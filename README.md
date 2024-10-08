@@ -5,6 +5,9 @@ Note: This project is in active development.
 
 Documentation: [https://informed-labs.github.io/tc/](https://informed-labs.github.io/tc/)
 
+Video Presentation on tc from AWS Community Day - Bay Area Sept 2024  
+[Higher Order Abstraction & Tooling for Step Functions & Serverless](https://youtu.be/1gqDGulszzQ?si=dtHcUkQF2nhZ_td8)
+
 ```sh
 Usage: tc <COMMAND>
 
