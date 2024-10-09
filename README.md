@@ -3,7 +3,7 @@ A graph-based, contextual, infrastructure composer. tc is both a Rust library an
 
 ### Abstract
 
-`tc` composes infrastructure using 6 core serverless primitives viz. `event`, `function`, `mutation`, `state`, `route` and `queue`. These primitives are [first-class](https://en.wikipedia.org/wiki/First-class_function) and can be composed like higher-order functions in functional programming. These primitives can be thought of nodes in an acyclic graph (DAG) and are agnostic of underlying cloud or infrastructure. For example, one can define a topology as follows
+`tc` composes infrastructure using 6 core serverless primitives viz. `event`, `function`, `mutation`, `state`, `route` and `queue`. These primitives are [first-class](https://en.wikipedia.org/wiki/First-class_function) and can be composed like higher-order functions in functional programming. These primitives can be thought of nodes in an acyclic graph (DAG) and are agnostic of underlying infrastructure. For example, one can define a topology as follows
 
 ```yaml
 name: my-topology
