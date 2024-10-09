@@ -1,0 +1,41 @@
+[book]
+authors = ["icy", "rob"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Cloud Functors using tc"
+
+[output.html]
+additional-css = ["assets/custom.css", "assets/mdbook-admonish.css", "./mdbook-admonish.css"]
+additional-js = ["assets/mermaid.min.js", "assets/mermaid-init.js"]
+git-repository-url = "https://github.com/informed-labs/tc"
+no-section-label = true
+
+[output.html.fold]
+enable = true
+level = 0
+
+[preprocessor]
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.0.2" # do not edit: managed by `mdbook-admonish install`
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]
+
+[output.html.search]
+enable = true
+limit-results = 30
+teaser-word-count = 30
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 1
+boost-paragraph = 1
+expand = true
+heading-split-level = 3
+copy-js = true
