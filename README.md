@@ -1,9 +1,13 @@
 # tc
-A graph-based, contextual, infrastructure composer. tc is both a Rust library and a cli app.
+A graph-based, contextual, application & infrastructure composer. tc is both a Rust library and a cli app.
 
 ### Abstract
 
-`tc` composes infrastructure using 6 core serverless primitives viz. `event`, `function`, `mutation`, `state`, `route` and `queue`. These primitives are [first-class](https://en.wikipedia.org/wiki/First-class_function) and can be composed like higher-order functions in functional programming. These primitives can be thought of nodes in an acyclic graph (DAG) and are agnostic of underlying infrastructure. For example, one can define a topology as follows
+The following diagram shows the 4 key ideas in `tc`:
+
+<img src="docs/src/images/core-ideas.png" width="300"/>
+
+`tc` composes infrastructure using 6 core entities viz. `event`, `function`, `mutation`, `state`, `route` and `queue`. These primitives or entities are [first-class](https://en.wikipedia.org/wiki/First-class_function) and can be composed like higher-order functions in functional programming. These entities can be thought of as nodes in an acyclic graph (DAG) and are agnostic of underlying infrastructure. For example, one can define a DAG(topology) as follows
 
 ```yaml
 name: my-pipeline
@@ -40,7 +44,7 @@ states:
 
 ```
 
-No infrastructure or underlying implementation has leaked into this definition. `tc` takes this topology specification, scans the current directory recursively for `functions` (Python3.X, Ruby3.2, Clojure, Janet, Go are currently supported), layers the dependencies and deploys the topology as a single unit. A tc topology can have tens or hundreds of functions, events, mutations, state transitions (Step functions), API routes etc. `tc` also sandboxes the deployment using convention. This also allows canary-style deployments and routing.
+No infrastructure or underlying implementation has leaked into this definition. `tc` takes this topology specification, scans the current directory recursively for `functions` (Python3.X, Ruby3.2, Clojure, Janet, Rust, Go are currently supported), layers the dependencies and deploys the topology as a single unit. A tc topology can have tens or hundreds of functions, events, mutations, state transitions (Step functions), API routes etc. `tc` also sandboxes the deployment using convention. This also allows canary-style deployments and routing.
 
 ### Resources
 
