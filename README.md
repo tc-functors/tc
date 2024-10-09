@@ -23,9 +23,9 @@ routes:
     queue: QueueA
 
 queues:
-	dlq:
-     consumer:
-	   function: Function-A
+  dlq:
+    consumer:
+      function: Function-A
 
 states:
    stepfn ASL
