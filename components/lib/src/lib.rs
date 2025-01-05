@@ -52,9 +52,17 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
     } else if clean {
         builder::clean(dir);
     } else if merge {
-        let layers = compiler::find_layers();
-        let mergeable_layers = builder::mergeable_layers(layers);
-        builder::merge(&name, mergeable_layers);
+
+       if &kind == "code" {
+            let dirs = u::list_dir(dir);
+            builder::merge_dirs(dirs)
+
+        } else {
+            let layers = compiler::find_layers();
+            let mergeable_layers = builder::mergeable_layers(layers);
+            builder::merge(&name, mergeable_layers);
+        }
+
     } else {
         builder::build(&dir, &name, &kind, no_docker, trace, dirty).await;
     }
