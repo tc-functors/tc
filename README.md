@@ -1,51 +1,6 @@
 # tc
 A graph-based, contextual, application & infrastructure composer. tc is both a Rust library and a cli app.
 
-### Abstract
-
-The following diagram shows the 4 key ideas in `tc`:
-
-<img src="docs/src/images/core-ideas.png" width="300"/>
-
-`tc` composes infrastructure using 6 core entities viz. `event`, `function`, `mutation`, `state`, `route` and `queue`. These primitives or entities are [first-class](https://en.wikipedia.org/wiki/First-class_function) and can be composed like higher-order functions in functional programming. These entities can be thought of as nodes in an acyclic graph (DAG) and are agnostic of underlying infrastructure. For example, one can define a DAG(topology) as follows
-
-```yaml
-name: my-pipeline
-events:
-  consumes:
-    EventA:
-      function: my-lambda-or-container-function
-    EventB:
-      mutation: Mutation-0
-
-routes:
-  apiA:
-    path: /api
-    function: my-lambda-proxy
-  apiB:
-    path: /hooks
-    queue: QueueA
-
-queues:
-  dlq:
-    consumer:
-      function: Function-A
-
-mutations:
-  resolvers:
-    Mutation-0:
-      function: Function-B
-      input: Event
-      output: SomeOutputType
-      subscribe: true
-
-states:
-  States Language (ASL)
-
-```
-
-No infrastructure or underlying implementation has leaked into this definition. `tc` takes this topology specification, scans the current directory recursively for `functions` (Python3.X, Ruby3.2, Clojure, Janet, Rust, Go are currently supported), layers the dependencies and deploys the topology as a single unit. A tc topology can have tens or hundreds of functions, events, mutations, state transitions (Step functions), API routes etc. `tc` also sandboxes the deployment using convention. This also allows canary-style deployments and routing.
-
 ### Resources
 
 Documentation: [https://informed-labs.github.io/tc/](https://informed-labs.github.io/tc/)
@@ -68,7 +23,7 @@ Commands:
   emulate    Emulate Runtime environments
   invoke     Invoke a topology synchronously or asynchronously
   list       List created entities
-  publish    Pulish layers, slabs and assets
+  publish    Publish layers, slabs and assets
   resolve    Resolve a topology from functions, events, states description
   scaffold   Scaffold roles and infra vars
   test       Run unit tests for functions in the topology dir

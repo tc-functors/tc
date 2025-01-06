@@ -28,7 +28,7 @@ enum Cmd {
     Invoke(InvokeArgs),
     /// List created entities
     List(ListArgs),
-    /// Pulish layers, slabs and assets
+    /// Publish layers
     Publish(PublishArgs),
     /// Resolve a topology from functions, events, states description
     Resolve(ResolveArgs),
