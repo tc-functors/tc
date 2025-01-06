@@ -177,9 +177,14 @@ fn make_target(
         None => None,
     };
 
+    let target_id = match kind {
+        "lambda" | "mutation" | "appsync" => format!("{}_{}_target", event_name, kind),
+        _ => format!("{}_target", event_name)
+    };
+
     Target {
         kind: s!(kind),
-        id: format!("{}_target", event_name),
+        id: target_id,
         name: s!(target_name),
         arn: s!(target_arn),
         role_arn: s!(role_arn),
@@ -272,6 +277,83 @@ async fn make_consumer(
     }
 }
 
+fn abbr(name: &str) -> String {
+    if name.chars().count() > 15 {
+        u::abbreviate(name, "-")
+    } else {
+        name.to_string()
+    }
+}
+
+async fn make_mutation_consumer(context: &Context, topology: &Topology, consumes: Consumes, event_name: &str) -> Option<Event> {
+    let Consumes { producer, filter, mutation, pattern, sandboxes, .. } = consumes;
+    let Context { env, config, name, namespace, sandbox, .. } = context;
+
+    let rule_name = format!("tc-{}-{}-{}-mutation", namespace, event_name, &sandbox);
+    let source = vec![context.render(&producer)];
+    let pattern = match pattern {
+        Some(p) => {
+            let pp: EventPattern = serde_json::from_str(&p).unwrap();
+            pp
+        },
+        None => make_pattern(event_name, source, filter),
+    };
+
+    let function = None;
+    let target_kind = determine_target_kind(&function, &mutation);
+    let target_name = find_target_name(&target_kind, context, topology, &function, &mutation).await;
+    let target_arn = find_target_arn(env, &target_kind, &target_name, &name).await;
+    let target = make_target(env, &target_kind, event_name, &target_name, &target_arn, mutation);
+
+    if sandbox == "stable" || sandboxes.contains(&sandbox) {
+        let event = Event {
+            name: s!(event_name),
+            rule_name: rule_name,
+            bus: config.eventbridge.bus.clone(),
+            pattern: pattern,
+            target: target
+        };
+        Some(event)
+    } else {
+        None
+    }
+}
+
+async fn make_function_consumer(context: &Context, topology: &Topology, consumes: Consumes, event_name: &str) -> Option<Event> {
+    let Consumes { producer, filter, function, pattern, sandboxes, .. } = consumes;
+    let Context { env, config, name, namespace, sandbox, .. } = context;
+
+    let rule_name = format!("tc-{}-{}-{}-fn", abbr(namespace), event_name, &sandbox);
+    let source = vec![context.render(&producer)];
+    let pattern = match pattern {
+        Some(p) => {
+            let pp: EventPattern = serde_json::from_str(&p).unwrap();
+            pp
+        },
+        None => make_pattern(event_name, source, filter),
+    };
+
+    let mutation = None;
+    let target_kind = determine_target_kind(&function, &mutation);
+    let target_name = find_target_name(&target_kind, context, topology, &function, &mutation).await;
+    let target_arn = find_target_arn(env, &target_kind, &target_name, &name).await;
+    let target = make_target(env, &target_kind, event_name, &target_name, &target_arn, mutation);
+
+    if sandbox == "stable" || sandboxes.contains(&sandbox) {
+        let event = Event {
+            name: s!(event_name),
+            rule_name: rule_name,
+            bus: config.eventbridge.bus.clone(),
+            pattern: pattern,
+            target: target
+        };
+        Some(event)
+    } else {
+        None
+    }
+}
+
+
 pub async fn make(context: &Context, topology: &Topology) -> Vec<Event> {
     let mut events: Vec<Event> = vec![];
 
@@ -282,10 +364,29 @@ pub async fn make(context: &Context, topology: &Topology) -> Vec<Event> {
         };
 
         for (event_name, event_spec) in consumes {
-            let event = make_consumer(context, topology, event_spec, &event_name).await;
-            match event {
-                Some(e) => events.push(e),
-                None => (),
+            if let Some(_) = &event_spec.mutation {
+                let event = make_mutation_consumer(context, topology, event_spec.clone(), &event_name).await;
+                match event {
+                    Some(e) => events.push(e),
+                    None => (),
+                }
+            }
+
+            if let Some(_) = &event_spec.function {
+                let event = make_function_consumer(context, topology, event_spec.clone(), &event_name).await;
+                match event {
+                    Some(e) => events.push(e),
+                    None => (),
+                }
+            }
+
+            if !kit::option_exists(event_spec.mutation.clone()) && !kit::option_exists(event_spec.function.clone()) {
+
+                let event = make_consumer(context, topology, event_spec, &event_name).await;
+                match event {
+                    Some(e) => events.push(e),
+                    None => (),
+                }
             }
         }
     }
