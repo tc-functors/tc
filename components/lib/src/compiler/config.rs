@@ -19,7 +19,7 @@ fn default_bus() -> String {
 }
 
 fn default_rule_prefix() -> String {
-    s!("tc-schedule-")
+    s!("tc-")
 }
 
 fn default_event_role() -> String {
@@ -196,15 +196,24 @@ pub struct Config {
 impl Config {
     pub fn new() -> Config {
         // look for possible paths
-        let filename = kit::expand_path("~/.tc.toml");
 
-        match fs::read_to_string(&filename) {
+        let path = match std::env::var("TC_CONFIG_PATH") {
+            Ok(p) => kit::expand_path(&p),
+            Err(_) => {
+                let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
+                format!("{}/infrastructure/tc/config.toml", root)
+
+            }
+        };
+        println!("Loading config {}", &path);
+
+        match fs::read_to_string(&path) {
             Ok(c) => {
                 let cfg: Config = match toml::from_str(&c) {
                     Ok(d) => d,
                     Err(e) => {
                         println!("{:?}", e);
-                        eprintln!("Unable to load data from `{}`", filename);
+                        eprintln!("Unable to load data from `{}`", path);
                         exit(1);
                     }
                 };

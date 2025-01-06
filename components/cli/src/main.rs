@@ -55,7 +55,7 @@ pub struct BootstrapArgs {
     #[arg(long, short = 'r')]
     role: Option<String>,
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
     #[arg(long, action)]
     create: bool,
     #[arg(long, action)]
@@ -67,7 +67,9 @@ pub struct BootstrapArgs {
 #[derive(Debug, Args)]
 pub struct ResolveArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
@@ -83,7 +85,7 @@ pub struct ResolveArgs {
 #[derive(Debug, Args)]
 pub struct BuildArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
     #[arg(long, action)]
     kind: Option<String>,
     #[arg(long, action)]
@@ -111,7 +113,9 @@ pub struct BuildArgs {
 #[derive(Debug, Args)]
 pub struct PublishArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, action)]
     kind: Option<String>,
     #[arg(long, action)]
@@ -157,7 +161,9 @@ pub struct TestArgs {
 #[derive(Debug, Args)]
 pub struct CreateArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, action)]
@@ -181,7 +187,9 @@ pub struct SyncArgs {
 #[derive(Debug, Args)]
 pub struct UpdateArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
@@ -199,7 +207,9 @@ pub struct UpdateArgs {
 #[derive(Debug, Args)]
 pub struct DeleteArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
@@ -215,7 +225,9 @@ pub struct InvokeArgs {
     #[arg(long, short = 'p')]
     payload: Option<String>,
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'M')]
@@ -235,7 +247,7 @@ pub struct InvokeArgs {
 #[derive(Debug, Args)]
 pub struct ReplArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
 }
@@ -243,7 +255,7 @@ pub struct ReplArgs {
 #[derive(Debug, Args)]
 pub struct ListArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
@@ -255,7 +267,7 @@ pub struct ListArgs {
 #[derive(Debug, Args)]
 pub struct EmulateArgs {
     #[arg(long, short = 'e')]
-    env: Option<String>,
+    profile: Option<String>,
     #[arg(long, action, short = 's')]
     shell: bool,
 }
@@ -300,27 +312,29 @@ async fn test(_args: TestArgs) {
 
 async fn create(args: CreateArgs) {
     let CreateArgs {
-        env,
+        profile,
+        role,
         sandbox,
         notify,
         recursive,
         ..
     } = args;
 
-    libtc::init(&env).await;
+    let env = libtc::init(profile, role).await;
     libtc::create(env, sandbox, notify, recursive).await;
 }
 
 async fn update(args: UpdateArgs) {
     let UpdateArgs {
-        env,
+        profile,
+        role,
         sandbox,
         component,
         recursive,
         ..
     } = args;
 
-    libtc::init(&env).await;
+    let env = libtc::init(profile, role).await;
 
     if kit::option_exists(component.clone()) {
         libtc::update_component(env, sandbox, component, recursive).await;
@@ -331,14 +345,15 @@ async fn update(args: UpdateArgs) {
 
 async fn delete(args: DeleteArgs) {
     let DeleteArgs {
-        env,
+        profile,
+        role,
         sandbox,
         component,
         recursive,
         ..
     } = args;
 
-    libtc::init(&env).await;
+    let env = libtc::init(profile, role).await;
 
     if kit::option_exists(component.clone()) {
         libtc::delete_component(env, sandbox, component, recursive).await;
@@ -367,7 +382,8 @@ async fn compile(args: CompileArgs) {
 
 async fn resolve(args: ResolveArgs) {
     let ResolveArgs {
-        env,
+        profile,
+        role,
         sandbox,
         component,
         quiet,
@@ -375,7 +391,7 @@ async fn resolve(args: ResolveArgs) {
         ..
     } = args;
 
-    libtc::init(&env).await;
+    let profile = libtc::init(&env, role).await;
     let plan = libtc::resolve(env, sandbox, component, recursive).await;
     if !quiet {
         println!("{plan}");
@@ -384,7 +400,8 @@ async fn resolve(args: ResolveArgs) {
 
 async fn invoke(args: InvokeArgs) {
     let InvokeArgs {
-        env,
+        profile,
+        role,
         payload,
         sandbox,
         mode,
@@ -394,7 +411,7 @@ async fn invoke(args: InvokeArgs) {
         dumb,
         ..
     } = args;
-    let opts = libtc::InvokeOptions {
+    let opts =   libtc::InvokeOptions {
         sandbox: sandbox,
         mode: mode,
         payload: payload,
@@ -404,7 +421,7 @@ async fn invoke(args: InvokeArgs) {
         dumb: dumb,
     };
 
-    libtc::init(&env).await;
+    let env = libtc::init(profile, role).await;
     libtc::invoke(env, opts).await;
 }
 
@@ -414,19 +431,20 @@ async fn upgrade() {
 
 async fn list(args: ListArgs) {
     let ListArgs {
-        env,
+        profile,
         sandbox,
         component,
         format,
         ..
     } = args;
-    libtc::init(&env).await;
+    let env = libtc::init(profile, role).await;
     libtc::list(env, sandbox, component, format).await;
 }
 
 async fn publish(args: PublishArgs) {
     let PublishArgs {
-        env,
+        profile,
+        role,
         kind,
         name,
         promote,
@@ -443,6 +461,7 @@ async fn publish(args: PublishArgs) {
         version: version,
     };
     let dir = kit::pwd();
+    let env = libtc::init(profile, role);
     if list {
         libtc::list_published_assets(env).await
     } else {
@@ -456,19 +475,20 @@ async fn scaffold(_args: ScaffoldArgs) {
 
 async fn bootstrap(args: BootstrapArgs) {
     let BootstrapArgs {
-        env,
+        profile,
         role,
         create,
         delete,
         show,
         ..
     } = args;
-    libtc::init(&env).await;
+    let env = libtc::init(profile, None).await;
     libtc::bootstrap(env, role, create, delete, show).await;
 }
 
 async fn emulate(args: EmulateArgs) {
     let EmulateArgs { env, shell, .. } = args;
+    let env = libc::init(env, None);
     libtc::emulate(env, shell).await;
 }
 

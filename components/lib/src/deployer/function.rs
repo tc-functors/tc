@@ -87,8 +87,8 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     }
 }
 
-pub async fn create_function(profile: &str, f: Function) -> String {
-    let env = Env::new(profile);
+pub async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
+    let env = Env::new(&profile, role_arn);
     match f.runtime.package_type.as_ref() {
         "zip" => {
             let lambda = make_lambda(&env, f.clone()).await;
@@ -108,12 +108,13 @@ pub async fn create_function(profile: &str, f: Function) -> String {
     }
 }
 
-pub async fn create(profile: String, fns: HashMap<String, Function>) {
+pub async fn create(env: &Env, fns: HashMap<String, Function>) {
     let mut tasks = vec![];
     for (_, function) in fns {
-        let p = profile.to_string();
+        let p = env.name.to_string();
+        let role = env.assume_role.to_owned();
         let h = tokio::spawn(async move {
-            create_function(&p, function).await;
+            create_function(p, role, function).await;
         });
         tasks.push(h);
     }
@@ -122,12 +123,13 @@ pub async fn create(profile: String, fns: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_code(profile: String, fns: HashMap<String, Function>) {
+pub async fn update_code(env: &Env, fns: HashMap<String, Function>) {
     let mut tasks = vec![];
     for (_, function) in fns {
-        let p = profile.to_string();
+        let p = env.name.to_string();
+        let role = env.assume_role.to_owned();
         let h = tokio::spawn(async move {
-            create_function(&p, function).await;
+            create_function(p, role, function).await;
         });
         tasks.push(h);
     }

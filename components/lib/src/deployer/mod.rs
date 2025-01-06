@@ -60,7 +60,7 @@ async fn create_flow(plan: &Plan) {
     } = plan;
 
     role::create(&env, roles.clone()).await;
-    function::create(env.clone().name, functions.clone()).await;
+    function::create(&env, functions.clone()).await;
     if should_update_layers() {
         function::update_layers(&env, functions.clone()).await;
     }
@@ -96,7 +96,7 @@ async fn create_function(plan: &Plan) {
         ..
     } = plan;
     role::create(&env, roles.clone()).await;
-    function::create(env.clone().name, functions.clone()).await;
+    function::create(&env, functions.clone()).await;
 }
 
 pub async fn create(plan: Plan) {
@@ -146,7 +146,7 @@ pub async fn update(plan: Plan) {
         &version
     );
 
-    function::update_code(env.clone().name, functions.clone()).await;
+    function::update_code(&env, functions.clone()).await;
     match flow {
         Some(f) => flow::create(&env, f).await,
         None => (),
@@ -196,7 +196,7 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
         }
 
         "functions" => {
-            function::create(env.clone().name, functions).await;
+            function::create(&env, functions).await;
         }
 
         "layers" => {
@@ -245,7 +245,7 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
 
         "all" => {
             role::create(&env, roles).await;
-            function::create(env.clone().name, functions.clone()).await;
+            function::create(&env, functions.clone()).await;
             match flow {
                 Some(f) => flow::create(&env, f).await,
                 None => (),
@@ -263,7 +263,10 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
                         let build = tasks.get("build").unwrap();
                         let dir = f.clone().dir.unwrap();
                         u::sh(build, &dir);
-                        function::create_function(&env.clone().name, f.clone()).await;
+
+                        let p = env.name.to_string();
+                        let role = env.assume_role.to_owned();
+                        function::create_function(p, role, f.clone()).await;
                     }
                     None => panic!("No valid function found"),
                 }

@@ -23,41 +23,52 @@ pub mod sts;
 use aws_config::SdkConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use aws_config::BehaviorVersion;
+use aws_config::sts::AssumeRoleProvider;
+use aws_config::environment::credentials::EnvironmentVariableCredentialsProvider;
 
 use kit::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Env {
     pub name: String,
+    pub assume_role: Option<String>
 }
 
 // config
 
-pub async fn init(profile: &Option<String>) {
-    let name = maybe_string(profile.clone(), "dev");
-    let env = Env::new(&name);
+pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
+    let name = maybe_string(profile, "dev");
+    let env = Env::new(&name, assume_role);
     let client = sts::make_client(&env).await;
     let account = sts::get_account_id(&client).await;
     cache::write(&name, &account).await;
+    env
 }
 
 impl Env {
-    pub fn new(name: &str) -> Env {
+    pub fn new(name: &str, assume_role: Option<String>) -> Env {
         Env {
             name: String::from(name),
+            assume_role: assume_role
         }
     }
 
-    pub fn maybe(some_name: Option<String>) -> Env {
-        let name = match some_name {
-            Some(name) => name,
-            None => String::from("dev"),
-        };
-        Env { name: name }
-    }
-
     pub async fn load(&self) -> SdkConfig {
-        aws_config::from_env().profile_name(&self.name).load().await
+        match &self.assume_role {
+            Some(role_arn) => {
+                let session_name = "TcSession";
+                let provider = AssumeRoleProvider::builder(role_arn)
+                    .session_name(session_name)
+                    .build_from_provider(EnvironmentVariableCredentialsProvider::new()).await;
+                aws_config::from_env()
+                    .credentials_provider(provider)
+                    .behavior_version(BehaviorVersion::latest())
+                    .load()
+                    .await
+            },
+            None => aws_config::from_env().profile_name(&self.name).load().await
+        }
     }
 
     pub fn account(&self) -> String {
