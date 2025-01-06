@@ -209,6 +209,17 @@ pub fn event_policy(region: &str, account: &str) -> String {
       "Sid": "SFNEvents1"
     }},
     {{
+         "Effect": "Allow",
+            "Action": [
+                "lambda:InvokeFunction"
+            ],
+            "Resource": [
+                "arn:aws:lambda:{region}:{account}:function:*",
+                "arn:aws:lambda:{region}:{account}:function:*:*"
+            ],
+      "Sid": "invokelambda1"
+    }},
+    {{
       "Action": [
         "states:StartExecution"
       ],

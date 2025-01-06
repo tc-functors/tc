@@ -1,5 +1,6 @@
 use crate::resolver::Event;
 use aws::eventbridge;
+use aws::lambda;
 use aws::Env;
 use colored::Colorize;
 
@@ -41,6 +42,21 @@ async fn make_event(env: &Env, event: Event) -> eventbridge::Event {
     }
 }
 
+async fn update_permissions(env: &Env, event: &Event) {
+    let kind = &event.target.kind;
+    match kind.as_ref() {
+        "function" | "lambda" => {
+            let client = lambda::make_client(env).await;
+            let principal = "events.amazonaws.com";
+            let statement_id = &event.rule_name;
+            let function_name = &event.target.name;
+            let _ = lambda::add_permission_basic(client, function_name, principal, statement_id).await;
+            println!("updating permission - function: {}", function_name);
+        },
+        _ => println!("Nothing to do!")
+    }
+}
+
 pub async fn create_event(env: &Env, event: Event) {
     println!("Creating event {}", &event.name.green());
     let target_event = make_event(env, event.clone()).await;
@@ -52,6 +68,7 @@ pub async fn create_event(env: &Env, event: Event) {
         if !rule_arn.is_empty() {
             target_event.clone().put_target().await;
         }
+        update_permissions(env, &event).await;
     }
 }
 
