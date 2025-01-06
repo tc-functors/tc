@@ -6,6 +6,7 @@ mod default;
 pub mod dynamo;
 pub mod ec2;
 pub mod efs;
+pub mod ecs;
 pub mod eventbridge;
 pub mod gateway;
 pub mod gatewayv2;

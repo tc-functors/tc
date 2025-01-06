@@ -15,6 +15,44 @@ pub struct Network {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ContainerTask {
+    pub name: String,
+    pub cluster: String,
+    pub task_role_arn: String,
+    pub image_uri: String,
+    pub command: String,
+    pub network_mode: String,
+    pub subnets: Vec<String>,
+    pub cpu: String,
+    pub mem: String,
+}
+
+async fn make_container_task(
+    context: &Context,
+    fqn: &str,
+    role: &str,
+    image_uri: &str,
+    command: &str
+) -> ContainerTask {
+
+    let Context { config, env, .. } = context;
+    let subnets = &config.ecs.subnets;
+    let cluster = &config.ecs.cluster;
+
+    ContainerTask {
+        name: s!(fqn),
+        cluster: cluster.to_string(),
+        task_role_arn: env.role_arn(role),
+        network_mode: s!("Awsvpc"),
+        image_uri: s!(image_uri),
+        command: command.to_owned(),
+        subnets: subnets.clone(),
+        cpu: s!("1024"),
+        mem: s!("2048")
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Runtime {
     pub lang: String,
     pub handler: String,
@@ -44,6 +82,7 @@ pub struct Function {
     pub description: Option<String>,
     pub role: String,
     pub runtime: Runtime,
+    pub container_task: Option<ContainerTask>,
     pub fs: Option<FileSystem>,
     pub uri: Option<String>,
     pub dir: Option<String>,
@@ -306,6 +345,15 @@ impl Function {
             fs = make_fs(env, context).await;
         }
 
+       let container_task = make_container_task(
+           context,
+           &fqn,
+           &funspec.container_task.task_role,
+           &funspec.container_task.image_uri,
+           &funspec.container_task.command
+       ).await;
+
+
         Function {
             version: version.to_string(),
             revision: revision.to_string(),
@@ -314,6 +362,7 @@ impl Function {
             description: funspec.clone().description,
             runtime: runtime,
             role: s!(&role_arn),
+            container_task: Some(container_task),
             fs: fs,
             uri: Some(uri),
             dir: Some(dir.to_string()),

@@ -41,10 +41,11 @@ impl TaskDef {
     }
 }
 
-pub fn make_cdf(name: String, image: String) -> ContainerDefinition {
+pub fn make_cdf(name: String, image: String, command: String) -> ContainerDefinition {
     let f = ContainerDefinitionBuilder::default();
     f.name(name)
         .image(image)
+        .command(command)
         .build()
 }
 
@@ -80,7 +81,8 @@ pub async fn create_taskdef(
     let res = client
         .register_task_definition()
         .family(tdf.name)
-        .task_role_arn(tdf.task_role_arn)
+        .task_role_arn(tdf.task_role_arn.to_owned())
+        .execution_role_arn(tdf.task_role_arn)
         .network_mode(tdf.network_mode)
         .cpu(tdf.cpu)
         .memory(tdf.mem)
@@ -93,7 +95,10 @@ pub async fn create_taskdef(
             Some(t) => t.task_definition_arn.unwrap(),
             None => panic!("failed to create task def")
         },
-        Err(_) => panic!("failed to create task def")
+        Err(_) => {
+            println!("{:?}", res);
+            panic!("failed to create task def")
+        }
     }
 }
 
