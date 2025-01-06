@@ -5,12 +5,6 @@ use aws::Env;
 use kit as u;
 
 #[derive(Tabled, Clone, Debug, PartialEq)]
-struct Between {
-    env: String,
-    version: String,
-}
-
-#[derive(Tabled, Clone, Debug, PartialEq)]
 struct Record {
     namespace: String,
     sandbox: String,

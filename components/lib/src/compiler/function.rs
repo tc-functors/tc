@@ -50,6 +50,30 @@ fn default_role() -> Role {
     }
 }
 
+fn default_container_task() -> ContainerTask {
+    ContainerTask::new("default")
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ContainerTask {
+    pub name: String,
+    pub task_role: String,
+    pub image_uri: String,
+    pub command: String
+}
+
+impl ContainerTask {
+    pub fn new(name: &str) -> ContainerTask {
+        ContainerTask {
+            name: s!(name),
+            task_role: s!("tc-base-task-role"),
+            image_uri: s!("public.ecr.aws/docker/library/python:3.11"),
+            command: s!("python /app/run.py"),
+        }
+    }
+}
+
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
     #[serde(default = "default_lang")]
@@ -99,6 +123,8 @@ pub struct FunctionSpec {
     pub vars_file: Option<String>,
     #[serde(default = "default_role")]
     pub role: Role,
+    #[serde(default = "default_container_task")]
+    pub container_task: ContainerTask
 }
 
 fn as_infra_dir(dir: &str, infra_dir: &str) -> String {
@@ -384,6 +410,7 @@ fn infer(dir: &str, infra_dir: &str, namespace: &str) -> FunctionSpec {
         assets: HashMap::new(),
         vars_file: vars_file,
         role: role_of(namespace, &roles_file, &fn_name),
+        container_task: ContainerTask::new(&fn_name)
     }
 }
 

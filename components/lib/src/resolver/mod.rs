@@ -16,7 +16,7 @@ pub mod vars;
 pub use context::Context;
 pub use event::Event;
 pub use flow::Flow;
-pub use function::Function;
+pub use function::{Function, ContainerTask};
 pub use logs::Logs;
 pub use mutation::ResolvedMutations;
 pub use plan::Plan;

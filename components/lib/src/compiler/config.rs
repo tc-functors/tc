@@ -10,6 +10,10 @@ fn default() -> String {
     s!("")
 }
 
+fn default_vec() -> Vec<String> {
+    vec![]
+}
+
 fn default_bus() -> String {
     s!("default")
 }
@@ -103,6 +107,19 @@ pub struct Efs {
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
+pub struct Ecs {
+    #[derivative(Default(value = "default_vec()"))]
+    #[serde(default)]
+    pub subnets: Vec<String>,
+
+    #[derivative(Default(value = "default()"))]
+    #[serde(default)]
+    pub cluster: String,
+}
+
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
 pub struct Stepfunction {
     #[derivative(Default(value = "default_sfn_role()"))]
     #[serde(default = "default_sfn_role")]
@@ -162,6 +179,9 @@ pub struct Config {
 
     #[serde(default = "Efs::default")]
     pub efs: Efs,
+
+    #[serde(default = "Ecs::default")]
+    pub ecs: Ecs,
 
     #[serde(default = "Stepfunction::default")]
     pub stepfunction: Stepfunction,
