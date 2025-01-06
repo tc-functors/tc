@@ -17,11 +17,6 @@ use resolver::Plan;
 use std::panic;
 use std::time::Instant;
 
-pub fn init_env(profile: Option<String>) -> Env {
-    let profile = u::maybe_string(profile, "dev");
-    Env { name: profile }
-}
-
 pub struct BuildOpts {
     pub pack: bool,
     pub no_docker: bool,
@@ -76,13 +71,12 @@ pub struct PublishOpts {
 }
 
 pub async fn publish(
-    profile: Option<String>,
+    env: Env,
     kind: Option<String>,
     name: Option<String>,
     dir: &str,
     opts: PublishOpts,
 ) {
-    let env = init_env(profile);
     let PublishOpts {
         promote,
         demote,
@@ -122,8 +116,7 @@ pub async fn publish(
     }
 }
 
-pub async fn list_published_assets(profile: Option<String>) {
-    let env = init_env(profile);
+pub async fn list_published_assets(env: Env) {
     publisher::list(&env).await
 }
 
@@ -163,13 +156,12 @@ pub async fn compile(opts: CompileOpts) -> String {
 }
 
 pub async fn resolve(
-    profile: Option<String>,
+    env: Env,
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
 ) -> String {
     let resolve = resolver::should_resolve(component.clone());
-    let env = Env::maybe(profile);
     let topology = compiler::compile(&u::pwd(), recursive);
     let plans = resolver::resolve(&env, sandbox, &topology, resolve).await;
     let component = u::maybe_string(component, "all");
@@ -201,7 +193,7 @@ fn count_of(topology: &Topology) -> String {
 }
 
 pub async fn create(
-    profile: Option<String>,
+    env: Env,
     sandbox: Option<String>,
     notify: bool,
     recursive: bool,
@@ -213,7 +205,6 @@ pub async fn create(
     let topology = compiler::compile(&dir, recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let env = Env::maybe(profile);
     let plans = resolver::resolve(&env, sandbox, &topology, true).await;
     for plan in plans.clone() {
         create_plan(plan, notify).await;
@@ -228,10 +219,9 @@ async fn update_plan(plan: Plan) {
     deployer::update(plan.clone()).await;
 }
 
-pub async fn update(profile: Option<String>, sandbox: Option<String>, recursive: bool) {
+pub async fn update(env: Env, sandbox: Option<String>, recursive: bool) {
     let start = Instant::now();
 
-    let env = Env::maybe(profile);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -246,12 +236,11 @@ pub async fn update(profile: Option<String>, sandbox: Option<String>, recursive:
 }
 
 pub async fn update_component(
-    profile: Option<String>,
+    env: Env,
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
 ) {
-    let env = Env::maybe(profile);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -263,8 +252,7 @@ pub async fn update_component(
     }
 }
 
-pub async fn delete(profile: Option<String>, sandbox: Option<String>, recursive: bool) {
-    let env = Env::maybe(profile);
+pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -277,12 +265,11 @@ pub async fn delete(profile: Option<String>, sandbox: Option<String>, recursive:
 }
 
 pub async fn delete_component(
-    profile: Option<String>,
+    env: Env,
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
 ) {
-    let env = Env::maybe(profile);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -295,12 +282,11 @@ pub async fn delete_component(
 }
 
 pub async fn list(
-    profile: Option<String>,
+    env: Env,
     sandbox: Option<String>,
     component: Option<String>,
     format: Option<String>,
 ) {
-    let env = init_env(profile);
     if u::option_exists(component.clone()) {
         lister::list_component(&env, sandbox, component, format).await;
     } else {
@@ -336,13 +322,12 @@ pub async fn scaffold() {
 }
 
 pub async fn bootstrap(
-    profile: Option<String>,
+    env: Env,
     role_name: Option<String>,
     create: bool,
     delete: bool,
     show: bool,
 ) {
-    let env = init_env(profile);
     match role_name {
         Some(role) => {
             if create {
@@ -369,8 +354,7 @@ pub struct InvokeOptions {
     pub dumb: bool,
 }
 
-pub async fn invoke(profile: Option<String>, opts: InvokeOptions) {
-    let env = init_env(profile.clone());
+pub async fn invoke(env: Env, opts: InvokeOptions) {
     let InvokeOptions {
         sandbox,
         mode,
@@ -393,8 +377,7 @@ pub async fn invoke(profile: Option<String>, opts: InvokeOptions) {
     }
 }
 
-pub async fn emulate(profile: Option<String>, shell: bool) {
-    let env = init_env(profile);
+pub async fn emulate(env: Env, shell: bool) {
     let kind = compiler::kind_of();
     match kind.as_ref() {
         "step-function" => emulator::sfn().await,
@@ -413,10 +396,10 @@ pub async fn upgrade() {
     git::self_upgrade("tc", "").await
 }
 
-pub async fn init(profile: &Option<String>) {
-    aws::init(profile).await;
+pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
     match std::env::var("TC_TRACE") {
         Ok(_) => kit::init_trace(),
         Err(_) => kit::init_log(),
     }
+    aws::init(profile, assume_role).await
 }

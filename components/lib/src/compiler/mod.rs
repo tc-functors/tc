@@ -98,7 +98,7 @@ pub fn show_component(component: &str, format: &str) -> String {
             let topology = compile(&dir, false);
             u::pretty_json(&topology.routes)
         }
-        "roles" => {
+        "roles" | "vars" => {
             let topology = compile(&dir, true);
             let functions = topology.functions();
             for (_dir, f) in functions {
@@ -154,6 +154,12 @@ pub fn show_component(component: &str, format: &str) -> String {
             for (name, dir) in topologies {
                 println!("{} - {}", &name, &dir);
             }
+            u::empty()
+        },
+
+        "config" => {
+            let cfg = Config::new();
+            println!("{:?}", &cfg);
             u::empty()
         }
 
