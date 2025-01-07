@@ -29,6 +29,8 @@ anyhow = "1.0.71"
 derivative = "2.2.0"
 kit =  { path = "../kit" }
 git =  { path = "../git" }
+github =  { path = "../github" }
+notifier =  { path = "../notifier" }
 aws =  { path = "../aws" }
 
 [dev-dependencies]

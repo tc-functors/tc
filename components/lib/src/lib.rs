@@ -8,6 +8,7 @@ mod publisher;
 mod resolver;
 mod scaffolder;
 mod tester;
+mod tagger;
 
 use aws::Env;
 use colored::Colorize;
@@ -209,6 +210,17 @@ pub async fn create(
     for plan in plans.clone() {
         create_plan(plan, notify).await;
     }
+
+    if plans.len() > 0 {
+        let root_plan = plans.first().unwrap();
+        let Plan { namespace, sandbox, version, env, .. } = root_plan;
+        let tag = format!("{}-{}", namespace, version);
+        let msg = format!(
+            "Deployed `{}` to *{}*::{}_{}",
+            tag, &env.name, namespace, &sandbox.name
+        );
+        notifier::notify(namespace, &msg).await;
+    }
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
@@ -392,8 +404,24 @@ pub async fn emulate(env: Env, shell: bool) {
     }
 }
 
+pub async fn tag(
+    prefix: Option<String>,
+    next: Option<String>,
+    dry_run: bool,
+    push: bool,
+    suffix: Option<String>,
+) {
+    let prefix = match prefix {
+        Some(p) => p,
+        None => panic!("No prefix given")
+    };
+    let next = u::maybe_string(next, "patch");
+    let suffix = u::maybe_string(suffix, "default");
+    tagger::create_tag(&next, &prefix, &suffix, push, dry_run).await
+}
+
 pub async fn upgrade() {
-    git::self_upgrade("tc", "").await
+    github::self_upgrade("tc", "").await
 }
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {

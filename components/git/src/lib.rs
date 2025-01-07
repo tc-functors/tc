@@ -1,9 +1,6 @@
-use kit::{pwd, sh};
+use kit::{pwd, sh, triml};
 use regex::Regex;
 use semver::Version;
-
-mod hub;
-use hub::Github;
 
 pub fn extract_version(s: &str) -> String {
     let re: Regex = Regex::new(r"(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)").unwrap();
@@ -69,6 +66,11 @@ pub fn tag_revision(tag: &str) -> String {
     sh(&cmd, &pwd())
 }
 
+pub fn commit_message(tag: &str) -> String {
+    let cmd = format!("git show --pretty=format:\"%B\" -n1 --no-patch {} | grep -v Co-authored | grep -iv \"Merge pull\" | head -n1", tag);
+    triml(&sh(&cmd, &pwd())).to_string()
+}
+
 pub fn current_repo() -> String {
     sh(
         "basename -s .git `git config --get remote.origin.url`",
@@ -80,14 +82,39 @@ pub fn root() -> String {
     sh("git rev-parse --show-toplevel", &pwd())
 }
 
-pub async fn self_upgrade(repo: &str, token: &str) {
-    let gh = Github::init(repo, token);
-    let arch_os = hub::arch_os();
-    let name = match arch_os.as_str() {
-        "x86_64-linux" => "tc-x86_64-linux",
-        "x86_64-macos" => "tc-x86_64-apple",
-        "aarch64-macos" => "tc",
-        _ => panic!("unknown os {}", arch_os),
+pub fn changelog(from_sha: &str, to_sha: &str) -> String {
+    let cmd = format!("git log --pretty=\"- %s\" {}...{} .", from_sha, to_sha);
+    let out = sh(&cmd, &pwd());
+    if out.contains("fatal") {
+        String::from("")
+    } else {
+        out
+    }
+}
+
+pub fn fetch_tags() {
+    sh("git fetch --tags", &pwd());
+}
+
+pub fn create_tag(tag: &str, parent: Option<String>) {
+    let cmd = match parent {
+        Some(p) => format!("git tag -f {} {}", tag, p),
+        None => format!("git tag {}", tag),
     };
-    gh.download_asset(name, "/tmp/tc").await;
+    sh(&cmd,& pwd());
+}
+
+pub fn create_annotated_tag(tag: &str, parent: Option<String>) {
+    let cmd =  match parent {
+       Some(p) => format!("git -c user.name=tc-releaser -c user.email=tc-releaser@informed.iq tag -a {} {} -m \"{} release\"", tag, p, tag),
+       None => format!("git tag {}", tag)
+    };
+    let out = sh(&cmd, &pwd());
+    println!("annot: {}", out);
+}
+
+pub fn push_tag(tag: &str) {
+    let cmd = format!("git push origin {}", tag);
+    let out = sh(&cmd, &pwd());
+    println!("{}", out);
 }
