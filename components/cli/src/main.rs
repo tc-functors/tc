@@ -256,6 +256,8 @@ pub struct ReplArgs {
 pub struct ListArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
@@ -391,7 +393,7 @@ async fn resolve(args: ResolveArgs) {
         ..
     } = args;
 
-    let profile = libtc::init(&env, role).await;
+    let env = libtc::init(profile, role).await;
     let plan = libtc::resolve(env, sandbox, component, recursive).await;
     if !quiet {
         println!("{plan}");
@@ -432,6 +434,7 @@ async fn upgrade() {
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
+        role,
         sandbox,
         component,
         format,
@@ -461,7 +464,7 @@ async fn publish(args: PublishArgs) {
         version: version,
     };
     let dir = kit::pwd();
-    let env = libtc::init(profile, role);
+    let env = libtc::init(profile, role).await;
     if list {
         libtc::list_published_assets(env).await
     } else {
@@ -487,8 +490,8 @@ async fn bootstrap(args: BootstrapArgs) {
 }
 
 async fn emulate(args: EmulateArgs) {
-    let EmulateArgs { env, shell, .. } = args;
-    let env = libc::init(env, None);
+    let EmulateArgs { profile, shell, .. } = args;
+    let env = libtc::init(profile, None).await;
     libtc::emulate(env, shell).await;
 }
 

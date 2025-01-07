@@ -18,7 +18,9 @@ anyhow = "1.0.71"
 config-file = "0.2.3"
 kit =  { path = "components/kit" }
 git =  { path = "components/git" }
+github =  { path = "components/github" }
 aws =  { path = "components/aws" }
+notifier =  { path = "components/notifier" }
 libtc =  { path = "components/lib" }
 
 [dev-dependencies]
@@ -28,6 +30,8 @@ mockall = "0.12.1"
 members = [
    "components/kit",
    "components/git",
+   "components/github",
+   "components/notifier",
    "components/aws",
    "components/lib"
 ]
