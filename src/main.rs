@@ -36,6 +36,8 @@ enum Cmd {
     Scaffold(ScaffoldArgs),
     /// Run unit tests for functions in the topology dir
     Test(TestArgs),
+    /// Create semver tags scoped by a topology
+    Tag(TagArgs),
     /// Update components
     Update(UpdateArgs),
     /// upgrade tc version
@@ -245,6 +247,22 @@ pub struct InvokeArgs {
 }
 
 #[derive(Debug, Args)]
+pub struct TagArgs {
+    #[arg(long, short = 'n')]
+    next: Option<String>,
+    #[arg(long, short = 's')]
+    service: Option<String>,
+    #[arg(long, action)]
+    dry_run: bool,
+    #[arg(long, action)]
+    push: bool,
+    #[arg(long, action)]
+    unwind: bool,
+    #[arg(long, short = 'S')]
+    suffix: Option<String>,
+}
+
+#[derive(Debug, Args)]
 pub struct ReplArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
@@ -295,7 +313,7 @@ async fn build(args: BuildArgs) {
     } = args;
 
     let dir = kit::pwd();
-    let opts = libtc::BuildOpts {
+    let opts = tc::BuildOpts {
         pack: pack,
         no_docker: no_docker,
         trace: trace,
@@ -305,11 +323,11 @@ async fn build(args: BuildArgs) {
         dirty: dirty,
         merge: merge,
     };
-    libtc::build(kind, name, &dir, opts).await;
+    tc::build(kind, name, &dir, opts).await;
 }
 
 async fn test(_args: TestArgs) {
-    libtc::test().await;
+    tc::test().await;
 }
 
 async fn create(args: CreateArgs) {
@@ -322,8 +340,8 @@ async fn create(args: CreateArgs) {
         ..
     } = args;
 
-    let env = libtc::init(profile, role).await;
-    libtc::create(env, sandbox, notify, recursive).await;
+    let env = tc::init(profile, role).await;
+    tc::create(env, sandbox, notify, recursive).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -336,12 +354,12 @@ async fn update(args: UpdateArgs) {
         ..
     } = args;
 
-    let env = libtc::init(profile, role).await;
+    let env = tc::init(profile, role).await;
 
     if kit::option_exists(component.clone()) {
-        libtc::update_component(env, sandbox, component, recursive).await;
+        tc::update_component(env, sandbox, component, recursive).await;
     } else {
-        libtc::update(env, sandbox, recursive).await;
+        tc::update(env, sandbox, recursive).await;
     }
 }
 
@@ -355,12 +373,12 @@ async fn delete(args: DeleteArgs) {
         ..
     } = args;
 
-    let env = libtc::init(profile, role).await;
+    let env = tc::init(profile, role).await;
 
     if kit::option_exists(component.clone()) {
-        libtc::delete_component(env, sandbox, component, recursive).await;
+        tc::delete_component(env, sandbox, component, recursive).await;
     } else {
-        libtc::delete(env, sandbox, recursive).await;
+        tc::delete(env, sandbox, recursive).await;
     }
 }
 
@@ -372,13 +390,13 @@ async fn compile(args: CompileArgs) {
         format,
         ..
     } = args;
-    let opts = libtc::CompileOpts {
+    let opts = tc::CompileOpts {
         versions: versions,
         recursive: recursive,
         component: component,
         format,
     };
-    let topology = libtc::compile(opts).await;
+    let topology = tc::compile(opts).await;
     println!("{topology}");
 }
 
@@ -393,8 +411,8 @@ async fn resolve(args: ResolveArgs) {
         ..
     } = args;
 
-    let env = libtc::init(profile, role).await;
-    let plan = libtc::resolve(env, sandbox, component, recursive).await;
+    let env = tc::init(profile, role).await;
+    let plan = tc::resolve(env, sandbox, component, recursive).await;
     if !quiet {
         println!("{plan}");
     }
@@ -413,7 +431,7 @@ async fn invoke(args: InvokeArgs) {
         dumb,
         ..
     } = args;
-    let opts =   libtc::InvokeOptions {
+    let opts =   tc::InvokeOptions {
         sandbox: sandbox,
         mode: mode,
         payload: payload,
@@ -423,12 +441,12 @@ async fn invoke(args: InvokeArgs) {
         dumb: dumb,
     };
 
-    let env = libtc::init(profile, role).await;
-    libtc::invoke(env, opts).await;
+    let env = tc::init(profile, role).await;
+    tc::invoke(env, opts).await;
 }
 
 async fn upgrade() {
-    libtc::upgrade().await
+    tc::upgrade().await
 }
 
 async fn list(args: ListArgs) {
@@ -440,8 +458,8 @@ async fn list(args: ListArgs) {
         format,
         ..
     } = args;
-    let env = libtc::init(profile, role).await;
-    libtc::list(env, sandbox, component, format).await;
+    let env = tc::init(profile, role).await;
+    tc::list(env, sandbox, component, format).await;
 }
 
 async fn publish(args: PublishArgs) {
@@ -457,23 +475,23 @@ async fn publish(args: PublishArgs) {
         trace,
         ..
     } = args;
-    let opts = libtc::PublishOpts {
+    let opts = tc::PublishOpts {
         trace: trace,
         promote: promote,
         demote: demote,
         version: version,
     };
     let dir = kit::pwd();
-    let env = libtc::init(profile, role).await;
+    let env = tc::init(profile, role).await;
     if list {
-        libtc::list_published_assets(env).await
+        tc::list_published_assets(env).await
     } else {
-        libtc::publish(env, kind, name, &dir, opts).await;
+        tc::publish(env, kind, name, &dir, opts).await;
     }
 }
 
 async fn scaffold(_args: ScaffoldArgs) {
-    libtc::scaffold().await;
+    tc::scaffold().await;
 }
 
 async fn bootstrap(args: BootstrapArgs) {
@@ -485,14 +503,27 @@ async fn bootstrap(args: BootstrapArgs) {
         show,
         ..
     } = args;
-    let env = libtc::init(profile, None).await;
-    libtc::bootstrap(env, role, create, delete, show).await;
+    let env = tc::init(profile, None).await;
+    tc::bootstrap(env, role, create, delete, show).await;
 }
 
 async fn emulate(args: EmulateArgs) {
     let EmulateArgs { profile, shell, .. } = args;
-    let env = libtc::init(profile, None).await;
-    libtc::emulate(env, shell).await;
+    let env = tc::init(profile, None).await;
+    tc::emulate(env, shell).await;
+}
+
+async fn tag(args: TagArgs) {
+    let TagArgs {
+        service,
+        next,
+        dry_run,
+        push,
+        suffix,
+        ..
+    } = args;
+
+    tc::tag(service, next, dry_run, push, suffix).await;
 }
 
 async fn run() {
@@ -510,6 +541,7 @@ async fn run() {
         Cmd::List(args) => list(args).await,
         Cmd::Publish(args) => publish(args).await,
         Cmd::Scaffold(args) => scaffold(args).await,
+        Cmd::Tag(args)       => tag(args).await,
         Cmd::Test(args) => test(args).await,
         Cmd::Update(args) => update(args).await,
         Cmd::Upgrade(..) => upgrade().await,
