@@ -10,7 +10,6 @@ build:
 	@cp $(TARGET_DIR)/debug/tc tc
 
 x86_64-linux:
-	cp etc/build.rs build.rs
 	rustup target add x86_64-unknown-linux-musl
 	PKG_CONFIG_ALLOW_CROSS=1 OPENSSL_STATIC=true OPENSSL_DIR=~/opt/musl RUSTFLAGS='-C link-arg=-s' cargo build --release --target x86_64-unknown-linux-musl
 	@mkdir -p $(BIN_DIR)
@@ -20,13 +19,11 @@ x86_64-linux:
 export PATH := $(HOME)/opt/apple/osxcross/target/bin:$(PATH)
 
 x86_64-apple:
-	cp etc/build.rs build.rs
 	export CC=o64-clang LIBZ_SYS_STATIC=1; cargo build --release --target x86_64-apple-darwin
 	@cp $(TARGET_DIR)/x86_64-apple-darwin/release/tc $(BIN_DIR)/tc-x86_64-apple
 
 aarch64-apple:
 	rm -f bin/tc
-	cp etc/build.rs build.rs
 	cargo build --release
 	@cp target/release/tc $(BIN_DIR)/tc
 

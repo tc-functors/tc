@@ -48,7 +48,7 @@ impl Github {
 
     fn headers(&self) -> HashMap<String, String> {
         let mut h = HashMap::new();
-        h.insert(s!("authorization"), format!("Bearer {}", self.token));
+        //h.insert(s!("authorization"), format!("Bearer {}", self.token));
         h.insert(s!("accept"), s!("application/vnd.github+json"));
         h.insert(s!("x-github-api-version"), s!("2022-11-28"));
         h.insert(
@@ -58,7 +58,7 @@ impl Github {
        h
     }
 
-    fn with_headers(&self, key: &str, val: &str) -> HashMap<String, String> {
+     fn with_headers(&self, key: &str, val: &str) -> HashMap<String, String> {
         let mut h = self.headers();
         h.insert(s!(key), s!(val));
         h
@@ -66,7 +66,7 @@ impl Github {
 
     fn url(&self, path: &str) -> String {
         format!(
-            "https://api.github.com/repos/Informed/{}{}",
+            "https://api.github.com/repos/informed-labs/{}{}",
             self.repo, path
         )
     }
@@ -135,8 +135,8 @@ pub async fn self_upgrade(repo: &str, token: &str) {
     let arch_os = arch_os();
     let name = match arch_os.as_str() {
         "x86_64-linux" => "tc-x86_64-linux",
-        "x86_64-macos" => "tc-x86_64-apple",
-        "aarch64-macos" => "tc",
+        "x86_64-macos" => "tc-x86_64-macos",
+        "aarch64-macos" => "tc-aarch64-macos",
         _ => panic!("unknown os {}", arch_os),
     };
     gh.download_asset(name, "/tmp/tc").await;
