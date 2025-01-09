@@ -266,7 +266,8 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
 
                         let p = env.name.to_string();
                         let role = env.assume_role.to_owned();
-                        function::create_function(p, role, f.clone()).await;
+                        let config = env.config.to_owned();
+                        function::create_function(p, role, config, f.clone()).await;
                     }
                     None => panic!("No valid function found"),
                 }

@@ -1,6 +1,6 @@
 use crate::resolver::{Function, ContainerTask};
 use aws::lambda;
-use aws::Env;
+use aws::{Env, Config};
 use aws::ecs;
 use aws::ecs::TaskDef;
 use kit as u;
@@ -87,8 +87,8 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     }
 }
 
-pub async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
-    let env = Env::new(&profile, role_arn);
+pub async fn create_function(profile: String, role_arn: Option<String>, config: Config, f: Function) -> String {
+    let env = Env::new(&profile, role_arn, config);
     match f.runtime.package_type.as_ref() {
         "zip" => {
             let lambda = make_lambda(&env, f.clone()).await;
@@ -113,8 +113,9 @@ pub async fn create(env: &Env, fns: HashMap<String, Function>) {
     for (_, function) in fns {
         let p = env.name.to_string();
         let role = env.assume_role.to_owned();
+        let config = env.config.to_owned();
         let h = tokio::spawn(async move {
-            create_function(p, role, function).await;
+            create_function(p, role, config, function).await;
         });
         tasks.push(h);
     }
@@ -128,8 +129,9 @@ pub async fn update_code(env: &Env, fns: HashMap<String, Function>) {
     for (_, function) in fns {
         let p = env.name.to_string();
         let role = env.assume_role.to_owned();
+        let config = env.config.to_owned();
         let h = tokio::spawn(async move {
-            create_function(p, role, function).await;
+            create_function(p, role, config, function).await;
         });
         tasks.push(h);
     }

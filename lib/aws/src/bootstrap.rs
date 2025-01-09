@@ -4,10 +4,10 @@ use crate::iam::Role;
 
 async fn make_role(env: &Env, name: &str) -> Role {
     let policy_doc = match name {
-        "lambda" => env.base_lambda_policy(),
-        "sfn" => env.base_sfn_policy(),
-        "event" => env.base_event_policy(),
-        "api" => env.base_api_policy(),
+        "lambda"  => env.base_lambda_policy(),
+        "sfn"     => env.base_sfn_policy(),
+        "event"   => env.base_event_policy(),
+        "api"     => env.base_api_policy(),
         "appsync" => env.base_appsync_policy(),
         _ => panic!("No such policy"),
     };

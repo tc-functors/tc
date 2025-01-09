@@ -18,8 +18,9 @@ fn parse_arn(arn: &str) -> (String, String) {
 }
 
 pub async fn list(env: &Env, fns: Vec<String>) {
+    let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
     let mut rows: Vec<Record> = vec![];
-    let client = lambda::make_client(env).await;
+    let client = lambda::make_client(&centralized).await;
     let cc = layer::make_client(&env).await;
 
     for f in fns {

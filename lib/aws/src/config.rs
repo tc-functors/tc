@@ -38,8 +38,8 @@ fn default_timeout() -> u8 {
     180
 }
 
-fn default_layers_profile() -> String {
-    s!("dev")
+fn default_layers_profile() -> Option<String> {
+    None
 }
 
 fn default_region() -> String {
@@ -147,7 +147,7 @@ pub struct Lambda {
 
     #[derivative(Default(value = "default_layers_profile()"))]
     #[serde(default = "default_layers_profile")]
-    pub layers_profile: String,
+    pub layers_profile: Option<String>,
 
     #[derivative(Default(value = "default_mountpoint()"))]
     #[serde(default = "default_mountpoint")]
@@ -194,20 +194,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Config {
-        // look for possible paths
+    pub fn new(path: &str) -> Config {
 
-        let path = match std::env::var("TC_CONFIG_PATH") {
-            Ok(p) => kit::expand_path(&p),
-            Err(_) => {
-                let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
-                format!("{}/infrastructure/tc/config.toml", root)
-
-            }
-        };
-        println!("Loading config {}", &path);
-
-        match fs::read_to_string(&path) {
+        match fs::read_to_string(path) {
             Ok(c) => {
                 let cfg: Config = match toml::from_str(&c) {
                     Ok(d) => d,
@@ -222,4 +211,5 @@ impl Config {
             Err(_) => Config::default(),
         }
     }
+
 }

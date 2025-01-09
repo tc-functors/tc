@@ -6,7 +6,6 @@ pub mod topology;
 
 pub mod deps;
 
-pub mod config;
 pub mod flow;
 pub mod function;
 pub mod layer;
@@ -14,7 +13,6 @@ pub mod mutation;
 pub mod schedule;
 
 use colored::Colorize;
-pub use config::Config;
 pub use function::{FunctionSpec, RuntimeSpec};
 pub use layer::Layer;
 pub use mutation::Mutations;
@@ -157,12 +155,6 @@ pub fn show_component(component: &str, format: &str) -> String {
             u::empty()
         },
 
-        "config" => {
-            let cfg = Config::new();
-            println!("{:?}", &cfg);
-            u::empty()
-        }
-
         _ => {
             let topology = compile(&dir, true);
             if u::file_exists(&component) {
@@ -279,8 +271,4 @@ pub fn list_topology_dirs() -> HashMap<String, String> {
         }
     }
     topologies
-}
-
-pub fn _get_config() -> Config {
-    Config::new()
 }

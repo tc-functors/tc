@@ -1,4 +1,3 @@
-use crate::compiler::Config;
 use aws::Env;
 use kit as u;
 use std::collections::HashMap;
@@ -8,8 +7,7 @@ pub struct Context {
     pub namespace: String,
     pub sandbox: String,
     pub name: String,
-    pub resolve: bool,
-    pub config: Config,
+    pub resolve: bool
 }
 
 impl Context {
@@ -23,12 +21,5 @@ impl Context {
         table.insert("sandbox", &self.sandbox);
         table.insert("env", &self.env.name);
         u::stencil(s, table)
-    }
-
-    pub fn resolve_config(&mut self) {
-        let cs = serde_json::to_string(&self.config).unwrap();
-        let csr = self.render(&cs);
-        let cfg: Config = serde_json::from_str(&csr).expect("fail");
-        self.config = cfg;
     }
 }

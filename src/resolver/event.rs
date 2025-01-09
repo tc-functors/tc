@@ -237,7 +237,6 @@ async fn make_consumer(
         name,
         namespace,
         sandbox,
-        config,
         ..
     } = context;
 
@@ -267,7 +266,7 @@ async fn make_consumer(
         let event = Event {
             name: s!(event_name),
             rule_name: rule_name,
-            bus: config.eventbridge.bus.to_owned(),
+            bus: env.config.eventbridge.bus.to_owned(),
             pattern: pattern,
             target: target,
         };
@@ -287,7 +286,7 @@ fn abbr(name: &str) -> String {
 
 async fn make_mutation_consumer(context: &Context, topology: &Topology, consumes: Consumes, event_name: &str) -> Option<Event> {
     let Consumes { producer, filter, mutation, pattern, sandboxes, .. } = consumes;
-    let Context { env, config, name, namespace, sandbox, .. } = context;
+    let Context { env, name, namespace, sandbox, .. } = context;
 
     let rule_name = format!("tc-{}-{}-{}-mutation", namespace, event_name, &sandbox);
     let source = vec![context.render(&producer)];
@@ -309,7 +308,7 @@ async fn make_mutation_consumer(context: &Context, topology: &Topology, consumes
         let event = Event {
             name: s!(event_name),
             rule_name: rule_name,
-            bus: config.eventbridge.bus.clone(),
+            bus: env.config.eventbridge.bus.clone(),
             pattern: pattern,
             target: target
         };
@@ -321,7 +320,7 @@ async fn make_mutation_consumer(context: &Context, topology: &Topology, consumes
 
 async fn make_function_consumer(context: &Context, topology: &Topology, consumes: Consumes, event_name: &str) -> Option<Event> {
     let Consumes { producer, filter, function, pattern, sandboxes, .. } = consumes;
-    let Context { env, config, name, namespace, sandbox, .. } = context;
+    let Context { env,  name, namespace, sandbox, .. } = context;
 
     let rule_name = format!("tc-{}-{}-{}-fn", abbr(namespace), event_name, &sandbox);
     let source = vec![context.render(&producer)];
@@ -343,7 +342,7 @@ async fn make_function_consumer(context: &Context, topology: &Topology, consumes
         let event = Event {
             name: s!(event_name),
             rule_name: rule_name,
-            bus: config.eventbridge.bus.clone(),
+            bus: env.config.eventbridge.bus.clone(),
             pattern: pattern,
             target: target
         };

@@ -2,7 +2,6 @@ pub mod appsync;
 pub mod bootstrap;
 pub mod cache;
 pub mod cloudwatch;
-mod default;
 pub mod dynamo;
 pub mod ec2;
 pub mod efs;
@@ -20,26 +19,33 @@ pub mod sqs;
 pub mod ssm;
 pub mod sts;
 
+mod default;
+mod config;
+
 use aws_config::SdkConfig;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use aws_config::BehaviorVersion;
 use aws_config::sts::AssumeRoleProvider;
 use aws_config::environment::credentials::EnvironmentVariableCredentialsProvider;
+pub use config::Config;
 
 use kit::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Env {
     pub name: String,
-    pub assume_role: Option<String>
+    pub assume_role: Option<String>,
+    pub config: Config,
 }
 
 // config
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
+pub async fn init(profile: Option<String>, assume_role: Option<String>, config_path: &str) -> Env {
     let name = maybe_string(profile, "dev");
-    let env = Env::new(&name, assume_role);
+    let config = Config::new(config_path);
+
+    let env = Env::new(&name, assume_role, config);
     let client = sts::make_client(&env).await;
     let account = sts::get_account_id(&client).await;
     cache::write(&name, &account).await;
@@ -47,10 +53,12 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
 }
 
 impl Env {
-    pub fn new(name: &str, assume_role: Option<String>) -> Env {
+    pub fn new(name: &str, assume_role: Option<String>, config: Config) -> Env {
+
         Env {
             name: String::from(name),
-            assume_role: assume_role
+            assume_role: assume_role,
+            config: config
         }
     }
 
@@ -207,7 +215,8 @@ impl Env {
     // resolvers
 
     pub async fn resolve_layers(&self, layers: Vec<String>) -> Vec<String> {
-        let client = layer::make_client(&self).await;
+        let centralized = self.inherit(self.config.lambda.layers_profile.to_owned());
+        let client = layer::make_client(&centralized).await;
         let mut v: Vec<String> = vec![];
         for layer in layers {
             let arn = layer::find_version(client.clone(), &layer).await.unwrap();
@@ -217,7 +226,8 @@ impl Env {
     }
 
     pub async fn resolve_layer(&self, layer_name: &str) -> String {
-        let client = layer::make_client(&self).await;
+        let centralized = self.inherit(self.config.lambda.layers_profile.to_owned());
+        let client = layer::make_client(&centralized).await;
         layer::find_version(client, layer_name).await.unwrap()
     }
 
@@ -249,7 +259,8 @@ impl Env {
     }
 
     pub async fn access_point_arn(&self, name: &str) -> Option<String> {
-        efs::get_ap_arn(&self, name).await.unwrap()
+        let centralized = self.inherit(self.config.lambda.layers_profile.to_owned());
+        efs::get_ap_arn(&centralized, name).await.unwrap()
     }
 
     // policies
@@ -275,5 +286,18 @@ impl Env {
 
     pub fn base_appsync_policy(&self) -> String {
         default::appsync_policy(&self.region(), &self.account())
+    }
+
+    pub fn inherit(&self, profile: Option<String>) -> Env {
+        match profile {
+            Some(p) => {
+                let role = match std::env::var("TC_CENTRALIZED_ASSUME_ROLE") {
+                    Ok(r) => Some(r),
+                    Err(_) => self.assume_role.clone()
+                };
+                Env::new(&p, role, self.config.clone())
+            },
+            None => self.clone()
+        }
     }
 }
