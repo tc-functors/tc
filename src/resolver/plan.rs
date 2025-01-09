@@ -62,16 +62,14 @@ impl Plan {
             format!("{}_{}", &topology.name, sandbox.name)
         };
 
-        let mut context = Context {
+        let context = Context {
             env: env.to_owned(),
             namespace: namespace.to_owned(),
             sandbox: sandbox.name.to_owned(),
             name: name.to_owned(),
             resolve: resolve,
-            config: topology.config.to_owned(),
         };
 
-        context.resolve_config();
 
         let given_mode = topology.mode.to_owned();
         let mode = match given_mode {

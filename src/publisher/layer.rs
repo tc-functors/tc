@@ -18,7 +18,8 @@ pub fn should_split(dir: &str) -> bool {
 }
 
 pub async fn publish(env: &Env, lang: &str, layer_name: &str, zipfile: &str) {
-    let client = layer::make_client(&env).await;
+    let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+    let client = layer::make_client(&centralized).await;
     if u::file_exists(zipfile) {
         let bar = kit::progress();
         let prefix = format!("Publishing {}", layer_name.blue());
@@ -38,14 +39,16 @@ async fn layer_arn(env: &Env, name: &str, version: Option<String>) -> String {
             env.layer_arn(&layer)
         }
         None => {
-            let client = layer::make_client(&env).await;
+            let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+            let client = layer::make_client(&centralized).await;
             layer::find_version(client, name).await.unwrap()
         }
     }
 }
 
 pub async fn promote(env: &Env, layer_name: &str, lang: &str, version: Option<String>) {
-    let client = layer::make_client(&env).await;
+    let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+    let client = layer::make_client(&centralized).await;
     let dev_layer_name = format!("{}-dev", layer_name);
 
     let dev_layer_arn = layer_arn(&env, &dev_layer_name, version).await;
@@ -77,7 +80,8 @@ pub async fn promote(env: &Env, layer_name: &str, lang: &str, version: Option<St
 }
 
 pub async fn publish_as_dev(env: &Env, layer_name: &str, lang: &str) {
-    let client = layer::make_client(&env).await;
+    let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+    let client = layer::make_client(&centralized).await;
     let layer_arn = env.resolve_layer(&layer_name).await;
     let maybe_url = layer::get_code_url(&client, &layer_arn).await;
     match maybe_url {
@@ -100,7 +104,8 @@ pub async fn publish_as_dev(env: &Env, layer_name: &str, lang: &str) {
 }
 
 pub async fn list(env: &Env, layer_names: Vec<String>) -> String {
-    let client = layer::make_client(&env).await;
+    let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+    let client = layer::make_client(&centralized).await;
     let layers = layer::list(client, layer_names).await;
     Table::new(layers).with(Style::psql()).to_string()
 }

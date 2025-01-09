@@ -35,9 +35,9 @@ async fn make_container_task(
     command: &str
 ) -> ContainerTask {
 
-    let Context { config, env, .. } = context;
-    let subnets = &config.ecs.subnets;
-    let cluster = &config.ecs.cluster;
+    let Context { env, .. } = context;
+    let subnets = &env.config.ecs.subnets;
+    let cluster = &env.config.ecs.cluster;
 
     ContainerTask {
         name: s!(fqn),
@@ -94,7 +94,7 @@ async fn make_network(
     assets: &HashMap<String, String>,
     network: &HashMap<String, Vec<String>>,
 ) -> Option<Network> {
-    let Context { env, config, .. } = context;
+    let Context { env, .. } = context;
 
     if !network.is_empty() {
         let given_subnets = network.get("subnets").unwrap();
@@ -127,8 +127,8 @@ async fn make_network(
         };
         Some(net)
     } else if !assets.get("DEPS_PATH").unwrap().is_empty() {
-        let given_subnet = &config.efs.subnets;
-        let given_sg = &config.efs.security_group;
+        let given_subnet = &env.config.efs.subnets;
+        let given_sg = &env.config.efs.security_group;
         let subnets = env.subnets(given_subnet).await;
         let security_groups = env.security_groups(&given_sg).await;
         let net = Network {
@@ -143,22 +143,21 @@ async fn make_network(
 
 fn find_ap_name(context: &Context) -> String {
     let Context {
-        sandbox, config, ..
+        sandbox, env,  ..
     } = context;
     match std::env::var("TC_EFS_AP") {
         Ok(t) => t,
         Err(_) => {
             if sandbox == "stable" {
-                s!(&config.efs.stable_ap)
+                s!(&env.config.efs.stable_ap)
             } else {
-                s!(&config.efs.dev_ap)
+                s!(&env.config.efs.dev_ap)
             }
         }
     }
 }
 
 async fn make_fs(env: &Env, context: &Context) -> Option<FileSystem> {
-    let Context { config, .. } = context;
     let ap_name = find_ap_name(context);
 
     println!("Updating fs: {}", &ap_name);
@@ -167,7 +166,7 @@ async fn make_fs(env: &Env, context: &Context) -> Option<FileSystem> {
         Some(a) => {
             let fs = FileSystem {
                 arn: a,
-                mount_point: config.lambda.fs_mountpoint.to_owned(),
+                mount_point: env.config.lambda.fs_mountpoint.to_owned(),
             };
             Some(fs)
         }

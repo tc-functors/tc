@@ -11,7 +11,6 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 use super::{BasicSpec, Events, FunctionSpec, Queue, Route, Schedule, Spec};
-use crate::compiler::config::Config;
 use crate::compiler::mutation;
 use crate::compiler::mutation::Mutations;
 use crate::compiler::schedule;
@@ -40,8 +39,7 @@ pub struct Topology {
     pub mutations: Option<Mutations>,
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
-    pub flow: Option<Value>,
-    pub config: Config,
+    pub flow: Option<Value>
 }
 
 fn relative_root_path() -> (String, String) {
@@ -288,8 +286,7 @@ fn make(
         flow: match &spec.flow {
             Some(f) => Some(flow::read(dir, f.clone())),
             None => spec.states.to_owned(),
-        },
-        config: Config::new(),
+        }
     }
 }
 
@@ -315,7 +312,6 @@ fn make_standalone(dir: &str) -> Topology {
         mutations: None,
         queues: HashMap::new(),
         schedules: HashMap::new(),
-        config: Config::new(),
     }
 }
 

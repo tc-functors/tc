@@ -1,4 +1,3 @@
-use aws::Env;
 
 use kit as u;
 
@@ -81,7 +80,7 @@ fn write_vars(name: &str, vars_dir: &str) {
 pub async fn create_function(name: &str, infra_dir: &str) {
     let role_dir = format!("{}/roles", infra_dir);
     let vars_dir = format!("{}/vars", infra_dir);
-    let env = Env::new("{{env}}", None);
+    let env = aws::init(Some(String::from("{{env}}")), None, "tc.toml").await;
     write_role(name, &role_dir, &env.base_lambda_policy());
     write_vars(name, &vars_dir);
     write_function_spec(name);

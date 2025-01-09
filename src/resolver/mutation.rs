@@ -14,10 +14,10 @@ pub struct ResolvedMutations {
 
 fn resolve_target(context: &Context, kind: &str, target: &str) -> String {
     let target = context.render(&target);
-    let Context { config, env, .. } = context;
+    let Context { env, .. } = context;
     match kind {
         "function" => env.lambda_arn(&target),
-        "event" => env.event_bus_arn(&config.eventbridge.bus),
+        "event" => env.event_bus_arn(&env.config.eventbridge.bus),
         _ => target,
     }
 }

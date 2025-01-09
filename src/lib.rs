@@ -425,9 +425,18 @@ pub async fn upgrade() {
 }
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
+    let config_path = match std::env::var("TC_CONFIG_PATH") {
+        Ok(p) => kit::expand_path(&p),
+        Err(_) => {
+            let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
+            format!("{}/infrastructure/tc/config.toml", root)
+
+        }
+    };
+
     match std::env::var("TC_TRACE") {
         Ok(_) => kit::init_trace(),
         Err(_) => kit::init_log(),
     }
-    aws::init(profile, assume_role).await
+    aws::init(profile, assume_role, &config_path).await
 }

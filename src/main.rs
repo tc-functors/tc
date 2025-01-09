@@ -54,7 +54,7 @@ pub struct ScaffoldArgs {}
 
 #[derive(Debug, Args)]
 pub struct BootstrapArgs {
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 'e')]
     profile: Option<String>,
@@ -70,7 +70,7 @@ pub struct BootstrapArgs {
 pub struct ResolveArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
@@ -116,7 +116,7 @@ pub struct BuildArgs {
 pub struct PublishArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, action)]
     kind: Option<String>,
@@ -164,7 +164,7 @@ pub struct TestArgs {
 pub struct CreateArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
@@ -190,7 +190,7 @@ pub struct SyncArgs {
 pub struct UpdateArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
@@ -210,7 +210,7 @@ pub struct UpdateArgs {
 pub struct DeleteArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
@@ -228,7 +228,7 @@ pub struct InvokeArgs {
     payload: Option<String>,
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'r')]
+    #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
@@ -531,21 +531,21 @@ async fn run() {
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
-        Cmd::Build(args) => build(args).await,
-        Cmd::Compile(args) => compile(args).await,
-        Cmd::Resolve(args) => resolve(args).await,
-        Cmd::Create(args) => create(args).await,
-        Cmd::Delete(args) => delete(args).await,
-        Cmd::Emulate(args) => emulate(args).await,
-        Cmd::Invoke(args) => invoke(args).await,
-        Cmd::List(args) => list(args).await,
-        Cmd::Publish(args) => publish(args).await,
-        Cmd::Scaffold(args) => scaffold(args).await,
+        Cmd::Build(args)     => build(args).await,
+        Cmd::Compile(args)   => compile(args).await,
+        Cmd::Resolve(args)   => resolve(args).await,
+        Cmd::Create(args)    => create(args).await,
+        Cmd::Delete(args)    => delete(args).await,
+        Cmd::Emulate(args)   => emulate(args).await,
+        Cmd::Invoke(args)    => invoke(args).await,
+        Cmd::List(args)      => list(args).await,
+        Cmd::Publish(args)   => publish(args).await,
+        Cmd::Scaffold(args)  => scaffold(args).await,
         Cmd::Tag(args)       => tag(args).await,
-        Cmd::Test(args) => test(args).await,
-        Cmd::Update(args) => update(args).await,
-        Cmd::Upgrade(..) => upgrade().await,
-        Cmd::Version(..) => version().await,
+        Cmd::Test(args)      => test(args).await,
+        Cmd::Update(args)    => update(args).await,
+        Cmd::Upgrade(..)     => upgrade().await,
+        Cmd::Version(..)     => version().await,
     }
 }
 
