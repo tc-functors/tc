@@ -41,5 +41,5 @@ tabled = "0.10.0"
 base64 = "0.21.0"
 cacache = "13.0.0"
 toml = "0.8.8"
-derivative = "2.2.0"
 kit = { path = "../kit" }
+configurator = { path = "../configurator" }

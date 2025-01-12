@@ -20,7 +20,7 @@ pub mod ssm;
 pub mod sts;
 
 mod default;
-mod config;
+
 
 use aws_config::SdkConfig;
 use serde_derive::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ use std::collections::HashMap;
 use aws_config::BehaviorVersion;
 use aws_config::sts::AssumeRoleProvider;
 use aws_config::environment::credentials::EnvironmentVariableCredentialsProvider;
-pub use config::Config;
+use configurator::Config;
 
 use kit::*;
 
@@ -41,10 +41,8 @@ pub struct Env {
 
 // config
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>, config_path: &str) -> Env {
+pub async fn init(profile: Option<String>, assume_role: Option<String>, config: Config) -> Env {
     let name = maybe_string(profile, "dev");
-    let config = Config::new(config_path);
-
     let env = Env::new(&name, assume_role, config);
     let client = sts::make_client(&env).await;
     let account = sts::get_account_id(&client).await;
@@ -62,20 +60,33 @@ impl Env {
         }
     }
 
+    async fn assume_given_role(&self, role_arn: &str) -> SdkConfig {
+        let session_name = "TcSession";
+        let provider = AssumeRoleProvider::builder(role_arn)
+            .session_name(session_name)
+            .build_from_provider(EnvironmentVariableCredentialsProvider::new()).await;
+        aws_config::from_env()
+            .credentials_provider(provider)
+            .behavior_version(BehaviorVersion::latest())
+            .load()
+            .await
+    }
+
     pub async fn load(&self) -> SdkConfig {
         match &self.assume_role {
-            Some(role_arn) => {
-                let session_name = "TcSession";
-                let provider = AssumeRoleProvider::builder(role_arn)
-                    .session_name(session_name)
-                    .build_from_provider(EnvironmentVariableCredentialsProvider::new()).await;
-                aws_config::from_env()
-                    .credentials_provider(provider)
-                    .behavior_version(BehaviorVersion::latest())
-                    .load()
-                    .await
-            },
-            None => aws_config::from_env().profile_name(&self.name).load().await
+            Some(role_arn) => self.assume_given_role(role_arn).await,
+            None => {
+                match std::env::var("TC_ASSUME_ROLE") {
+                    Ok(_)  => {
+                        if let Some(role_arn) = self.config.ci.roles.get(&self.name) {
+                            self.assume_given_role(role_arn).await
+                        } else {
+                            panic!("No role to assume")
+                        }
+                    }
+                    Err(_) => aws_config::from_env().profile_name(&self.name).load().await
+                }
+            }
         }
     }
 

@@ -15,6 +15,7 @@ pub async fn get_account_id(client: &Client) -> String {
             match res.account {
                 Some(acc) => acc,
                 None => {
+                    println!("{:?}", res);
                     panic::set_hook(Box::new(|_| {
                         println!("AWS authentication failed. Please run `aws sso login --profile <profile>");
                     }));
@@ -22,7 +23,8 @@ pub async fn get_account_id(client: &Client) -> String {
                 }
             }
         }
-        Err(_) => {
+        Err(e) => {
+            println!("{:?}", e);
             panic::set_hook(Box::new(|_| {
                 println!(
                     "AWS authentication failed. Please run `aws sso login --profile <profile>"

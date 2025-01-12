@@ -351,7 +351,7 @@ dependencies = [
  "base64",
  "cacache",
  "colored",
- "derivative",
+ "configurator",
  "kit",
  "lazy_static 1.5.0",
  "log",
@@ -1261,6 +1261,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ci"
+version = "0.0.2"
+dependencies = [
+ "aws",
+ "kit",
+ "open",
+ "self-replace",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "tagger",
+]
+
+[[package]]
 name = "clap"
 version = "4.5.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1366,6 +1380,18 @@ dependencies = [
  "serde_json",
  "toml 0.5.11",
  "yaml-rust",
+]
+
+[[package]]
+name = "configurator"
+version = "0.0.1"
+dependencies = [
+ "derivative",
+ "kit",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -1483,6 +1509,7 @@ version = "0.0.1"
 dependencies = [
  "aws",
  "colored",
+ "configurator",
  "kit",
  "log",
  "resolver",
@@ -1900,17 +1927,6 @@ name = "gimli"
 version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
-
-[[package]]
-name = "github"
-version = "0.0.1"
-dependencies = [
- "kit",
- "self-replace",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
-]
 
 [[package]]
 name = "glob"
@@ -3354,6 +3370,7 @@ name = "scaffolder"
 version = "0.0.1"
 dependencies = [
  "aws",
+ "configurator",
  "kit",
 ]
 
@@ -3833,12 +3850,13 @@ version = "0.7.5"
 dependencies = [
  "aws",
  "builder",
+ "ci",
  "clap",
  "colored",
  "compiler",
+ "configurator",
  "deployer",
  "emulator",
- "github",
  "invoker",
  "kit",
  "lister",

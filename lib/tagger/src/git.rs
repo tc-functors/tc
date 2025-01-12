@@ -71,3 +71,9 @@ pub fn push_tag(tag: &str) {
     let out = sh(&cmd, &pwd());
     println!("{}", out);
 }
+
+pub fn current_repo() -> String {
+    sh("basename -s .git `git config --get remote.origin.url`",
+       &pwd()
+    )
+}

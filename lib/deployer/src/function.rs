@@ -1,8 +1,9 @@
 use resolver::{Function, ContainerTask};
 use aws::lambda;
-use aws::{Env, Config};
+use aws::Env;
 use aws::ecs;
 use aws::ecs::TaskDef;
+use configurator::Config;
 use kit as u;
 use kit::*;
 use std::collections::HashMap;

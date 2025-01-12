@@ -1,7 +1,7 @@
 use notifier::RichText;
 use kit as u;
 use kit::*;
-mod git;
+pub mod git;
 
 fn inc_patch(v: &str) -> String {
     let version = git::maybe_semver(v);
@@ -159,7 +159,7 @@ fn fmt_msg(prefix: &str, version: &str, parent: &str, changes: &str) -> String {
     serde_json::to_string(&rt).unwrap()
 }
 
-async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
+pub async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
     let Tag {
         parent,
         prefix,
@@ -183,7 +183,7 @@ async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
     }
 }
 
-async fn create(next: &str, tag: Tag, push: bool, has_suffix: bool) {
+pub async fn create(next: &str, tag: Tag, push: bool, has_suffix: bool) {
     let Tag {
         parent,
         prefix,
@@ -248,4 +248,11 @@ pub async fn create_tag(next: &str, prefix: &str, suffix: &str, push: bool, is_d
     } else {
         create(&next, tag, push, has_suffix).await;
     }
+}
+
+pub fn delete_current_minor(prefix: &str, version: &str) {
+    let stable_version = current_stable_minor(version);
+    let tag = format!("{}-{}", &prefix, &stable_version);
+    let cmd = format!("git tag -d {} && git push --tag origin :{}", &tag, &tag);
+    u::runcmd_stream(&cmd, &u::pwd());
 }
