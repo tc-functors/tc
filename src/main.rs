@@ -77,11 +77,11 @@ pub struct BootstrapArgs {
 #[derive(Debug, Args)]
 pub struct DeployArgs {
     #[arg(long, short = 'S')]
-    service: String,
+    service: Option<String>,
     #[arg(long, short = 'e')]
     env: String,
     #[arg(long, short = 's')]
-    sandbox: String,
+    sandbox: Option<String>,
     #[arg(long)]
     manifest: Option<String>,
     #[arg(long, short = 'v')]
@@ -585,13 +585,10 @@ async fn release(args: ReleaseArgs) {
         service,
         suffix,
         unwind,
-        github,
-        tag,
-        asset,
         ..
     } = args;
 
-    tc::release(service, suffix, unwind, github, tag, asset).await;
+    tc::release(service, suffix, unwind).await;
 }
 
 
