@@ -1,20 +1,8 @@
-mod builder;
-mod compiler;
-mod deployer;
-mod emulator;
-mod invoker;
-mod lister;
-mod publisher;
-mod resolver;
-mod scaffolder;
-mod tester;
-mod tagger;
-
 use aws::Env;
 use colored::Colorize;
 use compiler::Topology;
-use kit as u;
 use resolver::Plan;
+use kit as u;
 use std::panic;
 use std::time::Instant;
 
@@ -423,6 +411,7 @@ pub async fn tag(
 pub async fn upgrade() {
     github::self_upgrade("tc", "").await
 }
+
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
     let config_path = match std::env::var("TC_CONFIG_PATH") {

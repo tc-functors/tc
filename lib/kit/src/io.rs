@@ -338,3 +338,7 @@ pub fn run_seq_quiet(cmds: Vec<&str>, dir: &str) {
         runcmd_quiet(cmd, dir);
     }
 }
+
+pub fn root() -> String {
+    sh("git rev-parse --show-toplevel", &pwd())
+}
