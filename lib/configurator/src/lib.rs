@@ -198,6 +198,10 @@ pub struct Ci {
     #[serde(default = "default_bool")]
     pub assume_role: bool,
 
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub update_metadata: bool,
+
     #[derivative(Default(value = "default_hashmap()"))]
     #[serde(default = "default_hashmap")]
     pub roles: HashMap<String, String>,

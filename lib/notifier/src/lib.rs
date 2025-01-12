@@ -2,7 +2,7 @@ use kit as u;
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::env;
+use configurator::Config;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Text {
@@ -81,15 +81,16 @@ pub fn wrap_msg(s: &str) -> String {
 }
 
 pub async fn slack(scope: &str, payload: String) {
-    let var_name = format!("TC_{}_SLACK_URL", u::snake_case(scope).to_uppercase());
-    let url = match env::var(var_name) {
-        Ok(v) => v,
-        Err(_e) => u::env_var("TC_SLACK_URL", ""),
-    };
-
-    if !url.is_empty() {
-        let res = u::http_post(&url, headers(), payload.to_string()).await;
-        println!("{:?}", res);
+    let config = Config::new(None);
+    let url = config.notifier.webhooks.get(scope);
+    match url {
+        Some(u) => {
+            let res = u::http_post(&u, headers(), payload.to_string()).await;
+            println!("{:?}", res);
+        },
+        None => {
+            println!("No notification webhook url found");
+        }
     }
 }
 

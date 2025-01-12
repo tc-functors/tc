@@ -2718,6 +2718,7 @@ dependencies = [
 name = "notifier"
 version = "0.0.2"
 dependencies = [
+ "configurator",
  "kit",
  "serde 1.0.217",
  "serde_derive",
