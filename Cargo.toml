@@ -14,9 +14,9 @@ clap = { version = "4.1", features = ["derive"] }
 openssl = { version = "0.10", features = ["vendored"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 kit =  { path = "lib/kit" }
-github =  { path = "lib/github" }
 aws =  { path = "lib/aws" }
 notifier =  { path = "lib/notifier" }
+configurator =  { path = "lib/configurator" }
 compiler =  { path = "lib/compiler" }
 resolver =  { path = "lib/resolver" }
 builder =  { path = "lib/builder" }
@@ -28,6 +28,7 @@ tagger =  { path = "lib/tagger" }
 tester = { path = "lib/tester" }
 scaffolder = { path = "lib/scaffolder" }
 lister = { path = "lib/lister" }
+ci = { path = "lib/ci" }
 
 [dev-dependencies]
 mockall = "0.12.1"
@@ -35,7 +36,7 @@ mockall = "0.12.1"
 [workspace]
 members = [
    "lib/kit",
-   "lib/github",
+   "lib/configurator",
    "lib/notifier",
    "lib/aws",
    "lib/compiler",
@@ -47,7 +48,8 @@ members = [
    "lib/tagger",
    "lib/tester",
    "lib/scaffolder",
-   "lib/lister"
+   "lib/lister",
+   "lib/ci"
 ]
 
 [profile.release]

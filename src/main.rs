@@ -16,8 +16,16 @@ enum Cmd {
     Bootstrap(BootstrapArgs),
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
+    /// Trigger deploy via CI
+    #[clap(name = "ci-deploy")]
+    Deploy(DeployArgs),
+    /// Trigger release via CI
+    #[clap(name = "ci-release")]
+    Release(ReleaseArgs),
     /// Compile a Topology
     Compile(CompileArgs),
+    /// Show config
+    Config(DefaultArgs),
     /// Create a sandboxed topology
     Create(CreateArgs),
     /// Delete a sandboxed topology
@@ -64,6 +72,40 @@ pub struct BootstrapArgs {
     delete: bool,
     #[arg(long, action)]
     show: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct DeployArgs {
+    #[arg(long, short = 'S')]
+    service: String,
+    #[arg(long, short = 'e')]
+    env: String,
+    #[arg(long, short = 's')]
+    sandbox: String,
+    #[arg(long)]
+    manifest: Option<String>,
+    #[arg(long, short = 'v')]
+    version: String,
+}
+
+#[derive(Debug, Args)]
+pub struct ReleaseArgs {
+    #[arg(long, short = 's')]
+    service: Option<String>,
+    #[arg(long, short = 'v')]
+    version: Option<String>,
+    #[arg(long, short = 'r')]
+    repo: Option<String>,
+    #[arg(long, short = 'S')]
+    suffix: Option<String>,
+    #[arg(long, action, short = 'u')]
+    unwind: bool,
+    #[arg(long, action, short = 'g')]
+    github: bool,
+    #[arg(long)]
+    tag: Option<String>,
+    #[arg(long)]
+    asset: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -526,20 +568,54 @@ async fn tag(args: TagArgs) {
     tc::tag(service, next, dry_run, push, suffix).await;
 }
 
+async fn deploy(args: DeployArgs) {
+    let DeployArgs {
+        env,
+        sandbox,
+        service,
+        version,
+        ..
+    } = args;
+
+    tc::deploy(service, env, sandbox, version).await;
+}
+
+async fn release(args: ReleaseArgs) {
+    let ReleaseArgs {
+        service,
+        suffix,
+        unwind,
+        github,
+        tag,
+        asset,
+        ..
+    } = args;
+
+    tc::release(service, suffix, unwind, github, tag, asset).await;
+}
+
+
+async fn config(_args: DefaultArgs) {
+    tc::show_config().await;
+}
+
 async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
         Cmd::Build(args)     => build(args).await,
+        Cmd::Config(args)    => config(args).await,
         Cmd::Compile(args)   => compile(args).await,
         Cmd::Resolve(args)   => resolve(args).await,
         Cmd::Create(args)    => create(args).await,
         Cmd::Delete(args)    => delete(args).await,
+        Cmd::Deploy(args)    => deploy(args).await,
         Cmd::Emulate(args)   => emulate(args).await,
         Cmd::Invoke(args)    => invoke(args).await,
         Cmd::List(args)      => list(args).await,
         Cmd::Publish(args)   => publish(args).await,
+        Cmd::Release(args)   => release(args).await,
         Cmd::Scaffold(args)  => scaffold(args).await,
         Cmd::Tag(args)       => tag(args).await,
         Cmd::Test(args)      => test(args).await,

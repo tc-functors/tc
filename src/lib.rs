@@ -1,7 +1,9 @@
 use aws::Env;
 use colored::Colorize;
 use compiler::Topology;
+use ci::github;
 use resolver::Plan;
+use configurator::Config;
 use kit as u;
 use std::panic;
 use std::time::Instant;
@@ -413,19 +415,46 @@ pub async fn upgrade() {
 }
 
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
-    let config_path = match std::env::var("TC_CONFIG_PATH") {
-        Ok(p) => kit::expand_path(&p),
-        Err(_) => {
-            let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
-            format!("{}/infrastructure/tc/config.toml", root)
+// ci
 
-        }
-    };
+pub async fn deploy(
+    service: String,
+    env: String,
+    sandbox: String,
+    version: String
+) {
+    ci::deploy(&env, &service, &sandbox, &version).await;
+}
+
+pub async fn release(
+    service: Option<String>,
+    suffix: Option<String>,
+    unwind: bool,
+    _github: bool,
+    _tag: Option<String>,
+    _asset: Option<String>,
+) {
+    let dir = u::pwd();
+    let suffix = u::maybe_string(suffix, "default");
+    let namespace = compiler::topology_name(&dir);
+    let service = u::maybe_string(service, &namespace);
+    if unwind {
+        ci::unwind(&service);
+    } else {
+        ci::release(&service, &suffix).await
+    }
+}
+
+pub async fn show_config() {
+    let config = Config::new(None);
+    println!("{}", config.render());
+}
+
+pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
 
     match std::env::var("TC_TRACE") {
         Ok(_) => kit::init_trace(),
         Err(_) => kit::init_log(),
     }
-    aws::init(profile, assume_role, &config_path).await
+    aws::init(profile, assume_role, Config::new(None)).await
 }

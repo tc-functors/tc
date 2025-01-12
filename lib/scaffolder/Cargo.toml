@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 kit = { path = "../kit" }
 aws = { path = "../aws" }
+configurator = { path = "../configurator" }

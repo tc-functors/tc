@@ -1,5 +1,6 @@
 
 use kit as u;
+use configurator::Config;
 
 fn default_vars() -> String {
     format!(
@@ -80,7 +81,7 @@ fn write_vars(name: &str, vars_dir: &str) {
 pub async fn create_function(name: &str, infra_dir: &str) {
     let role_dir = format!("{}/roles", infra_dir);
     let vars_dir = format!("{}/vars", infra_dir);
-    let env = aws::init(Some(String::from("{{env}}")), None, "tc.toml").await;
+    let env = aws::init(Some(String::from("{{env}}")), None, Config::new(None)).await;
     write_role(name, &role_dir, &env.base_lambda_policy());
     write_vars(name, &vars_dir);
     write_function_spec(name);

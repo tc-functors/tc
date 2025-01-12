@@ -1,8 +1,8 @@
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::collections::HashMap;
 use std::process::exit;
-use toml;
 
 use kit::*;
 
@@ -14,8 +14,20 @@ fn default_vec() -> Vec<String> {
     vec![]
 }
 
+fn default_hashmap() -> HashMap<String, String> {
+    HashMap::new()
+}
+
+fn default_bool() -> bool {
+    false
+}
+
 fn default_bus() -> String {
     s!("default")
+}
+
+fn default_ci_provider() -> String {
+    s!("circecli")
 }
 
 fn default_rule_prefix() -> String {
@@ -166,14 +178,37 @@ pub struct ApiGateway {
     pub default_region: String,
 }
 
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Notifier {
+    #[derivative(Default(value = "default_hashmap()"))]
+    #[serde(default = "default_hashmap")]
+    pub webhooks: HashMap<String, String>,
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Ci {
+    #[derivative(Default(value = "default_ci_provider()"))]
+    #[serde(default = "default_ci_provider")]
+    pub provider: String,
+
+
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub assume_role: bool,
+
+    #[derivative(Default(value = "default_hashmap()"))]
+    #[serde(default = "default_hashmap")]
+    pub roles: HashMap<String, String>,
+
+}
+
 // struct defaults
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Config {
-    #[serde(default = "General::default")]
-    pub general: General,
-
     #[serde(default = "Eventbridge::default")]
     pub eventbridge: Eventbridge,
 
@@ -191,18 +226,36 @@ pub struct Config {
 
     #[serde(default = "ApiGateway::default")]
     pub api_gateway: ApiGateway,
+
+    #[serde(default = "Notifier::default")]
+    pub notifier: Notifier,
+
+   #[serde(default = "Ci::default")]
+    pub ci: Ci,
+
 }
 
 impl Config {
-    pub fn new(path: &str) -> Config {
+    pub fn new(path: Option<String>) -> Config {
 
-        match fs::read_to_string(path) {
+        let config_path = match std::env::var("TC_CONFIG_PATH") {
+            Ok(p) => kit::expand_path(&p),
+            Err(_) =>  match path {
+                Some(p) => p,
+                None => {
+                    let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
+                    format!("{}/infrastructure/tc/config.yml", root)
+                }
+            }
+        };
+
+        match fs::read_to_string(&config_path) {
             Ok(c) => {
-                let cfg: Config = match toml::from_str(&c) {
+                let cfg: Config = match serde_yaml::from_str(&c) {
                     Ok(d) => d,
                     Err(e) => {
                         println!("{:?}", e);
-                        eprintln!("Unable to load data from `{}`", path);
+                        eprintln!("Unable to load data from `{}`", &config_path);
                         exit(1);
                     }
                 };
@@ -212,4 +265,11 @@ impl Config {
         }
     }
 
+    pub fn render(&self) -> String {
+        kit::pretty_json(self)
+    }
+
+    pub fn notification_webhook(&self, env: &str) -> Option<String> {
+        self.notifier.webhooks.get(env).cloned()
+    }
 }
