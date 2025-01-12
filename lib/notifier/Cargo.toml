@@ -7,3 +7,4 @@ edition = "2021"
 serde = "1.0"
 serde_derive = "1.0"
 kit = { path = "../kit" }
+configurator = { path = "../configurator" }

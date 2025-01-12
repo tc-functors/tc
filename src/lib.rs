@@ -183,6 +183,21 @@ fn count_of(topology: &Topology) -> String {
     format!("{} functions", functions.len())
 }
 
+async fn run_create_hook(env: &Env, root_plan: &Plan) {
+    let Plan { namespace, sandbox, version, .. } = root_plan;
+    let dir = u::pwd();
+    let tag = format!("{}-{}", namespace, version);
+    let msg = format!(
+        "Deployed `{}` to *{}*::{}_{}",
+        tag, &env.name, namespace, &sandbox.name
+    );
+    notifier::notify(&namespace, &msg).await;
+    if env.config.ci.update_metadata {
+        let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+        ci::update_metadata(&centralized, &sandbox.name, &namespace, &version, &env.name, &dir).await;
+    }
+}
+
 pub async fn create(
     env: Env,
     sandbox: Option<String>,
@@ -203,13 +218,9 @@ pub async fn create(
 
     if plans.len() > 0 {
         let root_plan = plans.first().unwrap();
-        let Plan { namespace, sandbox, version, env, .. } = root_plan;
-        let tag = format!("{}-{}", namespace, version);
-        let msg = format!(
-            "Deployed `{}` to *{}*::{}_{}",
-            tag, &env.name, namespace, &sandbox.name
-        );
-        notifier::notify(namespace, &msg).await;
+        if notify {
+            run_create_hook(&env, root_plan).await
+        }
     }
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));

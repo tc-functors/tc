@@ -4,7 +4,6 @@ pub mod github;
 use aws::Env;
 use tagger::git;
 
-
 pub async fn release(service: &str, suffix: &str) {
     let repo = git::current_repo();
     git::fetch_tags();
