@@ -1,0 +1,13 @@
+[package]
+name = "emulator"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+colored = "2.0.0"
+kit = { path = "../kit" }
+aws = { path = "../aws" }
+compiler = { path = "../compiler" }
