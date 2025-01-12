@@ -414,15 +414,18 @@ pub async fn upgrade() {
     github::self_upgrade("tc", "").await
 }
 
-
 // ci
 
 pub async fn deploy(
-    service: String,
+    service: Option<String>,
     env: String,
-    sandbox: String,
+    sandbox: Option<String>,
     version: String
 ) {
+    let dir = u::pwd();
+    let namespace = compiler::topology_name(&dir);
+    let service = u::maybe_string(service, &namespace);
+    let sandbox = u::maybe_string(sandbox, "stable");
     ci::deploy(&env, &service, &sandbox, &version).await;
 }
 
@@ -430,9 +433,6 @@ pub async fn release(
     service: Option<String>,
     suffix: Option<String>,
     unwind: bool,
-    _github: bool,
-    _tag: Option<String>,
-    _asset: Option<String>,
 ) {
     let dir = u::pwd();
     let suffix = u::maybe_string(suffix, "default");
