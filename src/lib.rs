@@ -204,6 +204,9 @@ pub async fn create(
     notify: bool,
     recursive: bool,
 ) {
+
+    let sbox = u::maybe_string(sandbox.clone(), "stable");
+    router::guard(&sbox);
     let dir = u::pwd();
     let start = Instant::now();
 
@@ -233,6 +236,8 @@ async fn update_plan(plan: Plan) {
 }
 
 pub async fn update(env: Env, sandbox: Option<String>, recursive: bool) {
+    let sbox = u::maybe_string(sandbox.clone(), "stable");
+    router::guard(&sbox);
     let start = Instant::now();
 
     println!("Compiling topology");
@@ -254,6 +259,8 @@ pub async fn update_component(
     component: Option<String>,
     recursive: bool,
 ) {
+    let sbox = u::maybe_string(sandbox.clone(), "stable");
+    router::guard(&sbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -266,6 +273,8 @@ pub async fn update_component(
 }
 
 pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
+    let sbox = u::maybe_string(sandbox.clone(), "stable");
+    router::guard(&sbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -283,6 +292,8 @@ pub async fn delete_component(
     component: Option<String>,
     recursive: bool,
 ) {
+    let sbox = u::maybe_string(sandbox.clone(), "stable");
+    router::guard(&sbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -419,6 +430,37 @@ pub async fn tag(
     let next = u::maybe_string(next, "patch");
     let suffix = u::maybe_string(suffix, "default");
     tagger::create_tag(&next, &prefix, &suffix, push, dry_run).await
+}
+
+pub async fn route(
+    env: Env,
+    event: Option<String>,
+    service: String,
+    sandbox: Option<String>,
+    rule: Option<String>,
+) {
+    let event = u::maybe_string(event, "default");
+    let sandbox = resolver::as_sandbox(sandbox);
+    match rule {
+        Some(r) => router::route(&env, &event, &service, &sandbox, &r).await,
+        None => println!("Rule not specified")
+    }
+}
+
+pub async fn freeze(env: Env, service: Option<String>, sandbox: String) {
+    let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
+    let name = format!("{}_{}", &service, &sandbox);
+    router::freeze(&env, &name).await;
+    let msg = format!("*{}*::{} is frozen", &env.name, sandbox);
+    notifier::notify(&service, &msg).await
+}
+
+pub async fn unfreeze(env: Env, service: Option<String>, sandbox: String) {
+    let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
+    let name = format!("{}_{}", &service, &sandbox);
+    router::unfreeze(&env, &name).await;
+    let msg = format!("{} is now unfrozen", &name);
+    notifier::notify(&service, &msg).await;
 }
 
 pub async fn upgrade() {

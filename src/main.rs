@@ -30,6 +30,8 @@ enum Cmd {
     Create(CreateArgs),
     /// Delete a sandboxed topology
     Delete(DeleteArgs),
+    /// Freeze a sandbox and make it immutable
+    Freeze(FreezeArgs),
     /// Emulate Runtime environments
     Emulate(EmulateArgs),
     /// Invoke a topology synchronously or asynchronously
@@ -40,12 +42,16 @@ enum Cmd {
     Publish(PublishArgs),
     /// Resolve a topology from functions, events, states description
     Resolve(ResolveArgs),
+    /// Route events to functors
+    Route(RouteArgs),
     /// Scaffold roles and infra vars
     Scaffold(ScaffoldArgs),
     /// Run unit tests for functions in the topology dir
     Test(TestArgs),
     /// Create semver tags scoped by a topology
     Tag(TagArgs),
+    /// Unfreeze a sandbox and make it mutable
+    Unfreeze(UnFreezeArgs),
     /// Update components
     Update(UpdateArgs),
     /// upgrade tc version
@@ -334,6 +340,46 @@ pub struct EmulateArgs {
     shell: bool,
 }
 
+#[derive(Debug, Args)]
+pub struct RouteArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 'E')]
+    event: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'S')]
+    service: String,
+    #[arg(long, short = 'r')]
+    rule: Option<String>,
+    #[arg(long, action)]
+    list: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct FreezeArgs {
+    #[arg(long, short = 'd')]
+    service: Option<String>,
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: String,
+   #[arg(long, action)]
+    all:  bool,
+}
+
+#[derive(Debug, Args)]
+pub struct UnFreezeArgs {
+    #[arg(long, short = 'd')]
+    service: Option<String>,
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: String,
+    #[arg(long, action)]
+    all: bool,
+}
+
 async fn version() {
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     println!("{}", version);
@@ -536,6 +582,41 @@ async fn scaffold(_args: ScaffoldArgs) {
     tc::scaffold().await;
 }
 
+async fn route(args: RouteArgs) {
+    let RouteArgs {
+        profile,
+        event,
+        service,
+        sandbox,
+        rule,
+        ..
+    } = args;
+    let env = tc::init(profile, None).await;
+    tc::route(env, event, service, sandbox, rule).await;
+}
+
+async fn freeze(args: FreezeArgs) {
+    let FreezeArgs {
+        profile,
+        service,
+        sandbox,
+        ..
+    } = args;
+    let env = tc::init(profile, None).await;
+    tc::freeze(env, service, sandbox).await;
+}
+
+async fn unfreeze(args: UnFreezeArgs) {
+    let UnFreezeArgs {
+        profile,
+        service,
+        sandbox,
+        ..
+    } = args;
+    let env = tc::init(profile, None).await;
+    tc::unfreeze(env, service, sandbox).await;
+}
+
 async fn bootstrap(args: BootstrapArgs) {
     let BootstrapArgs {
         profile,
@@ -609,13 +690,16 @@ async fn run() {
         Cmd::Delete(args)    => delete(args).await,
         Cmd::Deploy(args)    => deploy(args).await,
         Cmd::Emulate(args)   => emulate(args).await,
+        Cmd::Freeze(args)    => freeze(args).await,
         Cmd::Invoke(args)    => invoke(args).await,
         Cmd::List(args)      => list(args).await,
         Cmd::Publish(args)   => publish(args).await,
         Cmd::Release(args)   => release(args).await,
+        Cmd::Route(args)     => route(args).await,
         Cmd::Scaffold(args)  => scaffold(args).await,
         Cmd::Tag(args)       => tag(args).await,
         Cmd::Test(args)      => test(args).await,
+        Cmd::Unfreeze(args)  => unfreeze(args).await,
         Cmd::Update(args)    => update(args).await,
         Cmd::Upgrade(..)     => upgrade().await,
         Cmd::Version(..)     => version().await,

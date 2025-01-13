@@ -1,0 +1,9 @@
+[package]
+name = "router"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+colored = "2.0.0"
+kit = { path = "../kit" }
+aws = { path = "../aws" }

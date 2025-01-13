@@ -1,6 +1,6 @@
 [package]
 name = "tc"
-version = "0.7.5"
+version = "0.7.6"
 edition = "2021"
 rust-version = "1.81"
 
@@ -28,6 +28,7 @@ tagger =  { path = "lib/tagger" }
 tester = { path = "lib/tester" }
 scaffolder = { path = "lib/scaffolder" }
 lister = { path = "lib/lister" }
+router = { path = "lib/router" }
 ci = { path = "lib/ci" }
 
 [dev-dependencies]
@@ -49,6 +50,7 @@ members = [
    "lib/tester",
    "lib/scaffolder",
    "lib/lister",
+   "lib/router",
    "lib/ci"
 ]
 
