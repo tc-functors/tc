@@ -3,10 +3,8 @@
 # Preamble
 
 - [About](./about.md)
-- [Design](./design.md)
 - [Installation](./installation.md)
 - [Getting Started](./started.md)
-
 
 # Examples
 - [ETL](./examples/etl.md)
