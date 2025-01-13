@@ -4,6 +4,7 @@ use std::fs;
 use std::collections::HashMap;
 use std::process::exit;
 
+use kit as u;
 use kit::*;
 
 fn default() -> String {
@@ -310,8 +311,15 @@ pub struct Config {
 
 }
 
+
+fn render_template(env: &str, cfg_str: &str) -> String {
+    let mut table: HashMap<&str, &str> = HashMap::new();
+    table.insert("env", env);
+    u::stencil(cfg_str, table)
+}
+
 impl Config {
-    pub fn new(path: Option<String>) -> Config {
+    pub fn new(path: Option<String>, env: &str) -> Config {
 
         let config_path = match std::env::var("TC_CONFIG_PATH") {
             Ok(p) => kit::expand_path(&p),
@@ -326,7 +334,8 @@ impl Config {
 
         match fs::read_to_string(&config_path) {
             Ok(c) => {
-                let cfg: Config = match serde_yaml::from_str(&c) {
+                let rendered = render_template(env, &c);
+                let cfg: Config = match serde_yaml::from_str(&rendered) {
                     Ok(d) => d,
                     Err(e) => {
                         println!("{:?}", e);

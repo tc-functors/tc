@@ -81,7 +81,7 @@ pub fn wrap_msg(s: &str) -> String {
 }
 
 pub async fn slack(scope: &str, payload: String) {
-    let config = Config::new(None);
+    let config = Config::new(None, "");
     let url = config.notifier.webhooks.get(scope);
     match url {
         Some(u) => {

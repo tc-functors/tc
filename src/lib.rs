@@ -499,7 +499,7 @@ pub async fn release(
 }
 
 pub async fn show_config() {
-    let config = Config::new(None);
+    let config = Config::new(None, "dev");
     println!("{}", config.render());
 }
 
@@ -509,5 +509,8 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
         Ok(_) => kit::init_trace(),
         Err(_) => kit::init_log(),
     }
-    aws::init(profile, assume_role, Config::new(None)).await
+    match profile {
+        Some(ref p) => aws::init(profile.clone(), assume_role, Config::new(None, &p)).await,
+        None => aws::init(profile, assume_role, Config::new(None, "")).await
+    }
 }
