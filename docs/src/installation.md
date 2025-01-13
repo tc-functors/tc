@@ -4,7 +4,7 @@ Download the executable for your OS
 
 | GNU/Linux x86                                                                   | MacOSX M1/M2                                                       | MacOSX x86                                                                      |
 |---------------------------------------------------------------------------------|--------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [0.7.0](https://github.com/informed-labs/tc/releases/download/0.7.0/tc-x86_64-linux) | [0.7.0](https://github.com/informed-labs/tc/releases/download/0.7.0/tc) | [0.7.0](https://github.com/informed-labs/tc/releases/download/0.7.0/tc-x86_64-apple) |
+| [0.7.7](https://github.com/informed-labs/tc/releases/download/0.7.7/tc-x86_64-linux) | [0.7.7](https://github.com/informed-labs/tc/releases/download/0.7.7/tc-aarch64-macos) | [0.7.7](https://github.com/informed-labs/tc/releases/download/0.7.7/tc-x86_64-apple) |
 
 
 ```admonish warning title="For Mac users"
