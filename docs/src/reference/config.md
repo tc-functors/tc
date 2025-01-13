@@ -1,11 +1,6 @@
 # Config
 
 
-
-
-### Environment Variables
-
-
 `tc` uses special environment variables as feature bits and config overrides. The following is the list of TC environment variables:
 
 **TC_DIR**
@@ -13,7 +8,7 @@
 We don't have to always be in the topology or function directory to run a contextual tc command. TC_DIR env var sets the directory context
 
 ```
-TC_DIR=/path/to/services/fubar tc create -s sandbox -e env
+TC_DIR=/path/to/techno-core/services/fubar tc create -s sandbox -e env
 ```
 
 
