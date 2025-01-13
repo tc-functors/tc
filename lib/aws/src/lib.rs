@@ -226,7 +226,7 @@ impl Env {
     // resolvers
 
     pub async fn resolve_layers(&self, layers: Vec<String>) -> Vec<String> {
-        let centralized = self.inherit(self.config.lambda.layers_profile.to_owned());
+        let centralized = self.inherit(self.config.aws.lambda.layers_profile.to_owned());
         let client = layer::make_client(&centralized).await;
         let mut v: Vec<String> = vec![];
         for layer in layers {
@@ -237,7 +237,7 @@ impl Env {
     }
 
     pub async fn resolve_layer(&self, layer_name: &str) -> String {
-        let centralized = self.inherit(self.config.lambda.layers_profile.to_owned());
+        let centralized = self.inherit(self.config.aws.lambda.layers_profile.to_owned());
         let client = layer::make_client(&centralized).await;
         layer::find_version(client, layer_name).await.unwrap()
     }
@@ -270,7 +270,7 @@ impl Env {
     }
 
     pub async fn access_point_arn(&self, name: &str) -> Option<String> {
-        let centralized = self.inherit(self.config.lambda.layers_profile.to_owned());
+        let centralized = self.inherit(self.config.aws.lambda.layers_profile.to_owned());
         efs::get_ap_arn(&centralized, name).await.unwrap()
     }
 

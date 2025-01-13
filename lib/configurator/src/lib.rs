@@ -22,6 +22,10 @@ fn default_bool() -> bool {
     false
 }
 
+fn default_int() -> u8 {
+    1
+}
+
 fn default_bus() -> String {
     s!("default")
 }
@@ -66,11 +70,90 @@ fn default_mountpoint() -> String {
     s!("/mnt/assets")
 }
 
+
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
-pub struct General {
+pub struct Compiler {
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub verify: bool,
+
+    #[derivative(Default(value = "default_int()"))]
+    #[serde(default = "default_int")]
+    pub graph_depth: u8,
+
+    #[derivative(Default(value = "default()"))]
     #[serde(default = "default")]
-    pub assume_role: String,
+    pub default_infra_path: String,
+}
+
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Resolver {
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub incremental: bool,
+
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub cache: bool,
+
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub layer_promotions: bool,
+
+    #[derivative(Default(value = "default()"))]
+    #[serde(default = "default")]
+    pub stable_sandbox: String,
+}
+
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Deployer {
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub guard_stable_updates: bool,
+
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub rolling: bool,
+
+    #[derivative(Default(value = "default()"))]
+    #[serde(default = "default")]
+    pub fallback: String,
+}
+
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Notifier {
+    #[derivative(Default(value = "default_hashmap()"))]
+    #[serde(default = "default_hashmap")]
+    pub webhooks: HashMap<String, String>,
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Ci {
+    #[derivative(Default(value = "default_ci_provider()"))]
+    #[serde(default = "default_ci_provider")]
+    pub provider: String,
+
+
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub assume_role: bool,
+
+    #[derivative(Default(value = "default_bool()"))]
+    #[serde(default = "default_bool")]
+    pub update_metadata: bool,
+
+    #[derivative(Default(value = "default_hashmap()"))]
+    #[serde(default = "default_hashmap")]
+    pub roles: HashMap<String, String>,
+
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
@@ -178,41 +261,11 @@ pub struct ApiGateway {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
-#[derivative(Debug, Default)]
-pub struct Notifier {
-    #[derivative(Default(value = "default_hashmap()"))]
-    #[serde(default = "default_hashmap")]
-    pub webhooks: HashMap<String, String>,
-}
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
-pub struct Ci {
-    #[derivative(Default(value = "default_ci_provider()"))]
-    #[serde(default = "default_ci_provider")]
-    pub provider: String,
+pub struct Aws {
 
-
-    #[derivative(Default(value = "default_bool()"))]
-    #[serde(default = "default_bool")]
-    pub assume_role: bool,
-
-    #[derivative(Default(value = "default_bool()"))]
-    #[serde(default = "default_bool")]
-    pub update_metadata: bool,
-
-    #[derivative(Default(value = "default_hashmap()"))]
-    #[serde(default = "default_hashmap")]
-    pub roles: HashMap<String, String>,
-
-}
-
-// struct defaults
-
-#[derive(Derivative, Serialize, Deserialize, Clone)]
-#[derivative(Debug, Default)]
-pub struct Config {
     #[serde(default = "Eventbridge::default")]
     pub eventbridge: Eventbridge,
 
@@ -230,6 +283,24 @@ pub struct Config {
 
     #[serde(default = "ApiGateway::default")]
     pub api_gateway: ApiGateway,
+
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Config {
+
+    #[serde(default = "Compiler::default")]
+    pub compiler: Compiler,
+
+    #[serde(default = "Resolver::default")]
+    pub resolver: Resolver,
+
+    #[serde(default = "Deployer::default")]
+    pub deployer: Deployer,
+
+    #[serde(default = "Aws::default")]
+    pub aws: Aws,
 
     #[serde(default = "Notifier::default")]
     pub notifier: Notifier,
