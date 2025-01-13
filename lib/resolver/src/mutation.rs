@@ -17,7 +17,7 @@ fn resolve_target(context: &Context, kind: &str, target: &str) -> String {
     let Context { env, .. } = context;
     match kind {
         "function" => env.lambda_arn(&target),
-        "event" => env.event_bus_arn(&env.config.eventbridge.bus),
+        "event" => env.event_bus_arn(&env.config.aws.eventbridge.bus),
         _ => target,
     }
 }

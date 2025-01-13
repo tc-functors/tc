@@ -18,7 +18,7 @@ pub fn role_arn(acc: &str, namespace: &str, sandbox: &str, id: &str) -> String {
 
 pub async fn route(env: &Env, event_id: &str, service: &str, sandbox: &str, rule: &str) {
     let client = eventbridge::make_client(env).await;
-    let bus = &env.config.eventbridge.bus;
+    let bus = &env.config.aws.eventbridge.bus;
     let target_name = format!("{}_{}", service, sandbox);
     let target_id = target_id(event_id);
     let target_arn = env.sfn_arn(&target_name);

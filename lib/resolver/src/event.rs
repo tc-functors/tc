@@ -266,7 +266,7 @@ async fn make_consumer(
         let event = Event {
             name: s!(event_name),
             rule_name: rule_name,
-            bus: env.config.eventbridge.bus.to_owned(),
+            bus: env.config.aws.eventbridge.bus.to_owned(),
             pattern: pattern,
             target: target,
         };
@@ -308,7 +308,7 @@ async fn make_mutation_consumer(context: &Context, topology: &Topology, consumes
         let event = Event {
             name: s!(event_name),
             rule_name: rule_name,
-            bus: env.config.eventbridge.bus.clone(),
+            bus: env.config.aws.eventbridge.bus.clone(),
             pattern: pattern,
             target: target
         };
@@ -342,7 +342,7 @@ async fn make_function_consumer(context: &Context, topology: &Topology, consumes
         let event = Event {
             name: s!(event_name),
             rule_name: rule_name,
-            bus: env.config.eventbridge.bus.clone(),
+            bus: env.config.aws.eventbridge.bus.clone(),
             pattern: pattern,
             target: target
         };

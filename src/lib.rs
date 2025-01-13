@@ -193,7 +193,7 @@ async fn run_create_hook(env: &Env, root_plan: &Plan) {
     );
     notifier::notify(&namespace, &msg).await;
     if env.config.ci.update_metadata {
-        let centralized = env.inherit(env.config.lambda.layers_profile.to_owned());
+        let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
         ci::update_metadata(&centralized, &sandbox.name, &namespace, &version, &env.name, &dir).await;
     }
 }

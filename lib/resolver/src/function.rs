@@ -36,8 +36,8 @@ async fn make_container_task(
 ) -> ContainerTask {
 
     let Context { env, .. } = context;
-    let subnets = &env.config.ecs.subnets;
-    let cluster = &env.config.ecs.cluster;
+    let subnets = &env.config.aws.ecs.subnets;
+    let cluster = &env.config.aws.ecs.cluster;
 
     ContainerTask {
         name: s!(fqn),
@@ -127,8 +127,8 @@ async fn make_network(
         };
         Some(net)
     } else if !assets.get("DEPS_PATH").unwrap().is_empty() {
-        let given_subnet = &env.config.efs.subnets;
-        let given_sg = &env.config.efs.security_group;
+        let given_subnet = &env.config.aws.efs.subnets;
+        let given_sg = &env.config.aws.efs.security_group;
         let subnets = env.subnets(given_subnet).await;
         let security_groups = env.security_groups(&given_sg).await;
         let net = Network {
@@ -149,9 +149,9 @@ fn find_ap_name(context: &Context) -> String {
         Ok(t) => t,
         Err(_) => {
             if sandbox == "stable" {
-                s!(&env.config.efs.stable_ap)
+                s!(&env.config.aws.efs.stable_ap)
             } else {
-                s!(&env.config.efs.dev_ap)
+                s!(&env.config.aws.efs.dev_ap)
             }
         }
     }
@@ -166,7 +166,7 @@ async fn make_fs(env: &Env, context: &Context) -> Option<FileSystem> {
         Some(a) => {
             let fs = FileSystem {
                 arn: a,
-                mount_point: env.config.lambda.fs_mountpoint.to_owned(),
+                mount_point: env.config.aws.lambda.fs_mountpoint.to_owned(),
             };
             Some(fs)
         }
