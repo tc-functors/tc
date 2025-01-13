@@ -52,3 +52,6 @@ ssl-musl:
 
 clean:
 	rm -rf bin tc
+
+release-docs:
+	git subtree push --prefix docs/dist origin gh-pages
