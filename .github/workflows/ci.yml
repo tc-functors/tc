@@ -1,10 +1,17 @@
 name: Build
 on:
   push:
-    branches:
-      - "main"
+    tags:
+      - "*"
 env:
   PROJECT_NAME: tc
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+  packages: none
+
 jobs:
   build:
     # Set the job to run on the platform specified by the matrix below
@@ -14,10 +21,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: linux-amd64
+          - name: tc-x86_64-linux
             runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - name: macos-arm64
+          - name:  tc-aarch64-macos
             runner: macos-latest
             target: aarch64-apple-darwin
 
@@ -34,20 +41,13 @@ jobs:
       - name: Setup Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Build Binary
+      - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Release Binary
-        shell: bash
-        run: |
-          BIN_SUFFIX=""
-          # The built binary output location
-          BIN_OUTPUT="target/${{ matrix.target }}/release/${PROJECT_NAME}${BIN_SUFFIX}"
-
-          # Define a better name for the final binary
-          BIN_RELEASE="${PROJECT_NAME}-${{ matrix.name }}${BIN_SUFFIX}"
-          BIN_RELEASE_VERSIONED="${PROJECT_NAME}-${{ github.ref_name }}-${{ matrix.name }}${BIN_SUFFIX}"
-
-          # Move the built binary where you want it
-          mkdir -p out
-          mv "${BIN_OUTPUT}" "./out/${BIN_RELEASE}"
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/${{ matrix.name }}
+          asset_name: ${{ matrix.name }}
+          tag: ${{ github.ref }}
