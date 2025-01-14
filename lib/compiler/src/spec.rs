@@ -42,6 +42,7 @@ pub struct BasicSpec {
     pub name: String,
     #[serde(default)]
     pub hyphenated_names: bool,
+    pub events: Option<Events>,
 }
 
 impl BasicSpec {
@@ -54,6 +55,7 @@ impl BasicSpec {
             BasicSpec {
                 name: String::from("tc"),
                 hyphenated_names: false,
+                events: None
             }
         }
     }

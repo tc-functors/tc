@@ -138,7 +138,7 @@ pub async fn compile(opts: CompileOpts) -> String {
     let format = u::maybe_string(format, "json");
 
     match component {
-        Some(c) => compiler::show_component(&c, &format),
+        Some(c) => compiler::show_component(&c, &format, recursive),
         None => {
             let topology = compiler::compile(&dir, recursive);
             u::pretty_json(topology)

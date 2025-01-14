@@ -78,7 +78,7 @@ pub fn is_topology_dir(dir: &str) -> bool {
     topology::is_topology_dir(dir)
 }
 
-pub fn show_component(component: &str, format: &str) -> String {
+pub fn show_component(component: &str, format: &str, recursive: bool) -> String {
     let dir = u::pwd();
     match component {
         "layers" => {
@@ -86,18 +86,18 @@ pub fn show_component(component: &str, format: &str) -> String {
             u::pretty_json(layers)
         }
         "states" => {
-            let topology = compile(&dir, false);
+            let topology = compile(&dir, recursive);
             match topology.flow {
                 Some(f) => u::pretty_json(&f),
                 None => u::empty(),
             }
         }
         "routes" => {
-            let topology = compile(&dir, false);
+            let topology = compile(&dir, recursive);
             u::pretty_json(&topology.routes)
         }
         "roles" | "vars" => {
-            let topology = compile(&dir, true);
+            let topology = compile(&dir, recursive);
             let functions = topology.functions();
             for (_dir, f) in functions {
                 println!("{}", &f.fqn.blue());
@@ -109,15 +109,29 @@ pub fn show_component(component: &str, format: &str) -> String {
             u::empty()
         }
         "events" => {
-            let topology = compile(&dir, false);
-            u::pretty_json(&topology.events)
+            if recursive {
+                let topologies = list_topologies();
+                let mut xs: Vec<Events> = vec![];
+                for (_dir, basic_spec) in topologies {
+                    let BasicSpec { events, .. } = basic_spec;
+                    match events {
+                        Some(e) => xs.push(e),
+                        None => ()
+                    }
+                }
+                println!("{}", u::pretty_json(xs));
+                u::empty()
+            } else {
+                let topology = compile(&dir, false);
+                u::pretty_json(&topology.events)
+            }
         }
         "schedules" => {
-            let topology = compile(&dir, false);
+            let topology = compile(&dir, recursive);
             u::pretty_json(&topology.schedules)
         }
         "functions" => {
-            let topology = compile(&dir, true);
+            let topology = compile(&dir, recursive);
             match format {
                 "tree" => {
                     let tree = topology.build_tree();
@@ -129,7 +143,7 @@ pub fn show_component(component: &str, format: &str) -> String {
             }
         }
         "mutations" => {
-            let topology = compile(&dir, false);
+            let topology = compile(&dir, recursive);
             if format == "graphql" {
                 mutation::print_graphql(&topology.mutations.unwrap().types);
                 u::empty()
@@ -156,7 +170,7 @@ pub fn show_component(component: &str, format: &str) -> String {
         },
 
         _ => {
-            let topology = compile(&dir, true);
+            let topology = compile(&dir, recursive);
             if u::file_exists(&component) {
                 let functions = topology.functions;
                 let fn_dir = format!("{}/{}", &dir, component);
