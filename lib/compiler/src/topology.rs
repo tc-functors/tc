@@ -323,6 +323,7 @@ pub fn basic_spec(dir: &str) -> BasicSpec {
         BasicSpec {
             name: String::from("default"),
             hyphenated_names: false,
+            events: None
         }
     }
 }
