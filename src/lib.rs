@@ -68,6 +68,7 @@ pub async fn publish(
     dir: &str,
     opts: PublishOpts,
 ) {
+
     let PublishOpts {
         promote,
         demote,
@@ -401,18 +402,18 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
     }
 }
 
-pub async fn emulate(env: Env, shell: bool) {
+pub async fn emulate(env: Env, dev: bool, shell: bool) {
     let kind = compiler::kind_of();
     match kind.as_ref() {
         "step-function" => emulator::sfn().await,
         "function" => {
             if shell {
-                emulator::shell(&env).await;
+                emulator::shell(&env, dev).await;
             } else {
-                emulator::lambda(&env).await;
+                emulator::lambda(&env, dev).await;
             }
         }
-        _ => emulator::lambda(&env).await,
+        _ => emulator::lambda(&env, dev).await,
     }
 }
 
@@ -503,14 +504,30 @@ pub async fn show_config() {
     println!("{}", config.render());
 }
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
+pub async fn download_layer(env: Env, name: Option<String>) {
+    match name {
+        Some(n) => publisher::download_layer(&env, &n).await,
+        None => println!("provide layer name")
+    }
+}
 
-    match std::env::var("TC_TRACE") {
+pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
+     match std::env::var("TC_TRACE") {
         Ok(_) => kit::init_trace(),
         Err(_) => kit::init_log(),
     }
     match profile {
         Some(ref p) => aws::init(profile.clone(), assume_role, Config::new(None, &p)).await,
         None => aws::init(profile, assume_role, Config::new(None, "")).await
+    }
+}
+
+pub async fn init_repo_profile(profile: Option<String>) -> Env {
+    match profile {
+        Some(ref p) => aws::init(profile.clone(), None, Config::new(None, &p)).await,
+        None => {
+            let given_env = aws::init(profile, None, Config::new(None, "")).await;
+            given_env.inherit(given_env.config.aws.lambda.layers_profile.to_owned())
+        }
     }
 }

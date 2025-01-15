@@ -60,3 +60,7 @@ pub async fn list(env: &Env) {
     let table = list_layers(env, layer_names).await;
     println!("{}", table);
 }
+
+pub async fn download_layer(env: &Env, name: &str) {
+    layer::download(env, name).await
+}

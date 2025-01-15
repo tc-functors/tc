@@ -5,17 +5,32 @@ pub mod shell;
 use aws::Env;
 use kit as u;
 
-pub async fn shell(env: &Env) {
+
+fn as_dev_layers(layers: Vec<String>) -> Vec<String> {
+    let mut xs: Vec<String> = vec![];
+    for layer in layers {
+        xs.push(format!("{}-dev", &layer));
+    }
+    xs
+}
+
+pub async fn shell(env: &Env, dev: bool) {
     let dir = u::pwd();
     let function = compiler::current_function(&dir);
     match function {
         Some(f) => {
+            let layers = if dev {
+                as_dev_layers(f.runtime.layers)
+            } else {
+                f.runtime.layers
+            };
+
             shell::run(
                 env,
                 &f.name,
                 &f.runtime.lang,
                 &f.runtime.handler,
-                f.runtime.layers,
+                layers,
             )
             .await;
         }
@@ -23,16 +38,22 @@ pub async fn shell(env: &Env) {
     }
 }
 
-pub async fn lambda(env: &Env) {
+pub async fn lambda(env: &Env, dev: bool) {
     let dir = u::pwd();
     let function = compiler::current_function(&dir);
     match function {
         Some(f) => {
+            let layers = if dev {
+                as_dev_layers(f.runtime.layers)
+            } else {
+                f.runtime.layers
+            };
+
             lambda::run(
                 env,
                 &f.name,
                 &f.runtime.lang,
-                f.runtime.layers,
+                layers,
                 &f.runtime.handler,
             )
             .await;

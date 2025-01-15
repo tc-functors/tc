@@ -109,3 +109,27 @@ pub async fn list(env: &Env, layer_names: Vec<String>) -> String {
     let layers = layer::list(client, layer_names).await;
     Table::new(layers).with(Style::psql()).to_string()
 }
+
+pub async fn download(env: &Env, name: &str) {
+    let layer = env.resolve_layer(name).await;
+    println!("Resolving layer: {}", &layer);
+    let target_dir = format!("{}/layer", &u::pwd());
+    u::sh(&format!("rm -rf {}", &target_dir), &u::pwd());
+    let client = layer::make_client(&env).await;
+
+    let maybe_url = layer::get_code_url(&client, &layer).await;
+    match maybe_url {
+        Some(url) => {
+            let tmp_path = env::temp_dir();
+            let tmp_dir = tmp_path.to_string_lossy();
+            let tmp_zip_file = format!("{}/{}.zip", tmp_dir, u::uuid_str());
+            u::sh(&format!("rm -rf {}", tmp_zip_file), &u::pwd());
+            println!("Downloading to layer/ dir");
+            u::download(&url, HashMap::new(), &tmp_zip_file).await;
+            u::sh(&format!("unzip -o {} -d {}", tmp_zip_file, target_dir),
+                  &tmp_dir);
+            u::sh(&format!("rm -rf {}", tmp_zip_file), &u::pwd());
+        },
+        None => ()
+    }
+}
