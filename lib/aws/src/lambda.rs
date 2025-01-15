@@ -97,7 +97,7 @@ pub fn make_code(package_type: &str, path: &str) -> (String, Blob, FunctionCode)
             let hsize = file_size_human(size);
             (hsize, blob, code)
         }
-        "image" => {
+        "image" | "oci" => {
             let f = FunctionCodeBuilder::default();
             let code = f.image_uri(path).build();
             let blob = make_blob_from_str("default");
@@ -114,21 +114,21 @@ pub fn make_environment(vars: HashMap<String, String>) -> Environment {
 
 pub fn make_runtime(lang: &str) -> Runtime {
     match lang {
-        "java11" => Runtime::Java11,
-        "ruby2.7" => Runtime::Ruby27,
-        "go" => "provided.al2023".into(),
-        "python3.7" => Runtime::Python37,
-        "python3.8" => Runtime::Python38,
-        "python3.9" => Runtime::Python39,
-        "python3.10" => Runtime::Python310,
-        "python3.11" => Runtime::Python311,
-        "python3.12" => Runtime::Python312,
-        "provided" => Runtime::Provided,
+        "java11"      => Runtime::Java11,
+        "ruby2.7"     => Runtime::Ruby27,
+        "go"          => "provided.al2023".into(),
+        "python3.7"   => Runtime::Python37,
+        "python3.8"   => Runtime::Python38,
+        "python3.9"   => Runtime::Python39,
+        "python3.10"  => Runtime::Python310,
+        "python3.11"  => Runtime::Python311,
+        "python3.12"  => Runtime::Python312,
+        "provided"    => Runtime::Provided,
         "providedal2" => Runtime::Providedal2,
-        "janet" => "provided.al2023".into(),
-        "rust" => "provided.al2023".into(),
-        "ruby3.2" => "ruby3.2".into(),
-        _ => Runtime::Provided,
+        "janet"       => "provided.al2023".into(),
+        "rust"        => "provided.al2023".into(),
+        "ruby3.2"     => "ruby3.2".into(),
+        _             => Runtime::Provided,
     }
 }
 
@@ -144,7 +144,7 @@ pub fn make_arch(lang: &str) -> Architecture {
 pub fn make_package_type(package_type: &str) -> PackageType {
     match package_type {
         "zip" => PackageType::Zip,
-        "image" => PackageType::Image,
+        "image" | "oci" => PackageType::Image,
         _ => PackageType::Zip,
     }
 }
@@ -188,16 +188,16 @@ pub struct Function {
     pub code_size: String,
     pub code: FunctionCode,
     pub blob: Blob,
-    pub runtime: Runtime,
+    pub runtime: Option<Runtime>,
     pub uri: String,
-    pub handler: String,
+    pub handler: Option<String>,
     pub timeout: i32,
     pub memory_size: i32,
     pub package_type: PackageType,
     pub environment: Environment,
     pub architecture: Architecture,
     pub tags: HashMap<String, String>,
-    pub layers: Vec<String>,
+    pub layers: Option<Vec<String>>,
     pub vpc_config: Option<VpcConfig>,
     pub filesystem_config: Option<Vec<FileSystemConfig>>,
     pub logging_config: Option<LoggingConfig>,
@@ -277,14 +277,14 @@ impl Function {
             .create_function()
             .function_name(f.name.to_owned())
             .set_description(f.description)
-            .runtime(f.runtime)
+            .set_runtime(f.runtime)
             .role(f.role)
-            .handler(f.handler)
+            .set_handler(f.handler)
             .code(f.code)
             .environment(f.environment)
             .memory_size(f.memory_size)
             .timeout(f.timeout)
-            .set_layers(Some(f.layers))
+            .set_layers(f.layers)
             .package_type(f.package_type)
             .set_tags(Some(f.tags))
             .set_vpc_config(f.vpc_config)
@@ -335,10 +335,10 @@ impl Function {
             .client
             .update_function_configuration()
             .function_name(arn)
-            .set_layers(Some(f.layers))
+            .set_layers(f.layers)
             .role(f.role)
-            .runtime(f.runtime)
-            .handler(f.handler)
+            .set_runtime(f.runtime)
+            .set_handler(f.handler)
             .environment(f.environment)
             .timeout(f.timeout)
             .memory_size(f.memory_size)
@@ -403,7 +403,7 @@ impl Function {
             .client
             .update_function_configuration()
             .function_name(arn)
-            .set_layers(Some(f.layers))
+            .set_layers(f.layers)
             .send()
             .await
             .unwrap();
@@ -421,7 +421,7 @@ impl Function {
             .memory_size(f.memory_size)
             .timeout(f.timeout)
             .environment(f.environment)
-            .handler(f.handler)
+            .set_handler(f.handler)
             .send()
             .await?;
         self.wait(&f.name).await;

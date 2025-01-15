@@ -27,10 +27,6 @@ aarch64-apple:
 	cargo build --release
 	@cp target/release/tc $(BIN_DIR)/tc
 
-
-release-docs:
-	cd doc && make deploy
-
 docs:
 	cd doc && make run
 
