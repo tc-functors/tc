@@ -288,7 +288,7 @@ async fn make_mutation_consumer(context: &Context, topology: &Topology, consumes
     let Consumes { producer, filter, mutation, pattern, sandboxes, .. } = consumes;
     let Context { env, name, namespace, sandbox, .. } = context;
 
-    let rule_name = format!("tc-{}-{}-{}-mutation", namespace, event_name, &sandbox);
+    let rule_name = format!("tc-{}-{}-{}-mutation", abbr(namespace), event_name, &sandbox);
     let source = vec![context.render(&producer)];
     let pattern = match pattern {
         Some(p) => {
