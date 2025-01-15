@@ -248,6 +248,10 @@ pub struct Lambda {
     #[derivative(Default(value = "default_mountpoint()"))]
     #[serde(default = "default_mountpoint")]
     pub fs_mountpoint: String,
+
+    #[derivative(Default(value = "default()"))]
+    #[serde(default = "default")]
+    pub default_image_repo: String,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]

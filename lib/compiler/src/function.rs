@@ -42,6 +42,10 @@ fn default_package_type() -> String {
     s!("zip")
 }
 
+fn default_image_uri() -> String {
+    s!("public.ecr.aws/sam/build-python3.10:latest")
+}
+
 fn default_role() -> Role {
     Role {
         name: s!("tc-base-lambda-role"),
@@ -82,6 +86,8 @@ pub struct RuntimeSpec {
     pub handler: String,
     #[serde(default = "default_package_type")]
     pub package_type: String,
+    #[serde(default = "default_image_uri")]
+    pub image_uri: String,
     #[serde(default = "default_layers")]
     pub layers: Vec<String>,
     #[serde(default = "default_layers")]
@@ -368,6 +374,7 @@ fn infer(dir: &str, infra_dir: &str, namespace: &str) -> FunctionSpec {
         lang: lang.to_string(),
         handler: s!("handler.handler"),
         package_type: s!("zip"),
+        image_uri: default_image_uri(),
         layers: layers,
         extensions: vec![],
     };
@@ -375,14 +382,14 @@ fn infer(dir: &str, infra_dir: &str, namespace: &str) -> FunctionSpec {
     let mut tasks: HashMap<String, String> = HashMap::new();
 
     let build_task = match lang {
-        "python3.7" => s!("zip -r -q lambda.zip *.py"),
-        "python3.9" => s!("zip -r -q lambda.zip *.py"),
+        "python3.7"  => s!("zip -r -q lambda.zip *.py"),
+        "python3.9"  => s!("zip -r -q lambda.zip *.py"),
         "python3.10" => s!("zip -r -q lambda.zip *.py"),
         "python3.11" => s!("zip -r -q lambda.zip *.py"),
         "python3.12" => s!("zip -r -q lambda.zip *.py"),
-        "ruby3.2" => s!("zip -r -q lambda.zip *.rb"),
-        "janet" => s!("zip -r -q lambda.zip *.janet"),
-        _ => s!("zip -r -q lambda.zip bootstrap"),
+        "ruby3.2"    => s!("zip -r -q lambda.zip *.rb"),
+        "janet"      => s!("zip -r -q lambda.zip *.janet"),
+        _            => s!("zip -r -q lambda.zip bootstrap"),
     };
     tasks.insert(s!("build"), build_task);
     tasks.insert(s!("clean"), s!("rm -f lambda.zip"));

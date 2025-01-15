@@ -4,7 +4,6 @@ use aws::Env;
 use aws::ecs;
 use aws::ecs::TaskDef;
 use configurator::Config;
-use kit as u;
 use kit::*;
 use std::collections::HashMap;
 
@@ -49,7 +48,7 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     let client = lambda::make_client(env).await;
     let package_type = &f.runtime.package_type;
 
-    let uri = u::unwrap(f.uri);
+    let uri = f.runtime.uri;
 
     let (size, blob, code) = lambda::make_code(package_type, &uri);
     let vpc_config = match f.runtime.network {
@@ -62,6 +61,22 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     };
 
     let arch = lambda::make_arch(&f.runtime.lang);
+    let runtime = match package_type.as_ref() {
+        "zip" => Some(lambda::make_runtime(&f.runtime.lang)),
+        _ => None
+    };
+
+    let handler = match package_type.as_ref() {
+        "zip" => Some(f.runtime.handler),
+        _ => None
+    };
+
+    let layers = match package_type.as_ref() {
+        "zip" => Some(f.runtime.layers),
+        _ => None
+    };
+
+
 
     lambda::Function {
         client: client,
@@ -72,8 +87,8 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         code_size: size,
         blob: blob,
         role: f.role,
-        runtime: lambda::make_runtime(&f.runtime.lang),
-        handler: f.runtime.handler,
+        runtime: runtime,
+        handler: handler,
         timeout: f.runtime.timeout,
         uri: uri,
         memory_size: f.runtime.memory_size,
@@ -81,7 +96,7 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         environment: lambda::make_environment(f.runtime.environment),
         architecture: arch,
         tags: f.runtime.tags,
-        layers: f.runtime.layers,
+        layers: layers,
         vpc_config: vpc_config,
         filesystem_config: filesystem_config,
         logging_config: None,

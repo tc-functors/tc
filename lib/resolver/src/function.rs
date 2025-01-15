@@ -57,7 +57,7 @@ pub struct Runtime {
     pub lang: String,
     pub handler: String,
     pub package_type: String,
-    pub image: String,
+    pub uri: String,
     pub layers: Vec<String>,
     pub timeout: i32,
     pub memory_size: i32,
@@ -84,7 +84,6 @@ pub struct Function {
     pub runtime: Runtime,
     pub container_task: Option<ContainerTask>,
     pub fs: Option<FileSystem>,
-    pub uri: Option<String>,
     pub dir: Option<String>,
     pub tasks: HashMap<String, String>,
 }
@@ -298,12 +297,18 @@ async fn make_runtime(
     let env_vars = make_env_vars(context, vars, &assets).await;
     let network = make_network(context, &assets, &network).await;
 
+    let uri = match runtime.package_type.as_ref() {
+        "zip" => format!("{}/lambda.zip", &dir),
+        "oci" | "task" => runtime.image_uri.to_owned(),
+        _ => format!("{}/lambda.zip", &dir)
+    };
+
     Runtime {
         lang: runtime.lang.to_owned(),
         handler: runtime.handler.to_owned(),
         package_type: runtime.package_type.to_owned(),
         layers: layers.to_vec(),
-        image: u::empty(),
+        uri: uri,
         tags: tags.clone(),
         environment: env_vars,
         timeout: timeout,
@@ -334,13 +339,12 @@ impl Function {
         let fqn = context.render(&fqn);
         let Context { env, .. } = context;
         let runtime = make_runtime(context, &fqn, funspec, tags).await;
-        let uri = format!("{}/lambda.zip", &dir);
         let role_name = context.render(&role.name);
         let role_arn = env.role_arn(&role_name);
 
         let mut fs = None;
 
-        if !assets.is_empty() {
+        if !assets.is_empty() && runtime.package_type == "zip" {
             fs = make_fs(env, context).await;
         }
 
@@ -363,7 +367,6 @@ impl Function {
             role: s!(&role_arn),
             container_task: Some(container_task),
             fs: fs,
-            uri: Some(uri),
             dir: Some(dir.to_string()),
             tasks: tasks.to_owned(),
         }
