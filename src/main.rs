@@ -179,6 +179,8 @@ pub struct PublishArgs {
     #[arg(long, action)]
     demote: bool,
     #[arg(long, action)]
+    download: bool,
+    #[arg(long, action)]
     version: Option<String>,
     #[arg(long, action)]
     task: Option<String>,
@@ -338,6 +340,8 @@ pub struct EmulateArgs {
     profile: Option<String>,
     #[arg(long, action, short = 's')]
     shell: bool,
+    #[arg(long, action, short = 'd')]
+    dev: bool,
 }
 
 #[derive(Debug, Args)]
@@ -553,7 +557,6 @@ async fn list(args: ListArgs) {
 async fn publish(args: PublishArgs) {
     let PublishArgs {
         profile,
-        role,
         kind,
         name,
         promote,
@@ -561,6 +564,7 @@ async fn publish(args: PublishArgs) {
         version,
         list,
         trace,
+        download,
         ..
     } = args;
     let opts = tc::PublishOpts {
@@ -570,9 +574,11 @@ async fn publish(args: PublishArgs) {
         version: version,
     };
     let dir = kit::pwd();
-    let env = tc::init(profile, role).await;
+    let env = tc::init_repo_profile(profile).await;
     if list {
         tc::list_published_assets(env).await
+    } else if download {
+        tc::download_layer(env, name).await
     } else {
         tc::publish(env, kind, name, &dir, opts).await;
     }
@@ -631,9 +637,9 @@ async fn bootstrap(args: BootstrapArgs) {
 }
 
 async fn emulate(args: EmulateArgs) {
-    let EmulateArgs { profile, shell, .. } = args;
-    let env = tc::init(profile, None).await;
-    tc::emulate(env, shell).await;
+    let EmulateArgs { profile, dev, shell, .. } = args;
+    let env = tc::init_repo_profile(profile).await;
+    tc::emulate(env, dev, shell).await;
 }
 
 async fn tag(args: TagArgs) {
