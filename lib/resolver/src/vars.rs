@@ -83,6 +83,11 @@ pub fn default_vars(context: &Context, lang: &str, fqn: &str, dir: &str) -> Vars
             hmap.insert(String::from("GEM_PATH"), "/opt/ruby/gems/3.2.0".to_string());
 
             hmap.insert(
+                String::from("GEM_HOME"),
+                "/opt/ruby/gems/3.2.0".to_string(),
+            );
+
+            hmap.insert(
                 String::from("BUNDLE_CACHE_PATH"),
                 "/opt/ruby/lib".to_string(),
             );
