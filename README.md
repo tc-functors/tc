@@ -1,6 +1,9 @@
 # tc
 A graph-based, contextual, application & infrastructure composer. tc is both a Rust library and a cli app.
 
+
+[![Build](https://github.com/informed-labs/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/informed-labs/tc/actions/workflows/ci.yml)
+
 ### Resources
 
 Documentation: [https://informed-labs.github.io/tc/](https://informed-labs.github.io/tc/)
