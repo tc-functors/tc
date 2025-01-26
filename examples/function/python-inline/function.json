@@ -1,14 +1,28 @@
 {
-  "name": "python-inline",
-  "description": "bar",
+  "name": "python-example",
+  "description": "example function",
   "runtime": {
-    "lang": "python3.10",
+    "lang": "python3.12",
     "package_type": "zip",
     "handler": "handler.handler",
     "layers": []
   },
-  "tasks": {
-    "build": "inline-deps",
-    "clean": "rm *.zip"
+  "build": {
+    "kind": "Inline",
+    "pre": ["yum install libcurl -y"],
+    "post" ["ldconfig"],
+    "command" "zip -9 -q lambda.zip ."
+  },
+  "infra": {
+    "vars_file": "./vars.json",
+    "role" {
+      "name": "my-role",
+      "file": "./roles.json"
+    }
+  },
+  "test": {
+    "fixture": "python run-fixture.py",
+    "command": "poetry test"
   }
+
 }
