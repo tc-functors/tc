@@ -1,45 +1,42 @@
-use super::flow;
-use super::layer;
-use super::layer::Layer;
+use super::function::layer;
+use super::function::layer::Layer;
 use colored::Colorize;
 use ptree::builder::TreeBuilder;
 use ptree::item::StringItem;
 use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
 
-use super::{BasicSpec, Events, FunctionSpec, Queue, Route, Schedule, Spec};
-use super::mutation;
-use super::mutation::Mutations;
-use super::schedule;
+use super::spec::TopologySpec;
+use super::{mutation, schedule, event, version};
+use super::mutation::Mutation;
+use super::function::Function;
+use super::route::Route;
+use super::event::Event;
+use super::queue::Queue;
+use super::schedule::Schedule;
+use super::flow::Flow;
 use kit as u;
 use kit::*;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Filter {
-    pub metadata: HashMap<String, Vec<String>>,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Topology {
     pub name: String,
     pub kind: String,
-    pub mode: Option<String>,
     pub nodes: Vec<Topology>,
     pub infra: String,
-    pub role: Option<String>,
     pub dir: String,
-    pub version: Option<String>,
-    pub events: Option<Events>,
+    pub sandbox: String,
     pub hyphenated_names: bool,
-    pub routes: Option<HashMap<String, Route>>,
-    pub functions: HashMap<String, FunctionSpec>,
-    pub mutations: Option<Mutations>,
+    pub version: String,
+    pub events: HashMap<String, Event>,
+    pub routes: HashMap<String, Route>,
+    pub functions: HashMap<String, Function>,
+    pub mutations: HashMap<String, Mutation>,
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
-    pub flow: Option<Value>
+    pub flow: Option<Flow>
 }
 
 fn relative_root_path() -> (String, String) {
@@ -60,7 +57,7 @@ fn legacy_infra_dir(namespace: &str) -> Option<String> {
     ])
 }
 
-fn infra_dir(given_infra_dir: Option<String>, namespace: &str) -> String {
+fn as_infra_dir(given_infra_dir: Option<String>, namespace: &str) -> String {
     match given_infra_dir {
         Some(d) => d,
         None => {
@@ -104,6 +101,8 @@ pub fn is_relative_topology_dir(dir: &str) -> bool {
     }
 }
 
+
+// functions
 fn is_standalone_function_dir(dir: &str) -> bool {
     let function_file = "function.json";
     let topology_file = "topology.yml";
@@ -128,35 +127,19 @@ fn is_singular_function_dir() -> bool {
     u::file_exists(function_file) && u::file_exists(topology_file)
 }
 
-fn intern_functions(root_dir: &str, infra_dir: &str, spec: &Spec) -> HashMap<String, FunctionSpec> {
-    let shared = spec.clone().functions.shared;
+fn intern_functions(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
+    let shared = &spec.functions.shared;
     let namespace = &spec.name;
 
-    let mut functions: HashMap<String, FunctionSpec> = HashMap::new();
+    let mut functions: HashMap<String, Function> = HashMap::new();
     for d in shared {
         let abs_dir = u::absolute_dir(root_dir, &d);
         if u::is_dir(&abs_dir) {
-            let function = FunctionSpec::new(&abs_dir, infra_dir, &namespace, spec.fmt());
-            match function {
-                Some(f) => functions.insert(abs_dir, f),
-                None => None,
-            };
+            let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            functions.insert(abs_dir, function);
         }
     }
     functions
-}
-
-fn should_ignore_node(root_dir: &str, ignore_nodes: Vec<String>, topology_dir: &str) -> bool {
-    for node in ignore_nodes {
-        let abs_path = format!("{root_dir}/{node}");
-        if &abs_path == topology_dir {
-            return true;
-        }
-        if topology_dir.starts_with(&abs_path) {
-            return true;
-        }
-    }
-    return false;
 }
 
 fn function_dirs(dir: &str) -> Vec<String> {
@@ -172,51 +155,51 @@ fn function_dirs(dir: &str) -> Vec<String> {
     dirs
 }
 
-fn discover_functions(dir: &str, infra_dir: &str, spec: &Spec) -> HashMap<String, FunctionSpec> {
-    let mut functions: HashMap<String, FunctionSpec> = HashMap::new();
+fn discover_functions(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
+    let mut functions: HashMap<String, Function> = HashMap::new();
     let dirs = function_dirs(dir);
 
     for d in dirs {
         if u::is_dir(&d) && !&d.starts_with(".") {
-            let function = FunctionSpec::new(&d, infra_dir, &spec.name, spec.fmt());
-            match function {
-                Some(f) => functions.insert(d, f),
-                None => None,
-            };
+            let function = Function::new(&d, infra_dir, &spec.name, spec.fmt());
+            functions.insert(d, function);
         }
     }
     functions
 }
 
-fn current_function(dir: &str, infra_dir: &str, spec: &Spec) -> HashMap<String, FunctionSpec> {
-    let mut functions: HashMap<String, FunctionSpec> = HashMap::new();
+fn current_function(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
+    let mut functions: HashMap<String, Function> = HashMap::new();
     if u::is_dir(dir) && !dir.starts_with(".") {
-        let function = FunctionSpec::new(dir, infra_dir, &spec.name, spec.fmt());
-        match function {
-            Some(f) => functions.insert(dir.to_string(), f),
-            None => None,
-        };
+        let function = Function::new(dir, infra_dir, &spec.name, spec.fmt());
+        functions.insert(dir.to_string(), function);
     }
     functions
 }
 
-fn role_of(infra_dir: &str) -> Option<String> {
-    let path = format!("{}/roles/sfn.json", infra_dir);
-    if u::file_exists(&path) {
-        Some(path)
-    } else {
-        None
+// nodes
+
+fn should_ignore_node(root_dir: &str, ignore_nodes: Vec<String>, topology_dir: &str) -> bool {
+    for node in ignore_nodes {
+        let abs_path = format!("{root_dir}/{node}");
+        if &abs_path == topology_dir {
+            return true;
+        }
+        if topology_dir.starts_with(&abs_path) {
+            return true;
+        }
     }
+    return false;
 }
 
-fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, spec: &Spec) -> Vec<Topology> {
+fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, spec: &TopologySpec) -> Vec<Topology> {
     let ignore_nodes = &spec.nodes.ignore;
 
     let mut nodes: Vec<Topology> = vec![];
     if is_topology_dir(dir) {
         if !should_ignore_node(root_dir, ignore_nodes.clone(), dir) {
             let f = format!("{}/topology.yml", dir);
-            let spec = Spec::new(&f);
+            let spec = TopologySpec::new(&f);
             let mut functions = discover_functions(dir, infra_dir, &spec);
             let interned = intern_functions(dir, infra_dir, &spec);
             functions.extend(interned);
@@ -227,7 +210,7 @@ fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, spec: &Spec) 
     nodes
 }
 
-pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &Spec) -> Vec<Topology> {
+pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> Vec<Topology> {
     let ignore_nodes = &spec.nodes.ignore;
     let dir = u::pwd();
     let mut nodes: Vec<Topology> = vec![];
@@ -241,7 +224,7 @@ pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &Spec) -> Vec<Topol
         if is_topology_dir(&p) && dir.clone() != p.clone() {
             if !should_ignore_node(root_dir, ignore_nodes.clone(), &p) {
                 let f = format!("{}/topology.yml", &p);
-                let spec = Spec::new(&f);
+                let spec = TopologySpec::new(&f);
                 let mut functions = discover_functions(&p, infra_dir, &spec);
                 let interned = intern_functions(&p, infra_dir, &spec);
                 functions.extend(interned);
@@ -254,77 +237,86 @@ pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &Spec) -> Vec<Topol
     nodes
 }
 
+// builders
+fn make_events(spec: &TopologySpec) -> HashMap<String, Event> {
+    let events = &spec.events;
+    let mut h: HashMap<String, Event> = HashMap::new();
+    if let Some(evs) = events {
+        for (name, ev) in evs.consumes.clone().unwrap().into_iter() {
+            let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction);
+            let ev = Event::new(&name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes);
+            h.insert(name, ev);
+        }
+    }
+    h
+}
+
+fn make_routes(spec: &TopologySpec) -> HashMap<String, Route> {
+    let routes = &spec.routes;
+    match routes {
+        Some(xs) => {
+            let mut h: HashMap<String, Route> = HashMap::new();
+            for (name, rspec) in xs {
+                let route = Route::new(rspec);
+                h.insert(name.to_string(), route);
+            }
+            h
+        },
+        None => HashMap::new()
+    }
+}
+
+fn make_queues(spec: &TopologySpec) -> HashMap<String, Queue> {
+    let mut h: HashMap<String, Queue> = HashMap::new();
+    if let Some(queues) = &spec.queues {
+        for (name, qspec) in queues {
+            h.insert(name.to_string(), Queue::new(&name, qspec));
+        }
+    }
+    h
+}
+
+fn make_mutations(spec: &TopologySpec) -> HashMap<String, Mutation> {
+    let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
+    let mut h: HashMap<String, Mutation> = HashMap::new();
+    while let Some(ref m) = mutations {
+        h.insert(s!("default"), m.clone());
+    }
+    h
+}
+
 fn make(
     root_dir: &str,
     dir: &str,
-    spec: &Spec,
-    functions: HashMap<String, FunctionSpec>,
+    spec: &TopologySpec,
+    functions: HashMap<String, Function>,
     nodes: Vec<Topology>,
 ) -> Topology {
+
     let mut functions = functions;
     let namespace = spec.name.to_owned();
-    let infrastructure_dir = infra_dir(spec.infra.to_owned(), &spec.name);
-    let interned = intern_functions(root_dir, &infrastructure_dir, &spec);
+    let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
+    let interned = intern_functions(root_dir, &infra_dir, &spec);
     functions.extend(interned);
 
+    let version = u::sh(&format!("git log -n 1 --format=%h {}", dir), dir);
+
     Topology {
-        name: namespace,
+        name: namespace.clone(),
         kind: spec.kind.to_owned(),
-        version: spec.version.to_owned(),
-        infra: infrastructure_dir.to_owned(),
-        role: role_of(&infrastructure_dir),
-        nodes: nodes,
+        version: version,
+        infra: infra_dir.to_owned(),
+        sandbox: format!("{{{{sandbox}}}}"),
         dir: s!(dir),
-        mode: spec.mode.to_owned(),
         hyphenated_names: spec.hyphenated_names.to_owned(),
-        events: spec.events.to_owned(),
-        schedules: schedule::make(&infrastructure_dir),
-        routes: spec.routes.to_owned(),
+        nodes: nodes,
         functions: functions,
-        queues: spec.queues.to_owned(),
-        mutations: mutation::make(&spec.name, spec.mutations.to_owned()),
-        flow: match &spec.flow {
-            Some(f) => Some(flow::read(dir, f.clone())),
-            None => spec.states.to_owned(),
-        }
-    }
-}
-
-fn make_standalone(dir: &str) -> Topology {
-    let function = FunctionSpec::new(dir, dir, "", "");
-    let functions = FunctionSpec::to_map(function.clone());
-    let f = function.unwrap();
-
-    Topology {
-        name: f.name.to_owned(),
-        kind: s!("function"),
-        version: None,
-        infra: u::empty(),
-        role: None,
-        dir: s!(dir),
-        mode: None,
-        hyphenated_names: false,
-        events: None,
-        routes: None,
-        flow: None,
-        functions: functions,
-        nodes: vec![],
-        mutations: None,
-        queues: HashMap::new(),
-        schedules: HashMap::new(),
-    }
-}
-
-pub fn basic_spec(dir: &str) -> BasicSpec {
-    if is_topology_dir(dir) {
-        let f = format!("{}/topology.yml", dir);
-        BasicSpec::new(&f)
-    } else {
-        BasicSpec {
-            name: String::from("default"),
-            hyphenated_names: false,
-            events: None
-        }
+        events: make_events(&spec),
+        schedules: schedule::make_all(&infra_dir),
+        routes: make_routes(&spec),
+        queues: make_queues(&spec),
+        mutations: make_mutations(&spec),
+        flow: Flow::new(dir, &infra_dir, &namespace, &spec)
     }
 }
 
@@ -334,13 +326,36 @@ fn make_relative(dir: &str) -> Topology {
         None => format!("../topology.yml"),
     };
 
-    let spec = Spec::new(&f);
+    let spec = TopologySpec::new(&f);
     let namespace = &spec.name;
-    let infra_dir = infra_dir(spec.infra.to_owned(), &spec.name);
-    let fspec = FunctionSpec::new(dir, &infra_dir, namespace, &spec.fmt());
-    let functions = FunctionSpec::to_map(fspec);
+    let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
+    let function = Function::new(dir, &infra_dir, namespace, &spec.fmt());
+    let functions = Function::to_map(function);
     let nodes = vec![];
     make(dir, dir, &spec, functions, nodes)
+}
+
+fn make_standalone(dir: &str) -> Topology {
+    let function = Function::new(dir, dir, "", "");
+    let functions = Function::to_map(function.clone());
+    let namespace = function.name.to_owned();
+    Topology {
+        name: namespace.clone(),
+        kind: s!("function"),
+        version: version::current_semver(&namespace),
+        sandbox: format!("{{{{sandbox}}}}"),
+        infra: u::empty(),
+        dir: s!(dir),
+        hyphenated_names: false,
+        events: HashMap::new(),
+        routes: HashMap::new(),
+        flow: None,
+        functions: functions,
+        nodes: vec![],
+        mutations: HashMap::new(),
+        queues: HashMap::new(),
+        schedules: HashMap::new(),
+    }
 }
 
 pub fn is_compilable(dir: &str) -> bool {
@@ -348,29 +363,41 @@ pub fn is_compilable(dir: &str) -> bool {
 }
 
 impl Topology {
-    pub fn new(dir: &str, recursive: bool) -> Topology {
+
+    pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
+
         if is_singular_function_dir() {
             let f = format!("{}/topology.yml", dir);
-            let spec = Spec::new(&f);
-            let infra_dir = infra_dir(spec.infra.to_owned(), &spec.name);
+            let spec = TopologySpec::new(&f);
+              let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
             let functions = current_function(dir, &infra_dir, &spec);
             make(dir, dir, &spec, functions, vec![])
+
         } else if is_topology_dir(dir) {
+
             let f = format!("{}/topology.yml", dir);
-            let spec = Spec::new(&f);
-            let infra_dir = infra_dir(spec.infra.to_owned(), &spec.name);
-            let functions = discover_functions(dir, &infra_dir, &spec);
+            let spec = TopologySpec::new(&f);
+            let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
             let nodes;
             if recursive {
                 nodes = discover_nodes(dir, &infra_dir, &spec);
             } else {
                 nodes = vec![];
             }
-            make(dir, dir, &spec, functions, nodes)
+            if skip_functions {
+                let functions = HashMap::new();
+                make(dir, dir, &spec, functions, nodes)
+            } else {
+                let functions = discover_functions(dir, &infra_dir, &spec);
+                make(dir, dir, &spec, functions, nodes)
+            }
+
         } else if is_relative_topology_dir(dir) {
             make_relative(dir)
+
         } else if is_standalone_function_dir(dir) {
             make_standalone(dir)
+
         } else {
             println!("{}", dir);
             std::panic::set_hook(Box::new(|_| {
@@ -380,8 +407,8 @@ impl Topology {
         }
     }
 
-    pub fn functions(&self) -> HashMap<String, FunctionSpec> {
-        let mut fns: HashMap<String, FunctionSpec> = self.clone().functions;
+    pub fn functions(&self) -> HashMap<String, Function> {
+        let mut fns: HashMap<String, Function> = self.clone().functions;
         for node in &self.nodes {
             fns.extend(node.clone().functions);
         }
@@ -393,9 +420,9 @@ impl Topology {
 
         for (_, f) in &self.functions {
             t.begin_child(s!(f.name.green()));
-            t.add_empty_child(f.runtime.lang.to_owned());
-            t.add_empty_child(f.runtime.layers.join(","));
-            t.add_empty_child(u::value_to_string(f.assets.get("DEPS_PATH")));
+            // t.add_empty_child(f.runtime.lang.to_owned());
+            // t.add_empty_child(f.runtime.layers.join(","));
+            // t.add_empty_child(u::value_to_string(f.assets.get("DEPS_PATH")));
             t.end_child();
         }
 
@@ -403,9 +430,9 @@ impl Topology {
             t.begin_child(s!(&node.name.green()));
             for (_, f) in &node.functions {
                 t.begin_child(s!(&f.fqn));
-                t.add_empty_child(f.runtime.lang.to_owned());
-                t.add_empty_child(f.runtime.layers.join(","));
-                t.add_empty_child(u::value_to_string(f.assets.get("DEPS_PATH")));
+                // t.add_empty_child(f.runtime.lang.to_owned());
+                // t.add_empty_child(f.runtime.layers.join(","));
+                // t.add_empty_child(u::value_to_string(f.assets.get("DEPS_PATH")));
                 t.end_child();
             }
             t.end_child();

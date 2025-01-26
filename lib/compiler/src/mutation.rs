@@ -1,4 +1,4 @@
-use super::{MutationSpec, ResolverSpec};
+use super::spec::{MutationSpec, ResolverSpec};
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -41,7 +41,7 @@ fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Reso
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Mutations {
+pub struct Mutation {
     pub api_name: String,
     pub authorizer: String,
     pub types: HashMap<String, String>,
@@ -170,11 +170,11 @@ fn augment_types(mut given: Types) -> Types {
     given
 }
 
-pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutations> {
+pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutation> {
     match some_mutatations {
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());
-            let m = Mutations {
+            let m = Mutation {
                 api_name: format!("{}_{{sandbox}}", namespace),
                 authorizer: ms.authorizer.to_owned(),
                 types: make_types(types.to_owned(), ms.resolvers.to_owned()),
