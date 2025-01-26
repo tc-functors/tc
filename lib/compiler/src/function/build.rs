@@ -7,10 +7,10 @@ use super::Runtime;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Build {
-    kind: Kind,
-    pre: Vec<String>,
-    post: Vec<String>,
-    command: String
+    pub kind: Kind,
+    pub pre: Vec<String>,
+    pub post: Vec<String>,
+    pub command: String
 }
 
 fn infer_kind(package_type: &str) -> Kind {

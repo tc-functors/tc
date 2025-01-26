@@ -17,13 +17,14 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build, trace: bo
 
     let path = match kind {
         Kind::Code      => code::build(dir, &command),
-        Kind::Inline    => inline::build(dir, "inline-deps"),
+        Kind::Inline    => inline::build(dir, "inline-deps", trace),
         Kind::Layer     => layer::build(dir, name, &runtime, pre, post, trace),
-        Kind::Library   => library::build(dir, name),
+        Kind::Library   => library::build(dir),
         Kind::Extension => extension::build(dir, name),
         Kind::Image     => image::build(dir, name),
         Kind::Runtime   => todo!()
     };
+
     BuildOutput {
         name: u::basename(dir),
         dir: dir.to_string(),
@@ -34,5 +35,5 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build, trace: bo
 }
 
 pub fn clean(dir: &str) {
-    sh("rm -rf lambda.zip dist __pycache__", dir);
+    sh("rm -f lambda.zip", dir);
 }

@@ -1,6 +1,8 @@
 use colored::Colorize;
 use kit as u;
 
+use compiler::spec::LangRuntime;
+
 fn gen_wrapper(dir: &str) {
     let f = format!(
         r#"
@@ -137,7 +139,7 @@ fn build_with_docker(dir: &str, trace: bool) {
     }
 }
 
-pub fn build_deps(dir: &str, name: &str, _no_docker: bool, trace: bool) {
+pub fn build(dir: &str, name: &str, _runtime: &LangRuntime, _pre: Vec<String>, _post: Vec<String>, trace: bool) -> String {
     u::sh("rm -f deps.zip", dir);
     let bar = kit::progress();
     let prefix = format!("Building   {}", name.blue());
@@ -160,25 +162,5 @@ pub fn build_deps(dir: &str, name: &str, _no_docker: bool, trace: bool) {
     let size = format!("({})", size_of(dir, "deps.zip").green());
     bar.set_message(size);
     bar.finish();
-}
-
-pub fn pack(dir: &str, command: &str) {
-    u::sh("rm -f lambda.zip", dir);
-    match command {
-        "inline-deps" => {
-            build_with_docker(dir, false);
-            copy(dir);
-            let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
-            u::runcmd_quiet(&cmd, dir);
-        }
-        _ => {
-            let c = format!(r"{}", command);
-            u::sh(&c, dir);
-            u::runcmd_quiet("zip -q -9 lambda.zip", dir);
-        }
-    }
-}
-
-pub fn clean(dir: &str) {
-    u::sh("rm -f lambda.zip", dir);
+    format!("{}/deps.zip", dir)
 }
