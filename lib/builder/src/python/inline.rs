@@ -22,7 +22,7 @@ fn zip(dir: &str, zipfile: &str) {
     }
 }
 
-pub fn build(dir: &str, name: &str) {
+pub fn build(dir: &str, name: &str) -> String {
     let bar = kit::progress();
 
     let prefix = format!("Building {}", name.blue());
@@ -51,4 +51,5 @@ pub fn build(dir: &str, name: &str) {
         bar.finish();
         u::sh("rm -f requirements.txt", dir);
     }
+    format!("{}/lambda.zip", dir)
 }

@@ -10,31 +10,13 @@ fn run(dir: &str, cmd: Vec<&str>, trace: bool) {
     }
 }
 
-pub fn build_extension(dir: &str) {
-    let cmd = vec![
-        "docker run --rm",
-        "-v `pwd`:/code -w /code",
-        "-v ${HOME}/.cargo/registry:/cargo/registry",
-        "-v ${HOME}/.cargo/git:/cargo/git",
-        "-u $(id -u):$(id -g)",
-        "rustserverless/lambda-rust",
-    ];
-    run(dir, cmd, true);
-    let name = u::sh("cargo metadata --no-deps --format-version 1 | jq -r '.packages[].targets[] | select( .kind | map(. == \"bin\") | any ) | .name'", dir);
-    let cmd = format!(
-        "mkdir -p extensions && cp target/lambda/release/{} extensions/",
-        name
-    );
-    u::runcmd_stream(&cmd, dir);
-    u::sh("rm -rf build target", dir);
-    u::runcmd_stream("zip -q -9 -r extension.zip extensions", &u::pwd());
-    u::runcmd_stream("rm -rf extensions", &u::pwd());
-    let size = u::file_size("extension.zip");
-    println!("Built extension ({})", u::file_size_human(size));
-}
+pub fn build(dir: &str, trace: bool) -> String {
 
-pub fn build_deps(dir: &str, no_docker: bool, trace: bool) {
     println!("Building {} (rust)", u::basedir(dir).blue());
+    let no_docker = match std::env::var("TC_NO_DOCKER_BUILD") {
+        Ok(_) => true,
+        Err(_) => false
+    };
     if no_docker {
         let cmds = vec![
             "rustup target add x86_64-unknown-linux-musl",
@@ -66,13 +48,7 @@ pub fn build_deps(dir: &str, no_docker: bool, trace: bool) {
     }
     let size = u::path_size(dir, "bootstrap");
     println!("Built bootstrap ({})", u::file_size_human(size));
-}
-
-pub fn clean(dir: &str) {
-    u::runcmd_quiet("rm -rf deps.zip build target bootstrap", dir);
-}
-
-pub fn pack(dir: &str) {
     let command = "zip -q -r lambda.zip bootstrap";
     u::sh(command, dir);
+    format!("{}/lambda.zip", dir)
 }
