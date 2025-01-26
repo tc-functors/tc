@@ -1,6 +1,6 @@
 [package]
 name = "compiler"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 
 [dependencies]
@@ -12,4 +12,6 @@ ptree = "0.4.0"
 walkdir = "2"
 serde_yaml = "0.9.25"
 toml = "0.8.8"
+regex = "1.9.1"
+semver = "0.7.0"
 kit = { path = "../kit" }
