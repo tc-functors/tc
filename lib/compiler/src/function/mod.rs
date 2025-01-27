@@ -99,7 +99,7 @@ impl Function {
             version: s!(""),
             fqn: fqn.clone(),
             description: None,
-            dir: fspec.dir.clone(),
+            dir: dir.to_string(),
             namespace: namespace.to_string(),
             build: Build::new(&runtime, fspec.build),
             runtime: runtime,

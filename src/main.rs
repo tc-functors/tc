@@ -141,21 +141,17 @@ pub struct BuildArgs {
     #[arg(long, action)]
     name: Option<String>,
     #[arg(long, action)]
-    pack: bool,
-    #[arg(long, action)]
-    no_docker: bool,
-    #[arg(long, action)]
     clean: bool,
-    #[arg(long, action)]
-    delete: bool,
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
     #[arg(long, action)]
     trace: bool,
-    #[arg(long, action)]
-    parallel: bool,
     #[arg(long, action)]
     dirty: bool,
     #[arg(long, action)]
     merge: bool,
+    #[arg(long, action)]
+    split: bool,
     #[arg(long, action)]
     task: Option<String>,
 }
@@ -166,8 +162,6 @@ pub struct PublishArgs {
     profile: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
-    #[arg(long, action)]
-    kind: Option<String>,
     #[arg(long, action)]
     name: Option<String>,
     #[arg(long, action)]
@@ -393,27 +387,23 @@ async fn build(args: BuildArgs) {
     let BuildArgs {
         kind,
         name,
-        pack,
-        no_docker,
+        recursive,
         clean,
         trace,
-        delete,
-        parallel,
         dirty,
         merge,
+        split,
         ..
     } = args;
 
     let dir = kit::pwd();
     let opts = tc::BuildOpts {
-        pack: pack,
-        no_docker: no_docker,
         trace: trace,
         clean: clean,
-        delete: delete,
-        parallel: parallel,
         dirty: dirty,
-        merge: merge,
+        recursive: recursive,
+        split: split,
+        merge: merge
     };
     tc::build(kind, name, &dir, opts).await;
 }
@@ -557,7 +547,6 @@ async fn list(args: ListArgs) {
 async fn publish(args: PublishArgs) {
     let PublishArgs {
         profile,
-        kind,
         name,
         promote,
         demote,
@@ -580,7 +569,7 @@ async fn publish(args: PublishArgs) {
     } else if download {
         tc::download_layer(env, name).await
     } else {
-        tc::publish(env, kind, name, &dir, opts).await;
+        tc::publish(env, name, &dir, opts).await;
     }
 }
 

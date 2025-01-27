@@ -10,6 +10,17 @@ pub enum TargetKind {
     StepFunction
 }
 
+impl TargetKind {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            TargetKind::Function => s!("function"),
+            TargetKind::Mutation => s!("appsync"),
+            TargetKind::StepFunction => s!("sfn")
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {
     pub kind: TargetKind,

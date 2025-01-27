@@ -33,13 +33,21 @@ impl FromStr for Lang {
 
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub enum LangRuntime {
+    #[serde(alias="python3.9")]
     Python39,
+    #[serde(alias="python3.10")]
     Python310,
+    #[serde(alias="python3.11")]
     Python311,
+    #[serde(alias="python3.12")]
     Python312,
+    #[serde(alias="python3.13")]
     Python313,
+    #[serde(alias="ruby3.2")]
     Ruby32,
+    #[serde(alias="java21")]
     Java21,
+    #[serde(alias="rust")]
     Rust
 }
 
@@ -252,7 +260,7 @@ pub struct InfraSpec {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FunctionSpec {
     pub name: String,
-    pub dir: String,
+    pub dir: Option<String>,
     pub description: Option<String>,
     pub namespace: Option<String>,
     pub fqn: Option<String>,
@@ -295,7 +303,7 @@ impl FunctionSpec {
         } else {
             FunctionSpec {
                 name: u::basedir(dir).to_string(),
-                dir: dir.to_string(),
+                dir: Some(dir.to_string()),
                 description: None,
                 namespace: None,
                 fqn: None,

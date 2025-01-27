@@ -1,48 +1,10 @@
-use resolver::{Function, ContainerTask};
+use compiler::{Function};
 use aws::lambda;
 use aws::Env;
-use aws::ecs;
-use aws::ecs::TaskDef;
+//use aws::ecs;
+//use aws::ecs::TaskDef;
 use configurator::Config;
-use kit::*;
 use std::collections::HashMap;
-
-async fn delete_container_task(env: &Env, fn_name: &str, ct: ContainerTask) {
-    let client = ecs::make_client(env).await;
-
-    let ContainerTask { cluster, .. } = ct;
-
-    println!("Deleting ecs service {}", fn_name);
-    ecs::delete_service(&client, &cluster, fn_name).await;
-}
-
-async fn create_container_task(
-    env: &Env,
-    fn_name: &str,
-    ct: ContainerTask
-) -> String {
-    let ContainerTask { task_role_arn,
-                        cluster, image_uri, cpu, mem,
-                        subnets, command,
-                        .. } = ct;
-
-    let client = ecs::make_client(env).await;
-    let tdf = TaskDef::new(fn_name, &task_role_arn, &mem, &cpu);
-    let cdf = ecs::make_cdf(s!(fn_name), image_uri, command);
-    let net = ecs::make_network_config(subnets);
-    println!("Creating task def {}", fn_name);
-    let taskdef_arn  = ecs::create_taskdef(&client, tdf, cdf).await;
-
-    println!("Creating ecs service {}", fn_name);
-    ecs::create_service(
-        &client,
-        &cluster,
-        &fn_name,
-        &taskdef_arn,
-        net
-    ).await;
-    taskdef_arn
-}
 
 pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     let client = lambda::make_client(env).await;
@@ -55,14 +17,14 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         Some(s) => Some(lambda::make_vpc_config(s.subnets, s.security_groups)),
         _ => None,
     };
-    let filesystem_config = match f.fs {
+    let filesystem_config = match f.runtime.fs {
         Some(s) => Some(vec![lambda::make_fs_config(&s.arn, &s.mount_point)]),
         _ => None,
     };
 
-    let arch = lambda::make_arch(&f.runtime.lang);
+    let arch = lambda::make_arch(&f.runtime.lang.to_str());
     let runtime = match package_type.as_ref() {
-        "zip" => Some(lambda::make_runtime(&f.runtime.lang)),
+        "zip" => Some(lambda::make_runtime(&f.runtime.lang.to_str())),
         _ => None
     };
 
@@ -86,7 +48,7 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         code: code,
         code_size: size,
         blob: blob,
-        role: f.role,
+        role: f.runtime.role.arn,
         runtime: runtime,
         handler: handler,
         timeout: f.runtime.timeout,
@@ -109,13 +71,6 @@ pub async fn create_function(profile: String, role_arn: Option<String>, config: 
         "zip" => {
             let lambda = make_lambda(&env, f.clone()).await;
             lambda.clone().create_or_update().await
-        },
-        "ecs-image" | "container-task" => {
-            if let Some(ct) = f.container_task {
-                create_container_task(&env, &f.name, ct).await
-            } else {
-                panic!("There is no container task defined")
-            }
         },
         _ => {
             let lambda = make_lambda(&env, f.clone()).await;
@@ -169,13 +124,6 @@ pub async fn delete(env: &Env, fns: HashMap<String, Function>) {
             "zip" => {
                 let function = make_lambda(env, function).await;
                 function.clone().delete().await.unwrap();
-            },
-            "ecs-image" | "container-task" => {
-                if let Some(ct) = function.container_task {
-                    delete_container_task(&env, &function.name, ct).await
-                } else {
-                    panic!("There is no container task defined")
-                }
             },
             _ => {
                 let function = make_lambda(env, function).await;

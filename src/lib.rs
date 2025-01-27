@@ -2,56 +2,44 @@ use aws::Env;
 use colored::Colorize;
 use compiler::Topology;
 use ci::github;
-use resolver::Plan;
 use configurator::Config;
 use kit as u;
 use std::panic;
 use std::time::Instant;
 
 pub struct BuildOpts {
-    pub pack: bool,
-    pub no_docker: bool,
+    pub merge: bool,
+    pub recursive: bool,
     pub trace: bool,
     pub clean: bool,
-    pub delete: bool,
-    pub parallel: bool,
-    pub merge: bool,
+    pub split: bool,
     pub dirty: bool,
 }
 
 pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
-    let kind = builder::determine_kind(kind);
-    let name = u::maybe_string(name, u::basedir(&u::pwd()));
-
     let BuildOpts {
-        pack,
-        no_docker,
         trace,
         clean,
         dirty,
-        merge,
+        recursive,
         ..
     } = opts;
 
-    if pack {
-        builder::pack_all(dir);
+    if recursive {
+        let builds = builder::build_recursive(dirty, trace).await;
+        builder::write_manifest(&builds);
+        println!("{}", kit::pretty_json(&builds));
+
+
     } else if clean {
         builder::clean(dir);
-    } else if merge {
-
-       if &kind == "code" {
-            let dirs = u::list_dir(dir);
-            builder::merge_dirs(dirs)
-
-        } else {
-            let layers = compiler::find_layers();
-            let mergeable_layers = builder::mergeable_layers(layers);
-            builder::merge(&name, mergeable_layers);
-        }
 
     } else {
-        builder::build(&dir, &name, &kind, no_docker, trace, dirty).await;
+        let builds = builder::build(dir, name, kind, trace).await;
+        builder::write_manifest(&builds);
+        println!("{}", kit::pretty_json(&builds));
     }
+
 }
 
 pub struct PublishOpts {
@@ -63,7 +51,6 @@ pub struct PublishOpts {
 
 pub async fn publish(
     env: Env,
-    kind: Option<String>,
     name: Option<String>,
     dir: &str,
     opts: PublishOpts,
@@ -77,33 +64,18 @@ pub async fn publish(
     } = opts;
 
     if promote {
-        let lang = &compiler::guess_lang(&dir);
+        let lang = &compiler::guess_runtime(&dir);
         let bname = u::maybe_string(name, u::basedir(&u::pwd()));
-        publisher::promote(&env, &bname, &lang, version).await;
+        publisher::promote(&env, &bname, &lang.to_str(), version).await;
+
     } else if demote {
         let lang = "python3.10";
         publisher::demote(&env, name, &lang).await;
+
     } else {
-        let lang = &compiler::guess_lang(&dir);
-        let target = compiler::determine_target(dir);
-        let name = u::maybe_string(name, u::basedir(dir));
-        let kind = u::maybe_string(kind, "deps");
-        let builds = builder::just_build_out(&dir, &name, &lang, &target);
-        match kind.as_ref() {
-            "deps" | "extension" => {
-                for build in builds {
-                    publisher::publish_deps(
-                        &env,
-                        &build.dir,
-                        &build.zipfile,
-                        &build.lang,
-                        &build.name,
-                        &build.target,
-                    )
-                    .await
-                }
-            }
-            _ => (),
+        let builds = builder::read_manifest();
+        for build in builds {
+            publisher::publish(&env, &build.dir, &build.kind, &build.zipfile, &build.runtime, &build.name).await;
         }
     }
 }
@@ -153,30 +125,21 @@ pub async fn resolve(
     component: Option<String>,
     recursive: bool,
 ) -> String {
-    let resolve = resolver::should_resolve(component.clone());
     let topology = compiler::compile(&u::pwd(), recursive);
-    let plans = resolver::resolve(&env, sandbox, &topology, resolve).await;
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
     let component = u::maybe_string(component, "all");
-    resolver::render(plans, &component)
+    resolver::render(topologies, &component)
 }
 
-async fn create_plan(plan: Plan, _notify: bool) {
-    let Plan { functions, .. } = plan.clone();
+async fn create_topology(env: &Env, topology: &Topology, _notify: bool) {
+    let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        let lang = function.runtime.lang;
-        let mtask = &function.tasks.get("build");
-        let dir = &function.dir.unwrap();
-        match mtask {
-            Some(task) => {
-                builder::pack(&lang, dir, &task);
-            }
-            _ => {
-                builder::pack(&lang, dir, "zip -q lambda.zip *.rb *.py");
-            }
-        }
+        let dir = &function.dir;
+        builder::build(dir, None, None, false).await;
     }
-    deployer::create(plan).await;
+    deployer::create(env, topology).await;
 }
 
 fn count_of(topology: &Topology) -> String {
@@ -184,18 +147,18 @@ fn count_of(topology: &Topology) -> String {
     format!("{} functions", functions.len())
 }
 
-async fn run_create_hook(env: &Env, root_plan: &Plan) {
-    let Plan { namespace, sandbox, version, .. } = root_plan;
+async fn run_create_hook(env: &Env, root: &Topology) {
+    let Topology { namespace, sandbox, version, .. } = root;
     let dir = u::pwd();
     let tag = format!("{}-{}", namespace, version);
     let msg = format!(
         "Deployed `{}` to *{}*::{}_{}",
-        tag, &env.name, namespace, &sandbox.name
+        tag, &env.name, namespace, &sandbox
     );
     notifier::notify(&namespace, &msg).await;
     if env.config.ci.update_metadata {
         let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
-        ci::update_metadata(&centralized, &sandbox.name, &namespace, &version, &env.name, &dir).await;
+        ci::update_metadata(&centralized, &sandbox, &namespace, &version, &env.name, &dir).await;
     }
 }
 
@@ -206,8 +169,8 @@ pub async fn create(
     recursive: bool,
 ) {
 
-    let sbox = u::maybe_string(sandbox.clone(), "stable");
-    router::guard(&sbox);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    router::guard(&sandbox);
     let dir = u::pwd();
     let start = Instant::now();
 
@@ -215,40 +178,40 @@ pub async fn create(
     let topology = compiler::compile(&dir, recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let plans = resolver::resolve(&env, sandbox, &topology, true).await;
-    for plan in plans.clone() {
-        create_plan(plan, notify).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
+    for topology in &topologies {
+        create_topology(&env, &topology, notify).await;
     }
 
-    if plans.len() > 0 {
-        let root_plan = plans.first().unwrap();
+    if topologies.len() > 0 {
+        let root = topologies.first().unwrap();
         if notify {
-            run_create_hook(&env, root_plan).await
+            run_create_hook(&env, root).await
         }
     }
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
-async fn update_plan(plan: Plan) {
-    let Plan { dir, .. } = plan.clone();
-    builder::pack_all(&dir);
-    deployer::update(plan.clone()).await;
+async fn update_topology(env: &Env, topology: &Topology) {
+    let Topology { dir, .. } = topology;
+    builder::build(&dir, None, None, false).await;
+    deployer::update(env, topology).await;
 }
 
 pub async fn update(env: Env, sandbox: Option<String>, recursive: bool) {
-    let sbox = u::maybe_string(sandbox.clone(), "stable");
-    router::guard(&sbox);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    router::guard(&sandbox);
     let start = Instant::now();
 
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let plans = resolver::resolve(&env, sandbox, &topology, true).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
 
-    for plan in plans {
-        update_plan(plan).await;
+    for topology in topologies {
+        update_topology(&env, &topology).await;
     }
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
@@ -260,30 +223,30 @@ pub async fn update_component(
     component: Option<String>,
     recursive: bool,
 ) {
-    let sbox = u::maybe_string(sandbox.clone(), "stable");
-    router::guard(&sbox);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    router::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let plans = resolver::resolve(&env, sandbox, &topology, true).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
 
-    for plan in plans {
-        deployer::update_component(plan.clone(), component.clone()).await;
+    for topology in topologies {
+        deployer::update_component(&env, &topology, component.clone()).await;
     }
 }
 
 pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
-    let sbox = u::maybe_string(sandbox.clone(), "stable");
-    router::guard(&sbox);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    router::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let plans = resolver::resolve(&env, sandbox, &topology, false).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
 
-    for plan in plans {
-        deployer::delete(plan).await
+    for topology in topologies {
+        deployer::delete(&env, &topology).await
     }
 }
 
@@ -293,16 +256,16 @@ pub async fn delete_component(
     component: Option<String>,
     recursive: bool,
 ) {
-    let sbox = u::maybe_string(sandbox.clone(), "stable");
-    router::guard(&sbox);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    router::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology");
-    let plans = resolver::resolve(&env, sandbox, &topology, false).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
 
-    for plan in plans {
-        deployer::delete_component(plan, component.clone()).await
+    for topology in topologies {
+        deployer::delete_component(&env, topology, component.clone()).await
     }
 }
 
@@ -326,20 +289,20 @@ pub async fn scaffold() {
         "function" => {
             let function = compiler::current_function(&dir);
             match function {
-                Some(f) => scaffolder::create_function(&f.name, &f.infra_dir).await,
+                Some(f) => scaffolder::create_function(&f.name, &f.dir).await,
                 None => panic!("No function found"),
             }
         }
         "step-function" => {
             let functions = compiler::just_functions();
             for (_, f) in functions {
-                scaffolder::create_function(&f.name, &f.infra_dir).await;
+                scaffolder::create_function(&f.name, &f.dir).await;
             }
         }
         _ => {
             let function = compiler::current_function(&dir);
             match function {
-                Some(f) => scaffolder::create_function(&f.name, &f.infra_dir).await,
+                Some(f) => scaffolder::create_function(&f.name, &f.dir).await,
                 None => panic!("No function found"),
             }
         }
@@ -396,7 +359,7 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
     } else {
         let inferred_kind = compiler::kind_of();
         let kind = u::maybe_string(kind, &inferred_kind);
-        let sandbox = resolver::as_sandbox(sandbox);
+        let sandbox = resolver::maybe_sandbox(sandbox);
 
         invoker::invoke(&env, &sandbox, &kind, name, payload, mode, dumb).await;
     }
@@ -441,7 +404,7 @@ pub async fn route(
     rule: Option<String>,
 ) {
     let event = u::maybe_string(event, "default");
-    let sandbox = resolver::as_sandbox(sandbox);
+    let sandbox = resolver::maybe_sandbox(sandbox);
     match rule {
         Some(r) => router::route(&env, &event, &service, &sandbox, &r).await,
         None => println!("Rule not specified")
