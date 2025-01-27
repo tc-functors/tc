@@ -121,6 +121,19 @@ impl FromStr for Kind {
 
 // function infra spec
 
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RuntimeNetworkSpec {
+    pub subnets: Vec<String>,
+    pub security_groups: Vec<String>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RuntimeFilesystemSpec {
+    pub arn: String,
+    pub mount_point: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeInfraSpec {
     pub memory_size: Option<i32>,
@@ -128,7 +141,8 @@ pub struct RuntimeInfraSpec {
     pub image_uri: Option<String>,
     pub provisioned_concurrency: Option<i32>,
     pub environment: Option<HashMap<String, String>>,
-    pub network: Option<HashMap<String, Vec<String>>>,
+    pub network: Option<RuntimeNetworkSpec>,
+    pub filesystem: Option<RuntimeFilesystemSpec>,
     pub tags: Option<HashMap<String, String>>,
 }
 
@@ -148,6 +162,7 @@ impl RuntimeInfraSpec {
                 provisioned_concurrency: None,
                 environment: None,
                 network: None,
+                filesystem: None,
                 tags: None
             }
         }
@@ -308,14 +323,6 @@ fn default_route_kind() -> String {
     s!("http")
 }
 
-fn default_topology_kind() -> String {
-    s!("step-function")
-}
-
-fn default_proxy() -> String {
-    s!("none")
-}
-
 fn default_target() -> String {
     s!("")
 }
@@ -402,10 +409,7 @@ pub struct RouteSpec {
     #[serde(default)]
     pub authorizer: String,
 
-    #[serde(default = "default_proxy")]
-    pub proxy: String,
-
-    #[serde(default)]
+    pub proxy: Option<String>,
     pub function: Option<String>,
 
     pub stage: Option<String>,
@@ -458,11 +462,16 @@ pub struct ScheduleSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum TopologyKind {
+    StepFunction,
+    Function
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TopologySpec {
     pub name: String,
 
-    #[serde(default = "default_topology_kind")]
-    pub kind: String,
+    pub kind: Option<TopologyKind>,
 
     #[serde(default)]
     pub version: Option<String>,
@@ -498,7 +507,7 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
-                kind: s!("step-function"),
+                kind: Some(TopologyKind::Function),
                 hyphenated_names: false,
                 version: None,
                 infra: None,

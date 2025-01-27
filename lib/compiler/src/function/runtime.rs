@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use serde_json::Value;
 use crate::spec::{LangRuntime, FunctionSpec, RuntimeInfraSpec, RuntimeSpec, Lang};
-use crate::version;
+use crate::{version, template};
 use super::{layer};
 use super::role::Role;
 
@@ -169,10 +169,10 @@ fn make_env_vars(dir: &str,
 
     let mut hmap: HashMap<String, String> = HashMap::new();
 
-    hmap.insert(String::from("LAMBDA_STAGE"), format!("{{{{profile}}}}"));
-    hmap.insert(String::from("Environment"), format!("{{{{profile}}}}"));
-    hmap.insert(String::from("AWS_ACCOUNT_ID"), format!("{{{{account}}}}"));
-    hmap.insert(String::from("SANDBOX"), format!("{{{{sandbox}}}}"));
+    hmap.insert(String::from("LAMBDA_STAGE"), template::profile());
+    hmap.insert(String::from("Environment"), template::profile());
+    hmap.insert(String::from("AWS_ACCOUNT_ID"), template::account());
+    hmap.insert(String::from("SANDBOX"), template::sandbox());
     hmap.insert(String::from("NAMESPACE"), s!(namespace));
     hmap.insert(String::from("LOG_LEVEL"), s!("INFO"));
 
@@ -232,7 +232,7 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
     let version = version::current_semver(namespace);
     let mut h: HashMap<String, String> = HashMap::new();
     h.insert(s!("namespace"), s!(namespace));
-    h.insert(s!("sandbox"), format!("{{{{sandbox}}}}"));
+    h.insert(s!("sandbox"), template::sandbox());
     h.insert(s!("version"), version);
     h.insert(s!("git_branch"), version::branch_name());
     h.insert(s!("deployer"), s!("tc"));
@@ -241,13 +241,33 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
     h
 }
 
+fn make_network(infra_spec: &RuntimeInfraSpec) -> Option<Network> {
+    match &infra_spec.network {
+        Some(net) => Some(Network {
+            subnets: net.subnets.clone(),
+            security_groups: net.security_groups.clone()
+        }),
+        None => None
+    }
+}
+
+fn make_fs(infra_spec: &RuntimeInfraSpec) -> Option<FileSystem> {
+    match &infra_spec.filesystem {
+        Some(fs) => Some(FileSystem {
+            arn: fs.arn.clone(),
+            mount_point: fs.mount_point.clone()
+        }),
+        None => None
+    }
+}
+
 impl Runtime {
 
     pub fn new(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpec) -> Runtime {
         let rspec = fspec.runtime.clone();
 
         let infra_spec = lookup_infra_spec(infra_dir, &rspec, &fspec.name);
-        let RuntimeInfraSpec { memory_size, timeout, environment, .. } = infra_spec;
+        let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = infra_spec;
 
         let role = lookup_role(infra_dir, &rspec, namespace, &fspec.name);
 
@@ -256,7 +276,7 @@ impl Runtime {
                 let layer_name = find_layer_name(dir, namespace, fspec);
                 let layers = consolidate_layers(&mut r.extensions, &mut r.layers, layer_name);
                 let package_type = &r.package_type;
-                let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment, r.lang.to_lang());
+                let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment.clone(), r.lang.to_lang());
 
                 Runtime {
                     lang: r.lang,
@@ -271,13 +291,13 @@ impl Runtime {
                     timeout: timeout.unwrap(),
                     snapstart: false,
                     role: role,
-                    network: None,
-                    fs: None
+                    network: make_network(&infra_spec),
+                    fs: make_fs(&infra_spec)
                 }
             },
             None => {
                 let lang = infer_lang(dir);
-                let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment, lang.to_lang());
+                let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment.clone(), lang.to_lang());
 
                 Runtime {
                     lang: lang,

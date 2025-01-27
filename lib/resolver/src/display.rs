@@ -1,19 +1,19 @@
-use super::Plan;
 use serde_derive::Serialize;
-
+use compiler::Topology;
+use compiler::spec::{LangRuntime};
 use kit as u;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Layer {
     pub name: String,
     pub layers: Vec<String>,
-    pub lang: String,
+    pub lang: LangRuntime,
 }
 
-pub fn render_layers(plans: &Vec<Plan>) -> String {
+pub fn render_layers(topologies: &Vec<Topology>) -> String {
     let mut layers: Vec<Layer> = vec![];
-    for plan in plans {
-        let functions = &plan.functions;
+    for t in topologies {
+        let functions = &t.functions;
         for (_, f) in functions {
             if f.runtime.layers.len() > 0 {
                 let layer = Layer {

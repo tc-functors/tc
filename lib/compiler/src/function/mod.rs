@@ -9,6 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use super::spec::FunctionSpec;
+use crate::template;
 pub use build::Build;
 pub use runtime::Runtime;
 pub use role::Role;
@@ -27,6 +28,7 @@ pub struct Function {
     pub dir: String,
     pub description: Option<String>,
     pub fqn: String,
+    pub arn: String,
     pub layer_name: Option<String>,
     pub version: String,
     pub runtime: Runtime,
@@ -88,12 +90,14 @@ impl Function {
             None => &namespace.to_string()
         };
         let runtime = Runtime::new(dir, infra_dir,  &namespace, &fspec);
+        let fqn = make_fqn(&fspec, &namespace, format);
 
         Function {
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
+            arn: template::lambda_arn(&fqn),
             version: s!(""),
-            fqn: make_fqn(&fspec, &namespace, format),
+            fqn: fqn.clone(),
             description: None,
             dir: fspec.dir.clone(),
             namespace: namespace.to_string(),
