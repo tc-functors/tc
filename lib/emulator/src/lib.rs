@@ -28,7 +28,7 @@ pub async fn shell(env: &Env, dev: bool) {
             shell::run(
                 env,
                 &f.name,
-                &f.runtime.lang,
+                &f.runtime.lang.to_str(),
                 &f.runtime.handler,
                 layers,
             )
@@ -52,7 +52,7 @@ pub async fn lambda(env: &Env, dev: bool) {
             lambda::run(
                 env,
                 &f.name,
-                &f.runtime.lang,
+                &f.runtime.lang.to_str(),
                 layers,
                 &f.runtime.handler,
             )

@@ -1,8 +1,9 @@
-use resolver::Queue;
+use compiler::Queue;
 use aws::lambda;
 use aws::lambda::LambdaClient;
 use aws::sqs;
 use aws::Env;
+use std::collections::HashMap;
 
 async fn create_producer(lambda_client: &LambdaClient, name: &str, sqs_arn: &str) {
     if !name.is_empty() {
@@ -25,10 +26,10 @@ async fn create_consumer(lambda_client: &LambdaClient, name: &str, sqs_arn: &str
     lambda::update_event_invoke_config(&lambda_client, name).await;
 }
 
-pub async fn create(env: &Env, queues: Vec<Queue>) {
+pub async fn create(env: &Env, queues: &HashMap<String, Queue>) {
     let client = sqs::make_client(&env).await;
     let lambda_client = lambda::make_client(&env).await;
-    for queue in queues {
+    for (_, queue) in queues {
         println!("Creating queue: {}", &queue.name);
         sqs::create_queue(&client, &queue.name).await;
         let arn = &env.sqs_arn(&queue.name);
@@ -37,10 +38,10 @@ pub async fn create(env: &Env, queues: Vec<Queue>) {
     }
 }
 
-pub async fn delete(env: &Env, queues: Vec<Queue>) {
+pub async fn delete(env: &Env, queues: &HashMap<String, Queue>) {
     let client = sqs::make_client(&env).await;
     let lambda_client = lambda::make_client(&env).await;
-    for queue in queues {
+    for (_, queue) in queues {
         let arn = &env.sqs_arn(&queue.name);
         lambda::delete_event_source(&lambda_client, &queue.consumer, &arn).await;
         println!("Deleting queue: {}", &queue.name);

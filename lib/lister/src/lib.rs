@@ -27,16 +27,11 @@ async fn list_layers(env: &Env, dir: &str, sandbox: Option<String>) {
     layer::list(&env, fns).await
 }
 
-async fn list_topologies(env: &Env, sandbox: Option<String>, format: &str) {
-    let sandbox = u::maybe_string(sandbox, "stable");
+async fn list_topologies(env: &Env, _sandbox: Option<String>, format: &str) {
     let topologies = compiler::list_topologies();
     let mut names: Vec<String> = vec![];
     for (_, spec) in topologies {
-        let name = if spec.hyphenated_names {
-            format!("{}-{}", &spec.name, &sandbox)
-        } else {
-            format!("{}_{}", &spec.name, &sandbox)
-        };
+        let name = spec.fqn;
         names.push(name);
     }
     topology::list(&env, names, format).await
@@ -49,7 +44,7 @@ async fn list_events(env: &Env, name: &str) {
 pub async fn list(env: &Env, sandbox: Option<String>) {
     let dir = u::pwd();
     let topology_name = compiler::topology_name(&dir);
-    let sbox = resolver::as_sandbox(sandbox.clone());
+    let sbox = resolver::maybe_sandbox(sandbox.clone());
     let name = format!("{}_{}", &topology_name, &sbox);
     let event_prefix = format!("tc-{}", &topology_name);
 
@@ -80,7 +75,7 @@ pub async fn list_component(
         list_topologies(&env, sandbox, &format).await;
     } else {
         let topology_name = compiler::topology_name(&dir);
-        let sbox = resolver::as_sandbox(sandbox.clone());
+        let sbox = resolver::maybe_sandbox(sandbox.clone());
         let name = format!("{}_{}", &topology_name, &sbox);
         let event_prefix = format!("tc-{}", &topology_name);
 

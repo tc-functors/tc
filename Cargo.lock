@@ -1344,11 +1344,13 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "colored",
  "kit",
  "ptree",
+ "regex",
+ "semver 0.7.0",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -1509,10 +1511,10 @@ version = "0.0.1"
 dependencies = [
  "aws",
  "colored",
+ "compiler",
  "configurator",
  "kit",
  "log",
- "resolver",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -3856,7 +3858,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.7.12"
+version = "0.7.13"
 dependencies = [
  "aws",
  "builder",

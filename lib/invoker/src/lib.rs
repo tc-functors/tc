@@ -32,7 +32,7 @@ pub async fn invoke(
     kind: &str,
     name: Option<String>,
     payload: Option<String>,
-    mode: Option<String>,
+    _mode: Option<String>,
     dumb: bool,
 ) {
     let dir = u::pwd();
@@ -47,9 +47,9 @@ pub async fn invoke(
         "lambda" | "function" => lambda::invoke(env, &name, &payload).await,
         "event" => event::trigger(env, &payload).await,
         "step-function" | "state-machine" => {
-            let inferred_mode = compiler::topology_mode(&dir);
-            let mode = u::maybe_string(mode, inferred_mode);
-            sfn::invoke(&env, &name, &mode, &payload, dumb).await;
+            // let inferred_mode = compiler::topology_mode(&dir);
+            // let mode = u::maybe_string(mode, inferred_mode);
+            sfn::invoke(&env, &name, "Standard", &payload, dumb).await;
         }
         _ => println!(""),
     }

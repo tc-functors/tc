@@ -5,11 +5,12 @@ use aws_sdk_eventbridge::types::builders::TargetBuilder;
 use aws_sdk_eventbridge::types::AppSyncParameters;
 use aws_sdk_eventbridge::types::InputTransformer;
 use aws_sdk_eventbridge::types::PutEventsRequestEntry;
-use aws_sdk_eventbridge::types::{Rule, RuleState, Target};
+pub use aws_sdk_eventbridge::types::{Rule, RuleState, Target};
 use aws_sdk_eventbridge::Client;
 use std::collections::HashMap;
 
 use super::Env;
+use kit::*;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;
@@ -40,11 +41,12 @@ pub fn make_target(
     input_transformer: Option<InputTransformer>,
     appsync: Option<AppSyncParameters>,
 ) -> Target {
+
     let target = TargetBuilder::default();
 
     match kind {
-        "sfn" => target.id(id).arn(arn).role_arn(role_arn).build().unwrap(),
-        "lambda" => target.id(id).arn(arn).build().unwrap(),
+        "sfn" | "stepfunction" => target.id(id).arn(arn).role_arn(role_arn).build().unwrap(),
+        "lambda" | "function" => target.id(id).arn(arn).build().unwrap(),
         "appsync" => target
             .id(id)
             .arn(String::from(arn))
@@ -57,87 +59,57 @@ pub fn make_target(
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Event {
-    pub client: Client,
-    pub name: String,
-    pub rule_name: String,
-    pub bus: String,
-    pub pattern: String,
-    pub role: String,
-    pub target: Target,
-}
 
-impl Event {
-    pub async fn _list_rules(self) -> Vec<Rule> {
-        let s = self.clone();
-        let r = self
-            .client
-            .list_rules()
-            .event_bus_name(s.bus)
-            .send()
-            .await
-            .unwrap();
-        match r.rules {
-            Some(p) => p,
-            None => panic!("No rules"),
-        }
-    }
-
-    pub async fn create_rule(self) -> String {
-        let s = self.clone();
-        let r = s
-            .client
-            .put_rule()
-            .event_bus_name(self.bus)
-            .name(self.rule_name)
-            .event_pattern(self.pattern)
-            .state(RuleState::Enabled)
-            .send()
-            .await
-            .unwrap();
-        match r.rule_arn {
-            Some(p) => p,
-            None => panic!("oops"),
-        }
-    }
-
-    pub async fn put_target(self) {
-        self.client
-            .put_targets()
-            .event_bus_name(self.bus)
-            .rule(self.rule_name)
-            .targets(self.target)
-            .send()
-            .await
-            .unwrap();
-    }
-
-    pub async fn delete_rule(self) {
-        self.clone()
-            .client
-            .delete_rule()
-            .event_bus_name(self.bus)
-            .name(self.rule_name)
-            .force(true)
-            .send()
-            .await
-            .unwrap();
-    }
-
-    pub async fn remove_targets(self, id: &str) {
-        let s = self.clone();
-        s.client
-            .remove_targets()
-            .event_bus_name(self.clone().bus)
-            .rule(self.clone().rule_name)
-            .ids(id.to_string())
-            .force(true)
-            .send()
-            .await
-            .unwrap();
+pub async fn create_rule(client: &Client, bus: &str, rule_name: &str, pattern: &str) -> String {
+    let r = client
+        .put_rule()
+        .event_bus_name(s!(bus))
+        .name(s!(rule_name))
+        .event_pattern(s!(pattern))
+        .state(RuleState::Enabled)
+        .send()
+        .await
+        .unwrap();
+    match r.rule_arn {
+        Some(p) => p,
+        None => panic!("oops"),
     }
 }
+
+pub async fn put_targets(client: &Client, bus: &str, rule_name: &str, targets: Vec<Target>) {
+    client
+        .put_targets()
+        .event_bus_name(s!(bus))
+        .rule(s!(rule_name))
+        .set_targets(Some(targets))
+        .send()
+        .await
+        .unwrap();
+}
+
+pub async fn remove_target(client: &Client, bus: &str, rule_name: &str, id: &str) {
+    client
+        .remove_targets()
+        .event_bus_name(s!(bus))
+        .rule(s!(rule_name))
+        .ids(s!(id))
+        .force(true)
+        .send()
+        .await
+        .unwrap();
+}
+
+pub async fn delete_rule(client: &Client, bus: &str, rule_name: &str) {
+    client
+        .delete_rule()
+        .event_bus_name(s!(bus))
+        .name(s!(rule_name))
+        .force(true)
+        .send()
+        .await
+        .unwrap();
+}
+
 
 fn make_event(bus: &str, detail_type: &str, source: &str, detail: &str) -> PutEventsRequestEntry {
     let e = PutEventsRequestEntryBuilder::default();

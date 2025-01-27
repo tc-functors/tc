@@ -1,10 +1,10 @@
-use resolver;
+use compiler;
 use aws::iam;
 use aws::iam::Role;
 use aws::Env;
 use std::collections::HashMap;
 
-pub async fn create(env: &Env, roles: HashMap<String, resolver::Role>) {
+pub async fn create(env: &Env, roles: HashMap<String, compiler::Role>) {
     let client = iam::make_client(env).await;
     for (_, role) in roles {
         let r = Role {
@@ -19,7 +19,7 @@ pub async fn create(env: &Env, roles: HashMap<String, resolver::Role>) {
     }
 }
 
-pub async fn delete(env: &Env, roles: HashMap<String, resolver::Role>) {
+pub async fn delete(env: &Env, roles: HashMap<String, compiler::Role>) {
     let client = iam::make_client(env).await;
     for (_, role) in roles {
         let r = Role {
@@ -34,7 +34,7 @@ pub async fn delete(env: &Env, roles: HashMap<String, resolver::Role>) {
     }
 }
 
-pub async fn update(env: &Env, roles: HashMap<String, resolver::Role>) {
+pub async fn update(env: &Env, roles: HashMap<String, compiler::Role>) {
     let client = iam::make_client(env).await;
     for (_, role) in roles {
         let r = Role {
