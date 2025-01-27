@@ -8,8 +8,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
 
-use super::spec::TopologySpec;
-use super::{mutation, schedule, event, version};
+use super::spec::{TopologySpec, TopologyKind};
+use super::{mutation, schedule, event, version, template};
 use super::mutation::Mutation;
 use super::function::Function;
 use super::route::Route;
@@ -22,8 +22,9 @@ use kit::*;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Topology {
-    pub name: String,
-    pub kind: String,
+    pub namespace: String,
+    pub fqn: String,
+    pub kind: TopologyKind,
     pub nodes: Vec<Topology>,
     pub infra: String,
     pub dir: String,
@@ -285,6 +286,16 @@ fn make_mutations(spec: &TopologySpec) -> HashMap<String, Mutation> {
     h
 }
 
+fn find_kind(given_kind: &Option<TopologyKind>, flow: &Option<Flow>) -> TopologyKind {
+    match given_kind {
+        Some(k) => k.clone(),
+        None => match flow {
+            Some(_) => TopologyKind::StepFunction,
+            None => TopologyKind::Function
+        }
+    }
+}
+
 fn make(
     root_dir: &str,
     dir: &str,
@@ -300,13 +311,16 @@ fn make(
     functions.extend(interned);
 
     let version = u::sh(&format!("git log -n 1 --format=%h {}", dir), dir);
+    let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
+    let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
 
     Topology {
-        name: namespace.clone(),
-        kind: spec.kind.to_owned(),
+        namespace: namespace.clone(),
+        fqn: fqn.clone(),
+        kind: find_kind(&spec.kind, &flow),
         version: version,
         infra: infra_dir.to_owned(),
-        sandbox: format!("{{{{sandbox}}}}"),
+        sandbox: template::sandbox(),
         dir: s!(dir),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
@@ -316,7 +330,7 @@ fn make(
         routes: make_routes(&spec),
         queues: make_queues(&spec),
         mutations: make_mutations(&spec),
-        flow: Flow::new(dir, &infra_dir, &namespace, &spec)
+        flow: flow
     }
 }
 
@@ -336,14 +350,17 @@ fn make_relative(dir: &str) -> Topology {
 }
 
 fn make_standalone(dir: &str) -> Topology {
-    let function = Function::new(dir, dir, "", "");
+
+   let function = Function::new(dir, dir, "", "");
     let functions = Function::to_map(function.clone());
     let namespace = function.name.to_owned();
+
     Topology {
-        name: namespace.clone(),
-        kind: s!("function"),
+        namespace: namespace.clone(),
+        fqn: template::topology_fqn(&namespace, false),
+        kind: TopologyKind::Function,
         version: version::current_semver(&namespace),
-        sandbox: format!("{{{{sandbox}}}}"),
+        sandbox: template::sandbox(),
         infra: u::empty(),
         dir: s!(dir),
         hyphenated_names: false,
@@ -416,7 +433,7 @@ impl Topology {
     }
 
     pub fn build_tree(&self) -> StringItem {
-        let mut t = TreeBuilder::new(s!(self.name.blue()));
+        let mut t = TreeBuilder::new(s!(self.namespace.blue()));
 
         for (_, f) in &self.functions {
             t.begin_child(s!(f.name.green()));
@@ -427,7 +444,7 @@ impl Topology {
         }
 
         for node in &self.nodes {
-            t.begin_child(s!(&node.name.green()));
+            t.begin_child(s!(&node.namespace.green()));
             for (_, f) in &node.functions {
                 t.begin_child(s!(&f.fqn));
                 // t.add_empty_child(f.runtime.lang.to_owned());
@@ -445,4 +462,9 @@ impl Topology {
         let fns = self.functions();
         layer::find(fns)
     }
+
+    pub fn to_str(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
 }

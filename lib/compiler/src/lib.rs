@@ -3,14 +3,15 @@ use std::path::Path;
 
 pub mod spec;
 pub mod topology;
+pub mod function;
 mod flow;
-mod function;
 mod mutation;
 mod schedule;
 mod event;
 mod route;
 mod queue;
 mod version;
+mod template;
 
 use walkdir::WalkDir;
 
@@ -154,8 +155,8 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
         "topologies" => {
             let topologies = list_topologies();
             for (dir, basic_spec) in topologies {
-                let Topology { name, .. } = basic_spec;
-                println!("{} - {}", &name, u::second(&dir, "/services/"));
+                let Topology { namespace, .. } = basic_spec;
+                println!("{} - {}", &namespace, u::second(&dir, "/services/"));
             }
             u::empty()
         }
@@ -222,8 +223,8 @@ pub fn list_topologies() -> HashMap<String, Topology> {
         let p = entry.path().to_string_lossy();
         if is_topology_dir(&p) {
             let spec = Topology::new(&p, true, true);
-            if !names.contains(&spec.name.to_string()) {
-                names.push(spec.name.to_string());
+            if !names.contains(&spec.namespace.to_string()) {
+                names.push(spec.namespace.to_string());
                 topologies.insert(p.to_string(), spec);
             }
         }
@@ -248,7 +249,7 @@ pub fn list_topology_dirs() -> HashMap<String, String> {
         let p = entry.path().to_string_lossy();
         if is_topology_dir(&p) && is_ci_dir(&p) {
             let spec = Topology::new(&p, false, true);
-            topologies.insert(spec.name.to_string(), p.to_string());
+            topologies.insert(spec.namespace.to_string(), p.to_string());
         }
     }
     topologies

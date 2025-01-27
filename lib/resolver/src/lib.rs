@@ -1,34 +1,11 @@
 pub mod context;
-pub mod display;
-pub mod event;
-pub mod flow;
-pub mod function;
-pub mod logs;
-pub mod mutation;
-pub mod plan;
-pub mod queue;
-pub mod role;
-pub mod route;
-pub mod sandbox;
-pub mod schedule;
-pub mod vars;
-
-mod git;
+mod display;
+mod event;
+mod function;
+mod route;
+mod topology;
 
 pub use context::Context;
-pub use event::Event;
-pub use flow::Flow;
-pub use function::{Function, ContainerTask};
-pub use logs::Logs;
-pub use mutation::ResolvedMutations;
-pub use plan::Plan;
-pub use queue::Queue;
-pub use role::Role;
-pub use route::Route;
-pub use sandbox::Sandbox;
-pub use schedule::Schedule;
-pub use vars::Vars;
-
 use compiler::{Topology};
 use aws::Env;
 use kit as u;
@@ -41,90 +18,83 @@ fn maybe_component(component: Option<String>) -> String {
     }
 }
 
+pub fn maybe_sandbox(s: Option<String>) -> String {
+    match s {
+        Some(sandbox) => sandbox,
+        None => match std::env::var("TC_SANDBOX") {
+            Ok(e) => e,
+            Err(_) => panic!("Please specify sandbox or set TC_SANDBOX env variable")
+        }
+    }
+}
+
 pub fn should_resolve(component: Option<String>) -> bool {
     let component = maybe_component(component);
     match component.as_str() {
-        "logs" => false,
-        "events" => false,
-        "routes" => false,
-        "layers" => true,
-        "secrets" => false,
-        "roles" => false,
-        "vars" => true,
-        "tags" => false,
+        "events"    => false,
+        "routes"    => false,
+        "layers"    => true,
+        "secrets"   => false,
+        "roles"     => false,
+        "vars"      => true,
+        "tags"      => false,
         "functions" => true,
-        "all" => true,
-        "basic" => false,
-        "schedule" => true,
+        "all"       => true,
+        "basic"     => false,
+        "schedule"  => true,
         "mutations" => false,
-        "config" => false,
-        _ => true,
+        "config"    => false,
+        _           => true,
     }
 }
 
-pub async fn resolve(
-    env: &Env,
-    sandbox: Option<String>,
-    topology: &Topology,
-    resolve: bool,
-) -> Vec<Plan> {
-    let sandbox = Sandbox::new(sandbox);
+pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology) -> Vec<Topology> {
 
     let nodes = &topology.nodes;
-    let mut plans: Vec<Plan> = vec![];
-    let root = Plan::new(topology, &env, &sandbox, resolve).await;
-    plans.push(root);
+    let mut xs: Vec<Topology> = vec![];
+
+    let root = topology::resolve(topology, env, sandbox).await;
+    xs.push(root);
     for node in nodes {
-        let node_plan = Plan::new(&node, &env, &sandbox, resolve).await;
-        plans.push(node_plan);
+        let node_t = topology::resolve(&node, env, sandbox).await;
+        xs.push(node_t);
     }
-    plans
+    xs
 }
 
-pub async fn just_nodes(sandbox: &str, topology: &Topology) -> Vec<String> {
+pub async fn just_nodes(topology: &Topology) -> Vec<String> {
     let mut nodes: Vec<String> = vec![];
-    let root = if topology.hyphenated_names {
-        format!("{}-{}", &topology.name, &sandbox)
-    } else {
-        format!("{}_{}", &topology.name, &sandbox)
-    };
-    nodes.push(root);
+    let root = &topology.fqn;
+    nodes.push(root.to_string());
     for node in &topology.nodes {
-        let name = if topology.hyphenated_names {
-            format!("{}-{}", &node.name, &sandbox)
-        } else {
-            format!("{}_{}", &node.name, &sandbox)
-        };
-        nodes.push(name);
+        nodes.push(node.fqn.to_string());
     }
     nodes
 }
 
-pub fn render(plans: Vec<Plan>, component: &str) -> String {
-    let plan = plans.clone().into_iter().nth(0).unwrap();
+pub fn render(topologies: Vec<Topology>, component: &str) -> String {
+    let t = topologies.clone().into_iter().nth(0).unwrap();
     match component {
-        "functions" => u::pretty_json(plan.functions),
-        "logs" => u::pretty_json(plan.logs),
-        "flow" => match plan.flow {
+        "functions" => u::pretty_json(t.functions),
+        "flow"      => match t.flow {
             Some(f) => u::pretty_json(f),
-            _ => u::empty(),
+            _       => u::empty(),
         },
-        "layers" => display::render_layers(&plans),
-        "events" => u::pretty_json(plan.events),
-        "schedules" => u::pretty_json(plan.schedules),
-        "roles" => u::pretty_json(plan.roles),
-        "routes" => u::pretty_json(plan.routes),
-        "mutations" => u::pretty_json(plan.mutations),
-        "vars" => u::pretty_json(plan.functions),
-        "basic" => u::pretty_json(plan.version),
-        "all" => u::pretty_json(plans),
-        _ => {
+        "layers"    => display::render_layers(&topologies),
+        "events"    => u::pretty_json(t.events),
+        "schedules" => u::pretty_json(t.schedules),
+        "routes"    => u::pretty_json(t.routes),
+        "mutations" => u::pretty_json(t.mutations),
+        "vars"      => u::pretty_json(t.functions),
+        "basic"     => u::pretty_json(t.version),
+        "all"       => u::pretty_json(topologies),
+        _           => {
             if u::file_exists(&component) {
-                let fs = plan.functions;
+                let fs = t.functions;
                 let f = fs.get(component).unwrap();
                 u::pretty_json(f)
             } else {
-                u::pretty_json(plans)
+                u::pretty_json(t)
             }
         }
     }
@@ -133,17 +103,18 @@ pub fn render(plans: Vec<Plan>, component: &str) -> String {
 pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<String> {
     let topology = compiler::compile(&dir, true);
     let nodes = &topology.nodes;
-    let sbox = Sandbox::new(sandbox);
-    let plan = Plan::new(&topology, env, &sbox, false).await;
+
+    let sandbox = maybe_sandbox(sandbox);
+    let t = topology::resolve(&topology, env, &sandbox).await;
 
     let mut fns: Vec<String> = vec![];
-    for (_, f) in plan.functions {
+    for (_, f) in t.functions {
         fns.push(f.name)
     }
 
     for node in nodes {
-        let node_plan = Plan::new(&node, env, &sbox, false).await;
-        for (_, f) in node_plan.functions {
+        let node_t = topology::resolve(&node, env, &sandbox).await;
+        for (_, f) in node_t.functions {
             fns.push(f.name)
         }
     }
@@ -165,15 +136,11 @@ pub fn current_function(sandbox: &str) -> Option<String> {
     None
 }
 
-pub fn as_sandbox(sandbox: Option<String>) -> String {
-    sandbox::as_sandbox(sandbox)
-}
-
 pub async fn name_of(dir: &str, sandbox: &str, kind: &str) -> Option<String> {
     let topology = compiler::compile(&dir, false);
     match kind {
         "step-function" => {
-            let nodes = just_nodes(&sandbox, &topology).await;
+            let nodes = just_nodes(&topology).await;
             let node = nodes.into_iter().nth(0).unwrap();
             Some(node)
         }

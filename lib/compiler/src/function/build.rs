@@ -27,8 +27,6 @@ fn infer_kind(package_type: &str) -> Kind {
 
 impl Build {
 
-
-
     pub fn new(runtime: &Runtime, bspec: Option<BuildSpec>) -> Build {
         match bspec {
             Some(b) => Build {

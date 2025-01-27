@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use super::spec::TopologySpec;
-use super::version;
+use super::{version, template};
 
 fn default_trust_policy() -> String {
     format!(
@@ -39,9 +39,10 @@ pub struct Role {
     pub name: String,
     pub path: String,
     pub trust: String,
+    pub arn: String,
     pub policy_name: String,
     pub policy: String,
-    pub policy_arn: Option<String>,
+    pub policy_arn: String,
 }
 
 
@@ -49,24 +50,29 @@ impl Role {
 
     pub fn new(infra_dir: &str, namespace: &str) -> Role {
         let role_file = format!("{}/roles/sfn.json", infra_dir);
+        let policy_name = format!("tc-{}-sfn-policy", namespace);
 
         if u::file_exists(&role_file) {
+            let role_name = format!("tc-{}-sfn-role", namespace);
             Role {
-                name: format!("tc-{}-sfn-role", namespace),
+                name: role_name.clone(),
                 path: role_file.clone(),
                 trust: default_trust_policy(),
+                arn: template::role_arn(&role_name),
                 policy: read_policy(&role_file),
-                policy_name: format!("tc-{}-sfn-policy", namespace),
-                policy_arn: None
+                policy_name: policy_name.clone(),
+                policy_arn: template::policy_arn(&policy_name)
             }
         } else {
+            let role_name = s!("tc-base-lambda-role");
             Role {
-                name: s!("tc-base-lambda-role"),
+                name: role_name.clone(),
                 path: s!("provided"),
                 trust: s!("provided"),
+                arn: template::role_arn(&role_name),
                 policy: s!("provided"),
                 policy_name: s!("tc-base-lambda-policy"),
-                policy_arn: None
+                policy_arn: template::policy_arn("tc-base-lambda-policy")
             }
 
         }
@@ -76,6 +82,7 @@ impl Role {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flow {
     pub name: String,
+    pub arn: String,
     pub tags: HashMap<String, String>,
     pub definition: Value,
     pub mode: String,
@@ -115,7 +122,7 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
 
 impl Flow {
 
-    pub fn new(dir: &str, infra_dir: &str, namespace: &str, spec: &TopologySpec) -> Option<Flow> {
+    pub fn new(dir: &str, infra_dir: &str, fqn: &str, spec: &TopologySpec) -> Option<Flow> {
 
         let def = match &spec.flow {
             Some(f) => Some(read_definition(dir, f.clone())),
@@ -127,14 +134,15 @@ impl Flow {
             None => s!("Express")
         };
 
-        let role = Role::new(infra_dir, namespace);
+        let role = Role::new(infra_dir, fqn);
 
-        let tags = make_tags(namespace);
+        let tags = make_tags(fqn);
 
         match def {
             Some(definition) => Some(
                 Flow {
-                    name: s!(namespace),
+                    name: s!(fqn),
+                    arn: template::sfn_arn(fqn),
                     tags: tags,
                     definition: definition,
                     mode: mode,

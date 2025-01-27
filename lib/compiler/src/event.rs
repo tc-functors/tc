@@ -1,6 +1,7 @@
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use super::template;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TargetKind {
@@ -36,9 +37,9 @@ impl Target {
             kind: kind,
             id: id,
             basename: basename,
-            name: format!("{{{{event_target_name}}}}"),
-            arn: format!("{{{{event_target_arn}}}}"),
-            role_arn: format!("{{{{event_target_arn}}}}"),
+            name: s!("provided"),
+            arn: s!("provided"),
+            role_arn: template::role_arn("tc-base-event-role"),
             input_paths_map: input_paths_map,
             input_template: input_template
         }
@@ -128,6 +129,7 @@ pub struct Event {
     pub name: String,
     pub rule_name: String,
     pub bus: String,
+    pub bus_arn: String,
     pub pattern: EventPattern,
     pub targets: Vec<Target>,
     pub sandboxes: Vec<String>
@@ -153,10 +155,15 @@ impl Event {
             None => EventPattern::new(name, producer, filter)
         };
 
+        let bus = format!("{{{{cfg_event_bus}}}}");
+
+        let rule_name = format!("tc-{{{{abbr_namespace}}}}-{}-{{{{sandbox}}}}", s!(name));
+
         Event {
             name: s!(name),
-            rule_name: format!("{{{{event_rule_name}}}}"),
-            bus: format!("{{{{event_bus}}}}"),
+            rule_name: rule_name,
+            bus: bus.clone(),
+            bus_arn: template::event_bus_arn(&bus),
             pattern: pattern,
             targets: targets,
             sandboxes: sandboxes

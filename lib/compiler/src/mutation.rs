@@ -2,36 +2,54 @@ use super::spec::{MutationSpec, ResolverSpec};
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use super::template;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum TargetKind {
+    Function,
+    Event,
+    Table
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Resolver {
-    pub kind: String,
+    pub kind: TargetKind,
     pub name: String,
-    pub target: String,
+    pub target_arn: String,
     pub input: String,
     pub output: String,
 }
 
-fn kind_of(r: ResolverSpec) -> (String, String) {
+fn kind_of(r: ResolverSpec) -> (TargetKind, String) {
     if let Some(f) = r.function {
-        (s!("function"), f)
+        (TargetKind::Function, f)
     } else if let Some(e) = r.event {
-        (s!("event"), e)
+        (TargetKind::Event, e)
     } else if let Some(t) = r.table {
-        (s!("table"), t)
+        (TargetKind::Table, t)
     } else {
         panic!("Invalid Resolver {:?}", r)
+    }
+}
+
+
+fn make_target_arn(kind: &TargetKind, target_name: &str) -> String {
+    match kind {
+        TargetKind::Function => template::lambda_arn(target_name),
+        TargetKind::Event    => template::event_bus_arn("default"),
+        TargetKind::Table    => kit::empty()
     }
 }
 
 fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Resolver> {
     let mut xs: HashMap<String, Resolver> = HashMap::new();
     for (k, r) in rspecs {
-        let (kind, target) = kind_of(r.to_owned());
+        let (kind, target_name) = kind_of(r.to_owned());
+        let target_arn = make_target_arn(&kind, &target_name);
         let resolver = Resolver {
             kind: kind,
             name: k.to_owned(),
-            target: target,
+            target_arn: target_arn,
             input: r.input,
             output: r.output,
         };
