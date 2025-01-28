@@ -27,7 +27,7 @@ pub use route::Route;
 pub use flow::Flow;
 pub use role::{Role, RoleKind};
 
-use spec::{TopologySpec, LangRuntime, Lang};
+pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec};
 
 use kit as u;
 use kit::*;
@@ -94,7 +94,7 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             let layers = find_layers();
             u::pretty_json(layers)
         }
-        "states" => {
+        "flow" => {
             let topology = compile(&dir, recursive);
             match topology.flow {
                 Some(f) => u::pretty_json(&f),
@@ -106,6 +106,14 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             u::pretty_json(&topology.routes)
         }
         "runtime" => {
+            let topology = compile(&dir, recursive);
+            let functions = topology.functions();
+            for (_dir, f) in functions {
+                println!("{}", u::pretty_json(f.runtime));
+            }
+            u::empty()
+        }
+        "vars" => {
             let topology = compile(&dir, recursive);
             let functions = topology.functions();
             for (_dir, f) in functions {

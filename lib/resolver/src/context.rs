@@ -14,7 +14,7 @@ pub struct Context {
     pub env: Env,
     pub namespace: String,
     pub sandbox: String,
-    pub trace: bool
+    pub trace: bool,
 }
 
 impl Context {

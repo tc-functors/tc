@@ -3237,6 +3237,7 @@ name = "resolver"
 version = "0.0.2"
 dependencies = [
  "aws",
+ "cacache",
  "compiler",
  "kit",
  "regex",

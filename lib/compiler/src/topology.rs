@@ -474,7 +474,9 @@ impl Topology {
     pub fn roles(&self) -> Vec<Role> {
         let mut xs: Vec<Role> = vec![];
         for (_, f) in &self.functions {
-            xs.push(f.runtime.role.clone())
+            if &f.runtime.role.path != "provided" {
+                xs.push(f.runtime.role.clone())
+            }
         }
         xs
     }

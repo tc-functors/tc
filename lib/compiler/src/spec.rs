@@ -156,22 +156,27 @@ pub struct RuntimeInfraSpec {
 
 impl RuntimeInfraSpec {
 
-    pub fn new(runtime_file: Option<String>) -> RuntimeInfraSpec {
+    pub fn new(runtime_file: Option<String>) -> HashMap<String, RuntimeInfraSpec> {
         match runtime_file {
             Some(f) => {
                 let data = u::slurp(&f);
-                let ris: RuntimeInfraSpec = serde_json::from_str(&data).unwrap();
+                let ris: HashMap<String, RuntimeInfraSpec> = serde_json::from_str(&data).unwrap();
                 ris
             }
-            None => RuntimeInfraSpec {
-                memory_size: Some(128),
-                timeout: Some(300),
-                image_uri: None,
-                provisioned_concurrency: None,
-                environment: None,
-                network: None,
-                filesystem: None,
-                tags: None
+            None => {
+                let mut h: HashMap<String, RuntimeInfraSpec> = HashMap::new();
+                let r = RuntimeInfraSpec {
+                    memory_size: Some(128),
+                    timeout: Some(300),
+                    image_uri: None,
+                    provisioned_concurrency: None,
+                    environment: None,
+                    network: None,
+                    filesystem: None,
+                    tags: None
+                };
+                h.insert(s!("default"), r);
+                h
             }
         }
     }
