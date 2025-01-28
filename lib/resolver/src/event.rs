@@ -79,7 +79,7 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
 
     let target_name = match target.kind {
         TargetKind::Function => fqn_of(context, topology, &target.name),
-        TargetKind::Mutation => find_mutation(&target.basename, &topology.mutations).await,
+        TargetKind::Mutation => find_mutation(&target.name, &topology.mutations).await,
         TargetKind::StepFunction => s!(&env.sfn_arn(&name))
     };
 

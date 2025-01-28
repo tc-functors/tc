@@ -322,7 +322,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "aws"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1347,6 +1347,7 @@ name = "compiler"
 version = "0.0.2"
 dependencies = [
  "colored",
+ "configurator",
  "kit",
  "ptree",
  "regex",
@@ -1507,7 +1508,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "aws",
  "colored",
@@ -3233,7 +3234,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "aws",
  "compiler",
@@ -3858,7 +3859,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.7.13"
+version = "0.7.14"
 dependencies = [
  "aws",
  "builder",

@@ -7,6 +7,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
+use configurator::Config;
 
 use super::spec::{TopologySpec, TopologyKind};
 use super::{mutation, schedule, event, version, template};
@@ -17,6 +18,7 @@ use super::event::Event;
 use super::queue::Queue;
 use super::schedule::Schedule;
 use super::flow::Flow;
+use super::role::Role;
 use kit as u;
 use kit::*;
 
@@ -239,26 +241,26 @@ pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> V
 }
 
 // builders
-fn make_events(spec: &TopologySpec) -> HashMap<String, Event> {
+fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
         for (name, ev) in evs.consumes.clone().unwrap().into_iter() {
-            let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction);
-            let ev = Event::new(&name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes);
+            let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
+            let ev = Event::new(&name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes, config);
             h.insert(name, ev);
         }
     }
     h
 }
 
-fn make_routes(spec: &TopologySpec) -> HashMap<String, Route> {
+fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
-                let route = Route::new(rspec);
+                let route = Route::new(rspec, config);
                 h.insert(name.to_string(), route);
             }
             h
@@ -267,7 +269,7 @@ fn make_routes(spec: &TopologySpec) -> HashMap<String, Route> {
     }
 }
 
-fn make_queues(spec: &TopologySpec) -> HashMap<String, Queue> {
+fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> {
     let mut h: HashMap<String, Queue> = HashMap::new();
     if let Some(queues) = &spec.queues {
         for (name, qspec) in queues {
@@ -277,7 +279,7 @@ fn make_queues(spec: &TopologySpec) -> HashMap<String, Queue> {
     h
 }
 
-fn make_mutations(spec: &TopologySpec) -> HashMap<String, Mutation> {
+fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Mutation> {
     let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
     while let Some(ref m) = mutations {
@@ -304,6 +306,8 @@ fn make(
     nodes: Vec<Topology>,
 ) -> Topology {
 
+    let config = Config::new(None, "{{env}}");
+
     let mut functions = functions;
     let namespace = spec.name.to_owned();
     let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
@@ -325,11 +329,11 @@ fn make(
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
         functions: functions,
-        events: make_events(&spec),
+        events: make_events(&spec, &fqn, &config),
         schedules: schedule::make_all(&infra_dir),
-        routes: make_routes(&spec),
-        queues: make_queues(&spec),
-        mutations: make_mutations(&spec),
+        routes: make_routes(&spec, &config),
+        queues: make_queues(&spec, &config),
+        mutations: make_mutations(&spec, &config),
         flow: flow
     }
 }
@@ -465,6 +469,14 @@ impl Topology {
 
     pub fn to_str(&self) -> String {
         serde_json::to_string(&self).unwrap()
+    }
+
+    pub fn roles(&self) -> Vec<Role> {
+        let mut xs: Vec<Role> = vec![];
+        for (_, f) in &self.functions {
+            xs.push(f.runtime.role.clone())
+        }
+        xs
     }
 
 }

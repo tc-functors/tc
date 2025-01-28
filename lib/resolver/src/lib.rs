@@ -11,13 +11,6 @@ use aws::Env;
 use kit as u;
 use std::collections::HashMap;
 
-fn maybe_component(component: Option<String>) -> String {
-    match component {
-        Some(m) => m,
-        _ => "all".to_string(),
-    }
-}
-
 pub fn maybe_sandbox(s: Option<String>) -> String {
     match s {
         Some(sandbox) => sandbox,
@@ -28,25 +21,6 @@ pub fn maybe_sandbox(s: Option<String>) -> String {
     }
 }
 
-pub fn should_resolve(component: Option<String>) -> bool {
-    let component = maybe_component(component);
-    match component.as_str() {
-        "events"    => false,
-        "routes"    => false,
-        "layers"    => true,
-        "secrets"   => false,
-        "roles"     => false,
-        "vars"      => true,
-        "tags"      => false,
-        "functions" => true,
-        "all"       => true,
-        "basic"     => false,
-        "schedule"  => true,
-        "mutations" => false,
-        "config"    => false,
-        _           => true,
-    }
-}
 
 pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology) -> Vec<Topology> {
 
@@ -54,6 +28,20 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology) -> Vec<Topol
     let mut xs: Vec<Topology> = vec![];
 
     let root = topology::resolve(topology, env, sandbox).await;
+    xs.push(root);
+    for node in nodes {
+        let node_t = topology::resolve(&node, env, sandbox).await;
+        xs.push(node_t);
+    }
+    xs
+}
+
+pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, component: &str) -> Vec<Topology> {
+
+    let nodes = &topology.nodes;
+    let mut xs: Vec<Topology> = vec![];
+
+    let root = topology::resolve_component(topology, env, sandbox, component).await;
     xs.push(root);
     for node in nodes {
         let node_t = topology::resolve(&node, env, sandbox).await;
@@ -72,9 +60,11 @@ pub async fn just_nodes(topology: &Topology) -> Vec<String> {
     nodes
 }
 
-pub fn render(topologies: Vec<Topology>, component: &str) -> String {
+pub fn render(topologies: Vec<Topology>, component: Option<String>) -> String {
     let t = topologies.clone().into_iter().nth(0).unwrap();
-    match component {
+    let component = u::maybe_string(component, "all");
+
+    match component.as_ref() {
         "functions" => u::pretty_json(t.functions),
         "flow"      => match t.flow {
             Some(f) => u::pretty_json(f),
@@ -85,18 +75,9 @@ pub fn render(topologies: Vec<Topology>, component: &str) -> String {
         "schedules" => u::pretty_json(t.schedules),
         "routes"    => u::pretty_json(t.routes),
         "mutations" => u::pretty_json(t.mutations),
-        "vars"      => u::pretty_json(t.functions),
         "basic"     => u::pretty_json(t.version),
         "all"       => u::pretty_json(topologies),
-        _           => {
-            if u::file_exists(&component) {
-                let fs = t.functions;
-                let f = fs.get(component).unwrap();
-                u::pretty_json(f)
-            } else {
-                u::pretty_json(t)
-            }
-        }
+        _           => u::empty()
     }
 }
 

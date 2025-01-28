@@ -55,7 +55,7 @@ async fn create_flow(env: &Env, topology: &Topology) {
         ..
     } = topology;
 
-    //role::create(&env, roles.clone()).await;
+    role::create(&env, &topology.roles()).await;
     function::create(env, functions.clone()).await;
     if should_update_layers() {
         function::update_layers(env, functions.clone()).await;
@@ -83,7 +83,7 @@ async fn create_function(env: &Env, topology: &Topology) {
         functions,
         ..
     } = topology;
-    //role::create(&env, roles.clone()).await;
+    role::create(&env, &topology.roles()).await;
     function::create(&env, functions.clone()).await;
 }
 
@@ -215,7 +215,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         "queues" => queue::create(&env, &queues).await,
 
         "all" => {
-            //role::create(&env, roles).await;
+            role::create(&env, &topology.roles()).await;
             function::create(&env, functions.clone()).await;
             match flow {
                 Some(f) => flow::create(&env, f).await,
@@ -261,7 +261,7 @@ pub async fn delete(env: &Env, topology: &Topology) {
         None => println!("No flow defined, skipping"),
     }
     function::delete(&env, functions).await;
-    //role::delete(&env, roles).await;
+    role::delete(&env, &topology.roles()).await;
     route::delete(&env, "", routes).await;
 
     mutation::delete(&env, &mutations).await;
