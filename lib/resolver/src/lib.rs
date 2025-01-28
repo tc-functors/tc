@@ -1,9 +1,10 @@
-pub mod context;
+mod context;
 mod display;
 mod event;
 mod function;
 mod route;
 mod topology;
+mod cache;
 
 pub use context::Context;
 use compiler::{Topology};
@@ -22,15 +23,15 @@ pub fn maybe_sandbox(s: Option<String>) -> String {
 }
 
 
-pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology) -> Vec<Topology> {
+pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Vec<Topology> {
 
     let nodes = &topology.nodes;
     let mut xs: Vec<Topology> = vec![];
 
-    let root = topology::resolve(topology, env, sandbox).await;
+    let root = topology::resolve(topology, env, sandbox, cache).await;
     xs.push(root);
     for node in nodes {
-        let node_t = topology::resolve(&node, env, sandbox).await;
+        let node_t = topology::resolve(&node, env, sandbox, cache).await;
         xs.push(node_t);
     }
     xs
@@ -44,7 +45,7 @@ pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, co
     let root = topology::resolve_component(topology, env, sandbox, component).await;
     xs.push(root);
     for node in nodes {
-        let node_t = topology::resolve(&node, env, sandbox).await;
+        let node_t = topology::resolve(&node, env, sandbox, false).await;
         xs.push(node_t);
     }
     xs
@@ -86,7 +87,7 @@ pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<Str
     let nodes = &topology.nodes;
 
     let sandbox = maybe_sandbox(sandbox);
-    let t = topology::resolve(&topology, env, &sandbox).await;
+    let t = topology::resolve(&topology, env, &sandbox, true).await;
 
     let mut fns: Vec<String> = vec![];
     for (_, f) in t.functions {
@@ -94,7 +95,7 @@ pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<Str
     }
 
     for node in nodes {
-        let node_t = topology::resolve(&node, env, &sandbox).await;
+        let node_t = topology::resolve(&node, env, &sandbox, true).await;
         for (_, f) in node_t.functions {
             fns.push(f.name)
         }

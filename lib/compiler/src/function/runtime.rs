@@ -30,13 +30,14 @@ pub struct Runtime {
     pub layers: Vec<String>,
     pub tags: HashMap<String, String>,
     pub environment: HashMap<String, String>,
-    pub memory_size: i32,
-    pub timeout: i32,
+    pub memory_size: Option<i32>,
+    pub timeout: Option<i32>,
     pub snapstart: bool,
     pub provisioned_concurrency: Option<i32>,
     pub network: Option<Network>,
     pub fs: Option<FileSystem>,
-    pub role: Role
+    pub role: Role,
+    pub infra_spec: HashMap<String, RuntimeInfraSpec>
 }
 
 fn as_uri(dir: &str, package_type: &str, uri: Option<String>) -> String {
@@ -119,23 +120,22 @@ fn follow_path(path: &str) -> String {
     }
 }
 
-fn lookup_infra_spec(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str, ) -> RuntimeInfraSpec {
-    match rspec {
-        Some(r) => {
-            let path = match &r.vars_file {
-                Some(f) => Some(follow_path(&f)),
-                None => {
-                    let f = format!("{}/vars/{}.json", infra_dir, function_name);
-                    if u::file_exists(&f) {
-                        Some(f)
-                    } else {
-                        None
-                    }
+fn lookup_infra_spec(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str, ) -> HashMap<String, RuntimeInfraSpec> {
+
+    let f = format!("{}/vars/{}.json", infra_dir, function_name);
+    let actual_f =  follow_path(&f);
+    if u::file_exists(&actual_f) {
+        RuntimeInfraSpec::new(Some(actual_f))
+    } else {
+        match rspec {
+            Some(r) => {
+                match &r.vars_file {
+                    Some(f) => RuntimeInfraSpec::new(Some(follow_path(&f))),
+                    None => RuntimeInfraSpec::new(None)
                 }
-            };
-            RuntimeInfraSpec::new(path)
-        },
-        None => RuntimeInfraSpec::new(None)
+            },
+            None => RuntimeInfraSpec::new(None)
+        }
     }
 }
 
@@ -281,7 +281,9 @@ impl Runtime {
         let rspec = fspec.runtime.clone();
 
         let infra_spec = lookup_infra_spec(infra_dir, &rspec, &fspec.name);
-        let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = infra_spec;
+        //FIXME: handle unwrap
+        let default_infra_spec = infra_spec.get("default").unwrap();
+        let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = default_infra_spec;
 
         let role = lookup_role(infra_dir, &rspec, namespace, &fspec.name);
 
@@ -301,12 +303,13 @@ impl Runtime {
                     tags: make_tags(namespace),
                     environment: vars,
                     provisioned_concurrency: None,
-                    memory_size: memory_size.unwrap(),
-                    timeout: timeout.unwrap(),
+                    memory_size: *memory_size,
+                    timeout: *timeout,
                     snapstart: false,
                     role: role,
-                    network: make_network(&infra_spec),
-                    fs: make_fs(&infra_spec)
+                    network: make_network(&default_infra_spec),
+                    fs: make_fs(&default_infra_spec),
+                    infra_spec: infra_spec
                 }
             },
             None => {
@@ -323,11 +326,12 @@ impl Runtime {
                     tags: make_tags(namespace),
                     provisioned_concurrency: None,
                     role: role,
-                    memory_size: memory_size.unwrap(),
-                    timeout: timeout.unwrap(),
+                    memory_size: *memory_size,
+                    timeout: *timeout,
                     snapstart: false,
                     network: None,
-                    fs: None
+                    fs: None,
+                    infra_spec: infra_spec
                 }
             }
         }

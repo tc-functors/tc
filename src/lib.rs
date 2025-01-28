@@ -124,12 +124,13 @@ pub async fn resolve(
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
+    cache: bool
 ) -> String {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topologies = match component.clone() {
         Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
-        None => resolver::resolve(&env, &sandbox, &topology).await
+        None => resolver::resolve(&env, &sandbox, &topology, cache).await
     };
 
     resolver::render(topologies, component)
@@ -170,6 +171,7 @@ pub async fn create(
     sandbox: Option<String>,
     notify: bool,
     recursive: bool,
+    cache: bool
 ) {
 
     let sandbox = resolver::maybe_sandbox(sandbox);
@@ -181,7 +183,8 @@ pub async fn create(
     let topology = compiler::compile(&dir, recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology, cache).await;
+
     for topology in &topologies {
         create_topology(&env, &topology, notify).await;
     }
@@ -202,7 +205,7 @@ async fn update_topology(env: &Env, topology: &Topology) {
     deployer::update(env, topology).await;
 }
 
-pub async fn update(env: Env, sandbox: Option<String>, recursive: bool) {
+pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, cache: bool) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     router::guard(&sandbox);
     let start = Instant::now();
@@ -211,7 +214,7 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool) {
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology, cache).await;
 
     for topology in topologies {
         update_topology(&env, &topology).await;
@@ -232,7 +235,7 @@ pub async fn update_component(
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
 
     for topology in topologies {
         deployer::update_component(&env, &topology, component.clone()).await;
@@ -246,7 +249,7 @@ pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
 
     for topology in topologies {
         deployer::delete(&env, &topology).await
@@ -265,7 +268,7 @@ pub async fn delete_component(
     let topology = compiler::compile(&u::pwd(), recursive);
 
     println!("Resolving topology");
-    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
+    let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
 
     for topology in topologies {
         deployer::delete_component(&env, topology, component.clone()).await

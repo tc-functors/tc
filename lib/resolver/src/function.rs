@@ -1,16 +1,28 @@
 use std::collections::HashMap;
 
 use super::Context;
-use compiler::{Function, Runtime, Topology};
+use compiler::{Function, Runtime, Topology, RuntimeInfraSpec};
 use compiler::function::runtime::{Network, FileSystem};
 use kit::*;
 
-async fn resolve_environment(ctx: &Context,
-                             env_vars: HashMap<String, String>) -> HashMap<String, String> {
+async fn resolve_environment(
+    ctx: &Context,
+    default_vars: &HashMap<String, String>,
+    sandbox_vars: Option<HashMap<String, String>>
+) -> HashMap<String, String> {
 
     let Context { env, .. } = ctx;
-    // lookup by sandbox
-    env.resolve_vars(env_vars).await
+    let mut default_vars = default_vars.clone();
+
+    let combined = match sandbox_vars {
+        Some(v) => {
+            default_vars.extend(v);
+            default_vars
+        }
+        None => default_vars
+    };
+
+    env.resolve_vars(combined.clone()).await
 }
 
 async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
@@ -115,14 +127,63 @@ async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
     xs
 }
 
+fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> RuntimeInfraSpec {
+    RuntimeInfraSpec {
+        memory_size: match s.memory_size {
+            Some(p) => Some(p),
+            None => default.memory_size
+        },
+        timeout: match s.timeout {
+            Some(p) => Some(p),
+            None => default.timeout
+        },
+        environment: match s.environment.clone() {
+            Some(mut p) => {
+                p.extend(default.environment.clone().unwrap());
+                Some(p.clone())
+            },
+            None => default.environment.clone()
+        },
+        image_uri: None,
+        network: None,
+        filesystem: None,
+        provisioned_concurrency: None,
+        tags: None
+    }
+}
+
+fn get_infra_spec(infra_spec: &HashMap<String, RuntimeInfraSpec>, profile: &str, sandbox: &str) -> RuntimeInfraSpec {
+
+    let profile_specific = infra_spec.get(profile);
+    let sandbox_specific = infra_spec.get(sandbox);
+    let default = infra_spec.get("default").unwrap();
+
+    if let Some(s) = sandbox_specific {
+        return augment_infra_spec(&default, s)
+    }
+    if let Some(s) = profile_specific {
+        return augment_infra_spec(&default, s)
+    }
+    default.clone()
+
+}
+
 async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
-    let Runtime { environment, layers, network, fs, .. } = runtime;
+    let Context { env, sandbox, .. } = ctx;
+
+    let Runtime { layers, network, fs, infra_spec, .. } = runtime;
     let mut r: Runtime = runtime.clone();
 
-    r.environment = resolve_environment(ctx, environment.clone()).await;
+    let actual_infra = get_infra_spec(infra_spec, &env.name, sandbox);
+    let RuntimeInfraSpec { memory_size, timeout, environment, .. } = actual_infra;
+
+    r.memory_size = memory_size;
+    r.timeout = timeout;
+    r.environment = resolve_environment(ctx, &runtime.environment, environment).await;
     r.layers = resolve_layers(ctx, layers.clone()).await;
     r.network = resolve_network(ctx, network.clone()).await;
     r.fs = resolve_fs(ctx, fs.clone()).await;
+    r.infra_spec = HashMap::new();
     r
 }
 

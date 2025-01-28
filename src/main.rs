@@ -130,6 +130,8 @@ pub struct ResolveArgs {
     recursive: bool,
     #[arg(long, action)]
     diff: bool,
+    #[arg(long, action)]
+    cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -218,6 +220,8 @@ pub struct CreateArgs {
     recursive: bool,
     #[arg(long, action)]
     trace: bool,
+    #[arg(long, action)]
+    cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -248,6 +252,8 @@ pub struct UpdateArgs {
     recursive: bool,
     #[arg(long, action)]
     trace: bool,
+    #[arg(long, action)]
+    cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -264,6 +270,8 @@ pub struct DeleteArgs {
     recursive: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action)]
+    cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -419,11 +427,12 @@ async fn create(args: CreateArgs) {
         sandbox,
         notify,
         recursive,
+        cache,
         ..
     } = args;
 
     let env = tc::init(profile, role).await;
-    tc::create(env, sandbox, notify, recursive).await;
+    tc::create(env, sandbox, notify, recursive, cache).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -433,6 +442,7 @@ async fn update(args: UpdateArgs) {
         sandbox,
         component,
         recursive,
+        cache,
         ..
     } = args;
 
@@ -441,7 +451,7 @@ async fn update(args: UpdateArgs) {
     if kit::option_exists(component.clone()) {
         tc::update_component(env, sandbox, component, recursive).await;
     } else {
-        tc::update(env, sandbox, recursive).await;
+        tc::update(env, sandbox, recursive, cache).await;
     }
 }
 
@@ -490,11 +500,12 @@ async fn resolve(args: ResolveArgs) {
         component,
         quiet,
         recursive,
+        cache,
         ..
     } = args;
 
     let env = tc::init(profile, role).await;
-    let plan = tc::resolve(env, sandbox, component, recursive).await;
+    let plan = tc::resolve(env, sandbox, component, recursive, cache).await;
     if !quiet {
         println!("{plan}");
     }
