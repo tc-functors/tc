@@ -2,9 +2,9 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use serde_json::Value;
 use crate::spec::{LangRuntime, FunctionSpec, RuntimeInfraSpec, RuntimeSpec, Lang};
-use crate::{version, template};
+use crate::{version, template, role};
 use super::{layer};
-use super::role::Role;
+use crate::role::{Role, RoleKind};
 
 use kit as u;
 use kit::*;
@@ -153,9 +153,23 @@ fn lookup_role(infra_dir: &str, rspec: &Option<RuntimeSpec>, namespace: &str, fu
                     }
                 }
             };
-            Role::new(path, namespace, function_name)
+
+            if let Some(p) = path {
+                let abbr = if function_name.chars().count() > 15 {
+                    u::abbreviate(function_name, "-")
+                } else {
+                    function_name.to_string()
+                };
+                let policy_name = format!("tc-{}-{{{{sandbox}}}}-{}-policy", namespace, abbr);
+                let role_name = format!("tc-{}-{{{{sandbox}}}}-{}-role", namespace, abbr);
+
+                Role::new(RoleKind::Function, &p, &role_name, &policy_name)
+            } else {
+                role::default(RoleKind::Function)
+            }
+
         },
-        None =>     Role::new(None, namespace, function_name)
+        None => role::default(RoleKind::Function)
     }
 }
 

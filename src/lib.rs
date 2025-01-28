@@ -127,9 +127,12 @@ pub async fn resolve(
 ) -> String {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let topologies = resolver::resolve(&env, &sandbox, &topology).await;
-    let component = u::maybe_string(component, "all");
-    resolver::render(topologies, &component)
+    let topologies = match component.clone() {
+        Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
+        None => resolver::resolve(&env, &sandbox, &topology).await
+    };
+
+    resolver::render(topologies, component)
 }
 
 async fn create_topology(env: &Env, topology: &Topology, _notify: bool) {

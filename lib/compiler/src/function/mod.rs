@@ -1,7 +1,6 @@
 pub mod build;
 pub mod runtime;
 pub mod layer;
-pub mod role;
 
 use kit as u;
 use kit::*;
@@ -12,7 +11,6 @@ use super::spec::FunctionSpec;
 use crate::template;
 pub use build::Build;
 pub use runtime::Runtime;
-pub use role::Role;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Test {

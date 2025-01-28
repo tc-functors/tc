@@ -12,6 +12,7 @@ pub mod route;
 mod queue;
 mod version;
 mod template;
+mod role;
 
 use walkdir::WalkDir;
 
@@ -19,11 +20,12 @@ pub use function::layer::Layer;
 pub use mutation::{Mutation, Resolver};
 pub use schedule::Schedule;
 pub use topology::Topology;
-pub use function::{Function, Build, Runtime, Role};
+pub use function::{Function, Build, Runtime};
 pub use event::{Event, TargetKind, Target};
 pub use queue::Queue;
 pub use route::Route;
 pub use flow::Flow;
+pub use role::{Role, RoleKind};
 
 use spec::{TopologySpec, LangRuntime, Lang};
 

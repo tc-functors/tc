@@ -471,7 +471,9 @@ pub struct ScheduleSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TopologyKind {
+    #[serde(alias="step-function",alias="state-machine")]
     StepFunction,
+    #[serde(alias="functon")]
     Function
 }
 

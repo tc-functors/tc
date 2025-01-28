@@ -1,6 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use configurator::Config;
 use kit::*;
 use super::template;
 use super::spec::RouteSpec;
@@ -49,7 +50,7 @@ fn find_target_name(proxy: &Option<String>) -> String {
 
 impl Route {
 
-    pub fn new(spec: &RouteSpec) -> Route {
+    pub fn new(spec: &RouteSpec, _config: &Config) -> Route {
 
         let target_kind = match spec.proxy {
             Some(_) => TargetKind::Function,
@@ -70,8 +71,6 @@ impl Route {
             stage_variables: HashMap::new(),
             request_template: request_template(),
             response_template: response_template(),
-
         }
     }
-
 }

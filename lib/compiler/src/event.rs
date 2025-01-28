@@ -2,6 +2,7 @@ use kit::*;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use super::template;
+use configurator::Config;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TargetKind {
@@ -25,7 +26,6 @@ impl TargetKind {
 pub struct Target {
     pub kind: TargetKind,
     pub id: String,
-    pub basename: String,
     pub name: String,
     pub arn: String,
     pub role_arn: String,
@@ -37,19 +37,20 @@ impl Target {
 
     fn new(
         kind: TargetKind,
-        id: String,
-        basename: String,
+        id: &str,
+        name: &str,
+        arn: &str,
         input_paths_map: Option<HashMap<String, String>>,
-        input_template: Option<String>
+        input_template: Option<String>,
+
 
     ) -> Target {
 
         Target {
             kind: kind,
-            id: id,
-            basename: basename,
-            name: s!("provided"),
-            arn: s!("provided"),
+            id: s!(id),
+            name: s!(name),
+            arn: s!(arn),
             role_arn: template::role_arn("tc-base-event-role"),
             input_paths_map: input_paths_map,
             input_template: input_template
@@ -61,33 +62,46 @@ pub fn make_targets(
     event_name: &str,
     function: Option<String>,
     mutation: Option<String>,
-    stepfunction: Option<String>
+    stepfunction: Option<String>,
+    fallback_fqn: &str,
 ) -> Vec<Target> {
 
 
     let mut xs: Vec<Target> = vec![];
-    if let Some(f) = function {
+    if let Some(ref f) = function {
         let id = format!("{}_lambda_target", event_name);
-        let t = Target::new(TargetKind::Function, id, f, None, None);
+        let arn = template::lambda_arn(&f);
+        let t = Target::new(TargetKind::Function, &id, &f, &arn, None, None);
         xs.push(t);
     }
-    if let Some(m) = mutation {
+    if let Some(ref m) = mutation {
 
         let id = format!("{}_appsync_target", event_name);
         let mut h: HashMap<String, String> = HashMap::new();
         h.insert(s!("detail"), s!("$.detail"));
-        let input_paths_map = Some(h);
 
+        let input_paths_map = Some(h);
         let input_template = Some(format!(r##"{{"detail": <detail>}}"##));
-        let t = Target::new(TargetKind::Mutation, id, m, input_paths_map, input_template);
+
+        // FIXME:
+        let arn = "";
+        let t = Target::new(TargetKind::Mutation, &id, m, &arn, input_paths_map, input_template);
         xs.push(t);
     }
-    if let Some(s) = stepfunction {
+    if let Some(ref s) = stepfunction {
         let id = format!("{}_target", event_name);
-        let t = Target::new(TargetKind::StepFunction, id, s, None, None);
+        let arn = template::sfn_arn(s);
+        let t = Target::new(TargetKind::StepFunction, &id, s, &arn,  None, None);
         xs.push(t)
     }
 
+    //fallback
+    if mutation.is_none() && function.is_none() && stepfunction.is_none() {
+        let id = format!("{}_target", event_name);
+        let arn = template::sfn_arn(fallback_fqn);
+        let t = Target::new(TargetKind::StepFunction, &id, fallback_fqn, &arn, None, None);
+        xs.push(t)
+    }
     xs
 }
 
@@ -113,7 +127,7 @@ impl Detail {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventPattern {
-    #[serde(rename(serialize = "detail-type"))]
+    #[serde(rename(serialize = "detail-type", deserialize = "detail-type"))]
     pub detail_type: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source: Vec<String>,
@@ -154,7 +168,8 @@ impl Event {
         filter: Option<String>,
         pattern: Option<String>,
         targets: Vec<Target>,
-        sandboxes: Vec<String>
+        sandboxes: Vec<String>,
+        config: &Config
 
     ) -> Event {
 
@@ -166,15 +181,15 @@ impl Event {
             None => EventPattern::new(name, producer, filter)
         };
 
-        let bus = format!("{{{{cfg_event_bus}}}}");
-
-        let rule_name = format!("tc-{{{{abbr_namespace}}}}-{}-{{{{sandbox}}}}", s!(name));
+        let bus = &config.aws.eventbridge.bus;
+        let rule_prefix = &config.aws.eventbridge.rule_prefix;
+        let rule_name = format!("{}{{{{namespace}}}}-{}-{{{{sandbox}}}}", rule_prefix, s!(name));
 
         Event {
             name: s!(name),
             rule_name: rule_name,
             bus: bus.clone(),
-            bus_arn: template::event_bus_arn(&bus),
+            bus_arn: template::event_bus_arn(bus),
             pattern: pattern,
             targets: targets,
             sandboxes: sandboxes

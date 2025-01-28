@@ -57,7 +57,7 @@ pub fn make_target(
             .unwrap(),
         _ => target.id(id).arn(arn).role_arn(role_arn).build().unwrap(),
     }
-}
+ }
 
 
 pub async fn create_rule(client: &Client, bus: &str, rule_name: &str, pattern: &str) -> String {
