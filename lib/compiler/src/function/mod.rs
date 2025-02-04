@@ -99,7 +99,7 @@ impl Function {
             description: None,
             dir: dir.to_string(),
             namespace: namespace.to_string(),
-            build: Build::new(&runtime, fspec.build),
+            build: Build::new(dir, &runtime, fspec.build, fspec.tasks),
             runtime: runtime,
             layer_name: fspec.layer_name,
             assets: fspec.assets,

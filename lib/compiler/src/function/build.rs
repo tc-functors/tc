@@ -1,46 +1,55 @@
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 use kit::*;
-use crate::spec::{Kind, BuildSpec};
+use crate::spec::{BuildKind, BuildSpec};
 use super::Runtime;
 
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Build {
-    pub kind: Kind,
+    pub dir: String,
+    pub kind: BuildKind,
     pub pre: Vec<String>,
     pub post: Vec<String>,
     pub command: String
 }
 
-fn infer_kind(package_type: &str) -> Kind {
+fn infer_kind(package_type: &str) -> BuildKind {
     match package_type {
-        "zip"                   => Kind::Code,
-        "image" | "oci"         => Kind::Image,
-        "library"               => Kind::Library,
-        "extension"             => Kind::Library,
-        "zip-layer" | "layer"   => Kind::Layer,
-        "zip-inline" | "inline" => Kind::Inline,
-        _                       => Kind::Code
+        "zip"                   => BuildKind::Code,
+        "image" | "oci"         => BuildKind::Image,
+        "library"               => BuildKind::Library,
+        "extension"             => BuildKind::Library,
+        "zip-layer" | "layer"   => BuildKind::Layer,
+        "zip-inline" | "inline" => BuildKind::Inline,
+        _                       => BuildKind::Code
     }
 }
 
 impl Build {
 
-    pub fn new(runtime: &Runtime, bspec: Option<BuildSpec>) -> Build {
+    pub fn new(dir: &str, runtime: &Runtime, bspec: Option<BuildSpec>, tasks: HashMap<String, String>) -> Build {
         match bspec {
             Some(b) => Build {
+                dir: s!(dir),
                 kind: b.kind,
                 pre: b.pre,
                 post: b.post,
                 command: b.command
             },
             None => {
+                let command = match tasks.get("build") {
+                    Some(c) => c.to_owned(),
+                    None => s!("zip -9 -q lambda.zip .")
+                };
+
                 Build {
+                    dir: s!(dir),
                     kind: infer_kind(&runtime.package_type),
                     pre: vec![],
                     post: vec![],
-                    command: s!("zip -9 -q lambda.zip .")
+                    command: command
                 }
             }
         }
