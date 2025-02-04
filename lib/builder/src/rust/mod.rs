@@ -4,7 +4,7 @@ mod layer;
 mod image;
 
 use super::BuildOutput;
-use compiler::spec::{Kind, LangRuntime};
+use compiler::spec::{BuildKind, LangRuntime};
 use compiler::Build;
 use kit as u;
 
@@ -12,13 +12,13 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build, trace: bo
     let Build { kind, pre, post, .. } = spec;
 
     let path = match kind {
-        Kind::Code      => inline::build(dir, trace),
-        Kind::Inline    => inline::build(dir, trace),
-        Kind::Layer     => layer::build(dir, name, &runtime, pre, post, trace),
-        Kind::Extension => extension::build(dir),
-        Kind::Image     => image::build(dir, name),
-        Kind::Runtime   => todo!(),
-        Kind::Library   => todo!()
+        BuildKind::Code      => inline::build(dir, trace),
+        BuildKind::Inline    => inline::build(dir, trace),
+        BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post, trace),
+        BuildKind::Extension => extension::build(dir),
+        BuildKind::Image     => image::build(dir, name),
+        BuildKind::Runtime   => todo!(),
+        BuildKind::Library   => todo!()
     };
 
     BuildOutput {

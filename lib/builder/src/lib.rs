@@ -9,14 +9,14 @@ use glob::glob;
 use kit as u;
 use kit::sh;
 use serde_derive::{Serialize, Deserialize};
-use compiler::spec::{LangRuntime, Lang, Kind};
+use compiler::spec::{LangRuntime, Lang, BuildKind};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildOutput {
     pub name: String,
     pub dir: String,
     pub runtime: LangRuntime,
-    pub kind: Kind,
+    pub kind: BuildKind,
     pub zipfile: String,
 }
 
@@ -31,7 +31,7 @@ fn _should_split(dir: &str) -> bool {
     size >= 70000000.0
 }
 
-fn _split(dir: &str, name: &str, kind: &Kind, runtime: &LangRuntime) -> Vec<BuildOutput> {
+fn _split(dir: &str, name: &str, kind: &BuildKind, runtime: &LangRuntime) -> Vec<BuildOutput> {
     let zipfile = format!("{}/deps.zip", dir);
     let size;
     if u::file_exists(&zipfile) {
@@ -74,14 +74,14 @@ pub fn just_build_out(dir: &str, name: &str, lang_str: &str) -> Vec<BuildOutput>
         name: name.to_owned(),
         dir: dir.to_string(),
         runtime: runtime,
-        kind: Kind::Code,
+        kind: BuildKind::Code,
         zipfile: zipfile,
     };
     vec![out]
 }
 
 
-pub async fn build(dir: &str, name: Option<String>, kind: Option<String>, trace: bool) -> Vec<BuildOutput> {
+pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, trace: bool) -> Vec<BuildOutput> {
     let runtime = compiler::guess_runtime(dir);
     let lang = runtime.to_lang();
     let name = u::maybe_string(name, u::basedir(dir));
@@ -91,12 +91,14 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<String>, trace:
 
         let mut b = f.build;
 
-        match kind {
-            Some(k) => {
-                b.kind = Kind::from_str(&k).expect("parse error")
-            }
-            None => ()
-        }
+        let kind = match kind {
+            Some(k) => k,
+            None => BuildKind::Code
+        };
+
+        println!("Building {} ({:?})", &name, &kind);
+        b.kind = kind;
+
 
         sh("rm -f *.zip", dir);
         sh("rm -rf build", dir);
@@ -121,15 +123,43 @@ fn should_build(layer: &Layer, dirty: bool) -> bool {
     }
 }
 
-pub async fn build_recursive(dirty: bool, trace: bool) -> Vec<BuildOutput> {
+pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, trace: bool) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
-    let layers = compiler::find_layers();
-    for layer in layers.clone() {
-        if should_build(&layer, dirty) {
-            let mut out = build(&layer.path, Some(layer.name), None, trace).await;
-            outs.append(&mut out)
-        }
+
+    let knd = match kind {
+        Some(k) => k,
+        None => BuildKind::Code
+    };
+
+    match knd {
+
+        BuildKind::Code => {
+            let buildables = compiler::find_buildables(&u::pwd(), true);
+            for b in buildables {
+                let mut out = build(&b.dir, None, Some(BuildKind::Code), trace).await;
+                outs.append(&mut out);
+            }
+        },
+
+        BuildKind::Layer => {
+            let layers = compiler::find_layers();
+            for layer in layers.clone() {
+                if should_build(&layer, dirty) {
+                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer), trace).await;
+                    outs.append(&mut out)
+                }
+            }
+        },
+
+        BuildKind::Inline => {
+            println!("building inline")
+        },
+
+        _ => todo!()
+
     }
+
+
     outs
 }
 
