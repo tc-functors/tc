@@ -99,7 +99,7 @@ impl LangRuntime {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum Kind {
+pub enum BuildKind {
     Code,
     Inline,
     Layer,
@@ -109,19 +109,19 @@ pub enum Kind {
     Image
 }
 
-impl FromStr for Kind {
+impl FromStr for BuildKind {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "code"      => Ok(Kind::Code),
-            "inline"    => Ok(Kind::Inline),
-            "layer"     => Ok(Kind::Layer),
-            "library"   => Ok(Kind::Library),
-            "extension" => Ok(Kind::Extension),
-            "runtime"   => Ok(Kind::Runtime),
-            "image"     => Ok(Kind::Image),
-            _           => Ok(Kind::Layer)
+            "code"      => Ok(BuildKind::Code),
+            "inline"    => Ok(BuildKind::Inline),
+            "layer"     => Ok(BuildKind::Layer),
+            "library"   => Ok(BuildKind::Library),
+            "extension" => Ok(BuildKind::Extension),
+            "runtime"   => Ok(BuildKind::Runtime),
+            "image"     => Ok(BuildKind::Image),
+            _           => Ok(BuildKind::Layer)
         }
     }
 }
@@ -142,9 +142,21 @@ pub struct RuntimeFilesystemSpec {
     pub mount_point: String,
 }
 
+fn default_memory_size() -> Option<i32> {
+    Some(128)
+}
+
+
+fn default_timeout() -> Option<i32> {
+    Some(300)
+}
+
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeInfraSpec {
+    #[serde(default = "default_memory_size")]
     pub memory_size: Option<i32>,
+    #[serde(default = "default_timeout")]
     pub timeout: Option<i32>,
     pub image_uri: Option<String>,
     pub provisioned_concurrency: Option<i32>,
@@ -210,7 +222,7 @@ fn default_package_type() -> String {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BuildSpec {
-    pub kind: Kind,
+    pub kind: BuildKind,
 
     #[serde(default)]
     pub pre: Vec<String>,
@@ -237,6 +249,8 @@ pub struct RuntimeSpec {
     pub role_file: Option<String>,
 
     pub uri: Option<String>,
+
+    pub mount_fs: Option<bool>,
 
     #[serde(default = "default_layers")]
     pub layers: Vec<String>,

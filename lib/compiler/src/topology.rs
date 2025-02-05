@@ -158,12 +158,33 @@ fn function_dirs(dir: &str) -> Vec<String> {
     dirs
 }
 
+fn ignore_function(dir: &str, root_dir: &str) -> bool {
+    let ignore_file = u::path_of(root_dir, ".tcignore");
+    if u::file_exists(&ignore_file) {
+        let globs = u::readlines(&ignore_file);
+        for g in globs {
+            if u::is_dir(&g) && dir.ends_with(&g) {
+                return true
+            } else {
+                continue
+            }
+         }
+        false
+    } else {
+        if dir.contains(".circleci") || dir.contains(".git") || dir.contains(".vendor") {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 fn discover_functions(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
     let mut functions: HashMap<String, Function> = HashMap::new();
     let dirs = function_dirs(dir);
 
     for d in dirs {
-        if u::is_dir(&d) && !&d.starts_with(".") {
+        if u::is_dir(&d) && !ignore_function(&d, dir) {
             let function = Function::new(&d, infra_dir, &spec.name, spec.fmt());
             functions.insert(d, function);
         }
@@ -182,17 +203,37 @@ fn current_function(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<
 
 // nodes
 
-fn should_ignore_node(root_dir: &str, ignore_nodes: Vec<String>, topology_dir: &str) -> bool {
-    for node in ignore_nodes {
-        let abs_path = format!("{root_dir}/{node}");
-        if &abs_path == topology_dir {
-            return true;
+fn should_ignore_node(
+    root_dir: &str,
+    ignore_nodes: Vec<String>,
+    topology_dir: &str
+) -> bool {
+
+    let ignore_file = u::path_of(root_dir, ".tcignore");
+    if u::file_exists(&ignore_file) {
+        let globs = u::readlines(&ignore_file);
+        for g in globs {
+            let gdir = format!("{}/{}", root_dir, &g);
+            if topology_dir.ends_with(&g) || topology_dir.contains(&gdir) {
+                return true
+            } else {
+                continue
+            }
         }
-        if topology_dir.starts_with(&abs_path) {
-            return true;
+        return false
+    } else {
+        for node in ignore_nodes {
+            let abs_path = format!("{root_dir}/{node}");
+            if &abs_path == topology_dir {
+                return true
+            }
+            if topology_dir.starts_with(&abs_path) {
+                return true
+            }
+            return false
         }
+        return false
     }
-    return false;
 }
 
 fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, spec: &TopologySpec) -> Vec<Topology> {
@@ -441,9 +482,7 @@ impl Topology {
 
         for (_, f) in &self.functions {
             t.begin_child(s!(f.name.green()));
-            // t.add_empty_child(f.runtime.lang.to_owned());
-            // t.add_empty_child(f.runtime.layers.join(","));
-            // t.add_empty_child(u::value_to_string(f.assets.get("DEPS_PATH")));
+            t.add_empty_child(f.runtime.lang.to_str());
             t.end_child();
         }
 
@@ -451,9 +490,7 @@ impl Topology {
             t.begin_child(s!(&node.namespace.green()));
             for (_, f) in &node.functions {
                 t.begin_child(s!(&f.fqn));
-                // t.add_empty_child(f.runtime.lang.to_owned());
-                // t.add_empty_child(f.runtime.layers.join(","));
-                // t.add_empty_child(u::value_to_string(f.assets.get("DEPS_PATH")));
+                t.add_empty_child(f.runtime.lang.to_str());
                 t.end_child();
             }
             t.end_child();
