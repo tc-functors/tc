@@ -80,18 +80,31 @@ pub async fn create_function(profile: String, role_arn: Option<String>, config: 
 }
 
 pub async fn create(env: &Env, fns: HashMap<String, Function>) {
-    let mut tasks = vec![];
-    for (_, function) in fns {
-        let p = env.name.to_string();
-        let role = env.assume_role.to_owned();
-        let config = env.config.to_owned();
-        let h = tokio::spawn(async move {
-            create_function(p, role, config, function).await;
-        });
-        tasks.push(h);
-    }
-    for task in tasks {
-        let _ = task.await;
+    match std::env::var("TC_SYNC_CREATE") {
+        Ok(_) => {
+            for (_, function) in fns {
+                let p = env.name.to_string();
+                let role = env.assume_role.to_owned();
+                let config = env.config.to_owned();
+                create_function(p, role, config, function).await;
+            }
+        },
+
+        Err(_) => {
+            let mut tasks = vec![];
+            for (_, function) in fns {
+                let p = env.name.to_string();
+                let role = env.assume_role.to_owned();
+                let config = env.config.to_owned();
+                let h = tokio::spawn(async move {
+                    create_function(p, role, config, function).await;
+                });
+                tasks.push(h);
+            }
+            for task in tasks {
+                let _ = task.await;
+            }
+        }
     }
 }
 
