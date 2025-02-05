@@ -34,6 +34,7 @@ pub struct Runtime {
     pub timeout: Option<i32>,
     pub snapstart: bool,
     pub provisioned_concurrency: Option<i32>,
+    pub enable_fs: bool,
     pub network: Option<Network>,
     pub fs: Option<FileSystem>,
     pub role: Role,
@@ -255,23 +256,42 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
     h
 }
 
-fn make_network(infra_spec: &RuntimeInfraSpec) -> Option<Network> {
-    match &infra_spec.network {
-        Some(net) => Some(Network {
-            subnets: net.subnets.clone(),
-            security_groups: net.security_groups.clone()
-        }),
-        None => None
+fn needs_fs(assets: HashMap<String, Value>, mount_fs: Option<bool>) -> bool {
+    let assets = assets.get("MODEL_PATH");
+    match assets {
+        Some(_) => true,
+        None => match mount_fs {
+            Some(f) => f,
+            None => false
+        }
     }
 }
 
-fn make_fs(infra_spec: &RuntimeInfraSpec) -> Option<FileSystem> {
-    match &infra_spec.filesystem {
-        Some(fs) => Some(FileSystem {
-            arn: fs.arn.clone(),
-            mount_point: fs.mount_point.clone()
-        }),
-        None => None
+fn make_network(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<Network> {
+    if enable_fs {
+        match &infra_spec.network {
+            Some(net) => Some(Network {
+                subnets: net.subnets.clone(),
+                security_groups: net.security_groups.clone()
+            }),
+            None => None
+        }
+    } else {
+        None
+    }
+}
+
+fn make_fs(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<FileSystem> {
+    if enable_fs {
+        match &infra_spec.filesystem {
+            Some(fs) => Some(FileSystem {
+                arn: fs.arn.clone(),
+                mount_point: fs.mount_point.clone()
+            }),
+            None => None
+        }
+    } else {
+        None
     }
 }
 
@@ -294,6 +314,7 @@ impl Runtime {
                 let package_type = &r.package_type;
                 let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment.clone(), r.lang.to_lang());
 
+                let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
                 Runtime {
                     lang: r.lang,
                     handler: r.handler,
@@ -307,8 +328,9 @@ impl Runtime {
                     timeout: *timeout,
                     snapstart: false,
                     role: role,
-                    network: make_network(&default_infra_spec),
-                    fs: make_fs(&default_infra_spec),
+                    enable_fs: enable_fs,
+                    network: make_network(&default_infra_spec, enable_fs),
+                    fs: make_fs(&default_infra_spec, enable_fs),
                     infra_spec: infra_spec
                 }
             },
@@ -329,6 +351,7 @@ impl Runtime {
                     memory_size: *memory_size,
                     timeout: *timeout,
                     snapstart: false,
+                    enable_fs: false,
                     network: None,
                     fs: None,
                     infra_spec: infra_spec

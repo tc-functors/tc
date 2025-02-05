@@ -66,6 +66,17 @@ pub fn find_layers() -> Vec<Layer> {
     }
 }
 
+pub fn find_buildables(dir: &str, recursive: bool) -> Vec<Build> {
+    let mut xs: Vec<Build> = vec![];
+    let topology = Topology::new(dir, recursive, false);
+    let fns = topology.functions;
+    for (_, f) in fns {
+        xs.push(f.build)
+    }
+    xs
+}
+
+
 pub fn find_layer_names() -> Vec<String> {
     let mut xs: Vec<String> = vec![];
     let layers = find_layers();
