@@ -192,6 +192,10 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
             }
         },
 
+        "runtime" => {
+            function::update_runtime_version(&env, functions).await;
+        }
+
         "vars" => {
             function::update_vars(&env, functions).await;
         }

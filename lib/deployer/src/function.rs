@@ -1,4 +1,4 @@
-use compiler::{Function};
+use compiler::{Function, Lang};
 use aws::lambda;
 use aws::Env;
 //use aws::ecs;
@@ -158,5 +158,19 @@ pub async fn update_tags(env: &Env, funcs: HashMap<String, Function>) {
     for (_, f) in funcs {
         let arn = env.lambda_arn(&f.name);
         lambda::update_tags(client.clone(), &f.name, &arn, f.runtime.tags.clone()).await;
+    }
+}
+
+pub async fn update_runtime_version(env: &Env, fns: HashMap<String, Function>) {
+    let client = lambda::make_client(env).await;
+    match std::env::var("TC_LAMBDA_RUNTIME_VERSION") {
+        Ok(v) => {
+            for (_, f) in fns {
+                if f.runtime.lang.to_lang() == Lang::Ruby {
+                    let _ = lambda::update_runtime_management_config(&client, &f.name, &v).await;
+                }
+            }
+        }
+        Err(_) => println!("TC_LAMBDA_RUNTIME_VERSION env var is not set")
     }
 }
