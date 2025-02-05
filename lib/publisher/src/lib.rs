@@ -3,16 +3,16 @@ mod ecr;
 
 use aws::Env;
 use std::collections::HashMap;
-use compiler::spec::{LangRuntime, Kind};
+use compiler::spec::{LangRuntime, BuildKind};
 
 pub async fn list_layers(env: &Env, layer_names: Vec<String>) -> String {
     layer::list(env, layer_names).await
 }
 
-pub async fn publish(env: &Env, dir: &str, kind: &Kind, zipfile: &str, runtime: &LangRuntime, name: &str) {
+pub async fn publish(env: &Env, dir: &str, kind: &BuildKind, zipfile: &str, runtime: &LangRuntime, name: &str) {
     let lang = runtime.to_str();
     match kind {
-        Kind::Layer | Kind::Library => {
+        BuildKind::Layer | BuildKind::Library => {
             if layer::should_split(dir) {
                 layer::publish(env, &lang, &format!("{}-0-dev", name), "deps1.zip").await;
                 layer::publish(env, &lang, &format!("{}-1-dev", name), "deps2.zip").await;
@@ -21,7 +21,7 @@ pub async fn publish(env: &Env, dir: &str, kind: &Kind, zipfile: &str, runtime: 
                 layer::publish(env, &lang, &layer_name, zipfile).await;
             }
         },
-        Kind::Image => ecr::publish(env, name).await,
+        BuildKind::Image => ecr::publish(env, name).await,
         _ => ()
     }
 }

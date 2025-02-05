@@ -1,11 +1,13 @@
 use aws::Env;
 use colored::Colorize;
 use compiler::Topology;
+use compiler::spec::BuildKind;
 use ci::github;
 use configurator::Config;
 use kit as u;
 use std::panic;
 use std::time::Instant;
+use std::str::FromStr;
 
 pub struct BuildOpts {
     pub merge: bool,
@@ -26,7 +28,12 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
     } = opts;
 
     if recursive {
-        let builds = builder::build_recursive(dirty, trace).await;
+
+        let kind = match kind {
+            Some(s) => Some(BuildKind::from_str(&s).unwrap()),
+            None => None
+        };
+        let builds = builder::build_recursive(dirty, kind, trace).await;
         builder::write_manifest(&builds);
         println!("{}", kit::pretty_json(&builds));
 
@@ -35,6 +42,10 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
         builder::clean(dir);
 
     } else {
+        let kind = match kind {
+            Some(s) => Some(BuildKind::from_str(&s).unwrap()),
+            None => None
+        };
         let builds = builder::build(dir, name, kind, trace).await;
         builder::write_manifest(&builds);
         println!("{}", kit::pretty_json(&builds));

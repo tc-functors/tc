@@ -92,6 +92,7 @@ async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Netw
         },
 
         None => {
+
             let given_subnet = &env.config.aws.efs.subnets;
             let given_sg = &env.config.aws.efs.security_group;
             let subnets = env.subnets(given_subnet).await;
@@ -165,13 +166,12 @@ fn get_infra_spec(infra_spec: &HashMap<String, RuntimeInfraSpec>, profile: &str,
         return augment_infra_spec(&default, s)
     }
     default.clone()
-
 }
 
 async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     let Context { env, sandbox, .. } = ctx;
 
-    let Runtime { layers, network, fs, infra_spec, .. } = runtime;
+    let Runtime { layers, network, fs, infra_spec, enable_fs, .. } = runtime;
     let mut r: Runtime = runtime.clone();
 
     let actual_infra = get_infra_spec(infra_spec, &env.name, sandbox);
@@ -181,8 +181,10 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     r.timeout = timeout;
     r.environment = resolve_environment(ctx, &runtime.environment, environment).await;
     r.layers = resolve_layers(ctx, layers.clone()).await;
-    r.network = resolve_network(ctx, network.clone()).await;
-    r.fs = resolve_fs(ctx, fs.clone()).await;
+    if *enable_fs {
+        r.network = resolve_network(ctx, network.clone()).await;
+        r.fs = resolve_fs(ctx, fs.clone()).await;
+    }
     r.infra_spec = HashMap::new();
     r
 }

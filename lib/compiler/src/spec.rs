@@ -9,7 +9,7 @@ use kit as u;
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Lang {
     Python,
     Ruby,
@@ -125,7 +125,6 @@ impl FromStr for BuildKind {
         }
     }
 }
-
 
 // function infra spec
 
