@@ -160,6 +160,9 @@ fn function_dirs(dir: &str) -> Vec<String> {
 
 fn ignore_function(dir: &str, root_dir: &str) -> bool {
     let ignore_file = u::path_of(root_dir, ".tcignore");
+    if dir.contains(".circleci") || dir.contains(".git") || dir.contains(".vendor") {
+        return true
+    }
     if u::file_exists(&ignore_file) {
         let globs = u::readlines(&ignore_file);
         for g in globs {
@@ -169,13 +172,9 @@ fn ignore_function(dir: &str, root_dir: &str) -> bool {
                 continue
             }
          }
-        false
+        return false
     } else {
-        if dir.contains(".circleci") || dir.contains(".git") || dir.contains(".vendor") {
-            true
-        } else {
-            false
-        }
+        false
     }
 }
 
