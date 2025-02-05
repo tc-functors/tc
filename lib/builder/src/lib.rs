@@ -96,9 +96,7 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, tra
             None => BuildKind::Code
         };
 
-        println!("Building {} ({:?})", &name, &kind);
         b.kind = kind;
-
 
         sh("rm -f *.zip", dir);
         sh("rm -rf build", dir);
