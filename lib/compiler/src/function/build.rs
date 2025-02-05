@@ -41,7 +41,7 @@ impl Build {
             None => {
                 let command = match tasks.get("build") {
                     Some(c) => c.to_owned(),
-                    None => s!("zip -9 -q lambda.zip .")
+                    None => s!("zip -9 -q lambda.zip *.*")
                 };
 
                 Build {
