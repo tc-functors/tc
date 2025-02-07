@@ -14,6 +14,7 @@ async fn write_cache(key: &str, t: &Topology) {
 
 async fn read_cache(key: &str) -> Option<Topology> {
     if cache::has_key(key) {
+        println!("Found resolver cache: {}", key);
         let s = cache::read(key);
         let t: Topology = serde_json::from_str(&s).unwrap();
         Some(t)
@@ -39,13 +40,13 @@ async fn do_resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
 
 
     // resolve by query
-    println!("Resolving routes({})...", &partial_t.routes.len());
+    //println!("Resolving routes({})...", &partial_t.routes.len());
     partial_t.routes = route::resolve(&ctx, &partial_t).await;
 
-    println!("Resolving events({})...", &partial_t.events.len());
+    //println!("Resolving events({})...", &partial_t.events.len());
     partial_t.events = event::resolve(&ctx, &partial_t).await;
 
-    println!("Resolving functions({})...", &partial_t.functions.len());
+    //println!("Resolving functions({})...", &partial_t.functions.len());
     partial_t.functions = function::resolve(&ctx, &partial_t).await;
 
 
