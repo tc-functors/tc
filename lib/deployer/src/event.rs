@@ -3,9 +3,7 @@ use compiler::event::TargetKind;
 use aws::eventbridge;
 use aws::lambda;
 use aws::Env;
-use colored::Colorize;
 use std::collections::HashMap;
-
 
 async fn update_permissions(env: &Env, event: &Event) {
 
@@ -20,7 +18,7 @@ async fn update_permissions(env: &Env, event: &Event) {
                 let _ = lambda::add_permission_basic(client, function_name, principal, statement_id).await;
                 println!("updating permission - function: {}", function_name);
             },
-            _ => println!("Nothing to do!")
+            _ => ()
         }
 
     }
@@ -38,6 +36,8 @@ async fn create_event(env: &Env, event: &Event) {
 
     let pattern = serde_json::to_string(&pattern).unwrap();
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern).await;
+
+    println!("Creating Event: {} targets: {}", &rule_name, &event.targets.len());
 
     let mut xs: Vec<eventbridge::Target> = vec![];
     for target in &event.targets {
@@ -73,7 +73,7 @@ pub async fn create(env: &Env, events: &HashMap<String, Event>) {
 }
 
 pub async fn delete_event(env: &Env, event: Event) {
-    println!("Deleting event {}", &event.name.red());
+    println!("Deleting event {}", &event.rule_name);
 
     let client = eventbridge::make_client(&env).await;
     for target in event.targets {
