@@ -164,6 +164,7 @@ impl Event {
 
     pub fn new(
         name: &str,
+        rule_name: Option<String>,
         producer: &str,
         filter: Option<String>,
         pattern: Option<String>,
@@ -183,7 +184,10 @@ impl Event {
 
         let bus = &config.aws.eventbridge.bus;
         let rule_prefix = &config.aws.eventbridge.rule_prefix;
-        let rule_name = format!("{}{{{{namespace}}}}-{}-{{{{sandbox}}}}", rule_prefix, s!(name));
+        let rule_name = match rule_name {
+            Some(r) => r,
+            None => format!("{}{{{{namespace}}}}-{}-{{{{sandbox}}}}", rule_prefix, s!(name))
+        };
 
         Event {
             name: s!(name),
