@@ -131,7 +131,7 @@ pub struct ResolveArgs {
     #[arg(long, action)]
     diff: bool,
     #[arg(long, action)]
-    cache: bool,
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -221,7 +221,7 @@ pub struct CreateArgs {
     #[arg(long, action)]
     trace: bool,
     #[arg(long, action)]
-    cache: bool,
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -253,7 +253,7 @@ pub struct UpdateArgs {
     #[arg(long, action)]
     trace: bool,
     #[arg(long, action)]
-    cache: bool,
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -271,7 +271,7 @@ pub struct DeleteArgs {
     #[arg(long, action, short = 't')]
     trace: bool,
     #[arg(long, action)]
-    cache: bool,
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -427,12 +427,12 @@ async fn create(args: CreateArgs) {
         sandbox,
         notify,
         recursive,
-        cache,
+        no_cache,
         ..
     } = args;
 
     let env = tc::init(profile, role).await;
-    tc::create(env, sandbox, notify, recursive, cache).await;
+    tc::create(env, sandbox, notify, recursive, no_cache).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -442,7 +442,7 @@ async fn update(args: UpdateArgs) {
         sandbox,
         component,
         recursive,
-        cache,
+        no_cache,
         ..
     } = args;
 
@@ -451,7 +451,7 @@ async fn update(args: UpdateArgs) {
     if kit::option_exists(component.clone()) {
         tc::update_component(env, sandbox, component, recursive).await;
     } else {
-        tc::update(env, sandbox, recursive, cache).await;
+        tc::update(env, sandbox, recursive, no_cache).await;
     }
 }
 
@@ -500,12 +500,12 @@ async fn resolve(args: ResolveArgs) {
         component,
         quiet,
         recursive,
-        cache,
+        no_cache,
         ..
     } = args;
 
     let env = tc::init(profile, role).await;
-    let plan = tc::resolve(env, sandbox, component, recursive, cache).await;
+    let plan = tc::resolve(env, sandbox, component, recursive, no_cache).await;
     if !quiet {
         println!("{plan}");
     }

@@ -1,5 +1,4 @@
 use aws::Env;
-use colored::Colorize;
 use compiler::Topology;
 use compiler::spec::BuildKind;
 use ci::github;
@@ -135,13 +134,13 @@ pub async fn resolve(
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
-    cache: bool
+    no_cache: bool
 ) -> String {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topologies = match component.clone() {
         Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
-        None => resolver::resolve(&env, &sandbox, &topology, cache).await
+        None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await
     };
 
     resolver::render(topologies, component)
@@ -155,11 +154,6 @@ async fn create_topology(env: &Env, topology: &Topology, _notify: bool) {
         builder::build(dir, None, None, false).await;
     }
     deployer::create(env, topology).await;
-}
-
-fn count_of(topology: &Topology) -> String {
-    let Topology { functions, .. } = topology;
-    format!("{} functions", functions.len())
 }
 
 async fn run_create_hook(env: &Env, root: &Topology) {
@@ -182,7 +176,7 @@ pub async fn create(
     sandbox: Option<String>,
     notify: bool,
     recursive: bool,
-    cache: bool
+    no_cache: bool
 ) {
 
     let sandbox = resolver::maybe_sandbox(sandbox);
@@ -193,8 +187,9 @@ pub async fn create(
     println!("Compiling topology");
     let topology = compiler::compile(&dir, recursive);
 
-    println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let topologies = resolver::resolve(&env, &sandbox, &topology, cache).await;
+    compiler::count_of(&topology);
+
+    let topologies = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
 
     for topology in &topologies {
         create_topology(&env, &topology, notify).await;
@@ -216,7 +211,7 @@ async fn update_topology(env: &Env, topology: &Topology) {
     deployer::update(env, topology).await;
 }
 
-pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, cache: bool) {
+pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache: bool) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     router::guard(&sandbox);
     let start = Instant::now();
@@ -224,8 +219,9 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, cache: b
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
-    println!("Resolving topology ({}) ", count_of(&topology).cyan());
-    let topologies = resolver::resolve(&env, &sandbox, &topology, cache).await;
+    compiler::count_of(&topology);
+
+    let topologies = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
 
     for topology in topologies {
         update_topology(&env, &topology).await;
@@ -245,7 +241,8 @@ pub async fn update_component(
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
-    println!("Resolving topology ({}) ", count_of(&topology).cyan());
+    compiler::count_of(&topology);
+
     let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
 
     for topology in topologies {
@@ -259,7 +256,7 @@ pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
-    println!("Resolving topology ({}) ", count_of(&topology).cyan());
+    compiler::count_of(&topology);
     let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
 
     for topology in topologies {
@@ -278,6 +275,7 @@ pub async fn delete_component(
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
+    compiler::count_of(&topology);
     println!("Resolving topology");
     let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
 
