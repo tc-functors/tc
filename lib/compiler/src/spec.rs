@@ -393,6 +393,9 @@ pub struct Consumes {
     #[serde(default)]
     pub filter: Option<String>,
 
+    #[serde(default)]
+    pub rule_name: Option<String>,
+
     #[serde(default = "default_function")]
     pub function: Option<String>,
 
