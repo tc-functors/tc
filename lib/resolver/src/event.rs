@@ -38,7 +38,8 @@ async fn get_graphql_arn_id(env: &Env, name: &str) -> Option<String> {
 
 async fn find_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
 
-    let mutation = mutations.get(name).unwrap();
+    // FIXME: mutations hashmap key is api-name. Using default
+    let mutation = mutations.get("default").unwrap();
     let Mutation {
         types_map,
         resolvers,
