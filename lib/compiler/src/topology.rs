@@ -287,7 +287,7 @@ fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<Strin
     if let Some(evs) = events {
         for (name, ev) in evs.consumes.clone().unwrap().into_iter() {
             let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
-            let ev = Event::new(&name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes, config);
+            let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes, config);
             h.insert(name, ev);
         }
     }
@@ -322,7 +322,7 @@ fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> 
 fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Mutation> {
     let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
-    while let Some(ref m) = mutations {
+    if let Some(ref m) = mutations {
         h.insert(s!("default"), m.clone());
     }
     h
@@ -354,7 +354,7 @@ fn make(
     let interned = intern_functions(root_dir, &infra_dir, &spec);
     functions.extend(interned);
 
-    let version = u::sh(&format!("git log -n 1 --format=%h {}", dir), dir);
+    let version = version::current_semver(&namespace);
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
 
@@ -482,6 +482,7 @@ impl Topology {
         for (_, f) in &self.functions {
             t.begin_child(s!(f.name.green()));
             t.add_empty_child(f.runtime.lang.to_str());
+            t.add_empty_child(f.runtime.role.path.to_string());
             t.end_child();
         }
 
@@ -490,6 +491,7 @@ impl Topology {
             for (_, f) in &node.functions {
                 t.begin_child(s!(&f.fqn));
                 t.add_empty_child(f.runtime.lang.to_str());
+                t.add_empty_child(f.runtime.role.path.to_string());
                 t.end_child();
             }
             t.end_child();
