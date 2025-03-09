@@ -98,7 +98,7 @@ fn size_of(dir: &str, zipfile: &str) -> String {
     u::file_size_human(size)
 }
 
-fn copy_from_docker(dir: &str, trace: bool) {
+fn copy_from_docker(dir: &str) {
     let temp_cont = &format!("tmp-{}", u::basedir(dir));
     let clean = &format!("docker rm -f {}", &temp_cont);
 
@@ -106,9 +106,7 @@ fn copy_from_docker(dir: &str, trace: bool) {
     u::sh(&clean, dir);
     u::sh(&run, dir);
     let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
-    if trace {
-        println!("Container id: {}", &id);
-    }
+    tracing::debug!("Container id: {}", &id);
 
     u::sh(&format!("docker cp {}:/build build", id), dir);
     u::sh(&clean, dir);
@@ -119,7 +117,7 @@ fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
 }
 
-fn build_with_docker(dir: &str, trace: bool) {
+fn build_with_docker(dir: &str) {
     let root = &top_level();
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
@@ -132,35 +130,26 @@ fn build_with_docker(dir: &str, trace: bool) {
             u::basedir(dir)
         ),
     };
-    let status = u::runp(&cmd_str, dir, trace);
+    let status = u::runp(&cmd_str, dir);
     if !status {
         u::sh("rm -f Dockerfile wrapper", dir);
         panic!("Failed to build");
     }
 }
 
-pub fn build(dir: &str, name: &str, _runtime: &LangRuntime, _pre: Vec<String>, _post: Vec<String>, trace: bool) -> String {
+pub fn build(dir: &str, name: &str, _runtime: &LangRuntime, _pre: Vec<String>, _post: Vec<String>) -> String {
     u::sh("rm -f deps.zip", dir);
-    let bar = kit::progress();
-    let prefix = format!("Building   {}", name.blue());
-    bar.set_prefix(prefix);
-    bar.inc(10);
+    println!("Building   {}", name.blue());
     gen_wrapper(dir);
     gen_dockerfile(dir);
-    bar.inc(20);
-    build_with_docker(dir, trace);
-    bar.inc(50);
-    copy_from_docker(dir, trace);
-    bar.inc(70);
+    build_with_docker(dir);
+    copy_from_docker(dir);
     if !u::path_exists(dir, "function.json") {
         copy(dir);
     }
-    bar.inc(80);
     zip(dir, "deps.zip");
-    bar.inc(100);
     u::runcmd_quiet("rm -rf vendor && rm -rf bundler", dir);
     let size = format!("({})", size_of(dir, "deps.zip").green());
-    bar.set_message(size);
-    bar.finish();
+    println!("Size: {}", size);
     format!("{}/deps.zip", dir)
 }

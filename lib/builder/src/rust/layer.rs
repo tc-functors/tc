@@ -6,7 +6,6 @@ pub fn build(
     _runtime: &LangRuntime,
     _pre: Vec<String>,
     _post: Vec<String>,
-    _trace: bool,
 ) -> String {
 
     String::from("")

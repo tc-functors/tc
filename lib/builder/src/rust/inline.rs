@@ -1,16 +1,7 @@
 use colored::Colorize;
 use kit as u;
 
-fn run(dir: &str, cmd: Vec<&str>, trace: bool) {
-    let cmd_str = u::vec_to_str(cmd);
-    if trace {
-        u::runcmd_stream(&cmd_str, dir);
-    } else {
-        u::runcmd_quiet(&cmd_str, dir);
-    }
-}
-
-pub fn build(dir: &str, trace: bool) -> String {
+pub fn build(dir: &str) -> String {
 
     println!("Building {} (rust)", u::basedir(dir).blue());
     let no_docker = match std::env::var("TC_NO_DOCKER_BUILD") {
@@ -23,11 +14,7 @@ pub fn build(dir: &str, trace: bool) -> String {
             "cargo build --release --target x86_64-unknown-linux-musl --target-dir build",
             "cp build/x86_64-unknown-linux-musl/release/bootstrap bootstrap",
         ];
-        if trace {
-            u::run_seq(cmds, dir);
-        } else {
-            u::run_seq_quiet(cmds, dir);
-        }
+        u::run_seq(cmds, dir);
     } else {
         let cmd = vec![
             "docker run --rm",
@@ -37,14 +24,9 @@ pub fn build(dir: &str, trace: bool) -> String {
             "-u $(id -u):$(id -g)",
             "rustserverless/lambda-rust",
         ];
-        run(dir, cmd, trace);
-        if trace {
-            u::runcmd_stream("cp target/*/release/bootstrap bootstrap", dir);
-            u::runcmd_stream("rm -rf build target", dir);
-        } else {
-            u::runcmd_quiet("cp target/*/release/bootstrap bootstrap", dir);
-            u::runcmd_quiet("rm -rf build target", dir);
-        }
+        u::runv(dir, cmd);
+        u::runcmd_stream("cp target/*/release/bootstrap bootstrap", dir);
+        u::runcmd_stream("rm -rf build target", dir);
     }
     let size = u::path_size(dir, "bootstrap");
     println!("Built bootstrap ({})", u::file_size_human(size));
