@@ -24,6 +24,13 @@ async fn update_permissions(env: &Env, event: &Event) {
     }
 }
 
+fn should_prune() -> bool {
+    match std::env::var("TC_PRUNE_EVENT_RULES") {
+        Ok(_) => true,
+        Err(_) => false
+    }
+}
+
 async fn create_event(env: &Env, event: &Event) {
     let Event {
         rule_name,
@@ -38,6 +45,14 @@ async fn create_event(env: &Env, event: &Event) {
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern).await;
 
     println!("Creating Event: {} targets: {}", &rule_name, &event.targets.len());
+
+    if should_prune() {
+        let existing_targets = eventbridge::list_targets(&client, &bus, &rule_name).await;
+        for id in existing_targets {
+            println!("Removing event target {}", &id);
+            eventbridge::remove_targets(&client, &bus, &rule_name, &id).await;
+        }
+    }
 
     let mut xs: Vec<eventbridge::Target> = vec![];
     for target in &event.targets {

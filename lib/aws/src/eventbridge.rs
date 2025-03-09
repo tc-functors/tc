@@ -47,7 +47,7 @@ pub fn make_target(
     match kind {
         "sfn" | "stepfunction" => target.id(id).arn(arn).role_arn(role_arn).build().unwrap(),
         "lambda" | "function" => target.id(id).arn(arn).build().unwrap(),
-        "appsync" => target
+        "appsync" | "mutation" => target
             .id(id)
             .arn(String::from(arn))
             .role_arn(role_arn)
@@ -163,4 +163,39 @@ pub async fn list_rules(client: Client, bus: String, prefix: String) -> Vec<Rule
         .await
         .unwrap();
     r.rules.unwrap()
+}
+
+
+pub async fn list_targets(client: &Client, bus: &str, rule_name: &str) -> Vec<String> {
+    let res = client
+            .list_targets_by_rule()
+            .event_bus_name(bus)
+            .rule(rule_name)
+            .send()
+            .await
+            .unwrap();
+        let maybe_targets = res.targets;
+        match maybe_targets {
+            Some(v) => {
+                let mut xs: Vec<String> = vec![];
+                for x in v {
+                    xs.push(x.id().to_string())
+                }
+                xs
+            },
+            None => vec![]
+        }
+}
+
+
+pub async fn remove_targets(client: &Client, bus: &str, rule_name: &str, target_id: &str) {
+    client
+        .remove_targets()
+        .event_bus_name(bus.to_string())
+        .rule(rule_name.to_string())
+        .ids(target_id.to_string())
+        .force(true)
+        .send()
+        .await
+        .unwrap();
 }
