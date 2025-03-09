@@ -1,3 +1,6 @@
+use tabled::{Tabled};
+use kit as u;
+
 fn cache_dir() -> String {
     String::from("/tmp/tc-resolver-cache")
 }
@@ -20,4 +23,43 @@ pub fn has_key(key: &str) -> bool {
         Ok(_) => true,
         Err(_) => false,
     }
+}
+
+pub fn clear() {
+    u::sh(&format!("rm -rf {}", cache_dir()), &u::pwd());
+}
+
+#[derive(Tabled, Clone, Debug)]
+pub struct CacheItem {
+    pub namespace: String,
+    pub env: String,
+    pub sandbox: String,
+    pub time: String,
+    pub size: String
+}
+
+pub fn list() -> Vec<CacheItem> {
+    let dir = &cache_dir();
+    let items = cacache::list_sync(dir);
+    let mut xs: Vec<CacheItem> = vec![];
+    for x in items {
+        match x {
+            Ok(r) => {
+                let parts: Vec<&str> = r.key.split("_").collect();
+                let namespace = parts.clone().into_iter().nth(0).unwrap_or_default();
+                let env = parts.clone().into_iter().nth(1).unwrap_or_default();
+                let sandbox = &parts.into_iter().nth(2).unwrap_or_default();
+                let c = CacheItem {
+                    namespace: namespace.to_string(),
+                    env: env.to_string(),
+                    sandbox: sandbox.to_string(),
+                    time: u::ms_to_dt(r.time as i64).to_string(),
+                    size: u::file_size_human(r.size as f64)
+                };
+                xs.push(c)
+            }
+            Err(_) => ()
+        }
+    }
+    xs
 }

@@ -4,7 +4,7 @@ use super::{event, route, function, cache};
 use aws::Env;
 
 fn make_cache_key(namespace: &str, profile: &str, sandbox: &str) -> String {
-    format!("{}-{}-{}", namespace, profile, sandbox)
+    format!("{}_{}_{}", namespace, profile, sandbox)
 }
 
 async fn write_cache(key: &str, t: &Topology) {

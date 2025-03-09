@@ -1,5 +1,7 @@
 extern crate serde_derive;
 use std::env;
+use tracing_subscriber::filter::{LevelFilter, Targets};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 extern crate log;
 use clap::{Args, Parser, Subcommand};
@@ -22,6 +24,8 @@ enum Cmd {
     /// Trigger release via CI
     #[clap(name = "ci-release")]
     Release(ReleaseArgs),
+    /// List or clear resolver cache
+    Cache(CacheArgs),
     /// Compile a Topology
     Compile(CompileArgs),
     /// Show config
@@ -78,6 +82,14 @@ pub struct BootstrapArgs {
     delete: bool,
     #[arg(long, action)]
     show: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct CacheArgs {
+    #[arg(long, action)]
+    clear: bool,
+    #[arg(long, action)]
+    list: bool,
 }
 
 #[derive(Debug, Args)]
@@ -679,16 +691,49 @@ async fn release(args: ReleaseArgs) {
 }
 
 
+async fn cache(args: CacheArgs) {
+    let CacheArgs {
+        clear,
+        ..
+    } = args;
+
+    if clear {
+        tc::clear_cache().await;
+    } else {
+        tc::list_cache().await;
+    }
+}
+
+
 async fn config(_args: DefaultArgs) {
     tc::show_config().await;
 }
 
+fn init_tracing() {
+    let filter = Targets::new()
+        .with_target("tc", tracing::Level::DEBUG)
+        .with_default(tracing::Level::DEBUG)
+        .with_target("sqlx", LevelFilter::OFF);
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(filter)
+        .init();
+}
+
+
 async fn run() {
     let args = Tc::parse();
+
+    match env::var("TC_TRACE") {
+        Ok(_) => init_tracing(),
+        Err(_) => ()
+    }
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
         Cmd::Build(args)     => build(args).await,
+        Cmd::Cache(args)     => cache(args).await,
         Cmd::Config(args)    => config(args).await,
         Cmd::Compile(args)   => compile(args).await,
         Cmd::Resolve(args)   => resolve(args).await,
