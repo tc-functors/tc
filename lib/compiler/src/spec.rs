@@ -494,8 +494,10 @@ pub struct ScheduleSpec {
 pub enum TopologyKind {
     #[serde(alias="step-function",alias="state-machine")]
     StepFunction,
-    #[serde(alias="functon")]
-    Function
+    #[serde(alias="function")]
+    Function,
+    #[serde(alias="evented")]
+    Evented
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -563,4 +565,15 @@ impl TopologySpec {
         }
     }
 
+}
+
+// component
+pub enum Component {
+    Function,
+    Event,
+    Mutation,
+    Route,
+    Queue,
+    Node,
+    Flow
 }

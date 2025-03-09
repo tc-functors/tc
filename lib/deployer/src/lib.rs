@@ -106,7 +106,8 @@ pub async fn create(env: &Env, topology: &Topology) {
 
     match kind {
         TopologyKind::StepFunction => create_flow(env, &topology).await,
-        TopologyKind::Function => create_function(env, &topology).await
+        TopologyKind::Function => create_function(env, &topology).await,
+        TopologyKind::Evented => ()
     }
 
 }

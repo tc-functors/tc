@@ -143,7 +143,7 @@ pub async fn resolve(
         None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await
     };
 
-    resolver::render(topologies, component)
+    resolver::pprint(topologies, component)
 }
 
 async fn create_topology(env: &Env, topology: &Topology, _notify: bool) {
@@ -349,34 +349,37 @@ pub async fn bootstrap(
 
 pub struct InvokeOptions {
     pub sandbox: Option<String>,
-    pub mode: Option<String>,
     pub payload: Option<String>,
     pub name: Option<String>,
     pub kind: Option<String>,
     pub local: bool,
+    pub sync: bool,
     pub dumb: bool,
 }
 
 pub async fn invoke(env: Env, opts: InvokeOptions) {
     let InvokeOptions {
         sandbox,
-        mode,
         payload,
         name,
         local,
         kind,
         dumb,
+        sync,
         ..
     } = opts;
 
     if local {
         invoker::run_local(payload).await;
     } else {
-        let inferred_kind = compiler::kind_of();
-        let kind = u::maybe_string(kind, &inferred_kind);
-        let sandbox = resolver::maybe_sandbox(sandbox);
 
-        invoker::invoke(&env, &sandbox, &kind, name, payload, mode, dumb).await;
+        // FIXME: get dir
+        let topology = compiler::compile(&u::pwd(), false);
+
+        let sandbox = resolver::maybe_sandbox(sandbox);
+        let resolved = resolver::render(&env, &sandbox, &topology).await;
+
+        invoker::invoke(&env, &sandbox, topology.kind, &resolved.fqn, payload, sync, dumb).await;
     }
 }
 

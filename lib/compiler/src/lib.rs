@@ -14,6 +14,7 @@ mod version;
 mod template;
 mod role;
 
+use colored::Colorize;
 use walkdir::WalkDir;
 
 pub use function::layer::Layer;
@@ -27,7 +28,7 @@ pub use route::Route;
 pub use flow::Flow;
 pub use role::{Role, RoleKind};
 
-pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec};
+pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
 
 use kit as u;
 use kit::*;
@@ -88,6 +89,18 @@ pub fn find_layer_names() -> Vec<String> {
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
     function::runtime::infer_lang(dir)
+}
+
+pub fn guess_build_runtime(dir: &str, kind: BuildKind) -> LangRuntime {
+    match kind {
+        BuildKind::Code => function::runtime::infer_lang(dir),
+        BuildKind::Layer | BuildKind::Library => {
+            let dir = u::nths(list_dir(dir), 0);
+            function::runtime::infer_lang(&dir)
+        },
+        _ => function::runtime::infer_lang(dir),
+    }
+
 }
 
 pub fn guess_lang(dir: &str) -> Lang {
@@ -274,4 +287,36 @@ pub fn list_topology_dirs() -> HashMap<String, String> {
         }
     }
     topologies
+}
+
+pub fn count_of(topology: &Topology) {
+
+    let Topology { functions, mutations, events, queues, routes, .. } = topology;
+
+    let mut f: usize = functions.len();
+    let mut m: usize = match mutations.get("default") {
+        Some(mx) => mx.resolvers.len(),
+        _ => 0
+    };
+    let mut e: usize = events.len();
+    let mut q: usize = queues.len();
+    let mut r: usize = routes.len();
+
+    let nodes = &topology.nodes;
+
+    for node in nodes {
+        let Topology { functions, mutations, events, queues, routes, .. } = node;
+        f = f  + functions.len();
+        m = m + match mutations.get("default") {
+            Some(mx) => mx.resolvers.len(),
+            _ => 0
+        };
+        e = e + events.len();
+        q = q + queues.len();
+        r = r + routes.len();
+    }
+
+    let msg = format!("{} functions, {} mutations, {} events, {} routes, {} queues",
+                      f, m, e, r, q);
+    println!("Compiling {} ", msg.cyan());
 }

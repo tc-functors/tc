@@ -3,6 +3,7 @@ pub mod lambda;
 pub mod local;
 pub mod sfn;
 
+use compiler::TopologyKind;
 use aws::Env;
 use kit as u;
 
@@ -29,30 +30,21 @@ fn read_payload(dir: &str, s: Option<String>) -> String {
 pub async fn invoke(
     env: &Env,
     sandbox: &str,
-    kind: &str,
-    name: Option<String>,
+    kind: TopologyKind,
+    fqn: &str,
     payload: Option<String>,
-    _mode: Option<String>,
-    dumb: bool,
+    sync: bool,
+    dumb: bool
 ) {
     let dir = u::pwd();
     let payload = read_payload(&dir, payload);
-    let inferred_name = resolver::name_of(&dir, sandbox, kind).await;
-    let name = match inferred_name {
-        Some(n) => u::maybe_string(name, &n),
-        None => u::maybe_string(name, "default"),
-    };
 
-    match kind.as_ref() {
-        "lambda" | "function" => lambda::invoke(env, &name, &payload).await,
-        "event" => event::trigger(env, &payload).await,
-        "step-function" | "state-machine" => {
-            // let inferred_mode = compiler::topology_mode(&dir);
-            // let mode = u::maybe_string(mode, inferred_mode);
-            sfn::invoke(&env, &name, "Standard", &payload, dumb).await;
-        }
-        _ => println!(""),
+    match kind {
+        TopologyKind::Function     => lambda::invoke(env, fqn, &payload).await,
+        TopologyKind::StepFunction => sfn::invoke(&env, fqn, &payload, sync, dumb).await,
+        TopologyKind::Evented      => event::trigger(env, &payload).await
     }
+
 }
 
 pub async fn run_local(payload: Option<String>) {

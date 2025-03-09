@@ -58,9 +58,12 @@ members = [
 opt-level = 's'
 debug = false
 rpath = false
-lto = true
+lto = "fat"
 debug-assertions = false
 codegen-units = 1
 incremental = false
 overflow-checks = true
 strip = true
+
+[target.x86_64-apple-darwin]
+rustflags=["-C", "link-arg=-mmacosx-version-min=10.7"]

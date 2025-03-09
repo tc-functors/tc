@@ -21,19 +21,15 @@ fn name_of(arn: &str) -> String {
     u::nth(parts, 6)
 }
 
-pub fn open_execution(env: &Env, mode: &str, exec_arn: &str) {
+pub fn open_execution(env: &Env, sync: bool, exec_arn: &str) {
     let name = &name_of(exec_arn);
     let id = get_id(exec_arn);
-    let url = match mode {
-        "async" => {
-            println!("Invoking Standard StateMachine {}", name);
-            env.sfn_url(name, id)
-        }
-        "sync" => {
-            println!("Invoking Express StateMachine {}", name);
-            env.sfn_url_express(&exec_arn)
-        }
-        _ => env.sfn_url(name, id),
+    let url = if sync {
+        println!("Invoking Express StateMachine {}", name);
+        env.sfn_url_express(&exec_arn)
+    } else {
+        println!("Invoking Standard StateMachine {}", name);
+        env.sfn_url(name, id)
     };
     println!("{}", url);
     open::that(url).unwrap();
@@ -46,12 +42,12 @@ struct Response {
     output: Value,
 }
 
-pub async fn execute_state_machine(env: &Env, name: &str, mode: &str, payload: &str, dumb: bool) {
+pub async fn execute_state_machine(env: &Env, name: &str, payload: &str, sync: bool, dumb: bool) {
     let client = sfn::make_client(env).await;
     let arn = env.sfn_arn(name);
     let exec_arn = sfn::start_execution(client.clone(), &arn, &payload).await;
-    if dumb == false {
-        open_execution(env, mode, &exec_arn);
+    if !dumb {
+        open_execution(env, sync, &exec_arn);
     }
 }
 
@@ -66,8 +62,8 @@ pub fn augment_payload(payload_str: &str, vars: HashMap<String, String>) -> Stri
     u::merge_json(payload_str, &vars)
 }
 
-pub async fn invoke(env: &Env, name: &str, mode: &str, payload: &str, dumb: bool) {
+pub async fn invoke(env: &Env, name: &str, payload: &str, sync: bool, dumb: bool) {
     let vars = build_vars(env);
     let payload = augment_payload(payload, vars);
-    execute_state_machine(env, name, mode, &payload, dumb).await;
+    execute_state_machine(env, name, &payload, sync, dumb).await;
 }
