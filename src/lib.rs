@@ -12,7 +12,6 @@ use tabled::{Style, Table};
 pub struct BuildOpts {
     pub merge: bool,
     pub recursive: bool,
-    pub trace: bool,
     pub clean: bool,
     pub split: bool,
     pub dirty: bool,
@@ -20,7 +19,6 @@ pub struct BuildOpts {
 
 pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
     let BuildOpts {
-        trace,
         clean,
         dirty,
         recursive,
@@ -33,7 +31,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None
         };
-        let builds = builder::build_recursive(dirty, kind, trace).await;
+        let builds = builder::build_recursive(dirty, kind).await;
         builder::write_manifest(&builds);
         println!("{}", kit::pretty_json(&builds));
 
@@ -46,7 +44,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None
         };
-        let builds = builder::build(dir, name, kind, trace).await;
+        let builds = builder::build(dir, name, kind).await;
         builder::write_manifest(&builds);
         println!("{}", kit::pretty_json(&builds));
     }
@@ -54,11 +52,10 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
 }
 
 pub struct PublishOpts {
-    pub trace: bool,
     pub promote: bool,
     pub demote: bool,
     pub version: Option<String>,
-}
+ }
 
 pub async fn publish(
     env: Env,
@@ -152,7 +149,7 @@ async fn create_topology(env: &Env, topology: &Topology, _notify: bool) {
 
     for (_, function) in functions {
         let dir = &function.dir;
-        builder::build(dir, None, None, false).await;
+        builder::build(dir, None, None).await;
     }
     deployer::create(env, topology).await;
 }
@@ -208,7 +205,7 @@ pub async fn create(
 
 async fn update_topology(env: &Env, topology: &Topology) {
     let Topology { dir, .. } = topology;
-    builder::build(&dir, None, None, false).await;
+    builder::build(&dir, None, None).await;
     deployer::update(env, topology).await;
 }
 
@@ -354,7 +351,6 @@ pub struct InvokeOptions {
     pub name: Option<String>,
     pub kind: Option<String>,
     pub local: bool,
-    pub sync: bool,
     pub dumb: bool,
 }
 
@@ -364,7 +360,6 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
         payload,
         local,
         dumb,
-        sync,
         ..
     } = opts;
 
@@ -378,7 +373,11 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
         let sandbox = resolver::maybe_sandbox(sandbox);
         let resolved = resolver::render(&env, &sandbox, &topology).await;
 
-        invoker::invoke(&env, topology.kind, &resolved.fqn, payload, sync, dumb).await;
+        let mode = match topology.flow {
+            Some(f) => f.mode,
+            None => "Standard".to_string()
+        };
+        invoker::invoke(&env, topology.kind, &resolved.fqn, payload, &mode, dumb).await;
     }
 }
 

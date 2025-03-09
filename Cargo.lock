@@ -1159,7 +1159,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "colored",
  "compiler",
@@ -1169,6 +1169,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -1356,6 +1357,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_yaml",
+ "tabled",
  "toml 0.8.19",
  "walkdir",
 ]
@@ -2441,7 +2443,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "ansi-escapes",
  "base64",
@@ -3244,6 +3246,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tabled",
+ "tracing",
 ]
 
 [[package]]

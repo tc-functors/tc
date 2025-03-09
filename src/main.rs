@@ -159,8 +159,6 @@ pub struct BuildArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    trace: bool,
-    #[arg(long, action)]
     dirty: bool,
     #[arg(long, action)]
     merge: bool,
@@ -180,8 +178,6 @@ pub struct PublishArgs {
     name: Option<String>,
     #[arg(long, action)]
     list: bool,
-    #[arg(long, action)]
-    trace: bool,
     #[arg(long, action)]
     promote: bool,
     #[arg(long, action)]
@@ -231,8 +227,6 @@ pub struct CreateArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    trace: bool,
-    #[arg(long, action)]
     no_cache: bool,
 }
 
@@ -263,8 +257,6 @@ pub struct UpdateArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    trace: bool,
-    #[arg(long, action)]
     no_cache: bool,
 }
 
@@ -280,8 +272,6 @@ pub struct DeleteArgs {
     component: Option<String>,
     #[arg(long, action, short = 'r')]
     recursive: bool,
-    #[arg(long, action, short = 't')]
-    trace: bool,
     #[arg(long, action)]
     no_cache: bool,
 }
@@ -306,8 +296,6 @@ pub struct InvokeArgs {
     local: bool,
     #[arg(long, action)]
     dumb: bool,
-    #[arg(long, action)]
-    sync: bool,
 }
 
 #[derive(Debug, Args)]
@@ -409,7 +397,6 @@ async fn build(args: BuildArgs) {
         name,
         recursive,
         clean,
-        trace,
         dirty,
         merge,
         split,
@@ -418,7 +405,6 @@ async fn build(args: BuildArgs) {
 
     let dir = kit::pwd();
     let opts = tc::BuildOpts {
-        trace: trace,
         clean: clean,
         dirty: dirty,
         recursive: recursive,
@@ -529,7 +515,6 @@ async fn invoke(args: InvokeArgs) {
         role,
         payload,
         sandbox,
-        sync,
         name,
         local,
         kind,
@@ -538,7 +523,6 @@ async fn invoke(args: InvokeArgs) {
     } = args;
     let opts =   tc::InvokeOptions {
         sandbox: sandbox,
-        sync: sync,
         payload: payload,
         name: name,
         local: local,
@@ -575,12 +559,10 @@ async fn publish(args: PublishArgs) {
         demote,
         version,
         list,
-        trace,
         download,
         ..
     } = args;
     let opts = tc::PublishOpts {
-        trace: trace,
         promote: promote,
         demote: demote,
         version: version,

@@ -169,6 +169,7 @@ fn trim(input: &str) -> &str {
 
 #[cfg(not(test))]
 pub fn sh(path: &str, dir: &str) -> String {
+    tracing::debug!("sh {} {}", dir, path);
     let out = Exec::shell(path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)
@@ -218,14 +219,10 @@ pub fn runc(path: &str, dir: &str) -> (bool, String, String) {
     )
 }
 
-pub fn runp(cmd: &str, dir: &str, trace: bool) -> bool {
-    if trace {
-        let out = Exec::shell(cmd).cwd(dir).join().unwrap();
-        out.success()
-    } else {
-        let (status, _, _) = runc(cmd, dir);
-        status
-    }
+pub fn runp(cmd: &str, dir: &str) -> bool {
+    tracing::debug!(cmd);
+    let out = Exec::shell(cmd).cwd(dir).join().unwrap();
+    out.success()
 }
 
 pub fn sleep(ms: u64) {
@@ -338,6 +335,12 @@ pub fn run_seq_quiet(cmds: Vec<&str>, dir: &str) {
         runcmd_quiet(cmd, dir);
     }
 }
+
+pub fn runv(dir: &str, cmd: Vec<&str>) {
+    let cmd_str = cmd.join(" ");
+    runcmd_stream(&cmd_str, dir);
+}
+
 
 pub fn root() -> String {
     sh("git rev-parse --show-toplevel", &pwd())
