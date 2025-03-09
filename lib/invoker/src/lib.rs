@@ -29,7 +29,6 @@ fn read_payload(dir: &str, s: Option<String>) -> String {
 
 pub async fn invoke(
     env: &Env,
-    sandbox: &str,
     kind: TopologyKind,
     fqn: &str,
     payload: Option<String>,

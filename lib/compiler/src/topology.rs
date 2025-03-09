@@ -16,6 +16,7 @@ use super::function::Function;
 use super::route::Route;
 use super::event::Event;
 use super::queue::Queue;
+use super::log::LogConfig;
 use super::schedule::Schedule;
 use super::flow::Flow;
 use super::role::Role;
@@ -39,6 +40,7 @@ pub struct Topology {
     pub mutations: HashMap<String, Mutation>,
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
+    pub logs: LogConfig,
     pub flow: Option<Flow>
 }
 
@@ -374,6 +376,7 @@ fn make(
         routes: make_routes(&spec, &config),
         queues: make_queues(&spec, &config),
         mutations: make_mutations(&spec, &config),
+        logs: LogConfig::new(),
         flow: flow
     }
 }
@@ -415,6 +418,7 @@ fn make_standalone(dir: &str) -> Topology {
         nodes: vec![],
         mutations: HashMap::new(),
         queues: HashMap::new(),
+        logs: LogConfig::new(),
         schedules: HashMap::new(),
     }
 }
