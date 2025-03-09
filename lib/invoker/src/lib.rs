@@ -32,7 +32,7 @@ pub async fn invoke(
     kind: TopologyKind,
     fqn: &str,
     payload: Option<String>,
-    sync: bool,
+    mode: &str,
     dumb: bool
 ) {
     let dir = u::pwd();
@@ -40,7 +40,7 @@ pub async fn invoke(
 
     match kind {
         TopologyKind::Function     => lambda::invoke(env, fqn, &payload).await,
-        TopologyKind::StepFunction => sfn::invoke(&env, fqn, &payload, sync, dumb).await,
+        TopologyKind::StepFunction => sfn::invoke(&env, fqn, &payload, mode, dumb).await,
         TopologyKind::Evented      => event::trigger(env, &payload).await
     }
 
