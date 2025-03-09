@@ -217,6 +217,7 @@ impl StateMachine {
 }
 
 pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
+    println!("Invoking {}", arn);
     let res = client
         .start_execution()
         .state_machine_arn(arn.to_string())

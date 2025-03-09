@@ -82,29 +82,32 @@ pub fn just_build_out(dir: &str, name: &str, lang_str: &str) -> Vec<BuildOutput>
 
 
 pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, trace: bool) -> Vec<BuildOutput> {
-    let runtime = compiler::guess_runtime(dir);
-    let lang = runtime.to_lang();
-    let name = u::maybe_string(name, u::basedir(dir));
+
     let function = compiler::current_function(dir);
 
     if let Some(f) = function {
 
-        let mut b = f.build;
+        let mut spec = f.build;
 
         let kind = match kind {
             Some(k) => k,
             None => BuildKind::Code
         };
 
-        b.kind = kind;
+
+        let runtime = compiler::guess_build_runtime(dir, kind.clone());
+        let lang = runtime.to_lang();
+        let name = u::maybe_string(name, u::basedir(dir));
+
+        spec.kind = kind;
 
         sh("rm -f *.zip", dir);
         sh("rm -rf build", dir);
         let out = match lang {
-            Lang::Ruby    => ruby::build(dir, runtime, &name, b, trace),
-            Lang::Python  => python::build(dir, runtime,  &name, b, trace),
-            Lang::Rust    => rust::build(dir, runtime, &name, b, trace),
-            Lang::Clojure => clojure::build(dir, runtime, &name, b, trace),
+            Lang::Ruby    => ruby::build(dir, runtime, &name, spec, trace),
+            Lang::Python  => python::build(dir, runtime,  &name, spec, trace),
+            Lang::Rust    => rust::build(dir, runtime, &name, spec, trace),
+            Lang::Clojure => clojure::build(dir, runtime, &name, spec, trace),
             Lang::Go      => todo!()
         };
         vec![out]

@@ -1344,7 +1344,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "colored",
  "configurator",
@@ -2442,7 +2442,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "ansi-escapes",
  "base64",

@@ -7,7 +7,7 @@ mod topology;
 mod cache;
 
 pub use context::Context;
-use compiler::{Topology};
+use compiler::{Topology, TopologyKind};
 use aws::Env;
 use kit as u;
 use std::collections::HashMap;
@@ -51,6 +51,19 @@ pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, co
     xs
 }
 
+pub async fn render(env: &Env, sandbox: &str, topology: &Topology) -> Topology {
+    let ctx = Context {
+        env: env.clone(),
+        namespace: topology.namespace.to_owned(),
+        sandbox: sandbox.to_string(),
+        trace: true,
+    };
+    let v = serde_json::to_string(topology).unwrap();
+    let rendered = ctx.render(&v);
+    let t: Topology = serde_json::from_str(&rendered).unwrap();
+    t
+}
+
 pub async fn just_nodes(topology: &Topology) -> Vec<String> {
     let mut nodes: Vec<String> = vec![];
     let root = &topology.fqn;
@@ -61,7 +74,7 @@ pub async fn just_nodes(topology: &Topology) -> Vec<String> {
     nodes
 }
 
-pub fn render(topologies: Vec<Topology>, component: Option<String>) -> String {
+pub fn pprint(topologies: Vec<Topology>, component: Option<String>) -> String {
     let t = topologies.clone().into_iter().nth(0).unwrap();
     let component = u::maybe_string(component, "all");
 
@@ -118,15 +131,15 @@ pub fn current_function(sandbox: &str) -> Option<String> {
     None
 }
 
-pub async fn name_of(dir: &str, sandbox: &str, kind: &str) -> Option<String> {
+pub async fn name_of(dir: &str, sandbox: &str, kind: TopologyKind) -> Option<String> {
     let topology = compiler::compile(&dir, false);
     match kind {
-        "step-function" => {
+        TopologyKind::StepFunction => {
             let nodes = just_nodes(&topology).await;
             let node = nodes.into_iter().nth(0).unwrap();
             Some(node)
         }
-        "lambda" | "function" => current_function(sandbox),
-        _ => None,
+        TopologyKind::Function => current_function(sandbox),
+        TopologyKind::Evented => None,
     }
 }
