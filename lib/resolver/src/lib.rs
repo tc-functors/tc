@@ -4,10 +4,10 @@ mod event;
 mod function;
 mod route;
 mod topology;
-mod cache;
+pub mod cache;
 
 pub use context::Context;
-use compiler::{Topology, TopologyKind};
+use compiler::Topology;
 use aws::Env;
 use kit as u;
 use std::collections::HashMap;
@@ -129,17 +129,4 @@ pub fn current_function(sandbox: &str) -> Option<String> {
         }
     }
     None
-}
-
-pub async fn name_of(dir: &str, sandbox: &str, kind: TopologyKind) -> Option<String> {
-    let topology = compiler::compile(&dir, false);
-    match kind {
-        TopologyKind::StepFunction => {
-            let nodes = just_nodes(&topology).await;
-            let node = nodes.into_iter().nth(0).unwrap();
-            Some(node)
-        }
-        TopologyKind::Function => current_function(sandbox),
-        TopologyKind::Evented => None,
-    }
 }

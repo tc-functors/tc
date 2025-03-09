@@ -7,6 +7,7 @@ use kit as u;
 use std::panic;
 use std::time::Instant;
 use std::str::FromStr;
+use tabled::{Style, Table};
 
 pub struct BuildOpts {
     pub merge: bool,
@@ -491,10 +492,6 @@ pub async fn download_layer(env: Env, name: Option<String>) {
 }
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
-     match std::env::var("TC_TRACE") {
-        Ok(_) => kit::init_trace(),
-        Err(_) => kit::init_log(),
-    }
     match profile {
         Some(ref p) => aws::init(profile.clone(), assume_role, Config::new(None, &p)).await,
         None => aws::init(profile, assume_role, Config::new(None, "")).await
@@ -509,4 +506,14 @@ pub async fn init_repo_profile(profile: Option<String>) -> Env {
             given_env.inherit(given_env.config.aws.lambda.layers_profile.to_owned())
         }
     }
+}
+
+pub async fn clear_cache() {
+    resolver::cache::clear()
+}
+
+pub async fn list_cache() {
+    let xs = resolver::cache::list();
+    let table = Table::new(xs).with(Style::psql()).to_string();
+    println!("{}", table);
 }

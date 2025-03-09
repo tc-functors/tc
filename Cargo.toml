@@ -13,6 +13,9 @@ log = "0.4"
 clap = { version = "4.1", features = ["derive"] }
 openssl = { version = "0.10", features = ["vendored"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tabled = "0.10.0"
 kit =  { path = "lib/kit" }
 aws =  { path = "lib/aws" }
 notifier =  { path = "lib/notifier" }

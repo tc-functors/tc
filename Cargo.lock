@@ -2367,7 +2367,6 @@ dependencies = [
  "compiler",
  "kit",
  "open",
- "resolver",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -3234,7 +3233,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "aws",
  "cacache",
@@ -3244,6 +3243,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tabled",
 ]
 
 [[package]]
@@ -3885,9 +3885,12 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tabled",
  "tagger",
  "tester",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
