@@ -1,7 +1,6 @@
 mod python;
 mod ruby;
 mod rust;
-mod clojure;
 
 use std::str::FromStr;
 use compiler::Layer;
@@ -81,7 +80,7 @@ pub fn just_build_out(dir: &str, name: &str, lang_str: &str) -> Vec<BuildOutput>
 }
 
 
-pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, trace: bool) -> Vec<BuildOutput> {
+pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> Vec<BuildOutput> {
 
     let function = compiler::current_function(dir);
 
@@ -103,11 +102,12 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, tra
 
         sh("rm -f *.zip", dir);
         sh("rm -rf build", dir);
+
         let out = match lang {
-            Lang::Ruby    => ruby::build(dir, runtime, &name, spec, trace),
-            Lang::Python  => python::build(dir, runtime,  &name, spec, trace),
-            Lang::Rust    => rust::build(dir, runtime, &name, spec, trace),
-            Lang::Clojure => clojure::build(dir, runtime, &name, spec, trace),
+            Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
+            Lang::Python  => python::build(dir, runtime,  &name, spec),
+            Lang::Rust    => rust::build(dir, runtime, &name, spec),
+            Lang::Clojure => todo!(),
             Lang::Go      => todo!()
         };
         vec![out]
@@ -124,7 +124,7 @@ fn should_build(layer: &Layer, dirty: bool) -> bool {
     }
 }
 
-pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, trace: bool) -> Vec<BuildOutput> {
+pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
 
     let knd = match kind {
@@ -132,12 +132,14 @@ pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, trace: bool) 
         None => BuildKind::Code
     };
 
+
     match knd {
 
         BuildKind::Code => {
             let buildables = compiler::find_buildables(&u::pwd(), true);
+            tracing::debug!("Building recursively {}", buildables.len());
             for b in buildables {
-                let mut out = build(&b.dir, None, Some(BuildKind::Code), trace).await;
+                let mut out = build(&b.dir, None, Some(BuildKind::Code)).await;
                 outs.append(&mut out);
             }
         },
@@ -146,7 +148,7 @@ pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, trace: bool) 
             let layers = compiler::find_layers();
             for layer in layers.clone() {
                 if should_build(&layer, dirty) {
-                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer), trace).await;
+                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer)).await;
                     outs.append(&mut out)
                 }
             }
@@ -159,8 +161,6 @@ pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, trace: bool) 
         _ => todo!()
 
     }
-
-
     outs
 }
 
@@ -171,7 +171,7 @@ pub fn clean(dir: &str) {
         Lang::Ruby    => ruby::clean(dir),
         Lang::Python  => python::clean(dir),
         Lang::Rust    => rust::clean(dir),
-        Lang::Clojure => clojure::clean(dir),
+        Lang::Clojure => todo!(),
         Lang::Go      => todo!()
     }
 }

@@ -35,7 +35,7 @@ RUN rm -rf vendor ruby /build/ruby/lib/cache/
     u::write_str(&dockerfile, &f);
 }
 
-fn build_with_docker(dir: &str, trace: bool) {
+fn build_with_docker(dir: &str) {
     let root = &top_level();
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
@@ -48,7 +48,7 @@ fn build_with_docker(dir: &str, trace: bool) {
             u::basedir(dir)
         ),
     };
-    let status = u::runp(&cmd_str, dir, trace);
+    let status = u::runp(&cmd_str, dir);
     if !status {
         sh("rm -f Dockerfile wrapper", dir);
         panic!("Failed to build");
@@ -74,19 +74,13 @@ fn copy(dir: &str) {
     }
 }
 
-pub fn build(dir: &str, name: &str, trace: bool) -> String {
+pub fn build(dir: &str, name: &str) -> String {
     sh("rm -f lambda.zip", dir);
     sh("rm -f deps.zip", dir);
-    let bar = kit::progress();
-    let prefix = format!("Building   {}", name.blue());
-    bar.set_prefix(prefix);
-    bar.inc(10);
+    println!("Building   {}", name.blue());
     gen_dockerfile(dir);
-    bar.inc(20);
-    build_with_docker(dir, trace);
-    bar.inc(50);
+    build_with_docker(dir);
     copy(dir);
-    bar.inc(80);
     let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
     u::runcmd_quiet(&cmd, dir);
     format!("{}/lambda.zip", dir)

@@ -1,14 +1,6 @@
 use kit as u;
 use kit::sh;
 
-fn run(dir: &str, cmd: Vec<&str>, trace: bool) {
-    let cmd_str = u::vec_to_str(cmd);
-    if trace {
-        u::runcmd_stream(&cmd_str, dir);
-    } else {
-        u::runcmd_quiet(&cmd_str, dir);
-    }
-}
 
 pub fn build(dir: &str) -> String {
     let cmd = vec![
@@ -19,7 +11,7 @@ pub fn build(dir: &str) -> String {
         "-u $(id -u):$(id -g)",
         "rustserverless/lambda-rust",
     ];
-    run(dir, cmd, true);
+    u::runv(dir, cmd);
     let name = u::sh("cargo metadata --no-deps --format-version 1 | jq -r '.packages[].targets[] | select( .kind | map(. == \"bin\") | any ) | .name'", dir);
     let cmd = format!(
         "mkdir -p extensions && cp target/lambda/release/{} extensions/",

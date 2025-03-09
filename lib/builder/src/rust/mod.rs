@@ -8,13 +8,13 @@ use compiler::spec::{BuildKind, LangRuntime};
 use compiler::Build;
 use kit as u;
 
-pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build, trace: bool) -> BuildOutput {
+pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build) -> BuildOutput {
     let Build { kind, pre, post, .. } = spec;
 
     let path = match kind {
-        BuildKind::Code      => inline::build(dir, trace),
-        BuildKind::Inline    => inline::build(dir, trace),
-        BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post, trace),
+        BuildKind::Code      => inline::build(dir),
+        BuildKind::Inline    => inline::build(dir),
+        BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post),
         BuildKind::Extension => extension::build(dir),
         BuildKind::Image     => image::build(dir, name),
         BuildKind::Runtime   => todo!(),

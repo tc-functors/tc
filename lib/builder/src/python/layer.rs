@@ -4,14 +4,6 @@ use kit::sh;
 use colored::Colorize;
 use super::LangRuntime;
 
-fn run(dir: &str, cmd: Vec<&str>, trace: bool) {
-    let cmd_str = u::vec_to_str(cmd);
-    if trace {
-        u::runcmd_stream(&cmd_str, dir);
-    } else {
-        u::runcmd_quiet(&cmd_str, dir);
-    }
-}
 
 // FIXME: use ldd
 fn shared_objects() -> Vec<&'static str> {
@@ -118,7 +110,7 @@ RUN --mount=type=secret,id=aws,target=/root/.aws/credentials {extra_deps_post}
     }
 }
 
-pub fn gen_requirements_txt(dir: &str, runtime: &LangRuntime, trace: bool) {
+pub fn gen_requirements_txt(dir: &str, runtime: &LangRuntime) {
     let img = match runtime {
         LangRuntime::Python312 => "thehale/python-poetry:1.8.3-py3.12-slim",
         LangRuntime::Python311 => "sunpeek/poetry:py3.11-slim",
@@ -135,17 +127,17 @@ pub fn gen_requirements_txt(dir: &str, runtime: &LangRuntime, trace: bool) {
         &img,
         "sh -c \"rm -f requirements.txt && poetry export --without-hashes --format=requirements.txt --without dev > requirements.txt\"",
     ];
-    run(dir, cmd, trace);
+    u::runv(dir, cmd);
 }
 
-pub fn build_with_docker(dir: &str, trace: bool) {
+pub fn build_with_docker(dir: &str) {
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!("docker build --no-cache  --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
                          &e, u::basedir(dir)),
         Err(_) => format!("docker build --no-cache  --ssh default --secret id=aws,src=$HOME/.aws/credentials . -t {}",
                           u::basedir(dir))
     };
-    let ret = u::runp(&cmd_str, dir, trace);
+    let ret = u::runp(&cmd_str, dir);
     if !ret {
         sh("rm -rf Dockerfile build", dir);
         std::panic::set_hook(Box::new(|_| {
@@ -164,10 +156,10 @@ fn copy_from_docker(dir: &str) {
     sh(&run, dir);
     let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     if id.is_empty() {
-        println!("{}: ", dir);
+        tracing::info!("{}: ", dir);
         sh("rm -f requirements.txt Dockerfile", dir);
         std::panic::set_hook(Box::new(|_| {
-            println!("Build failed");
+            tracing::error!("Build failed");
         }));
         panic!("build failed")
     }
@@ -202,7 +194,6 @@ pub fn build(
     runtime: &LangRuntime,
     deps_pre: Vec<String>,
     deps_post: Vec<String>,
-    trace: bool,
 ) -> String {
     let bar = kit::progress();
     let prefix = format!("Building {}", name.blue());
@@ -212,13 +203,13 @@ pub fn build(
 
     if u::path_exists(dir, "pyproject.toml") {
         bar.inc(10);
-        gen_requirements_txt(dir, runtime, trace);
+        gen_requirements_txt(dir, runtime);
     }
 
     bar.inc(30);
     gen_dockerfile(dir, runtime, deps_pre, deps_post);
 
-    build_with_docker(dir, trace);
+    build_with_docker(dir);
 
     bar.inc(50);
 
