@@ -4,7 +4,7 @@ use super::{event, route, function, cache};
 use aws::Env;
 
 fn make_cache_key(namespace: &str, profile: &str, sandbox: &str) -> String {
-    format!("{}_{}_{}", namespace, profile, sandbox)
+    format!("{}.{}.{}", namespace, profile, sandbox)
 }
 
 async fn write_cache(key: &str, t: &Topology) {
@@ -14,7 +14,7 @@ async fn write_cache(key: &str, t: &Topology) {
 
 async fn read_cache(key: &str) -> Option<Topology> {
     if cache::has_key(key) {
-        println!("Found resolver cache: {}", key);
+        tracing::info!("Found resolver cache: {}", key);
         let s = cache::read(key);
         let t: Topology = serde_json::from_str(&s).unwrap();
         Some(t)
@@ -33,13 +33,16 @@ async fn do_resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
         trace: true,
     };
 
-    println!("Rendering templated topology...");
+    println!("Resolving topology {}", topology.namespace);
     let templated  = topology.to_str();
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
+    tracing::debug!("Resolving routes");
     partial_t.routes = route::resolve(&ctx, &partial_t).await;
+    tracing::debug!("Resolving events");
     partial_t.events = event::resolve(&ctx, &partial_t).await;
+    tracing::debug!("Resolving functions");
     partial_t.functions = function::resolve(&ctx, &partial_t).await;
     partial_t
 }
@@ -70,7 +73,7 @@ pub async fn resolve_component(topology: &Topology, env: &Env, sandbox: &str, co
         trace: true,
     };
 
-    println!("Rendering templated topology...");
+    println!("Resolving topology...");
     let templated  = topology.to_str();
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();

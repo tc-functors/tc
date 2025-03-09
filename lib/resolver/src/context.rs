@@ -24,6 +24,7 @@ impl Context {
         let region = &self.env.region();
         let abbr_namespace = abbr(&self.namespace);
         table.insert("account", account);
+        table.insert("acc", account);
         table.insert("region", region);
         table.insert("namespace", &self.namespace);
         table.insert("abbr_namespace", &abbr_namespace);

@@ -45,7 +45,7 @@ pub fn list() -> Vec<CacheItem> {
     for x in items {
         match x {
             Ok(r) => {
-                let parts: Vec<&str> = r.key.split("_").collect();
+                let parts: Vec<&str> = r.key.split(".").collect();
                 let namespace = parts.clone().into_iter().nth(0).unwrap_or_default();
                 let env = parts.clone().into_iter().nth(1).unwrap_or_default();
                 let sandbox = &parts.into_iter().nth(2).unwrap_or_default();
