@@ -42,7 +42,7 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
 
     lambda::Function {
         client: client,
-        name: f.name,
+        name: f.fqn,
         actual_name: f.actual_name,
         description: f.description,
         code: code,
