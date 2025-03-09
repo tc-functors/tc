@@ -3860,7 +3860,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.7.15"
+version = "0.7.22"
 dependencies = [
  "aws",
  "builder",
