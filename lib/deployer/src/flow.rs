@@ -1,5 +1,5 @@
-use compiler::{Flow};
-//use aws::cloudwatch;
+use compiler::{Flow, LogConfig};
+use aws::cloudwatch;
 use aws::iam;
 use aws::iam::Role;
 use aws::sfn;
@@ -71,19 +71,19 @@ pub async fn update_tags(env: &Env, name: &str, tags: HashMap<String, String>) {
     let _ = sfn::update_tags(&client, &sfn_arn, tags).await;
 }
 
-// pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: Logs) {
-//     let sfn_client = sfn::make_client(env).await;
-//     let cw_client = cloudwatch::make_client(env).await;
+pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig) {
+    let sfn_client = sfn::make_client(env).await;
+    let cw_client = cloudwatch::make_client(env).await;
 
-//     let aggregator = logs.aggregator;
+    let aggregator = logs.aggregator;
 
-//     cloudwatch::create_log_group(cw_client.clone(), &aggregator.states)
-//         .await
-//         .unwrap();
-//     let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn).await;
-// }
+    cloudwatch::create_log_group(cw_client.clone(), &aggregator.states)
+        .await
+        .unwrap();
+    let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn).await;
+}
 
-// pub async fn disable_logs(env: &Env, sfn_arn: &str) {
-//     let sfn_client = sfn::make_client(env).await;
-//     sfn::disable_logging(sfn_client, sfn_arn).await.unwrap();
-// }
+pub async fn disable_logs(env: &Env, sfn_arn: &str) {
+    let sfn_client = sfn::make_client(env).await;
+    sfn::disable_logging(sfn_client, sfn_arn).await.unwrap();
+}

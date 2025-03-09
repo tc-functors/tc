@@ -13,6 +13,7 @@ mod queue;
 mod version;
 mod template;
 mod role;
+mod log;
 
 use colored::Colorize;
 use walkdir::WalkDir;
@@ -27,6 +28,7 @@ pub use queue::Queue;
 pub use route::Route;
 pub use flow::Flow;
 pub use role::{Role, RoleKind};
+pub use log::LogConfig;
 
 pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
 

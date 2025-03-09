@@ -28,6 +28,7 @@ fn prn_components() {
         "routes",
         "flow",
         "vars",
+        "logs",
         "mutations",
         "schedules",
         "queues",
@@ -46,12 +47,14 @@ fn should_update_layers() -> bool {
 
 async fn create_flow(env: &Env, topology: &Topology) {
     let Topology {
+        fqn,
         functions,
         routes,
         events,
         flow,
         mutations,
         queues,
+        logs,
         ..
     } = topology;
 
@@ -63,7 +66,8 @@ async fn create_flow(env: &Env, topology: &Topology) {
     match flow {
         Some(f) => {
             flow::create(env, f.clone()).await;
-            //flow::enable_logs(&env, sfn_arn, logs.clone()).await;
+            let sfn_arn = &env.sfn_arn(&fqn);
+            flow::enable_logs(&env, sfn_arn, logs.clone()).await;
             //route::create(&env, sfn_arn, &f.default_role, routes.clone()).await;
         }
         None => {
@@ -237,6 +241,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
 
 pub async fn delete(env: &Env, topology: &Topology) {
     let Topology {
+        fqn,
         namespace,
         functions,
         flow,
@@ -258,9 +263,8 @@ pub async fn delete(env: &Env, topology: &Topology) {
 
     match flow {
         Some(f) => {
-            //let sfn_name = f.clone().name;
-            //let sfn_arn = env.sfn_arn(&sfn_name);
-            //flow::disable_logs(&env, &sfn_arn).await;
+            let sfn_arn = env.sfn_arn(&fqn);
+            flow::disable_logs(&env, &sfn_arn).await;
             flow::delete(&env, f.clone()).await;
         }
         None => println!("No flow defined, skipping"),
