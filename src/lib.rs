@@ -361,9 +361,7 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
     let InvokeOptions {
         sandbox,
         payload,
-        name,
         local,
-        kind,
         dumb,
         sync,
         ..
@@ -379,7 +377,7 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
         let sandbox = resolver::maybe_sandbox(sandbox);
         let resolved = resolver::render(&env, &sandbox, &topology).await;
 
-        invoker::invoke(&env, &sandbox, topology.kind, &resolved.fqn, payload, sync, dumb).await;
+        invoker::invoke(&env, topology.kind, &resolved.fqn, payload, sync, dumb).await;
     }
 }
 
