@@ -287,10 +287,12 @@ fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<Strin
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
-        for (name, ev) in evs.consumes.clone().unwrap().into_iter() {
-            let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
-            let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes, config);
-            h.insert(name, ev);
+        if let Some(c) = &evs.consumes {
+            for (name, ev) in c.clone().into_iter() {
+                let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
+                let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes, config);
+                h.insert(name, ev);
+            }
         }
     }
     h

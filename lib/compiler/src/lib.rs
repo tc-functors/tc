@@ -14,6 +14,7 @@ mod version;
 mod template;
 mod role;
 mod log;
+mod formatter;
 
 use colored::Colorize;
 use walkdir::WalkDir;
@@ -116,6 +117,11 @@ pub fn is_topology_dir(dir: &str) -> bool {
 pub fn show_component(component: &str, format: &str, recursive: bool) -> String {
     let dir = u::pwd();
     match component {
+        "spec" => {
+            let f = format!("{}/topology.yml", &u::pwd());
+            let spec = TopologySpec::new(&f);
+            u::pretty_json(spec)
+        },
         "layers" => {
             let layers = find_layers();
             u::pretty_json(layers)
@@ -190,10 +196,16 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
 
         "topologies" => {
             let topologies = list_topologies();
-            for (dir, basic_spec) in topologies {
-                let Topology { namespace, .. } = basic_spec;
-                println!("{} - {}", &namespace, u::second(&dir, "/services/"));
+            match format {
+                "table" => formatter::print_topologies(topologies),
+                _ =>  {
+                    for (dir, basic_spec) in topologies {
+                        let Topology { namespace, .. } = basic_spec;
+                        println!("{} - {}", &namespace, u::second(&dir, "/services/"));
+                    }
+                }
             }
+
             u::empty()
         }
 
@@ -318,7 +330,7 @@ pub fn count_of(topology: &Topology) {
         r = r + routes.len();
     }
 
-    let msg = format!("{} functions, {} mutations, {} events, {} routes, {} queues",
-                      f, m, e, r, q);
+    let msg = format!("{} node(s), {} function(s), {} mutation(s), {} event(s), {} route(s), {} queue(s)",
+                      nodes.len() + 1, f, m, e, r, q);
     println!("Compiling {} ", msg.cyan());
 }
