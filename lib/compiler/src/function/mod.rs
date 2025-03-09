@@ -73,7 +73,7 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
         },
         None => match &fspec.namespace {
             Some(n) => format!("{}_{}_{{{{sandbox}}}}", n, &fspec.name),
-            None => format!("{}_{{{{sandbox}}}}", &fspec.name)
+            None => format!("{}_{}_{{{{sandbox}}}}", namespace, &fspec.name)
         }
     }
 }
@@ -89,6 +89,8 @@ impl Function {
         };
         let runtime = Runtime::new(dir, infra_dir,  &namespace, &fspec);
         let fqn = make_fqn(&fspec, &namespace, format);
+
+
 
         Function {
             name: fspec.name.to_string(),
