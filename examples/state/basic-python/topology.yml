@@ -1,0 +1,29 @@
+name: example-basic-python
+mode: Express
+flow:
+  Comment: Basic example
+  StartAt: foo
+  TimeoutSeconds: 1200
+  States:
+    foo:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      InputPath: $
+      Parameters:
+        FunctionName: '{{namespace}}_foo_{{sandbox}}'
+        Payload:
+          metadata.$: $.metadata
+          execution.$: $$.Execution
+          data.$: $
+      Next: bar
+    bar:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      InputPath: $
+      Parameters:
+        FunctionName: '{{namespace}}_bar_{{sandbox}}'
+        Payload:
+          status.$: $.status
+      End: true
