@@ -94,6 +94,8 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
         };
 
 
+        let kind_str = &kind.to_str();
+
         let runtime = compiler::guess_build_runtime(dir, kind.clone());
         let lang = runtime.to_lang();
         let name = u::maybe_string(name, u::basedir(dir));
@@ -101,7 +103,8 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
         spec.kind = kind;
 
         sh("rm -f *.zip", dir);
-        sh("rm -rf build", dir);
+
+        println!("Building {} ({}/{})", &f.name, &runtime.to_str(), kind_str);
 
         let out = match lang {
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
@@ -164,7 +167,7 @@ pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>) -> Vec<BuildO
     outs
 }
 
-pub fn clean(dir: &str) {
+pub fn clean_lang(dir: &str) {
     let lang = compiler::guess_lang(dir);
 
     match lang {
@@ -176,10 +179,10 @@ pub fn clean(dir: &str) {
     }
 }
 
-pub fn clean_recursive() {
-    let layers = compiler::find_layers();
-    for layer in layers {
-        clean(&layer.path)
+pub fn clean(recursive: bool) {
+    let buildables = compiler::find_buildables(&u::pwd(), recursive);
+    for b in buildables {
+        kit::sh("rm -f lambda.zip && rm -rf build && rm -f bootstrap", &b.dir);
     }
 }
 
