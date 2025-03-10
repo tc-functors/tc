@@ -31,6 +31,7 @@ impl FromStr for Lang {
     }
 }
 
+
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub enum LangRuntime {
     #[serde(alias="python3.9")]
@@ -123,6 +124,22 @@ impl FromStr for BuildKind {
             "image"     => Ok(BuildKind::Image),
             _           => Ok(BuildKind::Layer)
         }
+    }
+}
+
+impl BuildKind {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            BuildKind::Code      => s!("code"),
+            BuildKind::Inline    => s!("inline"),
+            BuildKind::Layer     => s!("layer"),
+            BuildKind::Library   => s!("library"),
+            BuildKind::Extension => s!("extension"),
+            BuildKind::Runtime   => s!("runtime"),
+            BuildKind::Image     => s!("image")
+        }
+
     }
 }
 

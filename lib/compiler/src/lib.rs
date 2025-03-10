@@ -98,12 +98,10 @@ pub fn guess_build_runtime(dir: &str, kind: BuildKind) -> LangRuntime {
     match kind {
         BuildKind::Code => function::runtime::infer_lang(dir),
         BuildKind::Layer | BuildKind::Library => {
-            let dir = u::nths(list_dir(dir), 0);
             function::runtime::infer_lang(&dir)
         },
         _ => function::runtime::infer_lang(dir),
     }
-
 }
 
 pub fn guess_lang(dir: &str) -> Lang {
