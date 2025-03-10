@@ -1359,6 +1359,7 @@ dependencies = [
  "serde_yaml",
  "tabled",
  "toml 0.8.19",
+ "tracing",
  "walkdir",
 ]
 
@@ -1513,6 +1514,7 @@ name = "deployer"
 version = "0.0.2"
 dependencies = [
  "aws",
+ "builder",
  "colored",
  "compiler",
  "configurator",
@@ -3863,7 +3865,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.7.22"
+version = "0.8.0"
 dependencies = [
  "aws",
  "builder",
