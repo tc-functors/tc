@@ -175,6 +175,7 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
         mutations,
         schedules,
         queues,
+        logs,
         ..
     } = plan;
 
@@ -237,6 +238,11 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
         "mutations" => match mutations {
             Some(m) => mutation::create(&env, m).await,
             None => (),
+        },
+
+        "logs" => {
+            let sfn_arn = &env.sfn_arn(&sfn_name);
+            flow::enable_logs(&env, sfn_arn, logs.clone()).await;
         },
 
         "schedules" => schedule::create(&env, &namespace, schedules).await,

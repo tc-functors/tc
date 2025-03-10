@@ -53,7 +53,14 @@ async fn update_permissions(env: &Env, event: &Event) {
             let _ = lambda::add_permission_basic(client, function_name, principal, statement_id).await;
             println!("updating permission - function: {}", function_name);
         },
-        _ => println!("Nothing to do!")
+        _ => ()
+    }
+}
+
+fn should_prune() -> bool {
+    match std::env::var("TC_PRUNE_EVENT_RULES") {
+        Ok(_) => true,
+        Err(_) => false
     }
 }
 
@@ -63,6 +70,14 @@ pub async fn create_event(env: &Env, event: Event) {
 
     let target_arn = &event.target.arn;
     if !target_arn.is_empty() {
+
+        if should_prune() {
+            let existing_targets = target_event.clone().list_targets().await;
+            for id in existing_targets {
+                println!("Removing event target {}", &id);
+                target_event.clone().remove_targets(&id).await;
+            }
+        }
         let rule_arn = target_event.clone().create_rule().await;
 
         if !rule_arn.is_empty() {

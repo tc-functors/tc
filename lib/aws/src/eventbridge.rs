@@ -125,6 +125,28 @@ impl Event {
             .unwrap();
     }
 
+    pub async fn list_targets(self) -> Vec<String> {
+        let res = self.clone()
+            .client
+            .list_targets_by_rule()
+            .event_bus_name(self.bus)
+            .rule(self.rule_name)
+            .send()
+            .await
+            .unwrap();
+        let maybe_targets = res.targets;
+        match maybe_targets {
+            Some(v) => {
+                let mut xs: Vec<String> = vec![];
+                for x in v {
+                    xs.push(x.id().to_string())
+                }
+                xs
+            },
+            None => vec![]
+        }
+    }
+
     pub async fn remove_targets(self, id: &str) {
         let s = self.clone();
         s.client

@@ -37,6 +37,7 @@ pub async fn delete(env: &Env, roles: HashMap<String, resolver::Role>) {
 pub async fn update(env: &Env, roles: HashMap<String, resolver::Role>) {
     let client = iam::make_client(env).await;
     for (_, role) in roles {
+        println!("Updating role: {:?}", &role);
         let r = Role {
             client: client.clone(),
             name: role.name,
@@ -45,6 +46,6 @@ pub async fn update(env: &Env, roles: HashMap<String, resolver::Role>) {
             policy_name: role.policy_name,
             policy_doc: role.policy.to_string(),
         };
-        let _ = r.update().await;
+        let _ = r.create().await;
     }
 }

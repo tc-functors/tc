@@ -5,6 +5,8 @@ use aws_sdk_sfn::operation::start_sync_execution::StartSyncExecutionOutput;
 use aws_sdk_sfn::types::builders::{CloudWatchLogsLogGroupBuilder, LogDestinationBuilder};
 use aws_sdk_sfn::types::builders::{LoggingConfigurationBuilder, TagBuilder};
 use aws_sdk_sfn::types::{LogLevel, LoggingConfiguration};
+use aws_sdk_sfn::types::TracingConfiguration;
+use aws_sdk_sfn::types::builders::TracingConfigurationBuilder;
 use aws_sdk_sfn::types::{StateMachineStatus, StateMachineType, Tag};
 use aws_sdk_sfn::{Client, Error};
 use colored::Colorize;
@@ -39,25 +41,23 @@ fn make_tags(kvs: HashMap<String, String>) -> Vec<Tag> {
     tags
 }
 
+fn make_tracing_config(enabled: bool) -> TracingConfiguration {
+    let tc = TracingConfigurationBuilder::default();
+    tc.enabled(enabled).build()
+}
+
 fn make_log_config(log_group_arn: &str, enable: bool) -> LoggingConfiguration {
-    if enable {
-        let lg = CloudWatchLogsLogGroupBuilder::default();
-        let group = lg.log_group_arn(log_group_arn).build();
+    let lg = CloudWatchLogsLogGroupBuilder::default();
+    let group = lg.log_group_arn(log_group_arn).build();
 
-        let ld = LogDestinationBuilder::default();
-        let destination = ld.cloud_watch_logs_log_group(group).build();
+    let ld = LogDestinationBuilder::default();
+    let destination = ld.cloud_watch_logs_log_group(group).build();
 
-        let lc = LoggingConfigurationBuilder::default();
-        lc.level(LogLevel::All)
-            .include_execution_data(true)
-            .destinations(destination)
-            .build()
-    } else {
-        let lc = LoggingConfigurationBuilder::default();
-        lc.level(LogLevel::Off)
-            .include_execution_data(false)
-            .build()
-    }
+    let lc = LoggingConfigurationBuilder::default();
+    lc.level(LogLevel::Error)
+        .include_execution_data(false)
+        .destinations(destination)
+        .build()
 }
 
 pub fn make_mode(mode: &str) -> StateMachineType {
@@ -76,6 +76,7 @@ pub struct StateMachine {
     pub definition: String,
     pub role_arn: String,
     pub tags: HashMap<String, String>,
+    pub tracing: bool
 }
 
 impl StateMachine {
@@ -99,6 +100,7 @@ impl StateMachine {
         let mut state: StateMachineStatus = StateMachineStatus::Deleting;
 
         let tags = make_tags(self.tags.clone());
+        let tracing = make_tracing_config(self.tracing);
         let res = self
             .clone()
             .client
@@ -108,6 +110,7 @@ impl StateMachine {
             .role_arn(self.role_arn.to_owned())
             .r#type(self.mode.to_owned())
             .set_tags(Some(tags))
+            .tracing_configuration(tracing)
             .send()
             .await;
 
@@ -136,11 +139,13 @@ impl StateMachine {
     async fn update(self, arn: &str) {
         let s = self.clone();
         println!("Updating sfn {}", &self.name);
+        let tracing = make_tracing_config(self.tracing);
         self.client
             .update_state_machine()
             .state_machine_arn(arn.to_string())
             .definition(self.definition)
             .role_arn(self.role_arn)
+            .tracing_configuration(tracing)
             .send()
             .await
             .unwrap();
@@ -279,7 +284,7 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
 }
 
 pub async fn enable_logging(client: Client, arn: &str, log_arn: &str) -> Result<(), Error> {
-    let log_config = make_log_config(log_arn, true);
+    let log_config = make_log_config(log_arn, false);
     let res = client
         .update_state_machine()
         .state_machine_arn(arn.to_string())

@@ -48,7 +48,7 @@ fn default_image_uri() -> String {
 
 fn default_role() -> Role {
     Role {
-        name: s!("tc-base-lambda-role"),
+        name: s!("default"),
         path: s!("tc-base-lambda-role"),
         policy_name: s!("tc-base-lambda-policy"),
     }
@@ -357,7 +357,11 @@ fn load(dir: &str, infra_dir: &str, namespace: &str, format: &str) -> FunctionSp
     f.version = version;
     f.revision = revision;
     f.vars_file = vars_file;
-    f.role = role_of(namespace, &roles_file, &f.name);
+    f.role = if &f.role.name == "default" {
+        role_of(namespace, &roles_file, &f.name)
+    } else {
+        f.role
+    };
     f.infra_dir = infra_dir.to_string();
     f.fqn = find_fqn(&f.fqn, namespace, &f.name, format);
     f

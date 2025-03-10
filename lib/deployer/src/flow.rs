@@ -40,6 +40,7 @@ pub async fn create(env: &Env, flow: Flow) {
             definition: definition,
             role_arn: role_arn,
             tags: flow.clone().tags,
+            tracing: true
         };
 
         let arn = &flow.arn;
@@ -63,6 +64,7 @@ pub async fn delete(env: &Env, flow: Flow) {
             definition: definition,
             role_arn: flow.clone().default_role,
             tags: flow.clone().tags,
+            tracing: false
         };
 
         sf.delete(&flow.arn).await.unwrap();

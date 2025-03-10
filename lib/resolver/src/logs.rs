@@ -3,11 +3,11 @@ use kit as u;
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
 
-fn lambda_arn(acc: &str, region: &str, name: &str) -> String {
+fn lambda_arn(name: &str) -> String {
     format!("arn:aws:lambda:{}:{}:function:{}", region, acc, name)
 }
 
-fn log_group_arn(acc: &str, region: &str, log_group: &str) -> String {
+fn log_group_arn(log_group: &str) -> String {
     format!("arn:aws:logs:{}:{}:log-group:{}:*", region, acc, log_group)
 }
 
