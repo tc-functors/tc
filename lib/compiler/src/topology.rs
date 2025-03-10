@@ -183,7 +183,7 @@ fn ignore_function(dir: &str, root_dir: &str) -> bool {
 fn discover_functions(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
     let mut functions: HashMap<String, Function> = HashMap::new();
     let dirs = function_dirs(dir);
-
+    tracing::debug!("Compiling functions");
     for d in dirs {
         if u::is_dir(&d) && !ignore_function(&d, dir) {
             let function = Function::new(&d, infra_dir, &spec.name, spec.fmt());
@@ -270,6 +270,7 @@ pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> V
             if !should_ignore_node(root_dir, ignore_nodes.clone(), &p) {
                 let f = format!("{}/topology.yml", &p);
                 let spec = TopologySpec::new(&f);
+                tracing::debug!("Compiling node {}", &spec.name);
                 let mut functions = discover_functions(&p, infra_dir, &spec);
                 let interned = intern_functions(&p, infra_dir, &spec);
                 functions.extend(interned);
@@ -288,9 +289,11 @@ fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<Strin
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
         if let Some(c) = &evs.consumes {
+            tracing::debug!("Compiling events");
             for (name, ev) in c.clone().into_iter() {
                 let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
-                let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter, ev.pattern, targets, ev.sandboxes, config);
+                let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter,
+                                    ev.pattern, targets, ev.sandboxes, config);
                 h.insert(name, ev);
             }
         }
@@ -302,6 +305,7 @@ fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {
+            tracing::debug!("Compiling routes");
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
                 let route = Route::new(rspec, config);
@@ -314,8 +318,10 @@ fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
 }
 
 fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> {
+
     let mut h: HashMap<String, Queue> = HashMap::new();
     if let Some(queues) = &spec.queues {
+        tracing::debug!("Compiling queues");
         for (name, qspec) in queues {
             h.insert(name.to_string(), Queue::new(&name, qspec));
         }
@@ -327,6 +333,7 @@ fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Muta
     let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
     if let Some(ref m) = mutations {
+        tracing::debug!("Compiling mutations");
         h.insert(s!("default"), m.clone());
     }
     h
