@@ -11,4 +11,3 @@ open = "5.0.0"
 kit = { path = "../kit" }
 aws = { path = "../aws" }
 compiler = { path = "../compiler" }
-resolver = { path = "../resolver" }

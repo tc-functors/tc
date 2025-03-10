@@ -7,9 +7,10 @@ pub mod role;
 pub mod route;
 pub mod schedule;
 
-use resolver::plan::Plan;
 use colored::Colorize;
-use kit as u;
+use compiler::Topology;
+use compiler::spec::TopologyKind;
+use aws::Env;
 
 fn maybe_component(c: Option<String>) -> String {
     match c {
@@ -27,7 +28,7 @@ fn prn_components() {
         "routes",
         "flow",
         "vars",
-        "logger",
+        "logs",
         "mutations",
         "schedules",
         "queues",
@@ -44,89 +45,78 @@ fn should_update_layers() -> bool {
     }
 }
 
-async fn create_flow(plan: &Plan) {
-    let Plan {
-        env,
+async fn create_flow(env: &Env, topology: &Topology) {
+    let Topology {
+        fqn,
         functions,
-        name,
-        roles,
-        logs,
         routes,
         events,
         flow,
         mutations,
         queues,
+        logs,
         ..
-    } = plan;
+    } = topology;
 
-    role::create(&env, roles.clone()).await;
-    function::create(&env, functions.clone()).await;
+    role::create(&env, &topology.roles()).await;
+    function::create(env, functions.clone()).await;
     if should_update_layers() {
-        function::update_layers(&env, functions.clone()).await;
+        function::update_layers(env, functions.clone()).await;
     }
     match flow {
         Some(f) => {
-            flow::create(&env, f.clone()).await;
-            let sfn_name = name;
-            let sfn_arn = &env.sfn_arn(&sfn_name);
+            flow::create(env, f.clone()).await;
+            let sfn_arn = &env.sfn_arn(&fqn);
             flow::enable_logs(&env, sfn_arn, logs.clone()).await;
-            route::create(&env, sfn_arn, &f.default_role, routes.clone()).await;
+            //route::create(&env, sfn_arn, &f.default_role, routes.clone()).await;
         }
         None => {
             let role_name = "tc-base-api-role";
             let role_arn = &env.role_arn(&role_name);
-            route::create(&env, "", role_arn, routes.clone()).await;
+            route::create(&env, role_arn, routes.clone()).await;
         }
     }
 
-    match mutations {
-        Some(m) => mutation::create(&env, m.clone()).await,
-        None => (),
-    }
-
-    queue::create(&env, queues.to_vec()).await;
-    event::create(&env, events.clone()).await;
+    mutation::create(&env, mutations).await;
+    queue::create(&env, queues).await;
+    event::create(&env, events).await;
 }
 
-async fn create_function(plan: &Plan) {
-    let Plan {
-        env,
+async fn create_function(env: &Env, topology: &Topology) {
+    let Topology {
         functions,
-        roles,
         ..
-    } = plan;
-    role::create(&env, roles.clone()).await;
+    } = topology;
+    role::create(&env, &topology.roles()).await;
     function::create(&env, functions.clone()).await;
 }
 
-pub async fn create(plan: Plan) {
-    let Plan {
-        env,
+pub async fn create(env: &Env, topology: &Topology) {
+    let Topology {
         kind,
         namespace,
         version,
         sandbox,
         ..
-    } = plan.clone();
+    } = topology;
 
     println!(
         "Creating functor {}@{}.{}/{}",
         &namespace.green(),
-        &sandbox.name.cyan(),
+        &sandbox.cyan(),
         &env.name.blue(),
         &version
     );
 
-    if &kind == "step-function" || &kind == "state-machine" {
-        create_flow(&plan).await;
-    } else {
-        create_function(&plan).await;
+    match kind {
+        TopologyKind::StepFunction => create_flow(env, &topology).await,
+        TopologyKind::Function => create_function(env, &topology).await,
+        TopologyKind::Evented => ()
     }
 }
 
-pub async fn update(plan: Plan) {
-    let Plan {
-        env,
+pub async fn update(env: &Env, topology: &Topology) {
+    let Topology {
         namespace,
         version,
         functions,
@@ -136,33 +126,29 @@ pub async fn update(plan: Plan) {
         events,
         queues,
         ..
-    } = plan;
+    } = topology;
 
     println!(
         "Updating functor {}@{}.{}/{}",
         &namespace.green(),
-        &sandbox.name.cyan(),
+        &sandbox.cyan(),
         &env.name.blue(),
         &version
     );
 
     function::update_code(&env, functions.clone()).await;
     match flow {
-        Some(f) => flow::create(&env, f).await,
+        Some(f) => flow::create(&env, f.clone()).await,
         None => (),
     }
-    match mutations {
-        Some(m) => mutation::create(&env, m.clone()).await,
-        None => (),
-    }
-    event::create(&env, events.clone()).await;
-    queue::create(&env, queues).await;
+    mutation::create(&env, &mutations).await;
+    event::create(&env, &events).await;
+    queue::create(&env, &queues).await;
 }
 
-pub async fn update_component(plan: Plan, component: Option<String>) {
+pub async fn update_component(env: &Env, topology: &Topology, component: Option<String>) {
     let component = maybe_component(component);
-    let Plan {
-        env,
+    let Topology {
         version,
         namespace,
         sandbox,
@@ -170,21 +156,17 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
         events,
         routes,
         flow,
-        name,
-        roles,
         mutations,
         schedules,
         queues,
         ..
-    } = plan;
+    } = topology.clone();
 
-    let sfn_name = name;
-    let sfn_arn = env.sfn_arn(&sfn_name);
 
     println!(
         "Updating functor {}@{}.{}/{}/{}",
         &namespace.green(),
-        &sandbox.name.cyan(),
+        &sandbox.cyan(),
         &env.name.blue(),
         &version,
         &component
@@ -192,7 +174,7 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
 
     match component.as_str() {
         "events" => {
-            event::create(&env, events).await;
+            event::create(&env, &events).await;
         }
 
         "functions" => {
@@ -203,20 +185,20 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
             function::update_layers(&env, functions).await;
         }
 
-        "roles" => {
-            role::update(&env, roles).await;
-        }
-
         "routes" => match flow {
             Some(f) => {
-                route::create(&env, &sfn_arn, &f.default_role, routes).await;
+                route::create(&env, &f.role.name, routes).await;
             }
             None => {
                 let role_name = "tc-base-api-role";
                 let role_arn = &env.role_arn(&role_name);
-                route::create(&env, "", role_arn, routes).await;
+                route::create(&env, role_arn, routes).await;
             }
         },
+
+        "runtime" => {
+            function::update_runtime_version(&env, functions).await;
+        }
 
         "vars" => {
             function::update_vars(&env, functions).await;
@@ -234,17 +216,14 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
             None => println!("No flow defined, skipping"),
         },
 
-        "mutations" => match mutations {
-            Some(m) => mutation::create(&env, m).await,
-            None => (),
-        },
+        "mutations" => mutation::create(&env, &mutations).await,
 
         "schedules" => schedule::create(&env, &namespace, schedules).await,
 
-        "queues" => queue::create(&env, queues).await,
+        "queues" => queue::create(&env, &queues).await,
 
         "all" => {
-            role::create(&env, roles).await;
+            role::create(&env, &topology.roles()).await;
             function::create(&env, functions.clone()).await;
             match flow {
                 Some(f) => flow::create(&env, f).await,
@@ -255,15 +234,11 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
         }
 
         _ => {
-            if u::file_exists(&component) {
-                let c = u::strip(&component, "/").replace("_", "-");
+            if kit::file_exists(&component) {
+                let c = kit::strip(&component, "/").replace("_", "-");
                 match functions.get(&c) {
                     Some(f) => {
-                        let tasks = f.clone().tasks;
-                        let build = tasks.get("build").unwrap();
-                        let dir = f.clone().dir.unwrap();
-                        u::sh(build, &dir);
-
+                        builder::build(&f.dir, None, None).await;
                         let p = env.name.to_string();
                         let role = env.assume_role.to_owned();
                         let config = env.config.to_owned();
@@ -279,105 +254,79 @@ pub async fn update_component(plan: Plan, component: Option<String>) {
     }
 }
 
-pub async fn delete(plan: Plan) {
-    let Plan {
+
+pub async fn delete(env: &Env, topology: &Topology) {
+    let Topology {
+        fqn,
         namespace,
-        env,
         functions,
         flow,
         sandbox,
         mutations,
-        roles,
         routes,
         version,
         queues,
         ..
-    } = plan;
+    } = topology.clone();
 
     println!(
         "Deleting functor: {}@{}.{}/{}",
         &namespace.green(),
-        &sandbox.name.cyan(),
+        &sandbox.cyan(),
         &env.name.blue(),
         &version
     );
 
     match flow {
         Some(f) => {
-            let sfn_name = f.clone().name;
-            let sfn_arn = env.sfn_arn(&sfn_name);
+            let sfn_arn = env.sfn_arn(&fqn);
             flow::disable_logs(&env, &sfn_arn).await;
-            flow::delete(&env, f).await;
+            flow::delete(&env, f.clone()).await;
         }
         None => println!("No flow defined, skipping"),
     }
     function::delete(&env, functions).await;
-    role::delete(&env, roles).await;
-    route::delete(&env, "", "", routes).await;
-    match mutations {
-        Some(m) => mutation::delete(&env, m.clone()).await,
-        None => (),
-    }
-    queue::delete(&env, queues).await;
+    role::delete(&env, &topology.roles()).await;
+    route::delete(&env, "", routes).await;
+
+    mutation::delete(&env, &mutations).await;
+    queue::delete(&env, &queues).await;
 }
 
-pub async fn delete_component(plan: Plan, component: Option<String>) {
+pub async fn delete_component(env: &Env, topology: Topology, component: Option<String>) {
     let component = maybe_component(component);
-    let Plan {
+    let Topology {
         namespace,
-        env,
         functions,
         events,
         routes,
         mutations,
         schedules,
         flow,
-        roles,
         sandbox,
         version,
         ..
-    } = plan;
+    } = topology;
 
     println!(
         "Deleting functor: {}@{}.{}/{}/{}",
         &namespace.green(),
-        &sandbox.name.cyan(),
+        &sandbox.cyan(),
         &env.name.blue(),
         &version,
         &component
     );
 
     match component.as_str() {
-        "events" => event::delete(&env, events).await,
+        "events" => event::delete(&env, &events).await,
         "schedules" => schedule::delete(&env, &namespace, schedules).await,
-        "routes" => route::delete(&env, "", "", routes).await,
+        "routes" => route::delete(&env, "", routes).await,
         "functions" => function::delete(&env, functions).await,
-        "mutations" => match mutations {
-            Some(m) => mutation::delete(&env, m).await,
-            None => (),
-        },
+        "mutations" => mutation::delete(&env, &mutations).await,
         "flow" => match flow {
             Some(f) => flow::delete(&env, f).await,
             None => (),
         },
-        "roles" => role::delete(&env, roles).await,
-        _ => {
-            if u::file_exists(&component) {
-                let c = u::strip(&component, "/");
-                match functions.get(&c) {
-                    Some(f) => {
-                        let tasks = f.clone().tasks;
-                        let build = tasks.get("build").unwrap();
-                        let dir = f.clone().dir.unwrap();
-                        u::sh(build, &dir);
-                        function::delete_function(&env, f.clone()).await;
-                    }
-                    None => panic!("No valid function found"),
-                }
-            } else {
-                println!("Available components: ");
-                prn_components();
-            }
-        }
+        _ => prn_components()
     }
 }

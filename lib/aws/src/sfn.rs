@@ -5,7 +5,9 @@ use aws_sdk_sfn::operation::start_sync_execution::StartSyncExecutionOutput;
 use aws_sdk_sfn::types::builders::{CloudWatchLogsLogGroupBuilder, LogDestinationBuilder};
 use aws_sdk_sfn::types::builders::{LoggingConfigurationBuilder, TagBuilder};
 use aws_sdk_sfn::types::{LogLevel, LoggingConfiguration};
+use aws_sdk_sfn::types::TracingConfiguration;
 use aws_sdk_sfn::types::{StateMachineStatus, StateMachineType, Tag};
+use aws_sdk_sfn::types::builders::TracingConfigurationBuilder;
 use aws_sdk_sfn::{Client, Error};
 use colored::Colorize;
 use kit::LogUpdate;
@@ -39,25 +41,23 @@ fn make_tags(kvs: HashMap<String, String>) -> Vec<Tag> {
     tags
 }
 
-fn make_log_config(log_group_arn: &str, enable: bool) -> LoggingConfiguration {
-    if enable {
-        let lg = CloudWatchLogsLogGroupBuilder::default();
-        let group = lg.log_group_arn(log_group_arn).build();
+fn make_tracing_config() -> TracingConfiguration {
+    let tc = TracingConfigurationBuilder::default();
+    tc.enabled(true).build()
+}
 
-        let ld = LogDestinationBuilder::default();
-        let destination = ld.cloud_watch_logs_log_group(group).build();
+fn make_log_config(log_group_arn: &str) -> LoggingConfiguration {
+    let lg = CloudWatchLogsLogGroupBuilder::default();
+    let group = lg.log_group_arn(log_group_arn).build();
 
-        let lc = LoggingConfigurationBuilder::default();
+    let ld = LogDestinationBuilder::default();
+    let destination = ld.cloud_watch_logs_log_group(group).build();
+
+    let lc = LoggingConfigurationBuilder::default();
         lc.level(LogLevel::All)
-            .include_execution_data(true)
-            .destinations(destination)
-            .build()
-    } else {
-        let lc = LoggingConfigurationBuilder::default();
-        lc.level(LogLevel::Off)
-            .include_execution_data(false)
-            .build()
-    }
+        .include_execution_data(false)
+        .destinations(destination)
+        .build()
 }
 
 pub fn make_mode(mode: &str) -> StateMachineType {
@@ -97,6 +97,7 @@ impl StateMachine {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let _ = log_update.render(&format!("Creating sgn {}", name));
         let mut state: StateMachineStatus = StateMachineStatus::Deleting;
+        let tracing = make_tracing_config();
 
         let tags = make_tags(self.tags.clone());
         let res = self
@@ -108,6 +109,7 @@ impl StateMachine {
             .role_arn(self.role_arn.to_owned())
             .r#type(self.mode.to_owned())
             .set_tags(Some(tags))
+            .tracing_configuration(tracing)
             .send()
             .await;
 
@@ -136,11 +138,14 @@ impl StateMachine {
     async fn update(self, arn: &str) {
         let s = self.clone();
         println!("Updating sfn {}", &self.name);
+        let tracing = make_tracing_config();
+
         self.client
             .update_state_machine()
             .state_machine_arn(arn.to_string())
             .definition(self.definition)
             .role_arn(self.role_arn)
+            .tracing_configuration(tracing)
             .send()
             .await
             .unwrap();
@@ -217,6 +222,7 @@ impl StateMachine {
 }
 
 pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
+    println!("Invoking {}", arn);
     let res = client
         .start_execution()
         .state_machine_arn(arn.to_string())
@@ -225,7 +231,8 @@ pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
         .await;
     match res {
         Ok(r) => r.execution_arn,
-        Err(_) => {
+        Err(e) => {
+            println!("{:?}", e);
             panic::set_hook(Box::new(|_| {
                 println!("Error: Failed to invoke. Check payload or sandbox");
             }));
@@ -279,7 +286,7 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
 }
 
 pub async fn enable_logging(client: Client, arn: &str, log_arn: &str) -> Result<(), Error> {
-    let log_config = make_log_config(log_arn, true);
+    let log_config = make_log_config(log_arn);
     let res = client
         .update_state_machine()
         .state_machine_arn(arn.to_string())
@@ -293,7 +300,7 @@ pub async fn enable_logging(client: Client, arn: &str, log_arn: &str) -> Result<
 }
 
 pub async fn disable_logging(client: Client, arn: &str) -> Result<(), Error> {
-    let log_config = make_log_config("", false);
+    let log_config = make_log_config("");
     let res = client
         .update_state_machine()
         .state_machine_arn(arn.to_string())

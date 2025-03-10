@@ -54,7 +54,7 @@ fn find_latest(xs: Vec<LayerVersionsListItem>, layer_name: &str) -> String {
             }));
             panic!("Layer not found")
         }
-    }
+   }
 }
 
 pub async fn find_version(client: Client, layer_name: &str) -> Result<String> {
@@ -98,21 +98,21 @@ fn make_code(code: Blob) -> LayerVersionContentInput {
 
 pub fn make_runtimes(lang: &str) -> Vec<Runtime> {
     match lang {
-        "java11" => vec![Runtime::Java11],
-        "ruby2.7" => vec![Runtime::Ruby27],
-        "python3.7" => vec![Runtime::Python37],
-        "python3.8" => vec![Runtime::Python38],
-        "python3.9" => vec![Runtime::Python39],
-        "python3.10" => vec![Runtime::Python310, Runtime::Python311, Runtime::Python312],
-        "python3.11" => vec![Runtime::Python310, Runtime::Python311, Runtime::Python312],
-        "python3.12" => vec![Runtime::Python310, Runtime::Python311, Runtime::Python312],
-        "provided" => vec![Runtime::Provided],
+        "java11"      => vec![Runtime::Java11],
+        "ruby2.7"     => vec![Runtime::Ruby27],
+        "python3.7"   => vec![Runtime::Python37],
+        "python3.8"   => vec![Runtime::Python38],
+        "python3.9"   => vec![Runtime::Python39],
+        "python3.10"  => vec![Runtime::Python310, Runtime::Python311, Runtime::Python312],
+        "python3.11"  => vec![Runtime::Python310, Runtime::Python311, Runtime::Python312],
+        "python3.12"  => vec![Runtime::Python310, Runtime::Python311, Runtime::Python312],
+        "provided"    => vec![Runtime::Provided],
         "providedal2" => vec![Runtime::Providedal2],
-        "go" => vec!["provided.al2023".into()],
-        "janet" => vec!["provided.al2023".into()],
-        "rust" => vec!["provided.al2023".into()],
-        "ruby3.2" => vec!["ruby3.2".into()],
-        _ => vec![Runtime::Provided],
+        "go"          => vec!["provided.al2023".into()],
+        "janet"       => vec!["provided.al2023".into()],
+        "rust"        => vec!["provided.al2023".into()],
+        "ruby3.2"     => vec!["ruby3.2".into()],
+        _             => vec![Runtime::Provided],
     }
 }
 

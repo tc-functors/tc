@@ -322,7 +322,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "aws"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1159,7 +1159,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "colored",
  "compiler",
@@ -1169,6 +1169,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -1344,16 +1345,21 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "colored",
+ "configurator",
  "kit",
  "ptree",
+ "regex",
+ "semver 0.7.0",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
  "serde_yaml",
+ "tabled",
  "toml 0.8.19",
+ "tracing",
  "walkdir",
 ]
 
@@ -1505,14 +1511,15 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "aws",
+ "builder",
  "colored",
+ "compiler",
  "configurator",
  "kit",
  "log",
- "resolver",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -2364,7 +2371,6 @@ dependencies = [
  "compiler",
  "kit",
  "open",
- "resolver",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -2439,7 +2445,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "ansi-escapes",
  "base64",
@@ -3231,15 +3237,18 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.0.1"
+version = "0.0.3"
 dependencies = [
  "aws",
+ "cacache",
  "compiler",
  "kit",
  "regex",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tabled",
+ "tracing",
 ]
 
 [[package]]
@@ -3856,7 +3865,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.7.12"
+version = "0.8.0"
 dependencies = [
  "aws",
  "builder",
@@ -3881,9 +3890,12 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tabled",
  "tagger",
  "tester",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
