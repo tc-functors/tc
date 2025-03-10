@@ -37,7 +37,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
 
 
     } else if clean {
-        builder::clean(dir);
+        builder::clean_lang(dir);
 
     } else {
         let kind = match kind {
@@ -199,13 +199,19 @@ pub async fn create(
             run_create_hook(&env, root).await
         }
     }
+    builder::clean(recursive);
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
 async fn update_topology(env: &Env, topology: &Topology) {
-    let Topology { dir, .. } = topology;
-    builder::build(&dir, None, None).await;
+    let Topology { functions, .. } = topology;
+
+    for (_, function) in functions {
+        let dir = &function.dir;
+        builder::build(dir, None, None).await;
+    }
+
     deployer::update(env, topology).await;
 }
 
@@ -224,6 +230,7 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache
     for topology in topologies {
         update_topology(&env, &topology).await;
     }
+    builder::clean(recursive);
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
