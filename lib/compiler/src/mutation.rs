@@ -1,37 +1,66 @@
-use super::{MutationSpec, ResolverSpec};
+use super::spec::{MutationSpec, ResolverSpec};
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use super::template;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ResolverKind {
+    Function,
+    Event,
+    Table
+}
+
+impl ResolverKind {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            ResolverKind::Function => s!("function"),
+            ResolverKind::Event  => s!("event"),
+            ResolverKind::Table  => s!("table"),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Resolver {
-    pub kind: String,
+    pub kind: ResolverKind,
     pub name: String,
-    pub target: String,
+    pub target_arn: String,
     pub input: String,
     pub output: String,
 }
 
-fn kind_of(r: ResolverSpec) -> (String, String) {
+fn kind_of(r: ResolverSpec) -> (ResolverKind, String) {
     if let Some(f) = r.function {
-        (s!("function"), f)
+        (ResolverKind::Function, f)
     } else if let Some(e) = r.event {
-        (s!("event"), e)
+        (ResolverKind::Event, e)
     } else if let Some(t) = r.table {
-        (s!("table"), t)
+        (ResolverKind::Table, t)
     } else {
         panic!("Invalid Resolver {:?}", r)
+    }
+}
+
+
+fn make_target_arn(kind: &ResolverKind, target_name: &str) -> String {
+    match kind {
+        ResolverKind::Function => template::lambda_arn(target_name),
+        ResolverKind::Event    => template::event_bus_arn("default"),
+        ResolverKind::Table    => kit::empty()
     }
 }
 
 fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Resolver> {
     let mut xs: HashMap<String, Resolver> = HashMap::new();
     for (k, r) in rspecs {
-        let (kind, target) = kind_of(r.to_owned());
+        let (kind, target_name) = kind_of(r.to_owned());
+        let target_arn = make_target_arn(&kind, &target_name);
         let resolver = Resolver {
             kind: kind,
             name: k.to_owned(),
-            target: target,
+            target_arn: target_arn,
             input: r.input,
             output: r.output,
         };
@@ -41,9 +70,10 @@ fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Reso
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Mutations {
+pub struct Mutation {
     pub api_name: String,
     pub authorizer: String,
+    pub role_arn: String,
     pub types: HashMap<String, String>,
     pub resolvers: HashMap<String, Resolver>,
     pub types_map: HashMap<String, HashMap<String, String>>,
@@ -170,15 +200,16 @@ fn augment_types(mut given: Types) -> Types {
     given
 }
 
-pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutations> {
+pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutation> {
     match some_mutatations {
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());
-            let m = Mutations {
+            let m = Mutation {
                 api_name: format!("{}_{{sandbox}}", namespace),
                 authorizer: ms.authorizer.to_owned(),
                 types: make_types(types.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),
+                role_arn: template::role_arn("tc-base-appsync-role"),
                 types_map: types,
             };
             Some(m)

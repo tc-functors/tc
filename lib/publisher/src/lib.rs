@@ -1,31 +1,28 @@
-pub mod layer;
+mod layer;
+mod ecr;
 
 use aws::Env;
 use std::collections::HashMap;
+use compiler::spec::{LangRuntime, BuildKind};
 
 pub async fn list_layers(env: &Env, layer_names: Vec<String>) -> String {
     layer::list(env, layer_names).await
 }
 
-pub async fn publish_deps(
-    env: &Env,
-    dir: &str,
-    zipfile: &str,
-    lang: &str,
-    name: &str,
-    target: &str,
-) {
-    match target {
-        "layer" => {
+pub async fn publish(env: &Env, dir: &str, kind: &BuildKind, zipfile: &str, runtime: &LangRuntime, name: &str) {
+    let lang = runtime.to_str();
+    match kind {
+        BuildKind::Layer | BuildKind::Library => {
             if layer::should_split(dir) {
-                layer::publish(env, lang, &format!("{}-0-dev", name), "deps1.zip").await;
-                layer::publish(env, lang, &format!("{}-1-dev", name), "deps2.zip").await;
+                layer::publish(env, &lang, &format!("{}-0-dev", name), "deps1.zip").await;
+                layer::publish(env, &lang, &format!("{}-1-dev", name), "deps2.zip").await;
             } else {
                 let layer_name = format!("{}-dev", name);
-                layer::publish(env, lang, &layer_name, zipfile).await;
+                layer::publish(env, &lang, &layer_name, zipfile).await;
             }
-        }
-        _ => (),
+        },
+        BuildKind::Image => ecr::publish(env, name).await,
+        _ => ()
     }
 }
 
@@ -46,7 +43,7 @@ pub async fn demote(env: &Env, name: Option<String>, lang: &str) {
             let layers = compiler::find_layers();
             let mut h: HashMap<String, String> = HashMap::new();
             for layer in layers {
-                h.insert(layer.name.to_owned(), layer.lang.to_owned());
+                h.insert(layer.name.to_owned(), layer.runtime.to_str());
             }
             for (name, lang) in h {
                 publish_as_dev(env, &name, &lang).await

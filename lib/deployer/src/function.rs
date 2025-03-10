@@ -1,48 +1,10 @@
-use resolver::{Function, ContainerTask};
+use compiler::{Function, Lang};
 use aws::lambda;
 use aws::Env;
-use aws::ecs;
-use aws::ecs::TaskDef;
+//use aws::ecs;
+//use aws::ecs::TaskDef;
 use configurator::Config;
-use kit::*;
 use std::collections::HashMap;
-
-async fn delete_container_task(env: &Env, fn_name: &str, ct: ContainerTask) {
-    let client = ecs::make_client(env).await;
-
-    let ContainerTask { cluster, .. } = ct;
-
-    println!("Deleting ecs service {}", fn_name);
-    ecs::delete_service(&client, &cluster, fn_name).await;
-}
-
-async fn create_container_task(
-    env: &Env,
-    fn_name: &str,
-    ct: ContainerTask
-) -> String {
-    let ContainerTask { task_role_arn,
-                        cluster, image_uri, cpu, mem,
-                        subnets, command,
-                        .. } = ct;
-
-    let client = ecs::make_client(env).await;
-    let tdf = TaskDef::new(fn_name, &task_role_arn, &mem, &cpu);
-    let cdf = ecs::make_cdf(s!(fn_name), image_uri, command);
-    let net = ecs::make_network_config(subnets);
-    println!("Creating task def {}", fn_name);
-    let taskdef_arn  = ecs::create_taskdef(&client, tdf, cdf).await;
-
-    println!("Creating ecs service {}", fn_name);
-    ecs::create_service(
-        &client,
-        &cluster,
-        &fn_name,
-        &taskdef_arn,
-        net
-    ).await;
-    taskdef_arn
-}
 
 pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     let client = lambda::make_client(env).await;
@@ -55,14 +17,14 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         Some(s) => Some(lambda::make_vpc_config(s.subnets, s.security_groups)),
         _ => None,
     };
-    let filesystem_config = match f.fs {
+    let filesystem_config = match f.runtime.fs {
         Some(s) => Some(vec![lambda::make_fs_config(&s.arn, &s.mount_point)]),
         _ => None,
     };
 
-    let arch = lambda::make_arch(&f.runtime.lang);
+    let arch = lambda::make_arch(&f.runtime.lang.to_str());
     let runtime = match package_type.as_ref() {
-        "zip" => Some(lambda::make_runtime(&f.runtime.lang)),
+        "zip" => Some(lambda::make_runtime(&f.runtime.lang.to_str())),
         _ => None
     };
 
@@ -80,18 +42,18 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
 
     lambda::Function {
         client: client,
-        name: f.name,
+        name: f.fqn,
         actual_name: f.actual_name,
         description: f.description,
         code: code,
         code_size: size,
         blob: blob,
-        role: f.role,
+        role: f.runtime.role.arn,
         runtime: runtime,
         handler: handler,
-        timeout: f.runtime.timeout,
+        timeout: f.runtime.timeout.expect("Timeout error"),
         uri: uri,
-        memory_size: f.runtime.memory_size,
+        memory_size: f.runtime.memory_size.expect("memory error"),
         package_type: lambda::make_package_type(package_type),
         environment: lambda::make_environment(f.runtime.environment),
         architecture: arch,
@@ -110,13 +72,6 @@ pub async fn create_function(profile: String, role_arn: Option<String>, config: 
             let lambda = make_lambda(&env, f.clone()).await;
             lambda.clone().create_or_update().await
         },
-        "ecs-image" | "container-task" => {
-            if let Some(ct) = f.container_task {
-                create_container_task(&env, &f.name, ct).await
-            } else {
-                panic!("There is no container task defined")
-            }
-        },
         _ => {
             let lambda = make_lambda(&env, f.clone()).await;
             lambda.clone().create_or_update().await
@@ -125,18 +80,31 @@ pub async fn create_function(profile: String, role_arn: Option<String>, config: 
 }
 
 pub async fn create(env: &Env, fns: HashMap<String, Function>) {
-    let mut tasks = vec![];
-    for (_, function) in fns {
-        let p = env.name.to_string();
-        let role = env.assume_role.to_owned();
-        let config = env.config.to_owned();
-        let h = tokio::spawn(async move {
-            create_function(p, role, config, function).await;
-        });
-        tasks.push(h);
-    }
-    for task in tasks {
-        let _ = task.await;
+    match std::env::var("TC_SYNC_CREATE") {
+        Ok(_) => {
+            for (_, function) in fns {
+                let p = env.name.to_string();
+                let role = env.assume_role.to_owned();
+                let config = env.config.to_owned();
+                create_function(p, role, config, function).await;
+            }
+        },
+
+        Err(_) => {
+            let mut tasks = vec![];
+            for (_, function) in fns {
+                let p = env.name.to_string();
+                let role = env.assume_role.to_owned();
+                let config = env.config.to_owned();
+                let h = tokio::spawn(async move {
+                    create_function(p, role, config, function).await;
+                });
+                tasks.push(h);
+            }
+            for task in tasks {
+                let _ = task.await;
+            }
+        }
     }
 }
 
@@ -169,13 +137,6 @@ pub async fn delete(env: &Env, fns: HashMap<String, Function>) {
             "zip" => {
                 let function = make_lambda(env, function).await;
                 function.clone().delete().await.unwrap();
-            },
-            "ecs-image" | "container-task" => {
-                if let Some(ct) = function.container_task {
-                    delete_container_task(&env, &function.name, ct).await
-                } else {
-                    panic!("There is no container task defined")
-                }
             },
             _ => {
                 let function = make_lambda(env, function).await;
@@ -210,5 +171,19 @@ pub async fn update_tags(env: &Env, funcs: HashMap<String, Function>) {
     for (_, f) in funcs {
         let arn = env.lambda_arn(&f.name);
         lambda::update_tags(client.clone(), &f.name, &arn, f.runtime.tags.clone()).await;
+    }
+}
+
+pub async fn update_runtime_version(env: &Env, fns: HashMap<String, Function>) {
+    let client = lambda::make_client(env).await;
+    match std::env::var("TC_LAMBDA_RUNTIME_VERSION") {
+        Ok(v) => {
+            for (_, f) in fns {
+                if f.runtime.lang.to_lang() == Lang::Ruby {
+                    let _ = lambda::update_runtime_management_config(&client, &f.name, &v).await;
+                }
+            }
+        }
+        Err(_) => println!("TC_LAMBDA_RUNTIME_VERSION env var is not set")
     }
 }

@@ -33,3 +33,11 @@ pub fn human_time(ms: i64) -> String {
 pub fn time_format(duration: Duration) -> TimeFormat<Duration> {
     TimeFormat(duration)
 }
+
+pub fn ms_to_dt(ms: i64) -> DateTime<Local> {
+    let timestamp_sec = ms / 1000;
+    let timestamp_nano = 0;
+    let utc = DateTime::from_timestamp(timestamp_sec, timestamp_nano);
+    let converted: DateTime<Local> = DateTime::from(utc.unwrap());
+    converted
+}

@@ -18,13 +18,16 @@ pub fn should_split(dir: &str) -> bool {
 }
 
 pub async fn publish(env: &Env, lang: &str, layer_name: &str, zipfile: &str) {
+
     let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
     let client = layer::make_client(&centralized).await;
+
     if u::file_exists(zipfile) {
         let bar = kit::progress();
         let prefix = format!("Publishing {}", layer_name.blue());
         bar.set_prefix(prefix);
         bar.inc(20);
+
         let version = layer::publish(&client, layer_name, zipfile, lang).await;
         layer::add_permission(&client, layer_name, version).await;
         bar.set_message(format!("(version: {})", version));
@@ -33,6 +36,7 @@ pub async fn publish(env: &Env, lang: &str, layer_name: &str, zipfile: &str) {
 }
 
 async fn layer_arn(env: &Env, name: &str, version: Option<String>) -> String {
+
     match version {
         Some(v) => {
             let layer = format!("{}:{}", name, &v);
@@ -111,6 +115,7 @@ pub async fn list(env: &Env, layer_names: Vec<String>) -> String {
 }
 
 pub async fn download(env: &Env, name: &str) {
+
     let layer = env.resolve_layer(name).await;
     println!("Resolving layer: {}", &layer);
     let target_dir = format!("{}/layer", &u::pwd());
@@ -118,6 +123,7 @@ pub async fn download(env: &Env, name: &str) {
     let client = layer::make_client(&env).await;
 
     let maybe_url = layer::get_code_url(&client, &layer).await;
+
     match maybe_url {
         Some(url) => {
             let tmp_path = env::temp_dir();

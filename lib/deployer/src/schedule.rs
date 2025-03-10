@@ -1,6 +1,7 @@
-use resolver::Schedule;
+use compiler::Schedule;
 use aws::scheduler;
 use aws::Env;
+use std::collections::HashMap;
 
 pub async fn create_schedule(env: &Env, namespace: &str, schedule: Schedule) {
     let client = scheduler::make_client(&env).await;
@@ -21,17 +22,17 @@ pub async fn create_schedule(env: &Env, namespace: &str, schedule: Schedule) {
     }
 }
 
-pub async fn create(env: &Env, namespace: &str, schedules: Vec<Schedule>) {
+pub async fn create(env: &Env, namespace: &str, schedules: HashMap<String, Schedule>) {
     let client = scheduler::make_client(&env).await;
     scheduler::find_or_create_group(&client, namespace).await;
-    for schedule in schedules {
+    for (_, schedule) in schedules {
         create_schedule(&env, namespace, schedule).await;
     }
 }
 
-pub async fn delete(env: &Env, namespace: &str, schedules: Vec<Schedule>) {
+pub async fn delete(env: &Env, namespace: &str, schedules: HashMap<String, Schedule>) {
     let client = scheduler::make_client(&env).await;
-    for schedule in schedules {
+    for (_, schedule) in schedules {
         let _ = scheduler::delete_schedule(&client, namespace, &schedule.name).await;
     }
 }

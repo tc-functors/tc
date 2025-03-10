@@ -1,0 +1,32 @@
+[package]
+name = "lambda"
+version = "0.1.0"
+edition = "2021"
+autobins = false
+
+[dependencies]
+lambda_runtime = "0.13.0"
+serde = "^1"
+serde_json = "^1"
+serde_derive = "^1"
+log = "^0.4"
+simple_logger = "^1"
+
+#s3
+tokio = { version = "1", features = ["full"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+aws-config = "0.51.0"
+
+[[bin]]
+name = "bootstrap"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 's'
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+incremental = false
+overflow-checks = true

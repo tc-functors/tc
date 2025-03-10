@@ -1,259 +1,120 @@
-use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 
-use super::{Context, Topology, Vars};
-use compiler::{FunctionSpec, RuntimeSpec};
-use aws::Env;
-use kit as u;
+use super::Context;
+use compiler::{Function, Runtime, Topology, RuntimeInfraSpec};
+use compiler::function::runtime::{Network, FileSystem};
 use kit::*;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Network {
-    pub subnets: Vec<String>,
-    pub security_groups: Vec<String>,
-}
+async fn resolve_environment(
+    ctx: &Context,
+    default_vars: &HashMap<String, String>,
+    sandbox_vars: Option<HashMap<String, String>>
+) -> HashMap<String, String> {
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ContainerTask {
-    pub name: String,
-    pub cluster: String,
-    pub task_role_arn: String,
-    pub image_uri: String,
-    pub command: String,
-    pub network_mode: String,
-    pub subnets: Vec<String>,
-    pub cpu: String,
-    pub mem: String,
-}
+    let Context { env, .. } = ctx;
+    let mut default_vars = default_vars.clone();
 
-async fn make_container_task(
-    context: &Context,
-    fqn: &str,
-    role: &str,
-    image_uri: &str,
-    command: &str
-) -> ContainerTask {
-
-    let Context { env, .. } = context;
-    let subnets = &env.config.aws.ecs.subnets;
-    let cluster = &env.config.aws.ecs.cluster;
-
-    ContainerTask {
-        name: s!(fqn),
-        cluster: cluster.to_string(),
-        task_role_arn: env.role_arn(role),
-        network_mode: s!("Awsvpc"),
-        image_uri: s!(image_uri),
-        command: command.to_owned(),
-        subnets: subnets.clone(),
-        cpu: s!("1024"),
-        mem: s!("2048")
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Runtime {
-    pub lang: String,
-    pub handler: String,
-    pub package_type: String,
-    pub uri: String,
-    pub layers: Vec<String>,
-    pub timeout: i32,
-    pub memory_size: i32,
-    pub network: Option<Network>,
-    pub provisioned_concurrency: Option<i32>,
-    pub environment: HashMap<String, String>,
-    pub tags: HashMap<String, String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct FileSystem {
-    pub arn: String,
-    pub mount_point: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Function {
-    pub name: String,
-    pub actual_name: String,
-    pub version: String,
-    pub revision: String,
-    pub description: Option<String>,
-    pub role: String,
-    pub runtime: Runtime,
-    pub container_task: Option<ContainerTask>,
-    pub fs: Option<FileSystem>,
-    pub dir: Option<String>,
-    pub tasks: HashMap<String, String>,
-}
-
-async fn make_network(
-    context: &Context,
-    assets: &HashMap<String, String>,
-    network: &HashMap<String, Vec<String>>,
-) -> Option<Network> {
-    let Context { env, .. } = context;
-
-    if !network.is_empty() {
-        let given_subnets = network.get("subnets").unwrap();
-        let given_sgs = network.get("security_groups").unwrap();
-        let mut subnet_xs: Vec<String> = vec![];
-        let mut sgs_xs: Vec<String> = vec![];
-        for sn in given_subnets {
-            if !&sn.starts_with("subnet") {
-                let subnets = env.subnets(&sn).await;
-                for s in subnets {
-                    subnet_xs.push(s);
-                }
-            } else {
-                subnet_xs.push(sn.to_string());
-            }
+    let combined = match sandbox_vars {
+        Some(v) => {
+            default_vars.extend(v);
+            default_vars
         }
-        for sg in given_sgs {
-            if !&sg.starts_with("sg") {
-                let sgs = env.security_groups(&sg).await;
-                for s in sgs {
-                    sgs_xs.push(s);
-                }
-            } else {
-                sgs_xs.push(sg.to_string());
-            }
-        }
-        let net = Network {
-            subnets: subnet_xs,
-            security_groups: sgs_xs,
-        };
-        Some(net)
-    } else if !assets.get("DEPS_PATH").unwrap().is_empty() {
-        let given_subnet = &env.config.aws.efs.subnets;
-        let given_sg = &env.config.aws.efs.security_group;
-        let subnets = env.subnets(given_subnet).await;
-        let security_groups = env.security_groups(&given_sg).await;
-        let net = Network {
-            subnets: subnets,
-            security_groups: security_groups,
-        };
-        Some(net)
-    } else {
-        None
-    }
+        None => default_vars
+    };
+
+    env.resolve_vars(combined.clone()).await
 }
 
-fn find_ap_name(context: &Context) -> String {
-    let Context {
-        sandbox, env,  ..
-    } = context;
-    match std::env::var("TC_EFS_AP") {
-        Ok(t) => t,
-        Err(_) => {
-            if sandbox == "stable" {
-                s!(&env.config.aws.efs.stable_ap)
-            } else {
-                s!(&env.config.aws.efs.dev_ap)
-            }
-        }
-    }
-}
+async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
 
-async fn make_fs(env: &Env, context: &Context) -> Option<FileSystem> {
-    let ap_name = find_ap_name(context);
+    let Context { env, sandbox, .. } = ctx;
 
-    println!("Updating fs: {}", &ap_name);
-    let arn = env.access_point_arn(&ap_name).await;
-    match arn {
-        Some(a) => {
-            let fs = FileSystem {
-                arn: a,
-                mount_point: env.config.aws.lambda.fs_mountpoint.to_owned(),
+    match fs {
+        Some(f) => Some(f),
+        None => {
+            let ap_name =  match sandbox.as_ref() {
+                "stable" => s!(&env.config.aws.efs.stable_ap),
+                _ => s!(&env.config.aws.efs.dev_ap)
             };
-            Some(fs)
+
+            let arn = env.access_point_arn(&ap_name).await;
+            match arn {
+                Some(a) => {
+                    let fs = FileSystem {
+                        arn: a,
+                        mount_point: env.config.aws.lambda.fs_mountpoint.to_owned(),
+                    };
+                    Some(fs)
+                }
+                _ => None,
+            }
+
         }
-        _ => None,
     }
 }
 
-fn asset_vars(
-    deps_path: Option<String>,
-    base_deps_path: Option<String>,
-    asset_path: Option<String>,
-) -> HashMap<String, String> {
-    let mut h: HashMap<String, String> = HashMap::new();
-    let base_deps_path = u::maybe_string(base_deps_path, "/var/python");
-    let model_path = u::maybe_string(asset_path, "/var/python");
-    match deps_path {
-        Some(path) => {
-            h.insert(
-                s!("PYTHONPATH"),
-                format!(
-                    "/opt/python:/var/runtime:{}/python:{}/python:{}",
-                    &base_deps_path, &path, &model_path
-                ),
-            );
-            h.insert(s!("LD_LIBRARY_PATH"), format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &path));
+async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Network> {
+
+    let Context { env, .. } = ctx;
+
+    match network {
+
+        Some(net) => {
+            let subnet_tags = net.subnets;
+            let sg_tags = net.security_groups;
+            let mut subnet_xs: Vec<String> = vec![];
+            let mut sgs_xs: Vec<String> = vec![];
+            for sn in subnet_tags {
+                if !&sn.starts_with("subnet") {
+                    let subnets = env.subnets(&sn).await;
+                    for s in subnets {
+                        subnet_xs.push(s);
+                    }
+                } else {
+                    subnet_xs.push(sn.to_string());
+                }
+            }
+            for sg in sg_tags {
+                if !&sg.starts_with("sg") {
+                    let sgs = env.security_groups(&sg).await;
+                    for s in sgs {
+                        sgs_xs.push(s);
+                    }
+                } else {
+                    sgs_xs.push(sg.to_string());
+                }
+            }
+            let net = Network {
+                subnets: subnet_xs,
+                security_groups: sgs_xs,
+            };
+            Some(net)
+        },
+
+        None => {
+
+            let given_subnet = &env.config.aws.efs.subnets;
+            let given_sg = &env.config.aws.efs.security_group;
+            let subnets = env.subnets(given_subnet).await;
+            let security_groups = env.security_groups(&given_sg).await;
+            let net = Network {
+                subnets: subnets,
+                security_groups: security_groups,
+            };
+            Some(net)
         }
-        _ => (),
-    }
-    h
-}
-
-fn find_deps_path(default: Option<String>) -> Option<String> {
-    match std::env::var("TC_EFS_DEPS") {
-        Ok(d) => Some(d),
-        Err(_) => default,
     }
 }
 
-async fn make_env_vars(
-    context: &Context,
-    vars: Vars,
-    assets: &HashMap<String, String>,
-) -> HashMap<String, String> {
-    let Context { env, resolve, .. } = context;
-    let mut env_vars = vars.clone().environment;
-    if *resolve {
-        env_vars = env.resolve_vars(vars.clone().environment).await;
-    }
-    env_vars.extend(assets.to_owned());
-    let default_path = assets.get("DEPS_PATH");
-    let deps_path = find_deps_path(default_path.cloned());
-    let avars = asset_vars(
-        deps_path,
-        assets.get("BASE_DEPS_PATH").cloned(),
-        assets.get("MODEL_PATH").cloned(),
-    );
-    env_vars.extend(avars);
-    env_vars
-}
+async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
 
-fn make_assets(context: &Context, assets: &HashMap<String, Value>) -> HashMap<String, String> {
-    let mut ats: HashMap<String, String> = HashMap::new();
-    let deps_path = find_deps_path(Some(u::value_to_string(assets.get("DEPS_PATH"))));
-
-    let base_deps_path = u::value_to_string(assets.get("BASE_DEPS_PATH"));
-    if let Some(path) = deps_path {
-        ats.insert(s!("DEPS_PATH"), context.render(&path));
-    }
-
-    ats.insert(s!("BASE_DEPS_PATH"), context.render(&base_deps_path));
-    ats.insert(
-        s!("MODEL_PATH"),
-        u::value_to_string(assets.get("MODEL_PATH")),
-    );
-    ats
-}
-
-async fn resolve_layers(context: &Context, layers: Vec<String>) -> Vec<String> {
-    let Context {
-        env,
-        resolve,
-        sandbox,
-        ..
-    } = context;
+    let Context { env, sandbox, .. } = ctx;
     let mut xs: Vec<String> = vec![];
+
     for layer in layers {
         if layer.contains(":") {
             xs.push(env.layer_arn(&layer))
+
         } else if *sandbox != "stable" {
             let name = match std::env::var("TC_USE_STABLE_LAYERS") {
                 Ok(_) => layer,
@@ -261,130 +122,82 @@ async fn resolve_layers(context: &Context, layers: Vec<String>) -> Vec<String> {
             };
             xs.push(env.resolve_layer(&name).await);
         } else {
-            if *resolve {
-                xs.push(env.resolve_layer(&layer).await)
-            }
+            xs.push(env.resolve_layer(&layer).await)
         }
     }
     xs
 }
 
-async fn make_runtime(
-    context: &Context,
-    fqn: &str,
-    funspec: &FunctionSpec,
-    tags: &HashMap<String, String>,
-) -> Runtime {
-    let FunctionSpec {
-        runtime,
-        dir,
-        vars_file,
-        assets,
-        ..
-    } = funspec;
-    let RuntimeSpec { lang, .. } = runtime;
-    let vars = Vars::new(context, vars_file.to_owned(), lang, fqn, &dir);
-    let Vars {
-        timeout,
-        memory_size,
-        provisioned_concurrency,
-        network,
-        ..
-    } = vars.clone();
-
-    let layers = resolve_layers(context, runtime.clone().layers).await;
-    let assets = make_assets(context, assets);
-    let env_vars = make_env_vars(context, vars, &assets).await;
-    let network = make_network(context, &assets, &network).await;
-
-    let uri = match runtime.package_type.as_ref() {
-        "zip" => format!("{}/lambda.zip", &dir),
-        "oci" | "task" => runtime.image_uri.to_owned(),
-        _ => format!("{}/lambda.zip", &dir)
-    };
-
-    Runtime {
-        lang: runtime.lang.to_owned(),
-        handler: runtime.handler.to_owned(),
-        package_type: runtime.package_type.to_owned(),
-        layers: layers.to_vec(),
-        uri: uri,
-        tags: tags.clone(),
-        environment: env_vars,
-        timeout: timeout,
-        network: network,
-        provisioned_concurrency: provisioned_concurrency,
-        memory_size: memory_size,
+fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> RuntimeInfraSpec {
+    RuntimeInfraSpec {
+        memory_size: match s.memory_size {
+            Some(p) => Some(p),
+            None => default.memory_size
+        },
+        timeout: match s.timeout {
+            Some(p) => Some(p),
+            None => default.timeout
+        },
+        environment: match s.environment.clone() {
+            Some(mut p) => {
+                p.extend(default.environment.clone().unwrap());
+                Some(p.clone())
+            },
+            None => default.environment.clone()
+        },
+        image_uri: None,
+        network: None,
+        filesystem: None,
+        provisioned_concurrency: None,
+        tags: None
     }
 }
 
-impl Function {
-    pub async fn new(
-        dir: &str,
-        context: &Context,
-        funspec: &FunctionSpec,
-        tags: &HashMap<String, String>,
-    ) -> Function {
-        let FunctionSpec {
-            name,
-            assets,
-            fqn,
-            version,
-            revision,
-            role,
-            tasks,
-            ..
-        } = funspec;
+fn get_infra_spec(infra_spec: &HashMap<String, RuntimeInfraSpec>, profile: &str, sandbox: &str) -> RuntimeInfraSpec {
 
-        let fqn = context.render(&fqn);
-        let Context { env, .. } = context;
-        let runtime = make_runtime(context, &fqn, funspec, tags).await;
-        let role_name = context.render(&role.name);
-        let role_arn = env.role_arn(&role_name);
+    let profile_specific = infra_spec.get(profile);
+    let sandbox_specific = infra_spec.get(sandbox);
+    let default = infra_spec.get("default").unwrap();
 
-        let mut fs = None;
-
-        if !assets.is_empty() && runtime.package_type == "zip" {
-            fs = make_fs(env, context).await;
-        }
-
-       let container_task = make_container_task(
-           context,
-           &fqn,
-           &funspec.container_task.task_role,
-           &funspec.container_task.image_uri,
-           &funspec.container_task.command
-       ).await;
-
-
-        Function {
-            version: version.to_string(),
-            revision: revision.to_string(),
-            name: fqn,
-            actual_name: s!(name),
-            description: funspec.clone().description,
-            runtime: runtime,
-            role: s!(&role_arn),
-            container_task: Some(container_task),
-            fs: fs,
-            dir: Some(dir.to_string()),
-            tasks: tasks.to_owned(),
-        }
+    if let Some(s) = sandbox_specific {
+        return augment_infra_spec(&default, s)
     }
+    if let Some(s) = profile_specific {
+        return augment_infra_spec(&default, s)
+    }
+    default.clone()
 }
 
-pub async fn make(
-    context: &Context,
-    topology: &Topology,
-    tags: &HashMap<String, String>,
-) -> HashMap<String, Function> {
-    let funspecs = &topology.functions;
+async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
+    let Context { env, sandbox, .. } = ctx;
+
+    let Runtime { layers, network, fs, infra_spec, enable_fs, .. } = runtime;
+    let mut r: Runtime = runtime.clone();
+
+    let actual_infra = get_infra_spec(infra_spec, &env.name, sandbox);
+    let RuntimeInfraSpec { memory_size, timeout, environment, .. } = actual_infra;
+
+    r.memory_size = memory_size;
+    r.timeout = timeout;
+    r.environment = resolve_environment(ctx, &runtime.environment, environment).await;
+    r.layers = resolve_layers(ctx, layers.clone()).await;
+    if *enable_fs {
+        r.network = resolve_network(ctx, network.clone()).await;
+        r.fs = resolve_fs(ctx, fs.clone()).await;
+    }
+    r.infra_spec = HashMap::new();
+    r
+}
+
+pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Function> {
+
+    let fns = &topology.functions;
     let mut functions: HashMap<String, Function> = HashMap::new();
 
-    for (dir, funspec) in funspecs {
-        let actual_name = funspec.clone().name;
-        let function = Function::new(&dir, context, funspec, tags).await;
-        functions.insert(actual_name, function);
+    for (dir, f) in fns {
+        let mut fu: Function = f.clone();
+        fu.runtime = resolve_runtime(ctx, &f.runtime).await;
+        functions.insert(dir.to_string(), fu.clone());
     }
     functions
 }

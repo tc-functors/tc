@@ -1,5 +1,7 @@
 extern crate serde_derive;
 use std::env;
+use tracing_subscriber::filter::{LevelFilter, Targets};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 extern crate log;
 use clap::{Args, Parser, Subcommand};
@@ -22,6 +24,8 @@ enum Cmd {
     /// Trigger release via CI
     #[clap(name = "ci-release")]
     Release(ReleaseArgs),
+    /// List or clear resolver cache
+    Cache(CacheArgs),
     /// Compile a Topology
     Compile(CompileArgs),
     /// Show config
@@ -81,6 +85,14 @@ pub struct BootstrapArgs {
 }
 
 #[derive(Debug, Args)]
+pub struct CacheArgs {
+    #[arg(long, action)]
+    clear: bool,
+    #[arg(long, action)]
+    list: bool,
+}
+
+#[derive(Debug, Args)]
 pub struct DeployArgs {
     #[arg(long, short = 'S')]
     service: Option<String>,
@@ -130,32 +142,28 @@ pub struct ResolveArgs {
     recursive: bool,
     #[arg(long, action)]
     diff: bool,
+    #[arg(long, action)]
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct BuildArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, action)]
+    #[arg(long, short = 'k')]
     kind: Option<String>,
-    #[arg(long, action)]
+    #[arg(long, short = 'n')]
     name: Option<String>,
     #[arg(long, action)]
-    pack: bool,
-    #[arg(long, action)]
-    no_docker: bool,
-    #[arg(long, action)]
     clean: bool,
-    #[arg(long, action)]
-    delete: bool,
-    #[arg(long, action)]
-    trace: bool,
-    #[arg(long, action)]
-    parallel: bool,
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
     #[arg(long, action)]
     dirty: bool,
     #[arg(long, action)]
     merge: bool,
+    #[arg(long, action)]
+    split: bool,
     #[arg(long, action)]
     task: Option<String>,
 }
@@ -167,13 +175,9 @@ pub struct PublishArgs {
     #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, action)]
-    kind: Option<String>,
-    #[arg(long, action)]
     name: Option<String>,
     #[arg(long, action)]
     list: bool,
-    #[arg(long, action)]
-    trace: bool,
     #[arg(long, action)]
     promote: bool,
     #[arg(long, action)]
@@ -223,7 +227,7 @@ pub struct CreateArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    trace: bool,
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -253,7 +257,7 @@ pub struct UpdateArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    trace: bool,
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -268,8 +272,8 @@ pub struct DeleteArgs {
     component: Option<String>,
     #[arg(long, action, short = 'r')]
     recursive: bool,
-    #[arg(long, action, short = 't')]
-    trace: bool,
+    #[arg(long, action)]
+    no_cache: bool,
 }
 
 #[derive(Debug, Args)]
@@ -282,8 +286,6 @@ pub struct InvokeArgs {
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
-    #[arg(long, short = 'M')]
-    mode: Option<String>,
     #[arg(long, short = 'n')]
     name: Option<String>,
     #[arg(long, short = 'S')]
@@ -393,27 +395,21 @@ async fn build(args: BuildArgs) {
     let BuildArgs {
         kind,
         name,
-        pack,
-        no_docker,
+        recursive,
         clean,
-        trace,
-        delete,
-        parallel,
         dirty,
         merge,
+        split,
         ..
     } = args;
 
     let dir = kit::pwd();
     let opts = tc::BuildOpts {
-        pack: pack,
-        no_docker: no_docker,
-        trace: trace,
         clean: clean,
-        delete: delete,
-        parallel: parallel,
         dirty: dirty,
-        merge: merge,
+        recursive: recursive,
+        split: split,
+        merge: merge
     };
     tc::build(kind, name, &dir, opts).await;
 }
@@ -429,11 +425,12 @@ async fn create(args: CreateArgs) {
         sandbox,
         notify,
         recursive,
+        no_cache,
         ..
     } = args;
 
     let env = tc::init(profile, role).await;
-    tc::create(env, sandbox, notify, recursive).await;
+    tc::create(env, sandbox, notify, recursive, no_cache).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -443,6 +440,7 @@ async fn update(args: UpdateArgs) {
         sandbox,
         component,
         recursive,
+        no_cache,
         ..
     } = args;
 
@@ -451,7 +449,7 @@ async fn update(args: UpdateArgs) {
     if kit::option_exists(component.clone()) {
         tc::update_component(env, sandbox, component, recursive).await;
     } else {
-        tc::update(env, sandbox, recursive).await;
+        tc::update(env, sandbox, recursive, no_cache).await;
     }
 }
 
@@ -500,11 +498,12 @@ async fn resolve(args: ResolveArgs) {
         component,
         quiet,
         recursive,
+        no_cache,
         ..
     } = args;
 
     let env = tc::init(profile, role).await;
-    let plan = tc::resolve(env, sandbox, component, recursive).await;
+    let plan = tc::resolve(env, sandbox, component, recursive, no_cache).await;
     if !quiet {
         println!("{plan}");
     }
@@ -516,7 +515,6 @@ async fn invoke(args: InvokeArgs) {
         role,
         payload,
         sandbox,
-        mode,
         name,
         local,
         kind,
@@ -525,7 +523,6 @@ async fn invoke(args: InvokeArgs) {
     } = args;
     let opts =   tc::InvokeOptions {
         sandbox: sandbox,
-        mode: mode,
         payload: payload,
         name: name,
         local: local,
@@ -557,18 +554,15 @@ async fn list(args: ListArgs) {
 async fn publish(args: PublishArgs) {
     let PublishArgs {
         profile,
-        kind,
         name,
         promote,
         demote,
         version,
         list,
-        trace,
         download,
         ..
     } = args;
     let opts = tc::PublishOpts {
-        trace: trace,
         promote: promote,
         demote: demote,
         version: version,
@@ -580,7 +574,7 @@ async fn publish(args: PublishArgs) {
     } else if download {
         tc::download_layer(env, name).await
     } else {
-        tc::publish(env, kind, name, &dir, opts).await;
+        tc::publish(env, name, &dir, opts).await;
     }
 }
 
@@ -679,16 +673,49 @@ async fn release(args: ReleaseArgs) {
 }
 
 
+async fn cache(args: CacheArgs) {
+    let CacheArgs {
+        clear,
+        ..
+    } = args;
+
+    if clear {
+        tc::clear_cache().await;
+    } else {
+        tc::list_cache().await;
+    }
+}
+
+
 async fn config(_args: DefaultArgs) {
     tc::show_config().await;
 }
 
+fn init_tracing() {
+    let filter = Targets::new()
+        .with_target("tc", tracing::Level::DEBUG)
+        .with_default(tracing::Level::DEBUG)
+        .with_target("sqlx", LevelFilter::OFF);
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(filter)
+        .init();
+}
+
+
 async fn run() {
     let args = Tc::parse();
+
+    match env::var("TC_TRACE") {
+        Ok(_) => init_tracing(),
+        Err(_) => ()
+    }
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
         Cmd::Build(args)     => build(args).await,
+        Cmd::Cache(args)     => cache(args).await,
         Cmd::Config(args)    => config(args).await,
         Cmd::Compile(args)   => compile(args).await,
         Cmd::Resolve(args)   => resolve(args).await,

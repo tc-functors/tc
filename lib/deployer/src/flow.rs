@@ -1,4 +1,4 @@
-use resolver::{Flow, Logs};
+use compiler::{Flow, LogConfig};
 use aws::cloudwatch;
 use aws::iam;
 use aws::iam::Role;
@@ -16,22 +16,18 @@ pub async fn create(env: &Env, flow: Flow) {
         let client = sfn::make_client(env).await;
         let iam_client = iam::make_client(env).await;
         let role = flow.role.clone();
-        let role_arn = match role {
-            Some(ref r) => String::from(&env.role_arn(&r.name)),
-            None => String::from(&flow.default_role),
+        let role_arn = role.arn;
+
+        println!("Creating sfn-role {}", flow.role.name);
+        let r = Role {
+            client: iam_client,
+            name: role.name,
+            trust_policy: role.trust.to_string(),
+            policy_arn: role.policy_arn,
+            policy_name: role.policy_name,
+            policy_doc: role.policy.to_string(),
         };
-        if let Some(ro) = role {
-            println!("Creating sfn-role {}", ro.name);
-            let r = Role {
-                client: iam_client,
-                name: ro.name,
-                trust_policy: ro.trust.to_string(),
-                policy_arn: ro.policy_arn,
-                policy_name: ro.policy_name,
-                policy_doc: ro.policy.to_string(),
-            };
-            let _ = r.create().await;
-        };
+        let _ = r.create().await;
 
         let sf = StateMachine {
             name: name.clone(),
@@ -61,7 +57,7 @@ pub async fn delete(env: &Env, flow: Flow) {
             client: client,
             mode: mode,
             definition: definition,
-            role_arn: flow.clone().default_role,
+            role_arn: flow.role.arn.to_string(),
             tags: flow.clone().tags,
         };
 
@@ -75,7 +71,7 @@ pub async fn update_tags(env: &Env, name: &str, tags: HashMap<String, String>) {
     let _ = sfn::update_tags(&client, &sfn_arn, tags).await;
 }
 
-pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: Logs) {
+pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig) {
     let sfn_client = sfn::make_client(env).await;
     let cw_client = cloudwatch::make_client(env).await;
 

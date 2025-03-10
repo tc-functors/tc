@@ -14,6 +14,7 @@ use aws_sdk_lambda::types::LastUpdateStatus;
 use aws_sdk_lambda::types::{Environment, FunctionCode, PackageType, Runtime, State};
 use aws_sdk_lambda::types::{FileSystemConfig, VpcConfig};
 use aws_sdk_lambda::types::{InvocationType, LogType, LoggingConfig};
+use aws_sdk_lambda::types::UpdateRuntimeOn;
 use aws_sdk_lambda::{Client, Error};
 use base64::{engine::general_purpose, Engine as _};
 use colored::Colorize;
@@ -767,6 +768,21 @@ pub async fn update_event_invoke_config(client: &Client, name: &str) {
     match res {
         Ok(_) => (),
         Err(_) => panic!("{:?}", res),
+    }
+}
+
+pub async fn update_runtime_management_config(client: &Client, name: &str, version: &str) {
+    println!("Updating runtime ({}): Manual", &name);
+    let res = client
+        .put_runtime_management_config()
+        .function_name(s!(name))
+        .update_runtime_on(UpdateRuntimeOn::Manual)
+        .runtime_version_arn(s!(version))
+        .send()
+        .await;
+    match res {
+        Ok(_) => (),
+        Err(_) => panic!("{:?}", res)
     }
 }
 

@@ -3,34 +3,45 @@ use std::path::Path;
 
 pub mod spec;
 pub mod topology;
-
-pub mod deps;
-
-pub mod flow;
 pub mod function;
-pub mod layer;
-pub mod mutation;
-pub mod schedule;
+mod flow;
+mod mutation;
+mod schedule;
+pub mod event;
+pub mod route;
+mod queue;
+mod version;
+mod template;
+mod role;
+mod log;
+mod formatter;
 
 use colored::Colorize;
-pub use function::{FunctionSpec, RuntimeSpec};
-pub use layer::Layer;
-pub use mutation::Mutations;
-pub use schedule::Schedule;
-use serde_json::Value;
-pub use spec::{BasicSpec, Consumes, Events, MutationSpec, Queue, ResolverSpec, Route, Spec};
-pub use topology::Topology;
 use walkdir::WalkDir;
+
+pub use function::layer::Layer;
+pub use mutation::{Mutation, Resolver};
+pub use schedule::Schedule;
+pub use topology::Topology;
+pub use function::{Function, Build, Runtime};
+pub use event::{Event, TargetKind, Target};
+pub use queue::Queue;
+pub use route::Route;
+pub use flow::Flow;
+pub use role::{Role, RoleKind};
+pub use log::LogConfig;
+
+pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
 
 use kit as u;
 use kit::*;
 
 pub fn compile(dir: &str, recursive: bool) -> Topology {
-    Topology::new(dir, recursive)
+    Topology::new(dir, recursive, false)
 }
 
-pub fn just_functions() -> HashMap<String, FunctionSpec> {
-    let mut functions: HashMap<String, FunctionSpec> = HashMap::new();
+pub fn just_functions() -> HashMap<String, Function> {
+    let mut functions: HashMap<String, Function> = HashMap::new();
     let dir = u::pwd();
 
     for entry in WalkDir::new(dir.clone())
@@ -41,7 +52,7 @@ pub fn just_functions() -> HashMap<String, FunctionSpec> {
     {
         let p = entry.path().to_string_lossy();
         if topology::is_topology_dir(&p) {
-            let topology = Topology::new(&p, false);
+            let topology = Topology::new(&p, false, false);
             let fns = topology.functions();
             functions.extend(fns);
         }
@@ -55,23 +66,46 @@ pub fn find_layers() -> Vec<Layer> {
         let topology = compile(&dir, true);
         topology.layers()
     } else {
-        layer::discover()
+        function::layer::discover()
     }
 }
+
+pub fn find_buildables(dir: &str, recursive: bool) -> Vec<Build> {
+    let mut xs: Vec<Build> = vec![];
+    let topology = Topology::new(dir, recursive, false);
+    let fns = topology.functions;
+    for (_, f) in fns {
+        xs.push(f.build)
+    }
+    xs
+}
+
 
 pub fn find_layer_names() -> Vec<String> {
     let mut xs: Vec<String> = vec![];
     let layers = find_layers();
     for layer in layers {
-        if layer.target != "efs" {
-            xs.push(layer.name);
-        }
+        xs.push(layer.name)
     }
     u::uniq(xs)
 }
 
-pub fn guess_lang(dir: &str) -> String {
-    function::infer_lang(dir).to_string()
+pub fn guess_runtime(dir: &str) -> LangRuntime {
+    function::runtime::infer_lang(dir)
+}
+
+pub fn guess_build_runtime(dir: &str, kind: BuildKind) -> LangRuntime {
+    match kind {
+        BuildKind::Code => function::runtime::infer_lang(dir),
+        BuildKind::Layer | BuildKind::Library => {
+            function::runtime::infer_lang(&dir)
+        },
+        _ => function::runtime::infer_lang(dir),
+    }
+}
+
+pub fn guess_lang(dir: &str) -> Lang {
+    function::runtime::infer_lang(dir).to_lang()
 }
 
 pub fn is_topology_dir(dir: &str) -> bool {
@@ -81,11 +115,16 @@ pub fn is_topology_dir(dir: &str) -> bool {
 pub fn show_component(component: &str, format: &str, recursive: bool) -> String {
     let dir = u::pwd();
     match component {
+        "spec" => {
+            let f = format!("{}/topology.yml", &u::pwd());
+            let spec = TopologySpec::new(&f);
+            u::pretty_json(spec)
+        },
         "layers" => {
             let layers = find_layers();
             u::pretty_json(layers)
         }
-        "states" => {
+        "flow" => {
             let topology = compile(&dir, recursive);
             match topology.flow {
                 Some(f) => u::pretty_json(&f),
@@ -96,30 +135,31 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             let topology = compile(&dir, recursive);
             u::pretty_json(&topology.routes)
         }
-        "roles" | "vars" => {
+        "runtime" => {
             let topology = compile(&dir, recursive);
             let functions = topology.functions();
             for (_dir, f) in functions {
-                println!("{}", &f.fqn.blue());
-                println!("  role: - {}", &f.role.path);
-                if let Some(v) = &f.vars_file {
-                    println!("  var:  - {}", &v);
-                }
+                println!("{}", u::pretty_json(f.runtime));
+            }
+            u::empty()
+        }
+        "vars" => {
+            let topology = compile(&dir, recursive);
+            let functions = topology.functions();
+            for (_dir, f) in functions {
+                println!("{}", u::pretty_json(f.runtime));
             }
             u::empty()
         }
         "events" => {
             if recursive {
                 let topologies = list_topologies();
-                let mut xs: Vec<Events> = vec![];
-                for (_dir, basic_spec) in topologies {
-                    let BasicSpec { events, .. } = basic_spec;
-                    match events {
-                        Some(e) => xs.push(e),
-                        None => ()
-                    }
+                let mut h: HashMap<String, Event> = HashMap::new();
+                for (_dir, t) in topologies {
+                    let Topology { events, .. } = t;
+                    h.extend(events);
                 }
-                println!("{}", u::pretty_json(xs));
+                println!("{}", u::pretty_json(h));
                 u::empty()
             } else {
                 let topology = compile(&dir, false);
@@ -145,7 +185,7 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
         "mutations" => {
             let topology = compile(&dir, recursive);
             if format == "graphql" {
-                mutation::print_graphql(&topology.mutations.unwrap().types);
+                mutation::print_graphql(&topology.mutations.values().into_iter().nth(0).unwrap().types);
                 u::empty()
             } else {
                 u::pretty_json(&topology.mutations)
@@ -154,10 +194,16 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
 
         "topologies" => {
             let topologies = list_topologies();
-            for (dir, basic_spec) in topologies {
-                let BasicSpec { name, .. } = basic_spec;
-                println!("{} - {}", &name, u::second(&dir, "/services/"));
+            match format {
+                "table" => formatter::print_topologies(topologies),
+                _ =>  {
+                    for (dir, basic_spec) in topologies {
+                        let Topology { namespace, .. } = basic_spec;
+                        println!("{} - {}", &namespace, u::second(&dir, "/services/"));
+                    }
+                }
             }
+
             u::empty()
         }
 
@@ -185,25 +231,12 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
 
 pub fn topology_name(dir: &str) -> String {
     let f = format!("{}/topology.yml", dir);
-    let spec = Spec::new(&f);
+    let spec = TopologySpec::new(&f);
     spec.name
 }
 
-pub fn topology_mode(dir: &str) -> &str {
-    let f = format!("{}/topology.yml", dir);
-    let spec = Spec::new(&f);
-    match spec.mode {
-        Some(m) => match m.as_ref() {
-            "Standard" => "async",
-            "Expresss" => "sync",
-            _ => "sync",
-        },
-        None => "async",
-    }
-}
-
-pub fn current_function(dir: &str) -> Option<FunctionSpec> {
-    let topology = Topology::new(dir, false);
+pub fn current_function(dir: &str) -> Option<Function> {
+    let topology = Topology::new(dir, false, true);
     topology
         .functions
         .values()
@@ -224,28 +257,9 @@ pub fn kind_of() -> String {
     }
 }
 
-pub fn find_assets(dir: &str) -> HashMap<String, Value> {
-    let topology = Topology::new(dir, false);
-    deps::find_assets(dir, &topology)
-}
-
-pub fn determine_target(dir: &str) -> String {
-    if is_topology_dir(&u::pwd()) || u::path_exists(dir, "function.json") {
-        let assets = find_assets(dir);
-        let is_efs = assets.get("MODEL_PATH").is_some();
-        if !is_efs {
-            s!("layer")
-        } else {
-            s!("efs")
-        }
-    } else {
-        s!("layer")
-    }
-}
-
-pub fn list_topologies() -> HashMap<String, BasicSpec> {
+pub fn list_topologies() -> HashMap<String, Topology> {
     let mut names: Vec<String> = vec![];
-    let mut topologies: HashMap<String, BasicSpec> = HashMap::new();
+    let mut topologies: HashMap<String, Topology> = HashMap::new();
     for entry in WalkDir::new(u::pwd())
         .follow_links(false)
         .into_iter()
@@ -254,9 +268,9 @@ pub fn list_topologies() -> HashMap<String, BasicSpec> {
     {
         let p = entry.path().to_string_lossy();
         if is_topology_dir(&p) {
-            let spec = topology::basic_spec(&p);
-            if !names.contains(&spec.name.to_string()) {
-                names.push(spec.name.to_string());
+            let spec = Topology::new(&p, true, true);
+            if !names.contains(&spec.namespace.to_string()) {
+                names.push(spec.namespace.to_string());
                 topologies.insert(p.to_string(), spec);
             }
         }
@@ -280,9 +294,41 @@ pub fn list_topology_dirs() -> HashMap<String, String> {
     {
         let p = entry.path().to_string_lossy();
         if is_topology_dir(&p) && is_ci_dir(&p) {
-            let spec = topology::basic_spec(&p);
-            topologies.insert(spec.name.to_string(), p.to_string());
+            let spec = Topology::new(&p, false, true);
+            topologies.insert(spec.namespace.to_string(), p.to_string());
         }
     }
     topologies
+}
+
+pub fn count_of(topology: &Topology) {
+
+    let Topology { functions, mutations, events, queues, routes, .. } = topology;
+
+    let mut f: usize = functions.len();
+    let mut m: usize = match mutations.get("default") {
+        Some(mx) => mx.resolvers.len(),
+        _ => 0
+    };
+    let mut e: usize = events.len();
+    let mut q: usize = queues.len();
+    let mut r: usize = routes.len();
+
+    let nodes = &topology.nodes;
+
+    for node in nodes {
+        let Topology { functions, mutations, events, queues, routes, .. } = node;
+        f = f  + functions.len();
+        m = m + match mutations.get("default") {
+            Some(mx) => mx.resolvers.len(),
+            _ => 0
+        };
+        e = e + events.len();
+        q = q + queues.len();
+        r = r + routes.len();
+    }
+
+    let msg = format!("{} node(s), {} function(s), {} mutation(s), {} event(s), {} route(s), {} queue(s)",
+                      nodes.len() + 1, f, m, e, r, q);
+    println!("Compiling {} ", msg.cyan());
 }

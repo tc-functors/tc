@@ -39,6 +39,14 @@ pub fn nth(xs: Vec<&str>, n: u8) -> String {
         .to_string()
 }
 
+pub fn nths(xs: Vec<String>, n: u8) -> String {
+    xs.clone()
+        .into_iter()
+        .nth(n.into())
+        .unwrap_or_default()
+        .to_string()
+}
+
 pub fn lastn(xs: Vec<&str>, n: usize) -> Vec<&str> {
     xs.clone().into_iter().rev().take(n).collect()
 }

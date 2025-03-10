@@ -1,4 +1,3 @@
-use chrono::Local;
 use indicatif::{ProgressBar, ProgressStyle};
 use ptree::item::StringItem;
 use ptree::output::print_tree_with;
@@ -20,32 +19,10 @@ pub fn progress() -> ProgressBar {
 }
 
 pub fn trace() -> bool {
-    match env::var("TRACE") {
+    match env::var("TC_TRACE") {
         Ok(_) => true,
         Err(_) => false,
     }
-}
-
-pub fn init_trace() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .with_target(false)
-        .without_time()
-        .init();
-}
-
-pub fn init_log() {
-    let mut builder = env_logger::Builder::from_default_env();
-    builder
-        .format(|buf, record| {
-            writeln!(
-                buf,
-                "{} {}",
-                Local::now().format("%Y-%m-%dT%H:%M:%S%.3f"),
-                record.args()
-            )
-        })
-        .init();
 }
 
 /// Main struct that holds the state for one Write stream
