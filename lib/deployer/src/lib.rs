@@ -113,7 +113,6 @@ pub async fn create(env: &Env, topology: &Topology) {
         TopologyKind::Function => create_function(env, &topology).await,
         TopologyKind::Evented => ()
     }
-
 }
 
 pub async fn update(env: &Env, topology: &Topology) {
@@ -234,7 +233,24 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
             function::update_tags(&env, functions).await;
         }
 
-        _ => prn_components()
+        _ => {
+            if kit::file_exists(&component) {
+                let c = kit::strip(&component, "/").replace("_", "-");
+                match functions.get(&c) {
+                    Some(f) => {
+                        builder::build(&f.dir, None, None).await;
+                        let p = env.name.to_string();
+                        let role = env.assume_role.to_owned();
+                        let config = env.config.to_owned();
+                        function::create_function(p, role, config, f.clone()).await;
+                    }
+                    None => panic!("No valid function found"),
+                }
+            } else {
+                println!("Available components: ");
+                prn_components();
+            }
+        }
     }
 }
 
