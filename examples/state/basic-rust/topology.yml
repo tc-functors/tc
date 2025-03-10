@@ -1,6 +1,5 @@
-name: example-basic
+name: example-basic-rust
 mode: Express
-hyphenated_names: true
 flow:
   Comment: Basic example
   StartAt: foo
@@ -14,8 +13,15 @@ flow:
       Parameters:
         FunctionName: '{{namespace}}_foo_{{sandbox}}'
         Payload:
-          metadata.$: $.metadata
-          execution.$: $$.Execution
-          data.$: $
-
+          $: $.data
+      Next: bar
+    bar:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      InputPath: $
+      Parameters:
+        FunctionName: '{{namespace}}_bar_{{sandbox}}'
+        Payload:
+          message.$: $.message
       End: true
