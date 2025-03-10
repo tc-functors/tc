@@ -231,7 +231,8 @@ pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
         .await;
     match res {
         Ok(r) => r.execution_arn,
-        Err(_) => {
+        Err(e) => {
+            println!("{:?}", e);
             panic::set_hook(Box::new(|_| {
                 println!("Error: Failed to invoke. Check payload or sandbox");
             }));

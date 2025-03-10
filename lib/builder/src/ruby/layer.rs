@@ -38,7 +38,7 @@ fn gen_dockerfile(dir: &str) {
     let extra_str = u::vec_to_str(shared_objects());
     let f = format!(
         r#"
-FROM public.ecr.aws/sam/build-ruby3.2:1.103.0-20231116224730 as intermediate
+FROM public.ecr.aws/sam/build-ruby3.2:1.103.0-20231116224730 AS intermediate
 WORKDIR {dir}
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts

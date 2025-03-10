@@ -150,9 +150,9 @@ pub struct ResolveArgs {
 pub struct BuildArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, action)]
+    #[arg(long, short = 'k')]
     kind: Option<String>,
-    #[arg(long, action)]
+    #[arg(long, short = 'n')]
     name: Option<String>,
     #[arg(long, action)]
     clean: bool,
