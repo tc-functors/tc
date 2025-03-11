@@ -33,6 +33,8 @@ scaffolder = { path = "lib/scaffolder" }
 lister = { path = "lib/lister" }
 router = { path = "lib/router" }
 ci = { path = "lib/ci" }
+inspector = { path = "lib/inspector" }
+cache = { path = "lib/cache" }
 
 [dev-dependencies]
 mockall = "0.12.1"
@@ -54,7 +56,8 @@ members = [
    "lib/scaffolder",
    "lib/lister",
    "lib/router",
-   "lib/ci"
+   "lib/ci",
+   "lib/inspector"
 ]
 
 [profile.release]
