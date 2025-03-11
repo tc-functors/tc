@@ -78,6 +78,15 @@ impl Github {
         ats
     }
 
+    async fn release_assets_by_tag(&self, tag: &str) -> Vec<Asset> {
+        let path = format!("/releases/tags/{}", tag);
+        let res = u::http_get(&self.url(&path), self.headers()).await;
+        let assets = &res["assets"];
+        let ats: Vec<Asset> = serde_json::from_value(assets.clone()).unwrap();
+        ats
+    }
+
+
     async fn download_asset(&self, asset_name: &str, outfile: &str) {
         let assets = self.latest_release_assets().await;
         let headers = self.with_headers("accept", "application/octet-stream");
@@ -92,6 +101,22 @@ impl Github {
             }
         }
     }
+
+    async fn download_asset_by_tag(&self, asset_name: &str, outfile: &str, tag: &str) {
+        let assets = self.release_assets_by_tag(tag).await;
+        let headers = self.with_headers("accept", "application/octet-stream");
+        for asset in assets {
+            let id = &asset.id;
+            if &asset.name == asset_name {
+                println!("Upgrading to {} ({}) ref:{}", &asset.version(), file_size_human(asset.size), id);
+                let path = format!("/releases/assets/{}", id);
+                u::download(&self.url(&path), headers.clone(), outfile).await;
+                replace_exe(outfile);
+                println!("Everything you can imagine is real - Pablo Picasso");
+            }
+        }
+    }
+
 
     async fn create_release(&self, tag: &str) -> String {
         let payload = format!(
@@ -130,7 +155,7 @@ impl Github {
 
 }
 
-pub async fn self_upgrade(repo: &str, token: &str) {
+pub async fn self_upgrade(repo: &str, token: &str, tag: Option<String>) {
     let gh = Github::init(repo, token);
     let arch_os = arch_os();
     let name = match arch_os.as_str() {
@@ -139,7 +164,10 @@ pub async fn self_upgrade(repo: &str, token: &str) {
         "aarch64-macos" => "tc-aarch64-macos",
         _ => panic!("unknown os {}", arch_os),
     };
-    gh.download_asset(name, "/tmp/tc").await;
+    match tag {
+        Some(t) => gh.download_asset_by_tag(name, "/tmp/tc", &t).await,
+        None => gh.download_asset(name, "/tmp/tc").await
+    }
 }
 
 

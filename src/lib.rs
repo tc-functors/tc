@@ -450,8 +450,8 @@ pub async fn unfreeze(env: Env, service: Option<String>, sandbox: String) {
     notifier::notify(&service, &msg).await;
 }
 
-pub async fn upgrade() {
-    github::self_upgrade("tc", "").await
+pub async fn upgrade(version: Option<String>) {
+    github::self_upgrade("tc", "", version).await
 }
 
 // ci
