@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+    <title>tc inspector</title>
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link href="/jsonTree.css" rel="stylesheet" />
+    <script src="/jsonTree.js"></script>
+  </head>
+
+  <body>
+
+    <div class="spaced">
+      <nav class="navbar">
+	<ul>
+	  <li><strong>tc::inspector</strong></li>
+	</ul>
+	<ul>
+	  <li>
+	    {% if name == "functors" %}
+	    Functors
+	    {% else %}
+	    <a href="/">Functors</a>
+	    {% endif %}
+	  </li>
+	  <li>
+	    {% if name == "manifests" %}
+	    Manifests
+	    {% else %}
+	    <a href="/manifests">Manifests</a>
+	    {% endif %}
+	  </li>
+
+	  <li>
+	    {% if name == "audit" %}
+	    Audit
+	    {% else %}
+	    <a href="/audit">Audit</a>
+	    {% endif %}
+	  </li>
+
+	  <li>
+	    {% if name == "c4" %}
+	    Graph
+	    {% else %}
+	    <a href="/c4">Graph</a>
+	    {% endif %}
+	  </li>
+
+	  <li>
+	    {% if name == "settings" %}
+	    Settings
+	    {% else %}
+	    <a href="/settings">Settings</a>
+	    {% endif %}
+	  </li>
+
+	</ul>
+      </nav>
+
+      {% block content %}{% endblock %}
+
+    </div>
+  </body>
+</html>

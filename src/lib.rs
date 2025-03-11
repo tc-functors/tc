@@ -515,11 +515,15 @@ pub async fn init_repo_profile(profile: Option<String>) -> Env {
 }
 
 pub async fn clear_cache() {
-    resolver::cache::clear()
+    cache::clear()
 }
 
 pub async fn list_cache() {
-    let xs = resolver::cache::list();
+    let xs = cache::list();
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
+}
+
+pub async fn inspect() {
+    inspector::init().await
 }

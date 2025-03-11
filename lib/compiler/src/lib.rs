@@ -30,6 +30,7 @@ pub use route::Route;
 pub use flow::Flow;
 pub use role::{Role, RoleKind};
 pub use log::LogConfig;
+pub use formatter::TopologyCount;
 
 pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
 

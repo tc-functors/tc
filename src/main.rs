@@ -38,6 +38,8 @@ enum Cmd {
     Freeze(FreezeArgs),
     /// Emulate Runtime environments
     Emulate(EmulateArgs),
+    /// Inspect via browser
+    Inspect(InspectArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
     /// List created entities
@@ -69,6 +71,9 @@ pub struct DefaultArgs {}
 
 #[derive(Debug, Args)]
 pub struct ScaffoldArgs {}
+
+#[derive(Debug, Args)]
+pub struct InspectArgs {}
 
 #[derive(Debug, Args)]
 pub struct BootstrapArgs {
@@ -691,6 +696,10 @@ async fn config(_args: DefaultArgs) {
     tc::show_config().await;
 }
 
+async fn inspect(_args: InspectArgs) {
+    tc::inspect().await;
+}
+
 fn init_tracing() {
     let filter = Targets::new()
         .with_target("tc", tracing::Level::DEBUG)
@@ -724,6 +733,7 @@ async fn run() {
         Cmd::Deploy(args)    => deploy(args).await,
         Cmd::Emulate(args)   => emulate(args).await,
         Cmd::Freeze(args)    => freeze(args).await,
+        Cmd::Inspect(args)   => inspect(args).await,
         Cmd::Invoke(args)    => invoke(args).await,
         Cmd::List(args)      => list(args).await,
         Cmd::Publish(args)   => publish(args).await,
