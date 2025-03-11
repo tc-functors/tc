@@ -59,7 +59,7 @@ enum Cmd {
     /// Update components
     Update(UpdateArgs),
     /// upgrade tc version
-    Upgrade(DefaultArgs),
+    Upgrade(UpgradeArgs),
     /// display current tc version
     Version(DefaultArgs),
 }
@@ -239,6 +239,13 @@ pub struct SyncArgs {
     #[arg(long, action)]
     dry_run: bool,
 }
+
+#[derive(Debug, Args)]
+pub struct UpgradeArgs {
+    #[arg(long, short = 'v')]
+    version: Option<String>,
+}
+
 
 #[derive(Debug, Args)]
 pub struct UpdateArgs {
@@ -534,8 +541,9 @@ async fn invoke(args: InvokeArgs) {
     tc::invoke(env, opts).await;
 }
 
-async fn upgrade() {
-    tc::upgrade().await
+async fn upgrade(args: UpgradeArgs) {
+    let UpgradeArgs { version } = args;
+    tc::upgrade(version).await
 }
 
 async fn list(args: ListArgs) {
@@ -734,7 +742,7 @@ async fn run() {
         Cmd::Test(args)      => test(args).await,
         Cmd::Unfreeze(args)  => unfreeze(args).await,
         Cmd::Update(args)    => update(args).await,
-        Cmd::Upgrade(..)     => upgrade().await,
+        Cmd::Upgrade(args)   => upgrade(args).await,
         Cmd::Version(..)     => version().await,
     }
 }
