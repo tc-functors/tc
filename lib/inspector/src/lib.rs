@@ -4,17 +4,12 @@ use axum::{
     Router,
 };
 
-use memory_serve::{MemoryServe, load_assets};
-
 mod page;
 mod fragment;
 
 pub async fn init() {
 
     let addr = "0.0.0.0:8000";
-
-    let memory_router = MemoryServe::new(load_assets!("assets"))
-        .into_router();
 
     let app = Router::new()
         .route("/", get(page::functors))
@@ -31,7 +26,6 @@ pub async fn init() {
         .route("/c4", get(page::c4))
         .route("/topology/{:id}", get(page::get_topology))
         .route("/functions/{:id}", get(page::get_topology))
-        .merge(memory_router)
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

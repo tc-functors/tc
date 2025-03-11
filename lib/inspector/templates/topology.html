@@ -10,31 +10,44 @@
   </ul>
 </nav>
 
- <div id="wrapper">
-   <div id="tree"></div>
- </div>
-
 <script>
-var wrapper = document.getElementById("wrapper");
 
-var d = '{{topology}}'.replace(/&quot;/ig,'"');
+  // var d = '{{topology}}'.replace(/&quot;/ig,'"');
+  // var data = JSON.parse(d);
+  // console.log(data);
+  var obj = {a:1, 'b':'foo', c:[false,'false',null, 'null', {d:{e:1.3e5,f:'1.3e5'}}]};
+  var str = JSON.stringify(obj, null, 2);
 
-try {
-    var data = JSON.parse(d);
-} catch (e) {}
+  function syntaxHighlight(json) {
+    if (typeof json != 'string') {
+      json = JSON.stringify(json, undefined, 2);
+    }
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+      var cls = 'number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'key';
+        } else {
+          cls = 'string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'boolean';
+      } else if (/null/.test(match)) {
+        cls = 'null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    });
+  }
 
-console.log(data)
+  function output(inp) {
+    document.body.appendChild(document.createElement('pre')).innerHTML = inp;
+  }
 
-var tree = jsonTree.create(data, wrapper);
 
+  output(syntaxHighlight(str));
 
-
-// Expand all (or selected) child nodes of root (optional)
-tree.expand(function(node) {
-   return node.childNodes.length < 2;
-});
-
-</script>
+  </script>
 
 
 {% endblock %}
