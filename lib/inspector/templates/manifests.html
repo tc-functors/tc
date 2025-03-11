@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+
+<form>
+  <fieldset class="grid">
+
+    <select name="sandbox" aria-label="Sandbox" required>
+      <option disabled>
+	Select Sandbox
+      </option>
+      <option>stable</option>
+      <option>icy</option>
+    </select>
+
+    <input type="submit" value="Find Manifests"/>
+  </fieldset>
+</form>
+<div> </div>
+</div>
+
+<div id="functors"
+     hx-trigger="load"
+     hx-get="/manifests/list" hx-swap="innerHTML">
+
+  <div align="center">
+    <br/><br/><br/>
+    Loading Manifests ...
+  </div>
+
+</div>
+
+
+{% endblock %}

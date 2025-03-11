@@ -4,7 +4,6 @@ mod event;
 mod function;
 mod route;
 mod topology;
-pub mod cache;
 
 pub use context::Context;
 use compiler::Topology;

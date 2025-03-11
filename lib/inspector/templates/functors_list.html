@@ -1,0 +1,31 @@
+<table class="striped">
+  <thead>
+    <tr>
+      <td>Namespace</td>
+      <td>Version</td>
+      <td>Nodes</td>
+      <td>Functions</td>
+      <td>Events</td>
+      <td>Queues</td>
+      <td>Mutations</td>
+      <td>Routes</td>
+      <td>States</td>
+      <td>Topology</td>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td><a href="/functor/{{item.id}}">{{item.namespace}}<a/></td>
+      <td>{{item.version}}</td>
+      <td>{{item.nodes}}</td>
+      <td><a href="/functions/{{item.id}}">{{item.functions}}</a></td>
+      <td>{{item.events}}</td>
+      <td>{{item.queues}}</td>
+      <td>{{item.mutations}}</td>
+      <td>{{item.routes}}</td>
+      <td>0</td>
+      <td><a href="/topology/{{item.id}}">view</a></td>
+      {% endfor %}
+  </tbody>
+
+</table>

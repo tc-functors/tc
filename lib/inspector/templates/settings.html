@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<div class="grid">
+
+  <article>
+
+    <header>Resolver cache</header>
+
+    <form>
+      <fieldset>
+	<legend>Store</legend>
+	<input type="radio" id="filesystem" name="filesystem" checked />
+	<label htmlFor="filesystem">Filesystem</label>
+	<input type="radio" id="s3" name="s3" />
+	<label htmlFor="s3">S3</label>
+      </fieldset>
+
+      <input type="text" placeholder="Path or URI"/>
+
+      <button>Update Store</button>
+    </form>
+
+  </article>
+
+  <div></div>
+
+
+</div>
+
+
+<div class="grid">
+
+  <div>
+    Theme
+
+
+  </div>
+  <div> </div>
+
+</div>
+
+
+{% endblock %}

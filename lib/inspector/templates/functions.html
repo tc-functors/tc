@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<nav aria-label="breadcrumb">
+  <ul>
+    <li><a href="#">Home</a></li>
+    <li><a href="/functors">Functors</a></li>
+    <li>{{id}}</li>
+  </ul>
+</nav>
+
+ <div id="wrapper">
+   <div id="tree"></div>
+ </div>
+
+<script>
+var wrapper = document.getElementById("wrapper");
+
+var d = '{{topology}}'.replace(/&quot;/ig,'"');
+
+
+
+
+try {
+    var data = JSON.parse(d);
+} catch (e) {}
+
+console.log(data)
+
+var data2 = {
+    "firstName": "Jonh",
+    "lastName": "Smith",
+    "phones": [
+        "123-45-67",
+        "987-65-43"
+    ]
+};
+
+console.log(data2)
+
+var tree = jsonTree.create(data, wrapper);
+
+
+
+// Expand all (or selected) child nodes of root (optional)
+tree.expand(function(node) {
+   return node.childNodes.length < 2;
+});
+
+</script>
+
+
+{% endblock %}

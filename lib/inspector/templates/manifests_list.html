@@ -1,0 +1,25 @@
+<table>
+  <thead>
+    <tr>
+      <td>Namespace</td>
+      <td>Prod</td>
+      <td>Staging</td>
+      <td>QA</td>
+      <td>POC</td>
+    </tr>
+  <thead>
+
+    <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{item.namespace}}</td>
+      <td>{{item.prod}}</td>
+      <td>{{item.staging}}</td>
+      <td>{{item.qa}}</td>
+      <td>{{item.poc}}</td>
+    </tr>
+
+    {% endfor %}
+    </tbody>
+
+</table>

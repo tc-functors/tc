@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
 use configurator::Config;
+use serde_json::Value;
 
 use super::spec::{TopologySpec, TopologyKind};
 use super::{mutation, schedule, event, version, template};
@@ -530,6 +531,11 @@ impl Topology {
             }
         }
         xs
+    }
+
+    pub fn from_json(v: Value) -> Topology {
+        let t: Topology = serde_json::from_value(v).unwrap();
+        t
     }
 
 }

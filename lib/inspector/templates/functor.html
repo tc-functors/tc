@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav aria-label="breadcrumb">
+  <ul>
+    <li><a href="#">Home</a></li>
+    <li><a href="/functors">Functors</a></li>
+    <li>{{id}}</li>
+  </ul>
+</nav>
+
+<article>
+  <header>Functions</header>
+
+  <table class="striped">
+    <thead>
+      <tr>
+	<td>Name</td>
+	<td>Runtime</td>
+	<td>Layers</td>
+	<td>Memory</td>
+	<td>Timeout</td>
+      </tr>
+    </thead>
+    <tbody>
+    {% for (k,function) in topology.functions %}
+    <tr>
+      <td>{{function.actual_name}}</td>
+      <td></td>
+      <td>
+	{% for layer in function.runtime.layers %}
+	{{layer}}
+	<br>
+	{% endfor %}
+      </td>
+      <td></td>
+      <td></td>
+    </tr>
+    {% endfor %}
+
+    </tbody>
+  </table>
+
+</article>
+
+<br/>
+
+<article>
+  <header>States</header>
+
+</article>
+
+<br/>
+
+<article>
+  <header>Routes</header>
+
+</article>
+
+<br/>
+
+<article>
+  <header>Events</header>
+
+</article>
+
+<br/>
+
+<article>
+  <header>Mutations</header>
+
+</article>
+
+<br/>
+
+<article>
+  <header>Queues</header>
+
+</article>
+
+
+
+{% endblock %}

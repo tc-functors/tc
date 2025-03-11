@@ -1,5 +1,6 @@
-use tabled::{Tabled};
+use tabled::Tabled;
 use kit as u;
+use compiler::Topology;
 
 fn cache_dir() -> String {
     String::from("/tmp/tc-resolver-cache")
@@ -29,13 +30,13 @@ pub fn clear() {
     u::sh(&format!("rm -rf {}", cache_dir()), &u::pwd());
 }
 
-#[derive(Tabled, Clone, Debug)]
+#[derive(Tabled, Clone)]
 pub struct CacheItem {
     pub namespace: String,
     pub env: String,
     pub sandbox: String,
     pub time: String,
-    pub size: String
+    pub size: String,
 }
 
 pub fn list() -> Vec<CacheItem> {
@@ -49,12 +50,14 @@ pub fn list() -> Vec<CacheItem> {
                 let namespace = parts.clone().into_iter().nth(0).unwrap_or_default();
                 let env = parts.clone().into_iter().nth(1).unwrap_or_default();
                 let sandbox = &parts.into_iter().nth(2).unwrap_or_default();
+
                 let c = CacheItem {
                     namespace: namespace.to_string(),
                     env: env.to_string(),
                     sandbox: sandbox.to_string(),
                     time: u::ms_to_dt(r.time as i64).to_string(),
                     size: u::file_size_human(r.size as f64)
+
                 };
                 xs.push(c)
             }
@@ -62,4 +65,25 @@ pub fn list() -> Vec<CacheItem> {
         }
     }
     xs
+}
+
+
+pub fn make_key(namespace: &str, profile: &str, sandbox: &str) -> String {
+    format!("{}.{}.{}", namespace, profile, sandbox)
+}
+
+pub async fn write_topology(key: &str, t: &Topology) {
+    let s = serde_json::to_string(t).unwrap();
+    write(key, &s).await
+}
+
+pub async fn read_topology(key: &str) -> Option<Topology> {
+    if has_key(key) {
+        tracing::info!("Found resolver cache: {}", key);
+        let s = read(key);
+        let t: Topology = serde_json::from_str(&s).unwrap();
+        Some(t)
+    } else {
+        None
+    }
 }
