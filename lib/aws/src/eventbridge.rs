@@ -5,6 +5,8 @@ use aws_sdk_eventbridge::types::builders::TargetBuilder;
 use aws_sdk_eventbridge::types::AppSyncParameters;
 use aws_sdk_eventbridge::types::InputTransformer;
 use aws_sdk_eventbridge::types::PutEventsRequestEntry;
+use aws_sdk_eventbridge::types::RetryPolicy;
+use aws_sdk_eventbridge::types::builders::RetryPolicyBuilder;
 pub use aws_sdk_eventbridge::types::{Rule, RuleState, Target};
 use aws_sdk_eventbridge::Client;
 use std::collections::HashMap;
@@ -33,6 +35,11 @@ pub fn make_appsync_params(op: &str) -> AppSyncParameters {
     params.graph_ql_operation(op).build()
 }
 
+pub fn make_retry_policy() -> RetryPolicy {
+    let ret = RetryPolicyBuilder::default();
+    ret.maximum_retry_attempts(1).build()
+}
+
 pub fn make_target(
     id: &str,
     arn: &str,
@@ -43,19 +50,41 @@ pub fn make_target(
 ) -> Target {
 
     let target = TargetBuilder::default();
+    let retry_policy = make_retry_policy();
 
     match kind {
-        "sfn" | "stepfunction" => target.id(id).arn(arn).role_arn(role_arn).build().unwrap(),
-        "lambda" | "function" => target.id(id).arn(arn).build().unwrap(),
+        "sfn" | "stepfunction" => {
+            target.id(id)
+                .arn(arn)
+                .role_arn(role_arn)
+                .retry_policy(retry_policy)
+                .build()
+                .unwrap()
+        }
+        "lambda" | "function" => {
+            target.id(id)
+                .arn(arn)
+                .retry_policy(retry_policy)
+                .build()
+                .unwrap()
+        }
         "appsync" | "mutation" => target
             .id(id)
             .arn(String::from(arn))
             .role_arn(role_arn)
             .set_input_transformer(input_transformer)
             .set_app_sync_parameters(appsync)
+            .retry_policy(retry_policy)
             .build()
             .unwrap(),
-        _ => target.id(id).arn(arn).role_arn(role_arn).build().unwrap(),
+        _ => {
+            target.id(id)
+                .arn(arn)
+                .role_arn(role_arn)
+                .retry_policy(retry_policy)
+                .build()
+                .unwrap()
+        }
     }
  }
 
