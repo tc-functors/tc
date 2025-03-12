@@ -759,11 +759,5 @@ async fn run() {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "tc");
-    env::set_var("AWS_MAX_ATTEMPTS", "10");
-    env::set_var("DOCKER_BUILDKIT", "1");
-    env::set_var("AWS_RETRY_MODE", "standard");
-    env::set_var("DOCKER_DEFAULT_PLATFORM", "linux/amd64");
-
     run().await
 }
