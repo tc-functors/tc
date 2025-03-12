@@ -538,4 +538,15 @@ impl Topology {
         t
     }
 
+    pub fn to_bincode(&self) {
+        let byea: Vec<u8> = bincode::serialize(self).unwrap();
+        let path = format!("{}-{}.tc", self.fqn, self.version);
+        kit::write_bytes(&path, byea);
+    }
+
+
+    pub fn output_bincode(ts: &Vec<Topology>, path: &str) {
+        let byea: Vec<u8> = bincode::serialize(ts).unwrap();
+        kit::write_bytes(&path, byea);
+    }
 }
