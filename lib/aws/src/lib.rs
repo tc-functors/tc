@@ -3,7 +3,6 @@ pub mod bootstrap;
 pub mod cache;
 pub mod cloudwatch;
 pub mod dynamo;
-pub mod ec2;
 pub mod efs;
 pub mod ecs;
 pub mod eventbridge;
@@ -259,14 +258,6 @@ impl Env {
             }
         }
         h
-    }
-
-    pub async fn subnets(&self, tag: &str) -> Vec<String> {
-        ec2::get_subnets(&self, tag).await.unwrap()
-    }
-
-    pub async fn security_groups(&self, tag: &str) -> Vec<String> {
-        ec2::get_security_groups(&self, tag).await.unwrap()
     }
 
     pub async fn access_point_arn(&self, name: &str) -> Option<String> {
