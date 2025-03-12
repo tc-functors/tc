@@ -16,5 +16,6 @@ regex = "1.9.1"
 semver = "0.7.0"
 tabled = "0.10.0"
 tracing = "0.1"
+bincode = "1.2.1"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }

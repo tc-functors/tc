@@ -140,6 +140,12 @@ pub async fn resolve(
         Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
         None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await
     };
+    let out_path = format!("{}_{}_{}-{}.tc",
+                           &topology.namespace,
+                           &env.name,
+                           &sandbox,
+                           &topology.version);
+    Topology::output_bincode(&topologies, &out_path);
 
     resolver::pprint(topologies, component)
 }
