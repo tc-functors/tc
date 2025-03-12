@@ -71,6 +71,10 @@ fn default_mountpoint() -> String {
     s!("/mnt/assets")
 }
 
+fn default_network() -> HashMap<String, Network> {
+    HashMap::new()
+}
+
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
@@ -177,16 +181,30 @@ pub struct Eventbridge {
     pub default_region: String,
 }
 
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
+pub struct Network {
+    #[derivative(Default(value = "default_vec()"))]
+    #[serde(default)]
+    pub subnets: Vec<String>,
+
+    #[derivative(Default(value = "default_vec()"))]
+    #[serde(default)]
+    pub security_groups: Vec<String>,
+
+}
+
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Efs {
-    #[derivative(Default(value = "default()"))]
+    #[derivative(Default(value = "default_network()"))]
     #[serde(default)]
-    pub subnets: String,
+    pub network: HashMap<String, Network>,
 
     #[derivative(Default(value = "default()"))]
     #[serde(default)]
-    pub security_group: String,
+    pub fs: String,
 
     #[derivative(Default(value = "default()"))]
     #[serde(default)]

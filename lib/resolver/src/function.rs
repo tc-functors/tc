@@ -25,6 +25,7 @@ async fn resolve_environment(
     env.resolve_vars(combined.clone()).await
 }
 
+
 async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
 
     let Context { env, sandbox, .. } = ctx;
@@ -32,11 +33,16 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
     match fs {
         Some(f) => Some(f),
         None => {
-            let ap_name =  match sandbox.as_ref() {
-                "stable" => s!(&env.config.aws.efs.stable_ap),
-                _ => s!(&env.config.aws.efs.dev_ap)
-            };
 
+            let ap_name = match std::env::var("TC_EFS_AP") {
+                Ok(t) => t,
+                Err(_) => {
+                    match sandbox.as_ref() {
+                        "stable" => s!(&env.config.aws.efs.stable_ap),
+                        _ => s!(&env.config.aws.efs.dev_ap)
+                    }
+                }
+            };
             let arn = env.access_point_arn(&ap_name).await;
             match arn {
                 Some(a) => {
@@ -59,49 +65,22 @@ async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Netw
 
     match network {
 
-        Some(net) => {
-            let subnet_tags = net.subnets;
-            let sg_tags = net.security_groups;
-            let mut subnet_xs: Vec<String> = vec![];
-            let mut sgs_xs: Vec<String> = vec![];
-            for sn in subnet_tags {
-                if !&sn.starts_with("subnet") {
-                    let subnets = env.subnets(&sn).await;
-                    for s in subnets {
-                        subnet_xs.push(s);
-                    }
-                } else {
-                    subnet_xs.push(sn.to_string());
-                }
-            }
-            for sg in sg_tags {
-                if !&sg.starts_with("sg") {
-                    let sgs = env.security_groups(&sg).await;
-                    for s in sgs {
-                        sgs_xs.push(s);
-                    }
-                } else {
-                    sgs_xs.push(sg.to_string());
-                }
-            }
-            let net = Network {
-                subnets: subnet_xs,
-                security_groups: sgs_xs,
-            };
-            Some(net)
-        },
-
+        Some(net) => Some(net),
         None => {
 
-            let given_subnet = &env.config.aws.efs.subnets;
-            let given_sg = &env.config.aws.efs.security_group;
-            let subnets = env.subnets(given_subnet).await;
-            let security_groups = env.security_groups(&given_sg).await;
-            let net = Network {
-                subnets: subnets,
-                security_groups: security_groups,
-            };
-            Some(net)
+            let cfg = &env.config.aws.efs.network;
+            let cfg_net = cfg.get(&env.name);
+            match cfg_net {
+                Some(netc) => {
+                    let net = Network {
+                        subnets: netc.subnets.clone(),
+                        security_groups: netc.security_groups.clone(),
+                    };
+                    Some(net)
+                },
+                None => None
+            }
+
         }
     }
 }
