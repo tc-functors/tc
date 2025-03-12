@@ -1,8 +1,8 @@
 [package]
 name = "tc"
 version = "0.8.0"
-edition = "2021"
-rust-version = "1.81"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 serde = "1.0"
