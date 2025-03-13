@@ -3,7 +3,7 @@ use compiler::Topology;
 use super::{event, route, function};
 use aws::Env;
 
-async fn do_resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
+pub async fn resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
 
     let ctx = Context {
         env: env.clone(),
@@ -26,22 +26,6 @@ async fn do_resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
     partial_t
 }
 
-pub async fn resolve(topology: &Topology, env: &Env, sandbox: &str, cache: bool) -> Topology {
-    if cache {
-        let key = cache::make_key(&topology.namespace, &env.name, sandbox);
-        let t = cache::read_topology(&key).await;
-        match t {
-            Some(topo) => topo,
-            None => {
-                let topo = do_resolve(topology, env, sandbox).await;
-                cache::write_topology(&key, &topo).await;
-                topo
-            }
-        }
-    } else {
-        do_resolve(topology, env, sandbox).await
-    }
-}
 
 pub async fn resolve_component(topology: &Topology, env: &Env, sandbox: &str, component: &str) -> Topology {
 
