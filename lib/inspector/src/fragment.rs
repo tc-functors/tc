@@ -201,7 +201,7 @@ struct FunctionsTemplate {
 fn build_functions(t: &Topology) -> Vec<Function> {
     let mut xs: Vec<Function> = vec![];
 
-    for (dir, f) in &t.functions {
+    for (dir, f) in &t.functions() {
         let fun = Function {
             name: f.actual_name.clone(),
             dir: dir.to_string(),
@@ -212,22 +212,7 @@ fn build_functions(t: &Topology) -> Vec<Function> {
             runtime: f.runtime.lang.to_str()
         };
         xs.push(fun);
-        for node in &t.nodes {
-            for (d, nf) in &node.functions {
-                let fun = Function {
-                    name: nf.actual_name.clone(),
-                    dir: d.to_string(),
-                    fqn: nf.fqn.clone(),
-                    layers: nf.runtime.layers.clone(),
-                    memory: nf.runtime.memory_size.unwrap(),
-                    timeout: nf.runtime.timeout.unwrap(),
-                    runtime: nf.runtime.lang.to_str()
-                };
-                xs.push(fun);
-            }
-        }
     }
-    xs.dedup_by(|a, b| a.name == b.name);
     xs.sort_by(|a, b| b.name.cmp(&a.name));
     xs
 }
