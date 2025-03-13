@@ -136,28 +136,13 @@ pub async fn resolve(
 ) -> String {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let topologies = match component.clone() {
+    let resolved_topology = match component.clone() {
         Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
         None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await
     };
-    let out_path = format!("{}_{}_{}-{}.tc",
-                           &topology.namespace,
-                           &env.name,
-                           &sandbox,
-                           &topology.version);
-    Topology::output_bincode(&topologies, &out_path);
 
-    resolver::pprint(topologies, component)
-}
-
-async fn create_topology(env: &Env, topology: &Topology, _notify: bool) {
-    let Topology { functions, .. } = topology;
-
-    for (_, function) in functions {
-        let dir = &function.dir;
-        builder::build(dir, None, None).await;
-    }
-    deployer::create(env, topology).await;
+    let _ = &resolved_topology.to_bincode();
+    resolver::pprint(&resolved_topology, component)
 }
 
 async fn run_create_hook(env: &Env, root: &Topology) {
@@ -175,37 +160,77 @@ async fn run_create_hook(env: &Env, root: &Topology) {
     }
 }
 
+async fn create_topology(env: &Env, topology: &Topology) {
+    let Topology { functions, .. } = topology;
+
+    for (_, function) in functions {
+        let dir = &function.dir;
+        builder::build(dir, None, None).await;
+    }
+    deployer::create(env, topology).await;
+
+    for node in &topology.nodes {
+        deployer::create(env, node).await;
+    }
+}
+
+
+async fn read_topology(path: Option<String>) -> Option<Topology> {
+    if u::option_exists(path.clone()) {
+        let data = match path {
+            Some(p) => {
+                if kit::file_exists(&p) {
+                    kit::slurp(&p)
+                } else {
+                    kit::read_stdin()
+                }
+            },
+            None => kit::read_stdin()
+        };
+        let t: Topology = serde_json::from_str(&data).unwrap();
+        Some(t)
+    } else {
+        None
+    }
+}
+
 pub async fn create(
-    env: Env,
+    profile: Option<String>,
     sandbox: Option<String>,
     notify: bool,
     recursive: bool,
-    no_cache: bool
+    no_cache: bool,
+    topology_path: Option<String>
 ) {
 
-    let sandbox = resolver::maybe_sandbox(sandbox);
-    router::guard(&sandbox);
-    let dir = u::pwd();
     let start = Instant::now();
 
-    println!("Compiling topology");
-    let topology = compiler::compile(&dir, recursive);
+    let maybe_topology = read_topology(topology_path).await;
 
-    compiler::count_of(&topology);
-
-    let topologies = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
-
-    for topology in &topologies {
-        create_topology(&env, &topology, notify).await;
-    }
-
-    if topologies.len() > 0 {
-        let root = topologies.first().unwrap();
-        if notify {
-            run_create_hook(&env, root).await
+    let topology = match maybe_topology {
+        Some(t) => t,
+        None => {
+            let env = init(profile, None).await;
+            let sandbox = resolver::maybe_sandbox(sandbox);
+            router::guard(&sandbox);
+            let dir = u::pwd();
+            println!("Compiling topology");
+            let ct = compiler::compile(&dir, recursive);
+            let rt = resolver::resolve(&env, &sandbox, &ct, !no_cache).await;
+            rt
         }
-    }
+    };
+
+    let env = init(Some(topology.env.to_string()), None).await;
+    compiler::count_of(&topology);
+    create_topology(&env, &topology).await;
+
     builder::clean(recursive);
+
+    if notify {
+        run_create_hook(&env, &topology).await;
+    }
+
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
@@ -231,10 +256,11 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache
 
     compiler::count_of(&topology);
 
-    let topologies = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
+    let root = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
+    update_topology(&env, &root).await;
 
-    for topology in topologies {
-        update_topology(&env, &topology).await;
+    for node in root.nodes {
+        update_topology(&env, &node).await;
     }
     builder::clean(recursive);
     let duration = start.elapsed();
@@ -254,10 +280,11 @@ pub async fn update_component(
 
     compiler::count_of(&topology);
 
-    let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
+    let root = resolver::resolve(&env, &sandbox, &topology, true).await;
+    deployer::update_component(&env, &root, component.clone()).await;
 
-    for topology in topologies {
-        deployer::update_component(&env, &topology, component.clone()).await;
+    for node in root.nodes {
+        deployer::update_component(&env, &node, component.clone()).await;
     }
 }
 
@@ -268,10 +295,11 @@ pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
     let topology = compiler::compile(&u::pwd(), recursive);
 
     compiler::count_of(&topology);
-    let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
+    let root = resolver::resolve(&env, &sandbox, &topology, true).await;
 
-    for topology in topologies {
-        deployer::delete(&env, &topology).await
+    deployer::delete(&env, &root).await;
+    for node in root.nodes {
+        deployer::delete(&env, &node).await
     }
 }
 
@@ -288,10 +316,11 @@ pub async fn delete_component(
 
     compiler::count_of(&topology);
     println!("Resolving topology");
-    let topologies = resolver::resolve(&env, &sandbox, &topology, true).await;
+    let root = resolver::resolve(&env, &sandbox, &topology, true).await;
+    deployer::delete_component(&env, root.clone(), component.clone()).await;
 
-    for topology in topologies {
-        deployer::delete_component(&env, topology, component.clone()).await
+    for node in root.nodes {
+        deployer::delete_component(&env, node, component.clone()).await
     }
 }
 
@@ -524,10 +553,21 @@ pub async fn clear_cache() {
     cache::clear()
 }
 
-pub async fn list_cache() {
-    let xs = cache::list();
-    let table = Table::new(xs).with(Style::psql()).to_string();
-    println!("{}", table);
+pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox: Option<String>) {
+    match namespace {
+        Some(n) => {
+            let env = kit::maybe_string(env, "default");
+            let sandbox = kit::maybe_string(sandbox, "default");
+            let key = cache::make_key(&n, &env, &sandbox);
+            let topology = cache::read_topology(&key).await;
+            println!("{}", kit::pretty_json(&topology));
+        },
+        None => {
+            let xs = cache::list();
+            let table = Table::new(xs).with(Style::psql()).to_string();
+            println!("{}", table);
+        }
+    }
 }
 
 pub async fn inspect() {

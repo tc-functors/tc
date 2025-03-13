@@ -12,6 +12,8 @@ struct Tc {
     cmd: Cmd,
 }
 
+
+
 #[derive(Debug, Subcommand)]
 enum Cmd {
     /// Bootstrap IAM roles, extensions etc.
@@ -95,6 +97,12 @@ pub struct CacheArgs {
     clear: bool,
     #[arg(long, action)]
     list: bool,
+    #[arg(long, short = 'n')]
+    namespace: Option<String>,
+    #[arg(long, short = 'e')]
+    env: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -227,6 +235,8 @@ pub struct CreateArgs {
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
+    #[arg(long, short = 't')]
+    topology: Option<String>,
     #[arg(long, action)]
     notify: bool,
     #[arg(long, action, short = 'r')]
@@ -433,16 +443,15 @@ async fn test(_args: TestArgs) {
 async fn create(args: CreateArgs) {
     let CreateArgs {
         profile,
-        role,
         sandbox,
         notify,
         recursive,
         no_cache,
+        topology,
         ..
     } = args;
 
-    let env = tc::init(profile, role).await;
-    tc::create(env, sandbox, notify, recursive, no_cache).await;
+    tc::create(profile, sandbox, notify, recursive, no_cache, topology).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -689,13 +698,16 @@ async fn release(args: ReleaseArgs) {
 async fn cache(args: CacheArgs) {
     let CacheArgs {
         clear,
+        namespace,
+        env,
+        sandbox,
         ..
     } = args;
 
     if clear {
         tc::clear_cache().await;
     } else {
-        tc::list_cache().await;
+        tc::list_cache(namespace, env, sandbox).await;
     }
 }
 

@@ -27,6 +27,7 @@ use kit::*;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Topology {
     pub namespace: String,
+    pub env: String,
     pub fqn: String,
     pub kind: TopologyKind,
     pub nodes: Vec<Topology>,
@@ -373,6 +374,7 @@ fn make(
     Topology {
         namespace: namespace.clone(),
         fqn: fqn.clone(),
+        env: template::profile(),
         kind: find_kind(&spec.kind, &flow),
         version: version,
         infra: infra_dir.to_owned(),
@@ -414,6 +416,7 @@ fn make_standalone(dir: &str) -> Topology {
 
     Topology {
         namespace: namespace.clone(),
+        env: template::profile(),
         fqn: template::topology_fqn(&namespace, false),
         kind: TopologyKind::Function,
         version: version::current_semver(&namespace),
@@ -544,9 +547,10 @@ impl Topology {
         kit::write_bytes(&path, byea);
     }
 
-
-    pub fn output_bincode(ts: &Vec<Topology>, path: &str) {
-        let byea: Vec<u8> = bincode::serialize(ts).unwrap();
-        kit::write_bytes(&path, byea);
+    pub fn read_bincode(path: &str) -> Topology {
+        let data = kit::read_bytes(path);
+        let t: Topology = bincode::deserialize(&data).unwrap();
+        t
     }
+
 }

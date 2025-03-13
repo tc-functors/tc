@@ -1,5 +1,4 @@
 mod context;
-mod display;
 mod event;
 mod function;
 mod route;
@@ -21,33 +20,52 @@ pub fn maybe_sandbox(s: Option<String>) -> String {
     }
 }
 
-
-pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Vec<Topology> {
-
-    let nodes = &topology.nodes;
-    let mut xs: Vec<Topology> = vec![];
-
-    let root = topology::resolve(topology, env, sandbox, cache).await;
-    xs.push(root);
-    for node in nodes {
-        let node_t = topology::resolve(&node, env, sandbox, cache).await;
-        xs.push(node_t);
-    }
-    xs
+pub async fn read_cached_topology(env_name: &str, namespace: &str, sandbox: &str) -> Option<Topology> {
+    let key = cache::make_key(namespace, env_name, sandbox);
+    cache::read_topology(&key).await
 }
 
-pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, component: &str) -> Vec<Topology> {
+pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Topology {
 
-    let nodes = &topology.nodes;
-    let mut xs: Vec<Topology> = vec![];
+    let maybe_topology = if cache {
+        read_cached_topology(&env.name, &topology.namespace, sandbox).await
+    } else {
+        None
+    };
 
-    let root = topology::resolve_component(topology, env, sandbox, component).await;
-    xs.push(root);
-    for node in nodes {
-        let node_t = topology::resolve(&node, env, sandbox, false).await;
-        xs.push(node_t);
+    match maybe_topology {
+        Some(t) => t,
+        None => {
+            let mut root = topology::resolve(topology, env, sandbox).await;
+            let nodes = &topology.nodes;
+            let mut resolved_nodes: Vec<Topology> = vec![];
+            // FIXME: recurse
+            for node in nodes {
+                let node_t = topology::resolve(&node, env, sandbox).await;
+                resolved_nodes.push(node_t);
+            }
+            root.nodes = resolved_nodes;
+            // write it to cache
+            let key = cache::make_key(&root.namespace, &env.name, sandbox);
+            cache::write_topology(&key, &root).await;
+            root
+        }
     }
-    xs
+
+}
+
+pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, component: &str) -> Topology {
+
+    let mut root = topology::resolve_component(topology, env, sandbox, component).await;
+    let mut resolved_nodes: Vec<Topology> = vec![];
+    let nodes = &topology.nodes;
+
+    for node in nodes {
+        let node_t = topology::resolve(&node, env, sandbox).await;
+        resolved_nodes.push(node_t);
+    }
+    root.nodes = resolved_nodes;
+    root
 }
 
 pub async fn render(env: &Env, sandbox: &str, topology: &Topology) -> Topology {
@@ -73,23 +91,21 @@ pub async fn just_nodes(topology: &Topology) -> Vec<String> {
     nodes
 }
 
-pub fn pprint(topologies: Vec<Topology>, component: Option<String>) -> String {
-    let t = topologies.clone().into_iter().nth(0).unwrap();
+pub fn pprint(t: &Topology, component: Option<String>) -> String {
     let component = u::maybe_string(component, "all");
 
     match component.as_ref() {
-        "functions" => u::pretty_json(t.functions),
-        "flow"      => match t.flow {
+        "functions" => u::pretty_json(&t.functions),
+        "flow"      => match &t.flow {
             Some(f) => u::pretty_json(f),
             _       => u::empty(),
         },
-        "layers"    => display::render_layers(&topologies),
-        "events"    => u::pretty_json(t.events),
-        "schedules" => u::pretty_json(t.schedules),
-        "routes"    => u::pretty_json(t.routes),
-        "mutations" => u::pretty_json(t.mutations),
-        "basic"     => u::pretty_json(t.version),
-        "all"       => u::pretty_json(topologies),
+        "events"    => u::pretty_json(&t.events),
+        "schedules" => u::pretty_json(&t.schedules),
+        "routes"    => u::pretty_json(&t.routes),
+        "mutations" => u::pretty_json(&t.mutations),
+        "basic"     => u::pretty_json(&t.version),
+        "all"       => u::pretty_json(&t),
         _           => u::empty()
     }
 }
@@ -99,7 +115,7 @@ pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<Str
     let nodes = &topology.nodes;
 
     let sandbox = maybe_sandbox(sandbox);
-    let t = topology::resolve(&topology, env, &sandbox, true).await;
+    let t = topology::resolve(&topology, env, &sandbox).await;
 
     let mut fns: Vec<String> = vec![];
     for (_, f) in t.functions {
@@ -107,7 +123,7 @@ pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<Str
     }
 
     for node in nodes {
-        let node_t = topology::resolve(&node, env, &sandbox, true).await;
+        let node_t = topology::resolve(&node, env, &sandbox).await;
         for (_, f) in node_t.functions {
             fns.push(f.name)
         }
