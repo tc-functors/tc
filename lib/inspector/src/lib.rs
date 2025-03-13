@@ -16,7 +16,10 @@ pub async fn init() {
         .route("/functors", get(page::functors))
         .route("/functors/search", post(fragment::search_functors))
         .route("/functors/list", get(fragment::list_functors))
-        .route("/functor/{:id}", get(page::get_functor))
+        .route("/nodes/{:id}", get(page::nodes))
+        .route("/nodes/list/{:id}", get(fragment::get_nodes))
+        .route("/functions/{:id}", get(page::functions))
+        .route("/functions/list/{:id}", get(fragment::get_functions))
         .route("/manifests", get(page::manifests))
         .route("/manifests/list", get(fragment::list_manifests))
         .route("/manifests/search", post(fragment::search_manifests))
@@ -25,7 +28,6 @@ pub async fn init() {
         .route("/settings", get(page::settings))
         .route("/c4", get(page::c4))
         .route("/topology/{:id}", get(page::get_topology))
-        .route("/functions/{:id}", get(page::get_topology))
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

@@ -44,7 +44,7 @@ impl TopologyCount {
 
         TopologyCount {
             name: namespace.to_string(),
-            nodes: nodes.len(),
+            nodes: nodes.len() + 1,
             functions: f,
             events: e,
             queues: q,

@@ -5,8 +5,6 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
-use compiler::Topology;
-
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
 where
@@ -48,25 +46,33 @@ pub async fn manifests() -> impl IntoResponse {
 
 
 #[derive(Template)]
-#[template(path = "functor.html")]
-struct FunctorTemplate {
+#[template(path = "functions.html")]
+struct FunctionsTemplate {
     id: String,
     name: String,
-    topology: Topology
 }
 
-pub async fn get_functor(Path(id): Path<String>) -> impl IntoResponse {
-    let maybe_topology = cache::read_topology(&id).await;
+pub async fn functions(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(FunctionsTemplate {
+        id: id,
+        name: String::from("functor"),
+    })
+}
 
-    if let Some(t) = maybe_topology {
-        HtmlTemplate(FunctorTemplate {
-            id: id,
-            name: String::from("functor"),
-            topology: t
-        })
-    } else {
-        panic!("error")
-    }
+
+#[derive(Template)]
+#[template(path = "nodes.html")]
+struct NodesTemplate {
+    id: String,
+    name: String,
+}
+
+pub async fn nodes(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(NodesTemplate {
+        id: id,
+        name: String::from("functor")
+    })
+
 }
 
 #[derive(Template)]

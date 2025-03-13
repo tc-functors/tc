@@ -1,10 +1,11 @@
 use askama::Template;
 use axum::{
+    extract::Path,
     response::{Html, IntoResponse},
     Form,
 };
 
-use compiler::TopologyCount;
+use compiler::{TopologyCount, Topology};
 
 use serde::Deserialize;
 
@@ -65,20 +66,15 @@ struct FunctorsTemplate {
 pub struct FunctorsInput {
     pub env: String,
     pub sandbox: String,
-    pub kind: String
 }
 
 pub async fn search_functors(Form(payload): Form<FunctorsInput>) -> impl IntoResponse {
-    let FunctorsInput { env, sandbox, kind, .. } = payload;
+    let FunctorsInput { env, sandbox, .. } = payload;
 
     let xs = find_functors().await;
     tracing::debug!("search {} - {}", env, sandbox);
 
-    let functors = if &kind == "all" {
-        xs
-    } else {
-        xs.into_iter().filter(|x| x.version != "0.0.1").collect()
-    };
+    let functors = xs.into_iter().filter(|x| &x.env == &env && &x.sandbox == &sandbox).collect();
 
     let t = FunctorsTemplate {
         items: functors
@@ -125,4 +121,131 @@ pub async fn search_manifests() -> impl IntoResponse {
         items: manifests
     };
     Html(t.render().unwrap())
+}
+
+
+// nodes
+
+#[derive(Template)]
+#[template(path = "nodes_list.html")]
+struct NodesTemplate {
+    id: String,
+    items: Vec<Functor>
+ }
+
+async fn as_functors(root: &Topology) -> Vec<Functor> {
+    let mut xs: Vec<Functor> = vec![];
+    tracing::debug!("{}", &root.nodes.len());
+    for node in &root.nodes {
+        let t = TopologyCount::new(&node);
+        let f = Functor {
+            id: node.fqn.clone(),
+            namespace: node.namespace.clone(),
+            env: node.env.clone(),
+            sandbox: node.sandbox.clone(),
+            functions: t.functions,
+            nodes: t.nodes,
+            events: t.events,
+            queues: t.queues,
+            routes: t.routes,
+            states: t.states,
+            mutations: t.mutations,
+            version: String::from(&node.version)
+        };
+        xs.push(f)
+    }
+    xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
+    xs.reverse();
+    xs
+}
+
+pub async fn get_nodes(Path(id): Path<String>) -> impl IntoResponse {
+    let maybe_topology = cache::read_topology(&id).await;
+
+    if let Some(t) = maybe_topology {
+        tracing::debug!("Found topology");
+        let temp = NodesTemplate {
+            id: id,
+            items: as_functors(&t).await
+        };
+        Html(temp.render().unwrap())
+    } else {
+        let temp = NodesTemplate {
+            id: id,
+            items: vec![]
+        };
+        Html(temp.render().unwrap())
+    }
+}
+
+// functions
+
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct Function {
+    name: String,
+    dir: String,
+    fqn: String,
+    layers: Vec<String>,
+    memory: i32,
+    timeout: i32,
+    runtime: String,
+}
+
+#[derive(Template)]
+#[template(path = "functions_list.html")]
+struct FunctionsTemplate {
+    items: Vec<Function>
+ }
+
+
+fn build_functions(t: &Topology) -> Vec<Function> {
+    let mut xs: Vec<Function> = vec![];
+
+    for (dir, f) in &t.functions {
+        let fun = Function {
+            name: f.actual_name.clone(),
+            dir: dir.to_string(),
+            fqn: f.fqn.clone(),
+            layers: f.runtime.layers.clone(),
+            memory: f.runtime.memory_size.unwrap(),
+            timeout: f.runtime.timeout.unwrap(),
+            runtime: f.runtime.lang.to_str()
+        };
+        xs.push(fun);
+        for node in &t.nodes {
+            for (d, nf) in &node.functions {
+                let fun = Function {
+                    name: nf.actual_name.clone(),
+                    dir: d.to_string(),
+                    fqn: nf.fqn.clone(),
+                    layers: nf.runtime.layers.clone(),
+                    memory: nf.runtime.memory_size.unwrap(),
+                    timeout: nf.runtime.timeout.unwrap(),
+                    runtime: nf.runtime.lang.to_str()
+                };
+                xs.push(fun);
+            }
+        }
+    }
+    xs.dedup_by(|a, b| a.name == b.name);
+    xs.sort_by(|a, b| b.name.cmp(&a.name));
+    xs
+}
+
+pub async fn get_functions(Path(id): Path<String>) -> impl IntoResponse {
+    let maybe_topology = cache::read_topology(&id).await;
+
+    if let Some(t) = maybe_topology {
+        tracing::debug!("Found topology");
+        let temp = FunctionsTemplate {
+            items: build_functions(&t)
+        };
+        Html(temp.render().unwrap())
+    } else {
+        let temp = NodesTemplate {
+            id: id,
+            items: vec![]
+        };
+        Html(temp.render().unwrap())
+    }
 }

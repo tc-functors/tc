@@ -1,0 +1,32 @@
+<table class="striped">
+  <thead>
+    <tr>
+      <td>Name</td>
+      <td>Runtime</td>
+      <td>Layers</td>
+      <td>Memory</td>
+      <td>Timeout</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for function in items %}
+    <tr>
+      <td>{{function.name}}</td>
+      <td>
+	{{function.runtime}}
+      </td>
+      <td>
+	{% for layer in function.layers %}
+	<a href="#">{{layer}}</a>
+	<br>
+	{% endfor %}
+      </td>
+      <td>
+	{{function.memory}}
+      </td>
+      <td>
+	{{function.timeout}}
+      </td>
+    </tr>
+    {% endfor %}
+</table>
