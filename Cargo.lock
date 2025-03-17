@@ -2525,10 +2525,13 @@ name = "inspector"
 version = "0.1.0"
 dependencies = [
  "askama",
+ "aws",
  "axum",
  "cache",
  "chrono",
  "compiler",
+ "configurator",
+ "kit",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",

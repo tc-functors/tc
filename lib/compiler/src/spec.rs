@@ -332,9 +332,13 @@ impl FunctionSpec {
         let f = format!("{}/function.json", dir);
         let version = find_revision(dir);
         if u::file_exists(&f) {
+            tracing::debug!("file {}", &f);
             let data = render(&u::slurp(&f), &version);
-            let fspec: FunctionSpec = serde_json::from_str(&data).unwrap();
-            fspec
+            let fspec = serde_json::from_str(&data);
+            match fspec {
+                Ok(f) => f,
+                Err(e) => panic!("{}", e)
+            }
         } else {
             FunctionSpec {
                 name: u::basedir(dir).to_string(),
@@ -359,7 +363,7 @@ impl FunctionSpec {
 // topology
 
 fn default_nodes() -> Nodes {
-    Nodes { ignore: vec![] }
+    Nodes { ignore: vec![], dirs: vec![] }
 }
 
 fn default_route_kind() -> String {
@@ -464,7 +468,10 @@ pub struct RouteSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Nodes {
+    #[serde(default)]
     pub ignore: Vec<String>,
+    #[serde(default)]
+    pub dirs: Vec<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -565,7 +572,7 @@ impl TopologySpec {
                 functions: Functions { shared: vec![] },
                 routes: None,
                 events: None,
-                nodes: Nodes { ignore: vec![] },
+                nodes: Nodes { ignore: vec![], dirs: vec![] },
                 states: None,
                 flow: None,
                 queues: None,

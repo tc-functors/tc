@@ -122,7 +122,14 @@ pub async fn compile(opts: CompileOpts) -> String {
         Some(c) => compiler::show_component(&c, &format, recursive),
         None => {
             let topology = compiler::compile(&dir, recursive);
-            u::pretty_json(topology)
+            match std::env::var("TC_TRACE") {
+                Ok(_) => {
+                    kit::write_str("topology.json", &topology.to_str());
+                    tracing::debug!("Wrote topology.json");
+                    String::from("")
+                }
+                Err(_) => u::pretty_json(topology)
+            }
         }
     }
 }

@@ -151,15 +151,18 @@ fn intern_functions(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> Has
 
 fn function_dirs(dir: &str) -> Vec<String> {
     let known_roots = vec!["resolvers", "functions", "backend"];
-    let mut dirs: Vec<String> = u::list_dir(dir);
+    let mut xs: Vec<String> = vec![];
+    let dirs = u::list_dirs(dir);
     for root in known_roots {
-        let mut xs = u::list_dir(root);
-        dirs.append(&mut xs)
+        let mut xm = u::list_dirs(root);
+        xs.append(&mut xm)
     }
-    if path_exists(dir, "function.json") {
-        dirs.push(dir.to_string())
+    for d in dirs {
+        if path_exists(&d, "function.json") {
+            xs.push(d.to_string())
+        }
     }
-    dirs
+    xs
 }
 
 fn ignore_function(dir: &str, root_dir: &str) -> bool {
@@ -185,8 +188,9 @@ fn ignore_function(dir: &str, root_dir: &str) -> bool {
 fn discover_functions(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
     let mut functions: HashMap<String, Function> = HashMap::new();
     let dirs = function_dirs(dir);
-    tracing::debug!("Compiling functions");
+
     for d in dirs {
+        tracing::debug!("function {}", d);
         if u::is_dir(&d) && !ignore_function(&d, dir) {
             let function = Function::new(&d, infra_dir, &spec.name, spec.fmt());
             functions.insert(d, function);
@@ -257,22 +261,26 @@ fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, spec: &Topolo
     nodes
 }
 
-pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> Vec<Topology> {
+
+
+// builders
+
+
+fn make_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> Vec<Topology> {
     let ignore_nodes = &spec.nodes.ignore;
-    let dir = u::pwd();
     let mut nodes: Vec<Topology> = vec![];
-    for entry in WalkDir::new(dir.clone())
+    for entry in WalkDir::new(root_dir)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_dir())
     {
         let p = entry.path().to_string_lossy();
-        if is_topology_dir(&p) && dir.clone() != p.clone() {
+        if is_topology_dir(&p) && root_dir != p.clone() {
             if !should_ignore_node(root_dir, ignore_nodes.clone(), &p) {
                 let f = format!("{}/topology.yml", &p);
                 let spec = TopologySpec::new(&f);
-                tracing::debug!("Compiling node {}", &spec.name);
+                tracing::debug!("node {}", &spec.name);
                 let mut functions = discover_functions(&p, infra_dir, &spec);
                 let interned = intern_functions(&p, infra_dir, &spec);
                 functions.extend(interned);
@@ -285,14 +293,13 @@ pub fn discover_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> V
     nodes
 }
 
-// builders
 fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
         if let Some(c) = &evs.consumes {
-            tracing::debug!("Compiling events");
             for (name, ev) in c.clone().into_iter() {
+                tracing::debug!("event {}", &name);
                 let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
                 let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter,
                                     ev.pattern, targets, ev.sandboxes, config);
@@ -307,9 +314,9 @@ fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {
-            tracing::debug!("Compiling routes");
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
+                tracing::debug!("route {}", name);
                 let route = Route::new(rspec, config);
                 h.insert(name.to_string(), route);
             }
@@ -377,9 +384,9 @@ fn make(
         env: template::profile(),
         kind: find_kind(&spec.kind, &flow),
         version: version,
-        infra: infra_dir.to_owned(),
+        infra: u::gdir(&infra_dir),
         sandbox: template::sandbox(),
-        dir: s!(dir),
+        dir: u::gdir(dir),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
         functions: functions,
@@ -456,16 +463,22 @@ impl Topology {
             let f = format!("{}/topology.yml", dir);
             let spec = TopologySpec::new(&f);
             let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
+            tracing::debug!("Infra dir: {}", &infra_dir);
+
+            //TODO: discover or lookup
             let nodes;
             if recursive {
-                nodes = discover_nodes(dir, &infra_dir, &spec);
+                tracing::debug!("Recursive {}", dir);
+                nodes = make_nodes(dir, &infra_dir, &spec);
             } else {
                 nodes = vec![];
             }
             if skip_functions {
+                tracing::debug!("Skipping functions {}", dir);
                 let functions = HashMap::new();
                 make(dir, dir, &spec, functions, nodes)
             } else {
+                tracing::debug!("Discovering functions {}", dir);
                 let functions = discover_functions(dir, &infra_dir, &spec);
                 make(dir, dir, &spec, functions, nodes)
             }
@@ -493,7 +506,7 @@ impl Topology {
         fns.clone()
     }
 
-    pub fn build_tree(&self) -> StringItem {
+    pub fn build_functions_tree(&self) -> StringItem {
         let mut t = TreeBuilder::new(s!(self.namespace.blue()));
 
         for (_, f) in &self.functions {
@@ -509,6 +522,22 @@ impl Topology {
                 t.begin_child(s!(&f.fqn));
                 t.add_empty_child(f.runtime.lang.to_str());
                 t.add_empty_child(f.runtime.role.path.to_string());
+                t.end_child();
+            }
+            t.end_child();
+        }
+
+        t.build()
+    }
+
+
+    pub fn build_nodes_tree(&self) -> StringItem {
+        let mut t = TreeBuilder::new(s!(self.namespace.blue()));
+
+        for node in &self.nodes {
+            t.begin_child(s!(&node.namespace.green()));
+            for n in &node.nodes {
+                t.begin_child(s!(&n.namespace));
                 t.end_child();
             }
             t.end_child();
