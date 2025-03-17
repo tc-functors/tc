@@ -2,8 +2,6 @@
   <thead>
     <tr>
       <td>Namespace</td>
-      <td>Env</td>
-      <td>Sandbox</td>
       <td>Version</td>
       <td>Nodes</td>
       <td>Functions</td>
@@ -17,22 +15,20 @@
   <tbody>
     {% for item in items %}
     <tr>
-      <td><a href="/topology/{{item.id}}">{{item.namespace}}<a/></td>
-      <td>{{item.env}}</td>
-      <td>{{item.sandbox}}</td>
+      <td><a href="/topology/{{id}}">{{item.namespace}}<a/></td>
       <td>{{item.version}}</td>
       <td>
 	{% if item.nodes == 0 %}
 	0
 	{% else %}
-	<a href="/nodes/{{item.id}}">{{item.nodes}}</a>
+	<a href="/definitions/nodes/{{item.namespace}}">{{item.nodes}}</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.functions == 0 %}
 	0
 	{% else %}
-	<a href="/functions/{{item.id}}">{{item.functions}}</a>
+	<a href="/definitions/functions/{{item.namespace}}">{{item.functions}}</a>
 	{% endif %}
       </td>
       <td>{{item.events}}</td>

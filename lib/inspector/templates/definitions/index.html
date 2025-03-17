@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<br/>
+
+<div class="x">
+
+<div class="x4">
+<select name="action" aria-label="Select Action..." required
+	hx-get="/definitions/show-action-form" hx-target="#form-content">
+  <option selected disabled value="">
+    Select Action
+  </option>
+  <option>Test selected functors</option>
+  <option>Compile all functors</option>
+  <option>Visualize flow</option>
+  <option>Create sandbox for selected functors</option>
+</select>
+
+</div>
+<div class="xg" id="form-content"></div>
+
+</div>
+
+<br/>
+<div id="functors"
+     hx-trigger="load"
+     hx-get="/definitions/list"
+     hx-swap="innerHTML">
+
+  <div class="grid">
+    <div></div>
+  <div align="center" id="spinner">
+    <br/>
+    <br/>
+    <br/>
+    <progress />
+  </div>
+  <div></div>
+  </div>
+</div>
+
+{% endblock %}

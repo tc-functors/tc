@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+
+<div align="left">
+
+  <button class="outline secondary"
+	  hx-post="/releases/changelog"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Changelog
+  </button>
+
+  <button class="outline secondary"
+	  hx-post="/releases/snapshot"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Snapshot
+  </button>
+
+
+  <button class="outline secondary"
+	  hx-post="/releases/freeze"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Freeze
+  </button>
+
+  <button class="outline secondary"
+	  hx-post="/releases/promote"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Promote
+  </button>
+
+  <button class="outline secondary"
+	  hx-post="/releases/history"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    History
+  </button>
+
+</div>
+<div</div>
+</div>
+
+<br/>
+<div id="functors"
+     hx-trigger="load"
+     hx-get="/releases/list"
+     hx-swap="innerHTML">
+
+  <div class="grid">
+    <div></div>
+  <div align="center" id="spinner">
+    <br/>
+    <br/>
+    <br/>
+    <progress />
+  </div>
+  <div></div>
+  </div>
+</div>
+
+{% endblock %}

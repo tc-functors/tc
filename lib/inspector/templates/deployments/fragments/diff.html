@@ -1,0 +1,33 @@
+
+<table class="striped">
+
+<thead>
+  <tr>
+    <td>Functor</td>
+    {% for env in envs %}
+    <td> {{env}} </td>
+    {% endfor %}
+  </tr>
+</thead>
+
+<tbody>
+
+  {% for (functor, data) in items %}
+
+  <tr>
+    <td> {{functor}} </td>
+    {% for env in envs %}
+    <td> {{ data[env] }}</td>
+    {% endfor %}
+
+    <td> </td>
+  </tr>
+
+  {% endfor %}
+
+
+
+</tbody>
+
+
+</table>

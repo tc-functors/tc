@@ -4,30 +4,40 @@ use axum::{
     Router,
 };
 
+mod deployments;
+mod definitions;
+mod releases;
 mod page;
-mod fragment;
 
 pub async fn init() {
 
     let addr = "0.0.0.0:8000";
 
     let app = Router::new()
-        .route("/", get(page::functors))
-        .route("/functors", get(page::functors))
-        .route("/functors/search", post(fragment::search_functors))
-        .route("/functors/list", get(fragment::list_functors))
-        .route("/nodes/{:id}", get(page::nodes))
-        .route("/nodes/list/{:id}", get(fragment::get_nodes))
-        .route("/functions/{:id}", get(page::functions))
-        .route("/functions/list/{:id}", get(fragment::get_functions))
-        .route("/manifests", get(page::manifests))
-        .route("/manifests/list", get(fragment::list_manifests))
-        .route("/manifests/search", post(fragment::search_manifests))
-        .route("/flow", get(page::flow))
-        .route("/audit", get(page::audit))
-        .route("/settings", get(page::settings))
-        .route("/c4", get(page::c4))
-        .route("/topology/{:id}", get(page::get_topology))
+        .route("/"                                   , get(page::definitions))
+        .route("/definitions"                        , get(page::definitions))
+        .route("/definitions/search"                 , post(definitions::functors::list))
+        .route("/definitions/list"                   , get(definitions::functors::list))
+        .route("/definitions/compile"                , post(definitions::functors::compile))
+        .route("/definitions/nodes/{:id}"            , get(page::nodes))
+        .route("/definitions/nodes/list/{:id}"       , get(definitions::nodes::list))
+        .route("/definitions/functions/{:id}"        , get(page::functions))
+        .route("/definitions/functions/list/{:id}"   , get(definitions::functions::list))
+        .route("/definitions/functions/events/{:id}" , get(page::events))
+        .route("/definitions/events/list/{:id}"      , get(definitions::events::list))
+        .route("/definitions/mutations/{:id}"        , get(page::mutations))
+        .route("/definitions/mutations/list/{:id}"   , get(definitions::mutations::list))
+        .route("/definitions/routes/{:id}"           , get(page::routes))
+        .route("/definitions/routes/list/{:id}"      , get(definitions::routes::list))
+        .route("/deployments"                        , get(page::deployments))
+        .route("/deployments/diff"                   , get(deployments::diff::list))
+        .route("/deployments/audit"                  , post(deployments::audit::list))
+        .route("/deployments/search"                 , post(deployments::search::list))
+        .route("/releases"                           , get(page::releases))
+        .route("/releases/list"                      , get(releases::functors::list))
+        .route("/releases/changelog"                 , get(releases::changelog::list))
+        .route("/releases/snapshot"                  , get(releases::snapshot::list))
+        .route("/topology/{:id}"                     , get(page::get_topology))
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

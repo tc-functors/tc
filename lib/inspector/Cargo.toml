@@ -16,3 +16,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = { version = "0.4.*"}
 compiler = { path = "../compiler" }
 cache = { path = "../cache" }
+aws = { path = "../aws" }
+kit = { path = "../kit" }
+configurator = { path = "../configurator" }

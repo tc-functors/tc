@@ -4,18 +4,18 @@
 <nav aria-label="breadcrumb">
   <ul>
     <li><a href="#">Home</a></li>
-    <li><a href="/functors">Functors</a></li>
-    <li>{{id}}/functions</li>
+    <li><a href="/definitions/functors">Definitions</a></li>
+    <li>{{id}}/routes</li>
   </ul>
 </nav>
 
 <div id="functions"
      hx-trigger="load"
-     hx-get="/functions/list/{{id}}" hx-swap="innerHTML">
+     hx-get="/definitions/routes/list/{{id}}" hx-swap="innerHTML">
 
   <div align="center">
     <br/><br/><br/>
-    Loading Functors (functions) for {{id}} ...
+    Loading Functors (routes) for {{id}} ...
   </div>
 
 </div>

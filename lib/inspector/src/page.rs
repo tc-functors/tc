@@ -23,30 +23,57 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "functors.html")]
-struct FunctorsTemplate {
+#[template(path = "definitions/index.html")]
+struct DefinitionsTemplate {
     name: String,
 }
 
-pub async fn functors() -> impl IntoResponse {
-    let template = FunctorsTemplate {
-        name: "functors".to_string(),
+pub async fn definitions() -> impl IntoResponse {
+    let template = DefinitionsTemplate {
+        name: "definitions".to_string(),
     };
     HtmlTemplate(template)
 }
 
 #[derive(Template)]
-#[template(path = "manifests.html")]
-struct ManifestsTemplate { name: String }
+#[template(path = "deployments/index.html")]
+struct DeploymentsTemplate { name: String }
 
-pub async fn manifests() -> impl IntoResponse {
-    let template = ManifestsTemplate { name: "manifests".to_string() };
+pub async fn deployments() -> impl IntoResponse {
+    let template = DeploymentsTemplate {
+        name: "deployments".to_string()
+    };
     HtmlTemplate(template)
+}
+
+#[derive(Template)]
+#[template(path = "releases/index.html")]
+struct ReleasesTemplate { name: String }
+
+pub async fn releases() -> impl IntoResponse {
+    let template = ReleasesTemplate {
+        name: "releases".to_string()
+    };
+    HtmlTemplate(template)
+}
+
+#[derive(Template)]
+#[template(path = "definitions/index.html")]
+struct FunctorsTemplate {
+    id: String,
+    name: String,
+}
+
+pub async fn functors(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(FunctorsTemplate {
+        id: id,
+        name: String::from("definitons"),
+    })
 }
 
 
 #[derive(Template)]
-#[template(path = "functions.html")]
+#[template(path = "definitions/functions.html")]
 struct FunctionsTemplate {
     id: String,
     name: String,
@@ -55,13 +82,12 @@ struct FunctionsTemplate {
 pub async fn functions(Path(id): Path<String>) -> impl IntoResponse {
     HtmlTemplate(FunctionsTemplate {
         id: id,
-        name: String::from("functor"),
+        name: String::from("definitons"),
     })
 }
 
-
 #[derive(Template)]
-#[template(path = "nodes.html")]
+#[template(path = "definitions/nodes.html")]
 struct NodesTemplate {
     id: String,
     name: String,
@@ -70,13 +96,54 @@ struct NodesTemplate {
 pub async fn nodes(Path(id): Path<String>) -> impl IntoResponse {
     HtmlTemplate(NodesTemplate {
         id: id,
-        name: String::from("functor")
+        name: String::from("definitions")
     })
-
 }
 
 #[derive(Template)]
-#[template(path = "topology.html")]
+#[template(path = "definitions/events.html")]
+struct EventsTemplate {
+    id: String,
+    name: String,
+}
+
+pub async fn events(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(EventsTemplate {
+        id: id,
+        name: String::from("definitions")
+    })
+}
+
+#[derive(Template)]
+#[template(path = "definitions/mutations.html")]
+struct MutationsTemplate {
+    id: String,
+    name: String,
+}
+
+pub async fn mutations(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(MutationsTemplate {
+        id: id,
+        name: String::from("definitions")
+    })
+}
+
+#[derive(Template)]
+#[template(path = "definitions/routes.html")]
+struct RoutesTemplate {
+    id: String,
+    name: String,
+}
+
+pub async fn routes(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(RoutesTemplate {
+        id: id,
+        name: String::from("definitions")
+    })
+}
+
+#[derive(Template)]
+#[template(path = "definitions/topology.html")]
 struct TopologyTemplate {
     id: String,
     name: String,
@@ -95,52 +162,5 @@ pub async fn get_topology(Path(id): Path<String>) -> impl IntoResponse {
         name: "topology".to_string(),
         topology: t
     };
-    HtmlTemplate(template)
-}
-
-#[derive(Template)]
-#[template(path = "flow.html")]
-struct FlowTemplate {
-    name: String
-}
-
-pub async fn flow() -> impl IntoResponse {
-    let template = FlowTemplate { name: "flow".to_string() };
-    HtmlTemplate(template)
-}
-
-
-#[derive(Template)]
-#[template(path = "audit.html")]
-struct AuditTemplate {
-    name: String
-}
-
-pub async fn audit() -> impl IntoResponse {
-    let template = AuditTemplate { name: "audit".to_string() };
-    HtmlTemplate(template)
-}
-
-
-#[derive(Template)]
-#[template(path = "c4.html")]
-struct C4Template {
-    name: String
-}
-
-pub async fn c4() -> impl IntoResponse {
-    let template = C4Template { name: "c4".to_string() };
-    HtmlTemplate(template)
-}
-
-
-#[derive(Template)]
-#[template(path = "settings.html")]
-struct SettingsTemplate {
-    name: String
-}
-
-pub async fn settings() -> impl IntoResponse {
-    let template = SettingsTemplate { name: "settings".to_string() };
     HtmlTemplate(template)
 }

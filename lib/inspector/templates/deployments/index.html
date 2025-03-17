@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+
+<div align="left">
+  <button class="outline secondary"
+	  hx-post="/deployments/diff"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Diff
+  </button>
+
+
+  <button class="outline secondary"
+	  hx-post="/deployments/audit"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Audit
+  </button>
+
+  <button class="outline secondary"
+	  hx-post="/deployments/search"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Search
+  </button>
+
+  <button class="outline secondary"
+	  hx-post="/definitions/functors/visualize"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Deploy
+  </button>
+
+  <button class="outline secondary"
+	  hx-post="/definitions/functors/visualize"
+	  hx-target="#functors"
+	  hx-indicator="#spinner"
+	  hx-swap="outerHTML">
+    Canarys
+  </button>
+
+</div>
+<div> </div>
+
+</div>
+
+<br/>
+
+<div id="functors"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+
+  <div align="center">
+    <br/><br/><br/>
+    <progress/>
+  </div>
+
+</div>
+
+
+{% endblock %}
