@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 
 pub mod spec;
@@ -31,6 +30,7 @@ pub use flow::Flow;
 pub use role::{Role, RoleKind};
 pub use log::LogConfig;
 pub use formatter::TopologyCount;
+use std::collections::HashMap;
 
 pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
 
@@ -39,6 +39,20 @@ use kit::*;
 
 pub fn compile(dir: &str, recursive: bool) -> Topology {
     Topology::new(dir, recursive, false)
+}
+
+pub fn compile_root() -> HashMap<String, Topology> {
+    let f = format!("{}/topology.yml", &u::pwd());
+    let spec = TopologySpec::new(&f);
+    let given_root_dirs = &spec.nodes.dirs;
+    let mut h: HashMap<String, Topology> = HashMap::new();
+    for d in given_root_dirs {
+        let dir = u::absolutize(&u::pwd(), &d);
+        let t = compile(&dir, true);
+
+        h.insert(t.namespace.to_string(), t);
+    }
+    h
 }
 
 pub fn just_functions() -> HashMap<String, Function> {
@@ -175,7 +189,7 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             let topology = compile(&dir, recursive);
             match format {
                 "tree" => {
-                    let tree = topology.build_tree();
+                    let tree = topology.build_functions_tree();
                     kit::print_tree(tree);
                     u::empty()
                 }
@@ -191,6 +205,20 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             } else {
                 u::pretty_json(&topology.mutations)
             }
+        }
+
+        "nodes" => {
+            let topology = compile(&dir, recursive);
+            match format {
+                "tree" => {
+                    let tree = topology.build_nodes_tree();
+                    kit::print_tree(tree);
+                    u::empty()
+                }
+                "json" => u::pretty_json(&topology.nodes),
+                _ => u::pretty_json(&topology.nodes),
+            }
+
         }
 
         "topologies" => {

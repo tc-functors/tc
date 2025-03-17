@@ -61,6 +61,23 @@ pub fn list_dir(dir: &str) -> Vec<String> {
     }
 }
 
+pub fn list_dirs(dir: &str) -> Vec<String> {
+    if is_dir(dir) {
+        let paths = fs::read_dir(dir).unwrap();
+        let mut xs: Vec<String> = vec![];
+        for path in paths {
+            let p = path.unwrap().path();
+            if p.is_dir() {
+                xs.push(p.into_os_string().into_string().unwrap());
+            }
+        }
+        xs
+    } else {
+        vec![]
+    }
+}
+
+
 pub fn pwd() -> String {
     match env::var("TC_DIR") {
         Ok(d) => d,
@@ -169,7 +186,7 @@ fn trim(input: &str) -> &str {
 
 #[cfg(not(test))]
 pub fn sh(path: &str, dir: &str) -> String {
-    tracing::debug!("sh {} {}", dir, path);
+    //tracing::debug!("sh {} {}", dir, path);
     let out = Exec::shell(path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)
@@ -309,6 +326,16 @@ pub fn absolute_dir(root_dir: &str, relative_dir: &str) -> String {
         let path = split_last(relative_dir, "../");
         format!("{}/{}", root_dir, path)
     }
+}
+
+pub fn gdir(dir: &str) -> String {
+    let git_root = format!("{}/", root());
+    let parts: Vec<&str> = dir.split(&git_root).collect();
+    parts.clone().last().unwrap().to_string()
+}
+
+pub fn adir(dir: &str) -> String {
+    absolute_dir(&root(), dir)
 }
 
 pub fn file_contains(path: &str, s: &str) -> bool {

@@ -174,9 +174,16 @@ fn lookup_role(infra_dir: &str, rspec: &Option<RuntimeSpec>, namespace: &str, fu
     }
 }
 
+fn value_to_str(v: Option<&Value>, default: &str) -> String {
+    match v {
+        Some(s) => s.as_str().unwrap().to_string(),
+        None => String::from(default)
+    }
+}
+
 fn make_env_vars(dir: &str,
                  namespace: &str,
-                 _assets: HashMap<String, Value>,
+                 assets: HashMap<String, Value>,
                  environment: Option<HashMap<String, String>>,
                  lang: Lang,
 
@@ -207,27 +214,22 @@ fn make_env_vars(dir: &str,
                 }
             }
         },
-        // Lang::Python => {
-        //     let base_deps_path = assets.get("BASE_DEPS_PATH");
-        //     let deps_path = assets.get("DEPS_PATH");
-        //     let model_path = assets.get("MODEL_PATH");
-        //     // let base_deps_path = u::maybe_string(base_deps_path.cloned(), "/var/python");
-        //     // let model_path = u::maybe_string(model_path.cloned(), "/var/python");
+        Lang::Python => {
+            // legacy
+            let base_deps_path = value_to_str(assets.get("BASE_DEPS_PATH"), "/var/python");
+            let deps_path = value_to_str(assets.get("DEPS_PATH"), "/var/python");
+            let model_path = value_to_str(assets.get("MODEL_PATH"), "/var/python");
 
-        //     match deps_path {
-        //         Some(path) => {
-        //             hmap.insert(s!("PYTHONPATH"),
-        //                 format!(
-        //                     "/opt/python:/var/runtime:{}/python:{}/python:{}",
-        //                     &base_deps_path, &path, &model_path
-        //                 ),
-        //             );
-        //             hmap.insert(s!("LD_LIBRARY_PATH"),
-        //                      format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &path));
-        //         }
-        //         _ => (),
-        //     }
-        // },
+            hmap.insert(s!("PYTHONPATH"),
+                        format!(
+                            "/opt/python:/var/runtime:{}/python:{}/python:{}",
+                            &base_deps_path, &deps_path, &model_path
+                        ),
+            );
+            hmap.insert(s!("LD_LIBRARY_PATH"),
+                        format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
+
+        },
         _ => ()
     }
 
