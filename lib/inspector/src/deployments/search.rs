@@ -3,16 +3,15 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use compiler::Topology;
 
 #[derive(Template)]
 #[template(path = "deployments/fragments/search.html")]
-struct AuditTemplate {
+struct SearchTemplate {
     items: Vec<String>
 }
 
 pub async fn list() -> impl IntoResponse {
-    let t = AuditTemplate {
+    let t = SearchTemplate {
         items: vec![]
     };
     Html(t.render().unwrap())

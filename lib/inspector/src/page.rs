@@ -58,21 +58,6 @@ pub async fn releases() -> impl IntoResponse {
 }
 
 #[derive(Template)]
-#[template(path = "definitions/index.html")]
-struct FunctorsTemplate {
-    id: String,
-    name: String,
-}
-
-pub async fn functors(Path(id): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(FunctorsTemplate {
-        id: id,
-        name: String::from("definitons"),
-    })
-}
-
-
-#[derive(Template)]
 #[template(path = "definitions/functions.html")]
 struct FunctionsTemplate {
     id: String,

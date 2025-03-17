@@ -3,8 +3,6 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use compiler::Topology;
-
 #[derive(Template)]
 #[template(path = "releases/fragments/snapshot.html")]
 struct SnapshotTemplate {

@@ -1,7 +1,18 @@
 <form>
 
-  <fieldset role="group">
-    <input type="text">
-    <input type="submit">
+  <fieldset class="grid">
+    <select name="env" aria-label="Env" required>
+      <option disabled selected>
+	Select Env
+      </option>
+      <option>dev-af</option>
+      <option>qa</option>
+      <option>prod</option>
+    </select>
+
+    <input type="text" placeholder="sandbox"/>
+    <input type="submit" value="Create Sandbox"/>
+  </fieldset>
+
 
 </form>

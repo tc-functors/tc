@@ -1,11 +1,9 @@
 use askama::Template;
 use axum::{
     response::{Html, IntoResponse},
-    Form,
 };
 
 use std::collections::HashMap;
-use serde_derive::Deserialize;
 use compiler::{TopologyCount, Topology};
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -24,7 +22,7 @@ pub struct Functor {
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
     let mut xs: Vec<Functor> = vec![];
-    for (name, topology) in &topologies {
+    for (_, topology) in &topologies {
         let t = TopologyCount::new(&topology);
         let f = Functor {
             id: topology.namespace.clone(),
@@ -49,19 +47,6 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
 #[template(path = "definitions/fragments/functors.html")]
 struct FunctorsTemplate {
     items: Vec<Functor>
-}
-
-#[derive(Deserialize, Debug)]
-pub struct FunctorsInput {
-    pub term: String,
-}
-
-pub async fn search(Form(_payload): Form<FunctorsInput>) -> impl IntoResponse {
-
-    let t = FunctorsTemplate {
-        items: vec![]
-    };
-    Html(t.render().unwrap())
 }
 
 

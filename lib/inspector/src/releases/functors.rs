@@ -15,7 +15,7 @@ pub struct Functor {
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
     let mut xs: Vec<Functor> = vec![];
-    for (name, topology) in &topologies {
+    for (_, topology) in &topologies {
         let f = Functor {
             id: topology.namespace.clone(),
             namespace: topology.namespace.clone(),

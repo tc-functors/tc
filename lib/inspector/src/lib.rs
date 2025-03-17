@@ -19,6 +19,7 @@ pub async fn init() {
         .route("/definitions/search"                 , post(definitions::functors::list))
         .route("/definitions/list"                   , get(definitions::functors::list))
         .route("/definitions/compile"                , post(definitions::functors::compile))
+        .route("/definitions/show-action-form"       , post(definitions::show_action_form))
         .route("/definitions/nodes/{:id}"            , get(page::nodes))
         .route("/definitions/nodes/list/{:id}"       , get(definitions::nodes::list))
         .route("/definitions/functions/{:id}"        , get(page::functions))

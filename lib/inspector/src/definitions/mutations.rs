@@ -4,17 +4,17 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-struct Route {
+struct Mutation {
     name: String
 }
 
 #[derive(Template)]
 #[template(path = "definitions/fragments/mutations.html")]
-struct RoutesTemplate {
-    items: Vec<Route>
+struct MutationsTemplate {
+    items: Vec<Mutation>
  }
 
 pub async fn list(Path(_id): Path<String>) -> impl IntoResponse {
-    let t = RoutesTemplate { items: vec![] };
+    let t = MutationsTemplate { items: vec![] };
     Html(t.render().unwrap())
 }

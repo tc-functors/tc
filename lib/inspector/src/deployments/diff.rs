@@ -3,11 +3,9 @@ use configurator::Config;
 use askama::Template;
 use axum::{
     response::{Html, IntoResponse},
-    Form
 };
 
 use aws::{sfn, Env};
-use serde_derive::Deserialize;
 
 struct Record {
     namespace: String,
@@ -31,7 +29,7 @@ async fn list_cached_records() -> Vec<Record> {
 }
 
 
-async fn build(envs: Vec<String>, sandbox: &str) -> HashMap<String, HashMap<String, String>> {
+async fn build(envs: Vec<String>, _sandbox: &str) -> HashMap<String, HashMap<String, String>> {
     // hashmap of namespace -> env -> version
     let records = list_cached_records().await;
     let mut h: HashMap<String, HashMap<String, String>> = HashMap::new();
@@ -58,45 +56,11 @@ struct FunctorsTemplate {
     items: HashMap<String, HashMap<String, String>>
 }
 
-async fn maybe_build(envs: Vec<String>, sandbox: &str) -> HashMap<String, HashMap<String, String>> {
-    let key = format!("deployments.{}.versions", sandbox);
-    if cache::has_key(&key) {
-        tracing::info!("Found deployments cache: {}", key);
-        let s = cache::read(&key);
-        let t: HashMap<String, HashMap<String, String>> = serde_json::from_str(&s).unwrap();
-        println!("{:?}", &t);
-        t
-    } else {
-        let data = build(envs, sandbox).await;
-        let s = serde_json::to_string(&data).unwrap();
-        cache::write(&key, &s).await;
-        data
-    }
-}
-
 pub async fn list() -> impl IntoResponse {
-    let envs = vec![String::from("qa"), String::from("poc"), String::from("prod"), String::from("prod-01"), String::from("staging")];
+    let envs = vec![];
     let t = FunctorsTemplate {
         envs: envs.clone(),
         items: build(envs, "stable").await
-    };
-    Html(t.render().unwrap())
-}
-
-#[derive(Deserialize, Debug)]
-pub struct SearchInput {
-    pub profiles: String,
-    pub sandbox: String,
-}
-
-pub async fn search(Form(payload): Form<SearchInput>) -> impl IntoResponse {
-    let SearchInput { profiles, sandbox }  = payload;
-    let envs: Vec<String> = profiles.split(",").collect::<Vec<_>>()
-        .into_iter().map(|s| s.to_owned()).collect();
-
-    let t = FunctorsTemplate {
-        envs: envs.clone(),
-        items: build(envs, &sandbox).await
     };
     Html(t.render().unwrap())
 }

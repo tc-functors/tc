@@ -3,7 +3,6 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use compiler::Topology;
 
 #[derive(Template)]
 #[template(path = "deployments/fragments/audit.html")]
