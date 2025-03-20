@@ -187,6 +187,8 @@ pub struct PublishArgs {
     profile: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
+    #[arg(long, short = 'k')]
+    kind: Option<String>,
     #[arg(long, action)]
     name: Option<String>,
     #[arg(long, action)]
@@ -581,6 +583,7 @@ async fn publish(args: PublishArgs) {
         demote,
         version,
         list,
+        kind,
         download,
         ..
     } = args;
@@ -592,7 +595,7 @@ async fn publish(args: PublishArgs) {
     let dir = kit::pwd();
     let env = tc::init_repo_profile(profile).await;
     if list {
-        tc::list_published_assets(env).await
+        tc::list_published_assets(env, kind).await
     } else if download {
         tc::download_layer(env, name).await
     } else {

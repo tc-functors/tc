@@ -88,8 +88,10 @@ pub async fn publish(
     }
 }
 
-pub async fn list_published_assets(env: Env) {
-    publisher::list(&env).await
+pub async fn list_published_assets(env: Env, kind: Option<String>) {
+    let k = u::maybe_string(kind, "layer");
+    let kind = BuildKind::from_str(&k).unwrap();
+    publisher::list(&env, &kind).await
 }
 
 pub async fn test() {
@@ -176,7 +178,7 @@ async fn create_topology(env: &Env, topology: &Topology) {
     }
     deployer::create(env, topology).await;
 
-    for node in &topology.nodes {
+    for (_, node) in &topology.nodes {
         deployer::create(env, node).await;
     }
 }
@@ -266,7 +268,7 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache
     let root = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
     update_topology(&env, &root).await;
 
-    for node in root.nodes {
+    for (_, node) in root.nodes {
         update_topology(&env, &node).await;
     }
     builder::clean(recursive);
@@ -290,7 +292,7 @@ pub async fn update_component(
     let root = resolver::resolve(&env, &sandbox, &topology, true).await;
     deployer::update_component(&env, &root, component.clone()).await;
 
-    for node in root.nodes {
+    for (_, node) in root.nodes {
         deployer::update_component(&env, &node, component.clone()).await;
     }
 }
@@ -305,7 +307,7 @@ pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
     let root = resolver::resolve(&env, &sandbox, &topology, true).await;
 
     deployer::delete(&env, &root).await;
-    for node in root.nodes {
+    for (_, node) in root.nodes {
         deployer::delete(&env, &node).await
     }
 }
@@ -326,7 +328,7 @@ pub async fn delete_component(
     let root = resolver::resolve(&env, &sandbox, &topology, true).await;
     deployer::delete_component(&env, root.clone(), component.clone()).await;
 
-    for node in root.nodes {
+    for (_, node) in root.nodes {
         deployer::delete_component(&env, node, component.clone()).await
     }
 }

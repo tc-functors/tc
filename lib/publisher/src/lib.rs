@@ -60,8 +60,8 @@ pub async fn list(env: &Env, kind: &BuildKind) {
             println!("{}", table);
         },
         BuildKind::Image => {
-            let images = ecr::list().await;
-            println!("{}", images);
+            let images = ecr::list(env, "xxx").await;
+            println!("{:?}", images);
         },
         _ => todo!()
     }
