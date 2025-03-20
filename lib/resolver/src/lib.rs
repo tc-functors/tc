@@ -38,11 +38,11 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool)
         None => {
             let mut root = topology::resolve(topology, env, sandbox).await;
             let nodes = &topology.nodes;
-            let mut resolved_nodes: Vec<Topology> = vec![];
+            let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
             // FIXME: recurse
-            for node in nodes {
+            for (name, node) in nodes {
                 let node_t = topology::resolve(&node, env, sandbox).await;
-                resolved_nodes.push(node_t);
+                resolved_nodes.insert(name.to_string(), node_t);
             }
             root.nodes = resolved_nodes;
             // write it to cache
@@ -57,12 +57,12 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool)
 pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, component: &str) -> Topology {
 
     let mut root = topology::resolve_component(topology, env, sandbox, component).await;
-    let mut resolved_nodes: Vec<Topology> = vec![];
+    let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
     let nodes = &topology.nodes;
 
-    for node in nodes {
+    for (name, node) in nodes {
         let node_t = topology::resolve(&node, env, sandbox).await;
-        resolved_nodes.push(node_t);
+        resolved_nodes.insert(name.to_string(), node_t);
     }
     root.nodes = resolved_nodes;
     root
@@ -79,16 +79,6 @@ pub async fn render(env: &Env, sandbox: &str, topology: &Topology) -> Topology {
     let rendered = ctx.render(&v);
     let t: Topology = serde_json::from_str(&rendered).unwrap();
     t
-}
-
-pub async fn just_nodes(topology: &Topology) -> Vec<String> {
-    let mut nodes: Vec<String> = vec![];
-    let root = &topology.fqn;
-    nodes.push(root.to_string());
-    for node in &topology.nodes {
-        nodes.push(node.fqn.to_string());
-    }
-    nodes
 }
 
 pub fn pprint(t: &Topology, component: Option<String>) -> String {
@@ -122,7 +112,7 @@ pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<Str
         fns.push(f.name)
     }
 
-    for node in nodes {
+    for (_, node) in nodes {
         let node_t = topology::resolve(&node, env, &sandbox).await;
         for (_, f) in node_t.functions {
             fns.push(f.name)
