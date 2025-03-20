@@ -111,7 +111,7 @@ impl Function {
 
     pub fn to_map(function: Function) -> HashMap<String, Function> {
         let mut fns: HashMap<String, Function> = HashMap::new();
-        fns.insert(function.dir.to_string(), function);
+        fns.insert(function.name.to_string(), function);
         fns
     }
 }

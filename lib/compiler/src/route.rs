@@ -12,6 +12,16 @@ pub enum TargetKind {
     StepFunction
 }
 
+impl TargetKind {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            TargetKind::Function => s!("function"),
+            TargetKind::StepFunction => s!("sfn")
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum RouteKind {
     Function,
@@ -73,4 +83,6 @@ impl Route {
             response_template: response_template(),
         }
     }
+
+
 }

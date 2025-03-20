@@ -47,11 +47,13 @@ pub fn compile_root() -> HashMap<String, Topology> {
     let given_root_dirs = &spec.nodes.dirs;
     let mut h: HashMap<String, Topology> = HashMap::new();
     for d in given_root_dirs {
+        tracing::debug!("Given root: {}", &d);
         let dir = u::absolutize(&u::pwd(), &d);
         let t = compile(&dir, true);
 
         h.insert(t.namespace.to_string(), t);
     }
+    tracing::debug!("Compilation completed");
     h
 }
 
@@ -345,7 +347,7 @@ pub fn count_of(topology: &Topology) {
 
     let nodes = &topology.nodes;
 
-    for node in nodes {
+    for (_, node) in nodes {
         let Topology { functions, mutations, events, queues, routes, .. } = node;
         f = f  + functions.len();
         m = m + match mutations.get("default") {

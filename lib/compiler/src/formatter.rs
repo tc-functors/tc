@@ -30,7 +30,7 @@ impl TopologyCount {
 
         let nodes = &topology.nodes;
 
-        for node in nodes {
+        for (_, node) in nodes {
             let Topology { functions, mutations, events, queues, routes, .. } = node;
             f = f  + functions.len();
             m = m + match mutations.get("default") {
