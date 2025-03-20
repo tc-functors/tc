@@ -377,6 +377,7 @@ dependencies = [
  "aws-sdk-appsync",
  "aws-sdk-cloudwatchlogs",
  "aws-sdk-dynamodb",
+ "aws-sdk-ecr",
  "aws-sdk-ecs",
  "aws-sdk-efs",
  "aws-sdk-eventbridge",
@@ -582,6 +583,28 @@ dependencies = [
  "aws-types",
  "bytes",
  "fastrand",
+ "http 0.2.12",
+ "once_cell",
+ "regex-lite",
+ "tracing",
+]
+
+[[package]]
+name = "aws-sdk-ecr"
+version = "1.57.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98f1c38f36150ac97930e2d947960ed749ec6f97917d6a69371eeacd34f05022"
+dependencies = [
+ "aws-credential-types",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
  "http 0.2.12",
  "once_cell",
  "regex-lite",

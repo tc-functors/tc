@@ -17,6 +17,7 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
+pub mod ecr;
 
 mod default;
 

@@ -21,6 +21,7 @@ aws-sdk-appsync = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-ssm = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-sts = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-ecs = { version = "1.15.0", features = ["behavior-version-latest"] }
+aws-sdk-ecr = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-sqs = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-scheduler = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-smithy-http = "0.60.0"
