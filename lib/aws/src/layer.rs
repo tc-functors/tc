@@ -191,3 +191,32 @@ pub async fn list(client: Client, filter: Vec<String>) -> Vec<Layer> {
     }
     layers
 }
+
+
+pub async fn list_all_layers(client: &Client) -> Vec<Layer> {
+    let res = client
+        .list_layers()
+        .max_items(500)
+        .send()
+        .await
+        .unwrap()
+        .layers;
+
+    let mut layers: Vec<Layer> = vec![];
+    match res {
+        Some(xs) => {
+            for x in xs.to_vec() {
+                let ver = x.latest_matching_version.unwrap();
+                let layer_name = x.layer_name.unwrap();
+                let layer = Layer {
+                    name: layer_name,
+                    version: ver.version,
+                    created_date: ver.created_date.unwrap(),
+                };
+                layers.push(layer);
+            }
+        }
+        None => (),
+    }
+    layers
+}
