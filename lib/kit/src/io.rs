@@ -185,16 +185,20 @@ fn trim(input: &str) -> &str {
 }
 
 #[cfg(not(test))]
-pub fn sh(path: &str, dir: &str) -> String {
-    //tracing::debug!("sh {} {}", dir, path);
+ pub fn sh(path: &str, dir: &str) -> String {
     let out = Exec::shell(path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)
         .cwd(dir)
-        .capture()
-        .unwrap()
-        .stdout_str();
-    trim(&out).to_string()
+        .capture();
+
+    match out {
+        Ok(s) => {
+            let m = s.stdout_str();
+            trim(&m).to_string()
+        },
+        Err(e) => panic!("{}", e)
+    }
 }
 
 pub fn runcmd_quiet(path: &str, dir: &str) {
