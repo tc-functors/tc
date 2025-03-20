@@ -1,0 +1,21 @@
+<table class="striped" width="100%">
+  <thead>
+    <tr>
+      <td></td>
+      <td>Name</td>
+      <td>Version</td>
+      <td>Created</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{loop.index}}</td>
+      <td>{{item.name}}</td>
+      <td>{{item.version}}</td>
+      <td>
+	{{item.created}}
+      </td>
+    </tr>
+    {% endfor %}
+</table>

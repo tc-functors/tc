@@ -52,10 +52,19 @@ pub async fn demote(env: &Env, name: Option<String>, lang: &str) {
     }
 }
 
-pub async fn list(env: &Env) {
-    let layer_names = compiler::find_layer_names();
-    let table = list_layers(env, layer_names).await;
-    println!("{}", table);
+pub async fn list(env: &Env, kind: &BuildKind) {
+    match kind {
+        BuildKind::Layer => {
+            let layer_names = compiler::find_layer_names();
+            let table = list_layers(env, layer_names).await;
+            println!("{}", table);
+        },
+        BuildKind::Image => {
+            let images = ecr::list().await;
+            println!("{}", images);
+        },
+        _ => todo!()
+    }
 }
 
 pub async fn download_layer(env: &Env, name: &str) {

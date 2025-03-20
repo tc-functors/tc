@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+  <nav aria-label="breadcrumb">
+    <ul>
+      <li><a href="#">Home</a></li>
+      <li><a href="/deployments">Deployments</a></li>
+      <li>{{id}}/{{entity}}</li>
+    </ul>
+  </nav>
+
+  <div class="x">
+    <div class="xg"></div>
+    <div class="x4">
+
+      <details class="dropdown">
+	<summary role="button">
+	  <i class="fas fa-list"></i> List
+	</summary>
+	<ul>
+	  <li><a href="/deployments/nodes/all">Nodes</a></li>
+	  <li><a href="/deployments/functions/all">Functions</a></li>
+	</ul>
+      </details>
+
+    </div>
+  </div>
+</div>
+
+<div id="lister"
+     hx-trigger="load"
+     hx-get="/definitions/list/{{entity}}/{{id}}"
+     hx-swap="innerHTML">
+
+  <div align="center">
+    <br/><br/><br/>
+    <progress/>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -2,6 +2,7 @@
   <thead>
     <tr>
       <td></td>
+      <td></td>
       <td>Namespace</td>
       <td>Version</td>
       <td>Nodes</td>
@@ -16,7 +17,8 @@
     {% for item in items %}
     <tr>
       <td><input type="checkbox" name={{item.namespace}}/></td>
-      <td><a href="/topology/{{item.namespace}}">{{item.namespace}}<a/></td>
+      <td>{{loop.index}}</td>
+      <td><a href="/definition/node/{{item.namespace}}">{{item.namespace}}<a/></td>
       <td>{{item.version}}</td>
       <td>
 	{% if item.nodes != 0 %}

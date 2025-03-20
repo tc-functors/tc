@@ -36,6 +36,18 @@ pub async fn definitions() -> impl IntoResponse {
 }
 
 #[derive(Template)]
+#[template(path = "builds/index.html")]
+struct BuildsTemplate { name: String }
+
+pub async fn builds() -> impl IntoResponse {
+    let template = BuildsTemplate {
+        name: "builds".to_string()
+    };
+    HtmlTemplate(template)
+}
+
+
+#[derive(Template)]
 #[template(path = "deployments/index.html")]
 struct DeploymentsTemplate { name: String }
 
@@ -58,74 +70,38 @@ pub async fn releases() -> impl IntoResponse {
 }
 
 #[derive(Template)]
-#[template(path = "definitions/functions.html")]
-struct FunctionsTemplate {
+#[template(path = "definitions/list.html")]
+struct ListTemplate {
     id: String,
+    entity: String,
     name: String,
 }
 
-pub async fn functions(Path(id): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(FunctionsTemplate {
+pub async fn list_definitions(Path((entity, id)): Path<(String, String)>) -> impl IntoResponse {
+    HtmlTemplate(ListTemplate {
         id: id,
-        name: String::from("definitons"),
+        entity: entity,
+        name: String::from("definitions"),
     })
 }
+
 
 #[derive(Template)]
-#[template(path = "definitions/nodes.html")]
-struct NodesTemplate {
+#[template(path = "definitions/view.html")]
+struct ViewTemplate {
     id: String,
+    entity: String,
     name: String,
 }
 
-pub async fn nodes(Path(id): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(NodesTemplate {
+pub async fn view_definition(Path((entity, id)): Path<(String, String)>) -> impl IntoResponse {
+    HtmlTemplate(ViewTemplate {
         id: id,
-        name: String::from("definitions")
+        entity: entity,
+        name: String::from("definitions"),
     })
 }
 
-#[derive(Template)]
-#[template(path = "definitions/events.html")]
-struct EventsTemplate {
-    id: String,
-    name: String,
-}
-
-pub async fn events(Path(id): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(EventsTemplate {
-        id: id,
-        name: String::from("definitions")
-    })
-}
-
-#[derive(Template)]
-#[template(path = "definitions/mutations.html")]
-struct MutationsTemplate {
-    id: String,
-    name: String,
-}
-
-pub async fn mutations(Path(id): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(MutationsTemplate {
-        id: id,
-        name: String::from("definitions")
-    })
-}
-
-#[derive(Template)]
-#[template(path = "definitions/routes.html")]
-struct RoutesTemplate {
-    id: String,
-    name: String,
-}
-
-pub async fn routes(Path(id): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(RoutesTemplate {
-        id: id,
-        name: String::from("definitions")
-    })
-}
 
 #[derive(Template)]
 #[template(path = "definitions/topology.html")]

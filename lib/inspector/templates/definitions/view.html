@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+
+  <nav aria-label="breadcrumb">
+    <ul>
+      <li><a href="/definitions">definitions</a></li>
+      <li>{{entity}}</li>
+      <li><b>{{id}}</b></li>
+    </ul>
+  </nav>
+
+<div class="x">
+    <div class="xg">
+    </div>
+    <div class="x4">
+
+      <details class="dropdown">
+	<summary role="button">
+	  <i class="fas fa-list"></i> List
+	</summary>
+	<ul>
+	  <li><a href="/definitions/nodes/all">Nodes</a></li>
+	  <li><a href="/definitions/functions/all">Functions</a></li>
+	  <li><a href="/definitions/events/all">Events</a></li>
+	  <li><a href="/definitions/routes/all">Routes</a></li>
+	  <li><a href="/definitions/mutations/all">Mutations</a></li>
+	  <li><a href="/definitions/states/all">States</a></li>
+	  <li><a href="/definitions/infra/all">Infra</a></li>
+	</ul>
+      </details>
+
+    </div>
+  </div>
+
+</div>
+
+<br/>
+
+<div id="json-tree"></div>
+
+<div id="lister"
+     hx-trigger="load"
+     hx-get="/definition/view/{{entity}}/{{id}}"
+     hx-swap="innerHTML">
+
+  <br/><br/>
+  <progress/>
+
+</div>
+
+
+{% endblock %}

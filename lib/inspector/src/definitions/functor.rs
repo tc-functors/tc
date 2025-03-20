@@ -7,17 +7,17 @@ use std::collections::HashMap;
 use compiler::{TopologyCount, Topology};
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Functor {
-    pub id: String,
-    pub namespace: String,
-    pub functions: usize,
-    pub nodes: usize,
-    pub events: usize,
-    pub queues: usize,
-    pub routes: usize,
-    pub mutations: usize,
-    pub states: usize,
-    pub version: String
+struct Functor {
+    id: String,
+    namespace: String,
+    functions: usize,
+    nodes: usize,
+    events: usize,
+    queues: usize,
+    routes: usize,
+    mutations: usize,
+    states: usize,
+    version: String
 }
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
@@ -44,7 +44,7 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
 }
 
 #[derive(Template)]
-#[template(path = "definitions/fragments/functors.html")]
+#[template(path = "definitions/list/functors.html")]
 struct FunctorsTemplate {
     items: Vec<Functor>
 }

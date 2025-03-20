@@ -5,49 +5,28 @@
 
 <div align="left">
 
-  <button class="outline secondary"
-	  hx-post="/releases/changelog"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Changelog
-  </button>
+    <button class="custom-button primary"
+	    hx-post="/releases/list">
+      <i class="fas fa-list"></i> List
+    </button>
 
-  <button class="outline secondary"
-	  hx-post="/releases/snapshot"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Snapshot
-  </button>
+    <button class="custom-button primary"
+	    hx-post="/releases/changelog">
+      <i class="fas fa-download"></i> Changelog
+    </button>
 
+    <button class="custom-button primary"
+	    hx-post="/releases/freeze">
+      <i class="fas fa-pause"></i> Freeze Test Environment
+    </button>
 
-  <button class="outline secondary"
-	  hx-post="/releases/freeze"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Freeze
-  </button>
+    <button class="custom-button primary"
+	    hx-post="/releases/promote">
+      <i class="fas fa-angle-up"></i> Promote
+    </button>
 
-  <button class="outline secondary"
-	  hx-post="/releases/promote"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Promote
-  </button>
-
-  <button class="outline secondary"
-	  hx-post="/releases/history"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    History
-  </button>
 
 </div>
-<div</div>
 </div>
 
 <br/>

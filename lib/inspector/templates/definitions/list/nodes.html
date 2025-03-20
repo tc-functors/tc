@@ -1,9 +1,10 @@
 <table class="striped">
   <thead>
     <tr>
-      <td>Namespace</td>
+      <td></td>
+      <td>Root</td>
+      <td>Node</td>
       <td>Version</td>
-      <td>Nodes</td>
       <td>Functions</td>
       <td>Events</td>
       <td>Queues</td>
@@ -15,15 +16,10 @@
   <tbody>
     {% for item in items %}
     <tr>
+      <td>{{loop.index}}</td>
+      <td>{{item.parent}}</id>
       <td><a href="/topology/{{id}}">{{item.namespace}}<a/></td>
       <td>{{item.version}}</td>
-      <td>
-	{% if item.nodes == 0 %}
-	0
-	{% else %}
-	<a href="/definitions/nodes/{{item.namespace}}">{{item.nodes}}</a>
-	{% endif %}
-      </td>
       <td>
 	{% if item.functions == 0 %}
 	0

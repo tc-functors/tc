@@ -1,0 +1,33 @@
+<table class="striped" width="100%">
+  <thead>
+    <tr>
+      <td></td>
+      <td>Namespace</td>
+      <td>Name</td>
+      <td>Target</td>
+      <td>Input</td>
+      <td>Output</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for mutation in items %}
+    <tr>
+      <td>{{loop.index}}</td>
+      <td>{{mutation.namespace}}</td>
+      <td>{{mutation.name}}</td>
+      <td>
+	<b>{{mutation.kind}}</b>
+	<br/>
+	<small>
+	  {{mutation.target}}
+	  </small>
+      </td>
+      <td  width="15%">
+	<code>{{mutation.input}}</code>
+      </td>
+      <td  width="15%">
+	<code>{{mutation.output}}</code>
+      </td>
+    </tr>
+    {% endfor %}
+</table>

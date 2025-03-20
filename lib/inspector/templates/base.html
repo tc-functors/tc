@@ -6,8 +6,9 @@
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
-    <link rel="stylesheet" href="/style.css">
-    <script defer src="https://unpkg.com/alpinejs"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script><script src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
+    <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
 
     <style>
@@ -26,7 +27,7 @@
 
         --pico-table-border-color: #eeeeee;
 
-        --pico-typography-spacing-vertical: 0.6rem;
+        --pico-typography-spacing-vertical: 0.8rem;
       }
 
       @media (min-width: 576px) {
@@ -87,10 +88,6 @@
 	line-height: 0.7rem;
       }
 
-      hr {
-	color: #fde7c0;
-      }
-
       article {
 	border: 1px solid var(--pico-muted-border-color);
 	/* Original doesn't have a border */
@@ -142,19 +139,68 @@
            opacity:1;
 	 }
 
-      .x1 { flex: 0 0 100% }
-      .x2 { flex: 0 0 calc(1/2 * 100%) }
-      .x3 { flex: 0 0 calc(1/3 * 100%) }
-      .x4 { flex: 0 0 calc(1/4 * 100%) }
-      .x6 { flex: 0 0 calc(1/6 * 100%) }
-      .x8 { flex: 0 0 calc(1/8 * 100%) }
-      .x10 { flex: 0 0 calc(1/10 * 100%) }
-      .x15 { flex: 0 0 calc(1/15 * 100%) }
-      .x20 { flex: 0 0 calc(1/20 * 100%) }
-      .xg { flex: 1 0 auto }
-      .x-center   { align-items: center; }
-      @media (min-width: 992px) { .x { display: flex; } .x > * + * {margin-left: 0rem}}
+	 .x1 { flex: 0 0 100% }
+	 .x2 { flex: 0 0 calc(1/2 * 100%) }
+	 .x3 { flex: 0 0 calc(1/3 * 100%) }
+	 .x4 { flex: 0 0 calc(1/4 * 100%) }
+	 .x6 { flex: 0 0 calc(1/6 * 100%) }
+	 .x8 { flex: 0 0 calc(1/8 * 100%) }
+	 .x10 { flex: 0 0 calc(1/10 * 100%) }
+	 .x15 { flex: 0 0 calc(1/15 * 100%) }
+	 .x20 { flex: 0 0 calc(1/20 * 100%) }
+	 .xg { flex: 1 0 auto }
+	 .x-center   { align-items: center; }
+	 @media (min-width: 992px) { .x { display: flex; } .x > * + * {margin-left: 0rem}}
 
+
+	 .custom-button {
+	   font-size: 15px;
+	   padding: 10px 20px;
+	   background-color: #3498db; /* Default background color */
+	   color: white;
+	   border: none;
+	   border-radius: 5px;
+	   cursor: pointer;
+	   display: inline-flex; /* Align icon and text */
+	   align-items: center; /* Vertically center text and icon */
+	   gap: 10px; /* Space between icon and text */
+	   transition: background-color 0.3s ease;
+	 }
+
+	 .primary {
+	   background-color: #3498db; /* Blue */
+	 }
+
+	 .success {
+	   background-color: #2ecc71; /* Green */
+	 }
+
+	 .secondary {
+	   background-color: #F1F1F1; /* Green */
+	 }
+
+	 .danger {
+	   background-color: #e74c3c; /* Red */
+	 }
+
+	 /* Hover effect */
+	 .custom-button:hover {
+	   opacity: 0.9;
+	 }
+
+	 /* Icon styles */
+	 .custom-button i, .custom-button img {
+	   width: 16px;
+	   height: 16px;
+	 }
+
+	 .centered {
+	   text-align: center;
+	   margin-top: 50px;
+	   display: flex;
+	   gap: 20px;
+	   justify-content: center;
+	 }
 
     </style>
 
@@ -173,10 +219,10 @@
 	    {% endif %}
 	  </li>
 	  <li>
-	    {% if name == "releases" %}
-	    <mark>Releases</mark>
+	    {% if name == "builds" %}
+	    <mark>Builds</mark>
 	    {% else %}
-	    <a href="/releases">Releases</a>
+	    <a href="/builds">Builds</a>
 	    {% endif %}
 	  </li>
 	  <li>
@@ -184,6 +230,13 @@
 	    <mark>Deployments</mark>
 	    {% else %}
 	    <a href="/deployments">Deployments</a>
+	    {% endif %}
+	  </li>
+	  <li>
+	    {% if name == "releases" %}
+	    <mark>Releases</mark>
+	    {% else %}
+	    <a href="/releases">Releases</a>
 	    {% endif %}
 	  </li>
 	</ul>

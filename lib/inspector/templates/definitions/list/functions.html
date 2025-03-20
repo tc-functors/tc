@@ -1,7 +1,10 @@
 <table class="striped">
   <thead>
     <tr>
+      <td></td>
+      <td>Namespace</td>
       <td>Name</td>
+      <td>Package Type</td>
       <td>Runtime</td>
       <td>Layers</td>
       <td>Memory</td>
@@ -11,7 +14,10 @@
   <tbody>
     {% for function in items %}
     <tr>
+      <td>{{loop.index}}</td>
+      <td>{{function.namespace}}</td>
       <td>{{function.name}}</td>
+      <td>{{function.package_type}}</td>
       <td>
 	{{function.runtime}}
       </td>

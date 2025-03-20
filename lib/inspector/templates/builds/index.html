@@ -5,19 +5,24 @@
   <div align="left">
 
     <button class="custom-button primary"
-	    hx-post="/definitions/test"
-	    hx-target="#functors"
+	    hx-post="/builds/sync"
+	    hx-target="#builds"
 	    hx-indicator="#status">
-      <i class="fas fa-vial"></i> Test
+      <i class="fas fa-vial"></i> Sync
     </button>
 
     <button class="custom-button primary"
-	    hx-post="/definitions/compile">
-      <i class="fas fa-circle-notch"></i> Compile
+	    hx-post="/builds/start"
+	    hx-target="#builds"
+	    hx-indicator="#status">
+      <i class="fas fa-vial"></i> Build
     </button>
 
-    <button class="custom-button Primary">
-      <i class="fas fa-plus"></i> Sandbox
+    <button class="custom-button primary"
+	    hx-post="/builds/start"
+	    hx-target="#builds"
+	    hx-indicator="#status">
+      <i class="fas fa-vial"></i> Promote
     </button>
 
   </div>
@@ -32,13 +37,8 @@
 	<i class="fas fa-list"></i> List
       </summary>
       <ul>
-	<li><a href="/definitions/nodes/all">Nodes</a></li>
-	<li><a href="/definitions/functions/all">Functions</a></li>
-	<li><a href="/definitions/events/all">Events</a></li>
-	<li><a href="/definitions/routes/all">Routes</a></li>
-	<li><a href="/definitions/mutations/all">Mutations</a></li>
-	<li><a href="/definitions/states/all">States</a></li>
-	<li><a href="/definitions/infra/all">Infra</a></li>
+	<li><a href="/builds/layers/all">Layers</a></li>
+	<li><a href="/builds/images/all">Images</a></li>
       </ul>
     </details>
     </div>
@@ -48,9 +48,9 @@
 
 <br/>
 
-<div id="functors"
+<div id="builds"
      hx-trigger="load"
-     hx-get="/definitions/list"
+     hx-get="/builds/list/layers"
      hx-swap="innerHTML">
 
   <div class="grid">

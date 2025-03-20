@@ -3,50 +3,43 @@
 
 <div class="grid">
 
-<div align="left">
-  <button class="outline secondary"
-	  hx-post="/deployments/diff"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Diff
-  </button>
+  <div align="left">
+
+    <button class="custom-button primary"
+	    hx-post="/definitions/test"
+	    hx-target="#functors"
+	    hx-indicator="#status">
+      <i class="fas fa-vial"></i> Diff
+    </button>
+
+    <button class="custom-button primary"
+	    hx-post="/definitions/compile">
+      <i class="fas fa-circle-notch"></i> Sync
+    </button>
+
+    <button class="custom-button primary"
+	    hx-post="/definitions/compile">
+      <i class="fas fa-circle-notch"></i> Canary
+    </button>
+
+    </div>
+  <div class="x">
+    <div class="xg"></div>
+    <div class="x4">
 
 
-  <button class="outline secondary"
-	  hx-post="/deployments/audit"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Audit
-  </button>
+    <details class="dropdown">
+      <summary role="button">
+	<i class="fas fa-list"></i> List
+      </summary>
+      <ul>
+	<li><a href="/definitions/nodes/all">Functors</a></li>
+	<li><a href="/definitions/functions/all">Functions</a></li>
+      </ul>
+    </details>
+    </div>
+  </div>
 
-  <button class="outline secondary"
-	  hx-post="/deployments/search"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Search
-  </button>
-
-  <button class="outline secondary"
-	  hx-post="/definitions/functors/visualize"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Deploy
-  </button>
-
-  <button class="outline secondary"
-	  hx-post="/definitions/functors/visualize"
-	  hx-target="#functors"
-	  hx-indicator="#spinner"
-	  hx-swap="outerHTML">
-    Canarys
-  </button>
-
-</div>
-<div> </div>
 
 </div>
 
