@@ -47,7 +47,7 @@ pub fn list() -> Vec<CacheItem> {
     for x in items {
         match x {
             Ok(r) => {
-                if !&r.key.starts_with("deployments") || !&r.key.starts_with("root") {
+                if !&r.key.starts_with("functions") || !&r.key.starts_with("root") {
 
                     let parts: Vec<&str> = r.key.split(".").collect();
                     let namespace = parts.clone().into_iter().nth(0).unwrap_or_default();
