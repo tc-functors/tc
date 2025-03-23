@@ -1,7 +1,5 @@
 use tabled::Tabled;
 use kit as u;
-use compiler::Topology;
-use std::collections::HashMap;
 
 fn cache_dir() -> String {
     String::from("/tmp/tc-resolver-cache")
@@ -29,6 +27,11 @@ pub fn has_key(key: &str) -> bool {
 
 pub fn clear() {
     u::sh(&format!("rm -rf {}", cache_dir()), &u::pwd());
+}
+
+
+pub fn make_key(namespace: &str, profile: &str, sandbox: &str) -> String {
+    format!("{}.{}.{}", namespace, profile, sandbox)
 }
 
 #[derive(Tabled, Clone)]
@@ -69,36 +72,4 @@ pub fn list() -> Vec<CacheItem> {
         }
     }
     xs
-}
-
-
-pub fn make_key(namespace: &str, profile: &str, sandbox: &str) -> String {
-    format!("{}.{}.{}", namespace, profile, sandbox)
-}
-
-pub async fn write_topology(key: &str, t: &Topology) {
-    let s = serde_json::to_string(t).unwrap();
-    write(key, &s).await
-}
-
-pub async fn read_topology(key: &str) -> Option<Topology> {
-    if has_key(key) {
-        tracing::info!("Found resolver cache: {}", key);
-        let s = read(key);
-        let t: Topology = serde_json::from_str(&s).unwrap();
-        Some(t)
-    } else {
-        None
-    }
-}
-
-pub async fn read_topologies(key: &str) -> HashMap<String, Topology> {
-    if has_key(key) {
-        tracing::info!("Found cache: {}", key);
-        let s = read(key);
-        let r: HashMap<String, Topology> = serde_json::from_str(&s).unwrap();
-        r
-    } else {
-        HashMap::new()
-    }
 }
