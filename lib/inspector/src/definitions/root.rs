@@ -5,10 +5,11 @@ use axum::{
 
 use std::collections::HashMap;
 use compiler::{TopologyCount, Topology};
+use crate::store;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Functor {
-    id: String,
+    root: String,
     namespace: String,
     functions: usize,
     nodes: usize,
@@ -25,7 +26,7 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
     for (_, topology) in &topologies {
         let t = TopologyCount::new(&topology);
         let f = Functor {
-            id: topology.namespace.clone(),
+            root: topology.namespace.clone(),
             namespace: topology.namespace.clone(),
             functions: t.functions,
             nodes: t.nodes,
@@ -50,8 +51,8 @@ struct FunctorsTemplate {
 }
 
 
-pub async fn list() -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
+pub async fn list_all() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
     let functors = build(topologies);
         let t = FunctorsTemplate {
             items: functors

@@ -567,8 +567,8 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
         Some(n) => {
             let env = kit::maybe_string(env, "default");
             let sandbox = kit::maybe_string(sandbox, "default");
-            let key = cache::make_key(&n, &env, &sandbox);
-            let topology = cache::read_topology(&key).await;
+            let key = resolver::store::make_key(&n, &env, &sandbox);
+            let topology = resolver::store::read_topology(&key).await;
             println!("{}", kit::pretty_json(&topology));
         },
         None => {

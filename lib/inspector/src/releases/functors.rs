@@ -5,18 +5,19 @@ use axum::{
 
 use compiler::Topology;
 use std::collections::HashMap;
+use crate::store;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Functor {
+pub struct Item  {
     pub id: String,
     pub namespace: String,
     pub version: String,
 }
 
-fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
-    let mut xs: Vec<Functor> = vec![];
+fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
     for (_, topology) in &topologies {
-        let f = Functor {
+        let f = Item {
             id: topology.namespace.clone(),
             namespace: topology.namespace.clone(),
             version: String::from(&topology.version),
@@ -31,11 +32,11 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
 #[derive(Template)]
 #[template(path = "releases/fragments/functors.html")]
 struct FunctorsTemplate {
-    items: Vec<Functor>
+    items: Vec<Item>
 }
 
-pub async fn list() -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
+pub async fn list_all() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
     let functors = build(topologies);
         let t = FunctorsTemplate {
             items: functors

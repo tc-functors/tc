@@ -6,100 +6,111 @@ use axum::{
 
 use compiler::{TopologyCount, Topology};
 use std::collections::HashMap;
+use crate::store;
 
-
-struct Node {
-    parent: String,
+struct Item {
+    root: String,
     namespace: String,
     functions: usize,
     events: usize,
+    nodes: usize,
     queues: usize,
     routes: usize,
     mutations: usize,
     version: String
 }
 
-fn build_node(parent: &str, t: &Topology) -> Node {
-    let tc = TopologyCount::new(&t);
-    Node {
-        parent: String::from(parent),
-        namespace: t.namespace.clone(),
-        functions: tc.functions,
-        events: tc.events,
-        queues: tc.queues,
-        routes: tc.routes,
-        mutations: tc.mutations,
-        version: String::from(&t.version),
-    }
-}
-
-fn build(parent: &str, root: &Topology) -> Vec<Node> {
-    let mut xs: Vec<Node> = vec![];
-    for (_, node) in &root.nodes {
-        let f = build_node(parent, &node);
-        xs.push(f)
+fn build_aux(root: &str, rt: &Topology) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
+    for (_, node) in &rt.nodes {
+        let tc = TopologyCount::new(&node);
+        let item = Item {
+            root: String::from(root),
+            namespace: node.namespace.clone(),
+            functions: tc.functions,
+            nodes: tc.nodes,
+            events: tc.events,
+            queues: tc.queues,
+            routes: tc.routes,
+            mutations: tc.mutations,
+            version: String::from(&node.version),
+        };
+        xs.push(item)
     }
     xs
 }
 
-fn build_all(topologies: HashMap<String, Topology>) -> Vec<Node> {
+fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 
-    let mut xs: Vec<Node> = vec![];
+    let mut xs: Vec<Item> = vec![];
 
     for (_, topology) in topologies {
 
-        let ns = build_node(&topology.namespace, &topology);
-        xs.push(ns);
+        let ns = build_aux(&topology.namespace, &topology);
+        xs.extend(ns);
 
         for (_, node) in topology.nodes {
-            let fns = build(&topology.namespace, &node);
+            let fns = build_aux(&topology.namespace, &node);
             xs.extend(fns)
         }
     }
-    xs.sort_by(|a, b| b.parent.cmp(&a.parent));
+    xs.sort_by(|a, b| b.root.cmp(&a.root));
     xs.reverse();
     xs
 }
 
+fn build_root(topologies: HashMap<String, Topology>) -> Vec<Functor> {
+    let mut xs: Vec<Functor> = vec![];
+    for (_, topology) in &topologies {
+        let t = TopologyCount::new(&topology);
+        let f = Functor {
+            root: topology.namespace.clone(),
+            namespace: topology.namespace.clone(),
+            functions: t.functions,
+            nodes: t.nodes,
+            events: t.events,
+            queues: t.queues,
+            routes: t.routes,
+            states: t.states,
+            mutations: t.mutations,
+            version: String::from(&topology.version),
+        };
+        xs.push(f)
+    }
+    xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
+    xs.reverse();
+    xs
+}
+
+
+
 #[derive(Template)]
 #[template(path = "definitions/list/nodes.html")]
 struct NodesTemplate {
-    id: String,
-    items: Vec<Node>
+    items: Vec<Item>
  }
 
-pub async fn list(Path(id): Path<String>) -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
-
-   if &id == "all" {
-
-        let nodes = build_all(topologies);
-        let temp = NodesTemplate {
-            id: String::from("all"),
-            items: nodes
-        };
-        Html(temp.render().unwrap())
-
-    } else {
-
-    let maybe_topology = topologies.get(&id);
-
-    if let Some(t) = maybe_topology {
-        tracing::debug!("Found topology");
-        let temp = NodesTemplate {
-            id: id,
-            items: build(&t.namespace, &t)
-        };
-        Html(temp.render().unwrap())
-    } else {
-        let temp = NodesTemplate {
-            id: id,
-            items: vec![]
-        };
-        Html(temp.render().unwrap())
-    }
-   }
+pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let topologies = store::find_topologies(&root, &namespace).await;
+    let nodes = build(topologies);
+    let temp = NodesTemplate {
+        items: nodes
+    };
+    Html(temp.render().unwrap())
 }
+
+pub async fn list_all() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
+    let nodes = build(topologies);
+    let temp = NodesTemplate {
+        items: nodes
+    };
+    Html(temp.render().unwrap())
+}
+
+
+// view
+
 
 #[derive(Template)]
 #[template(path = "definitions/view/node.html")]
@@ -107,15 +118,13 @@ struct ViewTemplate {
     item: String
 }
 
-pub async fn view(Path(id): Path<String>) -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
-    let f = topologies.get(&id);
+pub async fn view(Path((root, namespace, _id)): Path<(String, String, String)>) -> impl IntoResponse {
+    let f = store::find_topology(&root, &namespace).await;
     if let Some(t) = f {
         let temp = ViewTemplate {
             item: t.to_str()
         };
         Html(temp.render().unwrap())
-
 
     } else {
         let temp = ViewTemplate {
@@ -123,6 +132,4 @@ pub async fn view(Path(id): Path<String>) -> impl IntoResponse {
         };
         Html(temp.render().unwrap())
     }
-
-
 }

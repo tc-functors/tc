@@ -4,11 +4,12 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use compiler::Topology;
+use compiler::{Function, Topology};
 use std::collections::HashMap;
+use crate::store;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
-struct Function {
+struct Item {
     namespace: String,
     name: String,
     package_type: String,
@@ -20,18 +21,11 @@ struct Function {
     runtime: String,
 }
 
-#[derive(Template)]
-#[template(path = "definitions/list/functions.html")]
-struct FunctionsTemplate {
-    items: Vec<Function>
-}
-
-fn build(t: &Topology) -> Vec<Function> {
-    let mut xs: Vec<Function> = vec![];
-
-    for (dir, f) in &t.functions() {
-        let fun = Function {
-            namespace: t.namespace.clone(),
+fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
+    for (dir, f) in fns {
+        let fun = Item {
+            namespace: namespace.to_string(),
             name: f.actual_name.clone(),
             dir: dir.to_string(),
             fqn: f.fqn.clone(),
@@ -46,48 +40,49 @@ fn build(t: &Topology) -> Vec<Function> {
     xs
 }
 
-fn build_all(topologies: HashMap<String, Topology>) -> Vec<Function> {
+fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 
-    let mut xs: Vec<Function> = vec![];
+    let mut xs: Vec<Item> = vec![];
 
     for (_, topology) in topologies {
         for (_, node) in topology.nodes {
-            let fns = build(&node);
+            let fns = build_fns(&node.namespace, node.functions);
             xs.extend(fns)
         }
     }
     xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
+    xs.reverse();
     xs
 }
 
-pub async fn list(Path(id): Path<String>) -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
 
-    if &id == "all" {
-
-        let fns = build_all(topologies);
-        let temp = FunctionsTemplate {
-            items: fns
-        };
-        Html(temp.render().unwrap())
-
-    } else {
-        let maybe_topology = topologies.get(&id);
-
-        if let Some(t) = maybe_topology {
-            tracing::debug!("Found topology");
-            let temp = FunctionsTemplate {
-                items: build(&t)
-            };
-            Html(temp.render().unwrap())
-        } else {
-            let temp = FunctionsTemplate {
-                items: vec![]
-            };
-            Html(temp.render().unwrap())
-        }
-    }
+#[derive(Template)]
+#[template(path = "definitions/list/functions.html")]
+struct FunctionsTemplate {
+    root: String,
+    items: Vec<Item>
 }
+
+pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let fns = store::find_functions(&root, &namespace).await;
+    let temp = FunctionsTemplate {
+        root: root,
+        items: build_fns(&namespace, fns)
+    };
+    Html(temp.render().unwrap())
+}
+
+pub async fn list_all() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
+    let fns = build(topologies);
+    let temp = FunctionsTemplate {
+        root: String::from(""),
+        items: fns
+    };
+    Html(temp.render().unwrap())
+}
+
+// view
 
 
 #[derive(Template)]
@@ -96,9 +91,15 @@ struct ViewTemplate {
     item: String
 }
 
-pub async fn view(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn view(Path((root, namespace, id)): Path<(String, String, String)>) -> impl IntoResponse {
+    let f = store::find_function(&root, &namespace, &id).await;
+    let f_str = match f {
+        Some(r) => serde_json::to_string(&r).unwrap(),
+        None => String::from("none")
+    };
+
     let temp = ViewTemplate {
-        item: String::from("test")
+        item: f_str
     };
     Html(temp.render().unwrap())
 }

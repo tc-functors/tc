@@ -4,10 +4,10 @@ use axum::{
     response::{Html, IntoResponse},
 };
 use std::collections::HashMap;
-use compiler::Topology;
+use compiler::{Topology, Event};
+use crate::store;
 
-
-struct Event {
+struct Item {
     namespace: String,
     name: String,
     rule_name: String,
@@ -16,15 +16,15 @@ struct Event {
 }
 
 
-fn build(topology: &Topology) -> Vec<Event> {
-    let mut xs: Vec<Event> = vec![];
-    for (_, event) in &topology.events {
+fn build_events(namespace: &str, evs: HashMap<String, Event>) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
+    for (_, event) in evs {
         let mut targets: HashMap<String, String> = HashMap::new();
         for t in &event.targets {
             targets.insert(t.kind.to_str(), t.name.clone());
         }
-        let e = Event {
-            namespace: topology.namespace.clone(),
+        let e = Item {
+            namespace: namespace.to_string(),
             name: event.name.clone(),
             rule_name: event.rule_name.clone(),
             pattern: serde_json::to_string(&event.pattern).unwrap(),
@@ -35,14 +35,14 @@ fn build(topology: &Topology) -> Vec<Event> {
     xs
 }
 
-fn build_all(topologies: HashMap<String, Topology>) -> Vec<Event> {
-    let mut xs: Vec<Event> = vec![];
+fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
 
     for (_, topology) in topologies {
-        let fns = build(&topology);
+        let fns = build_events(&topology.namespace, topology.events);
         xs.extend(fns);
         for (_, node) in topology.nodes {
-            let fns = build(&node);
+            let fns = build_events(&node.namespace, node.events);
             xs.extend(fns)
         }
     }
@@ -52,34 +52,22 @@ fn build_all(topologies: HashMap<String, Topology>) -> Vec<Event> {
 #[derive(Template)]
 #[template(path = "definitions/list/events.html")]
 struct EventsTemplate {
-    items: Vec<Event>
- }
+    items: Vec<Item>
+}
 
-pub async fn list(Path(id): Path<String>) -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
+pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let events = store::find_events(&root, &namespace).await;
+    let temp = EventsTemplate {
+        items: build_events(&namespace, events)
+    };
+    Html(temp.render().unwrap())
+}
 
-    if &id == "all" {
-
-        let xs = build_all(topologies);
-        let temp = EventsTemplate {
-            items: xs
-        };
-        Html(temp.render().unwrap())
-
-    } else {
-        let maybe_topology = topologies.get(&id);
-
-        if let Some(t) = maybe_topology {
-            tracing::debug!("Found topology");
-            let temp = EventsTemplate {
-                items: build(&t)
-            };
-            Html(temp.render().unwrap())
-        } else {
-            let temp = EventsTemplate {
-                items: vec![]
-            };
-            Html(temp.render().unwrap())
-        }
-    }
+pub async fn list_all() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
+    let events = build(topologies);
+    let temp = EventsTemplate {
+        items: events
+    };
+    Html(temp.render().unwrap())
 }

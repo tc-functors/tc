@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script><script src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
     <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
@@ -212,28 +212,28 @@
       <nav class="navbar">
 	<ul>
 	  <li>
-	    {% if name == "definitions" %}
+	    {% if context == "definitions" %}
 	    <mark>Definitions</mark>
 	    {% else %}
 	    <a href="/">Definitions</a>
 	    {% endif %}
 	  </li>
 	  <li>
-	    {% if name == "builds" %}
+	    {% if context == "builds" %}
 	    <mark>Builds</mark>
 	    {% else %}
 	    <a href="/builds">Builds</a>
 	    {% endif %}
 	  </li>
 	  <li>
-	    {% if name == "deployments" %}
+	    {% if context == "deployments" %}
 	    <mark>Deployments</mark>
 	    {% else %}
 	    <a href="/deployments">Deployments</a>
 	    {% endif %}
 	  </li>
 	  <li>
-	    {% if name == "releases" %}
+	    {% if context == "releases" %}
 	    <mark>Releases</mark>
 	    {% else %}
 	    <a href="/releases">Releases</a>

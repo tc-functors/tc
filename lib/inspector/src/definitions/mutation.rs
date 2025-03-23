@@ -6,8 +6,9 @@ use axum::{
 
 use compiler::Topology;
 use std::collections::HashMap;
+use crate::store;
 
-struct Mutation {
+struct Item {
     namespace: String,
     name: String,
     kind: String,
@@ -16,12 +17,12 @@ struct Mutation {
     output: String
 }
 
-fn build(topology: &Topology) -> Vec<Mutation> {
-    let mut xs: Vec<Mutation> = vec![];
+fn build_aux(topology: &Topology) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
 
     for (_, mutation) in &topology.mutations {
         for (_, resolver) in &mutation.resolvers {
-            let e = Mutation {
+            let e = Item {
                 namespace: topology.namespace.clone(),
                 name: resolver.name.clone(),
                 kind: resolver.kind.to_str(),
@@ -36,15 +37,15 @@ fn build(topology: &Topology) -> Vec<Mutation> {
     xs
 }
 
-fn build_all(topologies: HashMap<String, Topology>) -> Vec<Mutation> {
-    let mut xs: Vec<Mutation> = vec![];
+fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
+    let mut xs: Vec<Item> = vec![];
 
     for (_, topology) in topologies {
-        let fns = build(&topology);
-        xs.extend(fns);
+        let items = build_aux(&topology);
+        xs.extend(items);
         for (_, node) in topology.nodes {
-            let fns = build(&node);
-            xs.extend(fns)
+            let items = build_aux(&node);
+            xs.extend(items)
         }
     }
     xs
@@ -53,34 +54,23 @@ fn build_all(topologies: HashMap<String, Topology>) -> Vec<Mutation> {
 #[derive(Template)]
 #[template(path = "definitions/list/mutations.html")]
 struct MutationsTemplate {
-    items: Vec<Mutation>
+    items: Vec<Item>
  }
 
-pub async fn list(Path(id): Path<String>) -> impl IntoResponse {
-    let topologies = cache::read_topologies("root").await;
+pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let topologies = store::find_topologies(&root, &namespace).await;
+    let temp = MutationsTemplate {
+        items: build(topologies)
+    };
 
-    if &id == "all" {
+    Html(temp.render().unwrap())
+}
 
-        let xs = build_all(topologies);
-        let temp = MutationsTemplate {
-            items: xs
-        };
-        Html(temp.render().unwrap())
+pub async fn list_all() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
+    let temp = MutationsTemplate {
+        items: build(topologies)
+    };
 
-    } else {
-        let maybe_topology = topologies.get(&id);
-
-        if let Some(t) = maybe_topology {
-            tracing::debug!("Found topology");
-            let temp = MutationsTemplate {
-                items: build(&t)
-            };
-            Html(temp.render().unwrap())
-        } else {
-            let temp = MutationsTemplate {
-                items: vec![]
-            };
-            Html(temp.render().unwrap())
-        }
-    }
+    Html(temp.render().unwrap())
 }

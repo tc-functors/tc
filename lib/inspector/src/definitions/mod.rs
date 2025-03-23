@@ -1,4 +1,3 @@
-pub mod functor;
 pub mod event;
 pub mod route;
 pub mod function;

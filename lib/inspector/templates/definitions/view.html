@@ -6,6 +6,7 @@
   <nav aria-label="breadcrumb">
     <ul>
       <li><a href="/definitions">definitions</a></li>
+      <li>{{namespace}}</li>
       <li>{{entity}}</li>
       <li><b>{{id}}</b></li>
     </ul>
@@ -42,7 +43,7 @@
 
 <div id="lister"
      hx-trigger="load"
-     hx-get="/definition/view/{{entity}}/{{id}}"
+     hx-get="/definition/{{root}}/{{namespace}}/{{entity}}/{{id}}/view"
      hx-swap="innerHTML">
 
   <br/><br/>

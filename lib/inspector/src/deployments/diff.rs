@@ -6,6 +6,7 @@ use axum::{
 };
 
 use aws::{sfn, Env};
+use crate::store;
 
 struct Record {
     namespace: String,
@@ -17,7 +18,7 @@ async fn list_cached_records() -> Vec<Record> {
     let mut xs: Vec<Record> = vec![];
     for item in items {
         let key = cache::make_key(&item.namespace, &item.env, &item.sandbox);
-        let maybe_topology = cache::read_topology(&key).await;
+        let maybe_topology = store::read_topology(&key).await;
         if let Some(topology) = maybe_topology {
             xs.push(Record {
                 namespace: topology.namespace,

@@ -25,23 +25,23 @@ where
 #[derive(Template)]
 #[template(path = "definitions/index.html")]
 struct DefinitionsTemplate {
-    name: String,
+    context: String,
 }
 
 pub async fn definitions() -> impl IntoResponse {
     let template = DefinitionsTemplate {
-        name: "definitions".to_string(),
+        context: "definitions".to_string(),
     };
     HtmlTemplate(template)
 }
 
 #[derive(Template)]
 #[template(path = "builds/index.html")]
-struct BuildsTemplate { name: String }
+struct BuildsTemplate { context: String }
 
 pub async fn builds() -> impl IntoResponse {
     let template = BuildsTemplate {
-        name: "builds".to_string()
+        context: "builds".to_string()
     };
     HtmlTemplate(template)
 }
@@ -49,22 +49,22 @@ pub async fn builds() -> impl IntoResponse {
 
 #[derive(Template)]
 #[template(path = "deployments/index.html")]
-struct DeploymentsTemplate { name: String }
+struct DeploymentsTemplate { context: String }
 
 pub async fn deployments() -> impl IntoResponse {
     let template = DeploymentsTemplate {
-        name: "deployments".to_string()
+        context: "deployments".to_string()
     };
     HtmlTemplate(template)
 }
 
 #[derive(Template)]
 #[template(path = "releases/index.html")]
-struct ReleasesTemplate { name: String }
+struct ReleasesTemplate { context: String }
 
 pub async fn releases() -> impl IntoResponse {
     let template = ReleasesTemplate {
-        name: "releases".to_string()
+        context: "releases".to_string()
     };
     HtmlTemplate(template)
 }
@@ -72,16 +72,36 @@ pub async fn releases() -> impl IntoResponse {
 #[derive(Template)]
 #[template(path = "definitions/list.html")]
 struct ListTemplate {
-    id: String,
+    root: String,
+    namespace: String,
     entity: String,
-    name: String,
+    context: String,
 }
 
-pub async fn list_definitions(Path((entity, id)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn list_root_definitions(Path((root, entity)): Path<(String, String)>) -> impl IntoResponse {
     HtmlTemplate(ListTemplate {
-        id: id,
+        root: root.clone(),
+        namespace: root,
         entity: entity,
-        name: String::from("definitions"),
+        context: String::from("definitions"),
+    })
+}
+
+pub async fn list_ns_definitions(Path((root, namespace, entity)): Path<(String, String, String)>) -> impl IntoResponse {
+    HtmlTemplate(ListTemplate {
+        root: root,
+        namespace: namespace,
+        entity: entity,
+        context: String::from("definitions"),
+    })
+}
+
+pub async fn list_all_definitions(Path(entity): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(ListTemplate {
+        root: String::from("all"),
+        namespace: String::from("all"),
+        entity: entity,
+        context: String::from("definitions"),
     })
 }
 
@@ -90,38 +110,41 @@ pub async fn list_definitions(Path((entity, id)): Path<(String, String)>) -> imp
 #[template(path = "definitions/view.html")]
 struct ViewTemplate {
     id: String,
+    root: String,
+    namespace: String,
     entity: String,
-    name: String,
+    context: String,
 }
 
-pub async fn view_definition(Path((entity, id)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn view_definition(Path(id): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(ViewTemplate {
+        id: id.clone(),
+        root: id.clone(),
+        namespace: id,
+        entity: String::from("functor"),
+        context: String::from("definitions"),
+    })
+}
+
+pub async fn view_entity_definition(
+    Path((root, namespace, entity, id)): Path<(String, String, String, String)>
+) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {
         id: id,
+        root: root,
+        namespace: namespace,
         entity: entity,
-        name: String::from("definitions"),
+        context: String::from("definitions"),
     })
 }
 
 
-#[derive(Template)]
-#[template(path = "definitions/topology.html")]
-struct TopologyTemplate {
-    id: String,
-    name: String,
-    topology: String
-}
-
-pub async fn get_topology(Path(id): Path<String>) -> impl IntoResponse {
-    let maybe_topology = cache::read_topology(&id).await;
-    let t = match maybe_topology {
-        Some(topology) => topology.to_str(),
-        None => String::from("Topology not found")
-    };
-
-    let template = TopologyTemplate {
-        id: id,
-        name: "topology".to_string(),
-        topology: t
-    };
-    HtmlTemplate(template)
+pub async fn view_root_definition(Path(root): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(ViewTemplate {
+        id: root.clone(),
+        root: root.clone(),
+        namespace: root,
+        entity: String::from("node"),
+        context: String::from("definitions"),
+    })
 }

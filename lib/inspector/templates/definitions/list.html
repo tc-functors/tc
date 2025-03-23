@@ -5,7 +5,11 @@
   <nav aria-label="breadcrumb">
     <ul>
       <li><a href="/definitions">definitions</a></li>
-      <li>{{id}}/{{entity}}</li>
+      <li><a href="/definitions">{{root}}</a></li>
+      {% if root != namespace %}
+      <li><a href="/definitions">{{namespace}}</a></li>
+      {% endif %}
+      <li>{{entity}}</li>
     </ul>
   </nav>
 
@@ -34,7 +38,8 @@
 
 <div id="viewer"
      hx-trigger="load"
-     hx-get="/definitions/list/{{entity}}/{{id}}"
+
+     hx-get="/definitions/{{root}}/{{namespace}}/{{entity}}/list"
      hx-swap="innerHTML">
 
   <div align="center">

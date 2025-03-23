@@ -15,8 +15,16 @@
     {% for function in items %}
     <tr>
       <td>{{loop.index}}</td>
-      <td>{{function.namespace}}</td>
-      <td>{{function.name}}</td>
+      <td>
+	<a href="/definition/{{function.namespace}}">
+	{{function.namespace}}
+	</a>
+      </td>
+      <td>
+	<a href="/definition/{{root}}/{{function.namespace}}/function/{{function.name}}">
+	  {{function.name}}
+      </a>
+      </td>
       <td>{{function.package_type}}</td>
       <td>
 	{{function.runtime}}
