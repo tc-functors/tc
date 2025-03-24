@@ -46,12 +46,12 @@ pub async fn init() {
         .route("/definitions/{:root}/{:namespace}/{:entity}",
                get(page::list_ns_definitions))
 
-        // fragments
+        // fragments root
 
         .route("/definitions/list",
-               get(definitions::node::list_all))
+               get(definitions::root::list_all))
         .route("/definitions/compile",
-               post(definitions::node::compile))
+               post(definitions::root::compile))
 
         .route("/definition/{:root}/{:namespace}/function/{:id}/view",
                get(definitions::function::view))

@@ -45,7 +45,7 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
 }
 
 #[derive(Template)]
-#[template(path = "definitions/list/functors.html")]
+#[template(path = "definitions/list/root.html")]
 struct FunctorsTemplate {
     items: Vec<Functor>
 }

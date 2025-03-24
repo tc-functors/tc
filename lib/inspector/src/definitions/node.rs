@@ -20,6 +20,7 @@ struct Item {
     version: String
 }
 
+
 fn build_aux(root: &str, rt: &Topology) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
     for (_, node) in &rt.nodes {
@@ -59,30 +60,6 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
     xs
 }
 
-fn build_root(topologies: HashMap<String, Topology>) -> Vec<Functor> {
-    let mut xs: Vec<Functor> = vec![];
-    for (_, topology) in &topologies {
-        let t = TopologyCount::new(&topology);
-        let f = Functor {
-            root: topology.namespace.clone(),
-            namespace: topology.namespace.clone(),
-            functions: t.functions,
-            nodes: t.nodes,
-            events: t.events,
-            queues: t.queues,
-            routes: t.routes,
-            states: t.states,
-            mutations: t.mutations,
-            version: String::from(&topology.version),
-        };
-        xs.push(f)
-    }
-    xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
-    xs.reverse();
-    xs
-}
-
-
 
 #[derive(Template)]
 #[template(path = "definitions/list/nodes.html")]
@@ -92,7 +69,7 @@ struct NodesTemplate {
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let topologies = store::find_topologies(&root, &namespace).await;
-    let nodes = build(topologies);
+    let nodes = build_nodes(&namespace, topologies);
     let temp = NodesTemplate {
         items: nodes
     };
