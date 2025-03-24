@@ -127,9 +127,10 @@ pub async fn find_topology(root: &str, namespace: &str) -> Option<Topology> {
 
 
 pub async fn find_function(root: &str, namespace: &str, id: &str) -> Option<Function> {
-    let topologies = find_topologies(root, namespace).await;
+    let topologies = find_all_topologies().await;
     if root == namespace {
         let rt = topologies.get(root).unwrap();
+        tracing::debug!("{:?}", rt.functions);
         rt.functions.get(id).cloned()
     } else {
         let rt = topologies.get(root);

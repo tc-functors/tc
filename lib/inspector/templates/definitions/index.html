@@ -12,7 +12,10 @@
     </button>
 
     <button class="custom-button primary"
-	    hx-post="/definitions/compile">
+	    hx-post="/definitions/compile"
+	    hx-indicator="#status"
+	    hx-target="#functors"
+	    hx-swap="outerHtml">
       <i class="ph ph-arrow-clockwise"></i> Compile
     </button>
 
@@ -52,6 +55,10 @@
 
 <br/>
 
+<div class="htmx-indicator" id="status">
+  Compiling <progress/>
+</div>
+
 <div id="functors"
      hx-trigger="load"
      hx-get="/definitions/list"
@@ -59,7 +66,7 @@
 
   <div class="grid">
     <div></div>
-    <div align="center" id="spinner">
+    <div align="center" id="status" class="htmx-indicator">
       <br/>
       <br/>
       <br/>

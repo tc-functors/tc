@@ -127,17 +127,15 @@
 	   text-decoration-color: red;
 	 }
 
-
-	 .htmx-indicator{
-           opacity:0;
-           transition: opacity 500ms ease-in;
-	 }
-	 .htmx-request .htmx-indicator{
-           opacity:1;
-	 }
-	 .htmx-request.htmx-indicator{
-           opacity:1;
-	 }
+.htmx-indicator{
+    display:none;
+}
+.htmx-request .htmx-indicator{
+    display:inline;
+}
+.htmx-request.htmx-indicator{
+    display:inline;
+}
 
 	 .x1 { flex: 0 0 100% }
 	 .x2 { flex: 0 0 calc(1/2 * 100%) }
