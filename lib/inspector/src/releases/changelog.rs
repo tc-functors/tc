@@ -4,7 +4,7 @@ use axum::{
 };
 
 #[derive(Template)]
-#[template(path = "releases/fragments/changelog.html")]
+#[template(path = "releases/view/changelog.html")]
 struct ChangelogTemplate {
     items: Vec<String>
 }

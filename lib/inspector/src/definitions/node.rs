@@ -76,7 +76,7 @@ pub async fn list_all() -> impl IntoResponse {
     let topologies = store::find_all_topologies().await;
     let nodes = build(topologies);
     let temp = NodesTemplate {
-        items: vec![]
+        items: nodes
     };
     Html(temp.render().unwrap())
 }

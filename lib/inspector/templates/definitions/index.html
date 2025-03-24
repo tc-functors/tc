@@ -23,7 +23,11 @@
       <i class="ph ph-cube"></i> Sandbox
     </button>
 
-    <button class="custom-button Primary">
+    <button class="custom-button Primary"
+	    hx-post="/definitions/graph"
+	    hx-indicator="#status"
+	    hx-target="#functors"
+	    hx-swap="outerHtml">
       <i class="ph ph-graph"></i> Graph
     </button>
 

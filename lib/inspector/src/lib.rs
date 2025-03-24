@@ -20,7 +20,7 @@ pub async fn init() {
         .route("/definitions"         , get(page::definitions))
         .route("/builds"              , get(page::builds))
         .route("/builds/sync"         , post(builds::layers::sync))
-        .route("/builds/list/layers"  , get(builds::layers::list))
+        .route("/builds/layers/list"  , get(builds::layers::list))
 
         .route("/deployments"         , get(page::deployments))
         .route("/deployments/diff"    , get(deployments::diff::list))
@@ -30,6 +30,7 @@ pub async fn init() {
         .route("/releases"            , get(page::releases))
         .route("/releases/changelog"  , get(releases::changelog::list))
         .route("/releases/snapshot"   , get(releases::snapshot::list))
+        .route("/releases/nodes"      , get(releases::nodes::list_all))
 
 
         .route("/definition/{:root}",
@@ -53,11 +54,31 @@ pub async fn init() {
         .route("/definitions/compile",
                post(definitions::root::compile))
 
+        .route("/definitions/graph",
+               post(definitions::root::generate_graph))
+
         .route("/definition/{:root}/{:namespace}/function/{:id}/view",
                get(definitions::function::view))
         .route("/definition/{:root}/{:namespace}/node/{:id}/view",
                get(definitions::node::view))
 
+
+        // fragments list-all
+
+        .route("/definitions/all/all/functions/list",
+               get(definitions::function::list_all))
+
+        .route("/definitions/all/all/nodes/list",
+               get(definitions::node::list_all))
+
+        .route("/definitions/all/all/events/list",
+               get(definitions::event::list_all))
+
+        .route("/definitions/all/all/routes/list",
+               get(definitions::route::list_all))
+
+        .route("/definitions/all/all/mutations/list",
+               get(definitions::mutation::list_all))
 
         // fragments  list
         .route("/definitions/{:root}/{:namespace}/functions/list",

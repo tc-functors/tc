@@ -7,7 +7,6 @@ use compiler::Topology;
 use std::collections::HashMap;
 use crate::store;
 
-#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Item  {
     pub id: String,
     pub namespace: String,
@@ -30,7 +29,7 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 }
 
 #[derive(Template)]
-#[template(path = "releases/fragments/functors.html")]
+#[template(path = "releases/list/nodes.html")]
 struct FunctorsTemplate {
     items: Vec<Item>
 }
@@ -38,8 +37,8 @@ struct FunctorsTemplate {
 pub async fn list_all() -> impl IntoResponse {
     let topologies = store::find_all_topologies().await;
     let functors = build(topologies);
-        let t = FunctorsTemplate {
-            items: functors
-        };
-        Html(t.render().unwrap())
+    let t = FunctorsTemplate {
+        items: functors
+    };
+    Html(t.render().unwrap())
 }

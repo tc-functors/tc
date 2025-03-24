@@ -583,10 +583,14 @@ impl Topology {
         t
     }
 
-    // pub fn names(&self) -> HashMap<String, Vec<String>> {
-    //     let mut h: HashMap<String, Vec<String>> = HashMap::new();
-    //     h.insert(s!("events"), self.functions.keys()),
-    //     h.insert(s!("routes"), self.routes.keys())
-    // }
+    pub fn names_of(&self) -> HashMap<String, Vec<String>> {
+        let mut h: HashMap<String, Vec<String>> = HashMap::new();
+        h.insert(s!("functions"), self.functions.keys().cloned().collect::<Vec<String>>());
+        h.insert(s!("routes"), self.routes.keys().cloned().collect::<Vec<String>>());
+        h.insert(s!("events"), self.events.keys().cloned().collect::<Vec<String>>());
+        h.insert(s!("mutations"), self.mutations.keys().cloned().collect::<Vec<String>>());
+        h.insert(s!("nodes"), self.nodes.keys().cloned().collect::<Vec<String>>());
+        h
+    }
 
 }

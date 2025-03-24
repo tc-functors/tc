@@ -51,7 +51,7 @@ async fn build(envs: Vec<String>, _sandbox: &str) -> HashMap<String, HashMap<Str
 }
 
 #[derive(Template)]
-#[template(path = "deployments/fragments/diff.html")]
+#[template(path = "deployments/view/diff.html")]
 struct FunctorsTemplate {
     envs: Vec<String>,
     items: HashMap<String, HashMap<String, String>>

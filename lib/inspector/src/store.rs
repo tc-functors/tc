@@ -1,7 +1,8 @@
 use compiler::{Topology, Function, Event, Route};
 use std::collections::HashMap;
+use serde_derive::{Serialize, Deserialize};
 
-pub async fn write_topology(key: &str, t: &Topology) {
+pub async fn _write_topology(key: &str, t: &Topology) {
     let s = serde_json::to_string(t).unwrap();
     cache::write(key, &s).await
 }
@@ -143,9 +144,44 @@ pub async fn find_function(root: &str, namespace: &str, id: &str) -> Option<Func
 }
 
 
-// resolver
+pub async fn find_layers() -> Vec<String> {
+    let mut xs: Vec<String> = vec![];
+    let topologies = find_all_topologies().await;
+    for (_, node) in topologies {
+        for (_, f) in node.functions {
+            xs.extend(f.runtime.layers)
+        }
+        for (_, n) in node.nodes {
+            for (_, f) in n.functions {
+                xs.extend(f.runtime.layers)
+            }
+        }
+    }
+    xs.sort();
+    xs.dedup();
+    xs
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Layer {
+    pub name: String,
+    pub dev: i64,
+    pub stable: i64
+}
 
 
-pub async fn find_resolved_topology(namespace: &str, sandbox: &str, env: &str) -> Option<Topology> {
-    None
+pub async fn save_resolved_layers(layers: Vec<Layer>) {
+    cache::write("resolved_layers", &serde_json::to_string(&layers).unwrap()).await;
+}
+
+pub async fn find_resolved_layers() -> Vec<Layer> {
+    let key = "resolved_layers";
+    if cache::has_key(key) {
+        tracing::info!("Found cache: {}", key);
+        let s = cache::read(key);
+        let r: Vec<Layer> = serde_json::from_str(&s).unwrap();
+        r
+    } else {
+        vec![]
+    }
 }

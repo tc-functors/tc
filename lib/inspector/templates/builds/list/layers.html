@@ -3,8 +3,9 @@
     <tr>
       <td></td>
       <td>Name</td>
-      <td>Version</td>
-      <td>Created</td>
+      <td>Dev Version</td>
+      <td>Stable Version</td>
+      <td>Download</td>
     </tr>
   </thead>
   <tbody>
@@ -12,10 +13,9 @@
     <tr>
       <td>{{loop.index}}</td>
       <td>{{item.name}}</td>
-      <td>{{item.version}}</td>
-      <td>
-	{{item.created}}
-      </td>
+      <td>{{item.dev}}</td>
+      <td>{{item.stable}}</td>
+      <td><a href="#">download</a></td>
     </tr>
     {% endfor %}
 </table>

@@ -7,7 +7,8 @@
     <button class="custom-button primary"
 	    hx-post="/builds/sync"
 	    hx-target="#builds"
-	    hx-indicator="#status">
+	    hx-indicator="#status"
+	    hx-swap="outerHtml">
       <i class="ph ph-arrows-clockwise"></i> Sync
     </button>
 
@@ -19,7 +20,7 @@
     </button>
 
     <button class="custom-button primary"
-	    hx-post="/builds/start"
+	    hx-post="/builds/promote"
 	    hx-target="#builds"
 	    hx-indicator="#status">
       <i class="ph ph-arrow-fat-up"></i> Promote
@@ -48,9 +49,13 @@
 
 <br/>
 
+<div class="htmx-indicator" id="status">
+  Compiling <progress/>
+</div>
+
 <div id="builds"
      hx-trigger="load"
-     hx-get="/builds/list/layers"
+     hx-get="/builds/layers/list"
      hx-swap="innerHTML">
 
   <div class="grid">
