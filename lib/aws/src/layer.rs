@@ -71,6 +71,7 @@ pub async fn find_version(client: Client, layer_name: &str) -> Result<String> {
 }
 
 pub async fn find_latest_version(client: &Client, layer_name: &str) -> i64 {
+
     let res = client
         .list_layer_versions()
         .layer_name(layer_name)
@@ -87,7 +88,7 @@ pub async fn find_latest_version(client: &Client, layer_name: &str) -> i64 {
             }
             _ => 0,
         },
-        Err(_) => 0,
+        Err(e) => panic!("{:?}", e),
     }
 }
 
