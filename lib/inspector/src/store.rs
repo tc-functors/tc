@@ -32,7 +32,7 @@ pub async fn find_all_topologies() -> HashMap<String, Topology> {
 pub async fn find_topologies(root: &str, namespace: &str) -> HashMap<String, Topology> {
     let topologies = find_all_topologies().await;
     if root == namespace {
-        topologies
+        topologies.get(root).unwrap().nodes.clone()
     } else {
         let rt = topologies.get(root);
         if let Some(t) = rt {

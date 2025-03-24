@@ -21,9 +21,10 @@ struct Item {
 }
 
 
-fn build_aux(root: &str, rt: &Topology) -> Vec<Item> {
+fn build_nodes(root: &str, nodes: HashMap<String, Topology>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
-    for (_, node) in &rt.nodes {
+    for (_, node) in nodes {
+        tracing::debug!("n: {}", &node.namespace);
         let tc = TopologyCount::new(&node);
         let item = Item {
             root: String::from(root),
@@ -44,16 +45,11 @@ fn build_aux(root: &str, rt: &Topology) -> Vec<Item> {
 fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 
     let mut xs: Vec<Item> = vec![];
-
     for (_, topology) in topologies {
 
-        let ns = build_aux(&topology.namespace, &topology);
-        xs.extend(ns);
+        let ns = build_nodes(&topology.namespace, topology.nodes);
+        xs.extend(ns)
 
-        for (_, node) in topology.nodes {
-            let fns = build_aux(&topology.namespace, &node);
-            xs.extend(fns)
-        }
     }
     xs.sort_by(|a, b| b.root.cmp(&a.root));
     xs.reverse();
@@ -80,7 +76,7 @@ pub async fn list_all() -> impl IntoResponse {
     let topologies = store::find_all_topologies().await;
     let nodes = build(topologies);
     let temp = NodesTemplate {
-        items: nodes
+        items: vec![]
     };
     Html(temp.render().unwrap())
 }
