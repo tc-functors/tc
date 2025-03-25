@@ -94,7 +94,7 @@ pub fn make_targets(
         let input_template = Some(format!(r##"{{"detail": <detail>}}"##));
 
         // FIXME:
-        let arn = "";
+        let arn = "unresolved";
         let t = Target::new(TargetKind::Mutation, &id, m, &arn, input_paths_map, input_template);
         xs.push(t);
     }

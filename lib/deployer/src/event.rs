@@ -4,6 +4,7 @@ use aws::eventbridge;
 use aws::lambda;
 use aws::Env;
 use std::collections::HashMap;
+use colored::Colorize;
 
 async fn update_permissions(env: &Env, event: &Event) {
 
@@ -16,7 +17,7 @@ async fn update_permissions(env: &Env, event: &Event) {
                 let statement_id = &event.rule_name;
                 let function_name = &target.name;
                 let _ = lambda::add_permission_basic(client, function_name, principal, statement_id).await;
-                println!("updating permission - function: {}", function_name);
+                println!("Updating permission - function: {}", function_name.cyan());
             },
             _ => ()
         }
@@ -44,7 +45,7 @@ async fn create_event(env: &Env, event: &Event) {
     let pattern = serde_json::to_string(&pattern).unwrap();
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern).await;
 
-    println!("Creating Event: {} targets: {}", &rule_name, &event.targets.len());
+    println!("Creating Event: {} targets: {}", &rule_name.green(), &event.targets.len());
 
     if should_prune() {
         let existing_targets = eventbridge::list_targets(&client, &bus, &rule_name).await;
