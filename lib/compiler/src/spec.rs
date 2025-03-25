@@ -381,6 +381,10 @@ fn default_source() -> Vec<String> {
     vec![]
 }
 
+fn default_targets() -> Vec<String> {
+    vec![]
+}
+
 fn default_functions() -> Functions {
     Functions { shared: vec![] }
 }
@@ -418,6 +422,9 @@ pub struct Consumes {
 
     #[serde(default = "default_function")]
     pub function: Option<String>,
+
+    #[serde(default = "default_targets")]
+    pub functions: Vec<String>,
 
     #[serde(default)]
     pub mutation: Option<String>,
@@ -460,7 +467,6 @@ pub struct RouteSpec {
 
     pub proxy: Option<String>,
     pub function: Option<String>,
-
     pub stage: Option<String>,
     pub stage_variables: Option<HashMap<String, String>>,
 }

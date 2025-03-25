@@ -64,6 +64,7 @@ pub fn make_targets(
     mutation: Option<String>,
     stepfunction: Option<String>,
     fallback_fqn: &str,
+    functions: Vec<String>
 ) -> Vec<Target> {
 
 
@@ -73,6 +74,15 @@ pub fn make_targets(
         let arn = template::lambda_arn(&f);
         let t = Target::new(TargetKind::Function, &id, &f, &arn, None, None);
         xs.push(t);
+    }
+
+    if !functions.is_empty()  {
+        for f in functions {
+            let id = format!("{}_{}_target", event_name, &f);
+            let arn = template::lambda_arn(&f);
+            let t = Target::new(TargetKind::Function, &id, &f, &arn, None, None);
+            xs.push(t);
+        }
     }
     if let Some(ref m) = mutation {
 
