@@ -281,7 +281,7 @@ fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<Strin
         if let Some(c) = &evs.consumes {
             for (name, ev) in c.clone().into_iter() {
                 tracing::debug!("event {}", &name);
-                let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn);
+                let targets = event::make_targets(&name, ev.function, ev.mutation, ev.stepfunction, fqn, ev.functions);
                 let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter,
                                     ev.pattern, targets, ev.sandboxes, config);
                 h.insert(name, ev);
