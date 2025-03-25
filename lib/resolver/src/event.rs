@@ -81,16 +81,16 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
     let target_name = match target.kind {
         TargetKind::Function => fqn_of(context, topology, &target.name),
         TargetKind::Mutation => find_mutation(&target.name, &topology.mutations).await,
-        TargetKind::StepFunction => s!(&env.sfn_arn(&name))
+        TargetKind::StepFunction => name.clone()
     };
 
     let target_arn = match target.kind {
-        TargetKind::Function => fqn_of(context, topology, &target.name),
+        TargetKind::Function => env.lambda_arn(&target_name),
         TargetKind::Mutation => {
             let id = get_graphql_arn_id(env, &name).await;
             match id {
                 Some(gid) => env.graphql_arn(&gid),
-                None => s!(""),
+                None => panic!("Can't find graphql id"),
             }
         },
         TargetKind::StepFunction => env.sfn_arn(&target_name)
