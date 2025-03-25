@@ -87,10 +87,8 @@ impl Function {
             Some(ref n) => n,
             None => &namespace.to_string()
         };
-        let runtime = Runtime::new(dir, infra_dir,  &namespace, &fspec);
         let fqn = make_fqn(&fspec, &namespace, format);
-
-
+        let runtime = Runtime::new(dir, infra_dir,  &namespace, &fspec, &fqn);
 
         Function {
             name: fspec.name.to_string(),

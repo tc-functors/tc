@@ -332,7 +332,6 @@ impl FunctionSpec {
         let f = format!("{}/function.json", dir);
         let version = find_revision(dir);
         if u::file_exists(&f) {
-            tracing::debug!("file {}", &f);
             let data = render(&u::slurp(&f), &version);
             let fspec = serde_json::from_str(&data);
             match fspec {

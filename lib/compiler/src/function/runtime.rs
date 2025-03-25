@@ -38,6 +38,7 @@ pub struct Runtime {
     pub network: Option<Network>,
     pub fs: Option<FileSystem>,
     pub role: Role,
+    pub infra_spec_file: Option<String>,
     pub infra_spec: HashMap<String, RuntimeInfraSpec>
 }
 
@@ -121,21 +122,18 @@ fn follow_path(path: &str) -> String {
     }
 }
 
-fn lookup_infra_spec(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str, ) -> HashMap<String, RuntimeInfraSpec> {
-
+fn as_infra_spec_file(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str) -> Option<String> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f =  follow_path(&f);
     if u::file_exists(&actual_f) {
-        RuntimeInfraSpec::new(Some(actual_f))
+        Some(actual_f)
     } else {
         match rspec {
-            Some(r) => {
-                match &r.vars_file {
-                    Some(f) => RuntimeInfraSpec::new(Some(follow_path(&f))),
-                    None => RuntimeInfraSpec::new(None)
-                }
+            Some(r) => match &r.vars_file {
+                Some(p) => Some(follow_path(&p)),
+                None => None
             },
-            None => RuntimeInfraSpec::new(None)
+            None => None
         }
     }
 }
@@ -181,15 +179,18 @@ fn value_to_str(v: Option<&Value>, default: &str) -> String {
     }
 }
 
-fn make_env_vars(dir: &str,
-                 namespace: &str,
-                 assets: HashMap<String, Value>,
-                 environment: Option<HashMap<String, String>>,
-                 lang: Lang,
-
+fn make_env_vars(
+    dir: &str,
+    namespace: &str,
+    assets: HashMap<String, Value>,
+    environment: Option<HashMap<String, String>>,
+    lang: Lang,
+    fqn: &str,
 ) -> HashMap<String, String> {
 
     let mut hmap: HashMap<String, String> = HashMap::new();
+
+    let mn = u::pascal_case(&format!("{} {}", namespace, fqn));
 
     hmap.insert(String::from("LAMBDA_STAGE"), template::profile());
     hmap.insert(String::from("Environment"), template::profile());
@@ -197,6 +198,8 @@ fn make_env_vars(dir: &str,
     hmap.insert(String::from("SANDBOX"), template::sandbox());
     hmap.insert(String::from("NAMESPACE"), s!(namespace));
     hmap.insert(String::from("LOG_LEVEL"), s!("INFO"));
+    hmap.insert(String::from("POWERTOOLS_METRICS_NAMESPACE"), mn);
+
 
     match lang {
         Lang::Ruby => {
@@ -299,10 +302,11 @@ fn make_fs(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<FileSystem>
 
 impl Runtime {
 
-    pub fn new(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpec) -> Runtime {
+    pub fn new(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpec, fqn: &str) -> Runtime {
         let rspec = fspec.runtime.clone();
 
-        let infra_spec = lookup_infra_spec(infra_dir, &rspec, &fspec.name);
+        let infra_spec_file = as_infra_spec_file(infra_dir, &rspec, &fspec.name);
+        let infra_spec = RuntimeInfraSpec::new(infra_spec_file.clone());
         //FIXME: handle unwrap
         let default_infra_spec = infra_spec.get("default").unwrap();
         let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = default_infra_spec;
@@ -314,7 +318,14 @@ impl Runtime {
                 let layer_name = find_layer_name(dir, namespace, fspec);
                 let layers = consolidate_layers(&mut r.extensions, &mut r.layers, layer_name);
                 let package_type = &r.package_type;
-                let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment.clone(), r.lang.to_lang());
+                let vars = make_env_vars(
+                    dir,
+                    namespace,
+                    fspec.assets.clone(),
+                    environment.clone(),
+                    r.lang.to_lang(),
+                    fqn
+                );
 
                 let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
                 Runtime {
@@ -333,12 +344,20 @@ impl Runtime {
                     enable_fs: enable_fs,
                     network: make_network(&default_infra_spec, enable_fs),
                     fs: make_fs(&default_infra_spec, enable_fs),
+                    infra_spec_file: infra_spec_file,
                     infra_spec: infra_spec
                 }
             },
             None => {
                 let lang = infer_lang(dir);
-                let vars = make_env_vars(dir, namespace, fspec.assets.clone(), environment.clone(), lang.to_lang());
+                let vars = make_env_vars(
+                    dir,
+                    namespace,
+                    fspec.assets.clone(),
+                    environment.clone(),
+                    lang.to_lang(),
+                    fqn
+                );
 
                 Runtime {
                     lang: lang,
@@ -356,6 +375,7 @@ impl Runtime {
                     enable_fs: false,
                     network: None,
                     fs: None,
+                    infra_spec_file: infra_spec_file,
                     infra_spec: infra_spec
                 }
             }

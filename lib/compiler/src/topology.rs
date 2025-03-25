@@ -46,37 +46,18 @@ pub struct Topology {
     pub flow: Option<Flow>
 }
 
-fn relative_root_path() -> (String, String) {
-    let cur = u::pwd();
-    let root = u::split_first(&cur, "/services/");
-    let next = u::second(&cur, "/services/");
+fn relative_root_path(dir: &str) -> (String, String) {
+    let root = u::split_first(&dir, "/services/");
+    let next = u::second(&dir, "/services/");
     (root, next)
 }
 
-fn legacy_infra_dir(namespace: &str) -> Option<String> {
-    u::any_path(vec![
-        format!("../../../infrastructure/tc/{}", namespace),
-        format!("../../infrastructure/tc/{}", namespace),
-        format!("../infrastructure/tc/{}", namespace),
-        format!("infrastructure/tc/{}", namespace),
-        format!("infra/{}", namespace),
-        s!("infra"),
-    ])
-}
-
-fn as_infra_dir(given_infra_dir: Option<String>, namespace: &str) -> String {
+fn as_infra_dir(given_infra_dir: Option<String>, topology_dir: &str) -> String {
     match given_infra_dir {
         Some(d) => d,
         None => {
-            let legacy_dir = legacy_infra_dir(namespace);
-
-            match legacy_dir {
-                Some(p) => p,
-                None => {
-                    let (root, next) = relative_root_path();
-                    format!("{root}/infrastructure/tc/{next}")
-                }
-            }
+            let (root, next) = relative_root_path(topology_dir);
+            format!("{root}/infrastructure/tc/{next}")
         }
     }
 }
@@ -370,7 +351,8 @@ fn make(
 
     let mut functions = functions;
     let namespace = spec.name.to_owned();
-    let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
+    let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
+    tracing::debug!("node-infra-dir {:?}, {} {}", &spec.infra,  &spec.name, &infra_dir);
     let interned = intern_functions(root_dir, &infra_dir, &spec);
     functions.extend(interned);
 
@@ -408,7 +390,7 @@ fn make_relative(dir: &str) -> Topology {
 
     let spec = TopologySpec::new(&f);
     let namespace = &spec.name;
-    let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
+    let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
     let function = Function::new(dir, &infra_dir, namespace, &spec.fmt());
     let functions = Function::to_map(function);
     let nodes = HashMap::new();
@@ -462,8 +444,8 @@ impl Topology {
 
             let f = format!("{}/topology.yml", dir);
             let spec = TopologySpec::new(&f);
-            let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
-            tracing::debug!("Infra dir: {}", &infra_dir);
+            let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
+            tracing::debug!("Infra dir: {}  {}", &spec.name, &infra_dir);
 
             //TODO: discover or lookup
             let nodes;
