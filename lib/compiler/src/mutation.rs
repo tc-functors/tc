@@ -205,7 +205,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());
             let m = Mutation {
-                api_name: format!("{}_{{sandbox}}", namespace),
+                api_name: format!("{}_{{{{sandbox}}}}", namespace),
                 authorizer: ms.authorizer.to_owned(),
                 types: make_types(types.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),

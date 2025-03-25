@@ -1,7 +1,6 @@
 use aws_sdk_appsync::types::builders::LambdaDataSourceConfigBuilder;
 use aws_sdk_appsync::types::{DataSourceType, LambdaDataSourceConfig};
 use aws_sdk_appsync::Client;
-use colored::Colorize;
 use kit::*;
 
 fn make_lambda_config(lambda_arn: &str) -> LambdaDataSourceConfig {
@@ -16,7 +15,6 @@ pub async fn update_datasource(
     lambda_arn: &str,
     role_arn: &str,
 ) {
-    println!("Updating datasource:function {}", name.blue());
     let lambda_config = make_lambda_config(lambda_arn);
     let r = client
         .update_data_source()
@@ -40,7 +38,6 @@ pub async fn create_datasource(
     lambda_arn: &str,
     role_arn: &str,
 ) {
-    println!("Creating datasource:function {}", name.green());
     let lambda_config = make_lambda_config(lambda_arn);
     let r = client
         .create_data_source()

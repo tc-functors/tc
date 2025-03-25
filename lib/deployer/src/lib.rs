@@ -85,10 +85,21 @@ async fn create_flow(env: &Env, topology: &Topology) {
 async fn create_function(env: &Env, topology: &Topology) {
     let Topology {
         functions,
+        routes,
+        events,
+        queues,
+        mutations,
         ..
     } = topology;
     role::create(&env, &topology.roles()).await;
     function::create(&env, functions.clone()).await;
+    mutation::create(&env, mutations).await;
+    queue::create(&env, queues).await;
+    event::create(&env, events).await;
+
+    let role_name = "tc-base-api-role";
+    let role_arn = &env.role_arn(&role_name);
+    route::create(&env, role_arn, routes.clone()).await;
 }
 
 pub async fn create(env: &Env, topology: &Topology) {
@@ -108,10 +119,9 @@ pub async fn create(env: &Env, topology: &Topology) {
         &version
     );
 
-    match kind {
+     match kind {
         TopologyKind::StepFunction => create_flow(env, &topology).await,
-        TopologyKind::Function => create_function(env, &topology).await,
-        TopologyKind::Evented => ()
+        _  => create_function(env, &topology).await,
     }
 }
 

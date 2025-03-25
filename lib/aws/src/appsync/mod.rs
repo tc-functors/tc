@@ -284,7 +284,6 @@ async fn find_function(client: &Client, api_id: &str, name: &str) -> Option<Stri
 }
 
 async fn create_function(client: &Client, api_id: &str, name: &str, datasource_name: &str) {
-    println!("Creating resolver {}", name.green());
     let _ = client
         .create_function()
         .api_id(s!(api_id))
@@ -303,7 +302,6 @@ async fn update_function(
     function_id: &str,
     datasource_name: &str,
 ) {
-    println!("Updating resolver {}", name.blue());
     let _ = client
         .update_function()
         .api_id(s!(api_id))
@@ -350,7 +348,6 @@ async fn create_resolver(
     field_name: &str,
     datasource: &str,
 ) {
-    println!("Creating resolver for field {}", field_name.green());
     let _ = client
         .create_resolver()
         .api_id(api_id)
