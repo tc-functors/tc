@@ -1,7 +1,6 @@
 use aws_sdk_appsync::types::builders::DynamodbDataSourceConfigBuilder;
 use aws_sdk_appsync::types::{DataSourceType, DynamodbDataSourceConfig};
 use aws_sdk_appsync::Client;
-use colored::Colorize;
 use kit::*;
 
 fn make_config(table_name: &str) -> DynamodbDataSourceConfig {
@@ -19,7 +18,6 @@ pub async fn update_datasource(
     table_name: &str,
     role_arn: &str,
 ) {
-    println!("Updating datasource:table {}", name.blue());
     let config = make_config(table_name);
     let r = client
         .update_data_source()
@@ -43,7 +41,6 @@ pub async fn create_datasource(
     bus_arn: &str,
     role_arn: &str,
 ) {
-    println!("Creating datasource:table {}", name.green());
     let config = make_config(bus_arn);
     let r = client
         .create_data_source()

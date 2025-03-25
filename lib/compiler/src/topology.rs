@@ -57,7 +57,8 @@ fn as_infra_dir(given_infra_dir: Option<String>, topology_dir: &str) -> String {
         Some(d) => d,
         None => {
             let (root, next) = relative_root_path(topology_dir);
-            format!("{root}/infrastructure/tc/{next}")
+            let s = next.replace("_", "-");
+            format!("{root}/infrastructure/tc/{s}")
         }
     }
 }

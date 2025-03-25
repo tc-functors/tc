@@ -28,6 +28,7 @@ async fn create_mutation(env: &Env, mutation: Mutation) {
 
     let client = appsync::make_client(env).await;
     for (field_name, resolver) in resolvers {
+        println!("Creating mutation {}", &field_name);
         let datasource_name = &field_name;
         let kind = &resolver.kind;
         let datasource_input = appsync::DatasourceInput {
