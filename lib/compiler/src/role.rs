@@ -34,7 +34,10 @@ fn function_trust_policy() -> String {
                 "Service": [
                     "lambda.amazonaws.com",
                     "events.amazonaws.com",
-                    "logs.amazonaws.com"
+                    "logs.amazonaws.com",
+                    "scheduler.amazonaws.com",
+                    "appsync.amazonaws.com",
+                    "apigateway.amazonaws.com"
                 ]
             }},
             "Action": "sts:AssumeRole"
