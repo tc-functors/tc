@@ -80,6 +80,9 @@ pub async fn init() {
         .route("/definitions/all/all/mutations/list",
                get(definitions::mutation::list_all))
 
+        .route("/definitions/all/all/permissions/list",
+               get(definitions::permission::list_all))
+
         // fragments  list
         .route("/definitions/{:root}/{:namespace}/functions/list",
                get(definitions::function::list))

@@ -44,10 +44,14 @@
 	{{function.timeout}}
       </td>
       <td>
-	<a href="">view</a>
+	{% if function.role != "provided" %}
+	<a href="#">view</a>
+	{% endif %}
       </td>
       <td>
-	<a href="">view</a>
+	{% if function.vars != "provided" %}
+	<a href="#">view</a>
+	{% endif %}
       </td>
     </tr>
     {% endfor %}
