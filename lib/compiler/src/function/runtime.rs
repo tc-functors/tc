@@ -232,7 +232,9 @@ fn make_env_vars(
             hmap.insert(s!("LD_LIBRARY_PATH"),
                         format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
 
-            hmap.insert(s!("MODEL_PATH"), u::value_to_string(assets.get("MODEL_PATH")));
+            hmap.insert(s!("MODEL_PATH"), model_path);
+            hmap.insert(s!("DEPS_PATH"), deps_path);
+            hmap.insert(s!("BASE_DEPS_PATH"), base_deps_path);
 
         },
         _ => ()
