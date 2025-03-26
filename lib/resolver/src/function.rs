@@ -5,14 +5,53 @@ use compiler::{Function, Runtime, Topology, RuntimeInfraSpec};
 use compiler::function::runtime::{Network, FileSystem};
 use kit::*;
 
+
+fn augment_vars(ctx: &Context, lang: &str) -> HashMap<String, String> {
+    let mut hmap: HashMap<String, String> = HashMap::new();
+    let profile = &ctx.env.name;
+    let sandbox = &ctx.sandbox;
+    match lang {
+        "ruby3.2" => {
+            if sandbox != "stable" {
+                hmap.insert(
+                    String::from("HONEYBADGER_ENV"),
+                    format!("{}-{}", profile, sandbox),
+                );
+            } else {
+                hmap.insert(String::from("HONEYBADGER_ENV"), s!(profile));
+            }
+        },
+        _ => {
+            if sandbox != "stable" {
+                hmap.insert(
+                    String::from("HONEYBADGER_ENVIRONMENT"),
+                    format!("{}-{}", profile, sandbox),
+                );
+            } else {
+                hmap.insert(String::from("HONEYBADGER_ENVIRONMENT"), s!(profile));
+            }
+        }
+    }
+    hmap
+}
+
 async fn resolve_environment(
     ctx: &Context,
+    lang: &str,
     default_vars: &HashMap<String, String>,
     sandbox_vars: Option<HashMap<String, String>>
 ) -> HashMap<String, String> {
 
     let Context { env, .. } = ctx;
     let mut default_vars = default_vars.clone();
+
+    match std::env::var("TC_AUGMENT_VARS") {
+        Ok(_) => {
+            let augmented_vars = augment_vars(ctx, lang);
+            default_vars.extend(augmented_vars);
+        },
+        Err(_) => ()
+    }
 
     let combined = match sandbox_vars {
         Some(v) => {
@@ -158,7 +197,7 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
 
     r.memory_size = memory_size;
     r.timeout = timeout;
-    r.environment = resolve_environment(ctx, &runtime.environment, environment).await;
+    r.environment = resolve_environment(ctx, &runtime.lang.to_str(), &runtime.environment, environment).await;
     r.layers = resolve_layers(ctx, layers.clone()).await;
     if *enable_fs {
         r.network = resolve_network(ctx, network.clone()).await;

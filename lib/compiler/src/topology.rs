@@ -225,7 +225,7 @@ fn should_ignore_node(
     }
 }
 
-fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, s: &TopologySpec) -> HashMap<String, Topology> {
+fn discover_leaf_nodes(root_dir: &str, dir: &str, s: &TopologySpec) -> HashMap<String, Topology> {
     let ignore_nodes = &s.nodes.ignore;
 
     let mut nodes: HashMap<String, Topology> = HashMap::new();
@@ -233,8 +233,9 @@ fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, s: &TopologyS
         if !should_ignore_node(root_dir, ignore_nodes.clone(), dir) {
             let f = format!("{}/topology.yml", dir);
             let spec = TopologySpec::new(&f);
-            let mut functions = discover_functions(dir, infra_dir, &spec);
-            let interned = intern_functions(dir, infra_dir, &spec);
+            let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
+            let mut functions = discover_functions(dir, &infra_dir, &spec);
+            let interned = intern_functions(dir, &infra_dir, &spec);
             functions.extend(interned);
             let node = make(root_dir, dir, &spec, functions, HashMap::new());
             nodes.insert(spec.name.to_string(), node);
@@ -244,11 +245,10 @@ fn discover_leaf_nodes(root_dir: &str, infra_dir: &str, dir: &str, s: &TopologyS
 }
 
 
-
 // builders
 
 
-fn make_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
+fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
     let ignore_nodes = &spec.nodes.ignore;
     let mut nodes: HashMap<String, Topology> = HashMap::new();
     for entry in WalkDir::new(root_dir)
@@ -263,10 +263,11 @@ fn make_nodes(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<S
                 let f = format!("{}/topology.yml", &p);
                 let spec = TopologySpec::new(&f);
                 tracing::debug!("node {}", &spec.name);
-                let mut functions = discover_functions(&p, infra_dir, &spec);
-                let interned = intern_functions(&p, infra_dir, &spec);
+                let infra_dir = as_infra_dir(spec.infra.to_owned(), &p);
+                let mut functions = discover_functions(&p, &infra_dir, &spec);
+                let interned = intern_functions(&p, &infra_dir, &spec);
                 functions.extend(interned);
-                let leaf_nodes = discover_leaf_nodes(root_dir, infra_dir, &p, &spec);
+                let leaf_nodes = discover_leaf_nodes(root_dir, &p, &spec);
                 let node = make(root_dir, &p, &spec, functions, leaf_nodes);
                 nodes.insert(spec.name.to_string(), node);
             }
@@ -448,11 +449,10 @@ impl Topology {
             let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
             tracing::debug!("Infra dir: {}  {}", &spec.name, &infra_dir);
 
-            //TODO: discover or lookup
             let nodes;
             if recursive {
                 tracing::debug!("Recursive {}", dir);
-                nodes = make_nodes(dir, &infra_dir, &spec);
+                nodes = make_nodes(dir, &spec);
             } else {
                 nodes = HashMap::new();
             }
@@ -493,26 +493,28 @@ impl Topology {
         let mut t = TreeBuilder::new(s!(self.namespace.blue()));
 
         for (_, f) in &self.functions {
+            let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
             t.begin_child(s!(f.name.green()));
             t.add_empty_child(f.runtime.lang.to_str());
             t.add_empty_child(f.runtime.role.path.to_string());
+            t.add_empty_child(vars);
             t.end_child();
         }
 
         for (_, node) in &self.nodes {
             t.begin_child(s!(&node.namespace.green()));
             for (_, f) in &node.functions {
+                let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
                 t.begin_child(s!(&f.fqn));
                 t.add_empty_child(f.runtime.lang.to_str());
                 t.add_empty_child(f.runtime.role.path.to_string());
+                t.add_empty_child(vars);
                 t.end_child();
             }
             t.end_child();
         }
-
         t.build()
     }
-
 
     pub fn build_nodes_tree(&self) -> StringItem {
         let mut t = TreeBuilder::new(s!(self.namespace.blue()));

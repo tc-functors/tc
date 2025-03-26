@@ -80,7 +80,7 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
 
 impl Function {
 
-    pub fn new(dir: &str, infra_dir: &str, namespace: &str, format: &str) -> Function {
+    pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
         let fspec = FunctionSpec::new(dir);
 
         let namespace = match fspec.namespace {
@@ -88,7 +88,13 @@ impl Function {
             None => &namespace.to_string()
         };
         let fqn = make_fqn(&fspec, &namespace, format);
-        let runtime = Runtime::new(dir, infra_dir,  &namespace, &fspec, &fqn);
+
+        let infra_dir = match fspec.infra_dir {
+            Some(ref d) => &d,
+            None => topo_infra_dir
+        };
+
+        let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn);
 
         Function {
             name: fspec.name.to_string(),

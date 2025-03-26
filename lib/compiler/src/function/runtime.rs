@@ -179,6 +179,7 @@ fn value_to_str(v: Option<&Value>, default: &str) -> String {
     }
 }
 
+
 fn make_env_vars(
     dir: &str,
     namespace: &str,
@@ -199,7 +200,6 @@ fn make_env_vars(
     hmap.insert(String::from("NAMESPACE"), s!(namespace));
     hmap.insert(String::from("LOG_LEVEL"), s!("INFO"));
     hmap.insert(String::from("POWERTOOLS_METRICS_NAMESPACE"), mn);
-
 
     match lang {
         Lang::Ruby => {
@@ -231,6 +231,8 @@ fn make_env_vars(
             );
             hmap.insert(s!("LD_LIBRARY_PATH"),
                         format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
+
+            hmap.insert(s!("MODEL_PATH"), u::value_to_string(assets.get("MODEL_PATH")));
 
         },
         _ => ()
