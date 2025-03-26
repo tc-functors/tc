@@ -2550,6 +2550,7 @@ dependencies = [
  "askama",
  "aws",
  "axum",
+ "cacache",
  "cache",
  "chrono",
  "compiler",
@@ -4167,7 +4168,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "aws",
  "builder",

@@ -264,12 +264,17 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
 }
 
 fn needs_fs(assets: HashMap<String, Value>, mount_fs: Option<bool>) -> bool {
-    let assets = assets.get("MODEL_PATH");
-    match assets {
+    let ax = assets.get("DEPS_PATH");
+    match ax {
         Some(_) => true,
         None => match mount_fs {
             Some(f) => f,
-            None => false
+            None => {
+                match assets.get("MODEL_PATH") {
+                    Some(_) => true,
+                    None => false
+                }
+            }
         }
     }
 }
