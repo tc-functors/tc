@@ -150,7 +150,6 @@ pub async fn resolve(
         None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await
     };
 
-    let _ = &resolved_topology.to_bincode();
     resolver::pprint(&resolved_topology, component)
 }
 
