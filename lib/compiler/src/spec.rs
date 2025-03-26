@@ -306,6 +306,8 @@ pub struct FunctionSpec {
     pub build: Option<BuildSpec>,
     pub infra: Option<InfraSpec>,
     //deprecated
+    pub infra_dir: Option<String>,
+    //deprecated
     #[serde(default)]
     pub tasks: HashMap<String, String>,
     //deprecated
@@ -351,6 +353,7 @@ impl FunctionSpec {
                 runtime: None,
                 build: None,
                 infra: None,
+                infra_dir: None,
                 assets: HashMap::new(),
                 tasks: HashMap::new()
             }

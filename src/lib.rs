@@ -179,6 +179,12 @@ async fn create_topology(env: &Env, topology: &Topology) {
     deployer::create(env, topology).await;
 
     for (_, node) in &topology.nodes {
+
+        for (_, function) in &node.functions {
+            let dir = &function.dir;
+            builder::build(dir, None, None).await;
+        }
+
         deployer::create(env, node).await;
     }
 }
