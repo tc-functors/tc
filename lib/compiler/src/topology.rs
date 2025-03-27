@@ -131,6 +131,17 @@ fn intern_functions(root_dir: &str, infra_dir: &str, spec: &TopologySpec) -> Has
     functions
 }
 
+fn is_inferred_dir(dir: &str) -> bool {
+    u::path_exists(dir, "handler.rb")
+        || u::path_exists(dir, "handler.py")
+        || u::path_exists(dir, "main.go")
+        || u::path_exists(dir, "Cargo.toml")
+        || u::path_exists(dir, "handler.janet")
+        || u::path_exists(dir, "handler.clj")
+        || u::path_exists(dir, "handler.js")
+        || u::path_exists(dir, "main.janet")
+}
+
 fn function_dirs(dir: &str) -> Vec<String> {
     let known_roots = vec!["resolvers", "functions", "backend"];
     let mut xs: Vec<String> = vec![];
@@ -140,7 +151,7 @@ fn function_dirs(dir: &str) -> Vec<String> {
         xs.append(&mut xm)
     }
     for d in dirs {
-        if path_exists(&d, "function.json") {
+        if path_exists(&d, "function.json") || is_inferred_dir(&d) {
             xs.push(d.to_string())
         }
     }
