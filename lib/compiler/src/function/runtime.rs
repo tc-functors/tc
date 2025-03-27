@@ -122,7 +122,17 @@ fn follow_path(path: &str) -> String {
     }
 }
 
+fn as_infra_dir(dir: &str, infra_dir: &str) -> String {
+    let basename = u::basedir(dir).to_string();
+    let parent = u::split_first(dir, &format!("/{basename}"));
+    parent
+        .replace("/services/", "/infrastructure/tc/")
+        .replace("_", "-")
+}
+
+
 fn as_infra_spec_file(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str) -> Option<String> {
+
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f =  follow_path(&f);
     if u::file_exists(&actual_f) {
@@ -311,16 +321,18 @@ fn make_fs(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<FileSystem>
 
 impl Runtime {
 
-    pub fn new(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpec, fqn: &str) -> Runtime {
+    pub fn new(dir: &str, t_infra_dir: &str, namespace: &str, fspec: &FunctionSpec, fqn: &str) -> Runtime {
         let rspec = fspec.runtime.clone();
 
-        let infra_spec_file = as_infra_spec_file(infra_dir, &rspec, &fspec.name);
+        let infra_dir = as_infra_dir(dir, t_infra_dir);
+        let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
+
         let infra_spec = RuntimeInfraSpec::new(infra_spec_file.clone());
         //FIXME: handle unwrap
         let default_infra_spec = infra_spec.get("default").unwrap();
         let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = default_infra_spec;
 
-        let role = lookup_role(infra_dir, &rspec, namespace, &fspec.name);
+        let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
 
         match rspec {
             Some(mut r) => {
