@@ -149,11 +149,19 @@ async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
 fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> RuntimeInfraSpec {
     RuntimeInfraSpec {
         memory_size: match s.memory_size {
-            Some(p) => Some(p),
+            Some(p) => if p != 128 {
+                Some(p)
+            } else {
+                default.memory_size
+            },
             None => default.memory_size
         },
         timeout: match s.timeout {
-            Some(p) => Some(p),
+            Some(p) => if p != 300 {
+                Some(p)
+            } else {
+                default.timeout
+            },
             None => default.timeout
         },
         environment: match s.environment.clone() {
@@ -177,12 +185,13 @@ fn get_infra_spec(infra_spec: &HashMap<String, RuntimeInfraSpec>, profile: &str,
     let sandbox_specific = infra_spec.get(sandbox);
     let default = infra_spec.get("default").unwrap();
 
-    if let Some(s) = sandbox_specific {
-        return augment_infra_spec(&default, s)
-    }
     if let Some(s) = profile_specific {
         return augment_infra_spec(&default, s)
     }
+    if let Some(s) = sandbox_specific {
+        return augment_infra_spec(&default, s)
+    }
+
     default.clone()
 }
 
