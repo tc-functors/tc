@@ -122,7 +122,7 @@ fn follow_path(path: &str) -> String {
     }
 }
 
-fn as_infra_dir(dir: &str, infra_dir: &str) -> String {
+fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
     let basename = u::basedir(dir).to_string();
     let parent = u::split_first(dir, &format!("/{basename}"));
     parent
@@ -259,7 +259,19 @@ fn make_env_vars(
     }
 }
 
-fn make_tags(namespace: &str) -> HashMap<String, String> {
+
+fn load_tags(infra_dir: &str) -> HashMap<String, String> {
+    let tags_file = format!("{}/tags.json", infra_dir);
+    if u::file_exists(&tags_file) {
+        let data: String = u::slurp(&tags_file);
+        let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
+        tags
+    } else {
+        HashMap::new()
+    }
+}
+
+fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     let tc_version = option_env!("PROJECT_VERSION")
         .unwrap_or(env!("CARGO_PKG_VERSION"))
         .to_string();
@@ -272,6 +284,8 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
     h.insert(s!("deployer"), s!("tc"));
     h.insert(s!("updated_at"), u::utc_now());
     h.insert(s!("tc_version"), tc_version);
+    let given_tags = load_tags(infra_dir);
+    h.extend(given_tags);
     h
 }
 
@@ -355,7 +369,7 @@ impl Runtime {
                     package_type: package_type.to_string(),
                     uri: as_uri(dir, package_type, r.uri),
                     layers: layers,
-                    tags: make_tags(namespace),
+                    tags: make_tags(namespace, &infra_dir),
                     environment: vars,
                     provisioned_concurrency: None,
                     memory_size: *memory_size,
@@ -387,7 +401,7 @@ impl Runtime {
                     uri: as_uri(dir, "zip", None),
                     layers: vec![],
                     environment: vars,
-                    tags: make_tags(namespace),
+                    tags: make_tags(namespace, &infra_dir),
                     provisioned_concurrency: None,
                     role: role,
                     memory_size: *memory_size,

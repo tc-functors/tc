@@ -32,7 +32,18 @@ fn read_definition(dir: &str, def: Value) -> Value {
     }
 }
 
-fn make_tags(namespace: &str) -> HashMap<String, String> {
+fn load_tags(infra_dir: &str) -> HashMap<String, String> {
+    let tags_file = format!("{}/tags.json", infra_dir);
+    if u::file_exists(&tags_file) {
+        let data: String = u::slurp(&tags_file);
+        let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
+        tags
+    } else {
+        HashMap::new()
+    }
+}
+
+fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     let tc_version = option_env!("PROJECT_VERSION")
         .unwrap_or(env!("CARGO_PKG_VERSION"))
         .to_string();
@@ -45,6 +56,9 @@ fn make_tags(namespace: &str) -> HashMap<String, String> {
     h.insert(s!("deployer"), s!("tc"));
     h.insert(s!("updated_at"), u::utc_now());
     h.insert(s!("tc_version"), tc_version);
+
+    let given_tags = load_tags(infra_dir);
+    h.extend(given_tags);
     h
 }
 
@@ -74,7 +88,7 @@ impl Flow {
             None => s!("Express")
         };
 
-        let tags = make_tags(fqn);
+        let tags = make_tags(fqn, infra_dir);
 
         match def {
             Some(definition) => Some(

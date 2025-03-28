@@ -593,15 +593,18 @@ pub async fn invokeq(client: Client, service: &str, payload: &str) -> Option<Str
     }
 }
 
-pub async fn update_tags(client: Client, name: &str, arn: &str, tags: HashMap<String, String>) {
-    println!("Updating tags {}", name);
-    client
+pub async fn update_tags(client: Client, arn: &str, tags: HashMap<String, String>) {
+    println!("Updating tags {} {:?}", arn, &tags);
+    let res = client
         .tag_resource()
         .resource(arn)
         .set_tags(Some(tags))
         .send()
-        .await
-        .unwrap();
+        .await;
+    match res {
+        Ok(_) => (),
+        Err(_) => println!("error updating tags")
+    }
 }
 
 pub async fn list_tags(client: Client, arn: &str) -> Result<HashMap<String, String>, Error> {
