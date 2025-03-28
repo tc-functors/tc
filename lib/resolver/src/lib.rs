@@ -62,7 +62,7 @@ pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, co
     let nodes = &topology.nodes;
 
     for (name, node) in nodes {
-        let node_t = topology::resolve(&node, env, sandbox).await;
+        let node_t = topology::resolve_component(&node, env, sandbox, component).await;
         resolved_nodes.insert(name.to_string(), node_t);
     }
     root.nodes = resolved_nodes;
