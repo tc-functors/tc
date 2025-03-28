@@ -444,6 +444,8 @@ pub struct Consumes {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventsSpec {
+    #[serde(default)]
+    pub doc_only: bool,
     pub consumes: Option<HashMap<String, Consumes>>,
     pub produces: Option<HashMap<String, Produces>>,
 }

@@ -1341,21 +1341,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cache"
-version = "0.0.3"
-dependencies = [
- "cacache",
- "compiler",
- "kit",
- "regex",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
- "tabled",
- "tracing",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2550,7 +2535,7 @@ dependencies = [
  "askama",
  "aws",
  "axum",
- "cache",
+ "cacache",
  "chrono",
  "compiler",
  "configurator",
@@ -3521,13 +3506,14 @@ name = "resolver"
 version = "0.0.3"
 dependencies = [
  "aws",
- "cache",
+ "cacache",
  "compiler",
  "kit",
  "regex",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tabled",
  "tracing",
 ]
 
@@ -4167,11 +4153,10 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.9"
+version = "0.8.10"
 dependencies = [
  "aws",
  "builder",
- "cache",
  "ci",
  "clap",
  "colored",

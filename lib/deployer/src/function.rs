@@ -156,6 +156,8 @@ pub async fn update_layers(env: &Env, fns: HashMap<String, Function>) {
 
 pub async fn update_vars(env: &Env, funcs: HashMap<String, Function>) {
     for (_, f) in funcs {
+        let memory_size = f.runtime.memory_size.expect("memory error");
+        println!("mem {}", memory_size);
         let function = make_lambda(env, f.clone()).await;
         let _ = function.clone().update_vars().await;
 

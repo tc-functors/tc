@@ -3,7 +3,7 @@ mod event;
 mod function;
 mod route;
 mod topology;
-pub mod store;
+pub mod cache;
 
 pub use context::Context;
 use compiler::Topology;
@@ -22,8 +22,8 @@ pub fn maybe_sandbox(s: Option<String>) -> String {
 }
 
 pub async fn read_cached_topology(env_name: &str, namespace: &str, sandbox: &str) -> Option<Topology> {
-    let key = store::make_key(namespace, env_name, sandbox);
-    store::read_topology(&key).await
+    let key = cache::make_key(namespace, env_name, sandbox);
+    cache::read_topology(&key).await
 }
 
 pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Topology {
@@ -47,8 +47,8 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool)
             }
             root.nodes = resolved_nodes;
             // write it to cache
-            let key = store::make_key(&root.namespace, &env.name, sandbox);
-            store::write_topology(&key, &root).await;
+            let key = cache::make_key(&root.namespace, &env.name, sandbox);
+            cache::write_topology(&key, &root).await;
             root
         }
     }

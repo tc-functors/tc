@@ -568,7 +568,7 @@ pub async fn init_repo_profile(profile: Option<String>) -> Env {
 }
 
 pub async fn clear_cache() {
-    cache::clear()
+    resolver::cache::clear()
 }
 
 pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox: Option<String>) {
@@ -576,12 +576,12 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
         Some(n) => {
             let env = kit::maybe_string(env, "default");
             let sandbox = kit::maybe_string(sandbox, "default");
-            let key = resolver::store::make_key(&n, &env, &sandbox);
-            let topology = resolver::store::read_topology(&key).await;
+            let key = resolver::cache::make_key(&n, &env, &sandbox);
+            let topology = resolver::cache::read_topology(&key).await;
             println!("{}", kit::pretty_json(&topology));
         },
         None => {
-            let xs = cache::list();
+            let xs = resolver::cache::list();
             let table = Table::new(xs).with(Style::psql()).to_string();
             println!("{}", table);
         }
