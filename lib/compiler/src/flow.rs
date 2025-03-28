@@ -61,7 +61,6 @@ fn load_tags(infra_dir: &str) -> HashMap<String, String> {
                 tags
             }
             None => {
-                println!("tags not found: {}, {:?}", &tags_file, &parent_file);
                 HashMap::new()
             }
         }
