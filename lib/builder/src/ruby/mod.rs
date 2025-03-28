@@ -26,7 +26,7 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build) -> BuildO
     };
 
     BuildOutput {
-        name: u::basename(dir),
+        name: format!("{}-{}", name, u::basename(dir)),
         dir: dir.to_string(),
         zipfile: path,
         kind: kind,
