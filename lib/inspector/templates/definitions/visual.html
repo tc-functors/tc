@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+  <nav aria-label="breadcrumb">
+    <ul>
+      <li><a href="/definitions">definitions</a></li>
+      <li><a href="/definitions">{{root}}</a></li>
+      {% if root != namespace %}
+      <li><a href="/definitions">{{namespace}}</a></li>
+      {% endif %}
+      <li>{{entity}}</li>
+    </ul>
+  </nav>
+
+  {% include "menu.html" %}
+
+</div>
+
+<script src="https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js"></script>
+<div>
+  <h1>Events</h1>
+  <div class="mermaid">
+    graph TD
+    Start --> Stop
+  </div>
+</div>
+
+
+<!-- <div id="viewer" -->
+<!--      hx-trigger="load" -->
+
+<!--      hx-get="/definitions/{{root}}/{{namespace}}/{{entity}}/list" -->
+<!--      hx-swap="innerHTML"> -->
+
+<!--   <div align="center"> -->
+<!--     <br/><br/><br/> -->
+<!--     <progress/> -->
+<!--   </div> -->
+
+<!-- </div> -->
+
+{% endblock %}

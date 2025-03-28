@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="grid">
+  <div align="left">
+
+    <input type="text">
+
+  </div>
+
+  <div>
+  </div>
+
+</div>
+
+<br/>
+
+<div class="htmx-indicator" id="status">
+  Compiling <progress/>
+</div>
+
+<div id="manifests"
+     hx-trigger="load"
+     hx-get="/manifests/view"
+     hx-swap="innerHTML">
+
+  <div class="grid">
+    <div></div>
+    <div align="center" id="spinner">
+      <br/>
+      <br/>
+      <br/>
+      <progress />
+    </div>
+    <div></div>
+  </div>
+</div>
+
+
+{% endblock %}
