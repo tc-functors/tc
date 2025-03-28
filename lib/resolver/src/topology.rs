@@ -51,7 +51,11 @@ pub async fn resolve_component(topology: &Topology, env: &Env, sandbox: &str, co
         },
         "functions" => {
             partial_t.functions = function::resolve(&ctx, &partial_t).await;
+        },
+        "layers" => {
+            partial_t.functions = function::resolve(&ctx, &partial_t).await;
         }
+
         _ => ()
 
     }
