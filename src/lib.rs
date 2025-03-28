@@ -294,7 +294,8 @@ pub async fn update_component(
 
     compiler::count_of(&topology);
 
-    let root = resolver::resolve(&env, &sandbox, &topology, true).await;
+    let c = deployer::maybe_component(component.clone());
+    let root = resolver::resolve_component(&env, &sandbox, &topology, &c).await;
     deployer::update_component(&env, &root, component.clone()).await;
 
     for (_, node) in root.nodes {
