@@ -5,7 +5,7 @@ use axum::{
 
 use compiler::{Function, Topology};
 use std::collections::HashMap;
-use crate::store;
+use crate::cache;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Item {
@@ -55,7 +55,7 @@ struct PermissionsTemplate {
 }
 
 pub async fn list_all() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let fns = build(topologies);
     let temp = PermissionsTemplate {
         functions: fns

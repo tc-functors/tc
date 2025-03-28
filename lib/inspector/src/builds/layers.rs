@@ -6,8 +6,8 @@ use axum::{
 use aws::Env;
 use configurator::Config;
 use aws::layer;
-use crate::store;
-use crate::store::Layer;
+use crate::cache;
+use crate::cache::Layer;
 
 
 fn build(xs: Vec<String>) -> Vec<Layer> {
@@ -30,9 +30,9 @@ struct LayersTemplate {
 }
 
 pub async fn list() -> impl IntoResponse {
-    let layers = store::find_resolved_layers().await;
+    let layers = cache::find_resolved_layers().await;
     let xs = if layers.is_empty() {
-        build(store::find_layers().await)
+        build(cache::find_layers().await)
     } else {
         layers
     };
@@ -45,7 +45,7 @@ pub async fn list() -> impl IntoResponse {
 
 pub async fn sync() -> impl IntoResponse {
 
-    let layers = store::find_layers().await;
+    let layers = cache::find_layers().await;
 
     let cfg = Config::new(None, "");
     let profile = cfg.aws.lambda.layers_profile.unwrap();
@@ -66,7 +66,7 @@ pub async fn sync() -> impl IntoResponse {
         };
         resolve_layers.push(xl);
     }
-    store::save_resolved_layers(resolve_layers.clone()).await;
+    cache::save_resolved_layers(resolve_layers.clone()).await;
 
     let t = LayersTemplate {
         items: resolve_layers

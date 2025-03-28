@@ -6,7 +6,7 @@ use axum::{
 
 use compiler::{Function, Topology};
 use std::collections::HashMap;
-use crate::store;
+use crate::cache;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Item {
@@ -75,7 +75,7 @@ struct FunctionsTemplate {
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let fns = store::find_functions(&root, &namespace).await;
+    let fns = cache::find_functions(&root, &namespace).await;
     let temp = FunctionsTemplate {
         root: root,
         items: build_fns(&namespace, fns)
@@ -84,7 +84,7 @@ pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
 }
 
 pub async fn list_all() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let fns = build(topologies);
     let temp = FunctionsTemplate {
         root: String::from(""),
@@ -103,7 +103,7 @@ struct ViewTemplate {
 }
 
 pub async fn view(Path((root, namespace, id)): Path<(String, String, String)>) -> impl IntoResponse {
-    let f = store::find_function(&root, &namespace, &id).await;
+    let f = cache::find_function(&root, &namespace, &id).await;
     let f_str = match f {
         Some(r) => serde_json::to_string(&r).unwrap(),
         None => String::from("none")

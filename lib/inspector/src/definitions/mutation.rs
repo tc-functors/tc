@@ -6,7 +6,7 @@ use axum::{
 
 use compiler::Topology;
 use std::collections::HashMap;
-use crate::store;
+use crate::cache;
 
 struct Item {
     namespace: String,
@@ -58,7 +58,7 @@ struct MutationsTemplate {
  }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let topologies = store::find_topologies(&root, &namespace).await;
+    let topologies = cache::find_topologies(&root, &namespace).await;
     let temp = MutationsTemplate {
         items: build(topologies)
     };
@@ -67,7 +67,7 @@ pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
 }
 
 pub async fn list_all() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let temp = MutationsTemplate {
         items: build(topologies)
     };

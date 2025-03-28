@@ -5,7 +5,7 @@ use axum::{
 
 use compiler::Topology;
 use std::collections::HashMap;
-use crate::store;
+use crate::cache;
 
 pub struct Item  {
     pub id: String,
@@ -35,7 +35,7 @@ struct FunctorsTemplate {
 }
 
 pub async fn list_all() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let functors = build(topologies);
     let t = FunctorsTemplate {
         items: functors

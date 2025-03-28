@@ -5,7 +5,7 @@ use axum::{
 
 use std::collections::HashMap;
 use compiler::{TopologyCount, Topology};
-use crate::store;
+use crate::cache;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Functor {
@@ -52,7 +52,7 @@ struct FunctorsTemplate {
 
 
 pub async fn list_all() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let functors = build(topologies);
         let t = FunctorsTemplate {
             items: functors
@@ -79,7 +79,7 @@ struct GraphTemplate {
 }
 
 pub async fn generate_graph() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let mut h: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
     for (name, node) in topologies {
         let subg = node.names_of();

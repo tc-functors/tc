@@ -5,7 +5,7 @@ use axum::{
 };
 use std::collections::HashMap;
 use compiler::{Topology, Event};
-use crate::store;
+use crate::cache;
 
 struct Item {
     namespace: String,
@@ -56,7 +56,7 @@ struct EventsTemplate {
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let events = store::find_events(&root, &namespace).await;
+    let events = cache::find_events(&root, &namespace).await;
     let temp = EventsTemplate {
         items: build_events(&namespace, events)
     };
@@ -64,7 +64,7 @@ pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
 }
 
 pub async fn list_all() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let events = build(topologies);
     let temp = EventsTemplate {
         items: events
@@ -73,14 +73,9 @@ pub async fn list_all() -> impl IntoResponse {
 }
 
 
-
-struct Event {
-
-}
-
-fn build_event_flow() -> HashMap<String, String> {
-    let events = store::find_all_events().await;
-
+async fn build_event_flow() -> HashMap<String, String> {
+    let events = cache::find_all_events().await;
+    HashMap::new()
 
 }
 
@@ -92,7 +87,7 @@ struct VisualTemplate {
 }
 
 pub async fn visualize() -> impl IntoResponse {
-    let topologies = store::find_all_topologies().await;
+    let topologies = cache::find_all_topologies().await;
     let events = build(topologies);
     let temp = EventsTemplate {
         items: events

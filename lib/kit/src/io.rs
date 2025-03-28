@@ -197,7 +197,10 @@ fn trim(input: &str) -> &str {
             let m = s.stdout_str();
             trim(&m).to_string()
         },
-        Err(e) => panic!("{}", e)
+        Err(e) => {
+            tracing::debug!("File not found {}", path);
+            panic!("{}", e)
+        }
     }
 }
 

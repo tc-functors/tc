@@ -9,7 +9,7 @@ mod definitions;
 mod releases;
 mod builds;
 mod page;
-mod store;
+mod cache;
 
 pub async fn init() {
 
