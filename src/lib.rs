@@ -82,9 +82,12 @@ pub async fn publish(
 
     } else {
         let builds = builder::read_manifest();
+
         for build in builds {
-            publisher::publish(&env, &build.dir, &build.kind, &build.zipfile, &build.runtime, &build.name).await;
+            let bname = u::maybe_string(name.clone(), &build.name);
+            publisher::publish(&env, &build.dir, &build.kind, &build.zipfile, &build.runtime, &bname).await;
         }
+        builder::delete_manifest(dir);
     }
 }
 

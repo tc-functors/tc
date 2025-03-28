@@ -104,7 +104,7 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
 
         sh("rm -f *.zip", dir);
 
-        println!("Building {} ({}/{})", &f.name, &runtime.to_str(), kind_str);
+        println!("Building {} ({}/{})", &f.namespace, &runtime.to_str(), kind_str);
 
         let out = match lang {
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
@@ -195,4 +195,8 @@ pub fn read_manifest() -> Vec<BuildOutput> {
     let s = kit::slurp("build.json");
     let builds: Vec<BuildOutput> = serde_json::from_str(&s).expect("fail");
     builds
+}
+
+pub fn delete_manifest(dir: &str) {
+    kit::sh(dir, "rm -f build.json");
 }
