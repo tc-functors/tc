@@ -53,9 +53,14 @@ fn make_log_config(log_group_arn: &str) -> LoggingConfiguration {
     let ld = LogDestinationBuilder::default();
     let destination = ld.cloud_watch_logs_log_group(group).build();
 
+    let include_exec_data = match std::env::var("TC_SFN_DEBUG") {
+        Ok(_) => true,
+        Err(_) => false
+    };
+
     let lc = LoggingConfigurationBuilder::default();
         lc.level(LogLevel::All)
-        .include_execution_data(false)
+        .include_execution_data(include_exec_data)
         .destinations(destination)
         .build()
 }
