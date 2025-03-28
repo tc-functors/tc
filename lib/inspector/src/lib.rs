@@ -32,6 +32,10 @@ pub async fn init() {
         .route("/releases/snapshot"   , get(releases::snapshot::list))
         .route("/releases/nodes"      , get(releases::nodes::list_all))
 
+        // visualize
+        .route("/definitions/visualize/{:entity}", get(page::visualize))
+
+        // json
 
         .route("/definition/{:root}",
                get(page::view_root_definition))
@@ -53,9 +57,6 @@ pub async fn init() {
                get(definitions::root::list_all))
         .route("/definitions/compile",
                post(definitions::root::compile))
-
-        .route("/definitions/graph",
-               post(definitions::root::generate_graph))
 
         .route("/definition/{:root}/{:namespace}/function/{:id}/view",
                get(definitions::function::view))
@@ -94,6 +95,7 @@ pub async fn init() {
                get(definitions::mutation::list))
         .route("/definitions/{:root}/{:namespace}/routes/list",
                get(definitions::route::list))
+
 
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());

@@ -71,3 +71,31 @@ pub async fn list_all() -> impl IntoResponse {
     };
     Html(temp.render().unwrap())
 }
+
+
+
+struct Event {
+
+}
+
+fn build_event_flow() -> HashMap<String, String> {
+    let events = store::find_all_events().await;
+
+
+}
+
+
+#[derive(Template)]
+#[template(path = "definitions/visual/events.html")]
+struct VisualTemplate {
+    items: String
+}
+
+pub async fn visualize() -> impl IntoResponse {
+    let topologies = store::find_all_topologies().await;
+    let events = build(topologies);
+    let temp = EventsTemplate {
+        items: events
+    };
+    Html(temp.render().unwrap())
+}

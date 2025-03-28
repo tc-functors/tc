@@ -1,6 +1,6 @@
 [package]
 name = "tc"
-version = "0.8.9"
+version = "0.8.10"
 edition = "2024"
 rust-version = "1.85"
 
@@ -34,7 +34,6 @@ lister = { path = "lib/lister" }
 router = { path = "lib/router" }
 ci = { path = "lib/ci" }
 inspector = { path = "lib/inspector" }
-cache = { path = "lib/cache" }
 
 [dev-dependencies]
 mockall = "0.12.1"

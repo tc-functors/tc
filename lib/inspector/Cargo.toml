@@ -14,6 +14,7 @@ tower-http = { version = "0.6.1", features = ["limit", "trace", "fs"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = { version = "0.4.*"}
+cacache = "13.0.0"
 compiler = { path = "../compiler" }
 cache = { path = "../cache" }
 aws = { path = "../aws" }
