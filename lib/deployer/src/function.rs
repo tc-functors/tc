@@ -169,8 +169,8 @@ pub async fn update_vars(env: &Env, funcs: HashMap<String, Function>) {
 pub async fn update_tags(env: &Env, funcs: HashMap<String, Function>) {
     let client = lambda::make_client(env).await;
     for (_, f) in funcs {
-        let arn = env.lambda_arn(&f.name);
-        lambda::update_tags(client.clone(), &f.name, &arn, f.runtime.tags.clone()).await;
+        let arn = env.lambda_arn(&f.fqn);
+        lambda::update_tags(client.clone(), &arn, f.runtime.tags.clone()).await;
     }
 }
 

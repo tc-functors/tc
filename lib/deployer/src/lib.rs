@@ -12,7 +12,7 @@ use compiler::Topology;
 use compiler::spec::TopologyKind;
 use aws::Env;
 
-fn maybe_component(c: Option<String>) -> String {
+pub fn maybe_component(c: Option<String>) -> String {
     match c {
         Some(comp) => comp,
         _ => "default".to_string(),

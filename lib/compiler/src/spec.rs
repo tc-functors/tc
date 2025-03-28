@@ -565,6 +565,7 @@ impl TopologySpec {
 
     pub fn new(topology_spec_file: &str) -> TopologySpec {
         if u::file_exists(topology_spec_file) {
+            tracing::debug!("Loading topology {}", topology_spec_file);
             let data: String = u::slurp(topology_spec_file);
             let spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
             spec
