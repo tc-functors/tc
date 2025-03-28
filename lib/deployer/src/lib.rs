@@ -228,6 +228,8 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
 
         "mutations" => mutation::create(&env, &mutations).await,
 
+        "roles" => role::create(&env, &topology.roles()).await,
+
         "schedules" => schedule::create(&env, &namespace, schedules).await,
 
         "queues" => queue::create(&env, &queues).await,
