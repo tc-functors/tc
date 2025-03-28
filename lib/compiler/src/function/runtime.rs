@@ -132,7 +132,6 @@ fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
 
 
 fn as_infra_spec_file(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str) -> Option<String> {
-
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f =  follow_path(&f);
     if u::file_exists(&actual_f) {
@@ -288,7 +287,6 @@ fn load_tags(infra_dir: &str) -> HashMap<String, String> {
                 tags
             }
             None => {
-                println!("tags not found: {}, {:?}", &tags_file, &parent_file);
                 HashMap::new()
             }
         }
@@ -362,7 +360,10 @@ impl Runtime {
     pub fn new(dir: &str, t_infra_dir: &str, namespace: &str, fspec: &FunctionSpec, fqn: &str) -> Runtime {
         let rspec = fspec.runtime.clone();
 
-        let infra_dir = as_infra_dir(dir, t_infra_dir);
+        let infra_dir = match &fspec.infra_dir {
+            Some(p) => p.to_string(),
+            None => as_infra_dir(dir, t_infra_dir)
+        };
         let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
 
         let infra_spec = RuntimeInfraSpec::new(infra_spec_file.clone());
