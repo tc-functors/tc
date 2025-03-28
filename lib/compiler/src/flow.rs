@@ -32,14 +32,39 @@ fn read_definition(dir: &str, def: Value) -> Value {
     }
 }
 
+fn parent_tags_file(dir: &str) -> Option<String> {
+    let paths = vec![
+        u::absolutize(dir, "../tags.json"),
+        u::absolutize(dir, "../../tags.json"),
+        u::absolutize(dir, "../../../tags.json"),
+        u::absolutize(dir, "../../../../tags.json"),
+        s!("../tags.json"),
+        s!("../../tags.json"),
+        s!("../../../tags.json"),
+        s!("../../../../tags.json"),
+    ];
+    u::any_path(paths)
+}
+
 fn load_tags(infra_dir: &str) -> HashMap<String, String> {
     let tags_file = format!("{}/tags.json", infra_dir);
+    let parent_file = parent_tags_file(infra_dir);
     if u::file_exists(&tags_file) {
         let data: String = u::slurp(&tags_file);
         let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
         tags
     } else {
-        HashMap::new()
+        match parent_file {
+            Some(f) => {
+                let data: String = u::slurp(&f);
+                let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
+                tags
+            }
+            None => {
+                println!("tags not found: {}, {:?}", &tags_file, &parent_file);
+                HashMap::new()
+            }
+        }
     }
 }
 
