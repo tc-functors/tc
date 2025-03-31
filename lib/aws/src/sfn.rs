@@ -58,8 +58,17 @@ fn make_log_config(log_group_arn: &str) -> LoggingConfiguration {
         Err(_) => false
     };
 
+    let log_level = match std::env::var("TC_SFN_LOG_LEVEL") {
+        Ok("ALL") => LogLevel::All,
+        Ok("ERROR") => LogLevel::Error,
+        Ok("FATAL") => LogLevel::Fatal,
+        Ok("OFF") => LogLevel::Off,
+        Ok(_) => LogLevel::All
+        Err(_) => LogLevel::All
+    };
+    
     let lc = LoggingConfigurationBuilder::default();
-        lc.level(LogLevel::All)
+        lc.level(log_level)
         .include_execution_data(include_exec_data)
         .destinations(destination)
         .build()
