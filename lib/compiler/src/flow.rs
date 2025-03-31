@@ -71,6 +71,7 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     let tc_version = option_env!("PROJECT_VERSION")
         .unwrap_or(env!("CARGO_PKG_VERSION"))
         .to_string();
+
     let version = version::current_semver(namespace);
     let mut h: HashMap<String, String> = HashMap::new();
     h.insert(s!("namespace"), s!(namespace));
@@ -112,7 +113,7 @@ impl Flow {
             None => s!("Express")
         };
 
-        let tags = make_tags(fqn, infra_dir);
+        let tags = make_tags(&spec.name, infra_dir);
 
         match def {
             Some(definition) => Some(

@@ -36,7 +36,7 @@ pub fn render(s: &str, sandbox: &str) -> String {
 
 async fn list_topologies(env: &Env, sandbox: Option<String>, format: &str) {
     let sandbox = u::maybe_string(sandbox, "stable");
-    let topologies = compiler::list_topologies();
+    let topologies = compiler::compile_root();
     let mut names: Vec<String> = vec![];
     for (_, spec) in topologies {
         let name = render(&spec.fqn, &sandbox);
