@@ -540,6 +540,7 @@ pub enum TopologyKind {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TopologySpec {
+    #[serde(default)]
     pub name: String,
 
     pub kind: Option<TopologyKind>,
