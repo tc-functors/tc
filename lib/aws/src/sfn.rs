@@ -63,6 +63,7 @@ fn make_log_config(log_group_arn: &str) -> LoggingConfiguration {
         Ok("ERROR") => LogLevel::Error,
         Ok("FATAL") => LogLevel::Fatal,
         Ok("OFF") => LogLevel::Off,
+        Ok(_) => LogLevel::All
         Err(_) => LogLevel::All
     };
     
