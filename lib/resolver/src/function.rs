@@ -45,13 +45,8 @@ async fn resolve_environment(
     let Context { env, .. } = ctx;
     let mut default_vars = default_vars.clone();
 
-    match std::env::var("TC_AUGMENT_VARS") {
-        Ok(_) => {
-            let augmented_vars = augment_vars(ctx, lang);
-            default_vars.extend(augmented_vars);
-        },
-        Err(_) => ()
-    }
+    let augmented_vars = augment_vars(ctx, lang);
+    default_vars.extend(augmented_vars);
 
     let combined = match sandbox_vars {
         Some(v) => {

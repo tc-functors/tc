@@ -28,8 +28,12 @@ pub async fn read_cached_topology(env_name: &str, namespace: &str, sandbox: &str
 
 pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Topology {
 
+
     let maybe_topology = if cache {
-        read_cached_topology(&env.name, &topology.namespace, sandbox).await
+        match std::env::var("TC_CACHE") {
+            Ok(_) => read_cached_topology(&env.name, &topology.namespace, sandbox).await,
+            Err(_) => None
+        }
     } else {
         None
     };
