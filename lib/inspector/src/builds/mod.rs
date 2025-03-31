@@ -9,13 +9,14 @@ use axum::{
 
 pub fn page_routes() -> Router {
     Router::new()
-        .route("/builds", get(page::builds))
+        .route("/builds", get(page::index))
+        .route("/builds/list/{{entity}}", get(page::list))
 
 }
 
 pub fn list_routes() -> Router {
     Router::new()
-        .route("/builds/layers/list", get(layers::list))
+        .route("/builds/hx/list/layers", get(layers::list))
 }
 
 pub fn post_routes() -> Router {

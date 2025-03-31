@@ -24,11 +24,26 @@ where
 
 #[derive(Template)]
 #[template(path = "builds/index.html")]
-struct BuildsTemplate { context: String }
+struct IndexTemplate { context: String }
 
-pub async fn builds() -> impl IntoResponse {
-    let template = BuildsTemplate {
+pub async fn index() -> impl IntoResponse {
+    let template = IndexTemplate {
         context: "builds".to_string()
+    };
+    HtmlTemplate(template)
+}
+
+#[derive(Template)]
+#[template(path = "builds/list.html")]
+struct ListTemplate {
+    context: String,
+    entity: String
+}
+
+pub async fn list(Path(entity): Path<String>) -> impl IntoResponse {
+    let template = ListTemplate {
+        context: "builds".to_string(),
+        entity: entity
     };
     HtmlTemplate(template)
 }

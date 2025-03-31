@@ -32,7 +32,6 @@ pub fn page_routes() -> Router {
                get(page::list_ns_definitions))
 }
 
-
 // fragments
 
 pub fn list_routes() -> Router {
