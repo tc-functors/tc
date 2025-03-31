@@ -1,26 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="grid">
 
-  <nav aria-label="breadcrumb">
-    <ul>
-      <li><a href="/definitions">definitions</a></li>
-      <li>{{namespace}}</li>
-      <li>{{entity}}</li>
-      <li><b>{{id}}</b></li>
-    </ul>
-  </nav>
-
-  {% include "menu.html" %}
-
-</div>
+{% include "menu.html" %}
 
 <br/>
 
 <div id="json-tree"></div>
 
-<div id="lister"
+<div id="viewer"
      hx-trigger="load"
      hx-get="/definition/{{root}}/{{namespace}}/{{entity}}/{{id}}/view"
      hx-swap="innerHTML">

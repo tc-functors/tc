@@ -5,7 +5,8 @@
       <td>Name</td>
       <td>Dev Version</td>
       <td>Stable Version</td>
-      <td>Download</td>
+      <td>Sync</td>
+      <td>Promote</td>
     </tr>
   </thead>
   <tbody>
@@ -15,7 +16,16 @@
       <td>{{item.name}}</td>
       <td>{{item.dev}}</td>
       <td>{{item.stable}}</td>
-      <td><a href="#">download</a></td>
+      <td>
+	<button class="outline">
+	  <i class="ph ph-arrow-clockwise"></i>
+	</button>
+      </td>
+      <td>
+	<button class="outline">
+	  <i class="ph ph-caret-up"></i>
+	</button>
+      </td>
     </tr>
     {% endfor %}
 </table>

@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8">
     <title>tc inspector</title>
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script><script src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
+    <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script defer src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
     <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
-
+    <script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
 
     <style>
       :root {
@@ -26,44 +27,42 @@
 	--pico-border-radius: 0.3rem;
 	/* Original: 0.25rem */
 
-        --pico-table-border-color: #eeeeee;
-
         --pico-typography-spacing-vertical: 0.8rem;
       }
 
       @media (min-width: 576px) {
 	:root {
 	  --pico-font-size: 90.5%;
-      /* Original: 106.25% */
-      }
+	  /* Original: 106.25% */
+	}
       }
 
       @media (min-width: 768px) {
-      :root {
-      --pico-font-size: 90.5%;
-      /* Original: 112.5% */
-      }
+	:root {
+	  --pico-font-size: 90.5%;
+	  /* Original: 112.5% */
+	}
       }
 
       @media (min-width: 1024px) {
-      :root {
-      --pico-font-size: 100.0%;
-      /* Original: 118.75% */
-      }
+	:root {
+	  --pico-font-size: 100.0%;
+	  /* Original: 118.75% */
+	}
       }
 
       @media (min-width: 1280px) {
-      :root {
-      --pico-font-size: 100.5%;
-      /* Original: 125% */
-      }
+	:root {
+	  --pico-font-size: 100.5%;
+	  /* Original: 125% */
+	}
       }
 
       @media (min-width: 1536px) {
-      :root {
-      --pico-font-size: 100.5%;
-      /* Original: 131.25% */
-      }
+	:root {
+	  --pico-font-size: 100.5%;
+	  /* Original: 131.25% */
+	}
       }
 
       h1,
@@ -72,70 +71,42 @@
       h4,
       h5,
       h6 {
-      --pico-font-weight: 600;
-      /* Original: 700 */
+	--pico-font-weight: 600;
+	/* Original: 700 */
       }
 
       .input {
-      --pico-font-weight: 600;
+	--pico-font-weight: 600;
       }
 
       .spaced {
-      margin-left: 4rem;
-      margin-right: 4rem;
+	margin-left: 4rem;
+	margin-right: 4rem;
       }
 
       .button {
-      line-height: 0.7rem;
+	line-height: 0.7rem;
       }
 
       article {
-      border: 1px solid var(--pico-muted-border-color);
+	border: 1px solid var(--pico-muted-border-color);
 
-      border-radius: calc(var(--pico-border-radius) * 2);
-      /* Original: var(--pico-border-radius) */
+	border-radius: calc(var(--pico-border-radius) * 2);
+	/* Original: var(--pico-border-radius) */
       }
       article>footer {
-      border-radius: calc(var(--pico-border-radius) * 2);
-      /* Original: var(--pico-border-radius) */
-      }
-
-      [role="tabs"] {
-      display: flex;
-      }
-
-      [role="tabs"] section {
-      display: flex;
-      flex-wrap: wrap;
-      width: 100%;
-      }
-
-      [role="tabs"] figure {
-      flex-grow: 1;
-      width: 100%;
-      height: 100%;
-      display: none;
-      }
-
-      [role="tabs"] [type="radio"]:checked + figure {
-      display: block;
-      }
-
-      nav[role="tab-control"] label.active {
-      color: red;
-      cursor: pointer;
-      text-decoration: underline;
-      text-decoration-color: red;
+	border-radius: calc(var(--pico-border-radius) * 2);
+	/* Original: var(--pico-border-radius) */
       }
 
       .htmx-indicator{
-      display:none;
+	display:none;
       }
       .htmx-request .htmx-indicator{
-      display:inline;
+	display:inline;
       }
       .htmx-request.htmx-indicator{
-      display:inline;
+	display:inline;
       }
 
       .x1 { flex: 0 0 100% }
@@ -152,11 +123,39 @@
       @media (min-width: 992px) { .x { display: flex; } .x > * + * {margin-left: 0rem}}
 
 
+      .btn {
+      padding: 8px 18px;
+      padding-right: 10px;
+      min-width: 88px;
+      border: none;
+      font: inherit;
+      color: #eeeeee;
+      border-radius: 4px;
+      outline: none;
+      text-decoration: none;
+      font-weight: 400;
+      background: #4D4C5C;
+      background-color: #4D4C5C;
+      // border: 1px solid #ccc;
+      transition: background-color 0.3s ease;
+      box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.30), 0px 1px 1px rgba(0, 0, 0, .4);
+
+      &:active {
+      background: linear-gradient(#4faefc, #006bff);
+      color: #fff;
+      position: relative;
+      }
+
+      }
+      .btn:hover {
+       opacity: 0.7;
+      }
+
       .custom-button {
       font-size: 15px;
       padding: 10px 20px;
-      background-color: #3498db; /* Default background color */
-      color: white;
+      background-color: #4D4C5C; /* Default background color */
+      color: #000000;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -242,7 +241,7 @@
 	</ul>
 	<ul>
 	  <li>tc-inspector <small>0.8.0</small></li>
-	  <li><i class="ph ph-arrow-clockwise"></i></li>
+	  <li><a href="/settings"><i class="ph ph-gear-six"></i></a></li>
 	</ul>
 
       </nav>

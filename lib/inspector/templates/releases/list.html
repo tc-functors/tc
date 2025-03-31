@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
-
 {% include "menu.html" %}
-
-<br/> <br/>
 
 <div id="viewer"
      hx-trigger="load"
-     hx-get="/definitions/visualize/{{entity}}/load"
+
+     hx-get="/releases/{{entity}}/list"
      hx-swap="innerHTML">
 
   <div align="center">

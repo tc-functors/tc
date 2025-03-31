@@ -417,6 +417,10 @@ pub struct Consumes {
     #[serde(default)]
     pub producer: String,
 
+    pub producer_ns: Option<String>,
+
+    pub nth: Option<u8>,
+
     #[serde(default)]
     pub filter: Option<String>,
 

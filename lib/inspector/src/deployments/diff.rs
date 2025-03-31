@@ -13,19 +13,7 @@ struct Record {
 }
 
 async fn list_cached_records() -> Vec<Record> {
-    //let items = cache::list();
-    let mut xs: Vec<Record> = vec![];
-    // for item in items {
-    //     let key = cache::make_key(&item.namespace, &item.env, &item.sandbox);
-    //     let maybe_topology = cache::read_topology(&key).await;
-    //     if let Some(topology) = maybe_topology {
-    //         xs.push(Record {
-    //             namespace: topology.namespace,
-    //             fqn: topology.fqn
-    //         });
-    //     }
-    // }
-    xs
+    vec![]
 }
 
 

@@ -1,9 +1,8 @@
 {% if items.len() > 0 %}
 
-<table class="striped" data-theme="light">
+<table class="striped">
   <thead>
     <tr>
-      <td></td>
       <td></td>
       <td>Namespace</td>
       <td>Version</td>
@@ -18,7 +17,6 @@
   <tbody>
     {% for item in items %}
     <tr>
-      <td><input type="checkbox" name={{item.namespace}}/></td>
       <td>{{loop.index}}</td>
       <td><a href="/definition/{{item.namespace}}">{{item.namespace}}<a/></td>
       <td>{{item.version}}</td>

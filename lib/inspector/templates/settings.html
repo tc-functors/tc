@@ -1,26 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-
-
-
 <div class="grid">
 
   <article>
 
-    <header>Resolver cache</header>
+    <header>Caching</header>
 
     <form>
       <fieldset>
-	<legend>Store</legend>
+	<legend>URI</legend>
 	<input type="radio" id="filesystem" name="filesystem" checked />
 	<label htmlFor="filesystem">Filesystem</label>
+	<label htmlFor="filesystem">SurrealDB</label>
 	<input type="radio" id="s3" name="s3" />
 	<label htmlFor="s3">S3</label>
       </fieldset>
 
       <input type="text" placeholder="Path or URI"/>
 
-      <button>Update Store</button>
+      <button>Update Cache</button>
     </form>
 
   </article>
@@ -34,7 +32,7 @@
 <div class="grid">
 
   <div>
-    Theme
+
 
 
   </div>

@@ -1,32 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="grid">
-  <div align="left">
-
-    <button class="custom-button primary"
-	    hx-post="/definitions/test"
-	    hx-target="#functors"
-	    hx-indicator="#status">
-      <i class="ph ph-test-tube"></i> Test
-    </button>
-
-    <button class="custom-button primary"
-	    hx-post="/definitions/compile"
-	    hx-indicator="#status"
-	    hx-target="#functors"
-	    hx-swap="outerHtml">
-      <i class="ph ph-arrow-clockwise"></i> Compile
-    </button>
-
-    <button class="custom-button Primary">
-      <i class="ph ph-cube"></i> Sandbox
-    </button>
-
-  </div>
-  {% include "menu.html" %}
-
-</div>
+{% include "menu.html" %}
 
 <br/>
 

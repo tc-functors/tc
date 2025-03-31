@@ -1,33 +1,77 @@
-<div class="x">
-  <div class="xg"></div>
-  <div class="x4">
+<div class="grid">
+  <div class="x">
+    <div class="x4">
 
-    <details class="dropdown">
-      <summary role="button" class="outline secondary">
-	<i class="fas fa-list"></i> Visualize
-      </summary>
-      <ul>
-	<li><a href="/definitions/visualize/events">Events</a></li>
-	<li><a href="/definitions/visualize/nodes">Nodes</a></li>
-      </ul>
-    </details>
-  </div>
-  <div class="x15"></div>
-  <div class="x4">
+      <details class="dropdown">
+	<summary role="button" class="outline">
+	  <i class="fas fa-list"></i> List
+	</summary>
+	<ul>
+	  <li><a href="/definitions">Functors</a></li>
+	  <li><a href="/definitions/nodes/all">Nodes</a></li>
+	  <li><a href="/definitions/functions/all">Functions</a></li>
+	  <li><a href="/definitions/events/all">Events</a></li>
+	  <li><a href="/definitions/routes/all">Routes</a></li>
+	  <li><a href="/definitions/mutations/all">Mutations</a></li>
+	  <li><a href="/definitions/states/all">States</a></li>
+	  <li><a href="/definitions/permissions/all">Permissions</a></li>
+	</ul>
+      </details>
+    </div>
+    <div class="x20"></div>
+    <div class="x4">
+      <details class="dropdown">
+	<summary role="button" class="outline">
+	  <i class="fas fa-arrow-left-right"></i> Visualize
+	</summary>
+	<ul>
+	  <li><a href="/definitions/visualize/events">Sequence Diagram</a></li>
+	  <li><a href="/definitions/visualize/events">Node Graph</a></li>
+	  <li><a href="/definitions/visualize/events">C4</a></li>
+	</ul>
+      </details>
+    </div>
 
-    <details class="dropdown">
-      <summary role="button" class="outline secondary">
-	<i class="fas fa-list"></i> List
-      </summary>
-      <ul>
-	<li><a href="/definitions/nodes/all">Nodes</a></li>
-	<li><a href="/definitions/functions/all">Functions</a></li>
-	<li><a href="/definitions/events/all">Events</a></li>
-	<li><a href="/definitions/routes/all">Routes</a></li>
-	<li><a href="/definitions/mutations/all">Mutations</a></li>
-	<li><a href="/definitions/states/all">States</a></li>
-	<li><a href="/definitions/permissions/all">Permissions</a></li>
-      </ul>
-    </details>
+    <div class="x20"></div>
+    <div class="x4">
+      <details class="dropdown">
+	<summary role="button" class="outline">
+	  <i class="fas fa-list"></i> Create
+	</summary>
+	<ul>
+	  <li><a href="/definitions/nodes/all">Sandbox</a></li>
+	  <li><a href="/definitions/nodes/all">Manifest</a></li>
+	</ul>
+      </details>
+    </div>
+
+    <div class="x20"></div>
+    <div class="x4">
+      <details class="dropdown">
+	<summary role="button" class="outline">
+	  <i class="fas fa-list"></i> Test
+	</summary>
+	<ul>
+	  <li><a href="/definitions/nodes/all">Unit Tests</a></li>
+	  <li><a href="/definitions/nodes/all">Definitions</a></li>
+	</ul>
+      </details>
+    </div>
   </div>
+
+  <div class="xg" align="right">
+
+    <button class="btn"
+	    hx-post="/definitions/compile"
+	    hx-indicator="#status"
+	    hx-target="#functors"
+	    hx-swap="outerHtml">
+      <i class="ph ph-arrow-clockwise"></i> Compile
+    </button>
+
+  </div>
+
+
 </div>
+
+<br/>

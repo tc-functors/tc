@@ -287,18 +287,15 @@ fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> 
     nodes
 }
 
-fn make_events(spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<String, Event> {
+fn make_events(namespace: &str, spec: &TopologySpec, fqn: &str, config: &Config) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
         if let Some(c) = &evs.consumes {
             for (name, ev) in c.clone().into_iter() {
                 tracing::debug!("event {}", &name);
-                let targets = event::make_targets(
-                    &name, ev.function, ev.mutation, ev.stepfunction, fqn, ev.functions
-                );
-                let ev = Event::new(&name, ev.rule_name, &ev.producer, ev.filter,
-                                    ev.pattern, targets, ev.sandboxes, config);
+                let targets = event::make_targets(namespace, &name, &ev, fqn);
+                let ev = Event::new(&name, &ev, targets, config);
                 h.insert(name, ev);
             }
         }
@@ -387,7 +384,7 @@ fn make(
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
         functions: functions,
-        events: make_events(&spec, &fqn, &config),
+        events: make_events(&namespace, &spec, &fqn, &config),
         schedules: schedule::make_all(&infra_dir),
         routes: make_routes(&spec, &config),
         queues: make_queues(&spec, &config),

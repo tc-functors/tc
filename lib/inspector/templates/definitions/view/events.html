@@ -3,6 +3,8 @@
   <h1>Events</h1>
   <div class="mermaid">
     graph TD
-    Start --> Stop
+    {% for item in items %}
+    {{ item }}
+    {% endfor %}
   </div>
 </div>

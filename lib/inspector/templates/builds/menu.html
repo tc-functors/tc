@@ -1,0 +1,34 @@
+<div class="grid">
+  <div class="x">
+    <div class="x4">
+
+      <details class="dropdown">
+	<summary role="button" class="outline">
+	  <i class="fas fa-list"></i> List
+	</summary>
+	<ul>
+	  <li><a href="/builds/layers">Layers</a></li>
+	  <li><a href="/builds/images">Images</a></li>
+	  <li><a href="/builds/extensions">Extensions</a></li>
+	</ul>
+      </details>
+    </div>
+
+  </div>
+
+  <div class="xg" align="right">
+
+    <button class="btn"
+	    hx-post="/builds/sync"
+	    hx-indicator="#status"
+	    hx-target="#functors"
+	    hx-swap="outerHtml">
+      <i class="ph ph-arrow-clockwise"></i> Sync with Provider
+    </button>
+
+  </div>
+
+
+</div>
+
+<br/>

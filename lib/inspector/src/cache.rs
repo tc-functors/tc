@@ -135,25 +135,15 @@ pub async fn find_routes(root: &str, namespace: &str) -> HashMap<String, Route> 
 }
 
 pub async fn find_all_events() -> HashMap<String, Event> {
-    // let topologies = find_all_topologies().await;
-    // let mut h: HashMap<String, Event> = HashMap::new();
-    // for (_, node) in topologies {
-
-    // }
-
-    // } else {
-    //     match rt {
-    //         Some(t) => {
-    //             let node = t.nodes.get(namespace);
-    //             match node {
-    //                 Some(n) => n.events.clone(),
-    //                 None => HashMap::new()
-    //             }
-    //         },
-    //         None => HashMap::new()
-    //     }
-    // }
-    HashMap::new()
+    let topologies = find_all_topologies().await;
+    let mut h: HashMap<String, Event> = HashMap::new();
+    for (_, node) in topologies {
+        h.extend(node.events);
+        for (_, n) in node.nodes {
+            h.extend(n.events);
+        }
+    }
+    h
 }
 
 
@@ -232,4 +222,15 @@ pub async fn find_resolved_layers() -> Vec<Layer> {
     } else {
         vec![]
     }
+}
+
+pub async fn find_root_namespaces() -> Vec<String> {
+    let ts = find_all_topologies().await;
+    let mut xs: Vec<String> = vec![];
+    for (_, t) in ts {
+        if !t.events.is_empty() {
+            xs.push(t.namespace)
+        }
+    }
+    xs
 }

@@ -4,14 +4,14 @@ use axum::{
 };
 
 #[derive(Template)]
-#[template(path = "releases/view/changelog.html")]
+#[template(path = "releases/list/changelog.html")]
 struct ChangelogTemplate {
     items: Vec<String>
 }
 
 pub async fn list() -> impl IntoResponse {
-    let t = ChangelogTemplate {
+    let temp = ChangelogTemplate {
         items: vec![]
     };
-    Html(t.render().unwrap())
+    Html(temp.render().unwrap())
 }

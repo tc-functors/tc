@@ -36,40 +36,6 @@ pub async fn definitions() -> impl IntoResponse {
 }
 
 #[derive(Template)]
-#[template(path = "builds/index.html")]
-struct BuildsTemplate { context: String }
-
-pub async fn builds() -> impl IntoResponse {
-    let template = BuildsTemplate {
-        context: "builds".to_string()
-    };
-    HtmlTemplate(template)
-}
-
-
-#[derive(Template)]
-#[template(path = "deployments/index.html")]
-struct DeploymentsTemplate { context: String }
-
-pub async fn deployments() -> impl IntoResponse {
-    let template = DeploymentsTemplate {
-        context: "deployments".to_string()
-    };
-    HtmlTemplate(template)
-}
-
-#[derive(Template)]
-#[template(path = "releases/index.html")]
-struct ReleasesTemplate { context: String }
-
-pub async fn releases() -> impl IntoResponse {
-    let template = ReleasesTemplate {
-        context: "releases".to_string()
-    };
-    HtmlTemplate(template)
-}
-
-#[derive(Template)]
 #[template(path = "definitions/visual.html")]
 struct VisualTemplate {
     root: String,

@@ -1,28 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="grid">
-
-<div align="left">
-
-    <button class="custom-button primary"
-	    hx-post="/releases/changelog">
-      <i class="ph ph-git-diff"></i> Changelog
-    </button>
-
-    <button class="custom-button primary"
-	    hx-post="/releases/freeze">
-      <i class="ph ph-pause"></i> Freeze Test Environment
-    </button>
-
-    <button class="custom-button primary"
-	    hx-post="/releases/promote">
-      <i class="ph ph-caret-up"></i> Promote
-    </button>
-
-
-</div>
-</div>
+{% include "menu.html" %}
 
 <br/>
 <div id="functors"
@@ -36,7 +15,6 @@
     <br/>
     <br/>
     <br/>
-    <progress />
   </div>
   <div></div>
   </div>
