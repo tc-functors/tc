@@ -449,7 +449,14 @@ impl Function {
         let res = self.clone().find_arn().await;
         let arn = match res {
             Some(arn) => {
-                self.clone().update_code(&arn).await.unwrap();
+                let r = self.clone().update_code(&arn).await;
+                match r {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!("Failed to update {}", &arn);
+                        panic!("{:?}", e);
+                    }
+                }
                 self.clone().update_function(&arn).await.unwrap()
             }
             None => self.create().await.unwrap(),
