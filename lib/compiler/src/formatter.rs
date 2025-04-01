@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use super::Topology;
 use tabled::{Tabled, Table, Style};
 
-#[derive(Tabled, Clone, Debug)]
+#[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct TopologyCount {
     pub name: String,
+    pub kind: String,
     pub nodes: usize,
     pub functions: usize,
     pub events: usize,
@@ -18,7 +19,7 @@ impl TopologyCount {
 
     pub fn new(topology: &Topology) -> TopologyCount {
 
-       let Topology { namespace, functions, mutations, events, queues, routes, .. } = topology;
+       let Topology { namespace, kind, functions, mutations, events, queues, routes, .. } = topology;
         let mut f: usize = functions.len();
         let mut m: usize = match mutations.get("default") {
             Some(mx) => mx.resolvers.len(),
@@ -44,6 +45,7 @@ impl TopologyCount {
 
         TopologyCount {
             name: namespace.to_string(),
+            kind: kind.to_str(),
             nodes: nodes.len(),
             functions: f,
             events: e,
@@ -61,6 +63,8 @@ pub fn print_topologies(topologies: HashMap<String, Topology>) {
         let c = TopologyCount::new(&t);
         xs.push(c)
     }
+    xs.sort_by(|a, b| b.name.cmp(&a.name));
+    xs.reverse();
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
 }

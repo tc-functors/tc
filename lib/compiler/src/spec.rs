@@ -540,6 +540,18 @@ pub enum TopologyKind {
     Graphql
 }
 
+impl TopologyKind {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            TopologyKind::StepFunction => s!("stepfn"),
+            TopologyKind::Function => s!("function"),
+            TopologyKind::Graphql => s!("graphql"),
+            TopologyKind::Evented => s!("evented")
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TopologySpec {
     #[serde(default)]
