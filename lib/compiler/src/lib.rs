@@ -40,9 +40,7 @@ use kit::*;
 
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
-    let spec = TopologySpec::new(&f);
-    let given_root_dirs = &spec.nodes.dirs;
-    !given_root_dirs.is_empty()
+    topology::is_root_topology(&f)
 }
 
 pub fn compile(dir: &str, recursive: bool) -> Topology {

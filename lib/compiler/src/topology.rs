@@ -72,15 +72,33 @@ pub fn is_topology_dir(dir: &str) -> bool {
 fn parent_topology_file(dir: &str) -> Option<String> {
     let paths = vec![
         u::absolutize(dir, "../topology.yml"),
-        s!("../topology.yml")
+        u::absolutize(dir, "../../topology.yml"),
+        u::absolutize(dir, "../../../topology.yml"),
+        u::absolutize(dir, "../../../../topology.yml"),
+        s!("../topology.yml"),
+        s!("../../topology.yml"),
+        s!("../../../topology.yml"),
+        s!("../../../../topology.yml"),
     ];
     u::any_path(paths)
+}
+
+pub fn is_root_topology(spec_file: &str) -> bool {
+    let spec = TopologySpec::new(spec_file);
+    let given_root_dirs = &spec.nodes.dirs;
+    !given_root_dirs.is_empty()
 }
 
 pub fn is_relative_topology_dir(dir: &str) -> bool {
     let topology_file = parent_topology_file(dir);
     match topology_file {
-        Some(file) => Path::new(&file).exists(),
+        Some(file) => {
+            if is_root_topology(&file) {
+                false
+            } else {
+                Path::new(&file).exists()
+            }
+        }
         None => false,
     }
 }
@@ -94,7 +112,10 @@ fn is_standalone_function_dir(dir: &str) -> bool {
         Some(file) => file,
         None => u::empty(),
     };
-    u::path_exists(dir, function_file) && !u::path_exists(dir, topology_file) && !u::file_exists(&parent_file)
+    if is_root_topology(&parent_file) {
+        return true
+    } else {
+        u::file_exists(function_file) && !u::file_exists(topology_file) && !u::file_exists(&parent_file)
         || u::file_exists("handler.rb")
         || u::file_exists("handler.py")
         || u::file_exists("main.go")
@@ -103,6 +124,9 @@ fn is_standalone_function_dir(dir: &str) -> bool {
         || u::file_exists("handler.clj")
         || u::file_exists("handler.js")
         || u::file_exists("main.janet")
+    }
+
+
 }
 
 fn is_singular_function_dir() -> bool {
@@ -472,6 +496,9 @@ impl Topology {
                 let functions = discover_functions(dir, &infra_dir, &spec);
                 make(dir, dir, &spec, functions, nodes)
             }
+
+        } else if is_relative_topology_dir(dir) {
+            make_relative(dir)
 
         } else if is_standalone_function_dir(dir) {
             make_standalone(dir)
