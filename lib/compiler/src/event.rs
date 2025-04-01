@@ -59,9 +59,15 @@ impl Target {
 
     ) -> Target {
 
+        let abbr_id = if id.chars().count() >= 64 {
+            format!("{}-{}", kind.to_str(), &kit::abbreviate(id, "-"))
+        } else {
+            id.to_string()
+        };
+
         Target {
             kind: kind,
-            id: s!(id),
+            id: abbr_id,
             name: s!(name),
             producer_ns: s!(producer_ns),
             consumer_ns: s!(consumer_ns),
