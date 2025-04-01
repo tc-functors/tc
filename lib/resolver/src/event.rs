@@ -90,7 +90,7 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
             let id = get_graphql_arn_id(env, &name).await;
             match id {
                 Some(gid) => env.graphql_arn(&gid),
-                None => panic!("Can't find graphql id"),
+                None => String::from("none"),
             }
         },
         TargetKind::StepFunction => env.sfn_arn(&target_name)

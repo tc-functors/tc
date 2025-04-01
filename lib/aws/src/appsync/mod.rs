@@ -410,6 +410,7 @@ pub async fn create_types(env: &Env, api_id: &str, types: HashMap<String, String
 }
 
 pub async fn update_tags(client: &Client, graphql_arn: &str, tags: HashMap<String, String>) {
+    println!("Updating tags");
     let _ = client
         .tag_resource()
         .resource_arn(graphql_arn)
