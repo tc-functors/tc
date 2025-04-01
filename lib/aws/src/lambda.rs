@@ -126,6 +126,8 @@ pub fn make_runtime(lang: &str) -> Runtime {
         "python3.12"  => Runtime::Python312,
         "provided"    => Runtime::Provided,
         "providedal2" => Runtime::Providedal2,
+        "node22"      => Runtime::Nodejs22x,
+        "node20"      => Runtime::Nodejs20x,
         "janet"       => "provided.al2023".into(),
         "rust"        => "provided.al2023".into(),
         "ruby3.2"     => "ruby3.2".into(),

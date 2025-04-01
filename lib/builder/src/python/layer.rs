@@ -195,38 +195,23 @@ pub fn build(
     deps_pre: Vec<String>,
     deps_post: Vec<String>,
 ) -> String {
-    let bar = kit::progress();
-    let prefix = format!("Building {}", name.blue());
-    bar.set_prefix(prefix);
-
     sh("rm -f deps.zip", dir);
 
     if u::path_exists(dir, "pyproject.toml") {
-        bar.inc(10);
         gen_requirements_txt(dir, runtime);
     }
 
-    bar.inc(30);
     gen_dockerfile(dir, runtime, deps_pre, deps_post);
-
     build_with_docker(dir);
-
-    bar.inc(50);
-
     copy_from_docker(dir);
-    bar.inc(70);
     sh("rm -f Dockerfile", dir);
 
     if !u::path_exists(dir, "function.json") {
         copy(dir);
     }
-    bar.inc(80);
     zip(dir, "deps.zip");
-
-    bar.inc(100);
     let size = format!("({})", size_of(dir, "deps.zip").green());
-    bar.set_message(size);
-    bar.finish();
+    println!("{} ({}", name, size);
     if u::path_exists(dir, "pyproject.toml") {
         sh("rm -f requirements.txt", dir);
     }

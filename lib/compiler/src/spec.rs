@@ -15,6 +15,7 @@ pub enum Lang {
     Ruby,
     Go,
     Rust,
+    Node,
     Clojure
 }
 
@@ -25,6 +26,7 @@ impl FromStr for Lang {
         match s {
             "python3.10" | "python3.11" | "python3.9" | "python3.12" => Ok(Lang::Python),
             "ruby3.2" | "ruby" | "ruby32"             => Ok(Lang::Ruby),
+            "node22" | "node20" | "node18"            => Ok(Lang::Node),
             "rust"                                    => Ok(Lang::Rust),
             _                                         => Ok(Lang::Python)
         }
@@ -49,7 +51,11 @@ pub enum LangRuntime {
     #[serde(alias="java21")]
     Java21,
     #[serde(alias="rust")]
-    Rust
+    Rust,
+    #[serde(alias="node22")]
+    Node22,
+    #[serde(alias="node20")]
+    Node20,
 }
 
 impl FromStr for LangRuntime {
@@ -65,6 +71,8 @@ impl FromStr for LangRuntime {
             "ruby3.2" | "ruby" | "ruby32" => Ok(LangRuntime::Ruby32),
             "clojure" | "java21"          => Ok(LangRuntime::Java21),
             "rust"                        => Ok(LangRuntime::Rust),
+            "node22"                      => Ok(LangRuntime::Node22),
+            "node20"                      => Ok(LangRuntime::Node20),
             _                             => Ok(LangRuntime::Python311)
         }
     }
@@ -81,6 +89,8 @@ impl LangRuntime {
             LangRuntime::Python39  => String::from("python3.9"),
             LangRuntime::Ruby32    => String::from("ruby3.2"),
             LangRuntime::Java21    => String::from("java21"),
+            LangRuntime::Node22    => String::from("node22"),
+            LangRuntime::Node20    => String::from("node20"),
             LangRuntime::Rust      => String::from("rust"),
         }
     }
@@ -95,6 +105,8 @@ impl LangRuntime {
             LangRuntime::Ruby32    => Lang::Ruby,
             LangRuntime::Java21    => Lang::Clojure,
             LangRuntime::Rust      => Lang::Rust,
+            LangRuntime::Node20    => Lang::Node,
+            LangRuntime::Node22    => Lang::Node,
         }
     }
 }
