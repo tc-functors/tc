@@ -84,7 +84,9 @@ async fn create_event(env: &Env, event: &Event) {
 
 pub async fn create(env: &Env, events: &HashMap<String, Event>) {
     for (_, event) in events {
-        create_event(env, event).await;
+        if !&event.skip {
+            create_event(env, event).await;
+        }
     }
 }
 
@@ -100,6 +102,8 @@ pub async fn delete_event(env: &Env, event: Event) {
 
 pub async fn delete(env: &Env, events: &HashMap<String, Event>) {
     for (_, event) in events {
-        delete_event(env, event.clone()).await;
+        if !&event.skip {
+            delete_event(env, event.clone()).await;
+        }
     }
 }

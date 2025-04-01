@@ -230,6 +230,7 @@ impl EventPattern {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Event {
+    pub skip: bool,
     pub name: String,
     pub rule_name: String,
     pub bus: String,
@@ -245,7 +246,8 @@ impl Event {
         event_name: &str,
         consumer_spec: &Consumes,
         targets: Vec<Target>,
-        config: &Config
+        config: &Config,
+        skip: bool
     ) -> Event {
 
         let Consumes {
@@ -276,6 +278,7 @@ impl Event {
 
 
         Event {
+            skip: skip,
             name: s!(event_name),
             rule_name: rule_name,
             bus: bus.clone(),
