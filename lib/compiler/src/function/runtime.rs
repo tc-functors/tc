@@ -69,14 +69,24 @@ fn consolidate_layers(
 }
 
 pub fn infer_lang(dir: &str) -> LangRuntime {
-    if u::path_exists(dir, "handler.py") || u::path_exists(dir, "pyproject.toml") {
+    if u::path_exists(dir, "handler.py") ||
+        u::path_exists(dir, "pyproject.toml") {
         LangRuntime::Python310
+
     } else if u::path_exists(dir, "Cargo.toml") {
         LangRuntime::Rust
-    } else if u::path_exists(dir, "Gemfile") || u::path_exists(dir, "handler.rb") {
+
+    } else if u::path_exists(dir, "handler.js") ||
+        u::path_exists(dir, "package.json") {
+        LangRuntime::Node22
+
+    } else if u::path_exists(dir, "Gemfile") ||
+        u::path_exists(dir, "handler.rb") {
         LangRuntime::Ruby32
+
     } else if u::path_exists(dir, "deps.edn") {
         LangRuntime::Java21
+
     } else {
         LangRuntime::Python310
     }

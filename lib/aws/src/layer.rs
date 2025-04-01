@@ -113,6 +113,8 @@ pub fn make_runtimes(lang: &str) -> Vec<Runtime> {
         "janet"       => vec!["provided.al2023".into()],
         "rust"        => vec!["provided.al2023".into()],
         "ruby3.2"     => vec!["ruby3.2".into()],
+        "node22"      => vec![Runtime::Nodejs22x, Runtime::Nodejs20x],
+        "node20"      => vec![Runtime::Nodejs20x, Runtime::Nodejs20x],
         _             => vec![Runtime::Provided],
     }
 }

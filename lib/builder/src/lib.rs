@@ -1,6 +1,7 @@
 mod python;
 mod ruby;
 mod rust;
+mod node;
 
 use std::str::FromStr;
 use compiler::Layer;
@@ -110,8 +111,9 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
             Lang::Python  => python::build(dir, runtime,  &name, spec),
             Lang::Rust    => rust::build(dir, runtime, &name, spec),
+            Lang::Node    => node::build(dir, runtime, &name, spec),
             Lang::Clojure => todo!(),
-            Lang::Go      => todo!()
+            Lang::Go      => todo!(),
         };
         vec![out]
     } else {
@@ -174,6 +176,7 @@ pub fn clean_lang(dir: &str) {
         Lang::Ruby    => ruby::clean(dir),
         Lang::Python  => python::clean(dir),
         Lang::Rust    => rust::clean(dir),
+        Lang::Node    => node::clean(dir),
         Lang::Clojure => todo!(),
         Lang::Go      => todo!()
     }
