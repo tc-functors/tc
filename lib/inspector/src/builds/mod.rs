@@ -16,10 +16,10 @@ pub fn page_routes() -> Router {
 
 pub fn list_routes() -> Router {
     Router::new()
-        .route("/builds/hx/list/layers", get(layers::list))
+        .route("/hx/builds/list/layers", get(layers::list))
 }
 
 pub fn post_routes() -> Router {
     Router::new()
-        .route("/builds/sync", post(layers::sync))
+        .route("/hx/builds/sync", post(layers::sync))
 }

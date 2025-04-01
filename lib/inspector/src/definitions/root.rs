@@ -11,6 +11,7 @@ use crate::cache;
 struct Functor {
     root: String,
     namespace: String,
+    kind: String,
     functions: usize,
     nodes: usize,
     events: usize,
@@ -28,6 +29,7 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
         let f = Functor {
             root: topology.namespace.clone(),
             namespace: topology.namespace.clone(),
+            kind: t.kind,
             functions: t.functions,
             nodes: t.nodes,
             events: t.events,

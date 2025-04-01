@@ -6,6 +6,7 @@
       <td></td>
       <td>Namespace</td>
       <td>Version</td>
+      <td>Kind</td>
       <td>Nodes</td>
       <td>Functions</td>
       <td>Events</td>
@@ -20,6 +21,7 @@
       <td>{{loop.index}}</td>
       <td><a href="/definition/{{item.namespace}}">{{item.namespace}}<a/></td>
       <td>{{item.version}}</td>
+      <td>{{item.kind}}</td>
       <td>
 	{% if item.nodes != 0 %}
 	<a href="/definitions/{{item.namespace}}/nodes">{{item.nodes}}</a>
@@ -70,7 +72,7 @@
   <br/>
   <br/>
     <button class="custom-button primary"
-	    hx-post="/definitions/compile"
+	    hx-post="/hx/def/compile"
 	    hx-indicator="#status"
 	    hx-target="#functors"
 	    hx-swap="outerHtml">

@@ -15,10 +15,10 @@ pub fn page_routes() -> Router {
 
 pub fn list_routes() -> Router {
     Router::new()
-        .route("/deployments/list", get(diff::list))
+        .route("/hx/deployments/list", get(diff::list))
 }
 
 pub fn diff_routes() -> Router {
     Router::new()
-        .route("/deployments/diff", get(diff::list))
+        .route("/hx/deployments/diff", get(diff::list))
 }

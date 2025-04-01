@@ -1,5 +1,6 @@
 use askama::Template;
 use axum::{
+    extract::Path,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
@@ -23,11 +24,23 @@ where
 
 #[derive(Template)]
 #[template(path = "releases/index.html")]
-struct ReleasesTemplate { context: String }
+struct IndexTemplate { context: String }
 
-pub async fn releases() -> impl IntoResponse {
-    let template = ReleasesTemplate {
+pub async fn index() -> impl IntoResponse {
+    let template = IndexTemplate {
         context: "releases".to_string()
+    };
+    HtmlTemplate(template)
+}
+
+#[derive(Template)]
+#[template(path = "releases/list.html")]
+struct ListTemplate { context: String, entity: String }
+
+pub async fn list(Path(entity): Path<String>) -> impl IntoResponse {
+    let template = ListTemplate {
+        context: "releases".to_string(),
+        entity: entity
     };
     HtmlTemplate(template)
 }

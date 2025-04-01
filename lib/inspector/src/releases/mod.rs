@@ -9,10 +9,11 @@ use axum::{
 
 pub fn page_routes() -> Router {
     Router::new()
-        .route("/releases", get(page::releases))
+        .route("/releases", get(page::index))
+        .route("/releases/list/{:entity}", get(page::list))
 }
 
 pub fn list_routes() -> Router {
     Router::new()
-        .route("/releases/list/changelog", get(changelog::list))
+        .route("/hx/releases/list/changelog", get(changelog::list))
 }

@@ -18,6 +18,7 @@ pub async fn init() {
         .merge(definitions::list_routes())
         .merge(definitions::visualize_routes())
         .merge(definitions::view_routes())
+        .merge(definitions::post_routes())
 
         .merge(builds::page_routes())
         .merge(builds::list_routes())

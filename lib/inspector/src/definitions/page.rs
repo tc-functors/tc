@@ -63,7 +63,7 @@ struct ListTemplate {
     context: String,
 }
 
-pub async fn list_root_definitions(Path((root, entity)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn list_root(Path((root, entity)): Path<(String, String)>) -> impl IntoResponse {
     HtmlTemplate(ListTemplate {
         root: root.clone(),
         namespace: root,
@@ -72,7 +72,7 @@ pub async fn list_root_definitions(Path((root, entity)): Path<(String, String)>)
     })
 }
 
-pub async fn list_ns_definitions(Path((root, namespace, entity)): Path<(String, String, String)>) -> impl IntoResponse {
+pub async fn list_ns(Path((root, namespace, entity)): Path<(String, String, String)>) -> impl IntoResponse {
     HtmlTemplate(ListTemplate {
         root: root,
         namespace: namespace,
@@ -81,7 +81,7 @@ pub async fn list_ns_definitions(Path((root, namespace, entity)): Path<(String, 
     })
 }
 
-pub async fn list_all_definitions(Path(entity): Path<String>) -> impl IntoResponse {
+pub async fn list_all(Path(entity): Path<String>) -> impl IntoResponse {
     HtmlTemplate(ListTemplate {
         root: String::from("all"),
         namespace: String::from("all"),
@@ -101,7 +101,7 @@ struct ViewTemplate {
     context: String,
 }
 
-pub async fn view_definition(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn view_namespace(Path(id): Path<String>) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {
         id: id.clone(),
         root: id.clone(),
@@ -111,7 +111,7 @@ pub async fn view_definition(Path(id): Path<String>) -> impl IntoResponse {
     })
 }
 
-pub async fn view_entity_definition(
+pub async fn view_entity(
     Path((root, namespace, entity, id)): Path<(String, String, String, String)>
 ) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {
@@ -124,7 +124,7 @@ pub async fn view_entity_definition(
 }
 
 
-pub async fn view_root_definition(Path(root): Path<String>) -> impl IntoResponse {
+pub async fn view_root(Path(root): Path<String>) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {
         id: root.clone(),
         root: root.clone(),

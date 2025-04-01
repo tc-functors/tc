@@ -7,9 +7,9 @@
 	  <i class="fas fa-list"></i> List
 	</summary>
 	<ul>
-	  <li><a href="/builds/layers">Layers</a></li>
-	  <li><a href="/builds/images">Images</a></li>
-	  <li><a href="/builds/extensions">Extensions</a></li>
+	  <li><a href="/builds/list/layers">Layers</a></li>
+	  <li><a href="/builds/list/images">Images</a></li>
+	  <li><a href="/builds/list/extensions">Extensions</a></li>
 	</ul>
       </details>
     </div>
@@ -19,7 +19,7 @@
   <div class="xg" align="right">
 
     <button class="btn"
-	    hx-post="/builds/sync"
+	    hx-post="/hx/builds/sync"
 	    hx-indicator="#status"
 	    hx-target="#functors"
 	    hx-swap="outerHtml">

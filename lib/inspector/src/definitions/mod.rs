@@ -20,67 +20,72 @@ pub fn page_routes() -> Router {
                get(page::definitions))
         .route("/definitions/visualize/{:entity}",
                get(page::visualize))
-        .route("/definition/{:root}",
-               get(page::view_root_definition))
-        .route("/definition/{:root}/{:namespace}/{:entity}/{:id}",
-               get(page::view_entity_definition))
-        .route("/definitions/{:entity}/all",
-               get(page::list_all_definitions))
-        .route("/definitions/{:root}/{:entity}",
-               get(page::list_root_definitions))
-        .route("/definitions/{:root}/{:namespace}/{:entity}",
-               get(page::list_ns_definitions))
+
+        .route("/definition/view/{:root}",
+               get(page::view_root))
+        .route("/definition/view/{:root}/{:namespace}/{:entity}/{:id}",
+               get(page::view_entity))
+
+        .route("/definitions/list",
+               get(page::definitions))
+
+        .route("/definitions/list/{:entity}/all",
+               get(page::list_all))
+        .route("/definitions/list/{:root}/{:entity}",
+               get(page::list_root))
+        .route("/definitions/list/{:root}/{:namespace}/{:entity}",
+               get(page::list_ns))
 }
 
 // fragments
 
 pub fn list_routes() -> Router {
     Router::new()
-        .route("/definitions/list",
+        .route("/hx/def/list",
                get(root::list_all))
-        .route("/definitions/all/all/functions/list",
+        .route("/hx/def/list/all/all/functions",
                get(function::list_all))
-        .route("/definitions/all/all/nodes/list",
+        .route("/hx/def/list/all/all/nodes",
                get(node::list_all))
-        .route("/definitions/all/all/events/list",
+        .route("/hx/def/list/all/all/events",
                get(event::list_all))
-        .route("/definitions/all/all/routes/list",
+        .route("/hx/def/list/all/all/routes",
                get(route::list_all))
-        .route("/definitions/all/all/mutations/list",
+        .route("/hx/def/list/all/all/mutations",
                get(mutation::list_all))
-        .route("/definitions/all/all/permissions/list",
+        .route("/hx/def/list/all/all/permissions",
                get(permission::list_all))
 
-        .route("/definitions/{:root}/{:namespace}/functions/list",
+        .route("/hx/def/list/{:root}/{:namespace}/functions",
                get(function::list))
-        .route("/definitions/{:root}/{:namespace}/nodes/list",
+        .route("/hx/def/list/{:root}/{:namespace}/nodes",
                get(node::list))
-        .route("/definitions/{:root}/{:namespace}/events/list",
+        .route("/hx/def/list/{:root}/{:namespace}/events",
                get(event::list))
-        .route("/definitions/{:root}/{:namespace}/mutations/list",
+        .route("/hx/def/list/{:root}/{:namespace}/mutations",
                get(mutation::list))
-        .route("/definitions/{:root}/{:namespace}/routes/list",
+        .route("/hx/def/list/{:root}/{:namespace}/routes",
                get(route::list))
 }
 
 pub fn visualize_routes() -> Router {
     Router::new()
-        .route("/definitions/visualize/{:entity}/load",
+        .route("/hx/def/visualize/{:entity}/load",
                get(event::visualize))
 }
 
 pub fn view_routes() -> Router {
     Router::new()
-        .route("/definition/{:root}/{:namespace}/function/{:id}/view",
+        .route("/hx/def/{:root}/{:namespace}/function/{:id}/view",
                get(function::view))
-        .route("/definition/{:root}/{:namespace}/node/{:id}/view",
+        .route("/hx/def/{:root}/{:namespace}/node/{:id}/view",
                get(node::view))
 }
 
 
 pub fn post_routes() -> Router {
     Router::new()
-        .route("/definitions/compile",
+        .route("/hx/def/compile",
                post(root::compile))
 
 }
