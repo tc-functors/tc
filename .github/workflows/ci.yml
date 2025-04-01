@@ -40,8 +40,6 @@ jobs:
 
       - name: Setup Cache
         uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: "v0-rust"
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
