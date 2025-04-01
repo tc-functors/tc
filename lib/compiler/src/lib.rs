@@ -16,7 +16,6 @@ mod log;
 pub mod formatter;
 mod tag;
 
-use colored::Colorize;
 use walkdir::WalkDir;
 
 pub use function::layer::Layer;

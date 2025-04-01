@@ -310,11 +310,12 @@ fn make_events(namespace: &str, spec: &TopologySpec, fqn: &str, config: &Config)
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
+        let skip = evs.doc_only;
         if let Some(c) = &evs.consumes {
             for (name, ev) in c.clone().into_iter() {
                 tracing::debug!("event {}", &name);
                 let targets = event::make_targets(namespace, &name, &ev, fqn);
-                let ev = Event::new(&name, &ev, targets, config);
+                let ev = Event::new(&name, &ev, targets, config, skip);
                 h.insert(name, ev);
             }
         }
@@ -360,12 +361,25 @@ fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Muta
     h
 }
 
-fn find_kind(given_kind: &Option<TopologyKind>, flow: &Option<Flow>) -> TopologyKind {
+fn find_kind(
+    given_kind: &Option<TopologyKind>,
+    flow: &Option<Flow>,
+    functions: &HashMap<String, Function>,
+    mutations: &HashMap<String, Mutation>
+) -> TopologyKind {
     match given_kind {
         Some(k) => k.clone(),
         None => match flow {
             Some(_) => TopologyKind::StepFunction,
-            None => TopologyKind::Function
+            None => {
+                if !mutations.is_empty() {
+                    return TopologyKind::Graphql
+                } else if !functions.is_empty() {
+                    return TopologyKind::Function
+                } else {
+                    return TopologyKind::Evented
+                }
+            }
         }
     }
 }
@@ -390,12 +404,13 @@ fn make(
     let version = version::current_semver(&namespace);
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
+    let mutations = make_mutations(&spec, &config);
 
     Topology {
         namespace: namespace.clone(),
         fqn: fqn.clone(),
         env: template::profile(),
-        kind: find_kind(&spec.kind, &flow),
+        kind: find_kind(&spec.kind, &flow, &functions, &mutations),
         version: version,
         infra: u::gdir(&infra_dir),
         sandbox: template::sandbox(),
@@ -407,7 +422,7 @@ fn make(
         schedules: schedule::make_all(&infra_dir),
         routes: make_routes(&spec, &config),
         queues: make_queues(&spec, &config),
-        mutations: make_mutations(&spec, &config),
+        mutations: mutations,
         tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow
