@@ -8,6 +8,9 @@ pub mod topology;
 use aws::Env;
 use colored::Colorize;
 use kit as u;
+use topology::Record;
+
+use tabled::{Style, Table};
 
 async fn list_sfn(env: &Env) {
     sfn::list(&env).await
@@ -27,10 +30,24 @@ async fn list_layers(env: &Env, dir: &str, sandbox: Option<String>) {
     layer::list(&env, fns).await
 }
 
-async fn list_topologies(env: &Env, sandbox: Option<String>, format: &str) {
+async fn list_topologies(env: &Env, sandbox: Option<String>) -> Vec<Record> {
     let sandbox = u::maybe_string(sandbox, "stable");
     let topologies = compiler::compile_root(&u::pwd());
-    topology::list(&env, &sandbox, &topologies, format).await
+    topology::list(&env, &sandbox, &topologies).await
+}
+
+pub fn pprint_topologies(records: Vec<Record>, format: &str) {
+    match format {
+        "table" => {
+            let table = Table::new(records).with(Style::psql()).to_string();
+            println!("{}", table);
+        }
+        "json" => {
+            let s = u::pretty_json(records);
+            println!("{}", &s);
+        }
+        _ => (),
+    }
 }
 
 async fn list_events(env: &Env, name: &str) {
@@ -68,7 +85,8 @@ pub async fn list_component(
     let format = u::maybe_string(format, "table");
 
     if &component == "topologies" {
-        list_topologies(&env, sandbox, &format).await;
+        let records = list_topologies(&env, sandbox).await;
+        pprint_topologies(records, &format);
     } else {
         let topology_name = compiler::topology_name(&dir);
         let sbox = resolver::maybe_sandbox(sandbox.clone());
