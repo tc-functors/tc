@@ -6,7 +6,6 @@ pub mod dynamo;
 pub mod efs;
 pub mod ecs;
 pub mod eventbridge;
-pub mod gateway;
 pub mod gatewayv2;
 pub mod iam;
 pub mod lambda;

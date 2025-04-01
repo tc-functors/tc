@@ -55,6 +55,7 @@ async fn create_flow(env: &Env, topology: &Topology) {
         mutations,
         queues,
         logs,
+        tags,
         ..
     } = topology;
 
@@ -65,7 +66,7 @@ async fn create_flow(env: &Env, topology: &Topology) {
     }
     match flow {
         Some(f) => {
-            flow::create(env, f.clone()).await;
+            flow::create(env, tags, f.clone()).await;
             let sfn_arn = &env.sfn_arn(&fqn);
             flow::enable_logs(&env, sfn_arn, logs.clone()).await;
             //route::create(&env, sfn_arn, &f.default_role, routes.clone()).await;
@@ -77,7 +78,7 @@ async fn create_flow(env: &Env, topology: &Topology) {
         }
     }
 
-    mutation::create(&env, mutations).await;
+    mutation::create(&env, mutations, &tags).await;
     queue::create(&env, queues).await;
     event::create(&env, events).await;
 }
@@ -89,11 +90,12 @@ async fn create_function(env: &Env, topology: &Topology) {
         events,
         queues,
         mutations,
+        tags,
         ..
     } = topology;
     role::create(&env, &topology.roles()).await;
     function::create(&env, functions.clone()).await;
-    mutation::create(&env, mutations).await;
+    mutation::create(&env, mutations, tags).await;
     queue::create(&env, queues).await;
     event::create(&env, events).await;
 
@@ -135,6 +137,7 @@ pub async fn update(env: &Env, topology: &Topology) {
         sandbox,
         events,
         queues,
+        tags,
         ..
     } = topology;
 
@@ -148,10 +151,10 @@ pub async fn update(env: &Env, topology: &Topology) {
 
     function::update_code(&env, functions.clone()).await;
     match flow {
-        Some(f) => flow::create(&env, f.clone()).await,
+        Some(f) => flow::create(&env, tags, f.clone()).await,
         None => (),
     }
-    mutation::create(&env, &mutations).await;
+    mutation::create(&env, &mutations, &tags).await;
     event::create(&env, &events).await;
     queue::create(&env, &queues).await;
 }
@@ -169,6 +172,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         mutations,
         schedules,
         queues,
+        tags,
         ..
     } = topology.clone();
 
@@ -217,16 +221,16 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         "tags" => {
             function::update_tags(&env, functions).await;
             match flow {
-                Some(f) => flow::update_tags(&env, &f.name, f.tags).await,
+                Some(f) => flow::update_tags(&env, &f.name, tags).await,
                 None => println!("No flow defined, skipping"),
             }
         }
         "flow" => match flow {
-            Some(f) => flow::create(&env, f).await,
+            Some(f) => flow::create(&env, &tags, f).await,
             None => println!("No flow defined, skipping"),
         },
 
-        "mutations" => mutation::create(&env, &mutations).await,
+        "mutations" => mutation::create(&env, &mutations, &tags).await,
 
         "roles" => role::create(&env, &topology.roles()).await,
 
@@ -238,7 +242,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
             role::create(&env, &topology.roles()).await;
             function::create(&env, functions.clone()).await;
             match flow {
-                Some(f) => flow::create(&env, f).await,
+                Some(f) => flow::create(&env, &tags, f).await,
                 None => (),
             }
             function::update_vars(&env, functions.clone()).await;

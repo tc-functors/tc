@@ -10,7 +10,7 @@ async fn add_permission(env: &Env, statement_id: &str, authorizer_arn: &str) {
     let _ = lambda::add_permission_basic(client, authorizer_arn, principal, statement_id).await;
 }
 
-async fn create_mutation(env: &Env, mutation: Mutation) {
+async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, String>) {
     let Mutation {
         api_name,
         authorizer,
@@ -21,7 +21,7 @@ async fn create_mutation(env: &Env, mutation: Mutation) {
     } = mutation;
     let authorizer_arn = env.lambda_arn(&authorizer);
     let client = appsync::make_client(env).await;
-    let (api_id, _) = appsync::create_or_update_api(&client, &api_name, &authorizer_arn).await;
+    let (api_id, _) = appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
 
     add_permission(env, &api_name, &authorizer_arn).await;
     appsync::create_types(env, &api_id, types).await;
@@ -44,12 +44,17 @@ async fn create_mutation(env: &Env, mutation: Mutation) {
             .await;
         appsync::find_or_create_resolver(&client, &api_id, &field_name, datasource_name).await;
     }
+    appsync::update_tags(&client, &env.graphql_arn(&api_id), tags.clone()).await;
 }
 
-pub async fn create(env: &Env, mutations: &HashMap<String, Mutation>) {
+pub async fn create(
+    env: &Env,
+    mutations: &HashMap<String, Mutation>,
+    tags: &HashMap<String, String>
+) {
 
     for (_, mutation) in mutations {
-        create_mutation(env, mutation.clone()).await;
+        create_mutation(env, mutation.clone(), tags.clone()).await;
     }
 }
 

@@ -7,7 +7,7 @@ use aws::sfn::StateMachine;
 use aws::Env;
 use std::collections::HashMap;
 
-pub async fn create(env: &Env, flow: Flow) {
+pub async fn create(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
     let name = &flow.name;
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
@@ -35,7 +35,7 @@ pub async fn create(env: &Env, flow: Flow) {
             mode: mode,
             definition: definition,
             role_arn: role_arn,
-            tags: flow.clone().tags,
+            tags: tags.clone(),
         };
 
         let arn = &flow.arn;
@@ -58,7 +58,7 @@ pub async fn delete(env: &Env, flow: Flow) {
             mode: mode,
             definition: definition,
             role_arn: flow.role.arn.to_string(),
-            tags: flow.clone().tags,
+            tags: HashMap::new()
         };
 
         sf.delete(&flow.arn).await.unwrap();
