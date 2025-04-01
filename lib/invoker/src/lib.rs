@@ -41,7 +41,8 @@ pub async fn invoke(
     match kind {
         TopologyKind::Function     => lambda::invoke(env, fqn, &payload).await,
         TopologyKind::StepFunction => sfn::invoke(&env, fqn, &payload, mode, dumb).await,
-        TopologyKind::Evented      => event::trigger(env, &payload).await
+        TopologyKind::Evented      => event::trigger(env, &payload).await,
+        TopologyKind::Graphql      => ()
     }
 
 }

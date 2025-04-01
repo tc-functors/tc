@@ -126,14 +126,22 @@ pub async fn compile(opts: CompileOpts) -> String {
     match component {
         Some(c) => compiler::show_component(&c, &format, recursive),
         None => {
-            let topology = compiler::compile(&dir, recursive);
-            match std::env::var("TC_TRACE") {
-                Ok(_) => {
-                    kit::write_str("topology.json", &topology.to_str());
-                    tracing::debug!("Wrote topology.json");
-                    String::from("")
+            if compiler::is_root_dir(&dir) {
+                let res = compiler::compile_root(&dir);
+                compiler::formatter::print_topologies(res);
+                String::from("")
+
+            } else {
+
+                let topology = compiler::compile(&dir, recursive);
+                match std::env::var("TC_TRACE") {
+                    Ok(_) => {
+                        kit::write_str("topology.json", &topology.to_str());
+                        tracing::debug!("Wrote topology.json");
+                        String::from("")
+                    }
+                    Err(_) => u::pretty_json(topology)
                 }
-                Err(_) => u::pretty_json(topology)
             }
         }
     }
@@ -239,7 +247,8 @@ pub async fn create(
     };
 
     let env = init(Some(topology.env.to_string()), None).await;
-    compiler::count_of(&topology);
+    let msg = compiler::count_of(&topology);
+    println!("{}", msg);
     create_topology(&env, &topology).await;
 
     builder::clean(recursive);
