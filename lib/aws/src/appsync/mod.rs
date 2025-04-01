@@ -5,7 +5,7 @@ use aws_sdk_appsync::types::builders::{
 use aws_sdk_appsync::types::LambdaAuthorizerConfig;
 use aws_sdk_appsync::types::{AdditionalAuthenticationProvider, AuthenticationType};
 use aws_sdk_appsync::types::{ResolverKind, TypeDefinitionFormat};
-use aws_sdk_appsync::Client;
+use aws_sdk_appsync::{Client, Error};
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
@@ -29,6 +29,7 @@ fn make_auth_type() -> AdditionalAuthenticationProvider {
 #[derive(Clone, Debug)]
 pub struct Api {
     pub id: String,
+    pub arn: String,
     pub https: String,
     pub wss: String,
 }
@@ -45,6 +46,7 @@ async fn list_apis(client: &Client) -> HashMap<String, Api> {
                 let wss = uris.get("REALTIME");
                 let a = Api {
                     id: api.api_id.unwrap().to_string(),
+                    arn: api.arn.unwrap().to_string(),
                     https: https.unwrap().to_string(),
                     wss: wss.unwrap().to_string(),
                 };
@@ -60,6 +62,23 @@ async fn list_apis(client: &Client) -> HashMap<String, Api> {
 pub async fn find_api(client: &Client, name: &str) -> Option<Api> {
     let apis = list_apis(client).await;
     apis.get(name).cloned()
+}
+
+pub async fn find_api_arn(client: &Client, name: &str) -> Option<String> {
+    let r = client.list_apis().max_results(20).send().await;
+    match r {
+        Ok(res) => {
+            let apis = res.apis.unwrap();
+            println!("{:?}", apis);
+            for api in apis {
+                if api.name.unwrap() == name {
+                    return api.api_arn
+                }
+            }
+            None
+        },
+        Err(_) => None
+    }
 }
 
 fn make_lambda_authorizer(authorizer_arn: &str) -> LambdaAuthorizerConfig {
@@ -417,4 +436,23 @@ pub async fn update_tags(client: &Client, graphql_arn: &str, tags: HashMap<Strin
         .set_tags(Some(tags))
         .send()
         .await;
+}
+
+pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, String>, Error> {
+    let res = client
+        .list_tags_for_resource()
+        .resource_arn(arn)
+        .send()
+        .await;
+
+    match res {
+        Ok(r) => {
+            let maybe_tags = r.tags();
+            match maybe_tags {
+                Some(tags) => Ok(tags.clone()),
+                None => Ok(HashMap::new()),
+            }
+        }
+        Err(_) => Ok(HashMap::new()),
+    }
 }
