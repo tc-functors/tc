@@ -71,6 +71,7 @@ async fn create_api(
     client: &Client,
     name: &str,
     authorizer_arn: &str,
+    tags: HashMap<String, String>
 ) -> (String, HashMap<String, String>) {
     println!("Creating api {}", name.green());
     let auth_type = AuthenticationType::AwsLambda;
@@ -79,6 +80,7 @@ async fn create_api(
     let r = client
         .create_graphql_api()
         .name(s!(name))
+        .set_tags(Some(tags))
         .authentication_type(auth_type)
         .additional_authentication_providers(additional_auth_type)
         .lambda_authorizer_config(lambda_auth_config)
@@ -98,6 +100,7 @@ async fn update_api(
     name: &str,
     authorizer_arn: &str,
     api_id: &str,
+    _tags: HashMap<String, String>
 ) -> (String, HashMap<String, String>) {
     println!("Updating api {}", name.blue());
     let auth_type = AuthenticationType::AwsLambda;
@@ -125,11 +128,12 @@ pub async fn create_or_update_api(
     client: &Client,
     name: &str,
     authorizer_arn: &str,
+    tags: HashMap<String, String>
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {
-        Some(a) => update_api(client, name, authorizer_arn, &a.id).await,
-        None => create_api(client, name, authorizer_arn).await,
+        Some(a) => update_api(client, name, authorizer_arn, &a.id, tags).await,
+        None => create_api(client, name, authorizer_arn, tags).await,
     }
 }
 
@@ -403,4 +407,13 @@ pub async fn create_types(env: &Env, api_id: &str, types: HashMap<String, String
     for (t, def) in types {
         create_or_update_type(&client, &api_id, &t, &def).await;
     }
+}
+
+pub async fn update_tags(client: &Client, graphql_arn: &str, tags: HashMap<String, String>) {
+    let _ = client
+        .tag_resource()
+        .resource_arn(graphql_arn)
+        .set_tags(Some(tags))
+        .send()
+        .await;
 }
