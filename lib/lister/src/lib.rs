@@ -27,7 +27,6 @@ async fn list_layers(env: &Env, dir: &str, sandbox: Option<String>) {
     layer::list(&env, fns).await
 }
 
-
 async fn list_topologies(env: &Env, sandbox: Option<String>, format: &str) {
     let sandbox = u::maybe_string(sandbox, "stable");
     let topologies = compiler::compile_root(&u::pwd());

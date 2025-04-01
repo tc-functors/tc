@@ -1,7 +1,7 @@
 use serde_derive::{Deserialize, Serialize};
 use tabled::{Style, Table, Tabled};
 
-use aws::{sfn, lambda};
+use aws::{sfn, lambda, appsync};
 use aws::Env;
 use kit as u;
 use std::collections::HashMap;
@@ -16,6 +16,17 @@ struct Record {
     updated_at: String,
 }
 
+async fn get_graphql_api_arn(env: &Env, name: &str) -> Option<String> {
+    let client = appsync::make_client(env).await;
+    let api = appsync::find_api(&client, name).await;
+    match api {
+        Some(ap) => {
+            Some(ap.arn)
+        }
+        None => None,
+    }
+}
+
 async fn lookup_tags(env: &Env, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
     match kind {
         TopologyKind::StepFunction => {
@@ -28,7 +39,16 @@ async fn lookup_tags(env: &Env, kind: &TopologyKind, name: &str) -> HashMap<Stri
             let lambda_arn = env.lambda_arn(&name);
             lambda::list_tags(client, &lambda_arn).await.unwrap()
         },
-        TopologyKind::Graphql | TopologyKind::Evented => {
+        TopologyKind::Graphql => {
+            let client = appsync::make_client(env).await;
+            let maybe_api_arn = get_graphql_api_arn(env, &name).await;
+            if let Some(api_arn) = maybe_api_arn {
+                appsync::list_tags(&client, &api_arn).await.unwrap()
+            } else {
+                HashMap::new()
+            }
+        },
+        TopologyKind::Evented => {
             HashMap::new()
         }
     }
