@@ -1,5 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
-use tabled::{Style, Table, Tabled};
+use tabled::Tabled;
 
 use aws::{sfn, lambda, appsync};
 use aws::Env;
@@ -8,12 +8,12 @@ use std::collections::HashMap;
 use compiler::{Topology, TopologyKind};
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct Record {
-    namespace: String,
-    sandbox: String,
-    version: String,
-    frozen: String,
-    updated_at: String,
+pub struct Record {
+    pub namespace: String,
+    pub sandbox: String,
+    pub version: String,
+    pub frozen: String,
+    pub updated_at: String,
 }
 
 async fn get_graphql_api_arn(env: &Env, name: &str) -> Option<String> {
@@ -64,8 +64,8 @@ pub async fn list(
     env: &Env,
     sandbox: &str,
     topologies: &HashMap<String, Topology>,
-    format: &str
-) {
+) -> Vec<Record> {
+
     let mut rows: Vec<Record> = vec![];
     for (_, node) in topologies {
         let name = render(&node.fqn, sandbox);
@@ -85,15 +85,5 @@ pub async fn list(
             }
         }
     }
-    match format {
-        "table" => {
-            let table = Table::new(rows).with(Style::psql()).to_string();
-            println!("{}", table);
-        }
-        "json" => {
-            let s = u::pretty_json(rows);
-            println!("{}", &s);
-        }
-        _ => (),
-    }
+    rows
 }
