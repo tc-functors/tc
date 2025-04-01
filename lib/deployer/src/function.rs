@@ -149,7 +149,7 @@ pub async fn delete(env: &Env, fns: HashMap<String, Function>) {
 pub async fn update_layers(env: &Env, fns: HashMap<String, Function>) {
     for (_, f) in fns {
         let function = make_lambda(env, f.clone()).await;
-        let arn = env.lambda_arn(&f.name);
+        let arn = env.lambda_arn(&f.fqn);
         let _ = function.update_layers(&arn).await;
     }
 }
