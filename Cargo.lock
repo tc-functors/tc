@@ -372,7 +372,6 @@ dependencies = [
  "async-trait",
  "aws-config",
  "aws-credential-types",
- "aws-sdk-apigateway",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
  "aws-sdk-cloudwatchlogs",
@@ -475,28 +474,6 @@ dependencies = [
  "pin-project-lite",
  "tracing",
  "uuid",
-]
-
-[[package]]
-name = "aws-sdk-apigateway"
-version = "1.55.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b4383610be42c020e4bbdcd2ee13fae3e989b8c6fbfc1c06755138a964182b6"
-dependencies = [
- "aws-credential-types",
- "aws-runtime",
- "aws-smithy-async",
- "aws-smithy-http",
- "aws-smithy-json",
- "aws-smithy-runtime",
- "aws-smithy-runtime-api",
- "aws-smithy-types",
- "aws-types",
- "bytes",
- "http 0.2.12",
- "once_cell",
- "regex-lite",
- "tracing",
 ]
 
 [[package]]
@@ -4153,7 +4130,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.15"
+version = "0.8.16"
 dependencies = [
  "aws",
  "builder",
