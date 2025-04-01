@@ -8,7 +8,6 @@ pub mod topology;
 use aws::Env;
 use colored::Colorize;
 use kit as u;
-use std::collections::HashMap;
 
 async fn list_sfn(env: &Env) {
     sfn::list(&env).await
@@ -28,21 +27,11 @@ async fn list_layers(env: &Env, dir: &str, sandbox: Option<String>) {
     layer::list(&env, fns).await
 }
 
-pub fn render(s: &str, sandbox: &str) -> String {
-    let mut table: HashMap<&str, &str> = HashMap::new();
-    table.insert("sandbox", sandbox);
-    u::stencil(s, table)
-}
 
 async fn list_topologies(env: &Env, sandbox: Option<String>, format: &str) {
     let sandbox = u::maybe_string(sandbox, "stable");
-    let topologies = compiler::compile_root();
-    let mut names: Vec<String> = vec![];
-    for (_, spec) in topologies {
-        let name = render(&spec.fqn, &sandbox);
-        names.push(name);
-    }
-    topology::list(&env, names, format).await
+    let topologies = compiler::compile_root(&u::pwd());
+    topology::list(&env, &sandbox, &topologies, format).await
 }
 
 async fn list_events(env: &Env, name: &str) {

@@ -1,10 +1,11 @@
 use serde_derive::{Deserialize, Serialize};
 use tabled::{Style, Table, Tabled};
 
-use aws::sfn;
+use aws::{sfn, lambda};
 use aws::Env;
 use kit as u;
 use std::collections::HashMap;
+use compiler::{Topology, TopologyKind};
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct Record {
@@ -15,16 +16,40 @@ struct Record {
     updated_at: String,
 }
 
-async fn lookup_tags(env: &Env, name: &str) -> HashMap<String, String> {
-    let client = sfn::make_client(env).await;
-    let states_arn = env.sfn_arn(&name);
-    sfn::list_tags(&client, &states_arn).await.unwrap()
+async fn lookup_tags(env: &Env, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
+    match kind {
+        TopologyKind::StepFunction => {
+            let client = sfn::make_client(env).await;
+            let states_arn = env.sfn_arn(&name);
+            sfn::list_tags(&client, &states_arn).await.unwrap()
+        },
+        TopologyKind::Function => {
+            let client = lambda::make_client(env).await;
+            let lambda_arn = env.lambda_arn(&name);
+            lambda::list_tags(client, &lambda_arn).await.unwrap()
+        },
+        TopologyKind::Graphql | TopologyKind::Evented => {
+            HashMap::new()
+        }
+    }
 }
 
-pub async fn list(env: &Env, names: Vec<String>, format: &str) {
+pub fn render(s: &str, sandbox: &str) -> String {
+    let mut table: HashMap<&str, &str> = HashMap::new();
+    table.insert("sandbox", sandbox);
+    u::stencil(s, table)
+}
+
+pub async fn list(
+    env: &Env,
+    sandbox: &str,
+    topologies: &HashMap<String, Topology>,
+    format: &str
+) {
     let mut rows: Vec<Record> = vec![];
-    for name in names {
-        let tags = lookup_tags(env, &name).await;
+    for (_, node) in topologies {
+        let name = render(&node.fqn, sandbox);
+        let tags = lookup_tags(env, &node.kind, &name).await;
         let namespace = u::safe_unwrap(tags.get("namespace"));
         if !&namespace.is_empty() {
             let version = u::safe_unwrap(tags.get("version"));

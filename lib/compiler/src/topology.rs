@@ -11,7 +11,7 @@ use configurator::Config;
 use serde_json::Value;
 
 use super::spec::{TopologySpec, TopologyKind};
-use super::{mutation, schedule, event, version, template};
+use super::{mutation, schedule, event, version, template, tag};
 use super::mutation::Mutation;
 use super::function::Function;
 use super::route::Route;
@@ -42,6 +42,7 @@ pub struct Topology {
     pub mutations: HashMap<String, Mutation>,
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
+    pub tags: HashMap<String, String>,
     pub logs: LogConfig,
     pub flow: Option<Flow>
 }
@@ -71,13 +72,7 @@ pub fn is_topology_dir(dir: &str) -> bool {
 fn parent_topology_file(dir: &str) -> Option<String> {
     let paths = vec![
         u::absolutize(dir, "../topology.yml"),
-        u::absolutize(dir, "../../topology.yml"),
-        u::absolutize(dir, "../../../topology.yml"),
-        u::absolutize(dir, "../../../../topology.yml"),
-        s!("../topology.yml"),
-        s!("../../topology.yml"),
-        s!("../../../topology.yml"),
-        s!("../../../../topology.yml"),
+        s!("../topology.yml")
     ];
     u::any_path(paths)
 }
@@ -99,7 +94,7 @@ fn is_standalone_function_dir(dir: &str) -> bool {
         Some(file) => file,
         None => u::empty(),
     };
-    u::file_exists(function_file) && !u::file_exists(topology_file) && !u::file_exists(&parent_file)
+    u::path_exists(dir, function_file) && !u::path_exists(dir, topology_file) && !u::file_exists(&parent_file)
         || u::file_exists("handler.rb")
         || u::file_exists("handler.py")
         || u::file_exists("main.go")
@@ -389,6 +384,7 @@ fn make(
         routes: make_routes(&spec, &config),
         queues: make_queues(&spec, &config),
         mutations: make_mutations(&spec, &config),
+        tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow
     }
@@ -433,6 +429,7 @@ fn make_standalone(dir: &str) -> Topology {
         mutations: HashMap::new(),
         queues: HashMap::new(),
         logs: LogConfig::new(),
+        tags: HashMap::new(),
         schedules: HashMap::new(),
     }
 }
@@ -475,9 +472,6 @@ impl Topology {
                 let functions = discover_functions(dir, &infra_dir, &spec);
                 make(dir, dir, &spec, functions, nodes)
             }
-
-        } else if is_relative_topology_dir(dir) {
-            make_relative(dir)
 
         } else if is_standalone_function_dir(dir) {
             make_standalone(dir)

@@ -13,7 +13,8 @@ mod version;
 mod template;
 mod role;
 mod log;
-mod formatter;
+pub mod formatter;
+mod tag;
 
 use colored::Colorize;
 use walkdir::WalkDir;
@@ -37,12 +38,19 @@ pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, Top
 use kit as u;
 use kit::*;
 
+pub fn is_root_dir(dir: &str) -> bool {
+    let f = format!("{}/topology.yml", dir);
+    let spec = TopologySpec::new(&f);
+    let given_root_dirs = &spec.nodes.dirs;
+    !given_root_dirs.is_empty()
+}
+
 pub fn compile(dir: &str, recursive: bool) -> Topology {
     Topology::new(dir, recursive, false)
 }
 
-pub fn compile_root() -> HashMap<String, Topology> {
-    let f = format!("{}/topology.yml", &u::pwd());
+pub fn compile_root(dir: &str) -> HashMap<String, Topology> {
+    let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
     let given_root_dirs = &spec.nodes.dirs;
     let mut h: HashMap<String, Topology> = HashMap::new();
@@ -332,7 +340,7 @@ pub fn list_topology_dirs() -> HashMap<String, String> {
     topologies
 }
 
-pub fn count_of(topology: &Topology) {
+pub fn count_of(topology: &Topology) -> String {
 
     let Topology { functions, mutations, events, queues, routes, .. } = topology;
 
@@ -359,7 +367,7 @@ pub fn count_of(topology: &Topology) {
         r = r + routes.len();
     }
 
-    let msg = format!("{} node(s), {} function(s), {} mutation(s), {} event(s), {} route(s), {} queue(s)",
+    let msg = format!("{} nodes, {} functions, {} mutations, {} events, {} routes, {} queues",
                       nodes.len() + 1, f, m, e, r, q);
-    println!("Compiling {} ", msg.cyan());
+    msg
 }

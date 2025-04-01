@@ -535,7 +535,9 @@ pub enum TopologyKind {
     #[serde(alias="function")]
     Function,
     #[serde(alias="evented")]
-    Evented
+    Evented,
+    #[serde(alias="grapqhl")]
+    Graphql
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
