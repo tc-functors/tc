@@ -59,7 +59,7 @@ async fn create_flow(env: &Env, topology: &Topology) {
         ..
     } = topology;
 
-    role::create(&env, &topology.roles()).await;
+    role::create_or_update(&env, &topology.roles()).await;
     function::create(env, functions.clone()).await;
     if should_update_layers() {
         function::update_layers(env, functions.clone()).await;
@@ -93,7 +93,7 @@ async fn create_function(env: &Env, topology: &Topology) {
         tags,
         ..
     } = topology;
-    role::create(&env, &topology.roles()).await;
+    role::create_or_update(&env, &topology.roles()).await;
     function::create(&env, functions.clone()).await;
     mutation::create(&env, mutations, tags).await;
     queue::create(&env, queues).await;
@@ -232,14 +232,14 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
 
         "mutations" => mutation::create(&env, &mutations, &tags).await,
 
-        "roles" => role::create(&env, &topology.roles()).await,
+        "roles" => role::create_or_update(&env, &topology.roles()).await,
 
         "schedules" => schedule::create(&env, &namespace, schedules).await,
 
         "queues" => queue::create(&env, &queues).await,
 
         "all" => {
-            role::create(&env, &topology.roles()).await;
+            role::create_or_update(&env, &topology.roles()).await;
             function::create(&env, functions.clone()).await;
             match flow {
                 Some(f) => flow::create(&env, &tags, f).await,

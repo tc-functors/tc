@@ -18,7 +18,6 @@ pub async fn create(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
         let role = flow.role.clone();
         let role_arn = role.arn;
 
-        println!("Creating sfn-role {}", flow.role.name);
         let r = Role {
             client: iam_client,
             name: role.name,
@@ -27,7 +26,7 @@ pub async fn create(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
             policy_name: role.policy_name,
             policy_doc: role.policy.to_string(),
         };
-        let _ = r.create().await;
+        let _ = r.create_or_update().await;
 
         let sf = StateMachine {
             name: name.clone(),
