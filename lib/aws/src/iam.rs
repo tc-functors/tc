@@ -25,7 +25,7 @@ pub struct Role {
 }
 
 impl Role {
-    pub async fn create(&self) {
+    async fn create(&self) {
         println!("Creating role {}", self.name);
         self.find_or_create_policy().await;
         self.find_or_create_role().await;
@@ -41,16 +41,26 @@ impl Role {
         Ok(())
     }
 
-    pub async fn update(&self) -> Result<(), Error> {
+    async fn update(&self) -> Result<(), Error> {
         println!("Updating role {}", self.name);
         self.detach_policy().await?;
         self.delete_policy().await?;
-        sleep(2000);
+        sleep(3000);
         self.find_or_create_policy().await;
         self.attach_policy().await;
         self.find_or_create_role().await;
         Ok(())
     }
+
+    pub async fn create_or_update(&self) -> Result<(), Error> {
+        let res = self.client.get_role().role_name(&self.name).send().await;
+        match res {
+            Ok(_) => self.update().await?,
+            Err(_) => self.create().await
+        }
+        Ok(())
+    }
+
 
     pub async fn create_policy(&self) -> String {
         let res = self

@@ -33,7 +33,7 @@ pub async fn show_role(env: &Env, name: &str) {
 
 pub async fn create_role(env: &Env, name: &str) {
     let role = make_role(env, name).await;
-    let out = role.create().await;
+    let out = role.create_or_update().await;
     println!("{:?}", out);
 }
 
