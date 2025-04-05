@@ -18,4 +18,5 @@ cacache = "13.0.0"
 compiler = { path = "../compiler" }
 aws = { path = "../aws" }
 kit = { path = "../kit" }
+lister = { path = "../lister" }
 configurator = { path = "../configurator" }

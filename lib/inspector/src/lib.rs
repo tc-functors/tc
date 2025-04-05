@@ -25,8 +25,8 @@ pub async fn init() {
         .merge(builds::post_routes())
 
         .merge(deployments::page_routes())
-        .merge(deployments::list_routes())
-        .merge(deployments::diff_routes())
+        .merge(deployments::tab_routes())
+        .merge(deployments::view_routes())
 
         .merge(releases::page_routes())
         .merge(releases::list_routes())

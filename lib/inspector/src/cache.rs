@@ -234,3 +234,23 @@ pub async fn find_root_namespaces() -> Vec<String> {
     }
     xs
 }
+
+
+pub type Versions = HashMap<String, HashMap<String, String>>;
+
+pub async fn save_versions(vers: Versions) {
+    write("versions", &serde_json::to_string(&vers).unwrap()).await;
+}
+
+
+pub async fn find_versions() -> Option<Versions> {
+    let key = "versions";
+    if has_key(key) {
+        tracing::info!("Found cache: {}", key);
+        let s = read(key);
+        let r: Versions = serde_json::from_str(&s).unwrap();
+        Some(r)
+    } else {
+        None
+    }
+}

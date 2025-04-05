@@ -63,7 +63,7 @@ pub async fn list_all() -> impl IntoResponse {
 }
 
 pub async fn compile() -> impl IntoResponse {
-    let topologies = compiler::compile_root(&kit::pwd());
+    let topologies = compiler::compile_root(&kit::pwd(), true);
     cache::write("root", &serde_json::to_string(&topologies).unwrap()).await;
     let functors = build(topologies);
     let t = FunctorsTemplate {

@@ -27,7 +27,7 @@ async fn get_graphql_api_arn(env: &Env, name: &str) -> Option<String> {
     }
 }
 
-async fn lookup_tags(env: &Env, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
+pub async fn lookup_tags(env: &Env, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
     match kind {
         TopologyKind::StepFunction => {
             let client = sfn::make_client(env).await;
