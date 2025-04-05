@@ -2517,6 +2517,7 @@ dependencies = [
  "compiler",
  "configurator",
  "kit",
+ "lister",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",

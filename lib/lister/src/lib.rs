@@ -10,6 +10,8 @@ use colored::Colorize;
 use kit as u;
 use topology::Record;
 
+use compiler::TopologyKind;
+
 use tabled::{Style, Table};
 
 async fn list_sfn(env: &Env) {
@@ -30,9 +32,8 @@ async fn list_layers(env: &Env, dir: &str, sandbox: Option<String>) {
     layer::list(&env, fns).await
 }
 
-async fn list_topologies(env: &Env, sandbox: Option<String>) -> Vec<Record> {
-    let sandbox = u::maybe_string(sandbox, "stable");
-    let topologies = compiler::compile_root(&u::pwd());
+async fn list_topologies(env: &Env, sandbox: &str) -> Vec<Record> {
+    let topologies = compiler::compile_root(&u::pwd(), false);
     topology::list(&env, &sandbox, &topologies).await
 }
 
@@ -48,6 +49,12 @@ pub fn pprint_topologies(records: Vec<Record>, format: &str) {
         }
         _ => (),
     }
+}
+
+pub async fn lookup_version(env: &Env, kind: &TopologyKind, fqn: &str, sandbox: &str) -> Option<String> {
+    let name = topology::render(fqn, sandbox);
+    let tags = topology::lookup_tags(env, kind, &name).await;
+    tags.get("version").cloned()
 }
 
 async fn list_events(env: &Env, name: &str) {
@@ -85,7 +92,8 @@ pub async fn list_component(
     let format = u::maybe_string(format, "table");
 
     if &component == "topologies" {
-        let records = list_topologies(&env, sandbox).await;
+        let sandbox = u::maybe_string(sandbox, "stable");
+        let records = list_topologies(&env, &sandbox).await;
         pprint_topologies(records, &format);
     } else {
         let topology_name = compiler::topology_name(&dir);
