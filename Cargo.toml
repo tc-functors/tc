@@ -34,6 +34,11 @@ lister = { path = "lib/lister" }
 router = { path = "lib/router" }
 ci = { path = "lib/ci" }
 inspector = { path = "lib/inspector" }
+openssl-sys = "0.9.107"
+
+[features]
+# Force openssl-sys to staticly link in the openssl library. Necessary when
+# cross compiling to x86_64-unknown-linux-musl.
 vendored-openssl = ["openssl-sys/vendored"]
 
 [dev-dependencies]
