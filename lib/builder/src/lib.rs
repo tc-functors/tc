@@ -201,5 +201,5 @@ pub fn read_manifest() -> Vec<BuildOutput> {
 }
 
 pub fn delete_manifest(dir: &str) {
-    kit::sh(dir, "rm -f build.json");
+    kit::sh("rm -f build.json", dir);
 }
