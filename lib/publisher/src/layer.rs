@@ -18,8 +18,8 @@ pub fn should_split(dir: &str) -> bool {
 }
 
 pub async fn publish(env: &Env, lang: &str, layer_name: &str, zipfile: &str) {
-
     let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
+    println!("Using profile {}", &centralized.name);
     let client = layer::make_client(&centralized).await;
 
     if u::file_exists(zipfile) {
