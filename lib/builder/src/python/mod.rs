@@ -4,6 +4,7 @@ mod inline;
 mod extension;
 mod code;
 mod library;
+mod slab;
 
 use super::BuildOutput;
 use compiler::spec::{BuildKind, LangRuntime};
@@ -19,6 +20,7 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build) -> BuildO
         BuildKind::Inline    => inline::build(dir, "inline-deps"),
         BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post),
         BuildKind::Library   => library::build(dir, name),
+        BuildKind::Slab      => slab::build(dir, name, &runtime, pre, post),
         BuildKind::Extension => extension::build(dir, name),
         BuildKind::Image     => image::build(dir, name),
         BuildKind::Runtime   => todo!()

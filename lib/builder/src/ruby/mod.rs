@@ -22,7 +22,8 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build) -> BuildO
         BuildKind::Library   => library::build(dir),
         BuildKind::Extension => extension::build(dir, name),
         BuildKind::Image     => image::build(dir, name),
-        BuildKind::Runtime   => todo!()
+        BuildKind::Runtime   => todo!(),
+        BuildKind::Slab      => todo!()
     };
 
     BuildOutput {
