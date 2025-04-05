@@ -16,6 +16,9 @@ use aws_sdk_lambda::types::{FileSystemConfig, VpcConfig};
 use aws_sdk_lambda::types::{InvocationType, LogType, LoggingConfig};
 use aws_sdk_lambda::types::UpdateRuntimeOn;
 use aws_sdk_lambda::{Client, Error};
+use aws_sdk_lambda::types::builders::SnapStartBuilder;
+use aws_sdk_lambda::types::SnapStart;
+use aws_sdk_lambda::types::SnapStartApplyOn;
 use base64::{engine::general_purpose, Engine as _};
 use colored::Colorize;
 use kit::LogUpdate;
@@ -113,6 +116,15 @@ pub fn make_environment(vars: HashMap<String, String>) -> Environment {
     e.set_variables(Some(vars)).build()
 }
 
+pub fn make_snapstart(enable_snap: bool) -> Option<SnapStart> {
+    if enable_snap {
+        let e = SnapStartBuilder::default();
+        Some(e.set_apply_on(Some(SnapStartApplyOn::PublishedVersions)).build())
+    } else {
+        None
+    }
+}
+
 pub fn make_runtime(lang: &str) -> Runtime {
     match lang {
         "java11"      => Runtime::Java11,
@@ -124,6 +136,7 @@ pub fn make_runtime(lang: &str) -> Runtime {
         "python3.10"  => Runtime::Python310,
         "python3.11"  => Runtime::Python311,
         "python3.12"  => Runtime::Python312,
+        "python3.13"  => Runtime::Python313,
         "provided"    => Runtime::Provided,
         "providedal2" => Runtime::Providedal2,
         "node22"      => Runtime::Nodejs22x,
@@ -196,6 +209,7 @@ pub struct Function {
     pub handler: Option<String>,
     pub timeout: i32,
     pub memory_size: i32,
+    pub snap_start: Option<SnapStart>,
     pub package_type: PackageType,
     pub environment: Environment,
     pub architecture: Architecture,
@@ -286,6 +300,7 @@ impl Function {
             .code(f.code)
             .environment(f.environment)
             .memory_size(f.memory_size)
+            .set_snap_start(f.snap_start)
             .timeout(f.timeout)
             .set_layers(f.layers)
             .package_type(f.package_type)
@@ -345,6 +360,7 @@ impl Function {
             .environment(f.environment)
             .timeout(f.timeout)
             .memory_size(f.memory_size)
+            .set_snap_start(f.snap_start)
             .set_vpc_config(f.vpc_config)
             .set_file_system_configs(f.filesystem_config)
             .send()

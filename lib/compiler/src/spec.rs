@@ -280,6 +280,8 @@ pub struct RuntimeSpec {
 
     pub mount_fs: Option<bool>,
 
+    pub snapstart: Option<bool>,
+
     #[serde(default = "default_layers")]
     pub layers: Vec<String>,
 

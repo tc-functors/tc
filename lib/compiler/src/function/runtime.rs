@@ -409,7 +409,7 @@ impl Runtime {
                     provisioned_concurrency: None,
                     memory_size: *memory_size,
                     timeout: *timeout,
-                    snapstart: false,
+                    snapstart: u::opt_as_bool(r.snapstart),
                     role: role,
                     enable_fs: enable_fs,
                     network: make_network(&default_infra_spec, enable_fs),

@@ -23,11 +23,16 @@ impl TargetKind {
     }
 }
 
-
 fn as_ns(given: &Option<String>, s: &str) -> String {
     match given {
         Some(p) => s!(p),
-        None => kit::split_first(s, "/")
+        None => {
+            if s.contains("/") {
+                kit::split_first(s, "/")
+            } else {
+                s!(s)
+            }
+        }
     }
 }
 
@@ -226,9 +231,15 @@ impl EventPattern {
     fn new(event_name: &str, source: &str, filter: Option<String>) -> EventPattern {
         let detail = Detail::new(filter);
 
+        let source = if source.contains("/") {
+            kit::split_last(source, "/")
+        } else {
+            s!(source)
+        };
+
         EventPattern {
             detail_type: vec![event_name.to_string()],
-            source: vec![source.to_string()],
+            source: vec![source],
             detail: detail,
         }
     }

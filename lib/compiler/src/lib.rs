@@ -46,7 +46,7 @@ pub fn compile(dir: &str, recursive: bool) -> Topology {
     Topology::new(dir, recursive, false)
 }
 
-pub fn compile_root(dir: &str) -> HashMap<String, Topology> {
+pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
     let given_root_dirs = &spec.nodes.dirs;
@@ -54,7 +54,7 @@ pub fn compile_root(dir: &str) -> HashMap<String, Topology> {
     for d in given_root_dirs {
         tracing::debug!("Given root: {}", &d);
         let dir = u::absolutize(&u::pwd(), &d);
-        let t = compile(&dir, true);
+        let t = compile(&dir, recursive);
 
         h.insert(t.namespace.to_string(), t);
     }
