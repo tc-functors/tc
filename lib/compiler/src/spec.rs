@@ -116,6 +116,7 @@ pub enum BuildKind {
     Code,
     Inline,
     Layer,
+    Slab,
     Library,
     Extension,
     Runtime,
@@ -133,6 +134,7 @@ impl FromStr for BuildKind {
             "library"   => Ok(BuildKind::Library),
             "extension" => Ok(BuildKind::Extension),
             "runtime"   => Ok(BuildKind::Runtime),
+            "slab"      => Ok(BuildKind::Slab),
             "image"     => Ok(BuildKind::Image),
             _           => Ok(BuildKind::Layer)
         }
@@ -149,7 +151,8 @@ impl BuildKind {
             BuildKind::Library   => s!("library"),
             BuildKind::Extension => s!("extension"),
             BuildKind::Runtime   => s!("runtime"),
-            BuildKind::Image     => s!("image")
+            BuildKind::Image     => s!("image"),
+            BuildKind::Slab      => s!("slab")
         }
 
     }

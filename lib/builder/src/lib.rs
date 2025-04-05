@@ -97,7 +97,7 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
 
         let kind_str = &kind.to_str();
 
-        let runtime = compiler::guess_build_runtime(dir, kind.clone());
+        let runtime = f.runtime.lang;
         let lang = runtime.to_lang();
         let name = u::maybe_string(name, u::basedir(dir));
 
