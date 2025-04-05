@@ -299,7 +299,16 @@ impl Env {
                 };
                 Env::new(&p, role, self.config.clone())
             },
-            None => self.clone()
+            None => match std::env::var("AWS_PROFILE") {
+                Ok(p) => {
+                    let role = match std::env::var("TC_CENTRALIZED_ASSUME_ROLE") {
+                        Ok(r) => Some(r),
+                        Err(_) => self.assume_role.clone()
+                    };
+                    Env::new(&p, role, self.config.clone())
+                }
+                Err(_) => panic!("AWS_PROFILE or config not set")
+            }
         }
     }
 }
