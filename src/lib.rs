@@ -127,7 +127,7 @@ pub async fn compile(opts: CompileOpts) -> String {
         Some(c) => compiler::show_component(&c, &format, recursive),
         None => {
             if compiler::is_root_dir(&dir) {
-                let res = compiler::compile_root(&dir);
+                let res = compiler::compile_root(&dir, recursive);
                 compiler::formatter::print_topologies(res);
                 String::from("")
 
