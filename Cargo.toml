@@ -34,6 +34,7 @@ lister = { path = "lib/lister" }
 router = { path = "lib/router" }
 ci = { path = "lib/ci" }
 inspector = { path = "lib/inspector" }
+vendored-openssl = ["openssl-sys/vendored"]
 
 [dev-dependencies]
 mockall = "0.12.1"
