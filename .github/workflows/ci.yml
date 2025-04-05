@@ -22,12 +22,10 @@ jobs:
       - name: Setup Cache
         uses: Swatinem/rust-cache@v2
 
-      - uses: actions/checkout@v2
-      - id: 'compile'
-        uses: heroku/rust-cargo-musl-action@v1
+      - name: Build Musl
+        uses: gmiam/rust-musl-action@master
         with:
-          command: 'build'
-          flags: '--features vendored-openssl'
+          args: cargo build --target x86_64-unknown-linux-musl --release
 
       - name: Release MUSL
         uses: svenstaro/upload-release-action@v2
