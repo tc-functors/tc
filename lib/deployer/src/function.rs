@@ -38,7 +38,7 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         _ => None
     };
 
-
+    let snap_start = lambda::make_snapstart(f.runtime.snapstart);
 
     lambda::Function {
         client: client,
@@ -53,6 +53,7 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
         handler: handler,
         timeout: f.runtime.timeout.expect("Timeout error"),
         uri: uri,
+        snap_start: snap_start,
         memory_size: f.runtime.memory_size.expect("memory error"),
         package_type: lambda::make_package_type(package_type),
         environment: lambda::make_environment(f.runtime.environment),
