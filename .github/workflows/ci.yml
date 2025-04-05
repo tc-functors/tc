@@ -13,7 +13,32 @@ permissions:
   packages: none
 
 jobs:
-  build:
+  build-musl-linux:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Cache
+        uses: Swatinem/rust-cache@v2
+
+      - uses: actions/checkout@v2
+      - id: 'compile'
+        uses: heroku/rust-cargo-musl-action@v1
+        with:
+          command: 'build'
+          flags: '--features vendored-openssl'
+
+      - name: Release MUSL
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/x86_64-unknown-linux-musl/release/tc
+          asset_name: tc-x86_64-linux
+          tag: ${{ github.ref }}
+
+  build-aarch64-apple:
     # Set the job to run on the platform specified by the matrix below
     runs-on: ${{ matrix.runner }}
 
@@ -41,25 +66,10 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - uses: actions/checkout@v2
-      - id: 'compile'
-        uses: heroku/rust-cargo-musl-action@v1
-        with:
-          command: 'build'
-          flags: '--features vendored-openssl'
-
       - name: Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/tc
           asset_name: ${{ matrix.name }}
-          tag: ${{ github.ref }}
-
-      - name: Release MUSL
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/x86_64-unknown-linux-musl/release/tc
-          asset_name: tc-x86_64-linux
           tag: ${{ github.ref }}
