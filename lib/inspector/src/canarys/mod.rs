@@ -1,6 +1,7 @@
 use askama::Template;
 use axum::{
-    extract::Path,
+    routing::{get, post},
+    Router,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
@@ -23,24 +24,20 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "releases/index.html")]
-struct IndexTemplate { context: String }
-
-pub async fn index() -> impl IntoResponse {
-    let template = IndexTemplate {
-        context: "releases".to_string()
-    };
-    HtmlTemplate(template)
+#[template(path = "canarys/index.html")]
+struct IndexTemplate {
+    context: String,
 }
 
-#[derive(Template)]
-#[template(path = "releases/list.html")]
-struct ListTemplate { context: String, entity: String }
+pub async fn index_page() -> impl IntoResponse {
+    HtmlTemplate(IndexTemplate {
+        context: String::from("canarys"),
+    })
+}
 
-pub async fn list(Path(entity): Path<String>) -> impl IntoResponse {
-    let template = ListTemplate {
-        context: "releases".to_string(),
-        entity: entity
-    };
-    HtmlTemplate(template)
+pub fn routes() -> Router {
+    Router::new()
+        .route("/canarys",
+               get(index_page))
+
 }

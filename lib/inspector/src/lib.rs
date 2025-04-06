@@ -3,10 +3,15 @@ use axum::{
     Router,
 };
 
-mod deployments;
+
 mod definitions;
+mod diagrams;
+mod sandboxes;
 mod releases;
 mod builds;
+mod diffs;
+mod canarys;
+
 mod cache;
 
 pub async fn init() {
@@ -16,20 +21,15 @@ pub async fn init() {
     let app = Router::new()
         .merge(definitions::page_routes())
         .merge(definitions::list_routes())
-        .merge(definitions::visualize_routes())
         .merge(definitions::view_routes())
         .merge(definitions::post_routes())
 
-        .merge(builds::page_routes())
-        .merge(builds::list_routes())
-        .merge(builds::post_routes())
-
-        .merge(deployments::page_routes())
-        .merge(deployments::tab_routes())
-        .merge(deployments::view_routes())
-
-        .merge(releases::page_routes())
-        .merge(releases::list_routes())
+        .merge(diagrams::routes())
+        .merge(builds::routes())
+        .merge(diffs::routes())
+        .merge(canarys::routes())
+        .merge(sandboxes::routes())
+        .merge(releases::routes())
 
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());

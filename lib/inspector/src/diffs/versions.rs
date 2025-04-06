@@ -36,13 +36,13 @@ async fn build(
 }
 
 #[derive(Template)]
-#[template(path = "deployments/list/versions.html")]
+#[template(path = "diffs/versions.html")]
 struct VersionsTemplate {
     envs: Vec<String>,
     items: HashMap<String, HashMap<String, String>>
 }
 
-pub async fn view() -> impl IntoResponse {
+pub async fn generate() -> impl IntoResponse {
     let envs = vec![String::from("qa"),
                     String::from("staging"),
                     String::from("prod-01"),
@@ -56,21 +56,6 @@ pub async fn view() -> impl IntoResponse {
     let t = VersionsTemplate {
         envs: envs.clone(),
         items: versions
-    };
-    Html(t.render().unwrap())
-}
-
-#[derive(Template)]
-#[template(path = "deployments/tabs/versions.html")]
-struct TabTemplate {
-    envs: Vec<String>,
-    items: HashMap<String, HashMap<String, String>>
-}
-
-pub async fn tab() -> impl IntoResponse {
-   let t = TabTemplate {
-       envs: vec![],
-       items: HashMap::new()
     };
     Html(t.render().unwrap())
 }

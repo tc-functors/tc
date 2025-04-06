@@ -80,12 +80,18 @@
       }
 
       .spaced {
-	margin-left: 4rem;
-	margin-right: 4rem;
+	margin-left: 1rem;
+	margin-right: 1rem;
       }
 
       .button {
 	line-height: 0.7rem;
+      }
+
+      .sidebar {
+      line-height: 1.7rem;
+      background-color: var(--pico-table-row-stripped-background-color);
+      border-right: 1px solid var(--pico-muted-border-color);
       }
 
       article {
@@ -217,50 +223,68 @@
   </head>
 
   <body>
+      <div class="x">
+	<div class="x8 sidebar">
+	  <div class="spaced">
+	    <br/>
+	    tc-inspector
+	  <br/>
+	  <br/>
+	  {% if context == "definitions" %}
+	  <strong>Definitions</strong>
+	  {% else %}
+	  <a href="/definitions">Definitions</a>
+	  {% endif %}
+	  <br/>
 
+	  {% if context == "diagrams" %}
+	  <strong>Diagrams</strong>
+	  {% else %}
+	  <a href="/diagrams">Diagrams</a>
+	  {% endif %}
+	  <br/>
 
-    <div class="spaced">
-      <nav class="navbar">
-	<ul>
-	  <li>
-	    {% if context == "definitions" %}
-	    <mark>Definitions</mark>
-	    {% else %}
-	    <a href="/">Definitions</a>
-	    {% endif %}
-	  </li>
-	  <li>
-	    {% if context == "builds" %}
-	    <mark>Builds</mark>
-	    {% else %}
-	    <a href="/builds">Builds</a>
-	    {% endif %}
-	  </li>
-	  <li>
-	    {% if context == "deployments" %}
-	    <mark>Deployments</mark>
-	    {% else %}
-	    <a href="/deployments">Deployments</a>
-	    {% endif %}
-	  </li>
-	  <li>
-	    {% if context == "releases" %}
-	    <mark>Releases</mark>
-	    {% else %}
-	    <a href="/releases">Releases</a>
-	    {% endif %}
-	  </li>
-	</ul>
-	<ul>
-	  <li>tc-inspector <small>0.8.0</small></li>
-	  <li><a href="/settings"><i class="ph ph-gear-six"></i></a></li>
-	</ul>
+	  {% if context == "builds" %}
+	  <strong>Builds</strong>
+	  {% else %}
+	  <a href="/builds">Builds</a>
+	  {% endif %}
+	  <br/>
 
-      </nav>
+	  {% if context == "sandboxes" %}
+	  <strong>Sandboxes</strong>
+	  {% else %}
+	  <a href="/sandboxes">Sandboxes</a>
+	  {% endif %}
 
-      <hr/>
+	  <br/>
+	  {% if context == "diffs" %}
+	  <strong>Diffs</strong>
+	  {% else %}
+	  <a href="/diffs">Diffs</a>
+	  {% endif %}
+	  <br/>
 
-      {% block content %}{% endblock %}
+	  {% if context == "releases" %}
+	  <strong>Releases</strong>
+	  {% else %}
+	  <a href="/releases">Releases</a>
+	  {% endif %}
+	  <br/>
+
+	  {% if context == "canarys" %}
+	  <strong>Canarys</strong>
+	  {% else %}
+	  <a href="/canarys">Canarys</a>
+	  {% endif %}
+
+	  </div>
+	</div>
+	<div class="xg">
+	  <div class="spaced">
+	  {% block content %}{% endblock %}
+	  </div>
+	</div>
 
     </div>
   </body>

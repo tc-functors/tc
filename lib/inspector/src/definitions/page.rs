@@ -35,24 +35,6 @@ pub async fn definitions() -> impl IntoResponse {
     HtmlTemplate(template)
 }
 
-#[derive(Template)]
-#[template(path = "definitions/visual.html")]
-struct VisualTemplate {
-    root: String,
-    namespace: String,
-    entity: String,
-    context: String,
-}
-
-pub async fn visualize(Path(entity): Path<String>) -> impl IntoResponse {
-    HtmlTemplate(VisualTemplate {
-        root: String::from("all"),
-        namespace: String::from("all"),
-        entity: entity,
-        context: String::from("definitions"),
-    })
-}
-
 
 #[derive(Template)]
 #[template(path = "definitions/list.html")]

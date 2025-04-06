@@ -18,8 +18,6 @@ pub fn page_routes() -> Router {
                get(page::definitions))
         .route("/definitions",
                get(page::definitions))
-        .route("/definitions/visualize/{:entity}",
-               get(page::visualize))
 
         .route("/definition/view/{:root}",
                get(page::view_root))
@@ -68,11 +66,6 @@ pub fn list_routes() -> Router {
                get(route::list))
 }
 
-pub fn visualize_routes() -> Router {
-    Router::new()
-        .route("/hx/def/visualize/{:entity}/load",
-               get(event::visualize))
-}
 
 pub fn view_routes() -> Router {
     Router::new()

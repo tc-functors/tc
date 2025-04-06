@@ -6,7 +6,9 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
-mod layers;
+mod versions;
+mod manifests;
+mod changelog;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -26,20 +28,25 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "builds/index.html")]
+#[template(path = "diffs/index.html")]
 struct IndexTemplate {
     context: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        context: String::from("builds"),
+        context: String::from("diffs"),
     })
 }
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/builds", get(index_page))
-        .route("/hx/builds/list/layers", get(layers::list))
-        .route("/hx/builds/sync", post(layers::sync))
+        .route("/diffs",
+               get(index_page))
+        .route("/hx/diffs/manifests",
+               get(manifests::generate))
+        .route("/hx/diffs/changelog",
+               get(changelog::generate))
+        .route("/hx/diffs/versions",
+               get(versions::generate))
 }

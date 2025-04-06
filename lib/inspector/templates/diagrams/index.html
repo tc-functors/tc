@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div id="lister"
+<br/>
+
+<div id="viewer"
      hx-trigger="load"
-     hx-get="/hx/deployments/list/{{entity}}"
+     hx-get="/hx/diagrams/sequence"
      hx-swap="innerHTML">
 
   <div align="center">
     <br/><br/><br/>
-    <progress/>
+    <span aria-busy="true">Loading diagram...</span>
   </div>
 
 </div>

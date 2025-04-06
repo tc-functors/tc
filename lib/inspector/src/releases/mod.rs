@@ -1,19 +1,42 @@
-mod changelog;
-mod page;
-
+use askama::Template;
 use axum::{
     routing::{get},
     Router,
+    http::StatusCode,
+    response::{Html, IntoResponse, Response},
 };
 
-
-pub fn page_routes() -> Router {
-    Router::new()
-        .route("/releases", get(page::index))
-        .route("/releases/list/{:entity}", get(page::list))
+pub struct HtmlTemplate<T>(pub T);
+impl<T> IntoResponse for HtmlTemplate<T>
+where
+    T: Template,
+{
+    fn into_response(self) -> Response {
+        match self.0.render() {
+            Ok(html) => Html(html).into_response(),
+            Err(err) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to render template. Error: {}", err),
+            )
+                .into_response(),
+        }
+    }
 }
 
-pub fn list_routes() -> Router {
+#[derive(Template)]
+#[template(path = "releases/index.html")]
+struct IndexTemplate {
+    context: String,
+}
+
+pub async fn index_page() -> impl IntoResponse {
+    HtmlTemplate(IndexTemplate {
+        context: String::from("releases"),
+    })
+}
+
+pub fn routes() -> Router {
     Router::new()
-        .route("/hx/releases/list/changelog", get(changelog::list))
+        .route("/releases",
+               get(index_page))
 }
