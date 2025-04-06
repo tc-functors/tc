@@ -2,9 +2,28 @@
   <nav class="navbar">
     <ul>
       <li></li>
-      <li><a href="/builds/list/layers">Layers</a><li>
-      <li><a href="/builds/list/images">Images</a><li>
-      <li><a href="/builds/list/extensions">Extensions</a><li>
+      <li>
+	{% if entity == "layers" %}
+	<span class="selected">Layers</span>
+	{% else %}
+	<a href="/builds/list/layers">Layers</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "images" %}
+	<span class="selected">Images</span>
+	{% else %}
+	<a href="/builds/list/images">Images</a>
+	{% endif %}
+
+      <li>
+      <li>
+	{% if entity == "extensions" %}
+	<span class="selected">Extensions</span>
+	{% else %}
+	<a href="/builds/list/extensions">Extensions</a>
+	{% endif %}
+      <li>
     </ul>
     <ul>
       <li class="right-spaced">

@@ -28,11 +28,13 @@ where
 #[derive(Template)]
 #[template(path = "builds/index.html")]
 struct IndexTemplate {
+    entity: String,
     context: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
+        entity: String::from("layers"),
         context: String::from("builds"),
     })
 }

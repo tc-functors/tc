@@ -71,9 +71,9 @@ pub fn list_routes() -> Router {
 
 pub fn view_routes() -> Router {
     Router::new()
-        .route("/hx/def/{:root}/{:namespace}/function/{:id}/view",
+        .route("/hx/def/view/{:root}/{:namespace}/function/{:id}",
                get(function::view))
-        .route("/hx/def/{:root}/{:namespace}/node/{:id}/view",
+        .route("/hx/def/view/{:root}/{:namespace}/node/{:id}",
                get(node::view))
 }
 

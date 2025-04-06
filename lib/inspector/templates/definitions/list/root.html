@@ -19,24 +19,24 @@
     {% for item in items %}
     <tr>
       <td>{{loop.index}}</td>
-      <td><a href="/definition/{{item.namespace}}">{{item.namespace}}<a/></td>
+      <td><a href="/definition/view/{{item.namespace}}">{{item.namespace}}<a/></td>
       <td>{{item.version}}</td>
       <td>{{item.kind}}</td>
       <td>
 	{% if item.nodes != 0 %}
-	<a href="/definitions/{{item.namespace}}/nodes">{{item.nodes}}</a>
+	<a href="/definitions/list/{{item.namespace}}/nodes">{{item.nodes}}</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.functions != 0 %}
-	<a href="/definitions/{{item.namespace}}/functions">
+	<a href="/definitions/list/{{item.namespace}}/functions">
 	  {{item.functions}}
 	</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.events != 0 %}
-	<a href="/definitions/{{item.namespace}}/events">
+	<a href="/definitions/list/{{item.namespace}}/events">
 	  {{item.events}}
 	</a>
 	{% endif %}
@@ -48,14 +48,14 @@
       </td>
       <td>
 	{% if item.mutations != 0 %}
-	<a href="/definitions/{{item.namespace}}/mutations">
+	<a href="/definitions/list/{{item.namespace}}/mutations">
 	  {{item.mutations}}
 	</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.routes != 0 %}
-	<a href="/definitions/{{item.namespace}}/routes">
+	<a href="/definitions/list/{{item.namespace}}/routes">
 	  {{item.routes}}
 	</a>
 	{% endif %}
