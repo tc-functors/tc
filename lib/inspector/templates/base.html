@@ -82,6 +82,10 @@
       .spaced {
 	margin-left: 1rem;
 	margin-right: 1rem;
+        width: 98%;
+      }
+      .right-spaced {
+	margin-right: 0.7rem;
       }
 
       .button {
@@ -89,9 +93,16 @@
       }
 
       .sidebar {
+      height: 100dvh;
       line-height: 1.7rem;
       background-color: var(--pico-table-row-stripped-background-color);
       border-right: 1px solid var(--pico-muted-border-color);
+      }
+
+      .navbg {
+      margin-right: 10px;
+      background-color: var(--pico-table-row-stripped-background-color);
+      border-bottom: 1px solid var(--pico-muted-border-color);
       }
 
       article {
@@ -157,35 +168,53 @@
        opacity: 0.7;
       }
 
-      .custom-button {
-      font-size: 15px;
-      padding: 10px 20px;
-      background-color: #4D4C5C; /* Default background color */
-      color: #000000;
+      .mbtn {
+      padding: 5px 10px;
+      padding-right: 10px;
+      min-width: 10px;
       border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      display: inline-flex; /* Align icon and text */
-      align-items: center; /* Vertically center text and icon */
-      gap: 10px; /* Space between icon and text */
+      font: inherit;
+      color: #eeeeee;
+      border-radius: 2px;
+      outline: none;
+      text-decoration: none;
+      font-weight: 400;
+      background: #4D4C5C;
+      background-color: #4D4C5C;
+      // border: 1px solid #ccc;
       transition: background-color 0.3s ease;
+      box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.30), 0px 1px 1px rgba(0, 0, 0, .4);
+
+      &:active {
+      background: linear-gradient(#4faefc, #006bff);
+      color: #fff;
+      position: relative;
       }
 
-      .primary {
-      background-color: #3498db; /* Blue */
       }
-
-      .success {
-      background-color: #2ecc71; /* Green */
+      .mbtn:hover {
+       opacity: 0.7;
       }
 
       .selected {
 	color: #eeeeee;
-	padding: 10px 20px;
 	text-decoration-line: underline;
-	text-decoration-color: red;
+	text-decoration-color: #e9967a;
 	text-decoration-thickness: 2px;
 	text-underline-offset: 4px;
+	background-color: transparent;
+	transition: background-color 0.3s ease;
+      }
+
+      .side-selected {
+	color: #e9967a;
+	text-decoration-line: none;
+	background-color: transparent;
+	transition: background-color 0.3s ease;
+      }
+
+      .logo {
+	color: #a1caf1;
 	background-color: transparent;
 	transition: background-color 0.3s ease;
       }
@@ -224,66 +253,64 @@
 
   <body>
       <div class="x">
-	<div class="x8 sidebar">
+	<div class="x10 sidebar">
 	  <div class="spaced">
 	    <br/>
-	    tc-inspector
+	    <span class="logo">tc-inspector</span>
 	  <br/>
 	  <br/>
 	  {% if context == "definitions" %}
-	  <strong>Definitions</strong>
+	  <span class="side-selected">Definitions</span>
 	  {% else %}
 	  <a href="/definitions">Definitions</a>
 	  {% endif %}
 	  <br/>
 
 	  {% if context == "diagrams" %}
-	  <strong>Diagrams</strong>
+	  <span class="side-selected">Diagrams</span>
 	  {% else %}
 	  <a href="/diagrams">Diagrams</a>
 	  {% endif %}
 	  <br/>
 
 	  {% if context == "builds" %}
-	  <strong>Builds</strong>
+	  <span class="side-selected">Builds</span>
 	  {% else %}
 	  <a href="/builds">Builds</a>
 	  {% endif %}
 	  <br/>
 
 	  {% if context == "sandboxes" %}
-	  <strong>Sandboxes</strong>
+	  <span class="side-selected">Sandboxes</span>
 	  {% else %}
 	  <a href="/sandboxes">Sandboxes</a>
 	  {% endif %}
 
 	  <br/>
 	  {% if context == "diffs" %}
-	  <strong>Diffs</strong>
+	  <span class="side-selected">Diffs</span>
 	  {% else %}
 	  <a href="/diffs">Diffs</a>
 	  {% endif %}
 	  <br/>
 
 	  {% if context == "releases" %}
-	  <strong>Releases</strong>
+	  <span class="side-selected">Releases</span>
 	  {% else %}
 	  <a href="/releases">Releases</a>
 	  {% endif %}
 	  <br/>
 
 	  {% if context == "canarys" %}
-	  <strong>Canarys</strong>
+	  <span class="side-selected">Canarys</span>
 	  {% else %}
 	  <a href="/canarys">Canarys</a>
 	  {% endif %}
 
 	  </div>
 	</div>
-	<div class="xg">
-	  <div class="spaced">
+	<div style="width: 98%;">
 	  {% block content %}{% endblock %}
-	  </div>
 	</div>
 
     </div>

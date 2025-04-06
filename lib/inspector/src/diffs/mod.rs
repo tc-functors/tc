@@ -8,7 +8,7 @@ use axum::{
 
 mod versions;
 mod manifests;
-mod changelog;
+
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -45,8 +45,6 @@ pub fn routes() -> Router {
                get(index_page))
         .route("/hx/diffs/manifests",
                get(manifests::generate))
-        .route("/hx/diffs/changelog",
-               get(changelog::generate))
         .route("/hx/diffs/versions",
                get(versions::generate))
 }

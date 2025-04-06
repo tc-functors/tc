@@ -25,11 +25,13 @@ where
 #[derive(Template)]
 #[template(path = "definitions/index.html")]
 struct DefinitionsTemplate {
+    entity: String,
     context: String,
 }
 
 pub async fn definitions() -> impl IntoResponse {
     let template = DefinitionsTemplate {
+        entity: "functors".to_string(),
         context: "definitions".to_string(),
     };
     HtmlTemplate(template)

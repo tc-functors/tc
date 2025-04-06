@@ -33,7 +33,7 @@ struct IndexTemplate {
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        context: String::from("diagrams"),
+        context: String::from("sandboxes"),
     })
 }
 

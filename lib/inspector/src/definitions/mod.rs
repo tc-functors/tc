@@ -41,6 +41,8 @@ pub fn list_routes() -> Router {
     Router::new()
         .route("/hx/def/list",
                get(root::list_all))
+        .route("/hx/def/list/all/all/functors",
+               get(root::list_all))
         .route("/hx/def/list/all/all/functions",
                get(function::list_all))
         .route("/hx/def/list/all/all/nodes",

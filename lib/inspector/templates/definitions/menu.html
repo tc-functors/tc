@@ -1,17 +1,59 @@
-<div class="grid">
-  <div class="x">
-    <div class="x8" role="group">
-      <a href="/definitions">Functors</a>
+<div class="navbg">
+<nav class="navbar">
+  <ul>
+    <li></li>
+    <li>
+      {% if entity == "functors" %}
+      <span class="selected">Functors<span>
+      {% else %}
+      <a href="/definitions/list/functors/all">Functors</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "nodes" %}
+      <span class="selected">Nodes</span>
+      {% else %}
       <a href="/definitions/list/nodes/all">Nodes</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "functions" %}
+      <span class="selected">Functions</span>
+      {% else %}
+      <a href="/definitions/list/functions/all">Functions</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "events" %}
+      <span class="selected">Events</span>
+      {% else %}
       <a href="/definitions/list/events/all">Events</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "routes" %}
+      <span class="selected">Routes</span>
+      {% else %}
       <a href="/definitions/list/routes/all">Routes</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "mutations" %}
+      <span class="selected">Mutations</span>
+      {% else %}
       <a href="/definitions/list/mutations/all">Mutations</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "states" %}
+      <span class="selected">States</span>
+      {% else %}
       <a href="/definitions/list/states/all">States</a>
-    </div>
-  </div>
-
-  <div class="xg" align="right">
-
+      {% endif %}
+    <li>
+  </ul>
+  <ul>
+    <li class="right-spaced">
     <button class="btn"
 	    hx-post="/hx/def/compile"
 	    hx-indicator="#status"
@@ -19,9 +61,9 @@
 	    hx-swap="outerHtml">
       <i class="ph ph-arrow-clockwise"></i> Compile
     </button>
-
-  </div>
-
+    </li>
+  </ul>
+</nav>
 </div>
 
 <br/>

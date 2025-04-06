@@ -4,6 +4,7 @@
 {% include "menu.html" %}
 
 <div id="viewer"
+     class="spaced"
      hx-trigger="load"
      hx-get="/hx/builds/list/{{entity}}"
      hx-swap="innerHTML">

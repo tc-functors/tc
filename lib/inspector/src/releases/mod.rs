@@ -6,6 +6,8 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
+mod changelog;
+
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
 where
@@ -39,4 +41,6 @@ pub fn routes() -> Router {
     Router::new()
         .route("/releases",
                get(index_page))
+        .route("/hx/diffs/changelog",
+               get(changelog::generate))
 }
