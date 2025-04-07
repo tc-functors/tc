@@ -79,6 +79,15 @@ pub fn changelog_since_last(prefix: &str, version: &str, has_suffix: bool) -> St
     changelog(&prev_tag, &curr_tag)
 }
 
+pub fn changelogs_since_last(prefix: &str, version: &str) -> String {
+    let prev_ver = dec_minor(version);
+    let curr_tag = format!("{}-{}", prefix, version);
+    let prev_tag = format!("{}-{}", prefix, prev_ver);
+    let from_sha = git::tag_revision(&prev_tag);
+    let to_sha = git::tag_revision(&curr_tag);
+    git::changelogs(&from_sha, &to_sha)
+}
+
 // git
 
 fn should_tag(tag: &str) -> bool {
