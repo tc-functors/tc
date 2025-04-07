@@ -64,7 +64,10 @@ impl Route {
 
         let target_kind = match spec.proxy {
             Some(_) => TargetKind::Function,
-            None => TargetKind::StepFunction
+            None => match spec.function {
+                Some(_) => TargetKind::Function,
+                None => TargetKind::StepFunction
+            }
         };
 
         let target_name = find_target_name(&spec.proxy);
