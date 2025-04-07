@@ -43,5 +43,6 @@ pub fn routes() -> Router {
     Router::new()
         .route("/deps", get(index_page))
         .route("/hx/deps/list/layers", get(layers::list))
+        .route("/hx/deps/list/extensions", get(extensions::list))
         .route("/hx/deps/sync", post(layers::sync))
 }

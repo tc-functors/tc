@@ -8,7 +8,6 @@ use axum::{
 };
 
 mod sequence;
-mod c4;
 mod flow;
 
 pub struct HtmlTemplate<T>(pub T);
@@ -37,7 +36,7 @@ struct IndexTemplate {
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        entity: String::from("default"),
+        entity: String::from("flow"),
         context: String::from("diagrams"),
     })
 }
@@ -57,8 +56,6 @@ pub fn routes() -> Router {
                get(view_page))
         .route("/hx/diagrams/sequence",
                get(sequence::generate))
-        .route("/hx/diagrams/c4",
-               get(c4::generate))
         .route("/hx/diagrams/flow",
                get(flow::generate))
 }
