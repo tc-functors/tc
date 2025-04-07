@@ -2,9 +2,27 @@
   <nav class="navbar">
     <ul>
       <li></li>
-      <li><a href="/releases/current">Current</a><li>
-      <li><a href="/releases/timeline">Timeline</a><li>
-      <li><a href="/releases/changelog">Changelog</a><li>
+      <li>
+	{% if entity == "current" %}
+	<span class="selected">Current</span>
+	{% else %}
+	<a href="/releases/current">Current</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "new" %}
+	<span class="selected">New</span>
+	{% else %}
+	<a href="/releases/new">New</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "timeline" %}
+	<span class="selected">Timeline</span>
+	{% else %}
+	<a href="/releases/timeline">Timeline</a>
+	{% endif %}
+      <li>
     </ul>
   </nav>
 </div>

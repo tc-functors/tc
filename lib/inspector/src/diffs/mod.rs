@@ -7,7 +7,7 @@ use axum::{
 };
 
 mod versions;
-mod manifests;
+mod functors;
 
 
 pub struct HtmlTemplate<T>(pub T);
@@ -30,11 +30,13 @@ where
 #[derive(Template)]
 #[template(path = "diffs/index.html")]
 struct IndexTemplate {
+    entity: String,
     context: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
+        entity: String::from("default"),
         context: String::from("diffs"),
     })
 }
@@ -43,8 +45,8 @@ pub fn routes() -> Router {
     Router::new()
         .route("/diffs",
                get(index_page))
-        .route("/hx/diffs/manifests",
-               get(manifests::generate))
-        .route("/hx/diffs/versions",
-               get(versions::generate))
+        .route("/diffs/functors",
+               get(functors::view))
+        .route("/diffs/versions",
+               get(versions::view))
 }

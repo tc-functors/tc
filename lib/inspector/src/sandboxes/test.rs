@@ -4,7 +4,7 @@ use axum::{
 };
 
 #[derive(Template)]
-#[template(path = "sandboxes/list.html")]
+#[template(path = "sandboxes/test.html")]
 struct FormTemplate {
     items: Vec<String>
 }

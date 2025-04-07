@@ -1,36 +1,17 @@
-<html>
-<head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+{% extends "base.html" %}
+{% block content %}
+
+{% include "menu.html" %}
+
+<h4>Timeline of releases</h4>
+
+{% for item in items %}
+{{item}}
+{% endfor %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 
 <style>
-/* --------------------------------
-
-Primary style
-
--------------------------------- */
-@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro);
-*, *::after, *::before {
-  box-sizing: border-box;
-}
-
-html {
-  font-size: 62.5%;
-}
-
-body {
-  font-size: 1.6rem;
-  font-family: "Arial", sans-serif;
-  color: #383838;
-}
-
-
-
-/* --------------------------------
-
-Main Components
-
--------------------------------- */
-
 .cd-horizontal-timeline a {
   text-decoration: none;
 }
@@ -434,8 +415,6 @@ Main Components
 }
 
 </style>
-</head>
-<body>
 
 <script>
   jQuery(document).ready(function($){
@@ -821,5 +800,5 @@ Main Components
     </ol>
   </div> <!-- .events-content -->
 </section>
-</body>
-</html>
+
+{% endblock %}

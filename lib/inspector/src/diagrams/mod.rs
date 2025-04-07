@@ -1,5 +1,6 @@
 use askama::Template;
 use axum::{
+    extract::Path,
     routing::{get, post},
     Router,
     http::StatusCode,
@@ -7,6 +8,8 @@ use axum::{
 };
 
 mod sequence;
+mod c4;
+mod flow;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -28,11 +31,20 @@ where
 #[derive(Template)]
 #[template(path = "diagrams/index.html")]
 struct IndexTemplate {
+    entity: String,
     context: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
+        entity: String::from("default"),
+        context: String::from("diagrams"),
+    })
+}
+
+pub async fn view_page(Path(entity): Path<String>) -> impl IntoResponse {
+    HtmlTemplate(IndexTemplate {
+        entity: entity,
         context: String::from("diagrams"),
     })
 }
@@ -41,6 +53,12 @@ pub fn routes() -> Router {
     Router::new()
         .route("/diagrams",
                get(index_page))
+        .route("/diagrams/{:entity}",
+               get(view_page))
         .route("/hx/diagrams/sequence",
                get(sequence::generate))
+        .route("/hx/diagrams/c4",
+               get(c4::generate))
+        .route("/hx/diagrams/flow",
+               get(flow::generate))
 }

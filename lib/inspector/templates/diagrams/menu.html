@@ -2,9 +2,27 @@
 <nav class="navbar">
   <ul>
     <li></li>
-    <li><a href="/diagrams/sequence">Sequence</a><li>
-    <li><a href="/diagrams/c4">C4</a><li>
-    <li><a href="/diagrams/flow">Flow</a><li>
+    <li>
+      {% if entity == "sequence" %}
+      <span class="selected">Sequence</span>
+      {% else %}
+      <a href="/diagrams/sequence">Sequence</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "c4" %}
+      <span class="selected">C4</span>
+      {% else %}
+      <a href="/diagrams/c4">C4</a>
+      {% endif %}
+    <li>
+    <li>
+      {% if entity == "flow" %}
+      <span class="selected">Flow</span>
+      {% else %}
+      <a href="/diagrams/flow">Flow</a>
+      {% endif %}
+    <li>
   </ul>
 </nav>
 </div>

@@ -36,7 +36,7 @@ async fn build(
 }
 
 #[derive(Template)]
-#[template(path = "diffs/versions.html")]
+#[template(path = "diffs/versions_list.html")]
 struct VersionsTemplate {
     envs: Vec<String>,
     items: HashMap<String, HashMap<String, String>>
@@ -58,4 +58,26 @@ pub async fn generate() -> impl IntoResponse {
         items: versions
     };
     Html(t.render().unwrap())
+}
+
+
+#[derive(Template)]
+#[template(path = "diffs/versions.html")]
+struct ViewTemplate {
+    entity: String,
+    context: String,
+    envs: Vec<String>,
+}
+
+pub async fn view() -> impl IntoResponse {
+
+    let temp = ViewTemplate {
+        entity: String::from("versions"),
+        context: String::from("diffs"),
+        envs: vec![String::from("qa"),
+                   String::from("staging"),
+                   String::from("prod-01"),
+                   String::from("prod")]
+    };
+    Html(temp.render().unwrap())
 }

@@ -1,29 +1,33 @@
-<table class="striped">
+{% extends "base.html" %}
+{% block content %}
 
-<thead>
-  <tr>
-    <td>Functor</td>
-    {% for env in envs %}
-    <td> {{env}} </td>
-    {% endfor %}
-  </tr>
-</thead>
+{% include "menu.html" %}
 
-<tbody>
+<div class="spaced">
+<div class="grid">
 
-  {% for (functor, data) in items %}
+  <fieldset class="grid">
 
-  <tr>
-    <td> {{functor}} </td>
-    {% for env in envs %}
-    <td> {{ data[env] }}</td>
-    {% endfor %}
+    <details class="dropdown">
+      <summary>
+	Select Envs to diff
+      </summary>
+      <ul>
+	{% for env in envs %}
+	<li>
+	  <label>
+            <input type="checkbox" name={{env}} />
+	    {{env}}
+	  </label>
+	</li>
+	{% endfor %}
+      </ul>
+    </details>
+    <input type="text" placeholder="sandbox name"/>
+    <input type="submit" value="Find versions"/>
 
-    <td> </td>
-  </tr>
-
-  {% endfor %}
-
-</tbody>
-
-+</table>
+  </fieldset>
+  <div>
+</div>
+</div>
+{% endblock %}

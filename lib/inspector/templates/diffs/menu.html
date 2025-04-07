@@ -2,8 +2,20 @@
   <nav class="navbar">
     <ul>
       <li></li>
-      <li><a href="/builds/list/images">Versions</a><li>
-      <li><a href="/builds/list/extensions">Manifests</a><li>
+      <li>
+	{% if entity == "versions" %}
+	<span class="selected">Versions</span>
+	{% else %}
+	<a href="/diffs/versions">Versions</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "functors" %}
+	<span class="selected">Functors</span>
+	{% else %}
+	<a href="/diffs/functors">Functors</a>
+	{% endif %}
+      <li>
     </ul>
   </nav>
 </div>

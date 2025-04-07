@@ -3,12 +3,14 @@
 
 {% include "menu.html" %}
 
-<div id="functors">
-  <div align="center">
-    <br/><br/><br/>
-  </div>
+<div class="spaced">
+
+  {% if entity == "list" %}
+  {% include "list.html" %}
+  {% else if entity == "create" %}
+  {% include "create.html" %}
+  {% endif %}
 
 </div>
-
 
 {% endblock %}

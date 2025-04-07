@@ -2,20 +2,34 @@
   <nav class="navbar">
     <ul>
       <li></li>
-      <li><a href="/sandboxes/list">List</a><li>
-      <li><a href="/sandboxes/create">Create</a><li>
-      <li><a href="/sandboxes/clone">Clone</a><li>
-    </ul>
-    <ul>
-      <li class="right-spaced">
-	<button class="btn"
-		hx-post="/hx/builds/sync"
-		hx-indicator="#status"
-		hx-target="#functors"
-		hx-swap="outerHtml">
-	  <i class="ph ph-arrow-clockwise"></i> Sync with Provider
-	</button>
-      </li>
+      <li>
+	{% if entity == "list" %}
+	<span class="selected">List</span>
+	{% else %}
+	<a href="/sandboxes/list">List</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "create" %}
+	<span class="selected">Create</span>
+	{% else %}
+	<a href="/sandboxes/create">Create</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "clone" %}
+	<span class="selected">Clone</span>
+	{% else %}
+	<a href="/sandboxes/clone">Clone</a>
+	{% endif %}
+      <li>
+      <li>
+	{% if entity == "test" %}
+	<span class="selected">Test</span>
+	{% else %}
+	<a href="/sandboxes/clone">Test</a>
+	{% endif %}
+      <li>
     </ul>
   </nav>
 </div>

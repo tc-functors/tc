@@ -1,6 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% include "menu.html" %}
+
+
 <head>
   <!-- Make sure to load the highlight.js CSS file before the Diff2Html CSS file -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.1/styles/github.min.css" />
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css"
+  media="screen and (prefers-color-scheme: dark)"/>
+
     <link
       rel="stylesheet"
       type="text/css"
@@ -11,10 +21,8 @@
 
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
 <script>
-    const diffString = `diff --git a/sample.js b/sample.js
+    const diffString = `diff --git a/staging.json b/prod.json
 index 0000001..0ddf2ba
---- a/sample.js
-+++ b/sample.js
 @@ -1 +1 @@
 -layers ["layer:12"]
 +layers ["layer:14"]`;
@@ -23,7 +31,7 @@ index 0000001..0ddf2ba
     document.addEventListener('DOMContentLoaded', function () {
       var targetElement = document.getElementById('myDiffElement');
       var configuration = {
-        drawFileList: true,
+        drawFileList: false,
         fileListToggle: false,
         fileListStartVisible: false,
         fileContentToggle: false,
@@ -31,6 +39,7 @@ index 0000001..0ddf2ba
         outputFormat: 'side-by-side',
         synchronisedScroll: true,
         highlight: true,
+        colorScheme: 'dark',
         renderNothingWhenEmpty: false,
       };
       var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
@@ -38,10 +47,11 @@ index 0000001..0ddf2ba
       diff2htmlUi.highlightCode();
     });
   </script>
-  <body>
-    <div id="myDiffElement"></div>
 
-    <br/>
-    {{left}}  - {{right}}
-  </body>
-</html>
+<div class="spaced"
+   <div id="myDiffElement"></div>
+</div>
+    <!-- <br/> -->
+    <!-- {{left}}  - {{right}} -->
+
+{% endblock %}

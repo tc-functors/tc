@@ -1,5 +1,6 @@
 use askama::Template;
 use axum::{
+    extract::Path,
     routing::{get},
     Router,
     http::StatusCode,
@@ -7,6 +8,9 @@ use axum::{
 };
 
 mod changelog;
+mod timeline;
+mod new;
+mod current;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -28,11 +32,13 @@ where
 #[derive(Template)]
 #[template(path = "releases/index.html")]
 struct IndexTemplate {
+    entity: String,
     context: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
+        entity: String::from("default"),
         context: String::from("releases"),
     })
 }
@@ -41,6 +47,13 @@ pub fn routes() -> Router {
     Router::new()
         .route("/releases",
                get(index_page))
-        .route("/hx/diffs/changelog",
-               get(changelog::generate))
+        .route("/releases/timeline",
+               get(timeline::view))
+        .route("/releases/changelog",
+               get(changelog::view))
+        .route("/releases/new",
+               get(new::view))
+        .route("/releases/current",
+               get(current::view))
+
 }

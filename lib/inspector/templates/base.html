@@ -274,9 +274,9 @@
 	  <br/>
 
 	  {% if context == "builds" %}
-	  <span class="side-selected">Builds</span>
+	  <span class="side-selected">Dependencies</span>
 	  {% else %}
-	  <a href="/builds">Builds</a>
+	  <a href="/builds">Dependencies</a>
 	  {% endif %}
 	  <br/>
 
@@ -285,19 +285,19 @@
 	  {% else %}
 	  <a href="/sandboxes">Sandboxes</a>
 	  {% endif %}
-
-	  <br/>
-	  {% if context == "diffs" %}
-	  <span class="side-selected">Diffs</span>
-	  {% else %}
-	  <a href="/diffs">Diffs</a>
-	  {% endif %}
 	  <br/>
 
 	  {% if context == "releases" %}
 	  <span class="side-selected">Releases</span>
 	  {% else %}
 	  <a href="/releases">Releases</a>
+	  {% endif %}
+	  <br/>
+
+	  {% if context == "diffs" %}
+	  <span class="side-selected">Diffs</span>
+	  {% else %}
+	  <a href="/diffs">Diffs</a>
 	  {% endif %}
 	  <br/>
 
@@ -309,7 +309,7 @@
 
 	  </div>
 	</div>
-	<div style="width: 98%;">
+	<div style="width: 95%;">
 	  {% block content %}{% endblock %}
 	</div>
 
