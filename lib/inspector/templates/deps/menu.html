@@ -6,29 +6,21 @@
 	{% if entity == "layers" %}
 	<span class="selected">Layers</span>
 	{% else %}
-	<a href="/builds/list/layers">Layers</a>
+	<a href="/deps/list/layers">Layers</a>
 	{% endif %}
-      <li>
-      <li>
-	{% if entity == "images" %}
-	<span class="selected">Images</span>
-	{% else %}
-	<a href="/builds/list/images">Images</a>
-	{% endif %}
-
-      <li>
+      </li>
       <li>
 	{% if entity == "extensions" %}
 	<span class="selected">Extensions</span>
 	{% else %}
-	<a href="/builds/list/extensions">Extensions</a>
+	<a href="/deps/list/extensions">Extensions</a>
 	{% endif %}
-      <li>
+      </li>
     </ul>
     <ul>
       <li class="right-spaced">
 	<button class="btn"
-		hx-post="/hx/builds/sync"
+		hx-post="/hx/deps/sync"
 		hx-indicator="#status"
 		hx-target="#functors"
 		hx-swap="outerHtml">

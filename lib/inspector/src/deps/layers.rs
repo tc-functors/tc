@@ -24,7 +24,7 @@ fn build(xs: Vec<String>) -> Vec<Layer> {
 }
 
 #[derive(Template)]
-#[template(path = "builds/list/layers.html")]
+#[template(path = "deps/list/layers.html")]
 struct LayersTemplate {
     items: Vec<Layer>
 }

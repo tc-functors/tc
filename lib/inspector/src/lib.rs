@@ -8,7 +8,7 @@ mod definitions;
 mod diagrams;
 mod sandboxes;
 mod releases;
-mod builds;
+mod deps;
 mod diffs;
 mod canarys;
 
@@ -25,7 +25,7 @@ pub async fn init() {
         .merge(definitions::post_routes())
 
         .merge(diagrams::routes())
-        .merge(builds::routes())
+        .merge(deps::routes())
         .merge(diffs::routes())
         .merge(canarys::routes())
         .merge(sandboxes::routes())

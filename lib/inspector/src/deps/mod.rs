@@ -26,7 +26,7 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "builds/index.html")]
+#[template(path = "deps/index.html")]
 struct IndexTemplate {
     entity: String,
     context: String,
@@ -35,13 +35,13 @@ struct IndexTemplate {
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
         entity: String::from("layers"),
-        context: String::from("builds"),
+        context: String::from("deps"),
     })
 }
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/builds", get(index_page))
-        .route("/hx/builds/list/layers", get(layers::list))
-        .route("/hx/builds/sync", post(layers::sync))
+        .route("/deps", get(index_page))
+        .route("/hx/deps/list/layers", get(layers::list))
+        .route("/hx/deps/sync", post(layers::sync))
 }
