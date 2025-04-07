@@ -4,20 +4,43 @@
 {% include "menu.html" %}
 
 <div class="spaced">
-<div class="grid">
 
-<div></div>
-<div align="right">
+  <div class="grid">
+    <div hx-trigger="load"
+	 hx-get="/hx/releases/current/versions"
+	 hx-swap="innerHTML">
 
-  <button class="btn">Freeze</button>
-  <button class="btn">Snapshot</button>
+      <div class="grid">
+	<div></div>
+	<div align="center" id="status" class="htmx-indicator">
+	  <br/>
+	  <br/>
+	  <br/>
+	  <article aria-busy="true"></article>
+	</div>
+	<div></div>
+      </div>
+
+    </div>
+
+    <div hx-trigger="load"
+	 hx-get="/hx/releases/current/changelog"
+	 hx-swap="innerHTML">
+
+      <div class="grid">
+	<div></div>
+	<div align="center" id="status" class="htmx-indicator">
+	  <br/>
+	  <br/>
+	  <br/>
+	  <article aria-busy="true"></article>
+	</div>
+	<div></div>
+      </div>
+
+    </div>
+  </div>
 
 </div>
-</div>
-</div>
-
-{% for item in items %}
-{{item}}
-{% endfor %}
 
 {% endblock %}

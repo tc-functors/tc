@@ -24,6 +24,13 @@
 	{% endif %}
       <li>
     </ul>
+
+    {% if entity == "current" %}
+    <ul>
+      <li><button class="btn">Freeze</button></li>
+      <li class="right-spaced"><button class="btn">Snapshot</button></li>
+    </ul>
+    {% endif %}
   </nav>
 </div>
 

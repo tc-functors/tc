@@ -7,7 +7,6 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
-mod changelog;
 mod timeline;
 mod new;
 mod current;
@@ -45,15 +44,10 @@ pub async fn index_page() -> impl IntoResponse {
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/releases",
-               get(index_page))
-        .route("/releases/timeline",
-               get(timeline::view))
-        .route("/releases/changelog",
-               get(changelog::view))
-        .route("/releases/new",
-               get(new::view))
-        .route("/releases/current",
-               get(current::view))
-
+        .route("/releases", get(index_page))
+        .route("/releases/timeline", get(timeline::view))
+        .route("/releases/new", get(new::view))
+        .route("/releases/current", get(current::view))
+        .route("/hx/releases/current/changelog", get(current::changelog))
+        .route("/hx/releases/current/versions", get(current::versions))
 }

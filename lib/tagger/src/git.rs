@@ -45,6 +45,17 @@ pub fn changelog(from_sha: &str, to_sha: &str) -> String {
     }
 }
 
+pub fn changelogs(from_sha: &str, to_sha: &str) -> String {
+    let cmd = format!("git log --pretty=\"%s\" {}...{} .", from_sha, to_sha);
+    let out = sh(&cmd, &pwd());
+    if out.contains("fatal") {
+        String::from("")
+    } else {
+        out
+    }
+}
+
+
 pub fn fetch_tags() {
     sh("git fetch --tags", &pwd());
 }

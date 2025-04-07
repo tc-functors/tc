@@ -36,7 +36,7 @@ struct IndexTemplate {
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        entity: String::from("default"),
+        entity: String::from("versions"),
         context: String::from("diffs"),
     })
 }

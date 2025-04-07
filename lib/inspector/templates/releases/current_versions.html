@@ -1,0 +1,23 @@
+<table class="striped">
+
+<thead>
+  <tr>
+    <td>Functor</td>
+    <td>Version</td>
+  </tr>
+</thead>
+
+<tbody>
+
+  {% for (name, version) in items %}
+
+  <tr>
+    <td> {{name}} </td>
+    <td> {{version}} </td>
+  </tr>
+
+  {% endfor %}
+
+</tbody>
+
+</table>

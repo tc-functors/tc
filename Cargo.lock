@@ -2521,6 +2521,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tagger",
  "tokio",
  "tower-http",
  "tracing",

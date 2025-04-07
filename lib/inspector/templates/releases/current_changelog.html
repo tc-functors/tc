@@ -1,0 +1,14 @@
+
+<h4>Changelog</h4>
+
+{% for change in items %}
+
+<article>
+  <header><strong>{{change.name}} - {{change.version}}</strong></header>
+
+  {% for c in change.changes.split('\n') -%}
+  <p> - {{c}}</p>
+  {% endfor %}
+</article>
+
+{% endfor %}

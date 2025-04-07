@@ -19,4 +19,5 @@ compiler = { path = "../compiler" }
 aws = { path = "../aws" }
 kit = { path = "../kit" }
 lister = { path = "../lister" }
+tagger = { path = "../tagger" }
 configurator = { path = "../configurator" }
