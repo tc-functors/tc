@@ -50,4 +50,5 @@ pub fn routes() -> Router {
         .route("/releases/current", get(current::view))
         .route("/hx/releases/current/changelog", get(current::changelog))
         .route("/hx/releases/current/versions", get(current::versions))
+        .route("/hx/releases/new/versions", get(new::versions))
 }

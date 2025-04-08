@@ -49,4 +49,6 @@ pub fn routes() -> Router {
                get(functors::view))
         .route("/diffs/versions",
                get(versions::view))
+        .route("/hx/diffs/versions",
+               get(versions::generate))
 }

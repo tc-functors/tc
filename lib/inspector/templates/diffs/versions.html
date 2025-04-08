@@ -27,7 +27,27 @@
     <input type="submit" value="Find versions"/>
 
   </fieldset>
-  <div>
+  <div></div>
 </div>
+
+<br/>
+
+<div hx-trigger="load"
+     hx-get="/hx/diffs/versions"
+     hx-swap="innerHTML">
+
+  <div class="grid">
+    <div></div>
+    <div align="center" id="status" class="htmx-indicator">
+      <br/>
+      <br/>
+      <br/>
+      <span aria-busy="true">Looking up versions for given environments...</span>
+    </div>
+    <div></div>
+  </div>
+
+</div>
+
 </div>
 {% endblock %}

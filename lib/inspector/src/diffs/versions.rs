@@ -20,16 +20,16 @@ async fn build(
     let mut h: Versions = HashMap::new();
     for (_, t) in topologies {
         let mut v: HashMap<String, String> = HashMap::new();
-        for e in &envs {
-            let env = Env::new(&e, None, Config::new(None, &e));
-            let version = lister::lookup_version(
-                &env, &t.kind, &t.fqn, sandbox
-            ).await;
-            if let Some(ver) = version {
-                v.insert(e.to_string(), ver);
-            }
-        }
-        h.insert(t.namespace, v);
+        // for e in &envs {
+        //     let env = aws::init(Some(e.to_string()), None, Config::new(None, &e)).await;
+        //     let version = lister::lookup_version(
+        //         &env, &t.kind, &t.fqn, sandbox
+        //     ).await;
+        //     if let Some(ver) = version {
+        //         v.insert(e.to_string(), ver);
+        //     }
+        // }
+        // h.insert(t.namespace, v);
     }
     tracing::debug!("{:?}", &h);
     h

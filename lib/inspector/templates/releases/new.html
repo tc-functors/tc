@@ -3,18 +3,30 @@
 
 {% include "menu.html" %}
 
+
 <div class="spaced">
-<div class="grid">
 
-<div></div>
-<div align="right">
-  <button class="btn">Release</button>
-</div>
-</div>
-</div>
+  <div class="grid">
+    <div hx-trigger="load"
+	 hx-get="/hx/releases/new/versions"
+	 hx-swap="innerHTML">
 
-{% for item in items %}
-{{item}}
-{% endfor %}
+      <div class="grid">
+	<div></div>
+	<div align="center" id="status" class="htmx-indicator">
+	  <br/>
+	  <br/>
+	  <br/>
+	  <span aria-busy="true">Loading latest versions in git...</span>
+	</div>
+	<div></div>
+      </div>
+
+    </div>
+
+    <div></div>
+  </div>
+
+</div>
 
 {% endblock %}
