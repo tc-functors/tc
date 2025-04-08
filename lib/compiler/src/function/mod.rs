@@ -72,8 +72,20 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
             find_fqn(&f, namespace, &fspec.name, format)
         },
         None => match &fspec.namespace {
-            Some(n) => format!("{}_{}_{{{{sandbox}}}}", n, &fspec.name),
-            None => format!("{}_{}_{{{{sandbox}}}}", namespace, &fspec.name)
+            Some(n) => {
+                if format == "hyphenated" {
+                    format!("{}-{}-{{{{sandbox}}}}", n, &fspec.name)
+                } else {
+                    format!("{}_{}_{{{{sandbox}}}}", n, &fspec.name)
+                }
+            }
+            None => {
+                if format == "hyphenated" {
+                    format!("{}-{}-{{{{sandbox}}}}", namespace, &fspec.name)
+                } else {
+                    format!("{}_{}_{{{{sandbox}}}}", namespace, &fspec.name)
+                }
+            }
         }
     }
 }
