@@ -11,7 +11,7 @@ use configurator::Config;
 use serde_json::Value;
 
 use super::spec::{TopologySpec, TopologyKind};
-use super::{mutation, schedule, event, version, template, tag};
+use super::{mutation, schedule, event, version, template, tag, channel};
 use super::mutation::Mutation;
 use super::function::Function;
 use super::route::Route;
@@ -19,6 +19,7 @@ use super::event::Event;
 use super::queue::Queue;
 use super::log::LogConfig;
 use super::schedule::Schedule;
+use super::channel::Channel;
 use super::flow::Flow;
 use super::role::Role;
 use kit as u;
@@ -42,6 +43,7 @@ pub struct Topology {
     pub mutations: HashMap<String, Mutation>,
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
+    pub channels: HashMap<String, Channel>,
     pub tags: HashMap<String, String>,
     pub logs: LogConfig,
     pub flow: Option<Flow>
@@ -361,6 +363,15 @@ fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Muta
     h
 }
 
+fn make_channels(spec: &TopologySpec, _config: &Config) -> HashMap<String, Channel> {
+    match &spec.channels {
+        Some(c) => channel::make(&spec.name, c.clone()),
+        None => HashMap::new()
+    }
+
+}
+
+
 fn find_kind(
     given_kind: &Option<TopologyKind>,
     flow: &Option<Flow>,
@@ -423,6 +434,7 @@ fn make(
         routes: make_routes(&spec, &config),
         queues: make_queues(&spec, &config),
         mutations: mutations,
+        channels: make_channels(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow
@@ -467,6 +479,7 @@ fn make_standalone(dir: &str) -> Topology {
         nodes: HashMap::new(),
         mutations: HashMap::new(),
         queues: HashMap::new(),
+        channels: HashMap::new(),
         logs: LogConfig::new(),
         tags: HashMap::new(),
         schedules: HashMap::new(),

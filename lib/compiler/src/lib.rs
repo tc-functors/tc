@@ -15,6 +15,7 @@ mod role;
 mod log;
 pub mod formatter;
 mod tag;
+mod channel;
 
 use walkdir::WalkDir;
 
@@ -30,6 +31,7 @@ pub use flow::Flow;
 pub use role::{Role, RoleKind};
 pub use log::LogConfig;
 pub use formatter::TopologyCount;
+pub use channel::Channel;
 use std::collections::HashMap;
 
 pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
@@ -191,6 +193,11 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
         "schedules" => {
             let topology = compile(&dir, recursive);
             u::pretty_json(&topology.schedules)
+        }
+
+        "channels" => {
+            let topology = compile(&dir, recursive);
+            u::pretty_json(&topology.channels)
         }
         "functions" => {
             let topology = compile(&dir, recursive);

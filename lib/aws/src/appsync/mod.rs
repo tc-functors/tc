@@ -11,9 +11,10 @@ use kit::*;
 use std::collections::HashMap;
 
 mod dynamodb;
-mod event;
+mod eventbridge;
 mod http;
 mod lambda;
+pub mod events;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;
@@ -263,9 +264,9 @@ pub async fn find_or_create_datasource(client: &Client, api_id: &str, datasource
         }
         "event" => {
             if exists {
-                event::update_datasource(client, api_id, &name, &target_arn, &role_arn).await;
+                eventbridge::update_datasource(client, api_id, &name, &target_arn, &role_arn).await;
             } else {
-                event::create_datasource(client, api_id, &name, &target_arn, &role_arn).await;
+                eventbridge::create_datasource(client, api_id, &name, &target_arn, &role_arn).await;
             }
         }
         "http" => {
@@ -455,4 +456,12 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
         }
         Err(_) => Ok(HashMap::new()),
     }
+}
+
+pub async fn create_events_api(client: &Client, api_name: &str) -> String {
+    events::find_or_create_api(client, api_name).await
+}
+
+pub async fn create_events_channel(client: &Client, api_id: &str, name: &str, handler: &str) {
+    events::create_channel(client, api_id, name, handler).await
 }

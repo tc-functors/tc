@@ -16,7 +16,7 @@ aws-sdk-iam = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-lambda = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-sfn = { version = "1.15.0", features = ["behavior-version-latest"] }
-aws-sdk-appsync = { version = "1.15.0", features = ["behavior-version-latest"] }
+aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-ssm = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-sts = { version = "1.15.0", features = ["behavior-version-latest"] }
 aws-sdk-ecs = { version = "1.15.0", features = ["behavior-version-latest"] }
