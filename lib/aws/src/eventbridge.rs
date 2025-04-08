@@ -8,6 +8,11 @@ use aws_sdk_eventbridge::types::PutEventsRequestEntry;
 use aws_sdk_eventbridge::types::RetryPolicy;
 use aws_sdk_eventbridge::types::builders::RetryPolicyBuilder;
 pub use aws_sdk_eventbridge::types::{Rule, RuleState, Target};
+use aws_sdk_eventbridge::types::ConnectionAuthorizationType;
+use aws_sdk_eventbridge::types::CreateConnectionAuthRequestParameters;
+use aws_sdk_eventbridge::types::ApiDestinationHttpMethod;
+use aws_sdk_eventbridge::types::builders::CreateConnectionAuthRequestParametersBuilder;
+use aws_sdk_eventbridge::types::builders::CreateConnectionApiKeyAuthRequestParametersBuilder;
 use aws_sdk_eventbridge::Client;
 use std::collections::HashMap;
 
@@ -74,6 +79,13 @@ pub fn make_target(
             .role_arn(role_arn)
             .set_input_transformer(input_transformer)
             .set_app_sync_parameters(appsync)
+            .retry_policy(retry_policy)
+            .build()
+            .unwrap(),
+        "channel" => target
+            .id(id)
+            .arn(String::from(arn))
+            .set_input_transformer(input_transformer)
             .retry_policy(retry_policy)
             .build()
             .unwrap(),
@@ -227,4 +239,80 @@ pub async fn remove_targets(client: &Client, bus: &str, rule_name: &str, target_
         .send()
         .await
         .unwrap();
+}
+
+
+// api destination
+
+fn make_auth_params(api_key: &str) -> CreateConnectionAuthRequestParameters {
+    let ret = CreateConnectionApiKeyAuthRequestParametersBuilder::default();
+    let api_key_auth_params = ret.api_key_name(s!("x-api-key")).api_key_value(s!(api_key)).build().unwrap();
+    let b = CreateConnectionAuthRequestParametersBuilder::default();
+    b.api_key_auth_parameters(api_key_auth_params).build()
+}
+
+async fn create_connection(client: &Client, name: &str, api_key: &str) -> String {
+    let auth_params = make_auth_params(api_key);
+    let res = client
+        .create_connection()
+        .name(s!(name))
+        .authorization_type(ConnectionAuthorizationType::ApiKey)
+        .auth_parameters(auth_params)
+        .send()
+        .await;
+    res.unwrap().connection_arn.unwrap()
+}
+
+async fn find_connection(client: &Client, name: &str) -> Option<String> {
+   let res = client
+        .describe_connection()
+        .name(s!(name))
+        .send()
+        .await;
+    match res {
+        Ok(r) => r.connection_arn,
+        Err(_) => None
+    }
+}
+
+async fn find_or_create_connection(client: &Client, name: &str, api_key: &str) -> String {
+    match find_connection(client, name).await {
+        Some(c) => c,
+        None => create_connection(client, name, api_key).await
+    }
+}
+
+
+async fn find_api_destination(client: &Client, name: &str) -> Option<String> {
+    let res = client
+        .describe_api_destination()
+        .name(s!(name))
+        .send()
+        .await;
+    match res {
+        Ok(r) => r.api_destination_arn,
+        Err(_) => None
+    }
+}
+
+async fn create_api_destination(client: &Client, name: &str, connection_arn: &str, endpoint: &str) -> String {
+    let res = client
+        .create_api_destination()
+        .name(s!(name))
+        .connection_arn(s!(connection_arn))
+        .invocation_endpoint(s!(endpoint))
+        .http_method(ApiDestinationHttpMethod::Post)
+        .send()
+        .await;
+    res.unwrap().api_destination_arn.unwrap()
+}
+
+async fn find_or_create_api_destination(client: &Client, name: &str, endpoint: &str, api_key: &str) -> String {
+    match find_api_destination(client, name).await {
+        Some(api_dest_arn) => api_dest_arn,
+        None => {
+            let connection_arn = find_or_create_connection(client, name, api_key).await;
+            create_api_destination(client, name, &connection_arn, endpoint).await
+        }
+    }
 }

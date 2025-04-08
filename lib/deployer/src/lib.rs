@@ -6,6 +6,7 @@ pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
+pub mod channel;
 
 use colored::Colorize;
 use compiler::Topology;
@@ -32,6 +33,7 @@ fn prn_components() {
         "mutations",
         "schedules",
         "queues",
+        "channels"
     ];
     for x in v {
         println!("{x}");
@@ -173,6 +175,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         schedules,
         queues,
         tags,
+        channels,
         ..
     } = topology.clone();
 
@@ -237,6 +240,8 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         "schedules" => schedule::create(&env, &namespace, schedules).await,
 
         "queues" => queue::create(&env, &queues).await,
+
+        "channels" => channel::create(&env, &channels).await,
 
         "all" => {
             role::create_or_update(&env, &topology.roles()).await;

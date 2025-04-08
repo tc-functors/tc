@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::{Context, Topology};
 use compiler::{Event, Target, TargetKind, Mutation};
-use aws::appsync;
+use aws::{appsync, eventbridge};
 use aws::Env;
 use kit as u;
 use kit::*;
@@ -35,6 +35,7 @@ async fn get_graphql_arn_id(env: &Env, name: &str) -> Option<String> {
         None => None,
     }
 }
+
 
 async fn find_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
 
@@ -81,7 +82,8 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
     let target_name = match target.kind {
         TargetKind::Function => fqn_of(context, topology, &target.name),
         TargetKind::Mutation => find_mutation(&target.name, &topology.mutations).await,
-        TargetKind::StepFunction => name.clone()
+        TargetKind::StepFunction => name.clone(),
+        TargetKind::Channel => name.clone()
     };
 
     let target_arn = match target.kind {
@@ -93,7 +95,8 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
                 None => String::from("none"),
             }
         },
-        TargetKind::StepFunction => env.sfn_arn(&target_name)
+        TargetKind::StepFunction => env.sfn_arn(&target_name),
+        TargetKind::Channel => target.arn
     };
     target.name = target_name;
     target.arn = target_arn;

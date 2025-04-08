@@ -9,7 +9,8 @@ use configurator::Config;
 pub enum TargetKind {
     Function,
     Mutation,
-    StepFunction
+    StepFunction,
+    Channel
 }
 
 impl TargetKind {
@@ -18,7 +19,8 @@ impl TargetKind {
         match self {
             TargetKind::Function => s!("function"),
             TargetKind::Mutation => s!("appsync"),
-            TargetKind::StepFunction => s!("sfn")
+            TargetKind::StepFunction => s!("sfn"),
+            TargetKind::Channel => s!("channel")
         }
     }
 }
@@ -98,6 +100,7 @@ pub fn make_targets(
         mutation,
         functions,
         stepfunction,
+        channel,
         ..
     } = consumes;
 
@@ -172,6 +175,25 @@ pub fn make_targets(
             &producer_ns,
             &consumer_ns,
             None,
+            None
+        );
+        xs.push(t)
+    }
+
+    if let Some(ref c) = channel {
+        let id = format!("{}_channel_{}_target", c, event_name);
+        let mut h: HashMap<String, String> = HashMap::new();
+        h.insert(s!("detail"), s!("$.detail"));
+        let input_paths_map = Some(h);
+        let arn = format!("{{{{api_destination_arn}}}}");
+        let t = Target::new(
+            TargetKind::Channel,
+            &id,
+            c,
+            &arn,
+            &producer_ns,
+            &consumer_ns,
+            input_paths_map,
             None
         );
         xs.push(t)

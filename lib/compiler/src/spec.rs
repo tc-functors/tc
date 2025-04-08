@@ -454,6 +454,9 @@ pub struct Consumes {
     pub mutation: Option<String>,
 
     #[serde(default)]
+    pub channel: Option<String>,
+
+    #[serde(default)]
     pub stepfunction: Option<String>,
 
     #[serde(default)]
@@ -469,6 +472,26 @@ pub struct EventsSpec {
     pub doc_only: bool,
     pub consumes: Option<HashMap<String, Consumes>>,
     pub produces: Option<HashMap<String, Produces>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HandlerSpec {
+   #[serde(default)]
+    pub handler: Option<String>,
+
+   #[serde(default)]
+    pub event: Option<String>,
+
+    #[serde(default)]
+    pub function: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ChannelSpec {
+    #[serde(default)]
+    pub doc_only: bool,
+    pub on_publish: HandlerSpec,
+    pub on_subscribe: HandlerSpec
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -596,6 +619,7 @@ pub struct TopologySpec {
     pub states: Option<Value>,
     pub mutations: Option<MutationSpec>,
     pub queues: Option<HashMap<String, QueueSpec>>,
+    pub channels: Option<HashMap<String, ChannelSpec>>,
     pub flow: Option<Value>,
 }
 
@@ -624,6 +648,7 @@ impl TopologySpec {
                 flow: None,
                 queues: None,
                 mutations: None,
+                channels: None
             }
         }
     }
