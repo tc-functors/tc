@@ -120,8 +120,15 @@ pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Even
 
         event.targets = targets;
 
-        if sandbox == "stable" || event.sandboxes.contains(&sandbox) {
-            events.insert(name.to_string(), event.clone());
+        match std::env::var("TC_DEPLOY_EVENTS") {
+            Ok(_) => {
+                events.insert(name.to_string(), event.clone());
+            }
+            Err(_) => {
+                if sandbox == "stable" || event.sandboxes.contains(&sandbox) {
+                    events.insert(name.to_string(), event.clone());
+                }
+            }
         }
     }
     events
