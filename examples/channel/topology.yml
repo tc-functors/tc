@@ -1,0 +1,15 @@
+name: tc-example-channel
+
+events:
+  consumes:
+    MyTestEvent:
+      producer: MyP
+      channel: test-channel
+
+
+channels:
+  test-channel:
+    on_publish:
+      handler: default
+    on_subscribe:
+      handler: default
