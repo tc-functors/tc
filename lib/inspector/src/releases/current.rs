@@ -3,7 +3,6 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use compiler::Topology;
 use std::collections::HashMap;
 use crate::cache;
 

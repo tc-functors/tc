@@ -9,7 +9,7 @@ struct FormTemplate {
     items: Vec<String>
 }
 
-pub async fn form() -> impl IntoResponse {
+pub async fn generate() -> impl IntoResponse {
     let t = FormTemplate {
         items: vec![]
     };

@@ -5,7 +5,6 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use aws::Env;
 use compiler::Topology;
 use crate::cache::Versions;
 use crate::cache;
@@ -20,16 +19,16 @@ async fn build(
     let mut h: Versions = HashMap::new();
     for (_, t) in topologies {
         let mut v: HashMap<String, String> = HashMap::new();
-        // for e in &envs {
-        //     let env = aws::init(Some(e.to_string()), None, Config::new(None, &e)).await;
-        //     let version = lister::lookup_version(
-        //         &env, &t.kind, &t.fqn, sandbox
-        //     ).await;
-        //     if let Some(ver) = version {
-        //         v.insert(e.to_string(), ver);
-        //     }
-        // }
-        // h.insert(t.namespace, v);
+        for e in &envs {
+            let env = aws::init(Some(e.to_string()), None, Config::new(None, &e)).await;
+            let version = lister::lookup_version(
+                &env, &t.kind, &t.fqn, sandbox
+            ).await;
+            if let Some(ver) = version {
+                v.insert(e.to_string(), ver);
+            }
+        }
+        h.insert(t.namespace, v);
     }
     tracing::debug!("{:?}", &h);
     h
@@ -50,7 +49,11 @@ pub async fn generate() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let versions = match cache::find_versions().await  {
         Some(v) => v,
-        None => build(envs.clone(), topologies, "stable").await
+        None => {
+            let vers = build(envs.clone(), topologies, "stable").await;
+            cache::save_versions(vers.clone()).await;
+            vers
+        }
     };
 
     let t = VersionsTemplate {

@@ -1,26 +1,13 @@
 use askama::Template;
 use axum::{
-    extract::Path,
     response::{Html, IntoResponse},
 };
 use crate::cache;
-
-async fn build_participants(roots: &Vec<String>) -> Vec<String> {
-    let mut xs: Vec<String> = vec![];
-    for root in roots {
-        let x = format!("participant {}", kit::split_first(&root, "-"));
-        xs.push(x);
-    }
-    xs
-}
 
 async fn build_mermaid_str() -> Vec<String> {
     let events = cache::find_all_events().await;
     let mut xs: Vec<String> = vec![];
     let roots = cache::find_root_namespaces().await;
-    //let parts = build_participants(&roots).await;
-
-    //xs.extend(parts);
 
     for (_, event) in events {
         for t in event.targets {

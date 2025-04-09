@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::{
     extract::Path,
-    routing::{get, post},
+    routing::get,
     Router,
     http::StatusCode,
     response::{Html, IntoResponse, Response},

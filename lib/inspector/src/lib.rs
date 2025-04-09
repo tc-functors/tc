@@ -10,8 +10,6 @@ mod sandboxes;
 mod releases;
 mod deps;
 mod diffs;
-mod canarys;
-
 mod cache;
 
 pub async fn init() {
@@ -27,7 +25,6 @@ pub async fn init() {
         .merge(diagrams::routes())
         .merge(deps::routes())
         .merge(diffs::routes())
-        .merge(canarys::routes())
         .merge(sandboxes::routes())
         .merge(releases::routes())
 

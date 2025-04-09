@@ -85,7 +85,7 @@ struct ViewTemplate {
     context: String,
 }
 
-pub async fn view_namespace(Path(id): Path<String>) -> impl IntoResponse {
+pub async fn _view_namespace(Path(id): Path<String>) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {
         id: id.clone(),
         root: id.clone(),

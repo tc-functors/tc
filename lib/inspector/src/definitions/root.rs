@@ -71,25 +71,3 @@ pub async fn compile() -> impl IntoResponse {
     };
     Html(t.render().unwrap())
 }
-
-
-
-#[derive(Template)]
-#[template(path = "definitions/view/graph.html")]
-struct GraphTemplate {
-    item: String
-}
-
-pub async fn generate_graph() -> impl IntoResponse {
-    let topologies = cache::find_all_topologies().await;
-    let mut h: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
-    for (name, node) in topologies {
-        let subg = node.names_of();
-        h.insert(name, subg);
-    }
-    let graph_str = serde_json::to_string(&h).unwrap();
-    let t = GraphTemplate {
-        item: graph_str
-    };
-    Html(t.render().unwrap())
-}

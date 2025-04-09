@@ -56,4 +56,6 @@ pub fn routes() -> Router {
                get(index_page))
         .route("/sandboxes/{:entity}",
                get(view_page))
+        .route("/hx/sandboxes/list",
+               post(list::generate))
 }

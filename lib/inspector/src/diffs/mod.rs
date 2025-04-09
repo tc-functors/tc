@@ -50,5 +50,5 @@ pub fn routes() -> Router {
         .route("/diffs/versions",
                get(versions::view))
         .route("/hx/diffs/versions",
-               get(versions::generate))
+               post(versions::generate))
 }

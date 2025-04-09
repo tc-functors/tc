@@ -1,6 +1,5 @@
 use askama::Template;
 use axum::{
-    extract::Path,
     routing::{get},
     Router,
     http::StatusCode,

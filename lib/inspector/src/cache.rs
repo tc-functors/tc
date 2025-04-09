@@ -31,17 +31,6 @@ pub async fn _write_topology(key: &str, t: &Topology) {
     write(key, &s).await
 }
 
-pub async fn read_topology(key: &str) -> Option<Topology> {
-    if has_key(key) {
-        tracing::info!("Found resolver cache: {}", key);
-        let s = read(key);
-        let t: Topology = serde_json::from_str(&s).unwrap();
-        Some(t)
-    } else {
-        None
-    }
-}
-
 pub async fn find_all_topologies() -> HashMap<String, Topology> {
     let key = "root";
     if has_key(key) {
