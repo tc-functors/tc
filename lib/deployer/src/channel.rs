@@ -13,6 +13,6 @@ pub async fn create(env: &Env, channels: &HashMap<String, Channel>) {
     }
 }
 
-pub async fn delete(env: &Env, channels: &HashMap<String, Channel>) {
+pub async fn delete(_env: &Env, _channels: &HashMap<String, Channel>) {
 
 }
