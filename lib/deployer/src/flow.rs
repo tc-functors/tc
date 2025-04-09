@@ -78,7 +78,7 @@ pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig, flow: &Flow)
 
     let include_exec_data = match std::env::var("TC_SFN_DEBUG") {
         Ok(_) => true,
-        Err(_) => if flow.mode == "express" {
+        Err(_) => if flow.mode == "Express" {
             true
         } else {
             false
@@ -89,7 +89,7 @@ pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig, flow: &Flow)
     cloudwatch::create_log_group(cw_client.clone(), &aggregator.states)
         .await
         .unwrap();
-    println!("Updating log config {} include_exec_data {}", flow.name, include_exec_data);
+    println!("Updating log-config {} ({}) include_exec_data: {}", flow.name, flow.mode, include_exec_data);
     let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn, include_exec_data).await;
 }
 
