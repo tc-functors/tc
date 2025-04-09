@@ -15,7 +15,7 @@ export function onPublish(ctx) {{
 "#)
 }
 
-fn event_handler(event_name: &str) -> String {
+fn event_handler(_event_name: &str) -> String {
     default_handler()
 }
 

@@ -189,7 +189,7 @@ pub fn make_targets(
         let t = Target::new(
             TargetKind::Channel,
             &id,
-            c,
+            namespace,
             &arn,
             &producer_ns,
             &consumer_ns,
@@ -200,7 +200,7 @@ pub fn make_targets(
     }
 
     //fallback
-    if mutation.is_none() && function.is_none() && stepfunction.is_none() {
+    if mutation.is_none() && function.is_none() && stepfunction.is_none() && channel.is_none() {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(fallback_fqn);
         let t = Target::new(
