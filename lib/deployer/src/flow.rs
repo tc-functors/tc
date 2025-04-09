@@ -70,16 +70,27 @@ pub async fn update_tags(env: &Env, name: &str, tags: HashMap<String, String>) {
     let _ = sfn::update_tags(&client, &sfn_arn, tags).await;
 }
 
-pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig) {
+pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig, flow: &Flow) {
     let sfn_client = sfn::make_client(env).await;
     let cw_client = cloudwatch::make_client(env).await;
 
     let aggregator = logs.aggregator;
 
+    let include_exec_data = match std::env::var("TC_SFN_DEBUG") {
+        Ok(_) => true,
+        Err(_) => if flow.mode == "express" {
+            true
+        } else {
+            false
+        }
+    };
+
+
     cloudwatch::create_log_group(cw_client.clone(), &aggregator.states)
         .await
         .unwrap();
-    let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn).await;
+    println!("Updating log config {} include_exec_data {}", flow.name, include_exec_data);
+    let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn, include_exec_data).await;
 }
 
 pub async fn disable_logs(env: &Env, sfn_arn: &str) {

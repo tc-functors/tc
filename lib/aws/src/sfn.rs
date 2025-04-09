@@ -46,17 +46,12 @@ fn make_tracing_config() -> TracingConfiguration {
     tc.enabled(true).build()
 }
 
-fn make_log_config(log_group_arn: &str) -> LoggingConfiguration {
+fn make_log_config(log_group_arn: &str, include_data: bool) -> LoggingConfiguration {
     let lg = CloudWatchLogsLogGroupBuilder::default();
     let group = lg.log_group_arn(log_group_arn).build();
 
     let ld = LogDestinationBuilder::default();
     let destination = ld.cloud_watch_logs_log_group(group).build();
-
-    let include_exec_data = match std::env::var("TC_SFN_DEBUG") {
-        Ok(_) => true,
-        Err(_) => false
-    };
 
     let log_level = match std::env::var("TC_SFN_LOG_LEVEL") {
         Ok(v) => match v.as_ref() {
@@ -71,7 +66,7 @@ fn make_log_config(log_group_arn: &str) -> LoggingConfiguration {
 
     let lc = LoggingConfigurationBuilder::default();
         lc.level(log_level)
-        .include_execution_data(include_exec_data)
+        .include_execution_data(include_data)
         .destinations(destination)
         .build()
 }
@@ -301,8 +296,8 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
     }
 }
 
-pub async fn enable_logging(client: Client, arn: &str, log_arn: &str) -> Result<(), Error> {
-    let log_config = make_log_config(log_arn);
+pub async fn enable_logging(client: Client, arn: &str, log_arn: &str, include_data: bool) -> Result<(), Error> {
+    let log_config = make_log_config(log_arn, include_data);
     let res = client
         .update_state_machine()
         .state_machine_arn(arn.to_string())
@@ -316,7 +311,7 @@ pub async fn enable_logging(client: Client, arn: &str, log_arn: &str) -> Result<
 }
 
 pub async fn disable_logging(client: Client, arn: &str) -> Result<(), Error> {
-    let log_config = make_log_config("");
+    let log_config = make_log_config("", false);
     let res = client
         .update_state_machine()
         .state_machine_arn(arn.to_string())

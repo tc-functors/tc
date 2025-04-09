@@ -70,7 +70,7 @@ async fn create_flow(env: &Env, topology: &Topology) {
         Some(f) => {
             flow::create(env, tags, f.clone()).await;
             let sfn_arn = &env.sfn_arn(&fqn);
-            flow::enable_logs(&env, sfn_arn, logs.clone()).await;
+            flow::enable_logs(&env, sfn_arn, logs.clone(), f).await;
             //route::create(&env, sfn_arn, &f.default_role, routes.clone()).await;
         }
         None => {
@@ -164,6 +164,7 @@ pub async fn update(env: &Env, topology: &Topology) {
 pub async fn update_component(env: &Env, topology: &Topology, component: Option<String>) {
     let component = maybe_component(component);
     let Topology {
+        fqn,
         version,
         namespace,
         sandbox,
@@ -176,6 +177,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         queues,
         tags,
         channels,
+        logs,
         ..
     } = topology.clone();
 
@@ -242,6 +244,14 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         "queues" => queue::create(&env, &queues).await,
 
         "channels" => channel::create(&env, &channels).await,
+
+        "logs" => match flow {
+            Some(f) => {
+                let sfn_arn = env.sfn_arn(&fqn);
+                flow::enable_logs(&env, &sfn_arn, logs.clone(), &f).await;
+            },
+            None => ()
+        },
 
         "all" => {
             role::create_or_update(&env, &topology.roles()).await;
