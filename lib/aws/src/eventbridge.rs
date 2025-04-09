@@ -85,6 +85,7 @@ pub fn make_target(
         "channel" => target
             .id(id)
             .arn(String::from(arn))
+            .role_arn(role_arn)
             .set_input_transformer(input_transformer)
             .retry_policy(retry_policy)
             .build()
@@ -307,10 +308,11 @@ async fn create_api_destination(client: &Client, name: &str, connection_arn: &st
     res.unwrap().api_destination_arn.unwrap()
 }
 
-async fn find_or_create_api_destination(client: &Client, name: &str, endpoint: &str, api_key: &str) -> String {
+pub async fn find_or_create_api_destination(client: &Client, name: &str, endpoint: &str, api_key: &str) -> String {
     match find_api_destination(client, name).await {
         Some(api_dest_arn) => api_dest_arn,
         None => {
+            println!("Creating API destination {}", name);
             let connection_arn = find_or_create_connection(client, name, api_key).await;
             create_api_destination(client, name, &connection_arn, endpoint).await
         }

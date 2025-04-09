@@ -1,7 +1,6 @@
 use compiler::Event;
 use compiler::event::TargetKind;
-use aws::eventbridge;
-use aws::lambda;
+use aws::{eventbridge, lambda, appsync};
 use aws::Env;
 use std::collections::HashMap;
 use colored::Colorize;
@@ -29,6 +28,21 @@ fn should_prune() -> bool {
     match std::env::var("TC_PRUNE_EVENT_RULES") {
         Ok(_) => true,
         Err(_) => false
+    }
+}
+
+async fn create_target_dependencies(env: &Env, name: &str) -> String {
+
+    let appsync_client = appsync::make_client(env).await;
+    let api_creds = appsync::events::find_api_creds(&appsync_client, name).await;
+    if let Some(creds) = api_creds {
+        println!("Creating Event Target dependencies {}", name);
+        let client = eventbridge::make_client(env).await;
+        let endpoint = format!("{}/event", &creds.http_domain);
+        eventbridge::find_or_create_api_destination(&client, name, &endpoint, &creds.api_key).await
+    } else {
+        println!("Skipping Event Target dependencies {}", name);
+        String::from("invalid")
     }
 }
 
@@ -68,9 +82,15 @@ async fn create_event(env: &Env, event: &Event) {
             None => None,
         };
 
+        let target_arn = if &target.kind.to_str() == "channel" {
+            create_target_dependencies(env, &target.name).await
+        } else {
+            String::from(&target.arn)
+        };
+
         let t = eventbridge::make_target(
             &target.id,
-            &target.arn,
+            &target_arn,
             &target.role_arn,
             &target.kind.to_str(),
             input_transformer,
