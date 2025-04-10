@@ -4,13 +4,13 @@ use axum::{
 };
 
 #[derive(Template)]
-#[template(path = "sandboxes/list.html")]
-struct FormTemplate {
+#[template(path = "sandboxes/list_hx.html")]
+struct ListTemplate {
     items: Vec<String>
 }
 
 pub async fn generate() -> impl IntoResponse {
-    let t = FormTemplate {
+    let t = ListTemplate {
         items: vec![]
     };
     Html(t.render().unwrap())

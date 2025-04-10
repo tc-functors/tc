@@ -70,14 +70,12 @@ pub async fn versions() -> impl IntoResponse {
 struct ViewTemplate {
     entity: String,
     context: String,
-    items: Vec<String>
 }
 
 pub async fn view() -> impl IntoResponse {
     let t = ViewTemplate {
         entity: String::from("current"),
         context: String::from("releases"),
-        items: vec![]
     };
     Html(t.render().unwrap())
 }

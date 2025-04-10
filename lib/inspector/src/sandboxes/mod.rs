@@ -8,9 +8,7 @@ use axum::{
 };
 
 mod list;
-mod create;
 mod test;
-mod clone;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -50,6 +48,7 @@ pub async fn view_page(Path(entity): Path<String>) -> impl IntoResponse {
     })
 }
 
+
 pub fn routes() -> Router {
     Router::new()
         .route("/sandboxes",
@@ -58,4 +57,6 @@ pub fn routes() -> Router {
                get(view_page))
         .route("/hx/sandboxes/list",
                post(list::generate))
+        .route("/hx/sandboxes/test",
+               post(test::test))
 }
