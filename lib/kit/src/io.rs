@@ -245,8 +245,16 @@ pub fn runc(path: &str, dir: &str) -> (bool, String, String) {
 
 pub fn runp(cmd: &str, dir: &str) -> bool {
     tracing::debug!(cmd);
-    let out = Exec::shell(cmd).cwd(dir).join().unwrap();
-    out.success()
+    match std::env::var("TC_TRACE") {
+        Ok(_) => {
+            let out = Exec::shell(cmd).cwd(dir).join().unwrap();
+            out.success()
+        }
+        Err(_) => {
+            sh(cmd, dir);
+            true
+        }
+    }
 }
 
 pub fn sleep(ms: u64) {

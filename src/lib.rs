@@ -251,7 +251,10 @@ pub async fn create(
     println!("{}", msg);
     create_topology(&env, &topology).await;
 
-    builder::clean(recursive);
+    match std::env::var("TC_INSPECT_BUILD") {
+        Ok(_) => (),
+        Err(_) => builder::clean(recursive)
+    }
 
     if notify {
         run_create_hook(&env, &topology).await;

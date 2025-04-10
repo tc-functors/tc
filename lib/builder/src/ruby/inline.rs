@@ -1,4 +1,3 @@
-use colored::Colorize;
 use kit as u;
 use kit::sh;
 
@@ -6,7 +5,21 @@ fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
 }
 
+fn gen_wrapper(dir: &str) {
+    let f = format!(
+        r#"
+#!/usr/bin/env sh
+
+export BUNDLE_WITHOUT='test:development'
+BUNDLE_GEMFILE=/opt/ruby/Gemfile bundle exec $@
+"#
+    );
+    let file = format!("{}/wrapper", dir);
+    u::write_str(&file, &f);
+}
+
 fn gen_dockerfile(dir: &str) {
+    let build_context = &top_level();
     let f = format!(
         r#"
 FROM public.ecr.aws/sam/build-ruby3.2:1.103.0-20231116224730 as intermediate
@@ -15,6 +28,8 @@ WORKDIR {dir}
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY Gemfile ./
 COPY wrapper ./
+
+COPY --from=shared . {build_context}/
 
 RUN sed -i "/group/,/end:/d" Gemfile
 
@@ -55,6 +70,21 @@ fn build_with_docker(dir: &str) {
     }
 }
 
+fn copy_from_docker(dir: &str) {
+    let temp_cont = &format!("tmp-{}", u::basedir(dir));
+    let clean = &format!("docker rm -f {}", &temp_cont);
+
+    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
+    u::sh(&clean, dir);
+    u::sh(&run, dir);
+    let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
+    tracing::debug!("Container id: {}", &id);
+
+    u::sh(&format!("docker cp {}:/build build", id), dir);
+    u::sh(&clean, dir);
+    u::sh("rm -f Dockerfile wrapper", dir);
+}
+
 fn copy(dir: &str) {
     if u::path_exists(dir, "src") {
         sh("cp -r src/* build/ruby/", dir);
@@ -72,16 +102,22 @@ fn copy(dir: &str) {
         sh(&cp_cmd, dir);
         sh("cp *.rb build/ruby/", dir);
     }
+
 }
 
-pub fn build(dir: &str, name: &str) -> String {
+pub fn build(dir: &str, _name: &str, given_command: &str) -> String {
     sh("rm -f lambda.zip", dir);
     sh("rm -f deps.zip", dir);
-    println!("Building   {}", name.blue());
+    gen_wrapper(dir);
     gen_dockerfile(dir);
     build_with_docker(dir);
+    copy_from_docker(dir);
     copy(dir);
+    u::sh("rm -f Dockerfile wrapper", dir);
     let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
-    u::runcmd_quiet(&cmd, dir);
+
+    u::sh(&cmd, dir);
+    u::sh(given_command, dir);
+    u::sh("rm -rf build build.json", dir);
     format!("{}/lambda.zip", dir)
 }

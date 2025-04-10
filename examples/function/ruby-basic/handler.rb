@@ -1,8 +1,5 @@
+require 'json'
 
-module Handler
-  class << self
-    def handler(event:, context:)
-      puts(event)
-    end
-  end
+def handler(event:, context:)
+    { event: JSON.generate(event), context: JSON.generate(context.inspect) }
 end
