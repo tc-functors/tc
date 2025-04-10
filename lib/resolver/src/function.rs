@@ -202,7 +202,9 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     r.memory_size = memory_size;
     r.timeout = timeout;
     r.environment = resolve_environment(ctx, &runtime.lang.to_str(), &runtime.environment, environment).await;
-    r.layers = resolve_layers(ctx, layers.clone()).await;
+    if !layers.is_empty() {
+        r.layers = resolve_layers(ctx, layers.clone()).await;
+    }
     if *enable_fs {
         r.network = resolve_network(ctx, network.clone()).await;
         r.fs = resolve_fs(ctx, fs.clone()).await;

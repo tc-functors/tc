@@ -1,7 +1,10 @@
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use serde_json::Value;
-use crate::spec::{LangRuntime, FunctionSpec, RuntimeInfraSpec, RuntimeSpec, Lang};
+use crate::spec::{
+    LangRuntime, FunctionSpec, RuntimeInfraSpec,
+    RuntimeSpec, Lang, BuildKind
+};
 use crate::{version, template, role};
 use super::{layer};
 use crate::role::{Role, RoleKind};
@@ -61,6 +64,7 @@ fn consolidate_layers(
     let mut layers: Vec<String> = vec![];
     layers.append(given_layers);
     layers.append(extensions);
+
     match implicit_layer {
         Some(m) => layers.push(m),
         None => (),
@@ -98,28 +102,49 @@ fn is_singular_function_dir() -> bool {
     u::file_exists(function_file) && u::file_exists(topology_file)
 }
 
-fn find_layer_name(dir: &str, namespace: &str, fspec: &FunctionSpec) -> Option<String> {
+fn find_build_kind(fspec: &FunctionSpec) -> BuildKind {
+    match &fspec.build {
+        Some(b) => b.kind.clone(),
+        None => BuildKind::Code
+    }
+}
+
+fn find_implicit_layer_name(
+    dir: &str,
+    namespace: &str,
+    fspec: &FunctionSpec
+) -> Option<String> {
+
     let given_fqn = &fspec.fqn;
     let given_layer_name = &fspec.layer_name;
 
+    let build_kind = find_build_kind(fspec);
     match given_layer_name {
         Some(name) => Some(name.to_string()),
         None => {
-            let lang = infer_lang(dir);
-            if lang == LangRuntime::Ruby32  && layer::layerable(dir) {
-                match given_fqn {
-                    Some(f) => Some(u::kebab_case(&f)),
-                    None => {
-                        if is_singular_function_dir() {
-                            Some(s!(namespace))
-                        } else {
-                            Some(format!("{}-{}", namespace, &fspec.name))
+
+            match build_kind {
+                BuildKind::Code => {
+                    let lang = infer_lang(dir);
+                    if lang == LangRuntime::Ruby32  && layer::layerable(dir) {
+                        match given_fqn {
+                            Some(f) => Some(u::kebab_case(&f)),
+                            None => {
+                                if is_singular_function_dir() {
+                                    Some(s!(namespace))
+                                } else {
+                                    Some(format!("{}-{}", namespace, &fspec.name))
+                                }
+                            }
                         }
+                    } else {
+                        None
                     }
-                }
-            } else {
-                None
+                },
+                _ => None
             }
+
+
         }
     }
 }
@@ -202,6 +227,7 @@ fn value_to_str(v: Option<&Value>, default: &str) -> String {
 fn make_env_vars(
     dir: &str,
     namespace: &str,
+    build_kind: BuildKind,
     assets: HashMap<String, Value>,
     environment: Option<HashMap<String, String>>,
     lang: Lang,
@@ -222,19 +248,28 @@ fn make_env_vars(
 
     match lang {
         Lang::Ruby => {
-            hmap.insert(s!("GEM_PATH"), s!("/opt/ruby/gems/3.2.0"));
-            hmap.insert(s!("GEM_HOME"), s!("/opt/ruby/gems/3.2.0"));
-            hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/opt/ruby/lib"));
-            hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/opt/lib"));
+            match build_kind {
+                BuildKind::Inline => {
+                    hmap.insert(s!("GEM_PATH"), s!("/var/task/gems/3.2.0"));
+                    hmap.insert(s!("GEM_HOME"), s!("/var/task/gems/3.2.0"));
+                    hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/var/task/lib"));
+                    hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/var/task"));
 
-            match std::env::var("NO_RUBY_WRAPPER") {
-                Ok(_) => (),
-                Err(_) => {
+                },
+
+                _ => {
+
+                    hmap.insert(s!("GEM_PATH"), s!("/opt/ruby/gems/3.2.0"));
+                    hmap.insert(s!("GEM_HOME"), s!("/opt/ruby/gems/3.2.0"));
+                    hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/opt/ruby/lib"));
+                    hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/opt/lib"));
+
                     if u::path_exists(dir, "Gemfile") {
                         hmap.insert(s!("AWS_LAMBDA_EXEC_WRAPPER"), s!("/opt/ruby/wrapper"));
                     }
                 }
             }
+
         },
         Lang::Python => {
             // legacy
@@ -382,15 +417,17 @@ impl Runtime {
         let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = default_infra_spec;
 
         let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
+        let build_kind = find_build_kind(&fspec);
 
         match rspec {
             Some(mut r) => {
-                let layer_name = find_layer_name(dir, namespace, fspec);
+                let layer_name = find_implicit_layer_name(dir, namespace, fspec);
                 let layers = consolidate_layers(&mut r.extensions, &mut r.layers, layer_name);
                 let package_type = &r.package_type;
                 let vars = make_env_vars(
                     dir,
                     namespace,
+                    build_kind,
                     fspec.assets.clone(),
                     environment.clone(),
                     r.lang.to_lang(),
@@ -423,6 +460,7 @@ impl Runtime {
                 let vars = make_env_vars(
                     dir,
                     namespace,
+                    build_kind,
                     fspec.assets.clone(),
                     environment.clone(),
                     lang.to_lang(),

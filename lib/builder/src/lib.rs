@@ -91,9 +91,8 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
 
         let kind = match kind {
             Some(k) => k,
-            None => BuildKind::Code
+            None => spec.kind
         };
-
 
         let kind_str = &kind.to_str();
 
@@ -105,7 +104,7 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
 
         sh("rm -f *.zip", dir);
 
-        println!("Building {} ({}/{})", &f.namespace, &runtime.to_str(), kind_str);
+        println!("Building {} ({}/{})", &name, &runtime.to_str(), kind_str);
 
         let out = match lang {
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
