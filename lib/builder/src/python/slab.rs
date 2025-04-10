@@ -88,8 +88,8 @@ pub fn build(
     dir: &str,
     _name: &str,
     runtime: &LangRuntime,
-    deps_pre: Vec<String>,
-    deps_post: Vec<String>,
+    _deps_pre: Vec<String>,
+    _deps_post: Vec<String>,
 ) -> String {
 
     if !u::path_exists(dir, "slab.sh") {
