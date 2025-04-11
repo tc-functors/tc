@@ -1,8 +1,8 @@
 [package]
 name = "tc"
 version = "0.8.25"
-edition = "2021"
-rust-version = "1.81"
+edition = "2024"
+rust-version = "1.86"
 
 [dependencies]
 serde = "1.0"
@@ -35,6 +35,8 @@ router = { path = "lib/router" }
 ci = { path = "lib/ci" }
 inspector = { path = "lib/inspector" }
 openssl-sys = "0.9.107"
+clap-markdown = "0.1.4"
+schemars = "0.8.22"
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
