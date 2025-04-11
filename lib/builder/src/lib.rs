@@ -3,6 +3,7 @@ mod ruby;
 mod rust;
 mod node;
 
+use colored::Colorize;
 use std::str::FromStr;
 use compiler::Layer;
 use glob::glob;
@@ -104,7 +105,8 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
 
         sh("rm -f *.zip", dir);
 
-        println!("Building {} ({}/{})", &name, &runtime.to_str(), kind_str);
+
+        println!("Building {} ({}/{})", &name, &runtime.to_str(), kind_str.blue());
 
         let out = match lang {
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
