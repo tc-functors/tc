@@ -12,8 +12,6 @@ struct Tc {
     cmd: Cmd,
 }
 
-
-
 #[derive(Debug, Subcommand)]
 enum Cmd {
     /// Bootstrap IAM roles, extensions etc.
@@ -21,10 +19,10 @@ enum Cmd {
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
     /// Trigger deploy via CI
-    #[clap(name = "ci-deploy")]
+    #[clap(name = "ci-deploy",  hide = true)]
     Deploy(DeployArgs),
     /// Trigger release via CI
-    #[clap(name = "ci-release")]
+    #[clap(name = "ci-release",  hide = true)]
     Release(ReleaseArgs),
     /// List or clear resolver cache
     Cache(CacheArgs),
@@ -66,6 +64,8 @@ enum Cmd {
     Upgrade(UpgradeArgs),
     /// display current tc version
     Version(DefaultArgs),
+    #[clap(name = "md-help",  hide = true)]
+    Help(DefaultArgs),
 }
 
 #[derive(Debug, Args)]
@@ -736,6 +736,10 @@ fn init_tracing() {
 }
 
 
+async fn md_help() {
+    clap_markdown::print_help_markdown::<Tc>();
+}
+
 async fn run() {
     let args = Tc::parse();
 
@@ -769,6 +773,7 @@ async fn run() {
         Cmd::Update(args)    => update(args).await,
         Cmd::Upgrade(args)   => upgrade(args).await,
         Cmd::Version(..)     => version().await,
+        Cmd::Help(..)        => md_help().await
     }
 }
 
