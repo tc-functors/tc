@@ -64,8 +64,8 @@ enum Cmd {
     Upgrade(UpgradeArgs),
     /// display current tc version
     Version(DefaultArgs),
-    #[clap(name = "md-help",  hide = true)]
-    Help(DefaultArgs),
+    /// Generate documentation
+    Doc(DocArgs),
 }
 
 #[derive(Debug, Args)]
@@ -410,6 +410,12 @@ pub struct UnFreezeArgs {
     all: bool,
 }
 
+#[derive(Debug, Args)]
+pub struct DocArgs {
+    #[arg(long, short = 's')]
+    spec: Option<String>
+}
+
 async fn version() {
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     println!("{}", version);
@@ -736,8 +742,13 @@ fn init_tracing() {
 }
 
 
-async fn md_help() {
-    clap_markdown::print_help_markdown::<Tc>();
+async fn doc(args: DocArgs) {
+    let DocArgs { spec } = args;
+
+    match spec {
+        Some(s) => tc::generate_doc(&s),
+        None => clap_markdown::print_help_markdown::<Tc>()
+    }
 }
 
 async fn run() {
@@ -753,6 +764,7 @@ async fn run() {
         Cmd::Build(args)     => build(args).await,
         Cmd::Cache(args)     => cache(args).await,
         Cmd::Config(args)    => config(args).await,
+        Cmd::Doc(args)       => doc(args).await,
         Cmd::Compile(args)   => compile(args).await,
         Cmd::Resolve(args)   => resolve(args).await,
         Cmd::Create(args)    => create(args).await,
@@ -773,7 +785,7 @@ async fn run() {
         Cmd::Update(args)    => update(args).await,
         Cmd::Upgrade(args)   => upgrade(args).await,
         Cmd::Version(..)     => version().await,
-        Cmd::Help(..)        => md_help().await
+
     }
 }
 

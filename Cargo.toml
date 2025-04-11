@@ -36,7 +36,7 @@ ci = { path = "lib/ci" }
 inspector = { path = "lib/inspector" }
 openssl-sys = "0.9.107"
 clap-markdown = "0.1.4"
-doku = "0.21.1"
+schemars = "0.8.22"
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when

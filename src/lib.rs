@@ -1,6 +1,6 @@
 use aws::Env;
 use compiler::Topology;
-use compiler::spec::BuildKind;
+use compiler::spec::{BuildKind, TopologySpec, FunctionSpec, BuildSpec};
 use ci::github;
 use configurator::Config;
 use kit as u;
@@ -598,6 +598,17 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
             println!("{}", table);
         }
     }
+}
+
+pub fn generate_doc(spec: &str) {
+
+    let schema = match spec {
+        "topology" => schemars::schema_for!(TopologySpec),
+        "build" => schemars::schema_for!(BuildSpec),
+        "function" => schemars::schema_for!(FunctionSpec),
+        _ => schemars::schema_for!(TopologySpec)
+    };
+    println!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }
 
 pub async fn inspect() {
