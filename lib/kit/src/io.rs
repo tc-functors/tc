@@ -380,7 +380,11 @@ pub fn run_seq_quiet(cmds: Vec<&str>, dir: &str) {
 
 pub fn runv(dir: &str, cmd: Vec<&str>) {
     let cmd_str = cmd.join(" ");
-    runcmd_stream(&cmd_str, dir);
+    match std::env::var("TC_TRACE") {
+        Ok(_) => runcmd_stream(&cmd_str, dir),
+        Err(_) => { sh(&cmd_str, dir); } ,
+    }
+
 }
 
 
