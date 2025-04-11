@@ -1,55 +1,108 @@
-use colored::Colorize;
 use kit as u;
+use kit::sh;
+use super::LangRuntime;
 
-fn size_of(dir: &str, zipfile: &str) -> String {
-    let size = u::path_size(dir, zipfile);
-    u::file_size_human(size)
-}
-
-fn copy(dir: &str) {
-    if u::path_exists(dir, "src") {
-        u::sh("cp -r src/* build/python/", dir);
-    }
-    if u::path_exists(dir, "lib") {
-        u::sh("cp -r lib/* build/python/", dir);
+fn find_image(runtime: &LangRuntime) -> String {
+    match runtime {
+        LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
+        LangRuntime::Python311 => String::from("public.ecr.aws/sam/build-python3.11:latest"),
+        LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
+        _ => todo!()
     }
 }
 
-fn zip(dir: &str, zipfile: &str) {
-    if u::path_exists(dir, "build") {
-        let cmd = format!("cd build && zip -q -9 -r ../{} . && cd -", zipfile);
-        u::runcmd_quiet(&cmd, dir);
+fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
+    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
+        Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
+        Err(_) => "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
+    };
+
+    let image = find_image(&runtime);
+
+    let f = format!(
+            r#"
+FROM {image} as intermediate
+
+RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+COPY pyproject.toml ./
+
+RUN pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt --without dev > requirements.txt
+
+RUN --mount=type=ssh {pip_cmd}
+
+"#
+        );
+    let dockerfile = format!("{}/Dockerfile", dir);
+    u::write_str(&dockerfile, &f);
+}
+
+fn build_with_docker(dir: &str) {
+    let cmd_str = match std::env::var("DOCKER_SSH") {
+        Ok(e) => format!("docker build --no-cache  --ssh default={} . -t {}",
+                         &e, u::basedir(dir)),
+        Err(_) => format!("docker build --no-cache  --ssh default  . -t {}",
+                          u::basedir(dir))
+    };
+    let ret = u::runp(&cmd_str, dir);
+    if !ret {
+        sh("rm -rf Dockerfile build", dir);
+        std::panic::set_hook(Box::new(|_| {
+            println!("Build failed");
+        }));
+        panic!("Build failed")
     }
 }
 
-pub fn build(dir: &str, name: &str) -> String {
-    let bar = kit::progress();
+fn copy_from_docker(dir: &str) {
+    let temp_cont = &format!("tmp-{}", u::basedir(dir));
+    let clean = &format!("docker rm -f {}", &temp_cont);
 
-    let prefix = format!("Building {}", name.blue());
-    bar.set_prefix(prefix);
+    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
+    sh(&clean, dir);
+    sh(&run, dir);
+    let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
+    tracing::debug!("Container id: {}", &id);
 
+    sh(&format!("docker cp {}:/build build", id), dir);
+    sh(&clean, dir);
+    sh("rm -f Dockerfile wrapper", dir);
+}
+
+// local
+
+
+fn build_local(dir: &str, given_command: &str) {
     if u::path_exists(dir, "pyproject.toml") {
-        bar.inc(10);
-        u::sh("poetry config warnings.export false", dir);
+        sh("poetry config warnings.export false", dir);
         let cmd = "rm -f requirements.txt && poetry export -f requirements.txt --output requirements.txt --without-hashes --without dev";
-        bar.inc(30);
-        u::sh(cmd, dir);
-        u::sh("poetry build", dir);
-        bar.inc(50);
-        let c = "poetry run pip install -r requirements.txt --platform manylinux2014_x86_64 --no-deps --upgrade --target build/python";
-        u::sh(c, dir);
-        bar.inc(60);
-        if !u::path_exists(dir, "function.json") {
-            copy(dir);
-        }
-        bar.inc(80);
-        zip(dir, "deps.zip");
+        sh(cmd, dir);
+    }
+    let c = "pip install -r requirements.txt --platform manylinux2014_x86_64 --no-deps --upgrade --target build/python";
+    sh(c, dir);
+    let cmd = "cd build/python && zip -q -9 -r ../../lambda.zip . && cd -";
+    sh(&cmd, dir);
+    sh(given_command, dir);
+    sh("rm -rf build build.json", dir);
+}
 
-        bar.inc(100);
-        let size = format!("({})", size_of(dir, "deps.zip").green());
-        bar.set_message(size);
-        bar.finish();
-        u::sh("rm -f requirements.txt", dir);
+fn build_docker(dir: &str, runtime: &LangRuntime, given_command: &str) {
+    gen_dockerfile(dir, runtime);
+    tracing::debug!("building with docker ...");
+    build_with_docker(dir);
+    copy_from_docker(dir);
+    sh("rm -f Dockerfile wrapper", dir);
+    let cmd = "cd build/python && zip -q -9 -r ../../lambda.zip . && cd -";
+    sh(&cmd, dir);
+    sh(given_command, dir);
+    sh("rm -rf build build.json", dir);
+}
+
+pub fn build(dir: &str, runtime: &LangRuntime, given_command: &str) -> String {
+    sh("rm -rf lambda.zip deps.zip build", dir);
+
+    match std::env::var("TC_NO_DOCKER") {
+        Ok(_) => build_local(dir, given_command),
+        Err(_) => build_docker(dir, runtime, given_command)
     }
     format!("{}/lambda.zip", dir)
 }

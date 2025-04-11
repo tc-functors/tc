@@ -1,5 +1,5 @@
 {
-  "name": "python-example",
+  "name": "python-inline",
   "description": "example function",
   "runtime": {
     "lang": "python3.12",
@@ -9,16 +9,7 @@
   },
   "build": {
     "kind": "Inline",
-    "pre": ["yum install libcurl -y"],
-    "post" ["ldconfig"],
-    "command" "zip -9 -q lambda.zip ."
-  },
-  "infra": {
-    "vars_file": "./vars.json",
-    "role" {
-      "name": "my-role",
-      "file": "./roles.json"
-    }
+    "command": "zip -9 -q lambda.zip *.py"
   },
   "test": {
     "fixture": "python run-fixture.py",
