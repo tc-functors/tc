@@ -75,49 +75,44 @@ fn copy_from_docker(dir: &str) {
     let clean = &format!("docker rm -f {}", &temp_cont);
 
     let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
-    u::sh(&clean, dir);
-    u::sh(&run, dir);
+    sh(&clean, dir);
+    sh(&run, dir);
     let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
 
-    u::sh(&format!("docker cp {}:/build build", id), dir);
-    u::sh(&clean, dir);
-    u::sh("rm -f Dockerfile wrapper", dir);
+    sh(&format!("docker cp {}:/build build", id), dir);
+    sh(&clean, dir);
+    sh("rm -f Dockerfile wrapper", dir);
 }
 
-fn copy(dir: &str) {
-    if u::path_exists(dir, "src") {
-        sh("cp -r src/* build/ruby/", dir);
-    }
-    if u::path_exists(dir, "lib") {
-        sh(
-            "mkdir -p build/ruby/lib && cp -r lib/* build/ruby/lib/",
-            dir,
-        );
-        u::runcmd_quiet("mkdir -p build/lib && cp -r lib/* build/lib/", dir);
-    }
-    let basedir = u::snake_case(&u::basename(dir));
-    if u::path_exists(dir, &basedir) {
-        let cp_cmd = format!("mkdir -p build/ruby/ && cp -r {} build/ruby/", &basedir);
-        sh(&cp_cmd, dir);
-        sh("cp *.rb build/ruby/", dir);
-    }
-
+fn build_local(dir: &str) {
+    let cmd = "BUNDLE_WITHOUT='test:development' bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install";
+    u::sh(&cmd, dir);
+    sh("bundle lock && bundle install", dir);
+    sh("mkdir -p build/ruby/gems", dir);
+    sh("mv vendor/bundle/ruby/3.2.0 build/ruby/gems/3.2.0", dir);
+    let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
+    sh(cmd, dir);
+    sh("rm -rf vendor build", dir);
 }
 
-pub fn build(dir: &str, _name: &str, given_command: &str) -> String {
-    sh("rm -f lambda.zip", dir);
-    sh("rm -f deps.zip", dir);
+fn build_docker(dir: &str) {
     gen_wrapper(dir);
     gen_dockerfile(dir);
     build_with_docker(dir);
     copy_from_docker(dir);
-    copy(dir);
-    u::sh("rm -f Dockerfile wrapper", dir);
+    sh("rm -f Dockerfile wrapper", dir);
     let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
+    sh(&cmd, dir);
+}
 
-    u::sh(&cmd, dir);
-    u::sh(given_command, dir);
-    u::sh("rm -rf build build.json", dir);
+pub fn build(dir: &str, _name: &str, given_command: &str) -> String {
+    sh("rm -f lambda.zip deps.zip build", dir);
+    match std::env::var("TC_NO_DOCKER") {
+        Ok(_) => build_local(dir),
+        Err(_) => build_docker(dir)
+    }
+    sh(given_command, dir);
+    sh("rm -rf build build.json", dir);
     format!("{}/lambda.zip", dir)
 }

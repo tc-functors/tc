@@ -387,7 +387,6 @@ pub fn runv(dir: &str, cmd: Vec<&str>) {
 
 }
 
-
 pub fn root() -> String {
     sh("git rev-parse --show-toplevel", &pwd())
 }

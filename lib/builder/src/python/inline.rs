@@ -1,6 +1,8 @@
 use kit as u;
 use kit::sh;
 use super::LangRuntime;
+use kit::LogUpdate;
+use std::io::stdout;
 
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
@@ -11,6 +13,15 @@ fn find_image(runtime: &LangRuntime) -> String {
     }
 }
 
+fn gen_req_cmd(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        format!("pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt --without dev > requirements.txt")
+    } else {
+        format!("echo 1")
+    }
+
+}
+
 fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
@@ -18,6 +29,7 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     };
 
     let image = find_image(&runtime);
+    let req_cmd = gen_req_cmd(dir);
 
     let f = format!(
             r#"
@@ -26,7 +38,7 @@ FROM {image} as intermediate
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY pyproject.toml ./
 
-RUN pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt --without dev > requirements.txt
+RUN {req_cmd}
 
 RUN --mount=type=ssh {pip_cmd}
 
@@ -70,7 +82,6 @@ fn copy_from_docker(dir: &str) {
 
 // local
 
-
 fn build_local(dir: &str, given_command: &str) {
     if u::path_exists(dir, "pyproject.toml") {
         sh("poetry config warnings.export false", dir);
@@ -85,24 +96,32 @@ fn build_local(dir: &str, given_command: &str) {
     sh("rm -rf build build.json", dir);
 }
 
-fn build_docker(dir: &str, runtime: &LangRuntime, given_command: &str) {
+fn build_docker(dir: &str, name: &str, runtime: &LangRuntime, given_command: &str) {
+    let mut log = LogUpdate::new(stdout()).unwrap();
+
+    let _ = log.render(&format!("Building {name} - Generating Dockerfile"));
     gen_dockerfile(dir, runtime);
-    tracing::debug!("building with docker ...");
+
+    let _ = log.render(&format!("Building {name} - Building with Docker"));
     build_with_docker(dir);
+
+    let _ = log.render(&format!("Building {name} - Copying from container"));
     copy_from_docker(dir);
     sh("rm -f Dockerfile wrapper", dir);
+
+    let _ = log.render(&format!("Building {name} - Copying dependencies"));
     let cmd = "cd build/python && zip -q -9 -r ../../lambda.zip . && cd -";
     sh(&cmd, dir);
     sh(given_command, dir);
     sh("rm -rf build build.json", dir);
 }
 
-pub fn build(dir: &str, runtime: &LangRuntime, given_command: &str) -> String {
+pub fn build(dir: &str, name: &str, runtime: &LangRuntime, given_command: &str) -> String {
     sh("rm -rf lambda.zip deps.zip build", dir);
 
     match std::env::var("TC_NO_DOCKER") {
         Ok(_) => build_local(dir, given_command),
-        Err(_) => build_docker(dir, runtime, given_command)
+        Err(_) => build_docker(dir, name, runtime, given_command)
     }
     format!("{}/lambda.zip", dir)
 }
