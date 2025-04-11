@@ -19,4 +19,4 @@ tracing = "0.1"
 bincode = "1.2.1"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
-doku = "0.21.1"
+schemars = "0.8.22"
