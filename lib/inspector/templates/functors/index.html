@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="navbg right-spaced">
+<nav class="navbar">
+  <ul>
+    <li>
+    </li>
+  </ul>
+  <ul>
+    <li class="right-spaced">
+    <button class="btn"
+	    hx-post="/hx/functors/load"
+	    hx-indicator="#status"
+	    hx-target="#functors"
+	    hx-swap="innerHtml">
+      <i class="ph ph-arrow-clockwise"></i> Load Topologies
+    </button>
+    </li>
+  </ul>
+  </ul>
+</nav>
+</div>
+
+<br/>
+
+<div class="x">
+  <div class="x6">
+    <div class="functors">
+      <div class="spaced"
+	   id="functors"
+	   hx-trigger="load"
+	   hx-get="/hx/functors/list">
+
+      </div>
+      <br/>
+      <br/>
+    </div>
+  </div>
+
+  <div class="xg">
+    <div align="center" id="status" class="htmx-indicator">
+      <br/>
+      <br/>
+      <br/>
+      <span aria-busy="true">Loading topology definitions...</article>
+    </div>
+    <div class="spaced" id="view-flow">
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

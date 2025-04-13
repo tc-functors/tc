@@ -98,13 +98,22 @@
       height: 100dvh;
       line-height: 1.7rem;
       background-color: var(--pico-table-row-stripped-background-color);
-      border-right: 1px solid var(--pico-muted-border-color);
+      border-right: 1px solid var(--pico-secondary-focus);
       }
+
+      .functors {
+      margin-left: 1rem;
+      line-height: 1.8rem;
+      background-color: rgb(64 64 64 / 0.2);
+      border: 1px solid var(--pico-muted-border-color);
+      border-radius: 10px;
+      }
+
 
       .navbg {
       margin-right: 10px;
       background-color: var(--pico-table-row-stripped-background-color);
-      border-bottom: 1px solid var(--pico-muted-border-color);
+      border-bottom: 1px solid var(--pico-secondary-focus);
       }
 
       article {
@@ -295,29 +304,19 @@
 	    <nav>
 	      <ul>
 		<li>
-		  {% if context == "definitions" %}
-		  <span class="side-selected">Definitions</span>
+		  {% if context == "functors" %}
+		  <span class="side-selected">Functors</span>
 		  {% else %}
-		  <a href="/definitions">Definitions</a>
-		  {% endif %}
-
-		</li>
-		<li>
-		  {% if context == "diagrams" %}
-		  <span class="side-selected">Diagrams</span>
-		  {% else %}
-		  <a href="/diagrams">Diagrams</a>
+		  <a href="/functors">Functors</a>
 		  {% endif %}
 		</li>
 		<li>
-		  {% if context == "deps" %}
-		  <span class="side-selected">Dependencies</span>
+		  {% if context == "overview" %}
+		  <span class="side-selected">Overview</span>
 		  {% else %}
-		  <a href="/deps">Dependencies</a>
+		  <a href="/overview">Overview</a>
 		  {% endif %}
-
 		</li>
-
 		<li>
 		  {% if context == "sandboxes" %}
 		  <span class="side-selected">Sandboxes</span>
@@ -325,7 +324,6 @@
 		  <a href="/sandboxes">Sandboxes</a>
 		  {% endif %}
 		</li>
-
 		<li>
 		  {% if context == "releases" %}
 		  <span class="side-selected">Releases</span>

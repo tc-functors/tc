@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% include "menu.html" %}
+
+<div id="viewer"
+     class="spaced"
+     hx-trigger="load"
+     hx-get="/hx/overview/list/{{root}}/{{namespace}}/{{entity}}"
+     hx-swap="innerHTML">
+
+  <div align="center">
+    <br/><br/><br/>
+    <progress/>
+  </div>
+
+</div>
+
+{% endblock %}

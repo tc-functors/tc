@@ -6,9 +6,9 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
-mod versions;
-mod functors;
-mod layers;
+mod loader;
+mod flow;
+mod definition;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -28,7 +28,7 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "diffs/index.html")]
+#[template(path = "functors/index.html")]
 struct IndexTemplate {
     entity: String,
     context: String,
@@ -36,23 +36,17 @@ struct IndexTemplate {
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        entity: String::from("versions"),
-        context: String::from("diffs"),
+        entity: String::from("functors"),
+        context: String::from("functors"),
     })
 }
 
+
 pub fn routes() -> Router {
     Router::new()
-        .route("/diffs",
-               get(index_page))
-        .route("/diffs/functors",
-               get(functors::view))
-        .route("/diffs/versions",
-               get(versions::view))
-        .route("/diffs/layers",
-               get(layers::view))
-        .route("/hx/diffs/versions",
-               post(versions::generate))
-        .route("/hx/diffs/layers", get(layers::generate))
-        .route("/hx/diffs/layers", post(layers::sync))
+        .route("/", get(index_page))
+        .route("/functors", get(index_page))
+        .route("/hx/functor/{:name}", post(definition::view))
+        .route("/hx/functors/load", post(loader::load))
+        .route("/hx/functors/list", get(loader::list))
 }

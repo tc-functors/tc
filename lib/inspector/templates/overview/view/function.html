@@ -1,0 +1,13 @@
+<pre id="json-renderer"></pre>
+
+<script>
+
+  var data = "{{item}}"
+  const m = data.replace(/&quot;/ig,'"');
+  console.log(m)
+  const d = JSON.parse(m);
+
+  $(function(){
+    $('#json-renderer').jsonViewer(d);
+  });
+</script>

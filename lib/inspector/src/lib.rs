@@ -4,11 +4,10 @@ use axum::{
 };
 
 
-mod definitions;
-mod diagrams;
+mod functors;
+mod overview;
 mod sandboxes;
 mod releases;
-mod deps;
 mod diffs;
 mod cache;
 
@@ -17,13 +16,11 @@ pub async fn init() {
     let addr = "0.0.0.0:8000";
 
     let app = Router::new()
-        .merge(definitions::page_routes())
-        .merge(definitions::list_routes())
-        .merge(definitions::view_routes())
-        .merge(definitions::post_routes())
-
-        .merge(diagrams::routes())
-        .merge(deps::routes())
+        .merge(overview::page_routes())
+        .merge(overview::list_routes())
+        .merge(overview::view_routes())
+        .merge(overview::post_routes())
+        .merge(functors::routes())
         .merge(diffs::routes())
         .merge(sandboxes::routes())
         .merge(releases::routes())

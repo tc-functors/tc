@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% include "menu.html" %}
+
+<div class="htmx-indicator" id="status">
+  Compiling <progress/>
+</div>
+
+<div id="functors"
+     class="spaced"
+     hx-trigger="load"
+     hx-get="/hx/overview/list/all/all/functors"
+     hx-swap="innerHTML">
+
+  <div class="grid">
+    <div></div>
+    <div align="center" id="status" class="htmx-indicator">
+      <br/>
+      <br/>
+      <br/>
+      <article aria-busy="true"></article>
+    </div>
+    <div></div>
+  </div>
+</div>
+
+
+{% endblock %}
