@@ -1,5 +1,0 @@
-name: example-queue
-queues:
-    dlq:
-      consumer: '{{namespace}}_con_{{sandbox}}'
-      producer: '{{namespace}}_pro_{{sandbox}}'

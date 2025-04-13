@@ -14,12 +14,20 @@
 	    hx-indicator="#status"
 	    hx-target="#functors"
 	    hx-swap="innerHtml">
-      <i class="ph ph-arrow-clockwise"></i> Load Topologies
+      <i class="ph ph-arrow-clockwise"></i> Load Functors
     </button>
     </li>
   </ul>
   </ul>
 </nav>
+</div>
+
+
+<div align="center" id="status" class="htmx-indicator">
+  <br/>
+  <br/>
+  <br/>
+  <span aria-busy="true">Loading topology definitions...</article>
 </div>
 
 <br/>
@@ -38,14 +46,28 @@
     </div>
   </div>
 
-  <div class="xg">
-    <div align="center" id="status" class="htmx-indicator">
-      <br/>
-      <br/>
-      <br/>
-      <span aria-busy="true">Loading topology definitions...</article>
+  <div class="x5">
+    <div class="spaced">
+    {% if root != "default" %}
+    {% include "definition.html" %}
+    {% endif %}
     </div>
-    <div class="spaced" id="view-flow">
+  </div>
+
+  <div class="xg">
+    <div class="spaced">
+      <div align="right">
+	<button>Topology</button>
+      </div>
+
+      <!-- {% if root != "default" %} -->
+
+      <!-- <div hx-trigger="load" -->
+      <!-- 	   hx-get="/hx/functor/{{root}}/{{root}}"> -->
+      <!-- </div> -->
+
+      <!-- {% endif %} -->
+
     </div>
   </div>
 </div>

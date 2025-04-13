@@ -31,21 +31,22 @@ where
 #[derive(Template)]
 #[template(path = "functors/index.html")]
 struct IndexTemplate {
-    entity: String,
+    root: String,
+    namespace: String,
     context: String,
+    definition: String,
+    flow: String,
+    topology: String
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
-        entity: String::from("functors"),
+        root: String::from("default"),
+        namespace: String::from("default"),
         context: String::from("functors"),
-    })
-}
-
-pub async fn view_page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    HtmlTemplate(IndexTemplate {
-        entity: namespace,
-        context: String::from("functors"),
+        definition: String::from(""),
+        flow: String::from(""),
+        topology: String::from("")
     })
 }
 
@@ -53,7 +54,8 @@ pub fn routes() -> Router {
     Router::new()
         .route("/", get(index_page))
         .route("/functors", get(index_page))
-        .route("/functor/{:root}/{:namespace}", get(view_page))
+        .route("/functor/{:root}/{:namespace}", get(definition::view))
         .route("/hx/functors/load", post(loader::load))
         .route("/hx/functors/list", get(loader::list))
+        .route("/hx/functor/definition/{:root}/{:namespace}", get(definition::view))
 }

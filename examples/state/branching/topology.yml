@@ -1,3 +1,0 @@
-name: tc-sfn-branching
-kind: step-function
-flow: ./state-machine.json

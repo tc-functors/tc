@@ -52,7 +52,10 @@ pub fn compile(dir: &str, recursive: bool) -> Topology {
 pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
-    let given_root_dirs = &spec.nodes.dirs;
+    let given_root_dirs = match &spec.nodes.dirs {
+        Some(dirs) => dirs,
+        None => &list_dirs(dir)
+    };
     let mut h: HashMap<String, Topology> = HashMap::new();
     for d in given_root_dirs {
         tracing::debug!("Given root: {}", &d);
