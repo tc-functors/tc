@@ -5,12 +5,12 @@ use serde_json::Value;
 use std::str::FromStr;
 use kit::*;
 use kit as u;
-use schemars::JsonSchema;
+use doku::Document;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Document)]
 pub enum Lang {
     Python,
     Ruby,
@@ -35,7 +35,7 @@ impl FromStr for Lang {
 }
 
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug, Document)]
 pub enum LangRuntime {
     #[serde(alias="python3.9")]
     Python39,
@@ -112,7 +112,7 @@ impl LangRuntime {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub enum BuildKind {
     Code,
     Inline,
@@ -162,13 +162,13 @@ impl BuildKind {
 // function infra spec
 
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeNetworkSpec {
     pub subnets: Vec<String>,
     pub security_groups: Vec<String>
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeFilesystemSpec {
     pub arn: String,
     pub mount_point: String,
@@ -184,7 +184,7 @@ fn default_timeout() -> Option<i32> {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeInfraSpec {
     #[serde(default = "default_memory_size")]
     pub memory_size: Option<i32>,
@@ -252,21 +252,25 @@ fn default_package_type() -> String {
     s!("zip")
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct BuildSpec {
+    #[doku(example = "Inline")]
     pub kind: BuildKind,
 
     #[serde(default)]
+    #[doku(example = "dnf install git -yy")]
     pub pre: Vec<String>,
 
     #[serde(default)]
     pub post: Vec<String>,
 
+    /// Command to use when build kind is Code
     #[serde(default = "default_command")]
+    #[doku(example = "zip -9 lambda.zip *.py")]
     pub command: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeSpec {
     #[serde(default = "default_lang")]
     pub lang: LangRuntime,
@@ -293,13 +297,13 @@ pub struct RuntimeSpec {
     pub extensions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct Role {
     pub name: String,
     pub path: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct InfraSpec {
     #[serde(default = "default_infra_dir")]
     pub dir: String,
@@ -310,7 +314,7 @@ pub struct InfraSpec {
     pub role: Role,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct FunctionSpec {
     pub name: String,
     pub dir: Option<String>,
@@ -330,7 +334,8 @@ pub struct FunctionSpec {
     pub tasks: HashMap<String, String>,
     //deprecated
     #[serde(default)]
-    pub assets: HashMap<String, Value>,
+
+    pub assets: HashMap<String, String>,
 
 }
 
@@ -410,13 +415,13 @@ fn default_functions() -> Functions {
     Functions { shared: vec![] }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationConsumer {
     pub name: String,
     pub mapping: HashMap<String, String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Produces {
     pub consumer: String,
 
@@ -430,7 +435,7 @@ pub struct Produces {
     pub target: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Consumes {
     #[serde(default)]
     pub producer: String,
@@ -467,7 +472,7 @@ pub struct Consumes {
     pub sandboxes: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventsSpec {
     #[serde(default)]
     pub doc_only: bool,
@@ -475,7 +480,7 @@ pub struct EventsSpec {
     pub produces: Option<HashMap<String, Produces>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HandlerSpec {
    #[serde(default)]
     pub handler: Option<String>,
@@ -487,15 +492,15 @@ pub struct HandlerSpec {
     pub function: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ChannelSpec {
     #[serde(default)]
     pub doc_only: bool,
-    pub on_publish: HandlerSpec,
-    pub on_subscribe: HandlerSpec
+    pub on_publish: Option<HandlerSpec>,
+    pub on_subscribe: Option<HandlerSpec>
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct QueueSpec {
     #[serde(default)]
     pub producer: String,
@@ -504,7 +509,7 @@ pub struct QueueSpec {
     pub consumer: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RouteSpec {
     #[serde(default = "default_route_kind")]
     pub kind: String,
@@ -521,7 +526,7 @@ pub struct RouteSpec {
     pub stage_variables: Option<HashMap<String, String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Nodes {
     #[serde(default)]
     pub ignore: Vec<String>,
@@ -529,12 +534,12 @@ pub struct Nodes {
     pub dirs: Vec<String>
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Functions {
     pub shared: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ResolverSpec {
     pub input: String,
 
@@ -552,7 +557,7 @@ pub struct ResolverSpec {
     pub subscribe: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationSpec {
     #[serde(default)]
     pub authorizer: String,
@@ -562,14 +567,14 @@ pub struct MutationSpec {
     pub resolvers: HashMap<String, ResolverSpec>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ScheduleSpec {
     pub cron: String,
     pub target: String,
     pub payload: Value,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TopologyKind {
     #[serde(alias="step-function",alias="state-machine")]
     StepFunction,
@@ -593,7 +598,7 @@ impl TopologyKind {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TopologySpec {
     #[serde(default)]
     pub name: String,

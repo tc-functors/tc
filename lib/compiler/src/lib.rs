@@ -16,6 +16,7 @@ mod log;
 pub mod formatter;
 mod tag;
 mod channel;
+mod graph;
 
 use walkdir::WalkDir;
 

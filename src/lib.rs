@@ -603,12 +603,12 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
 pub fn generate_doc(spec: &str) {
 
     let schema = match spec {
-        "topology" => schemars::schema_for!(TopologySpec),
-        "build" => schemars::schema_for!(BuildSpec),
-        "function" => schemars::schema_for!(FunctionSpec),
-        _ => schemars::schema_for!(TopologySpec)
+        "build" => doku::to_json::<BuildSpec>(),
+        "function" => doku::to_toml::<FunctionSpec>(),
+        _ => doku::to_json::<FunctionSpec>()
     };
-    println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+    println!("{}", &schema);
+    //println!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }
 
 pub async fn inspect() {
