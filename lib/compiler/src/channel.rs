@@ -27,6 +27,7 @@ pub struct Channel {
 }
 
 fn find_handler(hs: &HandlerSpec) -> String {
+    println!("{:?}", &hs);
     let HandlerSpec { handler, event, .. } = hs;
     if let Some(h) = handler {
         match h.as_ref() {
@@ -44,7 +45,11 @@ fn find_handler(hs: &HandlerSpec) -> String {
 pub fn make(namespace: &str, spec: HashMap<String, ChannelSpec>) -> HashMap<String, Channel> {
     let mut h: HashMap<String, Channel> = HashMap::new();
     for (name, s) in spec {
-        let handler = find_handler(&s.on_publish);
+        let handler = match &s.on_publish {
+            Some(hs) =>  find_handler(hs),
+            None => default_handler()
+        };
+
          let c = Channel {
             name: name.clone(),
             handler: handler,

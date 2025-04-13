@@ -1,6 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde_json::Value;
 use crate::spec::{
     LangRuntime, FunctionSpec, RuntimeInfraSpec,
     RuntimeSpec, Lang, BuildKind
@@ -216,9 +215,9 @@ fn lookup_role(infra_dir: &str, rspec: &Option<RuntimeSpec>, namespace: &str, fu
     }
 }
 
-fn value_to_str(v: Option<&Value>, default: &str) -> String {
+fn as_str(v: Option<&String>, default: &str) -> String {
     match v {
-        Some(s) => s.as_str().unwrap().to_string(),
+        Some(s) => s.to_string(),
         None => String::from(default)
     }
 }
@@ -228,7 +227,7 @@ fn make_env_vars(
     dir: &str,
     namespace: &str,
     build_kind: BuildKind,
-    assets: HashMap<String, Value>,
+    assets: HashMap<String, String>,
     environment: Option<HashMap<String, String>>,
     lang: Lang,
     fqn: &str,
@@ -273,9 +272,10 @@ fn make_env_vars(
         },
         Lang::Python => {
             // legacy
-            let base_deps_path = value_to_str(assets.get("BASE_DEPS_PATH"), "/var/python");
-            let deps_path = value_to_str(assets.get("DEPS_PATH"), "/var/python");
-            let model_path = value_to_str(assets.get("MODEL_PATH"), "/var/python");
+            let base_deps_path = as_str(assets.get("BASE_DEPS_PATH"),
+                                        "/var/python");
+            let deps_path = as_str(assets.get("DEPS_PATH"), "/var/python");
+            let model_path = as_str(assets.get("MODEL_PATH"), "/var/python");
 
             hmap.insert(s!("PYTHONPATH"),
                         format!(
@@ -356,7 +356,7 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h
 }
 
-fn needs_fs(assets: HashMap<String, Value>, mount_fs: Option<bool>) -> bool {
+fn needs_fs(assets: HashMap<String, String>, mount_fs: Option<bool>) -> bool {
     let ax = assets.get("DEPS_PATH");
     match ax {
         Some(_) => true,

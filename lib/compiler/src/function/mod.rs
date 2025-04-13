@@ -5,7 +5,6 @@ pub mod layer;
 use kit as u;
 use kit::*;
 use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use super::spec::FunctionSpec;
 use crate::template;
@@ -32,7 +31,7 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: Test,
-    pub assets: HashMap<String, Value>,
+    pub assets: HashMap<String, String>,
 }
 
 fn is_singular_function_dir() -> bool {

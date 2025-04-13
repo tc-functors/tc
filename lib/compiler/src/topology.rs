@@ -22,6 +22,8 @@ use super::schedule::Schedule;
 use super::channel::Channel;
 use super::flow::Flow;
 use super::role::Role;
+use super::graph;
+use super::graph::Graph;
 use kit as u;
 use kit::*;
 
@@ -627,14 +629,8 @@ impl Topology {
         t
     }
 
-    pub fn names_of(&self) -> HashMap<String, Vec<String>> {
-        let mut h: HashMap<String, Vec<String>> = HashMap::new();
-        h.insert(s!("functions"), self.functions.keys().cloned().collect::<Vec<String>>());
-        h.insert(s!("routes"), self.routes.keys().cloned().collect::<Vec<String>>());
-        h.insert(s!("events"), self.events.keys().cloned().collect::<Vec<String>>());
-        h.insert(s!("mutations"), self.mutations.keys().cloned().collect::<Vec<String>>());
-        h.insert(s!("nodes"), self.nodes.keys().cloned().collect::<Vec<String>>());
-        h
+    pub fn graph(&self) -> Graph {
+        graph::generate(self)
     }
 
 }
