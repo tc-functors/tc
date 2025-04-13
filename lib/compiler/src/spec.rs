@@ -388,7 +388,7 @@ impl FunctionSpec {
 // topology
 
 fn default_nodes() -> Nodes {
-    Nodes { ignore: vec![], dirs: vec![] }
+    Nodes { root: Some(false), ignore: Some(vec![]), dirs: Some(vec![]) }
 }
 
 fn default_route_kind() -> String {
@@ -529,9 +529,11 @@ pub struct RouteSpec {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Nodes {
     #[serde(default)]
-    pub ignore: Vec<String>,
+    pub ignore: Option<Vec<String>>,
     #[serde(default)]
-    pub dirs: Vec<String>
+    pub root: Option<bool>,
+    #[serde(default)]
+    pub dirs: Option<Vec<String>>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -649,7 +651,7 @@ impl TopologySpec {
                 functions: Functions { shared: vec![] },
                 routes: None,
                 events: None,
-                nodes: Nodes { ignore: vec![], dirs: vec![] },
+                nodes: default_nodes(),
                 states: None,
                 flow: None,
                 queues: None,
@@ -669,6 +671,7 @@ impl TopologySpec {
 
 
 }
+
 
 // component
 pub enum Component {

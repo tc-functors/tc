@@ -1,8 +1,0 @@
-{
-  "Comment": "Test my Iterator function",
-  "iterator": {
-    "count": 10,
-    "index": 5,
-    "step": 1
-  }
-}

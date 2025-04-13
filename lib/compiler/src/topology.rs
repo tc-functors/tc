@@ -89,8 +89,11 @@ fn parent_topology_file(dir: &str) -> Option<String> {
 
 pub fn is_root_topology(spec_file: &str) -> bool {
     let spec = TopologySpec::new(spec_file);
-    let given_root_dirs = &spec.nodes.dirs;
-    !given_root_dirs.is_empty()
+    if let Some(given_root_dirs) = &spec.nodes.dirs {
+        !given_root_dirs.is_empty()
+    } else {
+        spec.nodes.root.is_some()
+    }
 }
 
 pub fn is_relative_topology_dir(dir: &str) -> bool {
@@ -228,7 +231,7 @@ fn current_function(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<
 
 fn should_ignore_node(
     root_dir: &str,
-    ignore_nodes: Vec<String>,
+    ignore_nodes: Option<Vec<String>>,
     topology_dir: &str
 ) -> bool {
 
@@ -245,7 +248,7 @@ fn should_ignore_node(
         }
         return false
     } else {
-        for node in ignore_nodes {
+        for node in ignore_nodes.unwrap() {
             let abs_path = format!("{root_dir}/{node}");
             if &abs_path == topology_dir {
                 return true
@@ -427,7 +430,7 @@ fn make(
         version: version,
         infra: u::gdir(&infra_dir),
         sandbox: template::sandbox(),
-        dir: u::gdir(dir),
+        dir: dir.to_string(),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
         functions: functions,

@@ -1,3 +1,0 @@
-name: example-basic
-kind: step-function
-flow: ./states.json
