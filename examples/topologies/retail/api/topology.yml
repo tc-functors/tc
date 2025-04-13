@@ -1,0 +1,5 @@
+name: api
+events:
+  PushRecommendation:
+    producer: recommendation
+    function: sse

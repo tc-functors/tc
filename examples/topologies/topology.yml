@@ -1,0 +1,11 @@
+name: examples
+nodes:
+  ignore: []
+  dirs:
+    - async-response
+    - chat
+    - etl
+    - job-tracker
+    - retail
+    - scheduled-notification
+    - mapreduce

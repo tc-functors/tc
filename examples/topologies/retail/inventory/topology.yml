@@ -1,0 +1,6 @@
+name: inventory
+events:
+  consumes:
+    CheckInventory:
+      producer: order
+      function: electronics

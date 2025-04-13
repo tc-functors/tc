@@ -1,0 +1,6 @@
+name: pricing
+events:
+  consumes:
+    FindPrice:
+      producer: api
+      function: resolver

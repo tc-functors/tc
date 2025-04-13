@@ -1,0 +1,5 @@
+name: fulfillment
+events:
+  consumes:
+    FulfillOrder:
+      producer: api
