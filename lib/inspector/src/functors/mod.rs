@@ -1,5 +1,6 @@
 use askama::Template;
 use axum::{
+    extract::Path,
     routing::{get, post},
     Router,
     http::StatusCode,
@@ -41,12 +42,18 @@ pub async fn index_page() -> impl IntoResponse {
     })
 }
 
+pub async fn view_page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    HtmlTemplate(IndexTemplate {
+        entity: namespace,
+        context: String::from("functors"),
+    })
+}
 
 pub fn routes() -> Router {
     Router::new()
         .route("/", get(index_page))
         .route("/functors", get(index_page))
-        .route("/hx/functor/{:name}", post(definition::view))
+        .route("/functor/{:root}/{:namespace}", get(view_page))
         .route("/hx/functors/load", post(loader::load))
         .route("/hx/functors/list", get(loader::list))
 }
