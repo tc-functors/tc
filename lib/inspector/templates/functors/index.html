@@ -11,11 +11,22 @@
 	    hx-indicator="#status"
 	    hx-target="#functors"
 	    hx-swap="innerHtml">
-      <i class="ph ph-arrow-clockwise"></i> Load Functors
+      Load Functors
     </button>
+    <span class="htmx-indicator" id="status" aria-busy="true">Loading...</button>
     </li>
   </ul>
   <ul>
+
+    <li>
+    <button class="mbtn"
+	    hx-post="/hx/functor/definition/{{root}}/{{namespace}}"
+	    hx-indicator="#status"
+	    hx-target="#functor-viewer"
+	    hx-swap="innerHtml">
+      <i class="ph ph-code"></i> Definition
+    </button>
+    </li>
 
     <li>
     <button class="mbtn"
@@ -37,25 +48,39 @@
     </button>
     </li>
 
+    <li>
+    <button class="mbtn"
+	    hx-post="/hx/functor/sandbox-form/{{root}}/{{namespace}}"
+	    hx-indicator="#status"
+	    hx-target="#functor-viewer"
+	    hx-swap="innerHtml">
+      <i class="ph ph-plus"></i> Sandbox
+    </button>
+    </li>
+
+    <li>
+    <button class="mbtn"
+	    hx-post="/hx/functor/test-form/{{root}}/{{namespace}}"
+	    hx-indicator="#status"
+	    hx-target="#functor-viewer"
+	    hx-swap="innerHtml">
+      <i class="ph ph-test-tube"></i> Test
+    </button>
+    </li>
+
   </ul>
   </ul>
 </nav>
 </div>
 
-
-<div align="center" id="status" class="htmx-indicator">
-  <br/>
-  <br/>
-  <br/>
-  <span aria-busy="true">Loading topology definitions...</article>
-</div>
-
 <br/>
 
 <div class="x">
-  <div class="x6">
-    <strong> Functors</strong>
-    <br/>
+  <div class="x4">
+    <div class="spaced">
+      <strong> Functors</strong>
+      <br/>
+    </div>
     <div class="functors">
       <div class="spaced"
 	   id="functors"
@@ -68,20 +93,13 @@
     </div>
   </div>
 
-  <div class="x4">
-    <div class="spaced container-def">
-    <strong>Definition</strong>
-    <br/>
-    {% if root != "default" %}
-    {% include "definition.html" %}
-    {% endif %}
-    </div>
-  </div>
 
-  <div class="xg">
+  <div class="x75">
     <div class="overflow-auto spaced container-fixed">
       <div id="functor-viewer">
-
+	{% if root != "default" %}
+	{% include "definition.html" %}
+	{% endif %}
       </div>
     </div>
   </div>

@@ -8,7 +8,7 @@ use crate::cache;
 
 #[derive(Template)]
 #[template(path = "functors/index.html")]
-struct ViewTemplate {
+struct PageTemplate {
     context: String,
     root: String,
     namespace: String,
@@ -22,11 +22,11 @@ fn lookup_definition(dir: &str) -> String {
     kit::slurp(&f)
 }
 
-pub async fn view(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let f = cache::find_topology(&namespace, &namespace).await;
     if let Some(t) = f {
         let definition = lookup_definition(&t.dir);
-        let temp = ViewTemplate {
+        let temp = PageTemplate {
             context: String::from("functors"),
             root: root,
             namespace: namespace,
@@ -36,12 +36,38 @@ pub async fn view(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
         Html(temp.render().unwrap())
 
     } else {
-        let temp = ViewTemplate {
+        let temp = PageTemplate {
             context: String::from("functors"),
             root: root,
             namespace: namespace,
             definition: String::from("test"),
             topology: String::from("test"),
+        };
+        Html(temp.render().unwrap())
+    }
+}
+
+// view
+
+
+#[derive(Template)]
+#[template(path = "functors/definition.html")]
+struct ViewTemplate {
+    definition: String,
+}
+
+pub async fn view(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let f = cache::find_topology(&namespace, &namespace).await;
+    if let Some(t) = f {
+        let definition = lookup_definition(&t.dir);
+        let temp = ViewTemplate {
+            definition: definition,
+        };
+        Html(temp.render().unwrap())
+
+    } else {
+        let temp = ViewTemplate {
+            definition: String::from("test"),
         };
         Html(temp.render().unwrap())
     }

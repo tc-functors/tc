@@ -11,6 +11,8 @@ mod loader;
 mod flow;
 mod definition;
 mod topology;
+mod sandbox;
+mod test;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -56,12 +58,18 @@ pub fn routes() -> Router {
         .route("/", get(index_page))
         .route("/functors", get(index_page))
         .route("/functor/{:root}/{:namespace}",
-               get(definition::view))
+               get(definition::page))
         .route("/hx/functors/load", post(loader::load))
         .route("/hx/functors/list/{:root}/{:namespace}",
                get(loader::list))
+        .route("/hx/functor/definition/{:root}/{:namespace}",
+               post(definition::view))
         .route("/hx/functor/topology/{:root}/{:namespace}",
                post(topology::view))
         .route("/hx/functor/flow/{:root}/{:namespace}",
                post(flow::view))
+        .route("/hx/functor/sandbox-form/{:root}/{:namespace}",
+               post(sandbox::form))
+        .route("/hx/functor/test-form/{:root}/{:namespace}",
+               post(test::form))
 }
