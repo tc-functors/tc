@@ -68,7 +68,8 @@ members = [
 ]
 
 [profile.release]
-opt-level = 's'
+opt-level = 'z'
+panic = "abort"
 debug = false
 rpath = false
 lto = "fat"
