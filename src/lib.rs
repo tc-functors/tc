@@ -1,6 +1,6 @@
 use aws::Env;
 use compiler::Topology;
-use compiler::spec::{BuildKind, TopologySpec, FunctionSpec, BuildSpec};
+use compiler::spec::{BuildKind, FunctionSpec, BuildSpec};
 use ci::github;
 use configurator::Config;
 use kit as u;

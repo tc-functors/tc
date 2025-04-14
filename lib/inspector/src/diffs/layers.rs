@@ -80,16 +80,12 @@ pub async fn sync() -> impl IntoResponse {
 struct ViewTemplate {
     entity: String,
     context: String,
-    left: String,
-    right: String
 }
 
 pub async fn view() -> impl IntoResponse {
     let temp = ViewTemplate {
         entity: String::from("layers"),
         context: String::from("diffs"),
-        left: String::from("a"),
-        right: String::from("b")
     };
     Html(temp.render().unwrap())
 }

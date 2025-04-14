@@ -9,7 +9,7 @@ use axum::{
 struct FlowTemplate {
 }
 
-pub async fn view(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn view(Path((_root, _namespace)): Path<(String, String)>) -> impl IntoResponse {
 
     let temp = FlowTemplate {
     };

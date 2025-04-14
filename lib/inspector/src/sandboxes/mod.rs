@@ -8,7 +8,6 @@ use axum::{
 };
 
 mod list;
-mod test;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -57,6 +56,4 @@ pub fn routes() -> Router {
                get(view_page))
         .route("/hx/sandboxes/list",
                post(list::generate))
-        .route("/hx/sandboxes/test",
-               post(test::test))
 }

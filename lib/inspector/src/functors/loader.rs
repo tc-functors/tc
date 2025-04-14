@@ -25,7 +25,7 @@ pub async fn load() -> impl IntoResponse {
     Html(t.render().unwrap())
 }
 
-pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+pub async fn list(Path((_root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let mut functors  = Vec::from_iter(topologies.keys().cloned());
     functors.sort();

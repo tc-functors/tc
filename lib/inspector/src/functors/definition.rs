@@ -13,7 +13,6 @@ struct PageTemplate {
     root: String,
     namespace: String,
     definition: String,
-    topology: String,
 }
 
 fn lookup_definition(dir: &str) -> String {
@@ -30,8 +29,7 @@ pub async fn page(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
             context: String::from("functors"),
             root: root,
             namespace: namespace,
-            definition: definition,
-            topology: t.to_str()
+            definition: definition
         };
         Html(temp.render().unwrap())
 
@@ -41,7 +39,6 @@ pub async fn page(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
             root: root,
             namespace: namespace,
             definition: String::from("test"),
-            topology: String::from("test"),
         };
         Html(temp.render().unwrap())
     }
@@ -57,7 +54,7 @@ struct ViewTemplate {
 }
 
 pub async fn view(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let f = cache::find_topology(&namespace, &namespace).await;
+    let f = cache::find_topology(&root, &namespace).await;
     if let Some(t) = f {
         let definition = lookup_definition(&t.dir);
         let temp = ViewTemplate {

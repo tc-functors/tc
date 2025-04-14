@@ -1,6 +1,5 @@
 use askama::Template;
 use axum::{
-    extract::Path,
     routing::{get, post},
     Router,
     http::StatusCode,
@@ -38,8 +37,6 @@ struct IndexTemplate {
     namespace: String,
     context: String,
     definition: String,
-    flow: String,
-    topology: String
 }
 
 pub async fn index_page() -> impl IntoResponse {
@@ -48,8 +45,6 @@ pub async fn index_page() -> impl IntoResponse {
         namespace: String::from("default"),
         context: String::from("functors"),
         definition: String::from(""),
-        flow: String::from(""),
-        topology: String::from("")
     })
 }
 

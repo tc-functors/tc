@@ -8,14 +8,12 @@ use axum::{
 struct ViewTemplate {
     entity: String,
     context: String,
-    items: Vec<String>
 }
 
 pub async fn view() -> impl IntoResponse {
     let t = ViewTemplate {
         entity: String::from("timeline"),
         context: String::from("releases"),
-        items: vec![]
     };
     Html(t.render().unwrap())
 }
