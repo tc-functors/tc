@@ -70,7 +70,7 @@ pub async fn list_all(Path(entity): Path<String>) -> impl IntoResponse {
         root: String::from("all"),
         namespace: String::from("all"),
         entity: entity,
-        context: String::from("definitions"),
+        context: String::from("overview"),
     })
 }
 

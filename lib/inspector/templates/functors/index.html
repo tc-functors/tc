@@ -16,6 +16,7 @@
 	<span class="htmx-indicator" id="status" aria-busy="true">Loading...</button>
 </li>
 </ul>
+{% if root != "default" %}
 <ul>
 
   <li>
@@ -59,7 +60,7 @@
   </li>
 
 </ul>
-</ul>
+{% endif %}
 </nav>
 </div>
 
@@ -68,7 +69,8 @@
 <div class="x">
   <div class="x5">
     <div class="spaced">
-      <input type="search" placeholder="Search functors.."/>
+      <strong>Functors</strong>
+      <br/>
     </div>
     <div class="functors">
       <div class="spaced"
