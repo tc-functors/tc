@@ -2,33 +2,23 @@
 {% block content %}
 
 <div class="navbg right-spaced">
-<nav class="navbar">
-  <ul>
-    <li></li>
-    <li>
-    <button class="mbtn"
-	    hx-post="/hx/functors/load"
-	    hx-indicator="#status"
-	    hx-target="#functors"
-	    hx-swap="innerHtml">
-      Load Functors
-    </button>
-    <span class="htmx-indicator" id="status" aria-busy="true">Loading...</button>
-    </li>
-  </ul>
-  <ul>
+  <nav class="navbar">
+    <ul>
+      <li></li>
+      <li>
+	<button class="mbtn"
+		hx-post="/hx/functors/load"
+		hx-indicator="#status"
+		hx-target="#functors"
+		hx-swap="innerHtml">
+	  Load Functors
+	</button>
+	<span class="htmx-indicator" id="status" aria-busy="true">Loading...</button>
+</li>
+</ul>
+<ul>
 
-    <li>
-    <button class="mbtn"
-	    hx-post="/hx/functor/definition/{{root}}/{{namespace}}"
-	    hx-indicator="#status"
-	    hx-target="#functor-viewer"
-	    hx-swap="innerHtml">
-      <i class="ph ph-code"></i> Definition
-    </button>
-    </li>
-
-    <li>
+  <li>
     <button class="mbtn"
 	    hx-post="/hx/functor/topology/{{root}}/{{namespace}}"
 	    hx-indicator="#status"
@@ -36,9 +26,9 @@
 	    hx-swap="innerHtml">
       <i class="ph ph-graph"></i> Topology
     </button>
-    </li>
+  </li>
 
-    <li>
+  <li>
     <button class="mbtn"
 	    hx-post="/hx/functor/flow/{{root}}/{{namespace}}"
 	    hx-indicator="#status"
@@ -46,9 +36,9 @@
 	    hx-swap="innerHtml">
       <i class="ph ph-tree-structure"></i> Flow
     </button>
-    </li>
+  </li>
 
-    <li>
+  <li>
     <button class="mbtn"
 	    hx-post="/hx/functor/sandbox-form/{{root}}/{{namespace}}"
 	    hx-indicator="#status"
@@ -56,9 +46,9 @@
 	    hx-swap="innerHtml">
       <i class="ph ph-plus"></i> Sandbox
     </button>
-    </li>
+  </li>
 
-    <li>
+  <li>
     <button class="mbtn"
 	    hx-post="/hx/functor/test-form/{{root}}/{{namespace}}"
 	    hx-indicator="#status"
@@ -66,17 +56,17 @@
 	    hx-swap="innerHtml">
       <i class="ph ph-test-tube"></i> Test
     </button>
-    </li>
+  </li>
 
-  </ul>
-  </ul>
+</ul>
+</ul>
 </nav>
 </div>
 
 <br/>
 
 <div class="x">
-  <div class="x4">
+  <div class="x5">
     <div class="spaced">
       <input type="search" placeholder="Search functors.."/>
     </div>
@@ -92,16 +82,20 @@
     </div>
   </div>
 
-
   <div class="x75">
-    <div class="overflow-auto spaced container-fixed">
-      <div id="functor-viewer">
+    <div class="grid">
+
+      <div class="overflow-auto spaced container-def">
 	{% if root != "default" %}
 	{% include "definition.html" %}
 	{% endif %}
       </div>
+
+      <div class="overflow-auto spaced container-fixed">
+	<div id="functor-viewer">
+	</div>
+      </div>
     </div>
-  </div>
   </div>
 </div>
 
