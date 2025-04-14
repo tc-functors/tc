@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::spec::{
     LangRuntime, FunctionSpec, RuntimeInfraSpec,
-    RuntimeSpec, Lang, BuildKind
+    RuntimeSpec, Lang, BuildKind, AssetsSpec
 };
 use crate::{version, template, role};
 use super::{layer};
@@ -215,19 +215,18 @@ fn lookup_role(infra_dir: &str, rspec: &Option<RuntimeSpec>, namespace: &str, fu
     }
 }
 
-fn as_str(v: Option<&String>, default: &str) -> String {
+fn as_str(v: Option<String>, default: &str) -> String {
     match v {
         Some(s) => s.to_string(),
         None => String::from(default)
     }
 }
 
-
 fn make_env_vars(
     dir: &str,
     namespace: &str,
     build_kind: BuildKind,
-    assets: HashMap<String, String>,
+    maybe_assets: Option<AssetsSpec>,
     environment: Option<HashMap<String, String>>,
     lang: Lang,
     fqn: &str,
@@ -272,23 +271,25 @@ fn make_env_vars(
         },
         Lang::Python => {
             // legacy
-            let base_deps_path = as_str(assets.get("BASE_DEPS_PATH"),
+            if let Some(assets) = maybe_assets {
+                let base_deps_path = as_str(assets.base_deps_path,
                                         "/var/python");
-            let deps_path = as_str(assets.get("DEPS_PATH"), "/var/python");
-            let model_path = as_str(assets.get("MODEL_PATH"), "/var/python");
+                let deps_path = as_str(assets.deps_path, "/var/python");
+                let model_path = as_str(assets.model_path, "/var/python");
 
-            hmap.insert(s!("PYTHONPATH"),
-                        format!(
-                            "/opt/python:/var/runtime:{}/python:{}/python:{}",
-                            &base_deps_path, &deps_path, &model_path
-                        ),
-            );
-            hmap.insert(s!("LD_LIBRARY_PATH"),
-                        format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
+                hmap.insert(s!("PYTHONPATH"),
+                            format!(
+                                "/opt/python:/var/runtime:{}/python:{}/python:{}",
+                                &base_deps_path, &deps_path, &model_path
+                            ),
+                );
+                hmap.insert(s!("LD_LIBRARY_PATH"),
+                            format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
 
-            hmap.insert(s!("MODEL_PATH"), model_path);
-            hmap.insert(s!("DEPS_PATH"), deps_path);
-            hmap.insert(s!("BASE_DEPS_PATH"), base_deps_path);
+                hmap.insert(s!("MODEL_PATH"), model_path);
+                hmap.insert(s!("DEPS_PATH"), deps_path);
+                hmap.insert(s!("BASE_DEPS_PATH"), base_deps_path);
+            }
 
         },
         _ => ()
@@ -356,19 +357,23 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h
 }
 
-fn needs_fs(assets: HashMap<String, String>, mount_fs: Option<bool>) -> bool {
-    let ax = assets.get("DEPS_PATH");
-    match ax {
-        Some(_) => true,
-        None => match mount_fs {
-            Some(f) => f,
-            None => {
-                match assets.get("MODEL_PATH") {
-                    Some(_) => true,
-                    None => false
+fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
+    if let Some(assets) =  maybe_assets {
+        let ax = assets.deps_path;
+        match ax {
+            Some(_) => true,
+            None => match mount_fs {
+                Some(f) => f,
+                None => {
+                    match assets.model_path {
+                        Some(_) => true,
+                        None => false
+                    }
                 }
             }
         }
+    } else {
+        false
     }
 }
 

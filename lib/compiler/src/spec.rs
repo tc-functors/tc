@@ -315,6 +315,20 @@ pub struct InfraSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
+pub struct AssetsSpec {
+    #[serde(alias="DEPS_PATH",alias="deps_path")]
+    pub deps_path: Option<String>,
+    #[serde(alias="BASE_DEPS_PATH",alias="base_deps_path")]
+    pub base_deps_path: Option<String>,
+    #[serde(alias="MODEL_PATH",alias="model_path")]
+    pub model_path: Option<String>,
+    #[serde(alias="ARTIFACTS_SOURCE",alias="artifacts_source")]
+    pub artifacts_source: Option<Vec<String>>
+}
+
+
+
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct FunctionSpec {
     pub name: String,
     pub dir: Option<String>,
@@ -333,9 +347,7 @@ pub struct FunctionSpec {
     #[serde(default)]
     pub tasks: HashMap<String, String>,
     //deprecated
-    #[serde(default)]
-
-    pub assets: HashMap<String, String>,
+    pub assets: Option<AssetsSpec>,
 
 }
 
@@ -377,7 +389,7 @@ impl FunctionSpec {
                 build: None,
                 infra: None,
                 infra_dir: None,
-                assets: HashMap::new(),
+                assets: None,
                 tasks: HashMap::new()
             }
         }
