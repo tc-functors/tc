@@ -15,6 +15,7 @@ x86_64-linux:
 	@mkdir -p $(BIN_DIR)
 	cargo build --release
 	@cp $(TARGET_DIR)/x86_64-unknown-linux-musl/release/tc $(BIN_DIR)/tc-x86_64-linux
+	upx --best --lzma $(BIN_DIR)/tc-x86_64-linux
 
 export PATH := $(HOME)/opt/apple/osxcross/target/bin:$(PATH)
 
