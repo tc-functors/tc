@@ -1,4 +1,4 @@
-name: async-response
+name: request-async-response
 
 routes:
   post-message:
