@@ -10,6 +10,7 @@ use axum::{
 mod loader;
 mod flow;
 mod definition;
+mod topology;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -54,8 +55,13 @@ pub fn routes() -> Router {
     Router::new()
         .route("/", get(index_page))
         .route("/functors", get(index_page))
-        .route("/functor/{:root}/{:namespace}", get(definition::view))
+        .route("/functor/{:root}/{:namespace}",
+               get(definition::view))
         .route("/hx/functors/load", post(loader::load))
-        .route("/hx/functors/list", get(loader::list))
-        .route("/hx/functor/definition/{:root}/{:namespace}", get(definition::view))
+        .route("/hx/functors/list/{:root}/{:namespace}",
+               get(loader::list))
+        .route("/hx/functor/topology/{:root}/{:namespace}",
+               post(topology::view))
+        .route("/hx/functor/flow/{:root}/{:namespace}",
+               post(flow::view))
 }

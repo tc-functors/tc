@@ -1,13 +1,16 @@
+<div class="spaced">
+  <strong>Topology</strong>
+  <br/>
 <pre id="json-renderer"></pre>
 
 <script>
 
   var data = "{{topology}}"
-  const m = data.replace(/&quot;/ig,'"');
-  console.log(m)
-  const d = JSON.parse(m);
+  var m = data.replace(/&quot;/ig,'"');
+  var d = JSON.parse(m);
 
   $(function(){
     $('#json-renderer').jsonViewer(d);
   });
 </script>
+</div>

@@ -4,12 +4,9 @@
 <div class="navbg right-spaced">
 <nav class="navbar">
   <ul>
+    <li></li>
     <li>
-    </li>
-  </ul>
-  <ul>
-    <li class="right-spaced">
-    <button class="btn"
+    <button class="mbtn"
 	    hx-post="/hx/functors/load"
 	    hx-indicator="#status"
 	    hx-target="#functors"
@@ -17,6 +14,29 @@
       <i class="ph ph-arrow-clockwise"></i> Load Functors
     </button>
     </li>
+  </ul>
+  <ul>
+
+    <li>
+    <button class="mbtn"
+	    hx-post="/hx/functor/topology/{{root}}/{{namespace}}"
+	    hx-indicator="#status"
+	    hx-target="#functor-viewer"
+	    hx-swap="innerHtml">
+      <i class="ph ph-graph"></i> Topology
+    </button>
+    </li>
+
+    <li>
+    <button class="mbtn"
+	    hx-post="/hx/functor/flow/{{root}}/{{namespace}}"
+	    hx-indicator="#status"
+	    hx-target="#functor-viewer"
+	    hx-swap="innerHtml">
+      <i class="ph ph-tree-structure"></i> Flow
+    </button>
+    </li>
+
   </ul>
   </ul>
 </nav>
@@ -34,11 +54,13 @@
 
 <div class="x">
   <div class="x6">
+    <strong> Functors</strong>
+    <br/>
     <div class="functors">
       <div class="spaced"
 	   id="functors"
 	   hx-trigger="load"
-	   hx-get="/hx/functors/list">
+	   hx-get="/hx/functors/list/{{root}}/{{namespace}}">
 
       </div>
       <br/>
@@ -46,8 +68,10 @@
     </div>
   </div>
 
-  <div class="x5">
-    <div class="spaced">
+  <div class="x4">
+    <div class="spaced container-def">
+    <strong>Definition</strong>
+    <br/>
     {% if root != "default" %}
     {% include "definition.html" %}
     {% endif %}
@@ -55,20 +79,12 @@
   </div>
 
   <div class="xg">
-    <div class="spaced">
-      <div align="right">
-	<button>Topology</button>
+    <div class="overflow-auto spaced container-fixed">
+      <div id="functor-viewer">
+
       </div>
-
-      <!-- {% if root != "default" %} -->
-
-      <!-- <div hx-trigger="load" -->
-      <!-- 	   hx-get="/hx/functor/{{root}}/{{root}}"> -->
-      <!-- </div> -->
-
-      <!-- {% endif %} -->
-
     </div>
+  </div>
   </div>
 </div>
 

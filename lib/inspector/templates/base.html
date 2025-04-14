@@ -116,6 +116,20 @@
       border-bottom: 1px solid var(--pico-secondary-focus);
       }
 
+      .container-fixed {
+      width: 90%;
+      max-width: 600px;
+      overflow:auto;
+      overflow-x:hidden;
+      }
+
+      .container-def {
+      width: 90%;
+      max-width: 400px;
+      overflow:auto;
+      overflow-x:hidden;
+      }
+
       article {
       border: 1px solid var(--pico-muted-border-color);
 
@@ -309,13 +323,6 @@
 		  <span class="side-selected">Functors</span>
 		  {% else %}
 		  <a href="/functors">Functors</a>
-		  {% endif %}
-		</li>
-		<li>
-		  {% if context == "overview" %}
-		  <span class="side-selected">Overview</span>
-		  {% else %}
-		  <a href="/overview">Overview</a>
 		  {% endif %}
 		</li>
 		<li>

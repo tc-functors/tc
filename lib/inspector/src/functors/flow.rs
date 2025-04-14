@@ -1,5 +1,6 @@
 use askama::Template;
 use axum::{
+    extract::Path,
     response::{Html, IntoResponse},
 };
 
@@ -8,7 +9,7 @@ use axum::{
 struct FlowTemplate {
 }
 
-pub async fn generate() -> impl IntoResponse {
+pub async fn view(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
 
     let temp = FlowTemplate {
     };
