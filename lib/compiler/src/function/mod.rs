@@ -31,7 +31,6 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: Test,
-    pub assets: HashMap<String, String>,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -129,7 +128,6 @@ impl Function {
             build: Build::new(dir, &runtime, fspec.build, fspec.tasks),
             runtime: runtime,
             layer_name: fspec.layer_name,
-            assets: fspec.assets,
             test: make_test()
         }
     }
