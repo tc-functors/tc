@@ -74,15 +74,6 @@ fn copy_from_docker(dir: &str) {
     sh(&clean, dir);
 }
 
-fn copy(dir: &str) {
-    if u::path_exists(dir, "src") {
-        u::sh("cp -r src/* build/python/", dir);
-    }
-    if u::path_exists(dir, "lib") {
-        u::sh("cp -r lib/* build/python/", dir);
-    }
-}
-
 
 pub fn build(
     dir: &str,
@@ -100,8 +91,6 @@ pub fn build(
     build_with_docker(dir);
     copy_from_docker(dir);
     sh("rm -f Dockerfile", dir);
-
-    copy(dir);
 
     if u::path_exists(dir, "pyproject.toml") {
         sh("rm -f requirements.txt", dir);

@@ -162,13 +162,13 @@ impl BuildKind {
 // function infra spec
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeNetworkSpec {
     pub subnets: Vec<String>,
     pub security_groups: Vec<String>
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeFilesystemSpec {
     pub arn: String,
     pub mount_point: String,
@@ -184,7 +184,7 @@ fn default_timeout() -> Option<i32> {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeInfraSpec {
     #[serde(default = "default_memory_size")]
     pub memory_size: Option<i32>,
