@@ -1631,6 +1631,7 @@ name = "configurator"
 version = "0.0.1"
 dependencies = [
  "derivative",
+ "doku",
  "kit",
  "serde 1.0.217",
  "serde_derive",
@@ -2815,6 +2816,7 @@ dependencies = [
  "chrono",
  "compiler",
  "configurator",
+ "doku",
  "kit",
  "lister",
  "serde 1.0.217",

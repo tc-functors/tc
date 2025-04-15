@@ -21,3 +21,4 @@ kit = { path = "../kit" }
 lister = { path = "../lister" }
 tagger = { path = "../tagger" }
 configurator = { path = "../configurator" }
+doku = "0.21.1"

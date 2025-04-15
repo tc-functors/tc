@@ -1,0 +1,40 @@
+<div class="navbg">
+  <nav class="navbar">
+    <ul>
+      <li></li>
+      <li>
+	{% if entity == "function" %}
+	<span class="selected">Function</span>
+	{% else %}
+	<a href="/specs/function">Function</a>
+	{% endif %}
+      </li>
+      <li>
+	{% if entity == "topology" %}
+	<span class="selected">Topology</span>
+	{% else %}
+	<a href="/specs/topology">Topology</a>
+	{% endif %}
+      </li>
+
+      <li>
+	{% if entity == "config" %}
+	<span class="selected">Config</span>
+	{% else %}
+	<a href="/specs/config">Config</a>
+	{% endif %}
+      </li>
+
+      <li>
+	{% if entity == "infrastructure" %}
+	<span class="selected">Infrastructure</span>
+	{% else %}
+	<a href="/specs/infra">Infrastructure</a>
+	{% endif %}
+      </li>
+
+    </ul>
+  </nav>
+</div>
+
+<br/>

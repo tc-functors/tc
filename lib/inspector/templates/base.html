@@ -307,15 +307,6 @@
 	justify-content: center;
 	}
 
-	.reveal pre code, .hljs {
-	  background-color: transparent;
-	  color: #DCDCDC;
-	  padding: 5px;
-	  overflow: auto;
-	  word-wrap: normal;
-	}
-
-
     </style>
 
   </head>
@@ -368,6 +359,14 @@
 		  <span class="side-selected">Diffs</span>
 		  {% else %}
 		  <a href="/diffs">Diffs</a>
+		  {% endif %}
+		</li>
+
+		<li>
+		  {% if context == "specs" %}
+		  <span class="side-selected">Specs</span>
+		  {% else %}
+		  <a href="/specs">Specs</a>
 		  {% endif %}
 		</li>
 

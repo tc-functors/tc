@@ -10,6 +10,7 @@ mod sandboxes;
 mod releases;
 mod diffs;
 mod cache;
+mod specs;
 
 pub async fn init() {
 
@@ -24,6 +25,7 @@ pub async fn init() {
         .merge(diffs::routes())
         .merge(sandboxes::routes())
         .merge(releases::routes())
+        .merge(specs::routes())
 
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());

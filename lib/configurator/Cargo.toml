@@ -10,3 +10,4 @@ serde_derive = "1.0"
 serde_yaml = "0.9.25"
 derivative = "2.2.0"
 kit = { path = "../kit" }
+doku = "0.21.1"

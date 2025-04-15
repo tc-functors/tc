@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::collections::HashMap;
 use std::process::exit;
+use doku::Document;
 
 use kit as u;
 use kit::*;
@@ -76,7 +77,7 @@ fn default_network() -> HashMap<String, Network> {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Compiler {
     #[derivative(Default(value = "default_bool()"))]
@@ -93,7 +94,7 @@ pub struct Compiler {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Resolver {
     #[derivative(Default(value = "default_bool()"))]
@@ -114,7 +115,7 @@ pub struct Resolver {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Deployer {
     #[derivative(Default(value = "default_bool()"))]
@@ -131,7 +132,7 @@ pub struct Deployer {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Notifier {
     #[derivative(Default(value = "default_hashmap()"))]
@@ -139,7 +140,7 @@ pub struct Notifier {
     pub webhooks: HashMap<String, String>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Ci {
     #[derivative(Default(value = "default_ci_provider()"))]
@@ -161,7 +162,7 @@ pub struct Ci {
 
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Eventbridge {
     #[derivative(Default(value = "default_bus()"))]
@@ -182,7 +183,7 @@ pub struct Eventbridge {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Network {
     #[derivative(Default(value = "default_vec()"))]
@@ -195,7 +196,7 @@ pub struct Network {
 
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Efs {
     #[derivative(Default(value = "default_network()"))]
@@ -219,7 +220,7 @@ pub struct Efs {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Ecs {
     #[derivative(Default(value = "default_vec()"))]
@@ -232,7 +233,7 @@ pub struct Ecs {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Stepfunction {
     #[derivative(Default(value = "default_sfn_role()"))]
@@ -244,7 +245,7 @@ pub struct Stepfunction {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Lambda {
     #[derivative(Default(value = "default_timeout()"))]
@@ -272,7 +273,7 @@ pub struct Lambda {
     pub default_image_repo: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct ApiGateway {
     #[derivative(Default(value = "default_api_name()"))]
@@ -285,7 +286,7 @@ pub struct ApiGateway {
 }
 
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Aws {
 
@@ -309,7 +310,7 @@ pub struct Aws {
 
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Config {
 

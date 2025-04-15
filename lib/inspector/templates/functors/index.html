@@ -41,6 +41,16 @@
 
   <li>
     <button class="mbtn"
+	    hx-post="/hx/functor/spec"
+	    hx-indicator="#status"
+	    hx-target="#functor-viewer"
+	    hx-swap="innerHtml">
+      <i class="ph ph-graph"></i> Build
+    </button>
+  </li>
+
+  <li>
+    <button class="mbtn"
 	    hx-post="/hx/functor/sandbox-form/{{root}}/{{namespace}}"
 	    hx-indicator="#status"
 	    hx-target="#functor-viewer"

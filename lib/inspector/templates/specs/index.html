@@ -1,6 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% include "menu.html" %}
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
 
 <style>
   .reveal pre code, .hljs {
@@ -17,13 +21,15 @@
   hljs.initHighlightingOnLoad();
 </script>
 
-<div>
-  <strong>Definition</strong>
-  <br/>
+<div class="spaced overflow-auto">
+
 <pre>
-  <code>
-  {{- definition}}
+  <code class="json">
+  {{data}}
   </code>
 </pre>
 
 </div>
+
+
+{% endblock %}
