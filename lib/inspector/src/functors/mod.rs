@@ -87,6 +87,8 @@ pub fn function_routes() -> Router {
                post(function::build))
         .route("/hx/function/compile/{:root}/{:namespace}",
                post(function::compile))
+        .route("/hx/function/permissions/{:root}/{:namespace}",
+               post(function::permissions))
 }
 
 pub fn mutation_routes() -> Router {

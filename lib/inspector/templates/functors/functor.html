@@ -1,14 +1,13 @@
 <div class="grid">
 
-  <div class="overflow-auto spaced container-def">
+  <div class="overflow-auto spaced" style="height: 86dvh;">
 
     {% include "code.html" %}
 
   </div>
 
-  <div class="overflow-auto spaced container-fixed">
+  <div class="overflow-auto spaced container-action">
     <nav class="navbar">
-      <ul><li></li></ul>
       <ul>
 
 	<li>
@@ -34,7 +33,7 @@
 	<li>
 	    <button class="mbtn"
 		    hx-post="/hx/functor/sandbox-form/{{root}}/{{namespace}}"
-		    hx-indicator="#status"
+		    hx-indicator="#viewer-status"
 		    hx-target="#functor-viewer"
 		    hx-swap="innerHtml">
 	        Sandbox
@@ -44,7 +43,7 @@
 	<li>
 	    <button class="mbtn"
 		    hx-post="/hx/functor/test-form/{{root}}/{{namespace}}"
-		    hx-indicator="#status"
+		    hx-indicator="#viewer-status"
 		    hx-target="#functor-viewer"
 		    hx-swap="innerHtml">
 	        Test
@@ -54,13 +53,10 @@
       </ul>
 
     </nav>
-    <div id="functor-viewer">
-      <div id="viewer-status">
-	<br/><br/>
-	<span class="htmx-indicator" id="status" aria-busy="true">
+    <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+      <span class="htmx-indicator" id="viewer-status" aria-busy="true">
 	  Loading...
       </span>
-      </div>
     </div>
   </div>
 

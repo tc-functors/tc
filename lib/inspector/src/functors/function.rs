@@ -49,3 +49,21 @@ pub async fn compile(
     };
     Html(temp.render().unwrap())
 }
+
+pub async fn permissions(
+    Path((root, namespace)): Path<(String, String)>,
+    Form(payload): Form<FunctionInput>
+) -> impl IntoResponse {
+    let FunctionInput { function } = payload;
+    let function = cache::find_function(&root, &namespace, &function).await;
+
+    let definition = if let Some(f) = function {
+        f.runtime.role.policy
+    } else {
+        String::from("")
+    };
+    let temp = DataTemplate {
+        definition: definition
+    };
+    Html(temp.render().unwrap())
+}

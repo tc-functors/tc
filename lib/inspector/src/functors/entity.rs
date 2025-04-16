@@ -18,7 +18,6 @@ struct DefinitionTemplate {
 
 fn lookup_definition(dir: &str) -> String {
     let f = format!("{}/topology.yml", dir);
-    println!("Loading {}", &f);
     kit::slurp(&f)
 }
 

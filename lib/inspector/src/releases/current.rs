@@ -18,7 +18,6 @@ async fn build_changelog() -> Vec<Change> {
     let mut xs: Vec<Change> = vec![];
     for (name, t) in topologies {
         let changes = tagger::changelogs_since_last(&name, &t.version);
-        println!("{}", &changes);
         let change = Change {
             name: name,
             changes: changes,

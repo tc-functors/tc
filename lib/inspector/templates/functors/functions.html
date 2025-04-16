@@ -1,6 +1,6 @@
 <div class="grid">
 
-  <div class="overflow-auto spaced container-def">
+  <div class="overflow-auto spaced" style="height: 86dvh;">
     <br/>
     <table class="striped">
 
@@ -27,17 +27,16 @@
     </table>
   </div>
 
-  <div class="overflow-auto spaced container-fixed">
+  <div class="overflow-auto spaced container-action">
 
     <nav class="navbar">
-      <ul><li></li></ul>
       <ul>
 
 	<li>
 	  <button class="mbtn"
 		  hx-trigger="click"
 		  hx-post="/hx/function/compile/{{root}}/{{namespace}}"
-		  hx-indicator="#status"
+		  hx-indicator="#viewer-status"
 		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
@@ -48,8 +47,19 @@
 	<li>
 	  <button class="mbtn"
 		  hx-trigger="click"
-		  hx-post="/hx/function/build/{{root}}/{{namespace}}"
+		  hx-post="/hx/function/permissions/{{root}}/{{namespace}}"
 		  hx-indicator="#status"
+		  hx-include="[name='function']"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Permissions
+	  </button>
+	</li>
+	<li>
+	  <button class="mbtn"
+		  hx-trigger="click"
+		  hx-post="/hx/function/build/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
 		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
@@ -57,11 +67,23 @@
 	  </button>
 	</li>
 
+	<li>
+	  <button class="mbtn"
+		  hx-trigger="click"
+		  hx-post="/hx/function/test/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-include="[name='function']"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Test
+	  </button>
+	</li>
+
       </ul>
     </nav>
 
-    <div id="functor-viewer">
-      	<span class="htmx-indicator" id="status" aria-busy="true">
+    <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+      	<span class="htmx-indicator" id="viewer-status" aria-busy="true">
 	  Loading...
       </span>
     </div>
