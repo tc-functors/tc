@@ -1,93 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="navbg right-spaced">
-  <nav class="navbar">
-    <ul>
-      <li></li>
-      <li>
-	<button class="mbtn"
-		hx-post="/hx/functors/load"
-		hx-indicator="#status"
-		hx-target="#functors"
-		hx-swap="innerHtml">
-	  Load Functors
-	</button>
-	<span class="htmx-indicator" id="status" aria-busy="true">Loading...</button>
-</li>
-</ul>
-{% if root != "default" %}
-<ul>
-
-  <li>
-    <button class="mbtn"
-	    hx-post="/hx/functor/topology/{{root}}/{{namespace}}"
-	    hx-indicator="#status"
-	    hx-target="#functor-viewer"
-	    hx-swap="innerHtml">
-      <i class="ph ph-graph"></i> Topology
-    </button>
-  </li>
-
-  <li>
-    <button class="mbtn"
-	    hx-post="/hx/functor/flow/{{root}}/{{namespace}}"
-	    hx-indicator="#status"
-	    hx-target="#functor-viewer"
-	    hx-swap="innerHtml">
-      <i class="ph ph-tree-structure"></i> Flow
-    </button>
-  </li>
-
-  <li>
-    <button class="mbtn"
-	    hx-post="/hx/functor/spec"
-	    hx-indicator="#status"
-	    hx-target="#functor-viewer"
-	    hx-swap="innerHtml">
-      <i class="ph ph-graph"></i> Build
-    </button>
-  </li>
-
-  <li>
-    <button class="mbtn"
-	    hx-post="/hx/functor/sandbox-form/{{root}}/{{namespace}}"
-	    hx-indicator="#status"
-	    hx-target="#functor-viewer"
-	    hx-swap="innerHtml">
-      <i class="ph ph-plus"></i> Sandbox
-    </button>
-  </li>
-
-  <li>
-    <button class="mbtn"
-	    hx-post="/hx/functor/test-form/{{root}}/{{namespace}}"
-	    hx-indicator="#status"
-	    hx-target="#functor-viewer"
-	    hx-swap="innerHtml">
-      <i class="ph ph-test-tube"></i> Test
-    </button>
-  </li>
-
-</ul>
-{% endif %}
-</nav>
-</div>
 
 <br/>
-
 <div class="x">
   <div class="x5">
     <div class="spaced">
-      <strong>Functors</strong>
+      <button class="mbtn"
+		hx-post="/hx/functors/load"
+	        hx-indicator="#status"
+		hx-target="#functors"
+		hx-swap="innerHtml">
+	<i class="ph ph-arrow-clockwise"></i> Load Functors
+	</button>
+      <span class="htmx-indicator" id="status" aria-busy="true">
+      </span>
       <br/>
     </div>
+    <br/>
     <div class="functors">
       <div class="spaced"
 	   id="functors"
 	   hx-trigger="load"
 	   hx-get="/hx/functors/list/{{root}}/{{namespace}}">
-
       </div>
       <br/>
       <br/>
@@ -95,19 +30,63 @@
   </div>
 
   <div class="x75">
-    <div class="grid">
+    <div id="tabs"
+	 hx-target="#tab-contents" role="tablist"
+	 hx-on:htmx-after-on-load="let currentTab = document.querySelector('[aria-selected=true]');
+				   currentTab.setAttribute('aria-selected', 'false')
+				   currentTab.classList.remove('selected')
+				   currentTab.classList.remove('outline')
+				   let newTab = event.target
+				   newTab.setAttribute('aria-selected', 'true')
+				   newTab.classList.add('selected')">
+      <button role="tab"
+	      aria-controls="tab-contents"
+	      aria-selected="true"
+	      hx-get="/hx/functor/definition/{{root}}/{{namespace}}"
+	      hx-indicator="#tab-status"
+	      class="tab selected">
+	Definition
+      </button>
 
-      <div class="overflow-auto spaced container-def">
-	{% if root != "default" %}
-	{% include "definition.html" %}
-	{% endif %}
-      </div>
+      <button role="tab"
+	      aria-controls="tab-contents"
+	      aria-selected="false"
+	      class="tab"
+	      hx-indicator="#tab-status"
+	      hx-get="/hx/functor/functions/{{root}}/{{namespace}}">
+	Functions
+      </button>
 
-      <div class="overflow-auto spaced container-fixed">
-	<div id="functor-viewer">
-	</div>
-      </div>
+
+      <button role="tab"
+	      aria-controls="tab-contents"
+	      aria-selected="false"
+	      class="tab"
+	      hx-indicator="#tab-status"
+	      hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
+	Mutations
+      </button>
+
+      <button role="tab"
+	      aria-controls="tab-contents"
+	      aria-selected="false"
+	      class="tab"
+	      hx-indicator="#tab-status"
+	      hx-get="/hx/functor/states/{{root}}/{{namespace}}">
+	States
+      </button>
+
     </div>
+
+    <br/>
+    <div id="tab-contents"
+	 role="tabpanel"
+	 hx-get="/hx/functor/definition/{{root}}/{{namespace}}"
+	 hx-trigger="load">
+
+
+    </div>
+
   </div>
 </div>
 

@@ -21,7 +21,13 @@ pub async fn init() {
         .merge(overview::list_routes())
         .merge(overview::view_routes())
         .merge(overview::post_routes())
-        .merge(functors::routes())
+
+        .merge(functors::page_routes())
+        .merge(functors::entity_routes())
+        .merge(functors::functor_routes())
+        .merge(functors::function_routes())
+        .merge(functors::mutation_routes())
+
         .merge(diffs::routes())
         .merge(sandboxes::routes())
         .merge(releases::routes())

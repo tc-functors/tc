@@ -6,12 +6,11 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
-mod loader;
-mod flow;
-mod definition;
-mod topology;
-mod sandbox;
-mod test;
+mod functor;
+mod entity;
+mod function;
+mod list;
+mod mutation;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -36,6 +35,7 @@ struct IndexTemplate {
     root: String,
     namespace: String,
     context: String,
+    entity: String,
     definition: String,
 }
 
@@ -44,27 +44,62 @@ pub async fn index_page() -> impl IntoResponse {
         root: String::from("default"),
         namespace: String::from("default"),
         context: String::from("functors"),
-        definition: String::from(""),
+        entity: String::from("definition"),
+        definition: String::from("")
     })
 }
 
-pub fn routes() -> Router {
+pub fn page_routes() -> Router {
     Router::new()
         .route("/", get(index_page))
         .route("/functors", get(index_page))
         .route("/functor/{:root}/{:namespace}",
-               get(definition::page))
-        .route("/hx/functors/load", post(loader::load))
+               get(entity::page))
         .route("/hx/functors/list/{:root}/{:namespace}",
-               get(loader::list))
+               get(list::functors))
+        .route("/hx/functors/load", post(list::load))
+}
+
+pub fn entity_routes() -> Router {
+    Router::new()
         .route("/hx/functor/definition/{:root}/{:namespace}",
-               post(definition::view))
-        .route("/hx/functor/topology/{:root}/{:namespace}",
-               post(topology::view))
+               get(entity::definition))
+        .route("/hx/functor/functions/{:root}/{:namespace}",
+               get(entity::functions))
+        .route("/hx/functor/mutations/{:root}/{:namespace}",
+               get(entity::mutations))
+        .route("/hx/functor/states/{:root}/{:namespace}",
+               get(entity::states))
+}
+
+
+pub fn functor_routes() -> Router {
+    Router::new()
+        .route("/hx/functor/compile/{:root}/{:namespace}",
+               post(functor::compile))
         .route("/hx/functor/flow/{:root}/{:namespace}",
-               post(flow::view))
+               post(functor::flow))
         .route("/hx/functor/sandbox-form/{:root}/{:namespace}",
-               post(sandbox::form))
+               post(functor::sandbox))
         .route("/hx/functor/test-form/{:root}/{:namespace}",
-               post(test::form))
+               post(functor::test))
+}
+
+pub fn function_routes() -> Router {
+    Router::new()
+        .route("/hx/function/build/{:root}/{:namespace}/{:name}",
+               post(function::build))
+        .route("/hx/function/definition/{:root}/{:namespace}/{:name}",
+               post(function::definition))
+        .route("/hx/function/vars/{:root}/{:namespace}/{:name}",
+               post(function::vars))
+        .route("/hx/function/permissions/{:root}/{:namespace}/{:name}",
+               post(function::permissions))
+}
+
+
+pub fn mutation_routes() -> Router {
+    Router::new()
+        .route("/hx/mutation/compile/{:root}/{:namespace}",
+               post(mutation::compile))
 }

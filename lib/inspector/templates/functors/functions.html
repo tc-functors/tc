@@ -1,0 +1,80 @@
+<div class="grid">
+
+  <div class="overflow-auto spaced container-def">
+    <br/>
+    <table class="striped">
+
+      <thead>
+	<tr>
+	  <td></td>
+	  <td>Name</td>
+	  <td>Build</td>
+	  <td>Runtime</td>
+	</tr>
+      </thead>
+      <tbody>
+
+	{% for item in items %}
+	<tr>
+	  <td><input type="radio" name="function"/></td>
+	  <td>{{item.name}}</td>
+	  <td>{{item.build}}</td>
+	  <td>{{item.runtime}}</td>
+
+	</tr>
+	{% endfor %}
+
+    </table>
+  </div>
+
+  <div class="overflow-auto spaced container-fixed">
+
+    <nav class="navbar">
+      <ul><li></li></ul>
+      <ul>
+
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/compile"
+		  hx-indicator="#status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Definition
+	  </button>
+	</li>
+
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/compile"
+		  hx-indicator="#status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Permissions
+	  </button>
+	</li>
+
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/compile"
+		  hx-indicator="#status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Vars
+	  </button>
+	</li>
+
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/compile"
+		  hx-indicator="#status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Build
+	  </button>
+	</li>
+
+      </ul>
+    </nav>
+  </div>
+
+</div>
