@@ -2,7 +2,11 @@ use askama::Template;
 use axum::{
     extract::Path,
     response::{Html, IntoResponse},
+    Form,
 };
+
+use serde::Deserialize;
+use crate::cache;
 
 #[derive(Template)]
 #[template(path = "functors/function/build.html")]
@@ -23,26 +27,25 @@ struct DataTemplate {
 }
 
 
-pub async fn vars(Path((root, namespace, name)): Path<(String, String, String)>) -> impl IntoResponse {
-
-    let temp = DataTemplate {
-        definition: name
-    };
-    Html(temp.render().unwrap())
+#[derive(Deserialize, Debug)]
+pub struct FunctionInput {
+    pub function: String,
 }
 
-pub async fn permissions(Path((root, namespace, name)): Path<(String, String, String)>) -> impl IntoResponse {
+pub async fn compile(
+    Path((root, namespace)): Path<(String, String)>,
+    Form(payload): Form<FunctionInput>
+) -> impl IntoResponse {
+    let FunctionInput { function } = payload;
+    let function = cache::find_function(&root, &namespace, &function).await;
 
-    let temp = DataTemplate {
-        definition: name
+    let definition = if let Some(f) = function {
+        serde_json::to_string_pretty(&f).unwrap()
+    } else {
+        String::from("")
     };
-    Html(temp.render().unwrap())
-}
-
-pub async fn definition(Path((root, namespace, name)): Path<(String, String, String)>) -> impl IntoResponse {
-
     let temp = DataTemplate {
-        definition: name
+        definition: definition
     };
     Html(temp.render().unwrap())
 }

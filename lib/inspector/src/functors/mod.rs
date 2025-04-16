@@ -35,8 +35,6 @@ struct IndexTemplate {
     root: String,
     namespace: String,
     context: String,
-    entity: String,
-    definition: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
@@ -44,8 +42,6 @@ pub async fn index_page() -> impl IntoResponse {
         root: String::from("default"),
         namespace: String::from("default"),
         context: String::from("functors"),
-        entity: String::from("definition"),
-        definition: String::from("")
     })
 }
 
@@ -87,16 +83,11 @@ pub fn functor_routes() -> Router {
 
 pub fn function_routes() -> Router {
     Router::new()
-        .route("/hx/function/build/{:root}/{:namespace}/{:name}",
+        .route("/hx/function/build/{:root}/{:namespace}",
                post(function::build))
-        .route("/hx/function/definition/{:root}/{:namespace}/{:name}",
-               post(function::definition))
-        .route("/hx/function/vars/{:root}/{:namespace}/{:name}",
-               post(function::vars))
-        .route("/hx/function/permissions/{:root}/{:namespace}/{:name}",
-               post(function::permissions))
+        .route("/hx/function/compile/{:root}/{:namespace}",
+               post(function::compile))
 }
-
 
 pub fn mutation_routes() -> Router {
     Router::new()

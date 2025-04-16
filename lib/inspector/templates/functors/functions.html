@@ -16,7 +16,7 @@
 
 	{% for item in items %}
 	<tr>
-	  <td><input type="radio" name="function"/></td>
+	  <td><input type="radio" name="function" id="{{item.name}}" value="{{item.name}}"/></td>
 	  <td>{{item.name}}</td>
 	  <td>{{item.build}}</td>
 	  <td>{{item.runtime}}</td>
@@ -35,38 +35,22 @@
 
 	<li>
 	  <button class="mbtn"
-		  hx-post="/hx/functor/compile"
+		  hx-trigger="click"
+		  hx-post="/hx/function/compile/{{root}}/{{namespace}}"
 		  hx-indicator="#status"
+		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
-	    Definition
+	    Compile
 	  </button>
 	</li>
 
 	<li>
 	  <button class="mbtn"
-		  hx-post="/hx/functor/compile"
+		  hx-trigger="click"
+		  hx-post="/hx/function/build/{{root}}/{{namespace}}"
 		  hx-indicator="#status"
-		  hx-target="#functor-viewer"
-		  hx-swap="innerHtml">
-	    Permissions
-	  </button>
-	</li>
-
-	<li>
-	  <button class="mbtn"
-		  hx-post="/hx/functor/compile"
-		  hx-indicator="#status"
-		  hx-target="#functor-viewer"
-		  hx-swap="innerHtml">
-	    Vars
-	  </button>
-	</li>
-
-	<li>
-	  <button class="mbtn"
-		  hx-post="/hx/functor/compile"
-		  hx-indicator="#status"
+		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
 	    Build
@@ -75,6 +59,12 @@
 
       </ul>
     </nav>
+
+    <div id="functor-viewer">
+      	<span class="htmx-indicator" id="status" aria-busy="true">
+	  Loading...
+      </span>
+    </div>
   </div>
 
 </div>

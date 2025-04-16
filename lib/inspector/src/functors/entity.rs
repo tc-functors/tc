@@ -54,6 +54,8 @@ struct Item {
 #[derive(Template)]
 #[template(path = "functors/functions.html")]
 struct FunctionsTemplate {
+    root: String,
+    namespace: String,
     items: Vec<Item>,
 }
 
@@ -74,6 +76,8 @@ fn build_functions(fns: HashMap<String, Function>) -> Vec<Item> {
 pub async fn functions(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let fns = cache::find_functions(&root, &namespace).await;
     let temp = FunctionsTemplate {
+        root: root,
+        namespace: namespace,
         items: build_functions(fns)
     };
     Html(temp.render().unwrap())
@@ -124,8 +128,6 @@ struct StatesTemplate {
     definition: String
 }
 
-
-
 pub async fn states(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let topology = cache::find_topology(&root, &namespace).await;
     let definition = if let Some(t) = topology {
@@ -153,28 +155,13 @@ struct PageTemplate {
     context: String,
     root: String,
     namespace: String,
-    definition: String,
 }
 
 pub async fn page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let f = cache::find_topology(&namespace, &namespace).await;
-    if let Some(t) = f {
-        let definition = lookup_definition(&t.dir);
-        let temp = PageTemplate {
-            context: String::from("functors"),
-            root: root,
-            namespace: namespace,
-            definition: definition
-        };
-        Html(temp.render().unwrap())
-
-    } else {
-        let temp = PageTemplate {
-            context: String::from("functors"),
-            root: root,
-            namespace: namespace,
-            definition: String::from("test"),
-        };
-        Html(temp.render().unwrap())
-    }
+    let temp = PageTemplate {
+        context: String::from("functors"),
+        root: root,
+        namespace: namespace,
+    };
+    Html(temp.render().unwrap())
 }
