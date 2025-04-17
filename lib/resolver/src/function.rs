@@ -169,8 +169,14 @@ fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> Runti
         image_uri: None,
         network: None,
         filesystem: None,
-        provisioned_concurrency: default.provisioned_concurrency,
-        reserved_concurrency: default.reserved_concurrency,
+        provisioned_concurrency: match s.provisioned_concurrency {
+            Some(p) => Some(p),
+            None => default.provisioned_concurrency
+        },
+        reserved_concurrency: match s.reserved_concurrency {
+            Some(p) => Some(p),
+            None => default.reserved_concurrency
+        },
         tags: None
     }
 }
