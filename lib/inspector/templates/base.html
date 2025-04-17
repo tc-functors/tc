@@ -88,7 +88,6 @@
       .spaced {
 	margin-left: 1rem;
 	margin-right: 1rem;
-	width: 98%;
       }
       .right-spaced {
 	margin-right: 0.7rem;
@@ -119,7 +118,8 @@
 	line-height: 1.8rem;
 	background-color: rgb(64 64 64 / 0.2);
 	border: 1px solid var(--pico-secondary-focus);
-	border-radius: 10px;
+      border-radius: 10px;
+      height: 84dvh;
       }
 
       .navbg {
@@ -129,17 +129,18 @@
       }
 
       .container-action {
-	margin-top: 2em;
+	margin-top: 1em;
 	margin-right: 1em;
 	margin-bottom: 2em;
 	background-color: #1a1f28;
 	border: 1px solid var(--pico-muted-border-color);
-	border-radius: 10px;
+      border-radius: 10px;
+      height: 80dvh;
       }
 
       .container-entity {
-	margin-top: 3rem;
-	margin-right: 3rem;
+      margin-top: 3rem;
+      margin-right: 3rem;
       }
 
       .bordered-table {
@@ -170,7 +171,7 @@
       }
 
       .x1 { flex: 0 0 100% }
-      .x79 { flex: 0 0 79% }
+      .x78 { flex: 0 0 78% }
       .x80 { flex: 0 0 80% }
       .x2 { flex: 0 0 calc(1/2 * 100%) }
       .x3 { flex: 0 0 calc(1/3 * 100%) }
@@ -394,7 +395,7 @@
       </div>
 
 
-      <div style="width: 95%;">
+      <div class="xg">
 	{% block content %}{% endblock %}
       </div>
 

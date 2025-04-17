@@ -1,0 +1,29 @@
+<div class="grid">
+
+  <div class="overflow-auto spaced" style="height: 82dvh;">
+
+    {% include "mutation/gql.html" %}
+
+  </div>
+
+  <div class="overflow-auto spaced container-action">
+    <nav class="navbar">
+      <ul>
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/mutation/compile/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Compile
+	  </button>
+	</li>
+
+      </ul>
+
+    </nav>
+    <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+    </div>
+  </div>
+
+</div>
