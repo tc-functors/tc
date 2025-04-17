@@ -7,6 +7,31 @@ use aws::sfn::StateMachine;
 use aws::Env;
 use std::collections::HashMap;
 
+pub async fn update_definition(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
+    let name = &flow.name;
+    let definition = serde_json::to_string(&flow.definition).unwrap();
+    let mode = sfn::make_mode(&flow.mode);
+
+    if !definition.is_empty() {
+        let client = sfn::make_client(env).await;
+        let role = flow.role.clone();
+        let role_arn = role.arn;
+
+        let sf = StateMachine {
+            name: name.clone(),
+            client: client,
+            mode: mode,
+            definition: definition,
+            role_arn: role_arn,
+            tags: tags.clone(),
+        };
+
+        let arn = &flow.arn;
+        sf.create_or_update(arn).await;
+    }
+}
+
+
 pub async fn create(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
     let name = &flow.name;
     let definition = serde_json::to_string(&flow.definition).unwrap();

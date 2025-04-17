@@ -231,7 +231,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
             }
         }
         "flow" => match flow {
-            Some(f) => flow::create(&env, &tags, f).await,
+            Some(f) => flow::update_definition(&env, &tags, f).await,
             None => println!("No flow defined, skipping"),
         },
 
