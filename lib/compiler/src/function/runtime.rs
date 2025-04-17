@@ -250,10 +250,10 @@ fn make_env_vars(
                 BuildKind::Inline => {
                     hmap.insert(s!("GEM_PATH"), s!("/var/task/gems/3.2.0"));
                     hmap.insert(s!("GEM_HOME"), s!("/var/task/gems/3.2.0"));
-                    hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/var/task/lib"));
-                    hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/var/task"));
-
-                },
+                    hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/var/task/vendor/cache"));
+                    hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/var/task/lib"));
+                    hmap.insert(s!("LD_LIBRARY_PATH"),
+                            s!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib"));                },
 
                 _ => {
 
