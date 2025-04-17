@@ -5,45 +5,53 @@ fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
 }
 
-fn gen_wrapper(dir: &str) {
-    let f = format!(
-        r#"
-#!/usr/bin/env sh
-
-export BUNDLE_WITHOUT='test:development'
-BUNDLE_GEMFILE=/opt/ruby/Gemfile bundle exec $@
-"#
-    );
-    let file = format!("{}/wrapper", dir);
-    u::write_str(&file, &f);
+fn shared_objects() -> Vec<&'static str> {
+    vec![
+        "cp /usr/lib64/libnghttp2.so.14.20.0 /build/ruby/lib/libnghttp2.so.14",
+        "&& cp /usr/lib64/libcurl.so.4.8.0 /build/ruby/lib/libcurl.so.4",
+        "&& cp /usr/lib64/libpsl* /build/ruby/lib/",
+        "&& cp /usr/lib64/libidn2.so.0.3.7 /build/ruby/lib/libidn2.so.0",
+        "&& cp /usr/lib64/liblber-2.4.so.2.10.7 /build/ruby/lib/liblber-2.4.so.2",
+        "&& cp /usr/lib64/libldap-2.4.so.2.10.7 /build/ruby/lib/libldap-2.4.so.2",
+        "&& cp /usr/lib64/libnss3.so /build/ruby/lib/libnss3.so",
+        "&& cp /usr/lib64/libnssutil3.so /build/ruby/lib/libnssutil3.so",
+        "&& cp /usr/lib64/libsmime3.so /build/ruby/lib/libsmime3.so",
+        "&& cp /usr/lib64/libssl3.so /build/ruby/lib/libssl3.so",
+        "&& cp /usr/lib64/libunistring.so.0.1.2 /build/ruby/lib/libunistring.so.0",
+        "&& cp /usr/lib64/libsasl2.so.3.0.0 /build/ruby/lib/libsasl2.so.3",
+        "&& cp /usr/lib64/libssh2.so.1.0.1 /build/ruby/lib/libssh2.so.1",
+        "&& cp /usr/lib64/libffi.so.6 /build/ruby/lib/libffi.so.6"
+    ]
 }
 
 fn gen_dockerfile(dir: &str) {
     let build_context = &top_level();
+    let extra_str = u::vec_to_str(shared_objects());
     let f = format!(
         r#"
-FROM public.ecr.aws/sam/build-ruby3.2:1.103.0-20231116224730 as intermediate
+FROM public.ecr.aws/sam/build-ruby3.2:1.103.0-20231116224730 AS intermediate
 WORKDIR {dir}
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY Gemfile ./
-COPY wrapper ./
 
 COPY --from=shared . {build_context}/
 
-RUN sed -i "/group/,/end:/d" Gemfile
-
 RUN mkdir -p /build/ruby/lib /build/lib
 
-RUN BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install
+RUN yum update -yy
 
-ENV BUNDLE_WITHOUT "test:development"
-RUN --mount=type=ssh bundle lock && bundle install
+RUN yum -y install libffi.x86_64 libpsl-devel
+
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
+
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
-RUN cp Gemfile.lock /build/ruby/ && cp wrapper /build/ruby/ && cp Gemfile /build/ruby/
-RUN find vendor/cache/ -maxdepth 1 -type d | xargs -I {{}} cp -r {{}} /build/ruby/lib/
+RUN cp Gemfile.lock /build/ruby/ && cp Gemfile /build/ruby/
+RUN mkdir -p /build/ruby/vendor
+RUN cp -r vendor/cache /build/ruby/vendor/cache
 RUN rm -rf vendor ruby /build/ruby/lib/cache/
+RUN {extra_str}
 "#
     );
     let dockerfile = format!("{}/Dockerfile", dir);
@@ -85,33 +93,18 @@ fn copy_from_docker(dir: &str) {
     sh("rm -f Dockerfile wrapper", dir);
 }
 
-fn build_local(dir: &str) {
-    let cmd = "BUNDLE_WITHOUT='test:development' bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install";
-    u::sh(&cmd, dir);
-    sh("bundle lock && bundle install", dir);
-    sh("mkdir -p build/ruby/gems", dir);
-    sh("mv vendor/bundle/ruby/3.2.0 build/ruby/gems/3.2.0", dir);
-    let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
-    sh(cmd, dir);
-    sh("rm -rf vendor build", dir);
-}
-
 fn build_docker(dir: &str) {
-    gen_wrapper(dir);
     gen_dockerfile(dir);
     build_with_docker(dir);
     copy_from_docker(dir);
     sh("rm -f Dockerfile wrapper", dir);
-    let cmd = "cd build/ruby && zip -q -9 -r ../../lambda.zip . && cd -";
+    let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
     sh(&cmd, dir);
 }
 
 pub fn build(dir: &str, _name: &str, given_command: &str) -> String {
     sh("rm -f lambda.zip deps.zip build", dir);
-    match std::env::var("TC_NO_DOCKER") {
-        Ok(_) => build_local(dir),
-        Err(_) => build_docker(dir)
-    }
+    build_docker(dir);
     sh(given_command, dir);
     sh("rm -rf build build.json", dir);
     format!("{}/lambda.zip", dir)

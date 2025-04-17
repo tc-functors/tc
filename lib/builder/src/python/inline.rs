@@ -4,6 +4,10 @@ use super::LangRuntime;
 use kit::LogUpdate;
 use std::io::stdout;
 
+fn top_level() -> String {
+    u::sh("git rev-parse --show-toplevel", &u::pwd())
+}
+
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
@@ -15,7 +19,7 @@ fn find_image(runtime: &LangRuntime) -> String {
 
 fn gen_req_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
-        format!("pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt --without dev > requirements.txt")
+        format!("pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt")
     } else {
         format!("echo 1")
     }
@@ -28,19 +32,23 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
         Err(_) => "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
     };
 
+    let build_context = &top_level();
     let image = find_image(&runtime);
     let req_cmd = gen_req_cmd(dir);
 
     let f = format!(
             r#"
-FROM {image} as intermediate
+FROM {image} AS intermediate
+WORKDIR {dir}
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY pyproject.toml ./
 
+COPY --from=shared . {build_context}/
+
 RUN {req_cmd}
 
-RUN --mount=type=ssh {pip_cmd}
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
 "#
         );
@@ -49,19 +57,22 @@ RUN --mount=type=ssh {pip_cmd}
 }
 
 fn build_with_docker(dir: &str) {
+    let root = &top_level();
     let cmd_str = match std::env::var("DOCKER_SSH") {
-        Ok(e) => format!("docker build --no-cache  --ssh default={} . -t {}",
-                         &e, u::basedir(dir)),
-        Err(_) => format!("docker build --no-cache  --ssh default  . -t {}",
-                          u::basedir(dir))
+        Ok(e) => format!(
+            "docker buildx build --ssh default={} -t {} --build-context shared={root} .",
+            &e,
+            u::basedir(dir)
+        ),
+        Err(_) => format!(
+            "docker buildx build --ssh default  -t {} --build-context shared={root} .",
+            u::basedir(dir)
+        ),
     };
-    let ret = u::runp(&cmd_str, dir);
-    if !ret {
-        sh("rm -rf Dockerfile build", dir);
-        std::panic::set_hook(Box::new(|_| {
-            println!("Build failed");
-        }));
-        panic!("Build failed")
+    let status = u::runp(&cmd_str, dir);
+    if !status {
+        sh("rm -f Dockerfile wrapper", dir);
+        panic!("Failed to build");
     }
 }
 
