@@ -160,10 +160,21 @@ pub async fn update_vars(env: &Env, funcs: HashMap<String, Function>) {
         let memory_size = f.runtime.memory_size.expect("memory error");
         println!("mem {}", memory_size);
         let function = make_lambda(env, f.clone()).await;
-        let _ = function.clone().update_vars().await;
+        let _ = function.update_vars().await;
+    }
+}
+
+pub async fn update_concurrency(env: &Env, funcs: HashMap<String, Function>) {
+    for (_, f) in funcs {
+        let function = make_lambda(env, f.clone()).await;
 
         match f.runtime.provisioned_concurrency {
-            Some(n) => function.update_concurrency(n).await,
+            Some(n) => function.clone().update_provisioned_concurrency(n).await,
+            None => (),
+        };
+
+        match f.runtime.reserved_concurrency {
+            Some(n) => function.update_reserved_concurrency(n).await,
             None => (),
         };
     }

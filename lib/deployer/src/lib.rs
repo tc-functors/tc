@@ -100,6 +100,7 @@ async fn create_function(env: &Env, topology: &Topology) {
     mutation::create(&env, mutations, tags).await;
     queue::create(&env, queues).await;
     event::create(&env, events).await;
+    function::update_concurrency(&env, functions.clone()).await;
 
     let role_name = "tc-base-api-role";
     let role_arn = &env.role_arn(&role_name);
@@ -152,6 +153,7 @@ pub async fn update(env: &Env, topology: &Topology) {
     );
 
     function::update_code(&env, functions.clone()).await;
+    function::update_concurrency(&env, functions.clone()).await;
     match flow {
         Some(f) => flow::create(&env, tags, f.clone()).await,
         None => (),
@@ -221,6 +223,10 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
 
         "vars" => {
             function::update_vars(&env, functions).await;
+        }
+
+        "concurrency" => {
+            function::update_concurrency(&env, functions).await;
         }
 
         "tags" => {
