@@ -533,10 +533,10 @@ impl Function {
         }
     }
 
-    pub async fn update_concurrency(self, n: i32) {
+    pub async fn update_provisioned_concurrency(self, n: i32) {
         let f = self.clone();
         println!("Setting provisioned concurrency {} {}", &f.name, n);
-        let res = self
+        let _ = self
             .client
             .put_provisioned_concurrency_config()
             .function_name(f.name)
@@ -545,7 +545,19 @@ impl Function {
             .send()
             .await
             .unwrap();
-        println!("{:?}", res);
+    }
+
+    pub async fn update_reserved_concurrency(self, n: i32) {
+        let f = self.clone();
+        println!("Setting reserved concurrency {} {}", &f.name, n);
+        let _ = self
+            .client
+            .put_function_concurrency()
+            .function_name(f.name)
+            .reserved_concurrent_executions(n)
+            .send()
+            .await
+            .unwrap();
     }
 }
 
