@@ -2,16 +2,9 @@
 
   <div class="overflow-auto spaced" style="height: 86dvh;">
     <br/>
-    <table class="striped">
 
-      <thead>
-	<tr>
-	  <td></td>
-	  <td>Name</td>
-	  <td>Build</td>
-	  <td>Runtime</td>
-	</tr>
-      </thead>
+    <table class="bordered-table">
+
       <tbody>
 
 	{% for item in items %}
@@ -27,7 +20,8 @@
     </table>
   </div>
 
-  <div class="overflow-auto spaced container-action">
+  <div class="container-action">
+    <div class="spaced">
 
     <nav class="navbar">
       <ul>
@@ -82,10 +76,11 @@
       </ul>
     </nav>
 
-    <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+    <div id="functor-viewer" class="overflow-auto" style="height: 76dvh;">
       	<span class="htmx-indicator" id="viewer-status" aria-busy="true">
 	  Loading...
       </span>
+    </div>
     </div>
   </div>
 

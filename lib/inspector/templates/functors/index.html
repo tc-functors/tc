@@ -14,9 +14,7 @@
 	</button>
       <span class="htmx-indicator" id="status" aria-busy="true">
       </span>
-      <br/>
     </div>
-    <br/>
     <div class="functors">
       <div class="spaced"
 	   id="functors"
@@ -28,7 +26,7 @@
     </div>
   </div>
 
-  <div class="x77">
+  <div class="xg">
     <div id="tabs"
 	 class="container-entity"
 	 hx-target="#tab-contents"
@@ -73,9 +71,18 @@
 	States
       </button>
 
+      <button role="tab"
+	      aria-controls="tab-contents"
+	      aria-selected="false"
+	      class="tab"
+	      hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+	Events
+      </button>
+
     </div>
 
     <div id="tab-contents"
+	 class="functors spaced"
 	 role="tabpanel"
 	 hx-get="/hx/functor/definition/{{root}}/{{namespace}}"
 	 hx-trigger="load">

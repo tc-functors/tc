@@ -1,11 +1,17 @@
-{% for item in items %}
-{% if namespace == item|lower %}
-<span class="side-selected">{{item}}</span>
-<br/>
-{% else %}
-<a href="/functor/{{item}}/{{item}}">
-  {{item}}
-</a>
-<br/>
-{% endif %}
-{% endfor %}
+<aside>
+  <nav>
+    <ul>
+      {% for item in items %}
+      <li>
+	{% if namespace == item|lower %}
+	<span class="side-selected">{{item}}</span>
+	{% else %}
+	<a href="/functor/{{item}}/{{item}}">
+	  {{item}}
+	</a>
+	{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+</aside>

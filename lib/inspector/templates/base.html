@@ -86,61 +86,70 @@
       }
 
       .spaced {
-      margin-left: 1rem;
-      margin-right: 1rem;
-      width: 98%;
+	margin-left: 1rem;
+	margin-right: 1rem;
+	width: 98%;
       }
       .right-spaced {
-      margin-right: 0.7rem;
+	margin-right: 0.7rem;
       }
 
       .button {
-      line-height: 0.7rem;
+	line-height: 0.7rem;
       }
 
-  .reveal pre code, .hljs {
-    background-color: transparent;
-    color: #DCDCDC;
-    padding: 5px;
-    overflow: auto;
-    word-wrap: normal;
-  }
+      .reveal pre code, .hljs {
+	background-color: transparent;
+	color: #DCDCDC;
+	padding: 5px;
+	overflow: auto;
+	word-wrap: normal;
+      }
 
 
       .sidebar {
-      height: 100dvh;
-      line-height: 1.7rem;
-      background-color: var(--pico-table-row-stripped-background-color);
-      border-right: 1px solid var(--pico-secondary-focus);
+	height: 100dvh;
+	line-height: 1.7rem;
+	background-color: var(--pico-table-row-stripped-background-color);
+	border-right: 1px solid var(--pico-secondary-focus);
       }
 
       .functors {
-      margin-left: 1rem;
-      line-height: 1.8rem;
-      background-color: rgb(64 64 64 / 0.2);
-      border: 1px solid var(--pico-muted-border-color);
-      border-radius: 10px;
+	margin-left: 1rem;
+	line-height: 1.8rem;
+	background-color: rgb(64 64 64 / 0.2);
+	border: 1px solid var(--pico-secondary-focus);
+	border-radius: 10px;
       }
 
-
       .navbg {
-      margin-right: 10px;
-      background-color: var(--pico-table-row-stripped-background-color);
-      border-bottom: 1px solid var(--pico-secondary-focus);
+	margin-right: 10px;
+	background-color: var(--pico-table-row-stripped-background-color);
+	border-bottom: 1px solid var(--pico-secondary-focus);
       }
 
       .container-action {
-	height: 90dvh;
-	overflow:auto;
-	overflow-x:hidden;
+	margin-top: 2em;
+	margin-right: 1em;
+	margin-bottom: 2em;
+	background-color: #1a1f28;
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: 10px;
       }
 
       .container-entity {
-	margin-top: 2rem;
+	margin-top: 3rem;
+	margin-right: 3rem;
+      }
+
+      .bordered-table {
+	background-color: #1a1f28;
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: 10px;
       }
 
       article {
-      border: 1px solid var(--pico-muted-border-color);
+	border: 1px solid var(--pico-muted-border-color);
 
       border-radius: calc(var(--pico-border-radius) * 2);
       /* Original: var(--pico-border-radius) */
@@ -148,36 +157,36 @@
       article>footer {
 	border-radius: calc(var(--pico-border-radius) * 2);
 	/* Original: var(--pico-border-radius) */
-	}
+      }
 
-	.htmx-indicator{
+      .htmx-indicator{
 	display:none;
-	}
-	.htmx-request .htmx-indicator{
+      }
+      .htmx-request .htmx-indicator{
 	display:inline;
-	}
-	.htmx-request.htmx-indicator{
+      }
+      .htmx-request.htmx-indicator{
 	display:inline;
-	}
+      }
 
-	.x1 { flex: 0 0 100% }
-	.x77 { flex: 0 0 77% }
-	.x80 { flex: 0 0 80% }
-	.x2 { flex: 0 0 calc(1/2 * 100%) }
-	.x3 { flex: 0 0 calc(1/3 * 100%) }
-	.x4 { flex: 0 0 calc(1/4 * 100%) }
-	.x5 { flex: 0 0 calc(1/5 * 100%) }
-	.x6 { flex: 0 0 calc(1/6 * 100%) }
-	.x8 { flex: 0 0 calc(1/8 * 100%) }
-	.x10 { flex: 0 0 calc(1/10 * 100%) }
-	.x15 { flex: 0 0 calc(1/15 * 100%) }
-	.x20 { flex: 0 0 calc(1/20 * 100%) }
-	.xg { flex: 1 0 auto }
-	.x-center   { align-items: center; }
-	@media (min-width: 992px) { .x { display: flex; } .x > * + * {margin-left: 0rem}}
+      .x1 { flex: 0 0 100% }
+      .x79 { flex: 0 0 79% }
+      .x80 { flex: 0 0 80% }
+      .x2 { flex: 0 0 calc(1/2 * 100%) }
+      .x3 { flex: 0 0 calc(1/3 * 100%) }
+      .x4 { flex: 0 0 calc(1/4 * 100%) }
+      .x5 { flex: 0 0 calc(1/5 * 100%) }
+      .x6 { flex: 0 0 calc(1/6 * 100%) }
+      .x8 { flex: 0 0 calc(1/8 * 100%) }
+      .x10 { flex: 0 0 calc(1/10 * 100%) }
+      .x15 { flex: 0 0 calc(1/15 * 100%) }
+      .x20 { flex: 0 0 calc(1/20 * 100%) }
+      .xg { flex: 1 0 auto }
+      .x-center   { align-items: center; }
+      @media (min-width: 992px) { .x { display: flex; } .x > * + * {margin-left: 0rem}}
 
 
-	.btn {
+      .btn {
 	padding: 8px 18px;
 	padding-right: 10px;
 	min-width: 88px;
@@ -268,7 +277,7 @@
 	text-decoration-color: #e9967a;
 	text-decoration-thickness: 2px;
 	text-underline-offset: 4px;
-	background-color: transparent;
+	background-color: rgb(64 64 64 / 0.2);
 	transition: background-color 0.3s ease;
 	}
 
