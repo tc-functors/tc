@@ -1,4 +1,4 @@
-name: 11-stepfn-linear
+name: 11-states-linear
 flow:
   Comment: ETL
   startAt: initialize
