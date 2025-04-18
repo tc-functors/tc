@@ -15,7 +15,7 @@
       <span class="htmx-indicator" id="status" aria-busy="true">
       </span>
     </div>
-    <div class="functors">
+    <div class="overflow-auto functors"  style="height: 92dvh;">
       <div class="spaced"
 	   id="functors"
 	   hx-trigger="load"
@@ -26,9 +26,8 @@
     </div>
   </div>
 
-  <div class="x78">
+  <div class="x78 container-entity" style="height: 92dvh;">
     <div id="tabs"
-	 class="container-entity"
 	 hx-target="#tab-contents"
 	 role="tablist"
 	 hx-on:htmx-after-on-load="let currentTab = document.querySelector('[aria-selected=true]');
