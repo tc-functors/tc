@@ -1,6 +1,6 @@
 use aws::Env;
 use compiler::Topology;
-use compiler::spec::{BuildKind, FunctionSpec, BuildSpec};
+use compiler::spec::{BuildKind, FunctionSpec, BuildSpec, RuntimeInfraSpec};
 use ci::github;
 use configurator::Config;
 use kit as u;
@@ -603,9 +603,10 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
 pub fn generate_doc(spec: &str) {
 
     let schema = match spec {
-        "build" => doku::to_json::<BuildSpec>(),
-        "function" => doku::to_toml::<FunctionSpec>(),
-        _ => doku::to_json::<FunctionSpec>()
+        "build"    => doku::to_json::<BuildSpec>(),
+        "infra"    => doku::to_json::<RuntimeInfraSpec>(),
+        "function" => doku::to_json::<FunctionSpec>(),
+        _          => doku::to_json::<FunctionSpec>()
     };
     println!("{}", &schema);
     //println!("{}", serde_json::to_string_pretty(&schema).unwrap());
