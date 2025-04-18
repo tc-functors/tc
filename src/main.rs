@@ -89,6 +89,8 @@ pub struct BootstrapArgs {
     delete: bool,
     #[arg(long, action)]
     show: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -103,6 +105,8 @@ pub struct CacheArgs {
     env: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -117,6 +121,8 @@ pub struct DeployArgs {
     manifest: Option<String>,
     #[arg(long, short = 'v')]
     version: String,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -137,6 +143,8 @@ pub struct ReleaseArgs {
     tag: Option<String>,
     #[arg(long)]
     asset: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -157,6 +165,8 @@ pub struct ResolveArgs {
     diff: bool,
     #[arg(long, action)]
     no_cache: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -179,6 +189,8 @@ pub struct BuildArgs {
     split: bool,
     #[arg(long, action)]
     task: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -205,6 +217,8 @@ pub struct PublishArgs {
     task: Option<String>,
     #[arg(long, action)]
     target: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -217,6 +231,8 @@ pub struct CompileArgs {
     component: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -227,6 +243,8 @@ pub struct TestArgs {
     lang: Option<String>,
     #[arg(long, action)]
     with_deps: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -245,6 +263,8 @@ pub struct CreateArgs {
     recursive: bool,
     #[arg(long, action)]
     no_cache: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -255,12 +275,16 @@ pub struct SyncArgs {
     to: String,
     #[arg(long, action)]
     dry_run: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct UpgradeArgs {
     #[arg(long, short = 'v')]
     version: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 
@@ -282,6 +306,8 @@ pub struct UpdateArgs {
     recursive: bool,
     #[arg(long, action)]
     no_cache: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -298,6 +324,8 @@ pub struct DeleteArgs {
     recursive: bool,
     #[arg(long, action)]
     no_cache: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -320,6 +348,8 @@ pub struct InvokeArgs {
     local: bool,
     #[arg(long, action)]
     dumb: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -336,6 +366,8 @@ pub struct TagArgs {
     unwind: bool,
     #[arg(long, short = 'S')]
     suffix: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -344,6 +376,8 @@ pub struct ReplArgs {
     profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -358,6 +392,8 @@ pub struct ListArgs {
     component: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -368,6 +404,8 @@ pub struct EmulateArgs {
     shell: bool,
     #[arg(long, action, short = 'd')]
     dev: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -384,6 +422,8 @@ pub struct RouteArgs {
     rule: Option<String>,
     #[arg(long, action)]
     list: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -396,6 +436,8 @@ pub struct FreezeArgs {
     sandbox: String,
    #[arg(long, action)]
     all:  bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -408,6 +450,8 @@ pub struct UnFreezeArgs {
     sandbox: String,
     #[arg(long, action)]
     all: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -430,8 +474,11 @@ async fn build(args: BuildArgs) {
         dirty,
         merge,
         split,
+        trace,
         ..
     } = args;
+
+    init_tracing(trace);
 
     let dir = kit::pwd();
     let opts = tc::BuildOpts {
@@ -456,9 +503,11 @@ async fn create(args: CreateArgs) {
         recursive,
         no_cache,
         topology,
+        trace,
         ..
     } = args;
 
+    init_tracing(trace);
     tc::create(profile, sandbox, notify, recursive, no_cache, topology).await;
 }
 
@@ -470,9 +519,11 @@ async fn update(args: UpdateArgs) {
         component,
         recursive,
         no_cache,
+        trace,
         ..
     } = args;
 
+    init_tracing(trace);
     let env = tc::init(profile, role).await;
 
     if kit::option_exists(component.clone()) {
@@ -489,8 +540,11 @@ async fn delete(args: DeleteArgs) {
         sandbox,
         component,
         recursive,
+        trace,
         ..
     } = args;
+
+    init_tracing(trace);
 
     let env = tc::init(profile, role).await;
 
@@ -507,8 +561,12 @@ async fn compile(args: CompileArgs) {
         recursive,
         component,
         format,
+        trace,
         ..
     } = args;
+
+    init_tracing(trace);
+
     let opts = tc::CompileOpts {
         versions: versions,
         recursive: recursive,
@@ -528,8 +586,11 @@ async fn resolve(args: ResolveArgs) {
         quiet,
         recursive,
         no_cache,
+        trace,
         ..
     } = args;
+
+    init_tracing(trace);
 
     let env = tc::init(profile, role).await;
     let plan = tc::resolve(env, sandbox, component, recursive, no_cache).await;
@@ -548,8 +609,11 @@ async fn invoke(args: InvokeArgs) {
         local,
         kind,
         dumb,
+        trace,
         ..
     } = args;
+
+    init_tracing(trace);
     let opts =   tc::InvokeOptions {
         sandbox: sandbox,
         payload: payload,
@@ -564,7 +628,7 @@ async fn invoke(args: InvokeArgs) {
 }
 
 async fn upgrade(args: UpgradeArgs) {
-    let UpgradeArgs { version } = args;
+    let UpgradeArgs { version, .. } = args;
     tc::upgrade(version).await
 }
 
@@ -575,8 +639,10 @@ async fn list(args: ListArgs) {
         sandbox,
         component,
         format,
+        trace,
         ..
     } = args;
+    init_tracing(trace);
     let env = tc::init(profile, role).await;
     tc::list(env, sandbox, component, format).await;
 }
@@ -591,8 +657,12 @@ async fn publish(args: PublishArgs) {
         list,
         kind,
         download,
+        trace,
         ..
     } = args;
+
+    init_tracing(trace);
+
     let opts = tc::PublishOpts {
         promote: promote,
         demote: demote,
@@ -620,8 +690,10 @@ async fn route(args: RouteArgs) {
         service,
         sandbox,
         rule,
+        trace,
         ..
     } = args;
+    init_tracing(trace);
     let env = tc::init(profile, None).await;
     tc::route(env, event, service, sandbox, rule).await;
 }
@@ -631,8 +703,10 @@ async fn freeze(args: FreezeArgs) {
         profile,
         service,
         sandbox,
+        trace,
         ..
     } = args;
+    init_tracing(trace);
     let env = tc::init(profile, None).await;
     tc::freeze(env, service, sandbox).await;
 }
@@ -642,8 +716,10 @@ async fn unfreeze(args: UnFreezeArgs) {
         profile,
         service,
         sandbox,
+        trace,
         ..
     } = args;
+    init_tracing(trace);
     let env = tc::init(profile, None).await;
     tc::unfreeze(env, service, sandbox).await;
 }
@@ -662,7 +738,8 @@ async fn bootstrap(args: BootstrapArgs) {
 }
 
 async fn emulate(args: EmulateArgs) {
-    let EmulateArgs { profile, dev, shell, .. } = args;
+    let EmulateArgs { profile, dev, shell, trace, .. } = args;
+    init_tracing(trace);
     let env = tc::init_repo_profile(profile).await;
     tc::emulate(env, dev, shell).await;
 }
@@ -674,9 +751,11 @@ async fn tag(args: TagArgs) {
         dry_run,
         push,
         suffix,
+        trace,
         ..
     } = args;
 
+    init_tracing(trace);
     tc::tag(service, next, dry_run, push, suffix).await;
 }
 
@@ -729,16 +808,22 @@ async fn inspect(_args: InspectArgs) {
     tc::inspect().await;
 }
 
-fn init_tracing() {
-    let filter = Targets::new()
-        .with_target("tc", tracing::Level::DEBUG)
-        .with_default(tracing::Level::DEBUG)
-        .with_target("sqlx", LevelFilter::OFF);
+fn init_tracing(trace: bool) {
+    let should_trace = trace || match env::var("TC_TRACE") {
+        Ok(_) => true,
+        Err(_) => trace
+    };
+    if should_trace {
+        let filter = Targets::new()
+            .with_target("tc", tracing::Level::DEBUG)
+            .with_default(tracing::Level::DEBUG)
+            .with_target("sqlx", LevelFilter::OFF);
 
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .with(filter)
-        .init();
+        tracing_subscriber::registry()
+            .with(tracing_subscriber::fmt::layer())
+            .with(filter)
+            .init();
+    }
 }
 
 
@@ -753,11 +838,6 @@ async fn doc(args: DocArgs) {
 
 async fn run() {
     let args = Tc::parse();
-
-    match env::var("TC_TRACE") {
-        Ok(_) => init_tracing(),
-        Err(_) => ()
-    }
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
