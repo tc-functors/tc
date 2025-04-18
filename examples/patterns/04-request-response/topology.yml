@@ -1,0 +1,9 @@
+name: 04-request-response
+
+routes:
+  get-user:
+    gateway: api-test
+    kind: http
+    method: GET
+    path: "/api/user"
+    function: fetcher

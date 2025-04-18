@@ -1,0 +1,8 @@
+name: 22-channels-basic
+
+channels:
+  room1:
+    handler: default
+    output_channel: room2
+  room2:
+    handler: default
