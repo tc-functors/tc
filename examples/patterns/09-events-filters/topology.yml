@@ -1,4 +1,4 @@
-name: 09-event-filters
+name: 09-events-filters
 events:
   consumes:
     MyRawEvent:
