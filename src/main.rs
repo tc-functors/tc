@@ -75,7 +75,10 @@ pub struct DefaultArgs {}
 pub struct ScaffoldArgs {}
 
 #[derive(Debug, Args)]
-pub struct InspectArgs {}
+pub struct InspectArgs {
+    #[arg(long, action, short = 't')]
+    trace: bool,
+}
 
 #[derive(Debug, Args)]
 pub struct BootstrapArgs {
@@ -804,7 +807,9 @@ async fn config(_args: DefaultArgs) {
     tc::show_config().await;
 }
 
-async fn inspect(_args: InspectArgs) {
+async fn inspect(args: InspectArgs) {
+    let InspectArgs { trace } = args;
+    init_tracing(trace);
     tc::inspect().await;
 }
 
