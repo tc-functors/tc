@@ -17,12 +17,20 @@ pub struct Context {
     pub trace: bool,
 }
 
+
 impl Context {
     pub fn render(&self, s: &str) -> String {
         let mut table: HashMap<&str, &str> = HashMap::new();
         let account = &self.env.account();
         let region = &self.env.region();
         let abbr_namespace = abbr(&self.namespace);
+
+
+        let repo = match std::env::var("TC_ECR_REPO") {
+            Ok(r) => &r.to_owned(),
+            Err(_) => &self.env.config.aws.ecr.repo
+        };
+
         table.insert("account", account);
         table.insert("acc", account);
         table.insert("region", region);
@@ -31,7 +39,7 @@ impl Context {
         table.insert("sandbox", &self.sandbox);
         table.insert("env", &self.env.name);
         table.insert("profile", &self.env.name);
-        table.insert("repo", &self.env.config.aws.ecr.repo);
+        table.insert("repo", repo);
         u::stencil(s, table)
     }
 
