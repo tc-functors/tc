@@ -31,6 +31,7 @@ impl Context {
         table.insert("sandbox", &self.sandbox);
         table.insert("env", &self.env.name);
         table.insert("profile", &self.env.name);
+        table.insert("repo", &self.env.config.aws.ecr.repo);
         u::stencil(s, table)
     }
 
