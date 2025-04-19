@@ -1,0 +1,3 @@
+honeybadger==0.15.2
+simplejson==3.19.2
+boto3==1.28.73
