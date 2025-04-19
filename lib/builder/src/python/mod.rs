@@ -29,7 +29,7 @@ pub fn build(
         BuildKind::Library   => library::build(dir, name),
         BuildKind::Slab      => slab::build(dir, name, &runtime, pre, post),
         BuildKind::Extension => extension::build(dir, name),
-        BuildKind::Image     => image::build(dir, name, image_kind, spec.images),
+        BuildKind::Image     => image::build(dir, name, &runtime, image_kind, spec.images),
         BuildKind::Runtime   => todo!()
     };
     BuildOutput {

@@ -1,9 +1,30 @@
 use kit as u;
 use kit::sh;
+use super::LangRuntime;
 
 use compiler::spec::ImageSpec;
 use configurator::Config;
 use std::collections::HashMap;
+
+fn find_build_image(runtime: &LangRuntime) -> String {
+    let tag = match runtime {
+        LangRuntime::Python310 => "python3.10:latest",
+        LangRuntime::Python311 => "python3.11:latest",
+        LangRuntime::Python312 => "python3.12:latest",
+        _ => todo!()
+    };
+    format!("public.ecr.aws/sam/build-{}", &tag)
+}
+
+fn find_runtime_image(runtime: &LangRuntime) -> String {
+    let tag = match runtime {
+        LangRuntime::Python310 => "python3.10",
+        LangRuntime::Python311 => "python3.11",
+        LangRuntime::Python312 => "python3.12",
+        _ => todo!()
+    };
+    format!("public.ecr.aws/lambda/{}", &tag)
+}
 
 fn deps_str(deps: Vec<String>) -> String {
     if deps.len() >= 2 {
@@ -15,12 +36,15 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-fn gen_base_dockerfile(dir: &str, commands: Vec<String>) {
+fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
     let commands = deps_str(commands);
+
+    let build_image = find_build_image(runtime);
+    let runtime_image = find_runtime_image(runtime);
 
     let f = format!(
             r#"
-FROM public.ecr.aws/sam/build-python3.10:latest AS build-image
+FROM {build_image} AS build-image
 
 WORKDIR /var/task
 
@@ -32,7 +56,7 @@ RUN mkdir -p /model
 
 RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {commands}
 
-FROM public.ecr.aws/lambda/python:3.10
+FROM {runtime_image}
 
 COPY --from=build-image /build/python /opt/python
 COPY --from=build-image /model /model
@@ -76,17 +100,17 @@ fn build_with_docker(dir: &str, name: &str) {
     }
 }
 
-fn render_uri(uri: &str, repo: &str) -> String {
-    let mut table: HashMap<&str, &str> = HashMap::new();
-    table.insert("repo", repo);
-    u::stencil(uri, table)
-}
-
 fn find_image_name(repo: &str, image_kind: &str, func_name: &str) -> String {
     format!("{}/{}:{}-latest", repo, image_kind, func_name)
 }
 
-pub fn build(dir: &str, name: &str, image_kind: &str, images: HashMap<String, ImageSpec>) -> String {
+pub fn build(
+    dir: &str,
+    name: &str,
+    runtime: &LangRuntime,
+    image_kind: &str,
+    images: HashMap<String, ImageSpec>
+) -> String {
 
     let image_spec = match images.get(image_kind) {
         Some(p) => p,
@@ -117,6 +141,7 @@ pub fn build(dir: &str, name: &str, image_kind: &str, images: HashMap<String, Im
         }
         "base" => gen_base_dockerfile(
             image_dir,
+            runtime,
             image_spec.commands.clone()
         ),
         _ => panic!("Invalid image kind")
