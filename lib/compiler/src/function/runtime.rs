@@ -49,7 +49,7 @@ fn as_uri(dir: &str, package_type: &str, uri: Option<String>) -> String {
     match package_type {
         "image" | "oci" => match uri {
             Some(u) => u,
-            None => format!("TEMPLATED")
+            None => format!("{{{{repo}}}}")
         },
         _ => format!("{}/lambda.zip", dir)
     }

@@ -1358,6 +1358,7 @@ version = "0.0.2"
 dependencies = [
  "colored",
  "compiler",
+ "configurator",
  "glob",
  "kit",
  "log",
@@ -4550,7 +4551,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.29"
+version = "0.8.30"
 dependencies = [
  "aws",
  "builder",

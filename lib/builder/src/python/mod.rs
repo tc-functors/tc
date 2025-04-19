@@ -17,18 +17,19 @@ pub fn build(
     runtime: LangRuntime,
     name: &str,
     spec: Build,
+    image_kind: &str
 ) -> BuildOutput {
 
 
     let Build { kind, pre, post, command, .. } = spec;
     let path = match kind {
-        BuildKind::Code  => code::build(dir, &command),
+        BuildKind::Code      => code::build(dir, &command),
         BuildKind::Inline    => inline::build(dir,name,  &runtime, &command),
         BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post),
         BuildKind::Library   => library::build(dir, name),
         BuildKind::Slab      => slab::build(dir, name, &runtime, pre, post),
         BuildKind::Extension => extension::build(dir, name),
-        BuildKind::Image     => image::build(dir, name),
+        BuildKind::Image     => image::build(dir, name, image_kind, spec.images),
         BuildKind::Runtime   => todo!()
     };
     BuildOutput {

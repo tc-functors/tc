@@ -232,6 +232,20 @@ pub struct Ecs {
     pub cluster: String,
 }
 
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derivative(Debug, Default)]
+pub struct Ecr {
+    #[derivative(Default(value = "default()"))]
+    #[serde(default)]
+    pub repo: String,
+   #[derivative(Default(value = "default()"))]
+    #[serde(default)]
+    pub stable_repo: String,
+   #[derivative(Default(value = "default()"))]
+    #[serde(default)]
+    pub dev_repo: String
+}
+
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
@@ -298,6 +312,9 @@ pub struct Aws {
 
     #[serde(default = "Ecs::default")]
     pub ecs: Ecs,
+
+    #[serde(default = "Ecr::default")]
+    pub ecr: Ecr,
 
     #[serde(default = "Stepfunction::default")]
     pub stepfunction: Stepfunction,
