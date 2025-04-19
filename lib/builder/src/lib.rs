@@ -82,7 +82,7 @@ pub fn just_build_out(dir: &str, name: &str, lang_str: &str) -> Vec<BuildOutput>
 }
 
 
-pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> Vec<BuildOutput> {
+pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, image: Option<String>) -> Vec<BuildOutput> {
 
     let function = compiler::current_function(dir);
 
@@ -106,11 +106,13 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>) -> 
         sh("rm -f *.zip", dir);
 
 
+        let image_kind = u::maybe_string(image, "code");
+
         println!("Building {} ({}/{})", &name, &runtime.to_str(), kind_str.blue());
 
         let out = match lang {
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
-            Lang::Python  => python::build(dir, runtime,  &name, spec),
+            Lang::Python  => python::build(dir, runtime,  &name, spec, &image_kind),
             Lang::Rust    => rust::build(dir, runtime, &name, spec),
             Lang::Node    => node::build(dir, runtime, &name, spec),
             Lang::Clojure => todo!(),
@@ -130,7 +132,7 @@ fn should_build(layer: &Layer, dirty: bool) -> bool {
     }
 }
 
-pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>) -> Vec<BuildOutput> {
+pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, image_kind: Option<String>) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
 
     let knd = match kind {
@@ -145,7 +147,7 @@ pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>) -> Vec<BuildO
             let buildables = compiler::find_buildables(&u::pwd(), true);
             tracing::debug!("Building recursively {}", buildables.len());
             for b in buildables {
-                let mut out = build(&b.dir, None, Some(BuildKind::Code)).await;
+                let mut out = build(&b.dir, None, Some(BuildKind::Code), image_kind.clone()).await;
                 outs.append(&mut out);
             }
         },
@@ -154,7 +156,7 @@ pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>) -> Vec<BuildO
             let layers = compiler::find_layers();
             for layer in layers.clone() {
                 if should_build(&layer, dirty) {
-                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer)).await;
+                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer), None).await;
                     outs.append(&mut out)
                 }
             }

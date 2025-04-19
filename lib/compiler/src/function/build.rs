@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use kit::*;
-use crate::spec::{BuildKind, BuildSpec};
+use crate::spec::{BuildKind, BuildSpec, ImageSpec};
 use super::Runtime;
 
 
@@ -12,7 +12,8 @@ pub struct Build {
     pub kind: BuildKind,
     pub pre: Vec<String>,
     pub post: Vec<String>,
-    pub command: String
+    pub command: String,
+    pub images: HashMap<String, ImageSpec>
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -36,7 +37,8 @@ impl Build {
                 kind: b.kind,
                 pre: b.pre,
                 post: b.post,
-                command: b.command
+                command: b.command,
+                images: b.images
             },
             None => {
                 let command = match tasks.get("build") {
@@ -49,7 +51,8 @@ impl Build {
                     kind: infer_kind(&runtime.package_type),
                     pre: vec![],
                     post: vec![],
-                    command: command
+                    command: command,
+                    images: HashMap::new()
                 }
             }
         }

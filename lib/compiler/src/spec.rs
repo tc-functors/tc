@@ -254,6 +254,15 @@ fn default_package_type() -> String {
     s!("zip")
 }
 
+
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+pub struct ImageSpec {
+    #[serde(default)]
+    pub dir: Option<String>,
+    pub parent: String,
+    pub commands: Vec<String>
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct BuildSpec {
     #[doku(example = "Inline")]
@@ -270,6 +279,9 @@ pub struct BuildSpec {
     #[serde(default = "default_command")]
     #[doku(example = "zip -9 lambda.zip *.py")]
     pub command: String,
+
+    #[serde(default)]
+    pub images: HashMap<String, ImageSpec>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
@@ -358,10 +370,22 @@ fn find_revision(dir: &str) -> String {
     u::sh(&cmd_str, dir)
 }
 
+fn top_level() -> String {
+    u::sh("git rev-parse --show-toplevel", &u::pwd())
+}
+
+
+
 fn render(s: &str, version: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
+    let root = &top_level();
     table.insert("version", version);
+    table.insert("root", root);
+    table.insert("git_root", root);
     table.insert("sandbox", "{{sandbox}}");
+    table.insert("repo", "{{repo}}");
+    table.insert("account", "{{account}}");
+    table.insert("region", "{{region}}");
     u::stencil(s, table)
 }
 

@@ -13,3 +13,4 @@ log = "0.4"
 tracing = "0.1"
 kit = { path = "../kit" }
 compiler = { path = "../compiler" }
+configurator = { path = "../configurator" }

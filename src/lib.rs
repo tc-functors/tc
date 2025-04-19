@@ -15,6 +15,7 @@ pub struct BuildOpts {
     pub clean: bool,
     pub split: bool,
     pub dirty: bool,
+    pub image_kind: Option<String>
 }
 
 pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
@@ -22,6 +23,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
         clean,
         dirty,
         recursive,
+        image_kind,
         ..
     } = opts;
 
@@ -31,7 +33,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None
         };
-        let builds = builder::build_recursive(dirty, kind).await;
+        let builds = builder::build_recursive(dirty, kind, image_kind).await;
         builder::write_manifest(&builds);
         println!("{}", kit::pretty_json(&builds));
 
@@ -44,7 +46,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None
         };
-        let builds = builder::build(dir, name, kind).await;
+        let builds = builder::build(dir, name, kind, image_kind).await;
         builder::write_manifest(&builds);
         println!("{}", kit::pretty_json(&builds));
     }
@@ -184,7 +186,7 @@ async fn create_topology(env: &Env, topology: &Topology) {
 
     for (_, function) in functions {
         let dir = &function.dir;
-        builder::build(dir, None, None).await;
+        builder::build(dir, None, None, Some(String::from("code"))).await;
     }
     deployer::create(env, topology).await;
 
@@ -192,7 +194,7 @@ async fn create_topology(env: &Env, topology: &Topology) {
 
         for (_, function) in &node.functions {
             let dir = &function.dir;
-            builder::build(dir, None, None).await;
+            builder::build(dir, None, None, Some(String::from("code"))).await;
         }
 
         deployer::create(env, node).await;
@@ -269,7 +271,7 @@ async fn update_topology(env: &Env, topology: &Topology) {
 
     for (_, function) in functions {
         let dir = &function.dir;
-        builder::build(dir, None, None).await;
+        builder::build(dir, None, None, Some(String::from("code"))).await;
     }
 
     deployer::update(env, topology).await;

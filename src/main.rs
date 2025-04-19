@@ -180,6 +180,8 @@ pub struct BuildArgs {
     kind: Option<String>,
     #[arg(long, short = 'n')]
     name: Option<String>,
+    #[arg(long, short = 'i')]
+    image: Option<String>,
     #[arg(long, action)]
     clean: bool,
     #[arg(long, action, short = 'r')]
@@ -258,7 +260,7 @@ pub struct CreateArgs {
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
-    #[arg(long, short = 't')]
+    #[arg(long, short = 'T')]
     topology: Option<String>,
     #[arg(long, action)]
     notify: bool,
@@ -478,6 +480,7 @@ async fn build(args: BuildArgs) {
         merge,
         split,
         trace,
+        image,
         ..
     } = args;
 
@@ -489,7 +492,8 @@ async fn build(args: BuildArgs) {
         dirty: dirty,
         recursive: recursive,
         split: split,
-        merge: merge
+        merge: merge,
+        image_kind: image
     };
     tc::build(kind, name, &dir, opts).await;
 }
