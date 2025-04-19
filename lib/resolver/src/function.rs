@@ -160,9 +160,10 @@ fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> Runti
             None => default.timeout
         },
         environment: match s.environment.clone() {
-            Some(mut p) => {
-                p.extend(default.environment.clone().unwrap());
-                Some(p.clone())
+            Some(p) => {
+                let mut def = default.environment.clone().unwrap();
+                def.extend(p);
+                Some(def)
             },
             None => default.environment.clone()
         },
