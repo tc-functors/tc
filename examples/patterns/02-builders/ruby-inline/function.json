@@ -1,0 +1,14 @@
+{
+  "name": "ruby-inline",
+  "description": "ruby-inline example",
+  "runtime": {
+    "lang": "ruby3.2",
+    "package_type": "zip",
+    "handler": "handler.handler",
+    "layers": []
+  },
+  "build": {
+    "kind": "Inline",
+    "command": "zip lambda.zip *.rb"
+  }
+}

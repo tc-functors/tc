@@ -1,0 +1,10 @@
+{
+  "name": "python-basic",
+  "description": "basic example",
+  "runtime": {
+    "lang": "python3.10",
+    "package_type": "zip",
+    "handler": "handler.handler",
+    "layers": []
+  }
+}
