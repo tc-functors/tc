@@ -389,14 +389,29 @@ impl Function {
         let _ = log_update.render(&format!("Updating code {} ({})", name, &f.code_size.cyan()));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
 
-        let res = self
-            .client
-            .update_function_code()
-            .function_name(arn)
-            .zip_file(f.blob)
-            .publish(true)
-            .send()
-            .await?;
+        let res = match f.package_type {
+            PackageType::Image => {
+                self
+                    .client
+                    .update_function_code()
+                    .function_name(arn)
+                    .image_uri(f.uri)
+                    .publish(true)
+                    .send()
+                    .await?
+            },
+            PackageType::Zip => {
+                self
+                    .client
+                    .update_function_code()
+                    .function_name(arn)
+                    .zip_file(f.blob)
+                    .publish(true)
+                    .send()
+                    .await?
+            },
+            _ => panic!("unsupported package type")
+        };
 
         while state != LastUpdateStatus::Successful {
             state = self.clone().get_update_status(&f.name).await;
