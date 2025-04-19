@@ -1,6 +1,5 @@
 use kit as u;
 use kit::sh;
-use kit::*;
 
 use compiler::spec::ImageSpec;
 use configurator::Config;
@@ -16,32 +15,27 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-fn copy_cmd(dir: &str) -> String {
-    if u::path_exists(dir, "requirements.txt") {
-        s!("COPY requirements.txt ./")
-    } else {
-        s!("COPY . /var/task")
-    }
-}
-
-fn gen_dockerfile(dir: &str, image_uri: &str, commands: Vec<String>) {
+fn gen_base_dockerfile(dir: &str, commands: Vec<String>) {
     let commands = deps_str(commands);
-
-    let cp_command = copy_cmd(dir);
 
     let f = format!(
             r#"
-FROM {image_uri}
+FROM public.ecr.aws/sam/build-python3.10:latest AS build-image
+
+WORKDIR /var/task
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-{cp_command}
+COPY requirements.txt ./
 
 RUN mkdir -p /model
 
 RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {commands}
 
-CMD [ "handler.handler" ]
+FROM public.ecr.aws/lambda/python:3.10
+
+COPY --from=build-image /build/python /opt/python
+COPY --from=build-image /model /model
 
 "#
         );
@@ -49,6 +43,23 @@ CMD [ "handler.handler" ]
         u::write_str(&dockerfile, &f);
 }
 
+
+fn gen_code_dockerfile(dir: &str, base_image: &str, commands: Vec<String>) {
+    let commands = deps_str(commands);
+    let f = format!(
+            r#"
+FROM {base_image}
+
+RUN {commands}
+
+COPY . /var/task
+
+CMD [ "handler.handler" ]
+"#
+        );
+    let dockerfile = format!("{}/Dockerfile", dir);
+    u::write_str(&dockerfile, &f);
+}
 
 fn build_with_docker(dir: &str, name: &str) {
     let cmd_str = format!(
@@ -65,12 +76,14 @@ fn build_with_docker(dir: &str, name: &str) {
     }
 }
 
-
 fn render_uri(uri: &str, repo: &str) -> String {
-    println!("repo: {}", uri);
     let mut table: HashMap<&str, &str> = HashMap::new();
     table.insert("repo", repo);
     u::stencil(uri, table)
+}
+
+fn find_image_name(repo: &str, image_kind: &str, func_name: &str) -> String {
+    format!("{}/{}:{}-latest", repo, image_kind, func_name)
 }
 
 pub fn build(dir: &str, name: &str, image_kind: &str, images: HashMap<String, ImageSpec>) -> String {
@@ -81,18 +94,36 @@ pub fn build(dir: &str, name: &str, image_kind: &str, images: HashMap<String, Im
     };
 
     let config = Config::new(None, "dev");
-    let parent_uri = render_uri(&image_spec.parent, &config.aws.ecr.repo);
+    let repo = match std::env::var("TC_ECR_REPO") {
+        Ok(r) => &r.to_owned(),
+        Err(_) => &config.aws.ecr.repo
+    };
+
+    //let parent_uri = render_uri(&image_spec.parent, repo);
     let image_dir = match &image_spec.dir {
         Some(d) => &d,
         None => dir
     };
 
-    if !u::path_exists(image_dir, "Dockerfile") {
-        gen_dockerfile(image_dir, &parent_uri, image_spec.commands.clone());
+    let base_image_name = find_image_name(repo, "base", name);
+
+    match image_kind {
+        "code" => {
+            gen_code_dockerfile(
+                image_dir,
+                &base_image_name,
+                image_spec.commands.clone()
+            )
+        }
+        "base" => gen_base_dockerfile(
+            image_dir,
+            image_spec.commands.clone()
+        ),
+        _ => panic!("Invalid image kind")
     }
-    let image_name = format!("{}:{}-{}-latest", &config.aws.ecr.repo, &name, image_kind);
-    println!("Building image {}", &image_name);
+    let image_name = find_image_name(repo, image_kind, name);
+    tracing::debug!("Building image dir: {} name: {}", image_dir, &image_name);
     build_with_docker(image_dir, &image_name);
-    sh("rm -rf build build.json", image_dir);
+    sh("rm -rf Dockerfile build build.json", image_dir);
     format!("docker")
 }
