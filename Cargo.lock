@@ -1455,6 +1455,193 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chksum"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6401faa70a7381c411e1d44c34cc9ea7c4dc1e12e9f86daf55e4941d10612f13"
+dependencies = [
+ "chksum-core",
+ "chksum-hash",
+ "chksum-md5",
+ "chksum-sha1",
+ "chksum-sha2",
+]
+
+[[package]]
+name = "chksum-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0475dc9fa905fe8feca5c4a48a97f65503ebd257a7566df1367d080083e160c6"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-hash"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "862a3491c65e277e0cc86f373c276dd8680b8a3a58460c44b22eded5e13cf1ba"
+dependencies = [
+ "chksum-hash-core",
+ "chksum-hash-md5",
+ "chksum-hash-sha1",
+ "chksum-hash-sha2",
+]
+
+[[package]]
+name = "chksum-hash-core"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "221456234d441c788a2c51a27b91c4380f499de560670a67d3303e621d37b3bd"
+
+[[package]]
+name = "chksum-hash-md5"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8445e9efb2556cedf4ef2bf704cb335cdd037ed20fe954f281baf93fe5e7c0d"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-hash-sha1"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cced59c79554a9305c3b5c6eec2704706e8e598edb80b0716fb3f6c923fabcd"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-hash-sha2"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5444bb0d12a9fae84353f686100ef2925a77c2a0d9196cdc3787042595bff48f"
+dependencies = [
+ "chksum-hash-sha2-224",
+ "chksum-hash-sha2-256",
+ "chksum-hash-sha2-384",
+ "chksum-hash-sha2-512",
+]
+
+[[package]]
+name = "chksum-hash-sha2-224"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63c0104600dc48e852971a0367e92ffd38b2165a2ff5e35ee947d85d1dc5dbb0"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-hash-sha2-256"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8231bf5c173db494835789e73fce310773f8f623c65989bb346d52b809e5e2f8"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-hash-sha2-384"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d56e3e64bbeb2faca7df586614e01d552582d770887101b2b4975da21b0e6fc"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-hash-sha2-512"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d10088e91d8fca497528476a51d8926035876d83ab709ddb7d0dca8b4e4415c"
+dependencies = [
+ "chksum-hash-core",
+ "thiserror",
+]
+
+[[package]]
+name = "chksum-md5"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dda0016624d188e791afdf491de89d0157411dafedb0a46dbcd3f1a13ef0a611"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-md5",
+]
+
+[[package]]
+name = "chksum-sha1"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80489dff9ef6c7da73bbed26db3eb29d222840f3e8763c41d9c01be683f363d2"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-sha1",
+]
+
+[[package]]
+name = "chksum-sha2"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc6a2371747d5021b6ac769e4607e0222ceed97888af1bf192f91c87bf00a9ed"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-sha2",
+ "chksum-sha2-224",
+ "chksum-sha2-256",
+ "chksum-sha2-384",
+ "chksum-sha2-512",
+]
+
+[[package]]
+name = "chksum-sha2-224"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e131b1945c9f344ed6e2bb71ce68039c06832287b489e9523dd3f4350d27cdb6"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-sha2-224",
+]
+
+[[package]]
+name = "chksum-sha2-256"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4a4d6bac6d5b362449c5009c10b7abfcb09dd3cc462944b49b3900b29f12a9f"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-sha2-256",
+]
+
+[[package]]
+name = "chksum-sha2-384"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1797d60e9973144df48aa117f93834cebc086249ea9a309c625659f8085dda7"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-sha2-384",
+]
+
+[[package]]
+name = "chksum-sha2-512"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9dcc633d445146283b50ed346a0934619326fd8c48a1dd8df1dc181ab06ebb08"
+dependencies = [
+ "chksum-core",
+ "chksum-hash-sha2-512",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1584,6 +1771,7 @@ name = "compiler"
 version = "0.0.3"
 dependencies = [
  "bincode",
+ "chksum",
  "colored",
  "configurator",
  "daggy",
@@ -3680,6 +3868,7 @@ name = "publisher"
 version = "0.0.1"
 dependencies = [
  "aws",
+ "base64",
  "colored",
  "compiler",
  "kit",
