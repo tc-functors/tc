@@ -4,7 +4,6 @@
   "runtime": {
     "lang": "python3.10",
     "package_type": "image",
-    "uri": "{{repo}}/code:foo-latest",
     "handler": "handler.handler"
   },
 
