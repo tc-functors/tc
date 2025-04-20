@@ -1,17 +1,17 @@
 {
-  "name": "foo",
-  "description": "foo example",
+  "name": "pyp",
+  "description": "example function",
   "runtime": {
     "lang": "python3.10",
     "package_type": "image",
     "handler": "handler.handler"
   },
-
   "build": {
     "kind": "Image",
+    "command": "zip -9 -q lambda.zip *.py",
     "images": {
       "base": {
-	"parent": "",
+	"version": "0.1.2",
 	"commands": [
 	  "yum install -y git wget unzip",
 	  "yum install -y gcc gcc-c++ libXext libSM libXrender",
@@ -23,5 +23,11 @@
 	"commands": []
       }
     }
+  },
+
+  "test": {
+    "fixture": "python run-fixture.py",
+    "command": "poetry test"
   }
+
 }

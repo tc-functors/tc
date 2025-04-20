@@ -27,13 +27,21 @@ fn find_runtime_image(runtime: &LangRuntime) -> String {
     format!("public.ecr.aws/lambda/{}", &tag)
 }
 
+fn gen_req_cmd(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        format!("pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt")
+    } else {
+        format!("echo 0")
+    }
+}
+
 fn deps_str(deps: Vec<String>) -> String {
     if deps.len() >= 2 {
         deps.join(" && ")
     } else if deps.len() == 1 {
         deps.first().unwrap().to_string()
     } else {
-        String::from("echo 1")
+        String::from("echo 0")
     }
 }
 
@@ -43,6 +51,8 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) 
     let build_image = find_build_image(runtime);
     let runtime_image = find_runtime_image(runtime);
 
+    let req_cmd = gen_req_cmd(dir);
+
     let f = format!(
             r#"
 FROM {build_image} AS build-image
@@ -51,7 +61,9 @@ WORKDIR /var/task
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-COPY requirements.txt ./
+COPY . ./
+
+RUN {req_cmd}
 
 RUN mkdir -p /model
 
@@ -122,6 +134,10 @@ fn find_base_image_name(
     };
 
     format!("{}/base:{}-{}", repo, func_name, version)
+}
+
+fn build_aux(dir: &str) {
+
 }
 
 
