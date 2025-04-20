@@ -19,9 +19,9 @@ fn find_build_image(runtime: &LangRuntime) -> String {
 
 fn find_runtime_image(runtime: &LangRuntime) -> String {
     let tag = match runtime {
-        LangRuntime::Python310 => "python3.10",
-        LangRuntime::Python311 => "python3.11",
-        LangRuntime::Python312 => "python3.12",
+        LangRuntime::Python310 => "python:3.10",
+        LangRuntime::Python311 => "python:3.11",
+        LangRuntime::Python312 => "python:3.12",
         _ => todo!()
     };
     format!("public.ecr.aws/lambda/{}", &tag)

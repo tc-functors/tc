@@ -3,7 +3,7 @@ mod ecr;
 
 use aws::Env;
 use std::collections::HashMap;
-use compiler::spec::{LangRuntime, BuildKind, BuildOutput};
+use compiler::spec::{BuildKind, BuildOutput};
 
 pub async fn list_layers(env: &Env, layer_names: Vec<String>) -> String {
     layer::list(env, layer_names).await
