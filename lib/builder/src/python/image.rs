@@ -88,7 +88,7 @@ CMD [ "handler.handler" ]
 
 fn build_with_docker(dir: &str, name: &str) {
     let cmd_str = format!(
-        "docker buildx build --squash --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .", name);
+        "docker buildx build --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .", name);
     match std::env::var("TC_TRACE") {
         Ok(_) => u::runcmd_stream(&cmd_str, dir),
         Err(_) => {
@@ -107,18 +107,30 @@ fn build_with_docker(dir: &str, name: &str) {
      u::stencil(uri, table)
  }
 
-fn find_base_image_name(repo: &str, func_name: &str) -> String {
-    let version = "latest";
-    //TODO: find version
-    format!("{}/base:{}-{}", repo, func_name, &version)
+fn find_base_image_name(
+    repo: &str,
+    func_name: &str,
+    images: &HashMap<String, ImageSpec>
+) -> String {
+
+    let version = match images.get("base") {
+        Some(b) => match &b.version {
+            Some(v) => v,
+            None => "latest"
+        },
+        None => "latest"
+    };
+
+    format!("{}/base:{}-{}", repo, func_name, version)
 }
+
 
 pub fn build(
     dir: &str,
     name: &str,
     runtime: &LangRuntime,
     image_kind: &str,
-    images: HashMap<String, ImageSpec>,
+    images: &HashMap<String, ImageSpec>,
     uri: &str,
 ) -> String {
 
@@ -138,7 +150,8 @@ pub fn build(
         None => dir
     };
 
-    let base_image_name = find_base_image_name(repo, name);
+
+    let base_image_name = find_base_image_name(repo, name, images);
     let uri = render_uri(uri, repo);
 
     match image_kind {
@@ -146,10 +159,11 @@ pub fn build(
             gen_code_dockerfile(
                 image_dir,
                 &base_image_name,
-                image_spec.commands.clone()
+                image_spec.commands.clone(),
+
             );
-            tracing::debug!("Building image dir: {} name: {}",
-                            image_dir, uri);
+            tracing::debug!("Building {} with base-image {}",
+                            uri, &base_image_name);
             build_with_docker(image_dir, &uri);
             sh("rm -rf Dockerfile build build.json", image_dir);
             uri.to_string()
