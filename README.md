@@ -50,7 +50,44 @@ Options:
 ```
 ## History and Roadmap
 
+We've been working on tc for quite a while in a private repo, but much of that time was focused on the internal needs of Informed. Since the creation of this public repo we have started work on making it suitable for broader use cases beyond our own.
+
+Here is a snapshot of the history and future plans. Please let us know how we could make it useful for your use cases as well.
+
 ![Roadmap](doc/images/tc-roadmap.png)
 
+## Contributing
 
-Note: this project is still quite nascent and is being actively developed
+Though significant work has been done previous to this public repo for internal use at Informed, this project is still quite nascent and is being actively developed to be suitable for use outside of Informed.
+
+We welcome contributions from the community! Whether you're just giving feedback, fixing bugs, improving documentation, or proposing new features, your efforts are appreciated.
+
+### Code of Conduct
+
+This project follows the Contributor Covenant Code of Conduct. We expect all contributors to adhere to its guidelines to maintain a welcoming and inclusive environment. Please read our [Code of Conduct](code_of_conduct.md) before participating.
+
+### Getting Started
+
+1. Try out tc by following the [installation guide](https://informed-labs.github.io/tc/installation.html)
+2. Build from source:
+   - Follow the [build instructions](https://informed-labs.github.io/tc/installation.html#building-your-own) to compile tc locally
+   - This is a great way to understand the codebase and start contributing
+
+### Ways to Contribute
+
+- **Report Issues**: Found a bug or have a suggestion? Open an issue on our [tc GitHub Issues](https://github.com/informed-labs/tc/issues) page
+- **Submit Pull Requests**: Have a fix or enhancement? PRs are welcome! [tc Github PRs](https://github.com/informed-labs/tc/pulls)
+- **Improve Documentation**: Help make our docs better by fixing errors or adding examples
+- **Join Discussions**: Participate in [GitHub Discussions](https://github.com/orgs/informed-labs/discussions) to share ideas, ask questions, and help others
+
+### Development Process
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Write or update tests as needed
+5. Submit a pull request
+6. Respond to any feedback
+
+We aim to review all contributions promptly and look forward to collaborating with you!
+
