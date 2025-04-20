@@ -204,6 +204,16 @@ fn trim(input: &str) -> &str {
     }
 }
 
+pub fn run(path: &str, dir: &str) {
+    match std::env::var("TC_TRACE") {
+        Ok(_) => {
+            runcmd_stream(path, dir);
+        }
+        Err(_) => { sh(path, dir); }
+    }
+}
+
+
 pub fn runcmd_quiet(path: &str, dir: &str) {
     let _ = Exec::shell(path)
         .stdout(Redirection::Pipe)
@@ -221,6 +231,7 @@ pub fn tee(path: &str, dir: &str) {
 pub fn runcmd_stream(path: &str, dir: &str) {
     Exec::shell(path).cwd(dir).join().unwrap();
 }
+
 
 pub fn runc(path: &str, dir: &str) -> (bool, String, String) {
     let data = Exec::shell(path)

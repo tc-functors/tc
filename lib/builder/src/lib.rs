@@ -9,17 +9,7 @@ use compiler::Layer;
 use glob::glob;
 use kit as u;
 use kit::sh;
-use serde_derive::{Serialize, Deserialize};
-use compiler::spec::{LangRuntime, Lang, BuildKind};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BuildOutput {
-    pub name: String,
-    pub dir: String,
-    pub runtime: LangRuntime,
-    pub kind: BuildKind,
-    pub zipfile: String,
-}
+use compiler::spec::{LangRuntime, Lang, BuildKind, BuildOutput};
 
 fn _should_split(dir: &str) -> bool {
     let zipfile = "deps.zip";
@@ -32,7 +22,14 @@ fn _should_split(dir: &str) -> bool {
     size >= 70000000.0
 }
 
-fn _split(dir: &str, name: &str, kind: &BuildKind, runtime: &LangRuntime) -> Vec<BuildOutput> {
+#[rustfmt::skip]
+fn _split(
+    dir: &str,
+    name: &str,
+    kind: &BuildKind,
+    runtime: &LangRuntime
+) -> Vec<BuildOutput> {
+
     let zipfile = format!("{}/deps.zip", dir);
     let size;
     if u::file_exists(&zipfile) {
@@ -56,7 +53,7 @@ fn _split(dir: &str, name: &str, kind: &BuildKind, runtime: &LangRuntime) -> Vec
                         dir: dir.to_string(),
                         runtime: runtime.clone(),
                         kind: kind.clone(),
-                        zipfile: z.to_string_lossy().to_string(),
+                        artifact: z.to_string_lossy().to_string(),
                     };
                     outs.push(out);
                 }
@@ -67,8 +64,15 @@ fn _split(dir: &str, name: &str, kind: &BuildKind, runtime: &LangRuntime) -> Vec
     outs
 }
 
-pub fn just_build_out(dir: &str, name: &str, lang_str: &str) -> Vec<BuildOutput> {
-    let runtime = LangRuntime::from_str(lang_str).expect("Failed to parse lang str");
+#[rustfmt::skip]
+pub fn just_build_out(
+    dir: &str,
+    name: &str,
+    lang_str: &str
+) -> Vec<BuildOutput> {
+
+    let runtime = LangRuntime::from_str(lang_str)
+        .expect("Failed to parse lang str");
 
     let zipfile = format!("{}/deps.zip", dir);
     let out = BuildOutput {
@@ -76,13 +80,19 @@ pub fn just_build_out(dir: &str, name: &str, lang_str: &str) -> Vec<BuildOutput>
         dir: dir.to_string(),
         runtime: runtime,
         kind: BuildKind::Code,
-        zipfile: zipfile,
+        artifact: zipfile,
     };
     vec![out]
 }
 
+#[rustfmt::skip]
+pub async fn build(
+    dir: &str,
+    name: Option<String>,
+    kind: Option<BuildKind>,
+    image: Option<String>
 
-pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, image: Option<String>) -> Vec<BuildOutput> {
+) -> Vec<BuildOutput> {
 
     let function = compiler::current_function(dir);
 
@@ -97,18 +107,18 @@ pub async fn build(dir: &str, name: Option<String>, kind: Option<BuildKind>, ima
 
         let kind_str = &kind.to_str();
 
-        let runtime = f.runtime.lang;
-        let lang = runtime.to_lang();
+        let runtime = &f.runtime;
+        let lang = &f.runtime.lang.to_lang();
         let name = u::maybe_string(name, u::basedir(dir));
 
         spec.kind = kind;
 
         sh("rm -f *.zip", dir);
 
-
         let image_kind = u::maybe_string(image, "code");
 
-        println!("Building {} ({}/{})", &name, &runtime.to_str(), kind_str.blue());
+        println!("Building {} ({}/{})",
+                 &name, &runtime.lang.to_str(), kind_str.blue());
 
         let out = match lang {
             Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
@@ -132,7 +142,12 @@ fn should_build(layer: &Layer, dirty: bool) -> bool {
     }
 }
 
-pub async fn build_recursive(dirty: bool, kind: Option<BuildKind>, image_kind: Option<String>) -> Vec<BuildOutput> {
+pub async fn build_recursive(
+    dirty: bool,
+    kind: Option<BuildKind>,
+    image_kind: Option<String>
+) -> Vec<BuildOutput> {
+
     let mut outs: Vec<BuildOutput> = vec![];
 
     let knd = match kind {

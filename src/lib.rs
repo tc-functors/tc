@@ -15,15 +15,23 @@ pub struct BuildOpts {
     pub clean: bool,
     pub split: bool,
     pub dirty: bool,
+    pub publish: bool,
     pub image_kind: Option<String>
 }
 
-pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
+pub async fn build(
+    kind: Option<String>,
+    name: Option<String>,
+    dir: &str,
+    opts: BuildOpts
+) {
+
     let BuildOpts {
         clean,
         dirty,
         recursive,
         image_kind,
+        publish,
         ..
     } = opts;
 
@@ -34,9 +42,6 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
             None => None
         };
         let builds = builder::build_recursive(dirty, kind, image_kind).await;
-        builder::write_manifest(&builds);
-        println!("{}", kit::pretty_json(&builds));
-
 
     } else if clean {
         builder::clean_lang(dir);
@@ -47,8 +52,7 @@ pub async fn build(kind: Option<String>, name: Option<String>, dir: &str, opts: 
             None => None
         };
         let builds = builder::build(dir, name, kind, image_kind).await;
-        builder::write_manifest(&builds);
-        println!("{}", kit::pretty_json(&builds));
+        println!("{:?}", &builds);
     }
 
 }
@@ -87,7 +91,7 @@ pub async fn publish(
 
         for build in builds {
             let bname = u::maybe_string(name.clone(), &build.name);
-            publisher::publish(&env, &build.dir, &build.kind, &build.zipfile, &build.runtime, &bname).await;
+            publisher::publish(&env, build).await;
         }
         builder::delete_manifest(dir);
     }
@@ -181,12 +185,25 @@ async fn run_create_hook(env: &Env, root: &Topology) {
     }
 }
 
+async fn maybe_build(env: &Env, dir: &str, name: &str) {
+    let builds = builder::build(
+        dir,
+        Some(String::from(name)),
+        None,
+        Some(String::from("code"))
+    ).await;
+    let centralized = env.inherit(env.config.aws.ecr.profile.clone());
+    for b in builds {
+        println!("Publishing {}", &b.name);
+        publisher::publish(&centralized, b).await;
+    }
+}
+
 async fn create_topology(env: &Env, topology: &Topology) {
     let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        let dir = &function.dir;
-        builder::build(dir, None, None, Some(String::from("code"))).await;
+        maybe_build(env, &function.dir, &function.name).await;
     }
     deployer::create(env, topology).await;
 
@@ -194,7 +211,7 @@ async fn create_topology(env: &Env, topology: &Topology) {
 
         for (_, function) in &node.functions {
             let dir = &function.dir;
-            builder::build(dir, None, None, Some(String::from("code"))).await;
+            maybe_build(env, dir, &function.name).await;
         }
 
         deployer::create(env, node).await;
@@ -270,8 +287,7 @@ async fn update_topology(env: &Env, topology: &Topology) {
     let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        let dir = &function.dir;
-        builder::build(dir, None, None, Some(String::from("code"))).await;
+        maybe_build(env, &function.dir, &function.name).await;
     }
 
     deployer::update(env, topology).await;

@@ -711,6 +711,17 @@ impl TopologySpec {
 }
 
 
+// build
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BuildOutput {
+    pub name: String,
+    pub dir: String,
+    pub runtime: LangRuntime,
+    pub kind: BuildKind,
+    pub artifact: String,
+}
+
 // component
 pub enum Component {
     Function,

@@ -2,7 +2,7 @@ use kit as u;
 use kit::sh;
 
 use colored::Colorize;
-use super::LangRuntime;
+use compiler::LangRuntime;
 
 
 fn find_image(runtime: &LangRuntime) -> String {

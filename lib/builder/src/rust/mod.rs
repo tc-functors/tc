@@ -4,17 +4,19 @@ mod layer;
 mod image;
 
 use super::BuildOutput;
-use compiler::spec::{BuildKind, LangRuntime};
-use compiler::Build;
+use compiler::spec::{BuildKind};
+use compiler::{Build, Runtime};
 use kit as u;
 
-pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build) -> BuildOutput {
+pub fn build(dir: &str, runtime: &Runtime, name: &str, spec: Build) -> BuildOutput {
     let Build { kind, pre, post, .. } = spec;
+
+    let Runtime { lang, .. } = runtime;
 
     let path = match kind {
         BuildKind::Code      => inline::build(dir),
         BuildKind::Inline    => inline::build(dir),
-        BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post),
+        BuildKind::Layer     => layer::build(dir, name, &lang, pre, post),
         BuildKind::Extension => extension::build(dir),
         BuildKind::Image     => image::build(dir, name),
         BuildKind::Runtime   => todo!(),
@@ -25,9 +27,9 @@ pub fn build(dir: &str, runtime: LangRuntime, name: &str, spec: Build) -> BuildO
     BuildOutput {
         name: u::basename(dir),
         dir: dir.to_string(),
-        zipfile: path,
+        artifact: path,
         kind: kind,
-        runtime: runtime
+        runtime: lang.clone()
     }
 
 }

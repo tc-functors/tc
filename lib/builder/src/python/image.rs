@@ -6,6 +6,7 @@ use compiler::spec::ImageSpec;
 use configurator::Config;
 use std::collections::HashMap;
 
+
 fn find_build_image(runtime: &LangRuntime) -> String {
     let tag = match runtime {
         LangRuntime::Python310 => "python3.10:latest",
@@ -87,7 +88,7 @@ CMD [ "handler.handler" ]
 
 fn build_with_docker(dir: &str, name: &str) {
     let cmd_str = format!(
-        "docker buildx build --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .", name);
+        "docker buildx build --squash --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .", name);
     match std::env::var("TC_TRACE") {
         Ok(_) => u::runcmd_stream(&cmd_str, dir),
         Err(_) => {
@@ -100,8 +101,16 @@ fn build_with_docker(dir: &str, name: &str) {
     }
 }
 
-fn find_image_name(repo: &str, image_kind: &str, func_name: &str) -> String {
-    format!("{}/{}:{}-latest", repo, image_kind, func_name)
+ fn render_uri(uri: &str, repo: &str) -> String {
+     let mut table: HashMap<&str, &str> = HashMap::new();
+     table.insert("repo", repo);
+     u::stencil(uri, table)
+ }
+
+fn find_base_image_name(repo: &str, func_name: &str) -> String {
+    let version = "latest";
+    //TODO: find version
+    format!("{}/base:{}-{}", repo, func_name, &version)
 }
 
 pub fn build(
@@ -109,7 +118,8 @@ pub fn build(
     name: &str,
     runtime: &LangRuntime,
     image_kind: &str,
-    images: HashMap<String, ImageSpec>
+    images: HashMap<String, ImageSpec>,
+    uri: &str,
 ) -> String {
 
     let image_spec = match images.get(image_kind) {
@@ -123,13 +133,13 @@ pub fn build(
         Err(_) => &config.aws.ecr.repo
     };
 
-    //let parent_uri = render_uri(&image_spec.parent, repo);
     let image_dir = match &image_spec.dir {
         Some(d) => &d,
         None => dir
     };
 
-    let base_image_name = find_image_name(repo, "base", name);
+    let base_image_name = find_base_image_name(repo, name);
+    let uri = render_uri(uri, repo);
 
     match image_kind {
         "code" => {
@@ -137,18 +147,25 @@ pub fn build(
                 image_dir,
                 &base_image_name,
                 image_spec.commands.clone()
-            )
+            );
+            tracing::debug!("Building image dir: {} name: {}",
+                            image_dir, uri);
+            build_with_docker(image_dir, &uri);
+            sh("rm -rf Dockerfile build build.json", image_dir);
+            uri.to_string()
         }
-        "base" => gen_base_dockerfile(
-            image_dir,
-            runtime,
-            image_spec.commands.clone()
-        ),
+        "base" => {
+            gen_base_dockerfile(
+                image_dir,
+                runtime,
+                image_spec.commands.clone()
+            );
+            tracing::debug!("Building image dir: {} name: {}",
+                            image_dir, &base_image_name);
+            build_with_docker(image_dir, &base_image_name);
+            sh("rm -rf Dockerfile build build.json", image_dir);
+            base_image_name
+        },
         _ => panic!("Invalid image kind")
     }
-    let image_name = find_image_name(repo, image_kind, name);
-    tracing::debug!("Building image dir: {} name: {}", image_dir, &image_name);
-    build_with_docker(image_dir, &image_name);
-    sh("rm -rf Dockerfile build build.json", image_dir);
-    format!("docker")
 }
