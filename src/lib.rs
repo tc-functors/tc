@@ -42,6 +42,13 @@ pub async fn build(
             None => None
         };
         let builds = builder::build_recursive(dirty, kind, image_kind).await;
+        if publish {
+            let env = init(None, None).await;
+            let cenv = env.inherit(env.config.aws.ecr.profile.to_owned());
+            for build in builds {
+                publisher::publish(&cenv, build).await;
+            }
+        }
 
     } else if clean {
         builder::clean_lang(dir);
@@ -52,7 +59,13 @@ pub async fn build(
             None => None
         };
         let builds = builder::build(dir, name, kind, image_kind).await;
-        println!("{:?}", &builds);
+        if publish {
+            let env = init(None, None).await;
+            let cenv = env.inherit(env.config.aws.ecr.profile.to_owned());
+            for build in builds {
+                publisher::publish(&cenv, build).await;
+            }
+        }
     }
 
 }
@@ -90,7 +103,6 @@ pub async fn publish(
         let builds = builder::read_manifest();
 
         for build in builds {
-            let bname = u::maybe_string(name.clone(), &build.name);
             publisher::publish(&env, build).await;
         }
         builder::delete_manifest(dir);
