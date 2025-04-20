@@ -26,3 +26,5 @@ bin/
 Dockerfile
 node_modules
 doc/dist
+.DS_Store
+.cursorrules
