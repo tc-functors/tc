@@ -259,7 +259,8 @@ fn default_package_type() -> String {
 pub struct ImageSpec {
     #[serde(default)]
     pub dir: Option<String>,
-    pub parent: String,
+    pub parent: Option<String>,
+    pub version: Option<String>,
     pub commands: Vec<String>
 }
 
