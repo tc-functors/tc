@@ -196,6 +196,8 @@ pub struct BuildArgs {
     task: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'p')]
+    publish: bool,
 }
 
 #[derive(Debug, Args)]
@@ -481,6 +483,7 @@ async fn build(args: BuildArgs) {
         split,
         trace,
         image,
+        publish,
         ..
     } = args;
 
@@ -493,7 +496,8 @@ async fn build(args: BuildArgs) {
         recursive: recursive,
         split: split,
         merge: merge,
-        image_kind: image
+        image_kind: image,
+        publish: publish
     };
     tc::build(kind, name, &dir, opts).await;
 }
@@ -819,7 +823,7 @@ async fn inspect(args: InspectArgs) {
 
 fn init_tracing(trace: bool) {
     let should_trace = trace || match env::var("TC_TRACE") {
-        Ok(_) => true,
+        Ok(t) => &t == "1",
         Err(_) => trace
     };
     if should_trace {

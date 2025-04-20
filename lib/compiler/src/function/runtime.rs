@@ -10,6 +10,8 @@ use crate::role::{Role, RoleKind};
 
 use kit as u;
 use kit::*;
+use chksum::sha1;
+use std::fs::read_dir;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {
@@ -45,11 +47,20 @@ pub struct Runtime {
     pub infra_spec: HashMap<String, RuntimeInfraSpec>
 }
 
-fn as_uri(dir: &str, package_type: &str, uri: Option<String>) -> String {
+fn find_code_version(dir: &str) -> String {
+    let readdir = read_dir(dir).unwrap();
+    let digest = sha1::chksum(readdir).unwrap();
+    digest.to_hex_lowercase()
+}
+
+fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
     match package_type {
         "image" | "oci" => match uri {
             Some(u) => u,
-            None => format!("{{{{repo}}}}")
+            None => {
+                let version = find_code_version(dir);
+                format!("{{{{repo}}}}/code:{}-{}", name, version)
+            }
         },
         _ => format!("{}/lambda.zip", dir)
     }
@@ -445,7 +456,7 @@ impl Runtime {
                     lang: r.lang,
                     handler: r.handler,
                     package_type: package_type.to_string(),
-                    uri: as_uri(dir, package_type, r.uri),
+                    uri: as_uri(dir, &fspec.name, package_type, r.uri),
                     layers: layers,
                     tags: make_tags(namespace, &infra_dir),
                     environment: vars,
@@ -478,7 +489,7 @@ impl Runtime {
                     lang: lang,
                     handler: s!("handler.handler"),
                     package_type: s!("zip"),
-                    uri: as_uri(dir, "zip", None),
+                    uri: as_uri(dir, &fspec.name,  "zip", None),
                     layers: vec![],
                     environment: vars,
                     tags: make_tags(namespace, &infra_dir),

@@ -238,14 +238,9 @@ pub struct Ecr {
     #[derivative(Default(value = "default()"))]
     #[serde(default)]
     pub repo: String,
-   #[derivative(Default(value = "default()"))]
     #[serde(default)]
-    pub stable_repo: String,
-   #[derivative(Default(value = "default()"))]
-    #[serde(default)]
-    pub dev_repo: String
+    pub profile: Option<String>,
 }
-
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]

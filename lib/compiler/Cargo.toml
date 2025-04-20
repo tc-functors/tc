@@ -17,6 +17,7 @@ semver = "0.7.0"
 tabled = "0.10.0"
 tracing = "0.1"
 bincode = "1.2.1"
+chksum = "0.4.0"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
 daggy = { version = "0.8.1", features = ["serde-1"] }

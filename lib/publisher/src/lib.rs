@@ -3,25 +3,30 @@ mod ecr;
 
 use aws::Env;
 use std::collections::HashMap;
-use compiler::spec::{LangRuntime, BuildKind};
+use compiler::spec::{LangRuntime, BuildKind, BuildOutput};
 
 pub async fn list_layers(env: &Env, layer_names: Vec<String>) -> String {
     layer::list(env, layer_names).await
 }
 
-pub async fn publish(env: &Env, dir: &str, kind: &BuildKind, zipfile: &str, runtime: &LangRuntime, name: &str) {
+pub async fn publish(env: &Env, build: BuildOutput) {
+
+    let BuildOutput { dir, kind, artifact, runtime, name, .. } = build;
+
     let lang = runtime.to_str();
     match kind {
         BuildKind::Layer | BuildKind::Library => {
-            if layer::should_split(dir) {
-                layer::publish(env, &lang, &format!("{}-0-dev", name), "deps1.zip").await;
-                layer::publish(env, &lang, &format!("{}-1-dev", name), "deps2.zip").await;
+            if layer::should_split(&dir) {
+                layer::publish(env, &lang, &format!("{}-0-dev", &name),
+                               "deps1.zip").await;
+                layer::publish(env, &lang, &format!("{}-1-dev", &name),
+                               "deps2.zip").await;
             } else {
-                let layer_name = format!("{}-dev", name);
-                layer::publish(env, &lang, &layer_name, zipfile).await;
+                let layer_name = format!("{}-dev", &name);
+                layer::publish(env, &lang, &layer_name, &artifact).await;
             }
         },
-        BuildKind::Image => ecr::publish(env, name).await,
+        BuildKind::Image => ecr::publish(env, &artifact).await,
         _ => ()
     }
 }

@@ -8,13 +8,13 @@ mod slab;
 
 use super::BuildOutput;
 use compiler::spec::{BuildKind, LangRuntime};
-use compiler::Build;
+use compiler::{Build, Runtime};
 use kit::sh;
 use kit as u;
 
 pub fn build(
     dir: &str,
-    runtime: LangRuntime,
+    runtime: &Runtime,
     name: &str,
     spec: Build,
     image_kind: &str
@@ -22,22 +22,24 @@ pub fn build(
 
 
     let Build { kind, pre, post, command, .. } = spec;
+    let Runtime { lang, uri, .. } = runtime;
+
     let path = match kind {
         BuildKind::Code      => code::build(dir, &command),
-        BuildKind::Inline    => inline::build(dir,name,  &runtime, &command),
-        BuildKind::Layer     => layer::build(dir, name, &runtime, pre, post),
+        BuildKind::Inline    => inline::build(dir,name,  &lang, &command),
+        BuildKind::Layer     => layer::build(dir, name, &lang, pre, post),
         BuildKind::Library   => library::build(dir, name),
-        BuildKind::Slab      => slab::build(dir, name, &runtime, pre, post),
+        BuildKind::Slab      => slab::build(dir, name, &lang, pre, post),
         BuildKind::Extension => extension::build(dir, name),
-        BuildKind::Image     => image::build(dir, name, &runtime, image_kind, spec.images),
+        BuildKind::Image     => image::build(dir, name, &lang, image_kind, spec.images, uri),
         BuildKind::Runtime   => todo!()
     };
     BuildOutput {
         name: u::basename(dir),
         dir: dir.to_string(),
-        zipfile: path,
+        artifact: path,
         kind: kind,
-        runtime: runtime
+        runtime: lang.clone()
     }
 }
 
