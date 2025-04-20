@@ -307,7 +307,7 @@ impl Env {
                     };
                     Env::new(&p, role, self.config.clone())
                 }
-                Err(_) => panic!("AWS_PROFILE or config not set")
+                Err(_) => self.clone()
             }
         }
     }
