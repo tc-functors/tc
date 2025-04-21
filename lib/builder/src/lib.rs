@@ -206,18 +206,3 @@ pub fn clean(recursive: bool) {
         kit::sh("rm -f lambda.zip && rm -rf build && rm -f bootstrap", &b.dir);
     }
 }
-
-pub fn write_manifest(builds: &Vec<BuildOutput>) {
-    let s = serde_json::to_string(builds).unwrap();
-    kit::write_str("build.json", &s);
-}
-
-pub fn read_manifest() -> Vec<BuildOutput> {
-    let s = kit::slurp("build.json");
-    let builds: Vec<BuildOutput> = serde_json::from_str(&s).expect("fail");
-    builds
-}
-
-pub fn delete_manifest(dir: &str) {
-    kit::sh("rm -f build.json", dir);
-}

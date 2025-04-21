@@ -636,4 +636,19 @@ impl Topology {
         graph::generate(self)
     }
 
+    pub fn build_tree(&self) -> StringItem {
+        let mut t = TreeBuilder::new(s!(self.namespace.blue()));
+        t.begin_child(s!("functions"));
+        for (_, f) in &self.functions {
+            t.add_empty_child(f.fqn.clone());
+        }
+        t.end_child();
+        t.begin_child(s!("events"));
+        for (_, f) in &self.events {
+            t.add_empty_child(f.name.clone());
+        }
+        t.end_child();
+        t.build()
+    }
+
 }

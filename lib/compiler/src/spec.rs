@@ -265,6 +265,12 @@ pub struct ImageSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
+pub struct LayerSpec {
+    #[serde(default)]
+    pub commands: Vec<String>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct BuildSpec {
     #[doku(example = "Inline")]
     pub kind: BuildKind,
@@ -282,8 +288,23 @@ pub struct BuildSpec {
     pub command: String,
 
     #[serde(default)]
-    pub images: HashMap<String, ImageSpec>
+    pub images: HashMap<String, ImageSpec>,
+
+    #[serde(default)]
+    pub layers: HashMap<String, LayerSpec>
 }
+
+impl BuildSpec {
+
+    pub fn new(dir: &str) -> BuildSpec {
+        let path = format!("{}/build.json", dir);
+        let data = u::slurp(&path);
+        let bspec: BuildSpec = serde_json::from_str(&data).unwrap();
+        bspec
+    }
+
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeSpec {
