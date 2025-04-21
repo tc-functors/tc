@@ -484,6 +484,7 @@ async fn build(args: BuildArgs) {
         trace,
         image,
         publish,
+        profile,
         ..
     } = args;
 
@@ -499,7 +500,8 @@ async fn build(args: BuildArgs) {
         image_kind: image,
         publish: publish
     };
-    tc::build(kind, name, &dir, opts).await;
+    let env = tc::init(profile, None).await;
+    tc::build(&env, kind, name, &dir, opts).await;
 }
 
 async fn test(_args: TestArgs) {

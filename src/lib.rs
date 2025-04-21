@@ -20,6 +20,7 @@ pub struct BuildOpts {
 }
 
 pub async fn build(
+    env: &Env,
     kind: Option<String>,
     name: Option<String>,
     dir: &str,
@@ -43,10 +44,8 @@ pub async fn build(
         };
         let builds = builder::build_recursive(dirty, kind, image_kind).await;
         if publish {
-            let env = init(None, None).await;
-            let cenv = env.inherit(env.config.aws.ecr.profile.to_owned());
             for build in builds {
-                publisher::publish(&cenv, build).await;
+                publisher::publish(&env, build).await;
             }
         }
 
@@ -60,10 +59,8 @@ pub async fn build(
         };
         let builds = builder::build(dir, name, kind, image_kind).await;
         if publish {
-            let env = init(None, None).await;
-            let cenv = env.inherit(env.config.aws.ecr.profile.to_owned());
             for build in builds {
-                publisher::publish(&cenv, build).await;
+                publisher::publish(&env, build).await;
             }
         }
     }
