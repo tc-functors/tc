@@ -114,13 +114,21 @@ impl LangRuntime {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub enum BuildKind {
+    #[serde(alias = "code")]
     Code,
+    #[serde(alias = "inline")]
     Inline,
+    #[serde(alias = "layer")]
     Layer,
+    #[serde(alias = "slab")]
     Slab,
+    #[serde(alias = "library")]
     Library,
+    #[serde(alias = "extension")]
     Extension,
+    #[serde(alias = "runtime")]
     Runtime,
+    #[serde(alias = "image")]
     Image
 }
 
@@ -272,9 +280,11 @@ pub struct LayerSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct BuildSpec {
+    // deprecated
     #[doku(example = "Inline")]
     pub kind: BuildKind,
 
+    // deprecated
     #[serde(default)]
     #[doku(example = "dnf install git -yy")]
     pub pre: Vec<String>,
