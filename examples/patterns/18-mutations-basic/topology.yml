@@ -1,4 +1,4 @@
-name: 18-states-basic
+name: 18-mutations-basic
 
 events:
   consumes:
