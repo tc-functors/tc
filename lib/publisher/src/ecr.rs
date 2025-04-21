@@ -22,29 +22,34 @@ fn is_logged_in(env: &Env) -> bool {
     if !u::file_exists(cfg_file) {
         return false
     }
-    let data = u::slurp(cfg_file);
-    let config: Config = serde_json::from_str(&data).expect("Unable to parse");
-    let host = get_host(env);
-    let maybe_auth = match config.get("auths") {
-        Some(x) => match x.get(&host) {
-            Some(g) => Some(g.auth.clone()),
-            None => None
-        },
-        None => None
-    };
+    match std::env::var("TC_SKIP_ECR_LOGIN") {
+        Ok(_) => true,
+        Err(_) => {
+            let data = u::slurp(cfg_file);
+            let config: Config = serde_json::from_str(&data).unwrap();
+            let host = get_host(env);
+            let maybe_auth = match config.get("auths") {
+                Some(x) => match x.get(&host) {
+                    Some(g) => Some(g.auth.clone()),
+                    None => None
+                },
+                None => None
+            };
 
-    match maybe_auth {
-        Some(auth) => {
-            let bytes1 = general_purpose::STANDARD.decode(auth).unwrap();
-            let sa1 = &String::from_utf8_lossy(&bytes1)[4..];
-            let bytes2 = general_purpose::STANDARD.decode(sa1).unwrap();
-            let sa = String::from_utf8_lossy(&bytes2);
-            let val: serde_json::Value = serde_json::from_str(&sa).unwrap();
-            let exp = &val["expiration"].as_i64().unwrap();
-            let now = u::current_millis() / 1000;
-            (exp - now) > 60
-        },
-        None => false
+            match maybe_auth {
+                Some(auth) => {
+                    let bytes1 = general_purpose::STANDARD.decode(auth).unwrap();
+                    let sa1 = &String::from_utf8_lossy(&bytes1)[4..];
+                    let bytes2 = general_purpose::STANDARD.decode(sa1).unwrap();
+                    let sa = String::from_utf8_lossy(&bytes2);
+                    let val: serde_json::Value = serde_json::from_str(&sa).unwrap();
+                    let exp = &val["expiration"].as_i64().unwrap();
+                    let now = u::current_millis() / 1000;
+                    (exp - now) > 60
+                },
+                None => false
+            }
+        }
     }
 }
 
