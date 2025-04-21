@@ -202,7 +202,7 @@ async fn maybe_build(env: &Env, dir: &str, name: &str) {
     ).await;
     let centralized = env.inherit(env.config.aws.ecr.profile.clone());
     for b in builds {
-        println!("Publishing {}", &b.artifact);
+        tracing::debug!("Publishing {}", &b.artifact);
         publisher::publish(&centralized, b).await;
     }
 }
