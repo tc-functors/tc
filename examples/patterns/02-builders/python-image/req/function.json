@@ -1,6 +1,6 @@
 {
-  "name": "foo",
-  "description": "foo example",
+  "name": "req",
+  "description": "basic image with requirements.txt",
   "runtime": {
     "lang": "python3.10",
     "package_type": "image",

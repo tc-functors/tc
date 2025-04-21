@@ -1,6 +1,6 @@
 {
-  "name": "foo",
-  "description": "foo example",
+  "name": "req-external",
+  "description": "With external parent",
   "runtime": {
     "lang": "python3.10",
     "package_type": "image",
@@ -10,12 +10,8 @@
   "build": {
     "kind": "Image",
     "images": {
-      "base": {
-	"dir": "../base",
-	"commands": []
-      },
       "code": {
-	"parent": "base",
+	"parent": "{{repo}}/base:req-0.1.1",
 	"commands": []
       }
     }
