@@ -14,7 +14,6 @@ pub async fn login(env: &Env, dir: &str) {
                       env.region(),
                       get_host(env)
     );
-    println!("{}", &cmd);
     u::run(&cmd, dir);
 }
 

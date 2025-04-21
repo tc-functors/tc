@@ -89,7 +89,7 @@ pub fn just_build_out(
 #[rustfmt::skip]
 pub async fn build(
     dir: &str,
-    name: Option<String>,
+    _name: Option<String>,
     kind: Option<BuildKind>,
     image: Option<String>
 
@@ -110,7 +110,7 @@ pub async fn build(
 
         let runtime = &f.runtime;
         let lang = &f.runtime.lang.to_lang();
-        let name = u::maybe_string(name, u::basedir(dir));
+        let name = &f.name;
 
         spec.kind = kind;
 
