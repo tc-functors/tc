@@ -136,10 +136,6 @@ fn find_base_image_name(
     format!("{}/base:{}-{}", repo, func_name, version)
 }
 
-fn build_aux(dir: &str) {
-
-}
-
 
 pub fn build(
     dir: &str,
