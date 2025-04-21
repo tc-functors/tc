@@ -20,26 +20,31 @@ At it's core, `tc` provides 7 entities (functions, events, mutations, queues, ro
 name: example
 
 routes:
-	myposts:
-		path: /api/posts
-		method: GET
-		function: bar
-		event: MyEvent
+  myposts:
+    path: /api/posts
+    method: GET
+    function: bar
+    event: MyEvent
 
 events:
-	consumes:
-		MyEvent:
-			function: foo
+  consumes:
+    MyEvent:
+      function: foo
+      channel: room1
+
+channels:
+  room1:
+    handler: default
 
 functions:
-	remote:
-		foo: github.com/bar/bar
-	local:
-		bar: ./bar
+  remote:
+    foo: github.com/bar/bar
+  local:
+    bar: ./bar
 
 ```
 
-Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions whose implementation is irrelevant in the high-level definition. However, we just defined the flow without specifying anything about permissions, the provider (AWS) jargon or implementation details. This is what an architect would do - define the system at a high-level. Using this definition, `tc` generates the flow and/or sequence diagram that is representative of a deployable architecture.
+Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, the event finally triggers a websocket notification with the event's payload. We just defined the flow without specifying anything about permissions, the provider (AWS) jargon or implementation details. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
 
 ### 2. Namespacing
 
