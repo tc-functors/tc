@@ -1,6 +1,6 @@
 [package]
 name = "tc"
-version = "0.8.36"
+version = "0.8.38"
 edition = "2024"
 rust-version = "1.86"
 
