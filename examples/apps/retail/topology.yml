@@ -1,12 +1,3 @@
 name: retail
 nodes:
   ignore: []
-  dirs:
-    - api
-    - inventory
-    - payment
-    - order
-    - pricing
-    - recommendation
-    - catalog
-    - fulfillment
