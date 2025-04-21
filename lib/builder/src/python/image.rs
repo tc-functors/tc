@@ -125,7 +125,7 @@ fn build_with_docker(dir: &str, name: &str) {
 fn find_base_image_name(
     repo: &str,
     func_name: &str,
-    images: &HashMap<String, ImageSpec>
+    images: &HashMap<String, ImageSpec>,
 ) -> String {
 
     let version = match images.get("base") {
@@ -139,7 +139,19 @@ fn find_base_image_name(
     format!("{}/base:{}-{}", repo, func_name, version)
 }
 
+fn find_parent_image_name(
+    repo: &str,
+    func_name: &str,
+    images: &HashMap<String, ImageSpec>,
+    parent: Option<String>
+) -> String {
+    let parent = u::maybe_string(parent, "base");
+    match parent.as_ref() {
+        "base" => find_base_image_name(repo, func_name, images),
+        _ => render_uri(&parent, repo)
+    }
 
+}
 
 pub fn build(
     dir: &str,
@@ -167,24 +179,31 @@ pub fn build(
     };
 
 
-    let base_image_name = find_base_image_name(repo, name, images);
+
     let uri = render_uri(uri, repo);
 
     match image_kind {
         "code" => {
+            let parent_image_name = find_parent_image_name(
+                repo,
+                name,
+                &images,
+                image_spec.parent.clone()
+            );
             gen_code_dockerfile(
                 image_dir,
-                &base_image_name,
+                &parent_image_name,
                 image_spec.commands.clone(),
 
             );
-            tracing::debug!("Building {} with base-image {}",
-                            uri, &base_image_name);
+            tracing::debug!("Building {} with parent {}",
+                            uri, &parent_image_name);
             build_with_docker(image_dir, &uri);
             sh("rm -rf Dockerfile build build.json", image_dir);
             uri.to_string()
         }
         "base" => {
+            let base_image_name = find_base_image_name(repo, name, images);
             gen_base_dockerfile(
                 image_dir,
                 runtime,
