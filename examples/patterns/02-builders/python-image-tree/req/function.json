@@ -1,6 +1,6 @@
 {
-  "name": "req",
-  "description": "image-tree with requirements",
+  "name": "foo",
+  "description": "foo example",
   "runtime": {
     "lang": "python3.10",
     "package_type": "image",
@@ -14,8 +14,7 @@
 	"version": "0.1.1",
 	"commands": [
 	  "yum install -y git wget unzip",
-	  "yum install -y gcc gcc-c++ libXext libSM libXrender",
-	  "pip install -vv -r requirements.txt --target /build/python"
+	  "yum install -y gcc gcc-c++ libXext libSM libXrender"
 	]
       },
       "code": {

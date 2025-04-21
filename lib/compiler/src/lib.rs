@@ -262,6 +262,18 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             u::empty()
         },
 
+        "all" => {
+            let topology = compile(&dir, false);
+            match format {
+                "tree" => {
+                    let tree = topology.build_tree();
+                    kit::print_tree(tree);
+                    u::empty()
+                },
+                _ => u::empty()
+            }
+        }
+
         _ => {
             let topology = compile(&dir, recursive);
             if u::file_exists(&component) {

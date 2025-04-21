@@ -52,6 +52,7 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) 
     let runtime_image = find_runtime_image(runtime);
 
     let req_cmd = gen_req_cmd(dir);
+    let pip_cmd = "pip install -vv -r requirements.txt --target /build/python";
 
     let f = format!(
             r#"
@@ -66,6 +67,8 @@ COPY . ./
 RUN {req_cmd}
 
 RUN mkdir -p /model
+
+RUN --mount=type=ssh {pip_cmd}
 
 RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {commands}
 
@@ -135,6 +138,7 @@ fn find_base_image_name(
 
     format!("{}/base:{}-{}", repo, func_name, version)
 }
+
 
 
 pub fn build(

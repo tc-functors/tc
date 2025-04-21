@@ -90,22 +90,21 @@ pub async fn publish(
         ..
     } = opts;
 
+    let lang = &compiler::guess_runtime(&dir);
+    let bname = u::maybe_string(name.clone(), u::basedir(&u::pwd()));
+
     if promote {
-        let lang = &compiler::guess_runtime(&dir);
-        let bname = u::maybe_string(name, u::basedir(&u::pwd()));
         publisher::promote(&env, &bname, &lang.to_str(), version).await;
 
     } else if demote {
-        let lang = "python3.10";
-        publisher::demote(&env, name, &lang).await;
+        publisher::demote(&env, name, &lang.to_str()).await;
 
     } else {
-        let builds = builder::read_manifest();
+        let builds = builder::just_build_out(&dir, &bname, &lang.to_str());
 
         for build in builds {
             publisher::publish(&env, build).await;
         }
-        builder::delete_manifest(dir);
     }
 }
 
@@ -206,7 +205,7 @@ async fn maybe_build(env: &Env, dir: &str, name: &str) {
     ).await;
     let centralized = env.inherit(env.config.aws.ecr.profile.clone());
     for b in builds {
-        println!("Publishing {}", &b.name);
+        println!("Publishing {}", &b.artifact);
         publisher::publish(&centralized, b).await;
     }
 }
