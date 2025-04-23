@@ -48,6 +48,8 @@ COPY --from=shared . {build_context}/
 
 RUN {req_cmd}
 
+RUN rm -rf /build
+
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
 "#
@@ -101,8 +103,8 @@ fn build_local(dir: &str, given_command: &str) {
     }
     let c = "pip install -r requirements.txt --platform manylinux2014_x86_64 --no-deps --upgrade --target build/python";
     sh(c, dir);
-    let cmd = "cd build/python && zip -q -9 -r ../../lambda.zip . && cd -";
-    sh(&cmd, dir);
+    let cmd = "zip -q -9 -r ../../lambda.zip .";
+    sh(&cmd, &format!("{}/build/python", dir));
     sh(given_command, dir);
     sh("rm -rf build build.json", dir);
 }
