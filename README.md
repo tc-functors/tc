@@ -70,6 +70,31 @@ tc update -s sandbox -e env -c events|routes|mutations|functions|flow
 
 `tc compile` generates a lot of the infrastructure (permissions, default configurations etc) boilerplate needed for the configured provider. Think of infrastructure as _Types_ in a dynamic programming language.
 
+### 5. Recursive Topology
+
+Functors can be created at any level in the code repository's heirarchy. They are like fractals where we can zoom in or out. For example, consider the following retail order management topology:
+
+```sh
+order/
+├── payment
+│   ├── other-payment-processor
+│   │   └── handler.py
+│   ├── stripe
+│   │   ├── handler
+│   │   └── topology.yml
+│   └── topology.yml
+└── topology.yml
+```
+
+There are two sub-topologies in the root topology. `order`, `payment` and `stripe` are valid topologies. `tc` can create and manage sandboxes at any level preserving the integrity of the overall graph.
+
+```
+cd order
+tc create -s <sandbox> -e <env> --recursive
+```
+
+This feature helps evolve the system and test individual nodes in isolation.
+
 ### 5. Isomorphic Topology
 
 The output of `tc compile` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider. We can write custom resolvers to resolve these template variables by querying the configured provider (AWS, GCP etc).
