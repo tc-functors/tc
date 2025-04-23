@@ -44,7 +44,9 @@ functions:
 
 ```
 
-Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, the event finally triggers a websocket notification with the event's payload. We just defined the flow without specifying anything about permissions, the provider (AWS) jargon or implementation details. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
+Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, the event finally triggers a channel notification with the event's payload. We just defined the flow without specifying anything about infrastructure, permissions or the provider. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
+
+`tc compile` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
 
 ### 2. Namespacing
 
@@ -64,22 +66,27 @@ and can invoke (`tc invoke -s sandbox -e env -p payload.json`) this topology. Th
 tc update -s sandbox -e env -c events|routes|mutations|functions|flow
 ```
 
-### 4. Pluggable Resolvers
+### 4. Inferred Infrastructure
 
-The output of `tc compile` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider.
-However, the resolver is pluggable.
+`tc compile` generates a lot of the infrastructure (permissions, default configurations etc) boilerplate needed for the configured provider. Think of infrastructure as _Types_ in a dynamic programming language.
+
+### 5. Isomorphic Topology
+
+The output of `tc compile` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider. We can write custom resolvers to resolve these template variables by querying the configured provider (AWS, GCP etc).
 
 ```
 tc compile | tc resolve -s sandbox -e env | tc create
 ```
 
-We can replace the resolver with `sed` or a template renderer with values from ENV variables, for example. The resolver can also be written in any language that is easy to use and query the provider, efficiently.
+We can replace the resolver with `sed` or a template renderer with values from ENV variables, SSM parameter store, Vault etc. For example:
 
+```
+tc compile | sed -i 's/{{API_GATEWAY}}/my-gateway/g' |tc create
+```
 
-### 5. Isomorphic Manifests
+The resolver can also be written in any language that is easy to use and query the provider, efficiently.
 
 The output of the compiler, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
-
 
 ## Resources
 
