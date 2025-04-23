@@ -431,7 +431,7 @@ impl Runtime {
         let infra_spec = RuntimeInfraSpec::new(infra_spec_file.clone());
         //FIXME: handle unwrap
         let default_infra_spec = infra_spec.get("default").unwrap();
-        let RuntimeInfraSpec { memory_size, timeout, ref environment, .. } = default_infra_spec;
+        let RuntimeInfraSpec { memory_size, timeout, environment, .. } = default_infra_spec;
 
         let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
         let build_kind = find_build_kind(&fspec);

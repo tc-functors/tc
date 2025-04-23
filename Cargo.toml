@@ -67,6 +67,9 @@ members = [
    "lib/inspector"
 ]
 
+[workspace.package]
+version = "0.8.38"
+
 [profile.release]
 opt-level = 'z'
 panic = "abort"

@@ -1,7 +1,8 @@
 [package]
 name = "tagger"
-version = "0.0.1"
-edition = "2021"
+version.workspace = true
+edition = "2024"
+
 
 [dependencies]
 serde = "1.0"

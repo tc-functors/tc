@@ -366,7 +366,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
 name = "aws"
-version = "0.2.0"
+version = "0.8.38"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1354,7 +1354,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.0.2"
+version = "0.8.38"
 dependencies = [
  "colored",
  "compiler",
@@ -1657,7 +1657,7 @@ dependencies = [
 
 [[package]]
 name = "ci"
-version = "0.0.2"
+version = "0.8.38"
 dependencies = [
  "aws",
  "kit",
@@ -1768,7 +1768,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.0.3"
+version = "0.8.38"
 dependencies = [
  "bincode",
  "chksum",
@@ -1817,7 +1817,7 @@ dependencies = [
 
 [[package]]
 name = "configurator"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "derivative",
  "doku",
@@ -1994,7 +1994,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.0.2"
+version = "0.8.38"
 dependencies = [
  "aws",
  "builder",
@@ -2166,7 +2166,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "colored",
@@ -2996,7 +2996,7 @@ dependencies = [
 
 [[package]]
 name = "inspector"
-version = "0.1.0"
+version = "0.8.38"
 dependencies = [
  "askama",
  "aws",
@@ -3021,7 +3021,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "compiler",
@@ -3110,7 +3110,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.0.3"
+version = "0.8.38"
 dependencies = [
  "ansi-escapes",
  "base64",
@@ -3224,7 +3224,7 @@ checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 
 [[package]]
 name = "lister"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "colored",
@@ -3451,7 +3451,7 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.0.2"
+version = "0.8.38"
 dependencies = [
  "configurator",
  "kit",
@@ -3865,7 +3865,7 @@ dependencies = [
 
 [[package]]
 name = "publisher"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "base64",
@@ -4021,7 +4021,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.0.3"
+version = "0.8.38"
 dependencies = [
  "aws",
  "cacache",
@@ -4063,7 +4063,7 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "colored",
@@ -4220,7 +4220,7 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "configurator",
@@ -4726,7 +4726,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "aws",
  "kit",
@@ -4808,7 +4808,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.0.1"
+version = "0.8.38"
 dependencies = [
  "compiler",
  "kit",

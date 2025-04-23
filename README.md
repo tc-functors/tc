@@ -5,7 +5,7 @@ A graph-based, stateless, serverless application & infrastructure composer.
 [![Build](https://github.com/informed-labs/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/informed-labs/tc/actions/workflows/ci.yml)
 
 
-`tc` defines, creates and manages serveless entities such as functions, mutations, events, routes, states, queues and channels. tc compiles a tree of entities defined in the filesystem as a topology. This namespaced, sandboxed, versioned and isomorphic topology is called a `Cloud Functor`. A functor is represented and referenced as `<namespace>@<sandbox.<env>/<version>` (example: `myapp@john.prod/0.1.1`). Any entity can be accessed in it's path, for example, `<namespace>@<sandbox.<env>/<version>/events`. This has practical implications as these functors are themselves composable.
+`tc` defines, creates and manages the lifecycle of serveless entities such as functions, mutations, events, routes, states, queues and channels. tc compiles a tree of entities defined in the filesystem as a topology. This namespaced, sandboxed, versioned and isomorphic topology is called a `Cloud Functor`.
 
 The word functor was popularized by Ocaml's parameterized modules. These modules, called functors, are first class. Cloud functors are similar in that they are treated as first class and are composable much like Ocaml's elegant modules.
 
@@ -44,7 +44,7 @@ functions:
 
 ```
 
-Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, the event finally triggers a channel notification with the event's payload. We just defined the flow without specifying anything about infrastructure, permissions or the provider. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
+Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, the event finally triggers a channel notification with the event's payload. We just defined the flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests, almost magically.
 
 `tc compile` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
 
@@ -95,7 +95,7 @@ tc create -s <sandbox> -e <env> --recursive
 
 This feature helps evolve the system and test individual nodes in isolation.
 
-### 5. Isomorphic Topology
+### 6. Isomorphic Topology
 
 The output of `tc compile` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider. We can write custom resolvers to resolve these template variables by querying the configured provider (AWS, GCP etc).
 
@@ -112,6 +112,7 @@ tc compile | sed -i 's/{{API_GATEWAY}}/my-gateway/g' |tc create
 The resolver can also be written in any language that is easy to use and query the provider, efficiently.
 
 The output of the compiler, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
+
 
 ## Resources
 
