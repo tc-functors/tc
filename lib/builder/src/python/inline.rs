@@ -103,7 +103,7 @@ fn build_local(dir: &str, given_command: &str) {
     }
     let c = "pip install -r requirements.txt --platform manylinux2014_x86_64 --no-deps --upgrade --target build/python";
     sh(c, dir);
-    let cmd = "zip -q -9 -r ../../lambda.zip .";
+    let cmd = "zip -q -9 -r ../../lambda.zip . && rm -rf build/python";
     sh(&cmd, &format!("{}/build/python", dir));
     sh(given_command, dir);
     sh("rm -rf build build.json", dir);
@@ -123,8 +123,8 @@ fn build_docker(dir: &str, name: &str, runtime: &LangRuntime, given_command: &st
     sh("rm -f Dockerfile wrapper", dir);
 
     let _ = log.render(&format!("Building {name} - Copying dependencies"));
-    let cmd = "cd build/python && zip -q -9 -r ../../lambda.zip . && cd -";
-    sh(&cmd, dir);
+    let cmd = "zip -q -9 -r ../../lambda.zip . && rm -rf build/python";
+    sh(&cmd, &format!("{}/build/python", dir));
     sh(given_command, dir);
     sh("rm -rf build build.json", dir);
 }
