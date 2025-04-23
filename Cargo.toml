@@ -1,8 +1,11 @@
 [package]
 name = "tc"
-version = "0.8.38"
+version = "0.8.39"
 edition = "2024"
 rust-version = "1.86"
+
+[workspace.package]
+version = "0.8.39"
 
 [dependencies]
 serde = "1.0"
@@ -66,9 +69,6 @@ members = [
    "lib/ci",
    "lib/inspector"
 ]
-
-[workspace.package]
-version = "0.8.38"
 
 [profile.release]
 opt-level = 'z'
