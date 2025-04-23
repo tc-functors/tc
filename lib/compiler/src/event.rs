@@ -109,7 +109,7 @@ pub fn make_targets(
     let producer_ns = as_ns(producer_ns, producer);
     let consumer_ns = namespace;
 
-    if let Some(ref f) = function {
+    if let Some(f) = function {
         let id = format!("{}_lambda_target", event_name);
         let arn = template::lambda_arn(&f);
         let t = Target::new(
@@ -142,7 +142,7 @@ pub fn make_targets(
             xs.push(t);
         }
     }
-    if let Some(ref m) = mutation {
+    if let Some(m) = mutation {
 
         let id = format!("{}_appsync_target", event_name);
         let mut h: HashMap<String, String> = HashMap::new();
@@ -164,7 +164,7 @@ pub fn make_targets(
         );
         xs.push(t);
     }
-    if let Some(ref s) = stepfunction {
+    if let Some(s) = stepfunction {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(s);
         let t = Target::new(
@@ -180,7 +180,7 @@ pub fn make_targets(
         xs.push(t)
     }
 
-    if let Some(ref c) = channel {
+    if let Some(c) = channel {
         let id = format!("{}_channel_{}_target", c, event_name);
         let mut h: HashMap<String, String> = HashMap::new();
         h.insert(s!("detail"), s!("$.detail"));
