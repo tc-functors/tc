@@ -125,8 +125,9 @@ fn build_docker(dir: &str, name: &str, runtime: &LangRuntime, given_command: &st
     let _ = log.render(&format!("Building {name} - Copying dependencies"));
     let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
     sh(&cmd, &format!("{}/build/python", dir));
-    sh(given_command, dir);
     sh("rm -rf build build.json", dir);
+    sh(given_command, dir);
+
 }
 
 pub fn build(dir: &str, name: &str, runtime: &LangRuntime, given_command: &str) -> String {
