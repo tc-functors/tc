@@ -14,6 +14,7 @@ use kit as u;
 
 pub fn build(
     dir: &str,
+    lang: &LangRuntime,
     runtime: &Runtime,
     name: &str,
     spec: Build,
@@ -22,7 +23,7 @@ pub fn build(
 
 
     let Build { kind, pre, post, command, .. } = spec;
-    let Runtime { lang, uri, .. } = runtime;
+    let Runtime { uri, .. } = runtime;
 
     let path = match kind {
         BuildKind::Code      => code::build(dir, &command),

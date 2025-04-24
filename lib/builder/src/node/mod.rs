@@ -2,7 +2,7 @@ mod layer;
 mod code;
 mod inline;
 
-use compiler::spec::{BuildKind};
+use compiler::spec::{BuildKind, LangRuntime};
 use super::BuildOutput;
 use compiler::{Build, Runtime};
 use kit::sh;
@@ -10,13 +10,13 @@ use kit as u;
 
 pub fn build(
     dir: &str,
-    runtime: &Runtime,
+    lang: &LangRuntime,
+    _runtime: &Runtime,
     name: &str,
     spec: Build
 ) -> BuildOutput {
 
     let Build { kind, pre, post, command, .. } = spec;
-    let Runtime { lang, .. } = runtime;
 
     let path = match kind {
         BuildKind::Code      => code::build(dir, &command),

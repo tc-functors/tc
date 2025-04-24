@@ -3,18 +3,16 @@ mod image;
 mod inline;
 mod extension;
 mod code;
-mod library;
+pub mod library;
 
 use super::BuildOutput;
-use compiler::spec::{BuildKind};
+use compiler::spec::{BuildKind, LangRuntime};
 use compiler::{Build, Runtime};
 use kit::sh;
-use kit as u;
 
-pub fn build(dir: &str, runtime: &Runtime, name: &str, spec: Build) -> BuildOutput {
+pub fn build(dir: &str, lang: &LangRuntime, _runtime: &Runtime, name: &str, spec: Build) -> BuildOutput {
 
     let Build { kind, pre, post, command, .. } = spec;
-    let Runtime { lang, .. } = runtime;
 
     let path = match kind {
         BuildKind::Code      => code::build(dir, &command),
@@ -28,7 +26,7 @@ pub fn build(dir: &str, runtime: &Runtime, name: &str, spec: Build) -> BuildOutp
     };
 
     BuildOutput {
-        name: format!("{}-{}", name, u::basename(dir)),
+        name: name.to_string(),
         dir: dir.to_string(),
         artifact: path,
         kind: kind,

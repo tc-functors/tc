@@ -25,12 +25,27 @@ impl FromStr for Lang {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "python3.10" | "python3.11" | "python3.9" | "python3.12" => Ok(Lang::Python),
-            "ruby3.2" | "ruby" | "ruby32"             => Ok(Lang::Ruby),
-            "node22" | "node20" | "node18"            => Ok(Lang::Node),
+            "python3.10" | "python3.11" | "python3.9" | "python3.12 | python" => Ok(Lang::Python),
+            "ruby3.2" | "ruby" | "ruby32 | ruby"             => Ok(Lang::Ruby),
+            "node22" | "node20" | "node18 | node"            => Ok(Lang::Node),
             "rust"                                    => Ok(Lang::Rust),
             _                                         => Ok(Lang::Python)
         }
+    }
+
+}
+
+impl Lang {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            Lang::Python => s!("python"),
+            Lang::Ruby => s!("ruby"),
+            Lang::Node => s!("node"),
+            Lang::Rust => s!("rust"),
+            _ => s!("python")
+        }
+
     }
 }
 
