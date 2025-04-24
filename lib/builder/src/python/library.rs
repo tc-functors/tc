@@ -4,10 +4,10 @@ use kit as u;
 pub fn build(dir: &str, _name: &str) -> String {
     u::sh("rm -f deps.zip build", &dir);
     let dirs = u::list_dir(dir);
-    u::runcmd_quiet("mkdir -p build/ruby/lib", &dir);
+    u::runcmd_quiet("mkdir -p build/python/lib", &dir);
     for d in dirs {
         if !d.ends_with("build") {
-            let cmd = format!("cp -r {}/lib/* build/lib/", &d);
+            let cmd = format!("cp -r {}/lib/* build/python/lib/", &d);
             u::runcmd_stream(&cmd, &dir);
         }
     }

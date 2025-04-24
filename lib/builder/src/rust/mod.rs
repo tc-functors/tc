@@ -4,14 +4,12 @@ mod layer;
 mod image;
 
 use super::BuildOutput;
-use compiler::spec::{BuildKind};
+use compiler::spec::{BuildKind, LangRuntime};
 use compiler::{Build, Runtime};
 use kit as u;
 
-pub fn build(dir: &str, runtime: &Runtime, name: &str, spec: Build) -> BuildOutput {
+pub fn build(dir: &str, lang: &LangRuntime, _runtime: &Runtime, name: &str, spec: Build) -> BuildOutput {
     let Build { kind, pre, post, .. } = spec;
-
-    let Runtime { lang, .. } = runtime;
 
     let path = match kind {
         BuildKind::Code      => inline::build(dir),

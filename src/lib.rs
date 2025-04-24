@@ -16,7 +16,8 @@ pub struct BuildOpts {
     pub split: bool,
     pub dirty: bool,
     pub publish: bool,
-    pub image_kind: Option<String>
+    pub image_kind: Option<String>,
+    pub lang: Option<String>
 }
 
 pub async fn build(
@@ -33,6 +34,7 @@ pub async fn build(
         recursive,
         image_kind,
         publish,
+        lang,
         ..
     } = opts;
 
@@ -57,7 +59,7 @@ pub async fn build(
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None
         };
-        let builds = builder::build(dir, name, kind, image_kind).await;
+        let builds = builder::build(dir, name, kind, image_kind, lang).await;
         if publish {
             for build in builds {
                 publisher::publish(&env, build).await;
@@ -198,7 +200,8 @@ async fn maybe_build(env: &Env, dir: &str, name: &str) {
         dir,
         Some(String::from(name)),
         None,
-        Some(String::from("code"))
+        Some(String::from("code")),
+        None
     ).await;
     let centralized = env.inherit(env.config.aws.ecr.profile.clone());
     for b in builds {

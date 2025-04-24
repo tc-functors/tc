@@ -275,7 +275,7 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
                 let c = kit::strip(&component, "/").replace("_", "-");
                 match functions.get(&c) {
                     Some(f) => {
-                        builder::build(&f.dir, None, None, None).await;
+                        builder::build(&f.dir, None, None, None, None).await;
                         let p = env.name.to_string();
                         let role = env.assume_role.to_owned();
                         let config = env.config.to_owned();

@@ -89,9 +89,10 @@ pub fn just_build_out(
 #[rustfmt::skip]
 pub async fn build(
     dir: &str,
-    _name: Option<String>,
+    name: Option<String>,
     kind: Option<BuildKind>,
-    image: Option<String>
+    image: Option<String>,
+    lang: Option<String>
 
 ) -> Vec<BuildOutput> {
 
@@ -109,8 +110,12 @@ pub async fn build(
         let kind_str = &kind.to_str();
 
         let runtime = &f.runtime;
-        let lang = &f.runtime.lang.to_lang();
-        let name = &f.name;
+        let lang = match lang {
+            Some(n) => &LangRuntime::from_str(&n).unwrap(),
+            None => &f.runtime.lang
+        };
+
+        let name = u::maybe_string(name, &f.name);
 
         spec.kind = kind;
 
@@ -119,13 +124,13 @@ pub async fn build(
         let image_kind = u::maybe_string(image, "code");
 
         println!("Building {} ({}/{})",
-                 &name, &runtime.lang.to_str(), kind_str.blue());
+                 &name, &lang.to_str(), kind_str.blue());
 
-        let out = match lang {
-            Lang::Ruby    => ruby::build(dir, runtime, &name, spec),
-            Lang::Python  => python::build(dir, runtime,  &name, spec, &image_kind),
-            Lang::Rust    => rust::build(dir, runtime, &name, spec),
-            Lang::Node    => node::build(dir, runtime, &name, spec),
+        let out = match lang.to_lang() {
+            Lang::Ruby    => ruby::build(dir, lang, runtime, &name, spec),
+            Lang::Python  => python::build(dir, lang, runtime,  &name, spec, &image_kind),
+            Lang::Rust    => rust::build(dir, lang, runtime, &name, spec),
+            Lang::Node    => node::build(dir, lang, runtime, &name, spec),
             Lang::Clojure => todo!(),
             Lang::Go      => todo!(),
         };
@@ -163,7 +168,7 @@ pub async fn build_recursive(
             let buildables = compiler::find_buildables(&u::pwd(), true);
             tracing::debug!("Building recursively {}", buildables.len());
             for b in buildables {
-                let mut out = build(&b.dir, None, Some(BuildKind::Code), image_kind.clone()).await;
+                let mut out = build(&b.dir, None, Some(BuildKind::Code), image_kind.clone(), None).await;
                 outs.append(&mut out);
             }
         },
@@ -172,7 +177,7 @@ pub async fn build_recursive(
             let layers = compiler::find_layers();
             for layer in layers.clone() {
                 if should_build(&layer, dirty) {
-                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer), None).await;
+                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer), None, None).await;
                     outs.append(&mut out)
                 }
             }

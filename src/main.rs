@@ -198,6 +198,8 @@ pub struct BuildArgs {
     trace: bool,
     #[arg(long, action, short = 'p')]
     publish: bool,
+    #[arg(long, action)]
+    lang: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -485,6 +487,7 @@ async fn build(args: BuildArgs) {
         image,
         publish,
         profile,
+        lang,
         ..
     } = args;
 
@@ -498,6 +501,7 @@ async fn build(args: BuildArgs) {
         split: split,
         merge: merge,
         image_kind: image,
+        lang: lang,
         publish: publish
     };
     let env = tc::init(profile, None).await;
