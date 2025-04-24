@@ -48,7 +48,7 @@ COPY --from=shared . {build_context}/
 
 RUN {req_cmd}
 
-RUN rm -rf /build
+RUN rm -rf /build/python && mkdir -p /build
 
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
@@ -123,7 +123,7 @@ fn build_docker(dir: &str, name: &str, runtime: &LangRuntime, given_command: &st
     sh("rm -f Dockerfile wrapper", dir);
 
     let _ = log.render(&format!("Building {name} - Copying dependencies"));
-    let cmd = "zip -q -9 -r ../../lambda.zip . && rm -rf build/python";
+    let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
     sh(&cmd, &format!("{}/build/python", dir));
     sh(given_command, dir);
     sh("rm -rf build build.json", dir);
