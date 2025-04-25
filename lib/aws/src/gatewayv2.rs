@@ -309,9 +309,9 @@ impl Api {
             .api_id(s!(api_id))
             .connection_type(ConnectionType::Internet)
             .credentials_arn(api.role)
-            .payload_format_version(s!("2.0"))
+            .payload_format_version(s!("1.0"))
             .integration_type(IntegrationType::AwsProxy)
-            .integration_subtype(s!("StepFunctions-StartSyncExecution"))
+            .integration_subtype(s!("StepFunctions-StartExecution"))
             .set_request_parameters(Some(req))
             .send()
             .await;

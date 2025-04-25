@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use configurator::Config;
 use kit::*;
 use super::template;
-use super::spec::RouteSpec;
+use super::spec::{TopologySpec, RouteSpec};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TargetKind {
@@ -50,34 +50,40 @@ fn response_template() -> String {
     format!(r#"#set ($parsedPayload = $util.parseJson($input.json('$.output'))) $parsedPayload"#)
 }
 
-fn find_target_name(proxy: &Option<String>) -> String {
-    match proxy {
-        Some(f) => s!(f),
-        None => s!("default")
+
+fn find_target_arn(target_name: &str, target_kind: &TargetKind) -> String {
+    match target_kind {
+        TargetKind::Function => template::lambda_arn(&target_name),
+        TargetKind::StepFunction => template::sfn_arn(&target_name)
     }
 }
 
-
 impl Route {
 
-    pub fn new(spec: &RouteSpec, _config: &Config) -> Route {
+    pub fn new(spec: &TopologySpec, rspec: &RouteSpec, _config: &Config) -> Route {
 
-        let target_kind = match spec.proxy {
+        let target_kind = match &rspec.proxy {
             Some(_) => TargetKind::Function,
-            None => match spec.function {
+            None => match rspec.function {
                 Some(_) => TargetKind::Function,
                 None => TargetKind::StepFunction
             }
         };
 
-        let target_name = find_target_name(&spec.proxy);
-        let target_arn =  template::lambda_arn(&target_name);
+        let target_name = match &rspec.proxy {
+            Some(f) => s!(f),
+            None => match &rspec.function {
+                Some(x) => s!(x),
+                None => template::topology_fqn(&spec.name, spec.hyphenated_names)
+            }
+        };
+        let target_arn =  find_target_arn(&target_name, &target_kind);
 
         Route {
-            method: spec.method.clone(),
-            path: spec.path.clone(),
-            gateway: spec.gateway.clone(),
-            authorizer: spec.authorizer.clone(),
+            method: rspec.method.clone(),
+            path: rspec.path.clone(),
+            gateway: rspec.gateway.clone(),
+            authorizer: rspec.authorizer.clone(),
             target_kind: target_kind,
             target_arn: target_arn,
             stage: s!("test"),
@@ -86,6 +92,5 @@ impl Route {
             response_template: response_template(),
         }
     }
-
 
 }

@@ -69,6 +69,7 @@ async fn create_route(env: &Env, route: &Route, role: &str) {
 
 pub async fn create(env: &Env, role: &str, routes: HashMap<String, Route>) {
     for (_, route) in routes {
+        println!("Creating route {} {}", &route.method, &route.path);
         create_route(env, &route, role).await;
     }
 }
