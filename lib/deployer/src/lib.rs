@@ -71,7 +71,9 @@ async fn create_flow(env: &Env, topology: &Topology) {
             flow::create(env, tags, f.clone()).await;
             let sfn_arn = &env.sfn_arn(&fqn);
             flow::enable_logs(&env, sfn_arn, logs.clone(), f).await;
-            //route::create(&env, sfn_arn, &f.default_role, routes.clone()).await;
+            let role_name = "tc-base-api-role";
+            let role_arn = &env.role_arn(&role_name);
+            route::create(&env, role_arn, routes.clone()).await;
         }
         None => {
             let role_name = "tc-base-api-role";
@@ -208,7 +210,9 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
 
         "routes" => match flow {
             Some(f) => {
-                route::create(&env, &f.role.name, routes).await;
+                //let role_name = "tc-base-api-role";
+                let role_arn = &env.role_arn(&f.role.name);
+                route::create(&env, role_arn, routes).await;
             }
             None => {
                 let role_name = "tc-base-api-role";
