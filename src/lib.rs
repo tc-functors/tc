@@ -1,7 +1,6 @@
 use aws::Env;
 use compiler::Topology;
 use compiler::spec::{BuildKind, FunctionSpec, BuildSpec, RuntimeInfraSpec};
-use ci::github;
 use configurator::Config;
 use kit as u;
 use std::panic;
@@ -188,10 +187,10 @@ async fn run_create_hook(env: &Env, root: &Topology) {
         "Deployed `{}` to *{}*::{}_{}",
         tag, &env.name, namespace, &sandbox
     );
-    notifier::notify(&namespace, &msg).await;
+    releaser::notify(&namespace, &msg).await;
     if env.config.ci.update_metadata {
         let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
-        ci::update_metadata(&centralized, &sandbox, &namespace, &version, &env.name, &dir).await;
+        releaser::update_metadata(&centralized, &sandbox, &namespace, &version, &env.name, &dir).await;
     }
 }
 
@@ -510,7 +509,7 @@ pub async fn tag(
     };
     let next = u::maybe_string(next, "patch");
     let suffix = u::maybe_string(suffix, "default");
-    tagger::create_tag(&next, &prefix, &suffix, push, dry_run).await
+    releaser::create_tag(&next, &prefix, &suffix, push, dry_run).await
 }
 
 pub async fn route(
@@ -533,7 +532,7 @@ pub async fn freeze(env: Env, service: Option<String>, sandbox: String) {
     let name = format!("{}_{}", &service, &sandbox);
     router::freeze(&env, &name).await;
     let msg = format!("*{}*::{} is frozen", &env.name, sandbox);
-    notifier::notify(&service, &msg).await
+    releaser::notify(&service, &msg).await
 }
 
 pub async fn unfreeze(env: Env, service: Option<String>, sandbox: String) {
@@ -541,11 +540,11 @@ pub async fn unfreeze(env: Env, service: Option<String>, sandbox: String) {
     let name = format!("{}_{}", &service, &sandbox);
     router::unfreeze(&env, &name).await;
     let msg = format!("{} is now unfrozen", &name);
-    notifier::notify(&service, &msg).await;
+    releaser::notify(&service, &msg).await;
 }
 
 pub async fn upgrade(version: Option<String>) {
-    github::self_upgrade("tc", "", version).await
+    releaser::self_upgrade("tc", version).await
 }
 
 // ci
@@ -560,7 +559,7 @@ pub async fn deploy(
     let namespace = compiler::topology_name(&dir);
     let service = u::maybe_string(service, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
-    ci::deploy(&env, &service, &sandbox, &version).await;
+    releaser::deploy(&env, &service, &sandbox, &version).await;
 }
 
 pub async fn release(
@@ -573,9 +572,9 @@ pub async fn release(
     let namespace = compiler::topology_name(&dir);
     let service = u::maybe_string(service, &namespace);
     if unwind {
-        ci::unwind(&service);
+        releaser::unwind(&service);
     } else {
-        ci::release(&service, &suffix).await
+        releaser::release(&service, &suffix).await
     }
 }
 

@@ -20,6 +20,6 @@ compiler = { path = "../compiler" }
 aws = { path = "../aws" }
 kit = { path = "../kit" }
 lister = { path = "../lister" }
-tagger = { path = "../tagger" }
+releaser = { path = "../releaser" }
 configurator = { path = "../configurator" }
 doku = "0.21.1"

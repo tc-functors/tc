@@ -1656,20 +1656,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ci"
-version = "0.8.43"
-dependencies = [
- "aws",
- "kit",
- "open",
- "self-replace",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
- "tagger",
-]
-
-[[package]]
 name = "clang-sys"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3008,11 +2994,11 @@ dependencies = [
  "doku",
  "kit",
  "lister",
+ "releaser",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
  "serde_yaml",
- "tagger",
  "tokio",
  "tower-http",
  "tracing",
@@ -3447,16 +3433,6 @@ checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
 dependencies = [
  "memchr",
  "minimal-lexical",
-]
-
-[[package]]
-name = "notifier"
-version = "0.8.43"
-dependencies = [
- "configurator",
- "kit",
- "serde 1.0.217",
- "serde_derive",
 ]
 
 [[package]]
@@ -3978,6 +3954,22 @@ name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+
+[[package]]
+name = "releaser"
+version = "0.8.43"
+dependencies = [
+ "aws",
+ "configurator",
+ "kit",
+ "open",
+ "regex",
+ "self-replace",
+ "semver 0.7.0",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+]
 
 [[package]]
 name = "reqwest"
@@ -4725,26 +4717,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "tagger"
-version = "0.8.43"
-dependencies = [
- "aws",
- "kit",
- "notifier",
- "regex",
- "semver 0.7.0",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "tc"
 version = "0.8.43"
 dependencies = [
  "aws",
  "builder",
- "ci",
  "clap",
  "clap-markdown",
  "colored",
@@ -4759,10 +4736,10 @@ dependencies = [
  "lister",
  "log",
  "mockall",
- "notifier",
  "openssl",
  "openssl-sys",
  "publisher",
+ "releaser",
  "resolver",
  "router",
  "scaffolder",
@@ -4770,7 +4747,6 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tabled",
- "tagger",
  "tester",
  "tokio",
  "tracing",

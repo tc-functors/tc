@@ -34,16 +34,14 @@ impl Asset {
 
 #[derive(Clone, Debug)]
 pub struct Github {
-    pub repo: String,
-    pub token: String,
+    pub repo: String
 }
 
 impl Github {
-    pub fn init(repo: &str, token: &str) -> Github {
+    pub fn init(repo: &str) -> Github {
     Github {
-            repo: String::from(repo),
-            token: s!(token),
-        }
+            repo: String::from(repo)
+    }
     }
 
     fn headers(&self) -> HashMap<String, String> {
@@ -116,47 +114,10 @@ impl Github {
             }
         }
     }
-
-
-    async fn create_release(&self, tag: &str) -> String {
-        let payload = format!(
-            r#"
-          {{
-             "tag_name": "{tag}",
-             "target_commitish": "main",
-             "name": "{tag}",
-             "draft": false,
-             "generate_release_notes": true
-          }}
-         "#
-        );
-        let res = u::http_post(&self.url("/releases"), self.headers(), payload).await;
-        match res {
-            Ok(r) => {
-                let asset: Asset = serde_json::from_value(r).unwrap();
-                asset.id.to_string()
-            }
-            Err(_) => panic!("Cannot create release")
-        }
-    }
-
-    async fn upload_asset(&self, release_id: &str, asset: &str) {
-        let path = format!("/releases/{}/assets", release_id);
-        let headers = self.with_headers("accept", "application/octet-stream");
-        u::upload(&self.url(&path), headers, asset).await;
-    }
-
-    async fn get_release(&self, tag: &str) -> Option<String> {
-        let path = format!("/releases/tags/{}", tag);
-        let res = u::http_get(&self.url(&path), self.headers()).await;
-        let id = &res["id"];
-        Some(id.to_string())
-    }
-
 }
 
-pub async fn self_upgrade(repo: &str, token: &str, tag: Option<String>) {
-    let gh = Github::init(repo, token);
+pub async fn self_upgrade(repo: &str, tag: Option<String>) {
+    let gh = Github::init(repo);
     let arch_os = arch_os();
     let name = match arch_os.as_str() {
         "x86_64-linux" => "tc-x86_64-linux",
@@ -168,15 +129,4 @@ pub async fn self_upgrade(repo: &str, token: &str, tag: Option<String>) {
         Some(t) => gh.download_asset_by_tag(name, "/tmp/tc", &t).await,
         None => gh.download_asset(name, "/tmp/tc").await
     }
-}
-
-
-pub async fn release(repo: &str, token: &str, tag: &str, asset: &str) {
-    let gh = Github::init(repo, token);
-    let rid = gh.get_release(tag).await;
-    let release_id = match rid {
-        Some(id) => id,
-        None => gh.create_release(tag).await
-    };
-    gh.upload_asset(&release_id, asset).await;
 }
