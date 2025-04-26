@@ -19,9 +19,11 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tabled = "0.10.0"
+openssl-sys = "0.9.107"
+clap-markdown = "0.1.4"
+doku = "0.21.1"
 kit =  { path = "lib/kit" }
 aws =  { path = "lib/aws" }
-notifier =  { path = "lib/notifier" }
 configurator =  { path = "lib/configurator" }
 compiler =  { path = "lib/compiler" }
 resolver =  { path = "lib/resolver" }
@@ -30,16 +32,12 @@ deployer =  { path = "lib/deployer" }
 invoker =  { path = "lib/invoker" }
 publisher =  { path = "lib/publisher" }
 emulator =  { path = "lib/emulator" }
-tagger =  { path = "lib/tagger" }
 tester = { path = "lib/tester" }
 scaffolder = { path = "lib/scaffolder" }
 lister = { path = "lib/lister" }
 router = { path = "lib/router" }
-ci = { path = "lib/ci" }
 inspector = { path = "lib/inspector" }
-openssl-sys = "0.9.107"
-clap-markdown = "0.1.4"
-doku = "0.21.1"
+releaser = { path = "lib/releaser" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -53,7 +51,6 @@ mockall = "0.12.1"
 members = [
    "lib/kit",
    "lib/configurator",
-   "lib/notifier",
    "lib/aws",
    "lib/compiler",
    "lib/resolver",
@@ -61,13 +58,12 @@ members = [
    "lib/deployer",
    "lib/publisher",
    "lib/emulator",
-   "lib/tagger",
    "lib/tester",
    "lib/scaffolder",
    "lib/lister",
    "lib/router",
-   "lib/ci",
-   "lib/inspector"
+   "lib/inspector",
+   "lib/releaser"
 ]
 
 [profile.release]
