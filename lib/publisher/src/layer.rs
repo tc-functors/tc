@@ -1,5 +1,5 @@
-use aws::layer;
-use aws::Env;
+use provider::aws::layer;
+use provider::Env;
 use colored::Colorize;
 use kit as u;
 use std::collections::HashMap;

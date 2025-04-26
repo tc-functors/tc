@@ -20,8 +20,8 @@ async fn build(
     for (_, t) in topologies {
         let mut v: HashMap<String, String> = HashMap::new();
         for e in &envs {
-            let env = aws::init(Some(e.to_string()), None, Config::new(None, &e)).await;
-            let version = lister::lookup_version(
+            let env = provider::init(Some(e.to_string()), None, Config::new(None, &e)).await;
+            let version = grokker::lookup_version(
                 &env, &t.kind, &t.fqn, sandbox
             ).await;
             if let Some(ver) = version {

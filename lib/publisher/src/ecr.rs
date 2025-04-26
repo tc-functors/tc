@@ -1,5 +1,5 @@
-use aws::Env;
-use aws::ecr;
+use provider::Env;
+use provider::aws::ecr;
 
 use std::collections::HashMap;
 use kit as u;

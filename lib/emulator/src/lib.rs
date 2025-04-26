@@ -2,7 +2,7 @@ pub mod lambda;
 pub mod sfn;
 pub mod shell;
 
-use aws::Env;
+use provider::Env;
 use kit as u;
 
 

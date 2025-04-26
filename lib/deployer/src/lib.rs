@@ -11,7 +11,7 @@ pub mod channel;
 use colored::Colorize;
 use compiler::Topology;
 use compiler::spec::TopologyKind;
-use aws::Env;
+use provider::Env;
 
 pub fn maybe_component(c: Option<String>) -> String {
     match c {

@@ -1,7 +1,7 @@
 mod layer;
 mod ecr;
 
-use aws::Env;
+use provider::Env;
 use std::collections::HashMap;
 use compiler::spec::{BuildKind, BuildOutput};
 

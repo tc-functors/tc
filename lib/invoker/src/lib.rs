@@ -4,7 +4,7 @@ pub mod local;
 pub mod sfn;
 
 use compiler::TopologyKind;
-use aws::Env;
+use provider::Env;
 use kit as u;
 
 fn read_payload(dir: &str, s: Option<String>) -> String {

@@ -1,7 +1,7 @@
 use super::Context;
 use compiler::Topology;
 use super::{event, route, function};
-use aws::Env;
+use provider::Env;
 
 pub async fn resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
 

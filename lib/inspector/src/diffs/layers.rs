@@ -3,9 +3,9 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use aws::Env;
+use provider::Env;
 use configurator::Config;
-use aws::layer;
+use provider::aws::layer;
 use crate::cache;
 use crate::cache::Layer;
 

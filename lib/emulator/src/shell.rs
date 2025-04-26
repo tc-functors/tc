@@ -1,5 +1,5 @@
-use aws::layer;
-use aws::Env;
+use provider::aws::layer;
+use provider::Env;
 use kit as u;
 use kit::*;
 use std::collections::HashMap;

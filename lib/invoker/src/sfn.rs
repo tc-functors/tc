@@ -2,8 +2,8 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-use aws::sfn;
-use aws::Env;
+use provider::aws::sfn;
+use provider::Env;
 use kit as u;
 use kit::*;
 

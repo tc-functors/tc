@@ -1,8 +1,8 @@
-use aws::eventbridge;
+use provider::aws::eventbridge;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 
-use aws::Env;
+use provider::Env;
 
 // eventbridge
 #[derive(Serialize, Deserialize, Debug)]

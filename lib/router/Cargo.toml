@@ -1,9 +1,0 @@
-[package]
-name = "router"
-version.workspace = true
-edition = "2024"
-
-[dependencies]
-colored = "2.0.0"
-kit = { path = "../kit" }
-aws = { path = "../aws" }
