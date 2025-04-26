@@ -1,7 +1,7 @@
 use compiler::Event;
 use compiler::event::TargetKind;
-use aws::{eventbridge, lambda, appsync};
-use aws::Env;
+use provider::aws::{eventbridge, lambda, appsync};
+use provider::Env;
 use std::collections::HashMap;
 use colored::Colorize;
 

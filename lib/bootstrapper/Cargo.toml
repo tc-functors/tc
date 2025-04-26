@@ -1,0 +1,9 @@
+[package]
+name = "bootstrapper"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+kit = { path = "../kit" }
+provider = { path = "../provider" }
+configurator = { path = "../configurator" }

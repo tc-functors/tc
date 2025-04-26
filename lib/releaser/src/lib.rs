@@ -3,9 +3,13 @@ mod dynamo;
 mod tagger;
 mod notifier;
 mod github;
+mod router;
 mod git;
 
-use aws::Env;
+pub use router::{route, freeze, unfreeze};
+
+
+use provider::Env;
 
 pub async fn create_tag(next: &str, prefix: &str, suffix: &str, push: bool, is_dry_run: bool) {
     let tag = tagger::next_tag(&prefix, &next, &suffix);
@@ -76,4 +80,24 @@ pub fn unwind(prefix: &str) {
     git::fetch_tags();
     let version = git::latest_version(prefix);
     tagger::delete_current_minor(prefix, &version);
+}
+
+pub fn should_abort(sandbox: &str) -> bool {
+    let yes = match std::env::var("CIRCLECI") {
+        Ok(_) => false,
+        Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
+            Ok(_) => false,
+            Err(_) => true
+        }
+    };
+    yes && ( sandbox == "stable")
+}
+
+pub fn guard(sandbox: &str) {
+    if should_abort(sandbox) {
+        std::panic::set_hook(Box::new(|_| {
+            println!("Cannot create stable sandbox outside CI");
+        }));
+        panic!("Cannot create stable sandbox outside CI")
+    }
 }

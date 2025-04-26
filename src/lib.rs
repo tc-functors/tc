@@ -1,4 +1,4 @@
-use aws::Env;
+use provider::Env;
 use compiler::Topology;
 use compiler::spec::{BuildKind, FunctionSpec, BuildSpec, RuntimeInfraSpec};
 use configurator::Config;
@@ -266,7 +266,7 @@ pub async fn create(
         None => {
             let env = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
-            router::guard(&sandbox);
+            releaser::guard(&sandbox);
             let dir = u::pwd();
             println!("Compiling topology");
             let ct = compiler::compile(&dir, recursive);
@@ -305,7 +305,7 @@ async fn update_topology(env: &Env, topology: &Topology) {
 
 pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache: bool) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    router::guard(&sandbox);
+    releaser::guard(&sandbox);
     let start = Instant::now();
 
     println!("Compiling topology");
@@ -331,7 +331,7 @@ pub async fn update_component(
     recursive: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    router::guard(&sandbox);
+    releaser::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -348,7 +348,7 @@ pub async fn update_component(
 
 pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    router::guard(&sandbox);
+    releaser::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -368,7 +368,7 @@ pub async fn delete_component(
     recursive: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    router::guard(&sandbox);
+    releaser::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
@@ -389,9 +389,9 @@ pub async fn list(
     format: Option<String>,
 ) {
     if u::option_exists(component.clone()) {
-        lister::list_component(&env, sandbox, component, format).await;
+        grokker::list_component(&env, sandbox, component, format).await;
     } else {
-        lister::list(&env, sandbox).await;
+        grokker::list(&env, sandbox).await;
     }
 }
 
@@ -402,20 +402,20 @@ pub async fn scaffold() {
         "function" => {
             let function = compiler::current_function(&dir);
             match function {
-                Some(f) => scaffolder::create_function(&f.name, &f.dir).await,
+                Some(f) => bootstrapper::scaffold_function(&f.name, &f.dir).await,
                 None => panic!("No function found"),
             }
         }
         "step-function" => {
             let functions = compiler::just_functions();
             for (_, f) in functions {
-                scaffolder::create_function(&f.name, &f.dir).await;
+                bootstrapper::scaffold_function(&f.name, &f.dir).await;
             }
         }
         _ => {
             let function = compiler::current_function(&dir);
             match function {
-                Some(f) => scaffolder::create_function(&f.name, &f.dir).await,
+                Some(f) => bootstrapper::scaffold_function(&f.name, &f.dir).await,
                 None => panic!("No function found"),
             }
         }
@@ -432,13 +432,13 @@ pub async fn bootstrap(
     match role_name {
         Some(role) => {
             if create {
-                aws::bootstrap::create_role(&env, &role).await;
+                bootstrapper::create_role(&env, &role).await;
             } else if delete {
-                aws::bootstrap::delete_role(&env, &role).await;
+                bootstrapper::delete_role(&env, &role).await;
             } else if show {
-                aws::bootstrap::show_role(&env, &role).await;
+                bootstrapper::show_role(&env, &role).await;
             } else {
-                aws::bootstrap::show_role(&env, &role).await;
+                bootstrapper::show_role(&env, &role).await;
             }
         }
         None => println!("No role name given"),
@@ -522,7 +522,7 @@ pub async fn route(
     let event = u::maybe_string(event, "default");
     let sandbox = resolver::maybe_sandbox(sandbox);
     match rule {
-        Some(r) => router::route(&env, &event, &service, &sandbox, &r).await,
+        Some(r) => releaser::route(&env, &event, &service, &sandbox, &r).await,
         None => println!("Rule not specified")
     }
 }
@@ -530,7 +530,7 @@ pub async fn route(
 pub async fn freeze(env: Env, service: Option<String>, sandbox: String) {
     let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
     let name = format!("{}_{}", &service, &sandbox);
-    router::freeze(&env, &name).await;
+    releaser::freeze(&env, &name).await;
     let msg = format!("*{}*::{} is frozen", &env.name, sandbox);
     releaser::notify(&service, &msg).await
 }
@@ -538,7 +538,7 @@ pub async fn freeze(env: Env, service: Option<String>, sandbox: String) {
 pub async fn unfreeze(env: Env, service: Option<String>, sandbox: String) {
     let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
     let name = format!("{}_{}", &service, &sandbox);
-    router::unfreeze(&env, &name).await;
+    releaser::unfreeze(&env, &name).await;
     let msg = format!("{} is now unfrozen", &name);
     releaser::notify(&service, &msg).await;
 }
@@ -592,16 +592,16 @@ pub async fn download_layer(env: Env, name: Option<String>) {
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
     match profile {
-        Some(ref p) => aws::init(profile.clone(), assume_role, Config::new(None, &p)).await,
-        None => aws::init(profile, assume_role, Config::new(None, "")).await
+        Some(ref p) => provider::init(profile.clone(), assume_role, Config::new(None, &p)).await,
+        None => provider::init(profile, assume_role, Config::new(None, "")).await
     }
 }
 
 pub async fn init_repo_profile(profile: Option<String>) -> Env {
     match profile {
-        Some(ref p) => aws::init(profile.clone(), None, Config::new(None, &p)).await,
+        Some(ref p) => provider::init(profile.clone(), None, Config::new(None, &p)).await,
         None => {
-            let given_env = aws::init(profile, None, Config::new(None, "")).await;
+            let given_env = provider::init(profile, None, Config::new(None, "")).await;
             given_env.inherit(given_env.config.aws.lambda.layers_profile.to_owned())
         }
     }

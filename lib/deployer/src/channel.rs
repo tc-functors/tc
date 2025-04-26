@@ -1,6 +1,6 @@
 use compiler::Channel;
-use aws::appsync;
-use aws::Env;
+use provider::aws::appsync;
+use provider::Env;
 use std::collections::HashMap;
 
 pub async fn create(env: &Env, channels: &HashMap<String, Channel>) {

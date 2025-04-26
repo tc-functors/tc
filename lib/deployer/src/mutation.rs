@@ -1,7 +1,8 @@
 use compiler::Mutation;
-use aws::appsync;
-use aws::lambda;
-use aws::Env;
+use provider::aws::{
+    appsync, lambda
+};
+use provider::Env;
 use std::collections::HashMap;
 
 async fn add_permission(env: &Env, statement_id: &str, authorizer_arn: &str) {

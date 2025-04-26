@@ -1,7 +1,7 @@
 use kit as u;
 
-use aws::dynamo;
-use aws::Env;
+use provider::aws::dynamo;
+use provider::Env;
 
 pub async fn put_item(env: &Env, service: &str, version: &str, deploy_env: &str, dir: &str)  {
     let client = dynamo::make_client(env).await;

@@ -1,10 +1,12 @@
 use compiler::{Flow, LogConfig};
-use aws::cloudwatch;
-use aws::iam;
-use aws::iam::Role;
-use aws::sfn;
-use aws::sfn::StateMachine;
-use aws::Env;
+use provider::aws::{
+    cloudwatch,
+    iam,
+    iam::Role,
+    sfn,
+    sfn::StateMachine
+};
+use provider::Env;
 use std::collections::HashMap;
 
 pub async fn update_definition(env: &Env, tags: &HashMap<String,String>, flow: Flow) {

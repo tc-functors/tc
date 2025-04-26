@@ -1,5 +1,5 @@
-use aws::lambda;
-use aws::Env;
+use provider::aws::lambda;
+use provider::Env;
 
 pub async fn invoke(env: &Env, name: &str, payload: &str) {
     let client = lambda::make_client(env).await;

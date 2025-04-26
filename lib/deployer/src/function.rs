@@ -1,6 +1,6 @@
 use compiler::{Function, Lang};
-use aws::lambda;
-use aws::Env;
+use provider::aws::lambda;
+use provider::Env;
 //use aws::ecs;
 //use aws::ecs::TaskDef;
 use configurator::Config;

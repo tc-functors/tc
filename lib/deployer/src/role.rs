@@ -1,7 +1,7 @@
 use compiler;
-use aws::iam;
-use aws::iam::Role;
-use aws::Env;
+use provider::aws::iam;
+use provider::aws::iam::Role;
+use provider::Env;
 
 pub async fn delete(env: &Env, roles: &Vec<compiler::Role>) {
     let client = iam::make_client(env).await;

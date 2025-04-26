@@ -12,5 +12,5 @@ tracing = "0.1"
 cacache = "13.0.0"
 tabled = "0.10.0"
 kit = { path = "../kit" }
-aws = { path = "../aws" }
+provider = { path = "../provider" }
 compiler = { path = "../compiler" }

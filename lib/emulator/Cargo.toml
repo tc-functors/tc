@@ -10,5 +10,5 @@ serde_json = "1.0"
 serde_derive = "1.0"
 colored = "2.0.0"
 kit = { path = "../kit" }
-aws = { path = "../aws" }
+provider = { path = "../provider" }
 compiler = { path = "../compiler" }

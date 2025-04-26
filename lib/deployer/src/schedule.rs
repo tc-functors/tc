@@ -1,6 +1,6 @@
 use compiler::Schedule;
-use aws::scheduler;
-use aws::Env;
+use provider::aws::scheduler;
+use provider::Env;
 use std::collections::HashMap;
 
 pub async fn create_schedule(env: &Env, namespace: &str, schedule: Schedule) {

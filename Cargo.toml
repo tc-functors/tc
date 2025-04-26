@@ -23,7 +23,8 @@ openssl-sys = "0.9.107"
 clap-markdown = "0.1.4"
 doku = "0.21.1"
 kit =  { path = "lib/kit" }
-aws =  { path = "lib/aws" }
+provider =  { path = "lib/provider" }
+bootstrapper =  { path = "lib/bootstrapper" }
 configurator =  { path = "lib/configurator" }
 compiler =  { path = "lib/compiler" }
 resolver =  { path = "lib/resolver" }
@@ -33,9 +34,7 @@ invoker =  { path = "lib/invoker" }
 publisher =  { path = "lib/publisher" }
 emulator =  { path = "lib/emulator" }
 tester = { path = "lib/tester" }
-scaffolder = { path = "lib/scaffolder" }
-lister = { path = "lib/lister" }
-router = { path = "lib/router" }
+grokker = { path = "lib/grokker" }
 inspector = { path = "lib/inspector" }
 releaser = { path = "lib/releaser" }
 
@@ -51,7 +50,8 @@ mockall = "0.12.1"
 members = [
    "lib/kit",
    "lib/configurator",
-   "lib/aws",
+   "lib/bootstrapper",
+   "lib/provider",
    "lib/compiler",
    "lib/resolver",
    "lib/builder",
@@ -59,9 +59,7 @@ members = [
    "lib/publisher",
    "lib/emulator",
    "lib/tester",
-   "lib/scaffolder",
-   "lib/lister",
-   "lib/router",
+   "lib/grokker",
    "lib/inspector",
    "lib/releaser"
 ]

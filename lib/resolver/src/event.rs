@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use super::{Context, Topology};
 use compiler::{Event, Target, TargetKind, Mutation};
-use aws::appsync;
-use aws::Env;
+use provider::aws::appsync;
+use provider::Env;
 use kit as u;
 use kit::*;
 

@@ -1,11 +1,11 @@
-use aws::gatewayv2;
-use aws::gatewayv2::Api;
-use aws::lambda;
+use provider::aws::gatewayv2;
+use provider::aws::gatewayv2::Api;
+use provider::aws::lambda;
 use std::collections::HashMap;
 
 use compiler::Route;
 use compiler::route::TargetKind;
-use aws::Env;
+use provider::Env;
 use log::info;
 
 async fn make_api(env: &Env, role: &str, route: &Route) -> Api {
