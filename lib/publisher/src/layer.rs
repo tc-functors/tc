@@ -1,10 +1,17 @@
-use provider::aws::layer;
-use provider::Env;
 use colored::Colorize;
 use kit as u;
-use std::collections::HashMap;
-use std::env;
-use tabled::{Style, Table};
+use provider::{
+    Env,
+    aws::layer,
+};
+use std::{
+    collections::HashMap,
+    env,
+};
+use tabled::{
+    Style,
+    Table,
+};
 
 pub fn should_split(dir: &str) -> bool {
     let zipfile = "deps.zip";
@@ -36,7 +43,6 @@ pub async fn publish(env: &Env, lang: &str, layer_name: &str, zipfile: &str) {
 }
 
 async fn layer_arn(env: &Env, name: &str, version: Option<String>) -> String {
-
     match version {
         Some(v) => {
             let layer = format!("{}:{}", name, &v);
@@ -115,7 +121,6 @@ pub async fn list(env: &Env, layer_names: Vec<String>) -> String {
 }
 
 pub async fn download(env: &Env, name: &str) {
-
     let layer = env.resolve_layer(name).await;
     println!("Resolving layer: {}", &layer);
     let target_dir = format!("{}/layer", &u::pwd());
@@ -132,10 +137,12 @@ pub async fn download(env: &Env, name: &str) {
             u::sh(&format!("rm -rf {}", tmp_zip_file), &u::pwd());
             println!("Downloading to layer/ dir");
             u::download(&url, HashMap::new(), &tmp_zip_file).await;
-            u::sh(&format!("unzip -o {} -d {}", tmp_zip_file, target_dir),
-                  &tmp_dir);
+            u::sh(
+                &format!("unzip -o {} -d {}", tmp_zip_file, target_dir),
+                &tmp_dir,
+            );
             u::sh(&format!("rm -rf {}", tmp_zip_file), &u::pwd());
-        },
-        None => ()
+        }
+        None => (),
     }
 }

@@ -1,13 +1,11 @@
-use aws_sdk_ecr::{Client};
-
 use crate::Env;
+use aws_sdk_ecr::Client;
 use std::collections::HashMap;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;
     Client::new(&shared_config)
 }
-
 
 pub async fn put_image(client: &Client, repo: &str, manifest: &str, tag: &str) {
     client
@@ -19,7 +17,6 @@ pub async fn put_image(client: &Client, repo: &str, manifest: &str, tag: &str) {
         .await
         .unwrap();
 }
-
 
 pub async fn list_images(client: &Client, repository: &str) -> HashMap<String, String> {
     let rsp = client
@@ -34,7 +31,10 @@ pub async fn list_images(client: &Client, repository: &str) -> HashMap<String, S
     let mut h: HashMap<String, String> = HashMap::new();
 
     for image in images {
-        h.insert(image.image_tag().unwrap().to_string(), image.image_digest().unwrap().to_string());
+        h.insert(
+            image.image_tag().unwrap().to_string(),
+            image.image_digest().unwrap().to_string(),
+        );
     }
     h
 }

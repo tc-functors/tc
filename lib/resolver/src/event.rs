@@ -1,11 +1,20 @@
-use std::collections::HashMap;
-
-use super::{Context, Topology};
-use compiler::{Event, Target, TargetKind, Mutation};
-use provider::aws::appsync;
-use provider::Env;
+use super::{
+    Context,
+    Topology,
+};
+use compiler::{
+    Event,
+    Mutation,
+    Target,
+    TargetKind,
+};
 use kit as u;
 use kit::*;
+use provider::{
+    Env,
+    aws::appsync,
+};
+use std::collections::HashMap;
 
 fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {
     let Topology { functions, .. } = topology;
@@ -36,9 +45,7 @@ async fn get_graphql_arn_id(env: &Env, name: &str) -> Option<String> {
     }
 }
 
-
 async fn find_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
-
     // FIXME: mutations hashmap key is api-name. Using default
     let mutation = mutations.get("default").unwrap();
     let Mutation {
@@ -70,12 +77,9 @@ async fn find_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> Str
   }}
 }}"#
     )
-
 }
 
-
 async fn resolve_target(context: &Context, topology: &Topology, mut target: Target) -> Target {
-
     let Context { env, .. } = context;
     let name = topology.fqn.clone();
 
@@ -83,7 +87,7 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
         TargetKind::Function => fqn_of(context, topology, &target.name),
         TargetKind::Mutation => find_mutation(&target.name, &topology.mutations).await,
         TargetKind::StepFunction => name.clone(),
-        TargetKind::Channel => name.clone()
+        TargetKind::Channel => name.clone(),
     };
 
     let target_arn = match target.kind {
@@ -94,29 +98,26 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
                 Some(gid) => env.graphql_arn(&gid),
                 None => String::from("none"),
             }
-        },
+        }
         TargetKind::StepFunction => env.sfn_arn(&target_name),
-        TargetKind::Channel => target.arn
+        TargetKind::Channel => target.arn,
     };
     target.name = target_name;
     target.arn = target_arn;
     target
 }
 
-
 pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Event> {
-
     let Context { sandbox, .. } = ctx;
     let mut events: HashMap<String, Event> = HashMap::new();
 
     for (name, mut event) in topology.events.clone() {
         let mut targets: Vec<Target> = vec![];
 
-
         for target in &event.targets {
             let t = resolve_target(ctx, topology, target.clone()).await;
             targets.push(t);
-         }
+        }
 
         event.targets = targets;
 

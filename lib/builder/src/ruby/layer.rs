@@ -1,7 +1,6 @@
 use colored::Colorize;
-use kit as u;
-
 use compiler::spec::LangRuntime;
+use kit as u;
 
 fn gen_wrapper(dir: &str) {
     let f = format!(
@@ -88,7 +87,10 @@ fn copy(dir: &str) {
 
 pub fn zip(dir: &str, zipfile: &str) {
     if u::path_exists(dir, "build") {
-        let cmd = format!("cd build && find . -type d -name \".git\" | xargs rm -rf && rm -rf ruby/gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../{} . && cd -", zipfile);
+        let cmd = format!(
+            "cd build && find . -type d -name \".git\" | xargs rm -rf && rm -rf ruby/gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../{} . && cd -",
+            zipfile
+        );
         u::runcmd_quiet(&cmd, dir);
     }
 }
@@ -137,7 +139,13 @@ fn build_with_docker(dir: &str) {
     }
 }
 
-pub fn build(dir: &str, name: &str, _runtime: &LangRuntime, _pre: Vec<String>, _post: Vec<String>) -> String {
+pub fn build(
+    dir: &str,
+    name: &str,
+    _runtime: &LangRuntime,
+    _pre: Vec<String>,
+    _post: Vec<String>,
+) -> String {
     u::sh("rm -f deps.zip", dir);
     println!("Building   {}", name.blue());
     gen_wrapper(dir);

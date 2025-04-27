@@ -1,11 +1,15 @@
+use crate::{
+    function::Function,
+    spec::{
+        FunctionSpec,
+        LangRuntime,
+    },
+};
+use kit as u;
+use kit::*;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use walkdir::WalkDir;
-
-use crate::function::Function;
-use crate::spec::{LangRuntime, FunctionSpec};
-use kit as u;
-use kit::*;
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
     let function = Function::new(dir, dir, "", "");
@@ -87,7 +91,7 @@ fn standalone_layer(dir: &str) -> Layer {
 fn external_layers(dir: &str) -> Vec<Layer> {
     let fspec = FunctionSpec::new(dir);
     let mut layers: Vec<Layer> = vec![];
-    if let Some(runtime)  = fspec.runtime {
+    if let Some(runtime) = fspec.runtime {
         for x in runtime.layers {
             let layer = Layer {
                 kind: s!("external"),
@@ -146,7 +150,6 @@ pub fn discover() -> Vec<Layer> {
                 layers.push(layer);
                 let mut external = external_layers(&p);
                 layers.append(&mut external);
-
             } else {
                 let layer = standalone_layer(&p);
                 layers.push(layer)
@@ -160,7 +163,6 @@ pub fn discover() -> Vec<Layer> {
 pub fn find(functions: HashMap<String, Function>) -> Vec<Layer> {
     let mut layers: Vec<Layer> = vec![];
     for (path, f) in functions {
-
         match f.layer_name {
             Some(name) => {
                 if layerable(&path) {
@@ -180,7 +182,6 @@ pub fn find(functions: HashMap<String, Function>) -> Vec<Layer> {
             }
             None => (),
         }
-
     }
     layers.sort_by_key(|x| x.name.to_owned());
     layers

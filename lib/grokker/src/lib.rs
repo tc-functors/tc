@@ -5,14 +5,15 @@ pub mod mutation;
 pub mod sfn;
 pub mod topology;
 
-use provider::Env;
 use colored::Colorize;
-use kit as u;
-use topology::Record;
-
 use compiler::TopologyKind;
-
-use tabled::{Style, Table};
+use kit as u;
+use provider::Env;
+use tabled::{
+    Style,
+    Table,
+};
+use topology::Record;
 
 async fn list_sfn(env: &Env) {
     sfn::list(&env).await
@@ -51,7 +52,12 @@ pub fn pprint_topologies(records: Vec<Record>, format: &str) {
     }
 }
 
-pub async fn lookup_version(env: &Env, kind: &TopologyKind, fqn: &str, sandbox: &str) -> Option<String> {
+pub async fn lookup_version(
+    env: &Env,
+    kind: &TopologyKind,
+    fqn: &str,
+    sandbox: &str,
+) -> Option<String> {
     let name = topology::render(fqn, sandbox);
     let tags = topology::lookup_tags(env, kind, &name).await;
     tags.get("version").cloned()

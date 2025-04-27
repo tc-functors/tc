@@ -1,10 +1,15 @@
-use aws_sdk_lambda::primitives::SdkBody;
-use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::{Client, Error};
-use std::path::Path;
-use tokio::io::{AsyncBufReadExt, BufReader};
-
 use crate::Env;
+use aws_sdk_lambda::primitives::SdkBody;
+use aws_sdk_s3::{
+    Client,
+    Error,
+    primitives::ByteStream,
+};
+use std::path::Path;
+use tokio::io::{
+    AsyncBufReadExt,
+    BufReader,
+};
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;

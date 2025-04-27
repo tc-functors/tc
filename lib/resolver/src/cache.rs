@@ -1,6 +1,6 @@
-use tabled::Tabled;
-use kit as u;
 use compiler::Topology;
+use kit as u;
+use tabled::Tabled;
 
 fn cache_dir() -> String {
     String::from("/tmp/tc-resolver-cache")
@@ -29,7 +29,6 @@ pub fn has_key(key: &str) -> bool {
 pub fn clear() {
     u::sh(&format!("rm -rf {}", cache_dir()), &u::pwd());
 }
-
 
 pub fn make_key(namespace: &str, profile: &str, sandbox: &str) -> String {
     format!("{}.{}.{}", namespace, profile, sandbox)
@@ -68,7 +67,6 @@ pub fn list() -> Vec<CacheItem> {
         match x {
             Ok(r) => {
                 if !&r.key.starts_with("functions") || !&r.key.starts_with("root") {
-
                     let parts: Vec<&str> = r.key.split(".").collect();
                     let namespace = parts.clone().into_iter().nth(0).unwrap_or_default();
                     let env = parts.clone().into_iter().nth(1).unwrap_or_default();
@@ -79,13 +77,12 @@ pub fn list() -> Vec<CacheItem> {
                         env: env.to_string(),
                         sandbox: sandbox.to_string(),
                         time: u::ms_to_dt(r.time as i64).to_string(),
-                        size: u::file_size_human(r.size as f64)
-
+                        size: u::file_size_human(r.size as f64),
                     };
                     xs.push(c)
                 }
             }
-            Err(_) => ()
+            Err(_) => (),
         }
     }
     xs

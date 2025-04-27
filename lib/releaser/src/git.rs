@@ -1,4 +1,8 @@
-use kit::{pwd, sh, triml};
+use kit::{
+    pwd,
+    sh,
+    triml,
+};
 use regex::Regex;
 use semver::Version;
 
@@ -31,7 +35,10 @@ pub fn tag_revision(tag: &str) -> String {
 }
 
 pub fn commit_message(tag: &str) -> String {
-    let cmd = format!("git show --pretty=format:\"%B\" -n1 --no-patch {} | grep -v Co-authored | grep -iv \"Merge pull\" | head -n1", tag);
+    let cmd = format!(
+        "git show --pretty=format:\"%B\" -n1 --no-patch {} | grep -v Co-authored | grep -iv \"Merge pull\" | head -n1",
+        tag
+    );
     triml(&sh(&cmd, &pwd())).to_string()
 }
 
@@ -55,7 +62,6 @@ pub fn changelogs(from_sha: &str, to_sha: &str) -> String {
     }
 }
 
-
 pub fn fetch_tags() {
     sh("git fetch --tags", &pwd());
 }
@@ -65,13 +71,16 @@ pub fn create_tag(tag: &str, parent: Option<String>) {
         Some(p) => format!("git tag -f {} {}", tag, p),
         None => format!("git tag {}", tag),
     };
-    sh(&cmd,& pwd());
+    sh(&cmd, &pwd());
 }
 
 pub fn create_annotated_tag(tag: &str, parent: Option<String>) {
-    let cmd =  match parent {
-       Some(p) => format!("git -c user.name=tc-releaser -c user.email=tc-releaser@informed.iq tag -a {} {} -m \"{} release\"", tag, p, tag),
-       None => format!("git tag {}", tag)
+    let cmd = match parent {
+        Some(p) => format!(
+            "git -c user.name=tc-releaser -c user.email=tc-releaser@informed.iq tag -a {} {} -m \"{} release\"",
+            tag, p, tag
+        ),
+        None => format!("git tag {}", tag),
     };
     let out = sh(&cmd, &pwd());
     println!("annot: {}", out);
@@ -84,7 +93,8 @@ pub fn push_tag(tag: &str) {
 }
 
 pub fn current_repo() -> String {
-    sh("basename -s .git `git config --get remote.origin.url`",
-       &pwd()
+    sh(
+        "basename -s .git `git config --get remote.origin.url`",
+        &pwd(),
     )
 }

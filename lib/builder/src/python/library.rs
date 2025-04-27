@@ -1,6 +1,5 @@
 use kit as u;
 
-
 pub fn build(dir: &str, _name: &str) -> String {
     u::sh("rm -f deps.zip build", &dir);
     let dirs = u::list_dir(dir);

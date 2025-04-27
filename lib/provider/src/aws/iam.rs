@@ -1,8 +1,10 @@
-use aws_sdk_iam::config as iam_config;
-use aws_sdk_iam::config::retry::RetryConfig;
-use aws_sdk_iam::{Client, Error};
-
 use crate::Env;
+use aws_sdk_iam::{
+    Client,
+    Error,
+    config as iam_config,
+    config::retry::RetryConfig,
+};
 use kit::*;
 
 pub async fn make_client(env: &Env) -> Client {
@@ -56,11 +58,10 @@ impl Role {
         let res = self.client.get_role().role_name(&self.name).send().await;
         match res {
             Ok(_) => self.update().await?,
-            Err(_) => self.create().await
+            Err(_) => self.create().await,
         }
         Ok(())
     }
-
 
     pub async fn create_policy(&self) -> String {
         let res = self

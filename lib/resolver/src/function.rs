@@ -1,10 +1,16 @@
-use std::collections::HashMap;
-
 use super::Context;
-use compiler::{Function, Runtime, Topology, RuntimeInfraSpec};
-use compiler::function::runtime::{Network, FileSystem};
+use compiler::{
+    Function,
+    Runtime,
+    RuntimeInfraSpec,
+    Topology,
+    function::runtime::{
+        FileSystem,
+        Network,
+    },
+};
 use kit::*;
-
+use std::collections::HashMap;
 
 fn augment_vars(ctx: &Context, lang: &str) -> HashMap<String, String> {
     let mut hmap: HashMap<String, String> = HashMap::new();
@@ -20,7 +26,7 @@ fn augment_vars(ctx: &Context, lang: &str) -> HashMap<String, String> {
             } else {
                 hmap.insert(String::from("HONEYBADGER_ENV"), s!(profile));
             }
-        },
+        }
         _ => {
             if sandbox != "stable" {
                 hmap.insert(
@@ -39,9 +45,8 @@ async fn resolve_environment(
     ctx: &Context,
     lang: &str,
     default_vars: &HashMap<String, String>,
-    sandbox_vars: Option<HashMap<String, String>>
+    sandbox_vars: Option<HashMap<String, String>>,
 ) -> HashMap<String, String> {
-
     let Context { env, .. } = ctx;
     let mut default_vars = default_vars.clone();
 
@@ -53,29 +58,24 @@ async fn resolve_environment(
             default_vars.extend(v);
             default_vars
         }
-        None => default_vars
+        None => default_vars,
     };
 
     env.resolve_vars(combined.clone()).await
 }
 
-
 async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
-
     let Context { env, sandbox, .. } = ctx;
 
     match fs {
         Some(f) => Some(f),
         None => {
-
             let ap_name = match std::env::var("TC_EFS_AP") {
                 Ok(t) => t,
-                Err(_) => {
-                    match sandbox.as_ref() {
-                        "stable" => s!(&env.config.aws.efs.stable_ap),
-                        _ => s!(&env.config.aws.efs.dev_ap)
-                    }
-                }
+                Err(_) => match sandbox.as_ref() {
+                    "stable" => s!(&env.config.aws.efs.stable_ap),
+                    _ => s!(&env.config.aws.efs.dev_ap),
+                },
             };
             let arn = env.access_point_arn(&ap_name).await;
             match arn {
@@ -88,20 +88,16 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
                 }
                 _ => None,
             }
-
         }
     }
 }
 
 async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Network> {
-
     let Context { env, .. } = ctx;
 
     match network {
-
         Some(net) => Some(net),
         None => {
-
             let cfg = &env.config.aws.efs.network;
             let cfg_net = cfg.get(&env.name);
             match cfg_net {
@@ -111,23 +107,20 @@ async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Netw
                         security_groups: netc.security_groups.clone(),
                     };
                     Some(net)
-                },
-                None => None
+                }
+                None => None,
             }
-
         }
     }
 }
 
 async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
-
     let Context { env, sandbox, .. } = ctx;
     let mut xs: Vec<String> = vec![];
 
     for layer in layers {
         if layer.contains(":") {
             xs.push(env.layer_arn(&layer))
-
         } else if *sandbox != "stable" {
             let name = match std::env::var("TC_USE_STABLE_LAYERS") {
                 Ok(_) => layer,
@@ -144,55 +137,62 @@ async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
 fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> RuntimeInfraSpec {
     RuntimeInfraSpec {
         memory_size: match s.memory_size {
-            Some(p) => if p != 128 {
-                Some(p)
-            } else {
-                default.memory_size
-            },
-            None => default.memory_size
+            Some(p) => {
+                if p != 128 {
+                    Some(p)
+                } else {
+                    default.memory_size
+                }
+            }
+            None => default.memory_size,
         },
         timeout: match s.timeout {
-            Some(p) => if p != 300 {
-                Some(p)
-            } else {
-                default.timeout
-            },
-            None => default.timeout
+            Some(p) => {
+                if p != 300 {
+                    Some(p)
+                } else {
+                    default.timeout
+                }
+            }
+            None => default.timeout,
         },
         environment: match s.environment.clone() {
             Some(p) => {
                 let mut def = default.environment.clone().unwrap();
                 def.extend(p);
                 Some(def)
-            },
-            None => default.environment.clone()
+            }
+            None => default.environment.clone(),
         },
         image_uri: None,
         network: None,
         filesystem: None,
         provisioned_concurrency: match s.provisioned_concurrency {
             Some(p) => Some(p),
-            None => default.provisioned_concurrency
+            None => default.provisioned_concurrency,
         },
         reserved_concurrency: match s.reserved_concurrency {
             Some(p) => Some(p),
-            None => default.reserved_concurrency
+            None => default.reserved_concurrency,
         },
-        tags: None
+        tags: None,
     }
 }
 
-fn get_infra_spec(infra_spec: &HashMap<String, RuntimeInfraSpec>, profile: &str, sandbox: &str) -> RuntimeInfraSpec {
-
+fn get_infra_spec(
+    infra_spec: &HashMap<String, RuntimeInfraSpec>,
+    profile: &str,
+    sandbox: &str,
+) -> RuntimeInfraSpec {
     let profile_specific = infra_spec.get(profile);
     let sandbox_specific = infra_spec.get(sandbox);
     let default = infra_spec.get("default").unwrap();
 
     if let Some(s) = profile_specific {
-        return augment_infra_spec(&default, s)
+        return augment_infra_spec(&default, s);
     }
     if let Some(s) = sandbox_specific {
-        return augment_infra_spec(&default, s)
+        return augment_infra_spec(&default, s);
     }
 
     default.clone()
@@ -201,15 +201,33 @@ fn get_infra_spec(infra_spec: &HashMap<String, RuntimeInfraSpec>, profile: &str,
 async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     let Context { env, sandbox, .. } = ctx;
 
-    let Runtime { layers, network, fs, infra_spec, enable_fs, .. } = runtime;
+    let Runtime {
+        layers,
+        network,
+        fs,
+        infra_spec,
+        enable_fs,
+        ..
+    } = runtime;
     let mut r: Runtime = runtime.clone();
 
     let actual_infra = get_infra_spec(infra_spec, &env.name, sandbox);
-    let RuntimeInfraSpec { memory_size, timeout, environment, .. } = actual_infra;
+    let RuntimeInfraSpec {
+        memory_size,
+        timeout,
+        environment,
+        ..
+    } = actual_infra;
 
     r.memory_size = memory_size;
     r.timeout = timeout;
-    r.environment = resolve_environment(ctx, &runtime.lang.to_str(), &runtime.environment, environment).await;
+    r.environment = resolve_environment(
+        ctx,
+        &runtime.lang.to_str(),
+        &runtime.environment,
+        environment,
+    )
+    .await;
     if !layers.is_empty() {
         r.layers = resolve_layers(ctx, layers.clone()).await;
     }
@@ -222,7 +240,6 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
 }
 
 pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Function> {
-
     let fns = &topology.functions;
     let mut functions: HashMap<String, Function> = HashMap::new();
 

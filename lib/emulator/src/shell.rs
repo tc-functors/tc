@@ -1,9 +1,13 @@
-use provider::aws::layer;
-use provider::Env;
 use kit as u;
 use kit::*;
-use std::collections::HashMap;
-use std::env;
+use provider::{
+    Env,
+    aws::layer,
+};
+use std::{
+    collections::HashMap,
+    env,
+};
 
 async fn download(url: &str, target_dir: &str) {
     let tmp_path = env::temp_dir();
@@ -90,11 +94,19 @@ fn run_docker(name: &str, cmd: &str) {
 
 fn get_shell_cmd(lang: &str, name: &str) -> String {
     match lang {
-        "ruby3.2" => format!("docker run -v $(pwd)/build:/opt -v $(pwd):/var/task -e BUNDLE_CACHE_PATH=/opt/ruby/lib -e GEM_PATH=/opt/ruby/gems/3.2.0 -e RUBYLIB=/opt/ruby/lib -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e BUNDLE_GEMFILE=/opt/ruby/Gemfile -e AWS_REGION=us-west-2 -e Environment=dev -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"),
-        "python3.10" => format!("docker run -v $(pwd)/build:/opt -p 8888:8888 -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION=us-west-2 -e Environment=dev -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"),
-        "python3.11" => format!("docker run -v $(pwd)/build:/opt -p 8888:8888 -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION=us-west-2 -e Environment=dev -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"),
-    "python3.12" => format!("docker run -v $(pwd)/build:/opt -p 8888:8888 -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION=us-west-2 -e Environment=dev -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"),
-        _ => s!("")
+        "ruby3.2" => format!(
+            "docker run -v $(pwd)/build:/opt -v $(pwd):/var/task -e BUNDLE_CACHE_PATH=/opt/ruby/lib -e GEM_PATH=/opt/ruby/gems/3.2.0 -e RUBYLIB=/opt/ruby/lib -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e BUNDLE_GEMFILE=/opt/ruby/Gemfile -e AWS_REGION=us-west-2 -e Environment=dev -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"
+        ),
+        "python3.10" => format!(
+            "docker run -v $(pwd)/build:/opt -p 8888:8888 -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION=us-west-2 -e Environment=dev -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"
+        ),
+        "python3.11" => format!(
+            "docker run -v $(pwd)/build:/opt -p 8888:8888 -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION=us-west-2 -e Environment=dev -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"
+        ),
+        "python3.12" => format!(
+            "docker run -v $(pwd)/build:/opt -p 8888:8888 -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION=us-west-2 -e Environment=dev -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev -it --entrypoint /bin/bash build_{name}"
+        ),
+        _ => s!(""),
     }
 }
 

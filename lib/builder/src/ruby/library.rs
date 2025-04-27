@@ -6,7 +6,10 @@ pub fn build(dir: &str) -> String {
     u::run("mkdir -p build/ruby/lib && mkdir -p build/lib", &dir);
     for d in dirs {
         if !d.ends_with("build") {
-            let cmd = format!("cp -r {}/lib/* build/ruby/lib/ && cp -r {}/lib/* build/lib/", &d, &d);
+            let cmd = format!(
+                "cp -r {}/lib/* build/ruby/lib/ && cp -r {}/lib/* build/lib/",
+                &d, &d
+            );
             u::run(&cmd, &dir);
         }
     }
@@ -16,8 +19,7 @@ pub fn build(dir: &str) -> String {
     format!("{}/deps.zip", dir)
 }
 
-
-pub fn _merge_dirs(dirs: Vec<String>)  {
+pub fn _merge_dirs(dirs: Vec<String>) {
     let cwd = u::pwd();
     let zipfile = format!("{}/deps.zip", &cwd);
     let build_dir = format!("{}/build", &cwd);

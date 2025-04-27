@@ -1,14 +1,14 @@
+pub mod cache;
 mod context;
 mod event;
 mod function;
 mod route;
 mod topology;
-pub mod cache;
 
-pub use context::Context;
 use compiler::Topology;
-use provider::Env;
+pub use context::Context;
 use kit as u;
+use provider::Env;
 use std::collections::HashMap;
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
@@ -16,23 +16,25 @@ pub fn maybe_sandbox(s: Option<String>) -> String {
         Some(sandbox) => sandbox,
         None => match std::env::var("TC_SANDBOX") {
             Ok(e) => e,
-            Err(_) => panic!("Please specify sandbox or set TC_SANDBOX env variable")
-        }
+            Err(_) => panic!("Please specify sandbox or set TC_SANDBOX env variable"),
+        },
     }
 }
 
-pub async fn read_cached_topology(env_name: &str, namespace: &str, sandbox: &str) -> Option<Topology> {
+pub async fn read_cached_topology(
+    env_name: &str,
+    namespace: &str,
+    sandbox: &str,
+) -> Option<Topology> {
     let key = cache::make_key(namespace, env_name, sandbox);
     cache::read_topology(&key).await
 }
 
 pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Topology {
-
-
     let maybe_topology = if cache {
         match std::env::var("TC_CACHE") {
             Ok(_) => read_cached_topology(&env.name, &topology.namespace, sandbox).await,
-            Err(_) => None
+            Err(_) => None,
         }
     } else {
         None
@@ -56,11 +58,14 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool)
             root
         }
     }
-
 }
 
-pub async fn resolve_component(env: &Env, sandbox: &str, topology: &Topology, component: &str) -> Topology {
-
+pub async fn resolve_component(
+    env: &Env,
+    sandbox: &str,
+    topology: &Topology,
+    component: &str,
+) -> Topology {
     let mut root = topology::resolve_component(topology, env, sandbox, component).await;
     let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
     let nodes = &topology.nodes;
@@ -91,17 +96,17 @@ pub fn pprint(t: &Topology, component: Option<String>) -> String {
 
     match component.as_ref() {
         "functions" => u::pretty_json(&t.functions),
-        "flow"      => match &t.flow {
+        "flow" => match &t.flow {
             Some(f) => u::pretty_json(f),
-            _       => u::empty(),
+            _ => u::empty(),
         },
-        "events"    => u::pretty_json(&t.events),
+        "events" => u::pretty_json(&t.events),
         "schedules" => u::pretty_json(&t.schedules),
-        "routes"    => u::pretty_json(&t.routes),
+        "routes" => u::pretty_json(&t.routes),
         "mutations" => u::pretty_json(&t.mutations),
-        "basic"     => u::pretty_json(&t.version),
-        "all"       => u::pretty_json(&t),
-        _           => u::empty()
+        "basic" => u::pretty_json(&t.version),
+        "all" => u::pretty_json(&t),
+        _ => u::empty(),
     }
 }
 

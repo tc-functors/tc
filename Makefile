@@ -37,8 +37,8 @@ unit-test:
 integration-test:
 	cargo test --test integration_test --quiet
 
-lib-docs:
-	rustdoc src/lib.rs -o doc/lib --crate-name tc --edition 2021  --library-path $(TARGET_DIR)/release/deps
+fmt:
+	 cargo +nightly fmt
 
 ssl-musl:
 	sudo ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm
@@ -49,6 +49,3 @@ ssl-musl:
 
 clean:
 	rm -rf bin tc
-
-release-docs:
-	git subtree push --prefix docs/dist origin gh-pages

@@ -1,20 +1,28 @@
 use crate::Env;
-use aws_sdk_appsync::types::builders::{
-    AdditionalAuthenticationProviderBuilder, LambdaAuthorizerConfigBuilder,
+use aws_sdk_appsync::{
+    Client,
+    Error,
+    types::{
+        AdditionalAuthenticationProvider,
+        AuthenticationType,
+        LambdaAuthorizerConfig,
+        ResolverKind,
+        TypeDefinitionFormat,
+        builders::{
+            AdditionalAuthenticationProviderBuilder,
+            LambdaAuthorizerConfigBuilder,
+        },
+    },
 };
-use aws_sdk_appsync::types::LambdaAuthorizerConfig;
-use aws_sdk_appsync::types::{AdditionalAuthenticationProvider, AuthenticationType};
-use aws_sdk_appsync::types::{ResolverKind, TypeDefinitionFormat};
-use aws_sdk_appsync::{Client, Error};
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
 
 mod dynamodb;
 mod eventbridge;
+pub mod events;
 mod http;
 mod lambda;
-pub mod events;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;
@@ -73,12 +81,12 @@ pub async fn find_api_arn(client: &Client, name: &str) -> Option<String> {
             println!("{:?}", apis);
             for api in apis {
                 if api.name.unwrap() == name {
-                    return api.api_arn
+                    return api.api_arn;
                 }
             }
             None
-        },
-        Err(_) => None
+        }
+        Err(_) => None,
     }
 }
 
@@ -91,7 +99,7 @@ async fn create_api(
     client: &Client,
     name: &str,
     authorizer_arn: &str,
-    tags: HashMap<String, String>
+    tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     println!("Creating api {}", name.green());
     let auth_type = AuthenticationType::AwsLambda;
@@ -120,7 +128,7 @@ async fn update_api(
     name: &str,
     authorizer_arn: &str,
     api_id: &str,
-    _tags: HashMap<String, String>
+    _tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     println!("Updating api {}", name.blue());
     let auth_type = AuthenticationType::AwsLambda;
@@ -148,7 +156,7 @@ pub async fn create_or_update_api(
     client: &Client,
     name: &str,
     authorizer_arn: &str,
-    tags: HashMap<String, String>
+    tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {

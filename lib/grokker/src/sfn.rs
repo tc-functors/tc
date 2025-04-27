@@ -1,8 +1,13 @@
-use tabled::{Style, Table, Tabled};
-
-use provider::aws::sfn;
-use provider::Env;
 use kit as u;
+use provider::{
+    Env,
+    aws::sfn,
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 
 #[derive(Tabled, Clone, Debug, PartialEq)]
 struct Record {

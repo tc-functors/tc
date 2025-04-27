@@ -1,7 +1,9 @@
-use aws_sdk_ssm::types::ParameterType;
-use aws_sdk_ssm::{Client, Error};
-
 use crate::Env;
+use aws_sdk_ssm::{
+    Client,
+    Error,
+    types::ParameterType,
+};
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;

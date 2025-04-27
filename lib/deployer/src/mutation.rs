@@ -1,8 +1,11 @@
 use compiler::Mutation;
-use provider::aws::{
-    appsync, lambda
+use provider::{
+    Env,
+    aws::{
+        appsync,
+        lambda,
+    },
 };
-use provider::Env;
 use std::collections::HashMap;
 
 async fn add_permission(env: &Env, statement_id: &str, authorizer_arn: &str) {
@@ -22,7 +25,8 @@ async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, St
     } = mutation;
     let authorizer_arn = env.lambda_arn(&authorizer);
     let client = appsync::make_client(env).await;
-    let (api_id, _) = appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
+    let (api_id, _) =
+        appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
 
     add_permission(env, &api_name, &authorizer_arn).await;
     appsync::create_types(env, &api_id, types).await;
@@ -51,9 +55,8 @@ async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, St
 pub async fn create(
     env: &Env,
     mutations: &HashMap<String, Mutation>,
-    tags: &HashMap<String, String>
+    tags: &HashMap<String, String>,
 ) {
-
     for (_, mutation) in mutations {
         create_mutation(env, mutation.clone(), tags.clone()).await;
     }

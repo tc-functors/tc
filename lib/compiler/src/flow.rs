@@ -1,10 +1,17 @@
+use super::{
+    Role,
+    RoleKind,
+    role,
+    spec::TopologySpec,
+    template,
+};
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
-use super::spec::TopologySpec;
-use super::{template, role};
-use super::{Role, RoleKind};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flow {
@@ -12,7 +19,7 @@ pub struct Flow {
     pub arn: String,
     pub definition: Value,
     pub mode: String,
-    pub role: Role
+    pub role: Role,
 }
 
 fn read_definition(dir: &str, def: Value) -> Value {
@@ -30,7 +37,6 @@ fn read_definition(dir: &str, def: Value) -> Value {
     }
 }
 
-
 fn make_role(infra_dir: &str, fqn: &str) -> Role {
     let role_file = format!("{}/roles/sfn.json", infra_dir);
     let role_name = format!("tc-{}-sfn-role", fqn);
@@ -43,10 +49,7 @@ fn make_role(infra_dir: &str, fqn: &str) -> Role {
 }
 
 impl Flow {
-
     pub fn new(dir: &str, infra_dir: &str, fqn: &str, spec: &TopologySpec) -> Option<Flow> {
-
-
         let def = match &spec.flow {
             Some(f) => Some(read_definition(dir, f.clone())),
             None => spec.states.to_owned(),
@@ -54,19 +57,18 @@ impl Flow {
 
         let mode = match &spec.mode {
             Some(m) => m.to_string(),
-            None => s!("Express")
+            None => s!("Express"),
         };
 
         match def {
-            Some(definition) => Some(
-                Flow {
-                    name: s!(fqn),
-                    arn: template::sfn_arn(fqn),
-                    definition: definition,
-                    mode: mode,
-                    role: make_role(infra_dir, fqn)
-                }),
-            None => None
+            Some(definition) => Some(Flow {
+                name: s!(fqn),
+                arn: template::sfn_arn(fqn),
+                definition: definition,
+                mode: mode,
+                role: make_role(infra_dir, fqn),
+            }),
+            None => None,
         }
     }
 }

@@ -1,10 +1,14 @@
-use provider::aws::layer;
-use provider::Env;
 use colored::Colorize;
 use kit as u;
 use kit::*;
-use std::collections::HashMap;
-use std::env;
+use provider::{
+    Env,
+    aws::layer,
+};
+use std::{
+    collections::HashMap,
+    env,
+};
 
 async fn download(url: &str, target_dir: &str) {
     let tmp_path = env::temp_dir();
@@ -103,13 +107,19 @@ fn docker_run_cmd(name: &str, lang: &str) -> String {
         Err(_) => s!("dev"),
     };
     match lang {
-        "ruby3.2" => format!("docker run -p 9000:8080 -v $(pwd)/build:/opt -v $(pwd):/var/task -e BUNDLE_CACHE_PATH=/opt/ruby/lib -e GEM_PATH=/opt/ruby/gems/3.2.0 -v $HOME/.aws:/root/aws:ro -e RUBYLIB=/opt/ruby/lib -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e BUNDLE_GEMFILE=/opt/ruby/Gemfile -e AWS_REGION=us-west-2 -e Environment={env} -e AWS_PROFILE={env} -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"),
+        "ruby3.2" => format!(
+            "docker run -p 9000:8080 -v $(pwd)/build:/opt -v $(pwd):/var/task -e BUNDLE_CACHE_PATH=/opt/ruby/lib -e GEM_PATH=/opt/ruby/gems/3.2.0 -v $HOME/.aws:/root/aws:ro -e RUBYLIB=/opt/ruby/lib -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e BUNDLE_GEMFILE=/opt/ruby/Gemfile -e AWS_REGION=us-west-2 -e Environment={env} -e AWS_PROFILE={env} -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"
+        ),
 
-       "python3.10" => format!("docker run -p 9000:8080 -v $(pwd)/build:/opt -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -v $HOME/.aws:/root/aws:ro -e AWS_REGION=us-west-2 -e Environment={env} -e AWS_PROFILE={env} -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"),
+        "python3.10" => format!(
+            "docker run -p 9000:8080 -v $(pwd)/build:/opt -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -v $HOME/.aws:/root/aws:ro -e AWS_REGION=us-west-2 -e Environment={env} -e AWS_PROFILE={env} -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"
+        ),
 
-        "rust" | "janet" => format!("docker run --rm -p 9000:8080 -e AWS_REGION=us-west-2 -e Environment=dev build_{name}"),
+        "rust" | "janet" => format!(
+            "docker run --rm -p 9000:8080 -e AWS_REGION=us-west-2 -e Environment=dev build_{name}"
+        ),
 
-        _ => s!("")
+        _ => s!(""),
     }
 }
 

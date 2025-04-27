@@ -1,11 +1,15 @@
-use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
-use std::collections::HashMap;
-
-use provider::aws::sfn;
-use provider::Env;
 use kit as u;
 use kit::*;
+use provider::{
+    Env,
+    aws::sfn,
+};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use serde_json::Value;
+use std::collections::HashMap;
 
 fn get_id(arn: &str) -> &str {
     let xs = arn.split(":").collect::<Vec<&str>>();

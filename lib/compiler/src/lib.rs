@@ -1,44 +1,62 @@
 use std::path::Path;
 
-pub mod spec;
-pub mod topology;
-pub mod function;
-mod flow;
-mod mutation;
-mod schedule;
-pub mod event;
-pub mod route;
-mod queue;
-mod version;
-mod template;
-mod role;
-mod log;
-pub mod formatter;
-mod tag;
 mod channel;
+pub mod event;
+mod flow;
+pub mod formatter;
+pub mod function;
 mod graph;
+mod log;
+mod mutation;
+mod queue;
+mod role;
+pub mod route;
+mod schedule;
+pub mod spec;
+mod tag;
+mod template;
+pub mod topology;
+mod version;
 
-use walkdir::WalkDir;
-
-pub use function::layer::Layer;
-pub use mutation::{Mutation, Resolver};
-pub use schedule::Schedule;
-pub use topology::Topology;
-pub use function::{Function, Build, Runtime};
-pub use event::{Event, TargetKind, Target};
-pub use queue::Queue;
-pub use route::Route;
-pub use flow::Flow;
-pub use role::{Role, RoleKind};
-pub use log::LogConfig;
-pub use formatter::TopologyCount;
 pub use channel::Channel;
-use std::collections::HashMap;
-
-pub use spec::{TopologySpec, LangRuntime, Lang, RuntimeInfraSpec, BuildKind, TopologyKind};
-
+pub use event::{
+    Event,
+    Target,
+    TargetKind,
+};
+pub use flow::Flow;
+pub use formatter::TopologyCount;
+pub use function::{
+    Build,
+    Function,
+    Runtime,
+    layer::Layer,
+};
 use kit as u;
 use kit::*;
+pub use log::LogConfig;
+pub use mutation::{
+    Mutation,
+    Resolver,
+};
+pub use queue::Queue;
+pub use role::{
+    Role,
+    RoleKind,
+};
+pub use route::Route;
+pub use schedule::Schedule;
+pub use spec::{
+    BuildKind,
+    Lang,
+    LangRuntime,
+    RuntimeInfraSpec,
+    TopologyKind,
+    TopologySpec,
+};
+use std::collections::HashMap;
+pub use topology::Topology;
+use walkdir::WalkDir;
 
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
@@ -54,7 +72,7 @@ pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let spec = TopologySpec::new(&f);
     let given_root_dirs = match &spec.nodes.dirs {
         Some(dirs) => dirs,
-        None => &list_dirs(dir)
+        None => &list_dirs(dir),
     };
     let mut h: HashMap<String, Topology> = HashMap::new();
     for d in given_root_dirs {
@@ -108,7 +126,6 @@ pub fn find_buildables(dir: &str, recursive: bool) -> Vec<Build> {
     xs
 }
 
-
 pub fn find_layer_names() -> Vec<String> {
     let mut xs: Vec<String> = vec![];
     let layers = find_layers();
@@ -125,9 +142,7 @@ pub fn guess_runtime(dir: &str) -> LangRuntime {
 pub fn guess_build_runtime(dir: &str, kind: BuildKind) -> LangRuntime {
     match kind {
         BuildKind::Code => function::runtime::infer_lang(dir),
-        BuildKind::Layer | BuildKind::Library => {
-            function::runtime::infer_lang(&dir)
-        },
+        BuildKind::Layer | BuildKind::Library => function::runtime::infer_lang(&dir),
         _ => function::runtime::infer_lang(dir),
     }
 }
@@ -147,7 +162,7 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             let f = format!("{}/topology.yml", &u::pwd());
             let spec = TopologySpec::new(&f);
             u::pretty_json(spec)
-        },
+        }
         "layers" => {
             let layers = find_layers();
             u::pretty_json(layers)
@@ -218,7 +233,15 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
         "mutations" => {
             let topology = compile(&dir, recursive);
             if format == "graphql" {
-                mutation::print_graphql(&topology.mutations.values().into_iter().nth(0).unwrap().types);
+                mutation::print_graphql(
+                    &topology
+                        .mutations
+                        .values()
+                        .into_iter()
+                        .nth(0)
+                        .unwrap()
+                        .types,
+                );
                 u::empty()
             } else {
                 u::pretty_json(&topology.mutations)
@@ -236,14 +259,13 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
                 "json" => u::pretty_json(&topology.nodes),
                 _ => u::pretty_json(&topology.nodes),
             }
-
         }
 
         "topologies" => {
             let topologies = list_topologies();
             match format {
                 "table" => formatter::print_topologies(topologies),
-                _ =>  {
+                _ => {
                     for (dir, basic_spec) in topologies {
                         let Topology { namespace, .. } = basic_spec;
                         println!("{} - {}", &namespace, u::second(&dir, "/services/"));
@@ -260,7 +282,7 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
                 println!("{} - {}", &name, &dir);
             }
             u::empty()
-        },
+        }
 
         "all" => {
             let topology = compile(&dir, false);
@@ -269,8 +291,8 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
                     let tree = topology.build_tree();
                     kit::print_tree(tree);
                     u::empty()
-                },
-                _ => u::empty()
+                }
+                _ => u::empty(),
             }
         }
 
@@ -361,13 +383,19 @@ pub fn list_topology_dirs() -> HashMap<String, String> {
 }
 
 pub fn count_of(topology: &Topology) -> String {
-
-    let Topology { functions, mutations, events, queues, routes, .. } = topology;
+    let Topology {
+        functions,
+        mutations,
+        events,
+        queues,
+        routes,
+        ..
+    } = topology;
 
     let mut f: usize = functions.len();
     let mut m: usize = match mutations.get("default") {
         Some(mx) => mx.resolvers.len(),
-        _ => 0
+        _ => 0,
     };
     let mut e: usize = events.len();
     let mut q: usize = queues.len();
@@ -376,18 +404,32 @@ pub fn count_of(topology: &Topology) -> String {
     let nodes = &topology.nodes;
 
     for (_, node) in nodes {
-        let Topology { functions, mutations, events, queues, routes, .. } = node;
-        f = f  + functions.len();
+        let Topology {
+            functions,
+            mutations,
+            events,
+            queues,
+            routes,
+            ..
+        } = node;
+        f = f + functions.len();
         m = m + match mutations.get("default") {
             Some(mx) => mx.resolvers.len(),
-            _ => 0
+            _ => 0,
         };
         e = e + events.len();
         q = q + queues.len();
         r = r + routes.len();
     }
 
-    let msg = format!("{} nodes, {} functions, {} mutations, {} events, {} routes, {} queues",
-                      nodes.len() + 1, f, m, e, r, q);
+    let msg = format!(
+        "{} nodes, {} functions, {} mutations, {} events, {} routes, {} queues",
+        nodes.len() + 1,
+        f,
+        m,
+        e,
+        r,
+        q
+    );
     msg
 }

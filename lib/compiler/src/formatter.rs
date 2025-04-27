@@ -1,6 +1,10 @@
-use std::collections::HashMap;
 use super::Topology;
-use tabled::{Tabled, Table, Style};
+use std::collections::HashMap;
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 
 #[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct TopologyCount {
@@ -12,18 +16,25 @@ pub struct TopologyCount {
     pub queues: usize,
     pub routes: usize,
     pub mutations: usize,
-    pub states: usize
+    pub states: usize,
 }
 
 impl TopologyCount {
-
     pub fn new(topology: &Topology) -> TopologyCount {
-
-       let Topology { namespace, kind, functions, mutations, events, queues, routes, .. } = topology;
+        let Topology {
+            namespace,
+            kind,
+            functions,
+            mutations,
+            events,
+            queues,
+            routes,
+            ..
+        } = topology;
         let mut f: usize = functions.len();
         let mut m: usize = match mutations.get("default") {
             Some(mx) => mx.resolvers.len(),
-            _ => 0
+            _ => 0,
         };
         let mut e: usize = events.len();
         let mut q: usize = queues.len();
@@ -32,11 +43,18 @@ impl TopologyCount {
         let nodes = &topology.nodes;
 
         for (_, node) in nodes {
-            let Topology { functions, mutations, events, queues, routes, .. } = node;
-            f = f  + functions.len();
+            let Topology {
+                functions,
+                mutations,
+                events,
+                queues,
+                routes,
+                ..
+            } = node;
+            f = f + functions.len();
             m = m + match mutations.get("default") {
                 Some(mx) => mx.resolvers.len(),
-                _ => 0
+                _ => 0,
             };
             e = e + events.len();
             q = q + queues.len();
@@ -52,7 +70,7 @@ impl TopologyCount {
             queues: q,
             routes: r,
             mutations: m,
-            states: 0
+            states: 0,
         }
     }
 }

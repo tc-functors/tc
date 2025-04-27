@@ -1,5 +1,8 @@
+use super::{
+    Context,
+    Topology,
+};
 use compiler::Route;
-use super::{Context, Topology};
 use std::collections::HashMap;
 
 fn is_stable(sandbox: &str) -> bool {

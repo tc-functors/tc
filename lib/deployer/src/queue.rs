@@ -1,8 +1,12 @@
 use compiler::Queue;
-use provider::aws::lambda;
-use provider::aws::lambda::LambdaClient;
-use provider::aws::sqs;
-use provider::Env;
+use provider::{
+    Env,
+    aws::{
+        lambda,
+        lambda::LambdaClient,
+        sqs,
+    },
+};
 use std::collections::HashMap;
 
 async fn create_producer(lambda_client: &LambdaClient, name: &str, sqs_arn: &str) {

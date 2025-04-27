@@ -1,26 +1,28 @@
-use kit::*;
-use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
-use crate::spec::Consumes;
 use super::template;
+use crate::spec::Consumes;
 use configurator::Config;
+use kit::*;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TargetKind {
     Function,
     Mutation,
     StepFunction,
-    Channel
+    Channel,
 }
 
 impl TargetKind {
-
     pub fn to_str(&self) -> String {
         match self {
             TargetKind::Function => s!("function"),
             TargetKind::Mutation => s!("appsync"),
             TargetKind::StepFunction => s!("sfn"),
-            TargetKind::Channel => s!("channel")
+            TargetKind::Channel => s!("channel"),
         }
     }
 }
@@ -52,7 +54,6 @@ pub struct Target {
 }
 
 impl Target {
-
     fn new(
         kind: TargetKind,
         id: &str,
@@ -62,10 +63,7 @@ impl Target {
         consumer_ns: &str,
         input_paths_map: Option<HashMap<String, String>>,
         input_template: Option<String>,
-
-
     ) -> Target {
-
         let abbr_id = if id.chars().count() >= 64 {
             format!("{}-{}", kind.to_str(), &kit::abbreviate(id, "-"))
         } else {
@@ -81,7 +79,7 @@ impl Target {
             arn: s!(arn),
             role_arn: template::role_arn("tc-base-event-role"),
             input_paths_map: input_paths_map,
-            input_template: input_template
+            input_template: input_template,
         }
     }
 }
@@ -90,9 +88,8 @@ pub fn make_targets(
     namespace: &str,
     event_name: &str,
     consumes: &Consumes,
-    fallback_fqn: &str
+    fallback_fqn: &str,
 ) -> Vec<Target> {
-
     let Consumes {
         producer_ns,
         producer,
@@ -120,12 +117,12 @@ pub fn make_targets(
             &producer_ns,
             &consumer_ns,
             None,
-            None
+            None,
         );
         xs.push(t);
     }
 
-    if !functions.is_empty()  {
+    if !functions.is_empty() {
         for f in functions {
             let id = format!("{}_{}_target", event_name, &f);
             let arn = template::lambda_arn(&f);
@@ -137,13 +134,12 @@ pub fn make_targets(
                 &producer_ns,
                 &consumer_ns,
                 None,
-                None
+                None,
             );
             xs.push(t);
         }
     }
     if let Some(m) = mutation {
-
         let id = format!("{}_appsync_target", event_name);
         let mut h: HashMap<String, String> = HashMap::new();
         h.insert(s!("detail"), s!("$.detail"));
@@ -160,7 +156,7 @@ pub fn make_targets(
             &producer_ns,
             &consumer_ns,
             input_paths_map,
-            input_template
+            input_template,
         );
         xs.push(t);
     }
@@ -175,7 +171,7 @@ pub fn make_targets(
             &producer_ns,
             &consumer_ns,
             None,
-            None
+            None,
         );
         xs.push(t)
     }
@@ -194,7 +190,7 @@ pub fn make_targets(
             &producer_ns,
             &consumer_ns,
             input_paths_map,
-            None
+            None,
         );
         xs.push(t)
     }
@@ -211,7 +207,7 @@ pub fn make_targets(
             &producer_ns,
             &consumer_ns,
             None,
-            None
+            None,
         );
         xs.push(t)
     }
@@ -229,11 +225,11 @@ pub struct Detail {
 impl Detail {
     fn new(filter: Option<String>) -> Option<Detail> {
         match filter {
-        Some(f) => {
-            let d: Detail = serde_json::from_str(&f).unwrap();
-            Some(d)
-        }
-        None => None,
+            Some(f) => {
+                let d: Detail = serde_json::from_str(&f).unwrap();
+                Some(d)
+            }
+            None => None,
         }
     }
 }
@@ -249,7 +245,6 @@ pub struct EventPattern {
 }
 
 impl EventPattern {
-
     fn new(event_name: &str, source: &str, filter: Option<String>) -> EventPattern {
         let detail = Detail::new(filter);
 
@@ -280,15 +275,13 @@ pub struct Event {
 }
 
 impl Event {
-
     pub fn new(
         event_name: &str,
         consumer_spec: &Consumes,
         targets: Vec<Target>,
         config: &Config,
-        skip: bool
+        skip: bool,
     ) -> Event {
-
         let Consumes {
             rule_name,
             producer,
@@ -298,23 +291,24 @@ impl Event {
             ..
         } = consumer_spec;
 
-
         let pattern = match pattern {
             Some(p) => {
                 let pp: EventPattern = serde_json::from_str(&p).unwrap();
                 pp
-            },
-            None => EventPattern::new(event_name, producer, filter.clone())
+            }
+            None => EventPattern::new(event_name, producer, filter.clone()),
         };
 
         let bus = &config.aws.eventbridge.bus;
         let rule_prefix = &config.aws.eventbridge.rule_prefix;
         let rule_name = match rule_name {
             Some(r) => s!(r),
-            None => format!("{}{{{{namespace}}}}-{}-{{{{sandbox}}}}",
-                            rule_prefix, s!(event_name))
+            None => format!(
+                "{}{{{{namespace}}}}-{}-{{{{sandbox}}}}",
+                rule_prefix,
+                s!(event_name)
+            ),
         };
-
 
         Event {
             skip: skip,

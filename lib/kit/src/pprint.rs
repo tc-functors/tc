@@ -1,12 +1,29 @@
-use indicatif::{ProgressBar, ProgressStyle};
-use ptree::item::StringItem;
-use ptree::output::print_tree_with;
-use ptree::print_config::{StyleWhen, UTF_CHARS_DASHED};
-use ptree::{Color, PrintConfig};
-use std::env;
-use std::io::Error;
-use std::io::Write;
-use tabled::{Style, Table, Tabled};
+use indicatif::{
+    ProgressBar,
+    ProgressStyle,
+};
+use ptree::{
+    Color,
+    PrintConfig,
+    item::StringItem,
+    output::print_tree_with,
+    print_config::{
+        StyleWhen,
+        UTF_CHARS_DASHED,
+    },
+};
+use std::{
+    env,
+    io::{
+        Error,
+        Write,
+    },
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 
 pub fn progress() -> ProgressBar {
     let bar = ProgressBar::new(100);

@@ -1,15 +1,22 @@
+mod node;
 mod python;
 mod ruby;
 mod rust;
-mod node;
 
 use colored::Colorize;
-use std::str::FromStr;
-use compiler::Layer;
+use compiler::{
+    Layer,
+    spec::{
+        BuildKind,
+        BuildOutput,
+        Lang,
+        LangRuntime,
+    },
+};
 use glob::glob;
 use kit as u;
 use kit::sh;
-use compiler::spec::{LangRuntime, Lang, BuildKind, BuildOutput};
+use std::str::FromStr;
 
 fn _should_split(dir: &str) -> bool {
     let zipfile = "deps.zip";
@@ -85,7 +92,6 @@ pub fn just_build_out(
     vec![out]
 }
 
-
 #[rustfmt::skip]
 pub async fn build(
     dir: &str,
@@ -151,44 +157,54 @@ fn should_build(layer: &Layer, dirty: bool) -> bool {
 pub async fn build_recursive(
     dirty: bool,
     kind: Option<BuildKind>,
-    image_kind: Option<String>
+    image_kind: Option<String>,
 ) -> Vec<BuildOutput> {
-
     let mut outs: Vec<BuildOutput> = vec![];
 
     let knd = match kind {
         Some(k) => k,
-        None => BuildKind::Code
+        None => BuildKind::Code,
     };
 
-
     match knd {
-
         BuildKind::Code => {
             let buildables = compiler::find_buildables(&u::pwd(), true);
             tracing::debug!("Building recursively {}", buildables.len());
             for b in buildables {
-                let mut out = build(&b.dir, None, Some(BuildKind::Code), image_kind.clone(), None).await;
+                let mut out = build(
+                    &b.dir,
+                    None,
+                    Some(BuildKind::Code),
+                    image_kind.clone(),
+                    None,
+                )
+                .await;
                 outs.append(&mut out);
             }
-        },
+        }
 
         BuildKind::Layer => {
             let layers = compiler::find_layers();
             for layer in layers.clone() {
                 if should_build(&layer, dirty) {
-                    let mut out = build(&layer.path, Some(layer.name), Some(BuildKind::Layer), None, None).await;
+                    let mut out = build(
+                        &layer.path,
+                        Some(layer.name),
+                        Some(BuildKind::Layer),
+                        None,
+                        None,
+                    )
+                    .await;
                     outs.append(&mut out)
                 }
             }
-        },
+        }
 
         BuildKind::Inline => {
             println!("building inline")
-        },
+        }
 
-        _ => todo!()
-
+        _ => todo!(),
     }
     outs
 }
@@ -197,18 +213,21 @@ pub fn clean_lang(dir: &str) {
     let lang = compiler::guess_lang(dir);
 
     match lang {
-        Lang::Ruby    => ruby::clean(dir),
-        Lang::Python  => python::clean(dir),
-        Lang::Rust    => rust::clean(dir),
-        Lang::Node    => node::clean(dir),
+        Lang::Ruby => ruby::clean(dir),
+        Lang::Python => python::clean(dir),
+        Lang::Rust => rust::clean(dir),
+        Lang::Node => node::clean(dir),
         Lang::Clojure => todo!(),
-        Lang::Go      => todo!()
+        Lang::Go => todo!(),
     }
 }
 
 pub fn clean(recursive: bool) {
     let buildables = compiler::find_buildables(&u::pwd(), recursive);
     for b in buildables {
-        kit::sh("rm -f lambda.zip && rm -rf build && rm -f bootstrap", &b.dir);
+        kit::sh(
+            "rm -f lambda.zip && rm -rf build && rm -f bootstrap",
+            &b.dir,
+        );
     }
 }

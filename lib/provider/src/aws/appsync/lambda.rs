@@ -1,6 +1,11 @@
-use aws_sdk_appsync::types::builders::LambdaDataSourceConfigBuilder;
-use aws_sdk_appsync::types::{DataSourceType, LambdaDataSourceConfig};
-use aws_sdk_appsync::Client;
+use aws_sdk_appsync::{
+    Client,
+    types::{
+        DataSourceType,
+        LambdaDataSourceConfig,
+        builders::LambdaDataSourceConfigBuilder,
+    },
+};
 use kit::*;
 
 fn make_lambda_config(lambda_arn: &str) -> LambdaDataSourceConfig {

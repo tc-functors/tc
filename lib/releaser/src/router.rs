@@ -1,8 +1,13 @@
-use provider::aws::{eventbridge, sfn};
-use provider::Env;
+use colored::Colorize;
 use kit as u;
 use kit::*;
-use colored::Colorize;
+use provider::{
+    Env,
+    aws::{
+        eventbridge,
+        sfn,
+    },
+};
 use std::io::stdout;
 
 fn target_id(name: &str) -> String {
@@ -34,7 +39,7 @@ pub async fn freeze(env: &Env, name: &str) {
     let arn = env.sfn_arn(name);
     let version = sfn::get_tag(&client, &arn, s!("version")).await;
     if &version != "0.0.1" && !&version.is_empty() {
-        let _ = log_update.render(&format!("Freezing {} ({})", name, version.blue() ));
+        let _ = log_update.render(&format!("Freezing {} ({})", name, version.blue()));
         let kv = u::kv("freeze", "true");
         let _ = sfn::update_tags(&client, &arn, kv).await;
     }
@@ -46,7 +51,7 @@ pub async fn unfreeze(env: &Env, name: &str) {
     let arn = env.sfn_arn(name);
     let version = sfn::get_tag(&client, &arn, s!("version")).await;
     if &version != "0.0.1" && !&version.is_empty() {
-        let _ = log_update.render(&format!("Unfreezing {} ({})", name, version.blue() ));
+        let _ = log_update.render(&format!("Unfreezing {} ({})", name, version.blue()));
         let kv = u::kv("freeze", "false");
         let _ = sfn::update_tags(&client, &arn, kv).await;
     }

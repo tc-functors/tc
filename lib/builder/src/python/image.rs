@@ -1,18 +1,16 @@
-use kit as u;
-use kit::sh;
 use super::LangRuntime;
-
 use compiler::spec::ImageSpec;
 use configurator::Config;
+use kit as u;
+use kit::sh;
 use std::collections::HashMap;
-
 
 fn find_build_image(runtime: &LangRuntime) -> String {
     let tag = match runtime {
         LangRuntime::Python310 => "python3.10:latest",
         LangRuntime::Python311 => "python3.11:latest",
         LangRuntime::Python312 => "python3.12:latest",
-        _ => todo!()
+        _ => todo!(),
     };
     format!("public.ecr.aws/sam/build-{}", &tag)
 }
@@ -22,14 +20,16 @@ fn find_runtime_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python310 => "python:3.10",
         LangRuntime::Python311 => "python:3.11",
         LangRuntime::Python312 => "python:3.12",
-        _ => todo!()
+        _ => todo!(),
     };
     format!("public.ecr.aws/lambda/{}", &tag)
 }
 
 fn gen_req_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
-        format!("pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt")
+        format!(
+            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+        )
     } else {
         format!("echo 0")
     }
@@ -55,7 +55,7 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) 
     let pip_cmd = "pip install -vv -r requirements.txt --target /build/python";
 
     let f = format!(
-            r#"
+        r#"
 FROM {build_image} AS build-image
 
 WORKDIR /var/task
@@ -78,16 +78,15 @@ COPY --from=build-image /build/python /opt/python
 COPY --from=build-image /model /model
 
 "#
-        );
-        let dockerfile = format!("{}/Dockerfile", dir);
-        u::write_str(&dockerfile, &f);
+    );
+    let dockerfile = format!("{}/Dockerfile", dir);
+    u::write_str(&dockerfile, &f);
 }
-
 
 fn gen_code_dockerfile(dir: &str, base_image: &str, commands: Vec<String>) {
     let commands = deps_str(commands);
     let f = format!(
-            r#"
+        r#"
 FROM {base_image}
 
 RUN {commands}
@@ -96,14 +95,16 @@ COPY . /var/task
 
 CMD [ "handler.handler" ]
 "#
-        );
+    );
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
 }
 
 fn build_with_docker(dir: &str, name: &str) {
     let cmd_str = format!(
-        "docker buildx build --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .", name);
+        "docker buildx build --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .",
+        name
+    );
     match std::env::var("TC_TRACE") {
         Ok(_) => u::runcmd_stream(&cmd_str, dir),
         Err(_) => {
@@ -116,24 +117,23 @@ fn build_with_docker(dir: &str, name: &str) {
     }
 }
 
- fn render_uri(uri: &str, repo: &str) -> String {
-     let mut table: HashMap<&str, &str> = HashMap::new();
-     table.insert("repo", repo);
-     u::stencil(uri, table)
- }
+fn render_uri(uri: &str, repo: &str) -> String {
+    let mut table: HashMap<&str, &str> = HashMap::new();
+    table.insert("repo", repo);
+    u::stencil(uri, table)
+}
 
 fn find_base_image_name(
     repo: &str,
     func_name: &str,
     images: &HashMap<String, ImageSpec>,
 ) -> String {
-
     let version = match images.get("base") {
         Some(b) => match &b.version {
             Some(v) => v,
-            None => "latest"
+            None => "latest",
         },
-        None => "latest"
+        None => "latest",
     };
 
     format!("{}/base:{}-{}", repo, func_name, version)
@@ -143,14 +143,13 @@ fn find_parent_image_name(
     repo: &str,
     func_name: &str,
     images: &HashMap<String, ImageSpec>,
-    parent: Option<String>
+    parent: Option<String>,
 ) -> String {
     let parent = u::maybe_string(parent, "base");
     match parent.as_ref() {
         "base" => find_base_image_name(repo, func_name, images),
-        _ => render_uri(&parent, repo)
+        _ => render_uri(&parent, repo),
     }
-
 }
 
 pub fn build(
@@ -161,60 +160,46 @@ pub fn build(
     images: &HashMap<String, ImageSpec>,
     uri: &str,
 ) -> String {
-
     let image_spec = match images.get(image_kind) {
         Some(p) => p,
-        None => panic!("No image spec specified in build:images")
+        None => panic!("No image spec specified in build:images"),
     };
 
     let config = Config::new(None, "dev");
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
-        Err(_) => &config.aws.ecr.repo
+        Err(_) => &config.aws.ecr.repo,
     };
 
     let image_dir = match &image_spec.dir {
         Some(d) => &d,
-        None => dir
+        None => dir,
     };
-
-
 
     let uri = render_uri(uri, repo);
 
     match image_kind {
         "code" => {
-            let parent_image_name = find_parent_image_name(
-                repo,
-                name,
-                &images,
-                image_spec.parent.clone()
-            );
-            gen_code_dockerfile(
-                image_dir,
-                &parent_image_name,
-                image_spec.commands.clone(),
-
-            );
-            tracing::debug!("Building {} with parent {}",
-                            uri, &parent_image_name);
+            let parent_image_name =
+                find_parent_image_name(repo, name, &images, image_spec.parent.clone());
+            gen_code_dockerfile(image_dir, &parent_image_name, image_spec.commands.clone());
+            tracing::debug!("Building {} with parent {}", uri, &parent_image_name);
             build_with_docker(image_dir, &uri);
             sh("rm -rf Dockerfile build build.json", image_dir);
             uri.to_string()
         }
         "base" => {
             let base_image_name = find_base_image_name(repo, name, images);
-            gen_base_dockerfile(
+            gen_base_dockerfile(image_dir, runtime, image_spec.commands.clone());
+            tracing::debug!(
+                "Building image dir: {} name: {}",
                 image_dir,
-                runtime,
-                image_spec.commands.clone()
+                &base_image_name
             );
-            tracing::debug!("Building image dir: {} name: {}",
-                            image_dir, &base_image_name);
             build_with_docker(image_dir, &base_image_name);
             sh("rm -rf Dockerfile build build.json", image_dir);
             base_image_name
-        },
-        _ => panic!("Invalid image kind")
+        }
+        _ => panic!("Invalid image kind"),
     }
 }

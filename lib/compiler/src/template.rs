@@ -1,5 +1,3 @@
-
-
 pub fn role_arn(name: &str) -> String {
     format!("arn:aws:iam::{{{{account}}}}:role/{}", name)
 }
@@ -9,11 +7,14 @@ pub fn policy_arn(name: &str) -> String {
 }
 
 pub fn event_bus_arn(bus_name: &str) -> String {
-    format!("arn:aws:events:{{{{region}}}}:{{{{account}}}}:event-bus/{}", bus_name)
+    format!(
+        "arn:aws:events:{{{{region}}}}:{{{{account}}}}:event-bus/{}",
+        bus_name
+    )
 }
 
 pub fn sandbox() -> String {
-     format!("{{{{sandbox}}}}")
+    format!("{{{{sandbox}}}}")
 }
 
 pub fn profile() -> String {
@@ -29,15 +30,24 @@ pub fn sqs_arn(name: &str) -> String {
 }
 
 pub fn _layer_arn(name: &str) -> String {
-    format!("arn:aws:lambda:{{{{region}}}}:{{{{account}}}}:layer:{}", name)
+    format!(
+        "arn:aws:lambda:{{{{region}}}}:{{{{account}}}}:layer:{}",
+        name
+    )
 }
 
 pub fn lambda_arn(name: &str) -> String {
-    format!("arn:aws:lambda:{{{{region}}}}:{{{{account}}}}:function:{}", name)
+    format!(
+        "arn:aws:lambda:{{{{region}}}}:{{{{account}}}}:function:{}",
+        name
+    )
 }
 
 pub fn sfn_arn(name: &str) -> String {
-    format!("arn:aws:states:{{{{region}}}}:{{{{account}}}}:stateMachine:{}", name)
+    format!(
+        "arn:aws:states:{{{{region}}}}:{{{{account}}}}:stateMachine:{}",
+        name
+    )
 }
 
 pub fn _base_role(name: &str) -> String {

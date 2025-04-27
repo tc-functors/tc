@@ -1,8 +1,10 @@
-use crate::notifier::RichText;
-use crate::notifier;
+use crate::{
+    git,
+    notifier,
+    notifier::RichText,
+};
 use kit as u;
 use kit::*;
-use crate::git;
 
 fn inc_patch(v: &str) -> String {
     let version = git::maybe_semver(v);
@@ -104,7 +106,6 @@ fn should_tag(tag: &str) -> bool {
     println!("rev: {c2_out}");
     c1_out != c2_out
 }
-
 
 #[derive(Clone, Debug)]
 pub struct Tag {
@@ -248,7 +249,6 @@ pub async fn create(next: &str, tag: Tag, push: bool, has_suffix: bool) {
         _ => println!("Nothing to do yet"),
     }
 }
-
 
 pub fn delete_current_minor(prefix: &str, version: &str) {
     let stable_version = current_stable_minor(version);

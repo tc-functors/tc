@@ -1,8 +1,7 @@
 use super::Topology;
-use std::fmt;
-use daggy::{Dag};
+use daggy::Dag;
 use serde_derive::Serialize;
-
+use std::fmt;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Node {
@@ -16,11 +15,9 @@ impl fmt::Display for Node {
     }
 }
 
-
 pub type Graph = Dag<String, Node>;
 
 pub fn generate(_t: &Topology) -> Graph {
-
     // let Topology {
     //     namespace, .. } = t;
 
@@ -31,5 +28,4 @@ pub fn generate(_t: &Topology) -> Graph {
     //let n0 = dag.add_node("root".to_string());
 
     dag
-
 }

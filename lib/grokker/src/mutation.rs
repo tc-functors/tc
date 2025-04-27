@@ -1,5 +1,7 @@
-use provider::aws::appsync;
-use provider::Env;
+use provider::{
+    Env,
+    aws::appsync,
+};
 
 pub async fn list(env: &Env, name: &str) {
     let client = appsync::make_client(env).await;

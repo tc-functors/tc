@@ -1,16 +1,20 @@
 pub mod aws;
-mod default;
 mod cache;
+mod default;
 
-use aws_config::SdkConfig;
-use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
-use aws_config::BehaviorVersion;
-use aws_config::sts::AssumeRoleProvider;
-use aws_config::environment::credentials::EnvironmentVariableCredentialsProvider;
+use aws_config::{
+    BehaviorVersion,
+    SdkConfig,
+    environment::credentials::EnvironmentVariableCredentialsProvider,
+    sts::AssumeRoleProvider,
+};
 use configurator::Config;
-
 use kit::*;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Env {
@@ -32,11 +36,10 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>, config: 
 
 impl Env {
     pub fn new(name: &str, assume_role: Option<String>, config: Config) -> Env {
-
         Env {
             name: String::from(name),
             assume_role: assume_role,
-            config: config
+            config: config,
         }
     }
 
@@ -44,7 +47,8 @@ impl Env {
         let session_name = "TcSession";
         let provider = AssumeRoleProvider::builder(role_arn)
             .session_name(session_name)
-            .build_from_provider(EnvironmentVariableCredentialsProvider::new()).await;
+            .build_from_provider(EnvironmentVariableCredentialsProvider::new())
+            .await;
         aws_config::from_env()
             .credentials_provider(provider)
             .behavior_version(BehaviorVersion::latest())
@@ -55,18 +59,16 @@ impl Env {
     pub async fn load(&self) -> SdkConfig {
         match &self.assume_role {
             Some(role_arn) => self.assume_given_role(role_arn).await,
-            None => {
-                match std::env::var("TC_ASSUME_ROLE") {
-                    Ok(_)  => {
-                        if let Some(role_arn) = self.config.ci.roles.get(&self.name) {
-                            self.assume_given_role(role_arn).await
-                        } else {
-                            panic!("No role to assume")
-                        }
+            None => match std::env::var("TC_ASSUME_ROLE") {
+                Ok(_) => {
+                    if let Some(role_arn) = self.config.ci.roles.get(&self.name) {
+                        self.assume_given_role(role_arn).await
+                    } else {
+                        panic!("No role to assume")
                     }
-                    Err(_) => aws_config::from_env().profile_name(&self.name).load().await
                 }
-            }
+                Err(_) => aws_config::from_env().profile_name(&self.name).load().await,
+            },
         }
     }
 
@@ -142,13 +144,25 @@ impl Env {
     }
 
     pub fn sfn_url(&self, name: &str, id: &str) -> String {
-        format!("https://{}.console.aws.amazon.com/states/home?region={}#/v2/executions/details/arn:aws:states:{}:{}:execution:{}:{}",
-                &self.region(), &self.region(),
-                &self.region(), &self.account(), name, id)
+        format!(
+            "https://{}.console.aws.amazon.com/states/home?region={}#/v2/executions/details/arn:aws:states:{}:{}:execution:{}:{}",
+            &self.region(),
+            &self.region(),
+            &self.region(),
+            &self.account(),
+            name,
+            id
+        )
     }
 
     pub fn sfn_url_express(&self, arn: &str) -> String {
-        format!("https://{}.console.aws.amazon.com/states/home?region={}#/express-executions/details/{}?startDate={}", &self.region(), &self.region(), arn, kit::current_millis() - 200000)
+        format!(
+            "https://{}.console.aws.amazon.com/states/home?region={}#/express-executions/details/{}?startDate={}",
+            &self.region(),
+            &self.region(),
+            arn,
+            kit::current_millis() - 200000
+        )
     }
 
     //config
@@ -210,7 +224,9 @@ impl Env {
         let client = aws::layer::make_client(&centralized).await;
         let mut v: Vec<String> = vec![];
         for layer in layers {
-            let arn = aws::layer::find_version(client.clone(), &layer).await.unwrap();
+            let arn = aws::layer::find_version(client.clone(), &layer)
+                .await
+                .unwrap();
             v.push(arn);
         }
         v
@@ -276,20 +292,20 @@ impl Env {
             Some(p) => {
                 let role = match std::env::var("TC_CENTRALIZED_ASSUME_ROLE") {
                     Ok(r) => Some(r),
-                    Err(_) => self.assume_role.clone()
+                    Err(_) => self.assume_role.clone(),
                 };
                 Env::new(&p, role, self.config.clone())
-            },
+            }
             None => match std::env::var("AWS_PROFILE") {
                 Ok(p) => {
                     let role = match std::env::var("TC_CENTRALIZED_ASSUME_ROLE") {
                         Ok(r) => Some(r),
-                        Err(_) => self.assume_role.clone()
+                        Err(_) => self.assume_role.clone(),
                     };
                     Env::new(&p, role, self.config.clone())
                 }
-                Err(_) => self.clone()
-            }
+                Err(_) => self.clone(),
+            },
         }
     }
 }

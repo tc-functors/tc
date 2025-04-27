@@ -1,11 +1,15 @@
-use std::collections::HashMap;
-
-use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
-use std::str::FromStr;
-use kit::*;
-use kit as u;
 use doku::Document;
+use kit as u;
+use kit::*;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use serde_json::Value;
+use std::{
+    collections::HashMap,
+    str::FromStr,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -17,7 +21,7 @@ pub enum Lang {
     Go,
     Rust,
     Node,
-    Clojure
+    Clojure,
 }
 
 impl FromStr for Lang {
@@ -26,51 +30,47 @@ impl FromStr for Lang {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "python3.10" | "python3.11" | "python3.9" | "python3.12 | python" => Ok(Lang::Python),
-            "ruby3.2" | "ruby" | "ruby32 | ruby"             => Ok(Lang::Ruby),
-            "node22" | "node20" | "node18 | node"            => Ok(Lang::Node),
-            "rust"                                    => Ok(Lang::Rust),
-            _                                         => Ok(Lang::Python)
+            "ruby3.2" | "ruby" | "ruby32 | ruby" => Ok(Lang::Ruby),
+            "node22" | "node20" | "node18 | node" => Ok(Lang::Node),
+            "rust" => Ok(Lang::Rust),
+            _ => Ok(Lang::Python),
         }
     }
-
 }
 
 impl Lang {
-
     pub fn to_str(&self) -> String {
         match self {
             Lang::Python => s!("python"),
             Lang::Ruby => s!("ruby"),
             Lang::Node => s!("node"),
             Lang::Rust => s!("rust"),
-            _ => s!("python")
+            _ => s!("python"),
         }
-
     }
 }
 
-
 #[derive(Serialize, Deserialize, PartialEq, Clone, Debug, Document)]
 pub enum LangRuntime {
-    #[serde(alias="python3.9")]
+    #[serde(alias = "python3.9")]
     Python39,
-    #[serde(alias="python3.10")]
+    #[serde(alias = "python3.10")]
     Python310,
-    #[serde(alias="python3.11")]
+    #[serde(alias = "python3.11")]
     Python311,
-    #[serde(alias="python3.12")]
+    #[serde(alias = "python3.12")]
     Python312,
-    #[serde(alias="python3.13")]
+    #[serde(alias = "python3.13")]
     Python313,
-    #[serde(alias="ruby3.2")]
+    #[serde(alias = "ruby3.2")]
     Ruby32,
-    #[serde(alias="java21")]
+    #[serde(alias = "java21")]
     Java21,
-    #[serde(alias="rust")]
+    #[serde(alias = "rust")]
     Rust,
-    #[serde(alias="node22")]
+    #[serde(alias = "node22")]
     Node22,
-    #[serde(alias="node20")]
+    #[serde(alias = "node20")]
     Node20,
 }
 
@@ -79,35 +79,34 @@ impl FromStr for LangRuntime {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "python3.13"                  => Ok(LangRuntime::Python313),
-            "python3.12"                  => Ok(LangRuntime::Python312),
-            "python3.11"                  => Ok(LangRuntime::Python311),
-            "python3.10"                  => Ok(LangRuntime::Python310),
-            "python3.9"                   => Ok(LangRuntime::Python39),
+            "python3.13" => Ok(LangRuntime::Python313),
+            "python3.12" => Ok(LangRuntime::Python312),
+            "python3.11" => Ok(LangRuntime::Python311),
+            "python3.10" => Ok(LangRuntime::Python310),
+            "python3.9" => Ok(LangRuntime::Python39),
             "ruby3.2" | "ruby" | "ruby32" => Ok(LangRuntime::Ruby32),
-            "clojure" | "java21"          => Ok(LangRuntime::Java21),
-            "rust"                        => Ok(LangRuntime::Rust),
-            "node22"                      => Ok(LangRuntime::Node22),
-            "node20"                      => Ok(LangRuntime::Node20),
-            _                             => Ok(LangRuntime::Python311)
+            "clojure" | "java21" => Ok(LangRuntime::Java21),
+            "rust" => Ok(LangRuntime::Rust),
+            "node22" => Ok(LangRuntime::Node22),
+            "node20" => Ok(LangRuntime::Node20),
+            _ => Ok(LangRuntime::Python311),
         }
     }
 }
 
 impl LangRuntime {
-
     pub fn to_str(&self) -> String {
         match self {
             LangRuntime::Python313 => String::from("python3.13"),
             LangRuntime::Python312 => String::from("python3.12"),
             LangRuntime::Python311 => String::from("python3.11"),
             LangRuntime::Python310 => String::from("python3.10"),
-            LangRuntime::Python39  => String::from("python3.9"),
-            LangRuntime::Ruby32    => String::from("ruby3.2"),
-            LangRuntime::Java21    => String::from("java21"),
-            LangRuntime::Node22    => String::from("node22"),
-            LangRuntime::Node20    => String::from("node20"),
-            LangRuntime::Rust      => String::from("rust"),
+            LangRuntime::Python39 => String::from("python3.9"),
+            LangRuntime::Ruby32 => String::from("ruby3.2"),
+            LangRuntime::Java21 => String::from("java21"),
+            LangRuntime::Node22 => String::from("node22"),
+            LangRuntime::Node20 => String::from("node20"),
+            LangRuntime::Rust => String::from("rust"),
         }
     }
 
@@ -117,12 +116,12 @@ impl LangRuntime {
             LangRuntime::Python312 => Lang::Python,
             LangRuntime::Python311 => Lang::Python,
             LangRuntime::Python310 => Lang::Python,
-            LangRuntime::Python39  => Lang::Python,
-            LangRuntime::Ruby32    => Lang::Ruby,
-            LangRuntime::Java21    => Lang::Clojure,
-            LangRuntime::Rust      => Lang::Rust,
-            LangRuntime::Node20    => Lang::Node,
-            LangRuntime::Node22    => Lang::Node,
+            LangRuntime::Python39 => Lang::Python,
+            LangRuntime::Ruby32 => Lang::Ruby,
+            LangRuntime::Java21 => Lang::Clojure,
+            LangRuntime::Rust => Lang::Rust,
+            LangRuntime::Node20 => Lang::Node,
+            LangRuntime::Node22 => Lang::Node,
         }
     }
 }
@@ -144,7 +143,7 @@ pub enum BuildKind {
     #[serde(alias = "runtime")]
     Runtime,
     #[serde(alias = "image")]
-    Image
+    Image,
 }
 
 impl FromStr for BuildKind {
@@ -152,43 +151,40 @@ impl FromStr for BuildKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "code"      => Ok(BuildKind::Code),
-            "inline"    => Ok(BuildKind::Inline),
-            "layer"     => Ok(BuildKind::Layer),
-            "library"   => Ok(BuildKind::Library),
+            "code" => Ok(BuildKind::Code),
+            "inline" => Ok(BuildKind::Inline),
+            "layer" => Ok(BuildKind::Layer),
+            "library" => Ok(BuildKind::Library),
             "extension" => Ok(BuildKind::Extension),
-            "runtime"   => Ok(BuildKind::Runtime),
-            "slab"      => Ok(BuildKind::Slab),
-            "image"     => Ok(BuildKind::Image),
-            _           => Ok(BuildKind::Layer)
+            "runtime" => Ok(BuildKind::Runtime),
+            "slab" => Ok(BuildKind::Slab),
+            "image" => Ok(BuildKind::Image),
+            _ => Ok(BuildKind::Layer),
         }
     }
 }
 
 impl BuildKind {
-
     pub fn to_str(&self) -> String {
         match self {
-            BuildKind::Code      => s!("code"),
-            BuildKind::Inline    => s!("inline"),
-            BuildKind::Layer     => s!("layer"),
-            BuildKind::Library   => s!("library"),
+            BuildKind::Code => s!("code"),
+            BuildKind::Inline => s!("inline"),
+            BuildKind::Layer => s!("layer"),
+            BuildKind::Library => s!("library"),
             BuildKind::Extension => s!("extension"),
-            BuildKind::Runtime   => s!("runtime"),
-            BuildKind::Image     => s!("image"),
-            BuildKind::Slab      => s!("slab")
+            BuildKind::Runtime => s!("runtime"),
+            BuildKind::Image => s!("image"),
+            BuildKind::Slab => s!("slab"),
         }
-
     }
 }
 
 // function infra spec
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeNetworkSpec {
     pub subnets: Vec<String>,
-    pub security_groups: Vec<String>
+    pub security_groups: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
@@ -201,11 +197,9 @@ fn default_memory_size() -> Option<i32> {
     Some(128)
 }
 
-
 fn default_timeout() -> Option<i32> {
     Some(300)
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeInfraSpec {
@@ -223,7 +217,6 @@ pub struct RuntimeInfraSpec {
 }
 
 impl RuntimeInfraSpec {
-
     pub fn new(runtime_file: Option<String>) -> HashMap<String, RuntimeInfraSpec> {
         match runtime_file {
             Some(f) => {
@@ -242,7 +235,7 @@ impl RuntimeInfraSpec {
                     environment: None,
                     network: None,
                     filesystem: None,
-                    tags: None
+                    tags: None,
                 };
                 h.insert(s!("default"), r);
                 h
@@ -277,20 +270,19 @@ fn default_package_type() -> String {
     s!("zip")
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct ImageSpec {
     #[serde(default)]
     pub dir: Option<String>,
     pub parent: Option<String>,
     pub version: Option<String>,
-    pub commands: Vec<String>
+    pub commands: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct LayerSpec {
     #[serde(default)]
-    pub commands: Vec<String>
+    pub commands: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
@@ -316,20 +308,17 @@ pub struct BuildSpec {
     pub images: HashMap<String, ImageSpec>,
 
     #[serde(default)]
-    pub layers: HashMap<String, LayerSpec>
+    pub layers: HashMap<String, LayerSpec>,
 }
 
 impl BuildSpec {
-
     pub fn new(dir: &str) -> BuildSpec {
         let path = format!("{}/build.json", dir);
         let data = u::slurp(&path);
         let bspec: BuildSpec = serde_json::from_str(&data).unwrap();
         bspec
     }
-
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct RuntimeSpec {
@@ -377,17 +366,15 @@ pub struct InfraSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct AssetsSpec {
-    #[serde(alias="DEPS_PATH",alias="deps_path")]
+    #[serde(alias = "DEPS_PATH", alias = "deps_path")]
     pub deps_path: Option<String>,
-    #[serde(alias="BASE_DEPS_PATH",alias="base_deps_path")]
+    #[serde(alias = "BASE_DEPS_PATH", alias = "base_deps_path")]
     pub base_deps_path: Option<String>,
-    #[serde(alias="MODEL_PATH",alias="model_path")]
+    #[serde(alias = "MODEL_PATH", alias = "model_path")]
     pub model_path: Option<String>,
-    #[serde(alias="ARTIFACTS_SOURCE",alias="artifacts_source")]
-    pub artifacts_source: Option<Vec<String>>
+    #[serde(alias = "ARTIFACTS_SOURCE", alias = "artifacts_source")]
+    pub artifacts_source: Option<Vec<String>>,
 }
-
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct FunctionSpec {
@@ -409,7 +396,6 @@ pub struct FunctionSpec {
     pub tasks: HashMap<String, String>,
     //deprecated
     pub assets: Option<AssetsSpec>,
-
 }
 
 fn find_revision(dir: &str) -> String {
@@ -420,8 +406,6 @@ fn find_revision(dir: &str) -> String {
 fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
 }
-
-
 
 fn render(s: &str, version: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
@@ -437,7 +421,6 @@ fn render(s: &str, version: &str) -> String {
 }
 
 impl FunctionSpec {
-
     pub fn new(dir: &str) -> FunctionSpec {
         let f = format!("{}/function.json", dir);
         let version = find_revision(dir);
@@ -446,7 +429,7 @@ impl FunctionSpec {
             let fspec = serde_json::from_str(&data);
             match fspec {
                 Ok(f) => f,
-                Err(e) => panic!("{}", e)
+                Err(e) => panic!("{}", e),
             }
         } else {
             FunctionSpec {
@@ -463,17 +446,20 @@ impl FunctionSpec {
                 infra: None,
                 infra_dir: None,
                 assets: None,
-                tasks: HashMap::new()
+                tasks: HashMap::new(),
             }
         }
     }
 }
 
-
 // topology
 
 fn default_nodes() -> Nodes {
-    Nodes { root: Some(false), ignore: Some(vec![]), dirs: Some(vec![]) }
+    Nodes {
+        root: Some(false),
+        ignore: Some(vec![]),
+        dirs: Some(vec![]),
+    }
 }
 
 fn default_route_kind() -> String {
@@ -567,10 +553,10 @@ pub struct EventsSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HandlerSpec {
-   #[serde(default)]
+    #[serde(default)]
     pub handler: Option<String>,
 
-   #[serde(default)]
+    #[serde(default)]
     pub event: Option<String>,
 
     #[serde(default)]
@@ -582,7 +568,7 @@ pub struct ChannelSpec {
     #[serde(default)]
     pub doc_only: bool,
     pub on_publish: Option<HandlerSpec>,
-    pub on_subscribe: Option<HandlerSpec>
+    pub on_subscribe: Option<HandlerSpec>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -618,7 +604,7 @@ pub struct Nodes {
     #[serde(default)]
     pub root: Option<bool>,
     #[serde(default)]
-    pub dirs: Option<Vec<String>>
+    pub dirs: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -663,24 +649,23 @@ pub struct ScheduleSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TopologyKind {
-    #[serde(alias="step-function",alias="state-machine")]
+    #[serde(alias = "step-function", alias = "state-machine")]
     StepFunction,
-    #[serde(alias="function")]
+    #[serde(alias = "function")]
     Function,
-    #[serde(alias="evented")]
+    #[serde(alias = "evented")]
     Evented,
-    #[serde(alias="grapqhl")]
-    Graphql
+    #[serde(alias = "grapqhl")]
+    Graphql,
 }
 
 impl TopologyKind {
-
     pub fn to_str(&self) -> String {
         match self {
             TopologyKind::StepFunction => s!("stepfn"),
             TopologyKind::Function => s!("function"),
             TopologyKind::Graphql => s!("graphql"),
-            TopologyKind::Evented => s!("evented")
+            TopologyKind::Evented => s!("evented"),
         }
     }
 }
@@ -717,14 +702,12 @@ pub struct TopologySpec {
 }
 
 impl TopologySpec {
-
     pub fn new(topology_spec_file: &str) -> TopologySpec {
         if u::file_exists(topology_spec_file) {
             tracing::debug!("Loading topology {}", topology_spec_file);
             let data: String = u::slurp(topology_spec_file);
             let spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
             spec
-
         } else {
             TopologySpec {
                 name: s!("tc"),
@@ -741,7 +724,7 @@ impl TopologySpec {
                 flow: None,
                 queues: None,
                 mutations: None,
-                channels: None
+                channels: None,
             }
         }
     }
@@ -753,10 +736,7 @@ impl TopologySpec {
             "regular"
         }
     }
-
-
 }
-
 
 // build
 
@@ -777,5 +757,5 @@ pub enum Component {
     Route,
     Queue,
     Node,
-    Flow
+    Flow,
 }

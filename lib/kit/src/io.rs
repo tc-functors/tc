@@ -1,13 +1,28 @@
 use human_bytes::human_bytes;
 use path_absolutize::*;
-use std::env;
-use std::fs;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read, Write};
-use std::path::{Path, PathBuf};
-use std::thread;
-use std::time::Duration;
-use subprocess::{CaptureData, Exec, Redirection};
+use std::{
+    env,
+    fs,
+    fs::File,
+    io::{
+        self,
+        BufRead,
+        BufReader,
+        Read,
+        Write,
+    },
+    path::{
+        Path,
+        PathBuf,
+    },
+    thread,
+    time::Duration,
+};
+use subprocess::{
+    CaptureData,
+    Exec,
+    Redirection,
+};
 
 pub fn basedir(path: &str) -> &str {
     let parts: Vec<&str> = path.split("/").collect();
@@ -76,7 +91,6 @@ pub fn list_dirs(dir: &str) -> Vec<String> {
         vec![]
     }
 }
-
 
 pub fn pwd() -> String {
     match env::var("TC_DIR") {
@@ -185,7 +199,7 @@ fn trim(input: &str) -> &str {
 }
 
 #[cfg(not(test))]
- pub fn sh(path: &str, dir: &str) -> String {
+pub fn sh(path: &str, dir: &str) -> String {
     let out = Exec::shell(path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)
@@ -196,7 +210,7 @@ fn trim(input: &str) -> &str {
         Ok(s) => {
             let m = s.stdout_str();
             trim(&m).to_string()
-        },
+        }
         Err(e) => {
             tracing::debug!("File not found {}", path);
             panic!("{}", e)
@@ -209,10 +223,11 @@ pub fn run(path: &str, dir: &str) {
         Ok(_) => {
             runcmd_stream(path, dir);
         }
-        Err(_) => { sh(path, dir); }
+        Err(_) => {
+            sh(path, dir);
+        }
     }
 }
-
 
 pub fn runcmd_quiet(path: &str, dir: &str) {
     let _ = Exec::shell(path)
@@ -231,7 +246,6 @@ pub fn tee(path: &str, dir: &str) {
 pub fn runcmd_stream(path: &str, dir: &str) {
     Exec::shell(path).cwd(dir).join().unwrap();
 }
-
 
 pub fn runc(path: &str, dir: &str) -> (bool, String, String) {
     let data = Exec::shell(path)
@@ -393,9 +407,10 @@ pub fn runv(dir: &str, cmd: Vec<&str>) {
     let cmd_str = cmd.join(" ");
     match std::env::var("TC_TRACE") {
         Ok(_) => runcmd_stream(&cmd_str, dir),
-        Err(_) => { sh(&cmd_str, dir); } ,
+        Err(_) => {
+            sh(&cmd_str, dir);
+        }
     }
-
 }
 
 pub fn root() -> String {

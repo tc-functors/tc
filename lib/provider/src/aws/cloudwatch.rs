@@ -1,6 +1,8 @@
-use aws_sdk_cloudwatchlogs::{Client, Error};
-
 use crate::Env;
+use aws_sdk_cloudwatchlogs::{
+    Client,
+    Error,
+};
 use kit::*;
 
 pub async fn make_client(env: &Env) -> Client {

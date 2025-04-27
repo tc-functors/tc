@@ -1,7 +1,6 @@
 use kit as u;
 use kit::sh;
 
-
 pub fn build(dir: &str) -> String {
     let cmd = vec![
         "docker run --rm",
@@ -12,7 +11,10 @@ pub fn build(dir: &str) -> String {
         "rustserverless/lambda-rust",
     ];
     u::runv(dir, cmd);
-    let name = u::sh("cargo metadata --no-deps --format-version 1 | jq -r '.packages[].targets[] | select( .kind | map(. == \"bin\") | any ) | .name'", dir);
+    let name = u::sh(
+        "cargo metadata --no-deps --format-version 1 | jq -r '.packages[].targets[] | select( .kind | map(. == \"bin\") | any ) | .name'",
+        dir,
+    );
     let cmd = format!(
         "mkdir -p extensions && cp target/lambda/release/{} extensions/",
         name
