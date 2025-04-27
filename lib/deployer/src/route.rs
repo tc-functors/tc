@@ -1,20 +1,20 @@
 use compiler::{
     Route,
-    route::TargetKind,
+    Entity
 };
 use log::info;
 use provider::{
     Env,
     aws::{
-        gatewayv2,
-        gatewayv2::Api,
+        gateway,
+        gateway::Api,
         lambda,
     },
 };
 use std::collections::HashMap;
 
 async fn make_api(env: &Env, role: &str, route: &Route) -> Api {
-    let client = gatewayv2::make_client(env).await;
+    let client = gateway::make_client(env).await;
     let uri = env.sfn_uri();
 
     Api {
@@ -36,35 +36,41 @@ async fn add_permission(env: &Env, lambda_arn: &str, api_id: &str) {
     let client = lambda::make_client(env).await;
     let source_arn = env.api_arn(api_id);
     let principal = "apigateway.amazonaws.com";
-    let _ = lambda::add_permission(client, lambda_arn, principal, &source_arn, api_id).await;
+    let _ = lambda::add_permission(
+        client, lambda_arn, principal, &source_arn, api_id
+    ).await;
 }
 
-async fn create_api(env: &Env, api: &Api, integration_type: &TargetKind, lambda_arn: &str) {
+async fn create_api(
+    env: &Env,
+    api: &Api,
+    integration_type: &Entity,
+    target_arn: &str
+) {
+
     let api_id = api.find_or_create().await;
 
-    add_permission(env, lambda_arn, &api_id).await;
-    let arn = env.api_integration_arn(lambda_arn);
+    add_permission(env, target_arn, &api_id).await;
+    let arn = env.api_integration_arn(target_arn);
 
     let integration_id = match integration_type {
-        TargetKind::Function => api.find_or_create_lambda_integration(&api_id, &arn).await,
-        TargetKind::StepFunction => api.find_or_create_sfn_integration(&api_id, &arn).await,
+        Entity::Function => {
+            api.create_integration(&api_id, "lambda", &arn).await
+        }
+        Entity::State => {
+            api.create_integration(&api_id, "sfn", &arn).await
+        }
+        _ => String::from("")
+
     };
 
     let authorizer_id = api.find_authorizer(&api_id).await;
-    let _ = api
-        .find_or_create_route(&api_id, &integration_id, authorizer_id)
-        .await;
+    api.find_or_create_route(&api_id, &integration_id, authorizer_id).await;
+    api.create_stage(&api_id).await;
+    api.create_deployment(&api_id, &api.stage).await;
 
-    let _ = api.create_stage(&api_id).await.unwrap();
-    let _ = api.create_deployment(&api_id, &api.stage).await;
-
-    if kit::trace() {
-        let endpoint = env.api_endpoint(&api_id, &api.stage);
-        println!(
-            "curl -X {} {}{} -d @payload.json -H \"Content-Type: application/json\"",
-            &api.method, &endpoint, &api.path
-        );
-    }
+    let endpoint = env.api_endpoint(&api_id, &api.stage);
+    println!("Endpoint {}", &endpoint);
 }
 
 async fn create_route(env: &Env, route: &Route, role: &str) {
@@ -88,17 +94,23 @@ async fn delete_route(env: &Env, route: &Route, role: &str) {
         Some(id) => {
             let route_id = api.find_route(&id, &route_key).await;
             match route_id {
-                Some(rid) => api.delete_route(&id, &rid).await.unwrap(),
+                Some(rid) => {
+                    println!("Deleting route: {}", &route_key);
+                    api.delete_route(&id, &rid).await.unwrap();
+                }
                 _ => (),
             }
+            //api.delete(&id).await
         }
         _ => (),
     }
+
 }
 
 pub async fn delete(env: &Env, role: &str, routes: HashMap<String, Route>) {
     for (name, route) in routes {
         info!("Deleting route {}", &name);
         delete_route(env, &route, role).await;
+
     }
 }

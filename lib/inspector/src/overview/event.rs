@@ -26,7 +26,7 @@ fn build_events(namespace: &str, evs: HashMap<String, Event>) -> Vec<Item> {
     for (_, event) in evs {
         let mut targets: HashMap<String, String> = HashMap::new();
         for t in &event.targets {
-            targets.insert(t.kind.to_str(), t.name.clone());
+            targets.insert(t.entity.to_str(), t.name.clone());
         }
         let e = Item {
             namespace: namespace.to_string(),

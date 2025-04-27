@@ -1,5 +1,5 @@
 use super::template;
-use crate::spec::Consumes;
+use crate::spec::{Consumes, Entity};
 use configurator::Config;
 use kit::*;
 use serde_derive::{
@@ -7,25 +7,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum TargetKind {
-    Function,
-    Mutation,
-    StepFunction,
-    Channel,
-}
-
-impl TargetKind {
-    pub fn to_str(&self) -> String {
-        match self {
-            TargetKind::Function => s!("function"),
-            TargetKind::Mutation => s!("appsync"),
-            TargetKind::StepFunction => s!("sfn"),
-            TargetKind::Channel => s!("channel"),
-        }
-    }
-}
 
 fn as_ns(given: &Option<String>, s: &str) -> String {
     match given {
@@ -42,7 +23,7 @@ fn as_ns(given: &Option<String>, s: &str) -> String {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {
-    pub kind: TargetKind,
+    pub entity: Entity,
     pub id: String,
     pub name: String,
     pub producer_ns: String,
@@ -55,7 +36,7 @@ pub struct Target {
 
 impl Target {
     fn new(
-        kind: TargetKind,
+        entity: Entity,
         id: &str,
         name: &str,
         arn: &str,
@@ -65,13 +46,13 @@ impl Target {
         input_template: Option<String>,
     ) -> Target {
         let abbr_id = if id.chars().count() >= 64 {
-            format!("{}-{}", kind.to_str(), &kit::abbreviate(id, "-"))
+            format!("{}-{}", entity.to_str(), &kit::abbreviate(id, "-"))
         } else {
             id.to_string()
         };
 
         Target {
-            kind: kind,
+            entity: entity,
             id: abbr_id,
             name: s!(name),
             producer_ns: s!(producer_ns),
@@ -110,7 +91,7 @@ pub fn make_targets(
         let id = format!("{}_lambda_target", event_name);
         let arn = template::lambda_arn(&f);
         let t = Target::new(
-            TargetKind::Function,
+            Entity::Function,
             &id,
             &f,
             &arn,
@@ -127,7 +108,7 @@ pub fn make_targets(
             let id = format!("{}_{}_target", event_name, &f);
             let arn = template::lambda_arn(&f);
             let t = Target::new(
-                TargetKind::Function,
+                Entity::Function,
                 &id,
                 &f,
                 &arn,
@@ -149,7 +130,7 @@ pub fn make_targets(
 
         let arn = "unresolved";
         let t = Target::new(
-            TargetKind::Mutation,
+            Entity::Mutation,
             &id,
             m,
             &arn,
@@ -164,7 +145,7 @@ pub fn make_targets(
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(s);
         let t = Target::new(
-            TargetKind::StepFunction,
+            Entity::State,
             &id,
             s,
             &arn,
@@ -183,7 +164,7 @@ pub fn make_targets(
         let input_paths_map = Some(h);
         let arn = format!("{{{{api_destination_arn}}}}");
         let t = Target::new(
-            TargetKind::Channel,
+            Entity::Channel,
             &id,
             namespace,
             &arn,
@@ -200,7 +181,7 @@ pub fn make_targets(
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(fallback_fqn);
         let t = Target::new(
-            TargetKind::StepFunction,
+            Entity::State,
             &id,
             fallback_fqn,
             &arn,

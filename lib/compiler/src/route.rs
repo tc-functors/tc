@@ -2,6 +2,7 @@ use super::{
     spec::{
         RouteSpec,
         TopologySpec,
+        Entity,
     },
     template,
 };
@@ -14,33 +15,12 @@ use serde_derive::{
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum TargetKind {
-    Function,
-    StepFunction,
-}
-
-impl TargetKind {
-    pub fn to_str(&self) -> String {
-        match self {
-            TargetKind::Function => s!("function"),
-            TargetKind::StepFunction => s!("sfn"),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum RouteKind {
-    Function,
-    StepFunction,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Route {
     pub method: String,
     pub path: String,
     pub gateway: String,
     pub authorizer: String,
-    pub target_kind: TargetKind,
+    pub target_kind: Entity,
     pub target_arn: String,
     pub stage: String,
     pub stage_variables: HashMap<String, String>,
@@ -56,20 +36,21 @@ fn response_template() -> String {
     format!(r#"#set ($parsedPayload = $util.parseJson($input.json('$.output'))) $parsedPayload"#)
 }
 
-fn find_target_arn(target_name: &str, target_kind: &TargetKind) -> String {
+fn find_target_arn(target_name: &str, target_kind: &Entity) -> String {
     match target_kind {
-        TargetKind::Function => template::lambda_arn(&target_name),
-        TargetKind::StepFunction => template::sfn_arn(&target_name),
+        Entity::Function => template::lambda_arn(&target_name),
+        Entity::State => template::sfn_arn(&target_name),
+        _ => template::lambda_arn(&target_name),
     }
 }
 
 impl Route {
     pub fn new(spec: &TopologySpec, rspec: &RouteSpec, _config: &Config) -> Route {
         let target_kind = match &rspec.proxy {
-            Some(_) => TargetKind::Function,
+            Some(_) => Entity::Function,
             None => match rspec.function {
-                Some(_) => TargetKind::Function,
-                None => TargetKind::StepFunction,
+                Some(_) => Entity::Function,
+                None => Entity::State,
             },
         };
 

@@ -6,7 +6,7 @@ use compiler::{
     Event,
     Mutation,
     Target,
-    TargetKind,
+    Entity,
 };
 use kit as u;
 use kit::*;
@@ -83,24 +83,26 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
     let Context { env, .. } = context;
     let name = topology.fqn.clone();
 
-    let target_name = match target.kind {
-        TargetKind::Function => fqn_of(context, topology, &target.name),
-        TargetKind::Mutation => find_mutation(&target.name, &topology.mutations).await,
-        TargetKind::StepFunction => name.clone(),
-        TargetKind::Channel => name.clone(),
+    let target_name = match target.entity {
+        Entity::Function => fqn_of(context, topology, &target.name),
+        Entity::Mutation => find_mutation(&target.name, &topology.mutations).await,
+        Entity::State => name.clone(),
+        Entity::Channel => name.clone(),
+        _ => name.clone()
     };
 
-    let target_arn = match target.kind {
-        TargetKind::Function => env.lambda_arn(&target_name),
-        TargetKind::Mutation => {
+    let target_arn = match target.entity {
+        Entity::Function => env.lambda_arn(&target_name),
+        Entity::Mutation => {
             let id = get_graphql_arn_id(env, &name).await;
             match id {
                 Some(gid) => env.graphql_arn(&gid),
                 None => String::from("none"),
             }
         }
-        TargetKind::StepFunction => env.sfn_arn(&target_name),
-        TargetKind::Channel => target.arn,
+        Entity::State => env.sfn_arn(&target_name),
+        Entity::Channel => target.arn,
+        _ => target.arn
     };
     target.name = target_name;
     target.arn = target_arn;

@@ -27,7 +27,7 @@ fn build_aux(topology: &Topology) -> Vec<Item> {
             let e = Item {
                 namespace: topology.namespace.clone(),
                 name: resolver.name.clone(),
-                kind: resolver.kind.to_str(),
+                kind: resolver.entity.to_str(),
                 target: resolver.target_arn.clone(),
                 input: resolver.input.clone(),
                 output: resolver.output.clone(),
