@@ -1,15 +1,20 @@
-use compiler::{Flow, LogConfig};
-use provider::aws::{
-    cloudwatch,
-    iam,
-    iam::Role,
-    sfn,
-    sfn::StateMachine
+use compiler::{
+    Flow,
+    LogConfig,
 };
-use provider::Env;
+use provider::{
+    Env,
+    aws::{
+        cloudwatch,
+        iam,
+        iam::Role,
+        sfn,
+        sfn::StateMachine,
+    },
+};
 use std::collections::HashMap;
 
-pub async fn update_definition(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
+pub async fn update_definition(env: &Env, tags: &HashMap<String, String>, flow: Flow) {
     let name = &flow.name;
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
@@ -33,8 +38,7 @@ pub async fn update_definition(env: &Env, tags: &HashMap<String,String>, flow: F
     }
 }
 
-
-pub async fn create(env: &Env, tags: &HashMap<String,String>, flow: Flow) {
+pub async fn create(env: &Env, tags: &HashMap<String, String>, flow: Flow) {
     let name = &flow.name;
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
@@ -84,7 +88,7 @@ pub async fn delete(env: &Env, flow: Flow) {
             mode: mode,
             definition: definition,
             role_arn: flow.role.arn.to_string(),
-            tags: HashMap::new()
+            tags: HashMap::new(),
         };
 
         sf.delete(&flow.arn).await.unwrap();
@@ -105,18 +109,22 @@ pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig, flow: &Flow)
 
     let include_exec_data = match std::env::var("TC_SFN_DEBUG") {
         Ok(_) => true,
-        Err(_) => if flow.mode == "Express" {
-            true
-        } else {
-            false
+        Err(_) => {
+            if flow.mode == "Express" {
+                true
+            } else {
+                false
+            }
         }
     };
-
 
     cloudwatch::create_log_group(cw_client.clone(), &aggregator.states)
         .await
         .unwrap();
-    println!("Updating log-config {} ({}) include_exec_data: {}", flow.name, flow.mode, include_exec_data);
+    println!(
+        "Updating log-config {} ({}) include_exec_data: {}",
+        flow.name, flow.mode, include_exec_data
+    );
     let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn, include_exec_data).await;
 }
 

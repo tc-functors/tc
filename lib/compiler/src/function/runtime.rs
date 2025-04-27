@@ -1,17 +1,33 @@
-use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
-use crate::spec::{
-    LangRuntime, FunctionSpec, RuntimeInfraSpec,
-    RuntimeSpec, Lang, BuildKind, AssetsSpec
+use super::layer;
+use crate::{
+    role,
+    role::{
+        Role,
+        RoleKind,
+    },
+    spec::{
+        AssetsSpec,
+        BuildKind,
+        FunctionSpec,
+        Lang,
+        LangRuntime,
+        RuntimeInfraSpec,
+        RuntimeSpec,
+    },
+    template,
+    version,
 };
-use crate::{version, template, role};
-use super::{layer};
-use crate::role::{Role, RoleKind};
-
+use chksum::sha1;
 use kit as u;
 use kit::*;
-use chksum::sha1;
-use std::fs::read_dir;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    collections::HashMap,
+    fs::read_dir,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {
@@ -44,7 +60,7 @@ pub struct Runtime {
     pub fs: Option<FileSystem>,
     pub role: Role,
     pub infra_spec_file: Option<String>,
-    pub infra_spec: HashMap<String, RuntimeInfraSpec>
+    pub infra_spec: HashMap<String, RuntimeInfraSpec>,
 }
 
 fn find_code_version(dir: &str) -> String {
@@ -62,7 +78,7 @@ fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> Str
                 format!("{{{{repo}}}}/code:{}-{}", name, version)
             }
         },
-        _ => format!("{}/lambda.zip", dir)
+        _ => format!("{}/lambda.zip", dir),
     }
 }
 
@@ -71,7 +87,6 @@ fn consolidate_layers(
     given_layers: &mut Vec<String>,
     implicit_layer: Option<String>,
 ) -> Vec<String> {
-
     let mut layers: Vec<String> = vec![];
     layers.append(given_layers);
     layers.append(extensions);
@@ -84,24 +99,16 @@ fn consolidate_layers(
 }
 
 pub fn infer_lang(dir: &str) -> LangRuntime {
-    if u::path_exists(dir, "handler.py") ||
-        u::path_exists(dir, "pyproject.toml") {
+    if u::path_exists(dir, "handler.py") || u::path_exists(dir, "pyproject.toml") {
         LangRuntime::Python310
-
     } else if u::path_exists(dir, "Cargo.toml") {
         LangRuntime::Rust
-
-    } else if u::path_exists(dir, "handler.js") ||
-        u::path_exists(dir, "package.json") {
+    } else if u::path_exists(dir, "handler.js") || u::path_exists(dir, "package.json") {
         LangRuntime::Node22
-
-    } else if u::path_exists(dir, "Gemfile") ||
-        u::path_exists(dir, "handler.rb") {
+    } else if u::path_exists(dir, "Gemfile") || u::path_exists(dir, "handler.rb") {
         LangRuntime::Ruby32
-
     } else if u::path_exists(dir, "deps.edn") {
         LangRuntime::Java21
-
     } else {
         LangRuntime::Python310
     }
@@ -116,47 +123,37 @@ fn is_singular_function_dir() -> bool {
 fn find_build_kind(fspec: &FunctionSpec) -> BuildKind {
     match &fspec.build {
         Some(b) => b.kind.clone(),
-        None => BuildKind::Code
+        None => BuildKind::Code,
     }
 }
 
-fn find_implicit_layer_name(
-    dir: &str,
-    namespace: &str,
-    fspec: &FunctionSpec
-) -> Option<String> {
-
+fn find_implicit_layer_name(dir: &str, namespace: &str, fspec: &FunctionSpec) -> Option<String> {
     let given_fqn = &fspec.fqn;
     let given_layer_name = &fspec.layer_name;
 
     let build_kind = find_build_kind(fspec);
     match given_layer_name {
         Some(name) => Some(name.to_string()),
-        None => {
-
-            match build_kind {
-                BuildKind::Code => {
-                    let lang = infer_lang(dir);
-                    if lang == LangRuntime::Ruby32  && layer::layerable(dir) {
-                        match given_fqn {
-                            Some(f) => Some(u::kebab_case(&f)),
-                            None => {
-                                if is_singular_function_dir() {
-                                    Some(s!(namespace))
-                                } else {
-                                    Some(format!("{}-{}", namespace, &fspec.name))
-                                }
+        None => match build_kind {
+            BuildKind::Code => {
+                let lang = infer_lang(dir);
+                if lang == LangRuntime::Ruby32 && layer::layerable(dir) {
+                    match given_fqn {
+                        Some(f) => Some(u::kebab_case(&f)),
+                        None => {
+                            if is_singular_function_dir() {
+                                Some(s!(namespace))
+                            } else {
+                                Some(format!("{}-{}", namespace, &fspec.name))
                             }
                         }
-                    } else {
-                        None
                     }
-                },
-                _ => None
+                } else {
+                    None
+                }
             }
-
-
-        }
+            _ => None,
+        },
     }
 }
 
@@ -176,35 +173,39 @@ fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
         .replace("_", "-")
 }
 
-
-fn as_infra_spec_file(infra_dir: &str, rspec: &Option<RuntimeSpec>, function_name: &str) -> Option<String> {
+fn as_infra_spec_file(
+    infra_dir: &str,
+    rspec: &Option<RuntimeSpec>,
+    function_name: &str,
+) -> Option<String> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
-    let actual_f =  follow_path(&f);
+    let actual_f = follow_path(&f);
     if u::file_exists(&actual_f) {
         Some(actual_f)
     } else {
         match rspec {
             Some(r) => match &r.vars_file {
                 Some(p) => Some(follow_path(&p)),
-                None => None
+                None => None,
             },
-            None => None
+            None => None,
         }
     }
 }
 
-fn lookup_role(infra_dir: &str, rspec: &Option<RuntimeSpec>, namespace: &str, function_name: &str) -> Role {
+fn lookup_role(
+    infra_dir: &str,
+    rspec: &Option<RuntimeSpec>,
+    namespace: &str,
+    function_name: &str,
+) -> Role {
     match rspec {
         Some(r) => {
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
                     let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                    if u::file_exists(&f) {
-                        Some(f)
-                    } else {
-                        None
-                    }
+                    if u::file_exists(&f) { Some(f) } else { None }
                 }
             };
 
@@ -221,16 +222,15 @@ fn lookup_role(infra_dir: &str, rspec: &Option<RuntimeSpec>, namespace: &str, fu
             } else {
                 role::default(RoleKind::Function)
             }
-
-        },
-        None => role::default(RoleKind::Function)
+        }
+        None => role::default(RoleKind::Function),
     }
 }
 
 fn as_str(v: Option<String>, default: &str) -> String {
     match v {
         Some(s) => s.to_string(),
-        None => String::from(default)
+        None => String::from(default),
     }
 }
 
@@ -243,7 +243,6 @@ fn make_env_vars(
     lang: Lang,
     fqn: &str,
 ) -> HashMap<String, String> {
-
     let mut hmap: HashMap<String, String> = HashMap::new();
 
     let mn = u::pascal_case(&format!("{} {}", namespace, fqn));
@@ -257,43 +256,40 @@ fn make_env_vars(
     hmap.insert(String::from("POWERTOOLS_METRICS_NAMESPACE"), mn);
 
     match lang {
-        Lang::Ruby => {
-            match build_kind {
-                BuildKind::Inline => {
-                    hmap.insert(s!("GEM_PATH"), s!("/var/task/gems/3.2.0"));
-                    hmap.insert(s!("GEM_HOME"), s!("/var/task/gems/3.2.0"));
-                    hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/var/task/vendor/cache"));
-                    hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/var/task/lib"));
-                    hmap.insert(s!("LD_LIBRARY_PATH"),
-                            s!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib"));                },
-
-                _ => {
-
-                    hmap.insert(s!("GEM_PATH"), s!("/opt/ruby/gems/3.2.0"));
-                    hmap.insert(s!("GEM_HOME"), s!("/opt/ruby/gems/3.2.0"));
-                    hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/opt/ruby/lib"));
-                    hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/opt/lib"));
-
-                    if u::path_exists(dir, "Gemfile") {
-                        hmap.insert(s!("AWS_LAMBDA_EXEC_WRAPPER"), s!("/opt/ruby/wrapper"));
-                    }
-                }
+        Lang::Ruby => match build_kind {
+            BuildKind::Inline => {
+                hmap.insert(s!("GEM_PATH"), s!("/var/task/gems/3.2.0"));
+                hmap.insert(s!("GEM_HOME"), s!("/var/task/gems/3.2.0"));
+                hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/var/task/vendor/cache"));
+                hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/var/task/lib"));
+                hmap.insert(s!("LD_LIBRARY_PATH"),
+                            s!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib"));
             }
 
+            _ => {
+                hmap.insert(s!("GEM_PATH"), s!("/opt/ruby/gems/3.2.0"));
+                hmap.insert(s!("GEM_HOME"), s!("/opt/ruby/gems/3.2.0"));
+                hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/opt/ruby/lib"));
+                hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/opt/lib"));
+
+                if u::path_exists(dir, "Gemfile") {
+                    hmap.insert(s!("AWS_LAMBDA_EXEC_WRAPPER"), s!("/opt/ruby/wrapper"));
+                }
+            }
         },
         Lang::Python => {
             // legacy
             if let Some(assets) = maybe_assets {
-                let base_deps_path = as_str(assets.base_deps_path,
-                                        "/var/python");
+                let base_deps_path = as_str(assets.base_deps_path, "/var/python");
                 let deps_path = as_str(assets.deps_path, "/var/python");
                 let model_path = as_str(assets.model_path, "/var/python");
 
-                hmap.insert(s!("PYTHONPATH"),
-                            format!(
-                                "/opt/python:/var/runtime:{}/python:{}/python:{}",
-                                &base_deps_path, &deps_path, &model_path
-                            ),
+                hmap.insert(
+                    s!("PYTHONPATH"),
+                    format!(
+                        "/opt/python:/var/runtime:{}/python:{}/python:{}",
+                        &base_deps_path, &deps_path, &model_path
+                    ),
                 );
                 hmap.insert(s!("LD_LIBRARY_PATH"),
                             format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
@@ -302,9 +298,8 @@ fn make_env_vars(
                 hmap.insert(s!("DEPS_PATH"), deps_path);
                 hmap.insert(s!("BASE_DEPS_PATH"), base_deps_path);
             }
-
-        },
-        _ => ()
+        }
+        _ => (),
     }
 
     match environment {
@@ -312,7 +307,7 @@ fn make_env_vars(
             hmap.extend(e);
             hmap
         }
-        None => hmap
+        None => hmap,
     }
 }
 
@@ -344,9 +339,7 @@ fn load_tags(infra_dir: &str) -> HashMap<String, String> {
                 let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
                 tags
             }
-            None => {
-                HashMap::new()
-            }
+            None => HashMap::new(),
         }
     }
 }
@@ -370,19 +363,17 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
 }
 
 fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
-    if let Some(assets) =  maybe_assets {
+    if let Some(assets) = maybe_assets {
         let ax = assets.deps_path;
         match ax {
             Some(_) => true,
             None => match mount_fs {
                 Some(f) => f,
-                None => {
-                    match assets.model_path {
-                        Some(_) => true,
-                        None => false
-                    }
-                }
-            }
+                None => match assets.model_path {
+                    Some(_) => true,
+                    None => false,
+                },
+            },
         }
     } else {
         false
@@ -394,9 +385,9 @@ fn make_network(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<Networ
         match &infra_spec.network {
             Some(net) => Some(Network {
                 subnets: net.subnets.clone(),
-                security_groups: net.security_groups.clone()
+                security_groups: net.security_groups.clone(),
             }),
-            None => None
+            None => None,
         }
     } else {
         None
@@ -408,9 +399,9 @@ fn make_fs(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<FileSystem>
         match &infra_spec.filesystem {
             Some(fs) => Some(FileSystem {
                 arn: fs.arn.clone(),
-                mount_point: fs.mount_point.clone()
+                mount_point: fs.mount_point.clone(),
             }),
-            None => None
+            None => None,
         }
     } else {
         None
@@ -418,20 +409,30 @@ fn make_fs(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<FileSystem>
 }
 
 impl Runtime {
-
-    pub fn new(dir: &str, t_infra_dir: &str, namespace: &str, fspec: &FunctionSpec, fqn: &str) -> Runtime {
+    pub fn new(
+        dir: &str,
+        t_infra_dir: &str,
+        namespace: &str,
+        fspec: &FunctionSpec,
+        fqn: &str,
+    ) -> Runtime {
         let rspec = fspec.runtime.clone();
 
         let infra_dir = match &fspec.infra_dir {
             Some(p) => p.to_string(),
-            None => as_infra_dir(dir, t_infra_dir)
+            None => as_infra_dir(dir, t_infra_dir),
         };
         let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
 
         let infra_spec = RuntimeInfraSpec::new(infra_spec_file.clone());
         //FIXME: handle unwrap
         let default_infra_spec = infra_spec.get("default").unwrap();
-        let RuntimeInfraSpec { memory_size, timeout, environment, .. } = default_infra_spec;
+        let RuntimeInfraSpec {
+            memory_size,
+            timeout,
+            environment,
+            ..
+        } = default_infra_spec;
 
         let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
         let build_kind = find_build_kind(&fspec);
@@ -448,7 +449,7 @@ impl Runtime {
                     fspec.assets.clone(),
                     environment.clone(),
                     r.lang.to_lang(),
-                    fqn
+                    fqn,
                 );
 
                 let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
@@ -470,9 +471,9 @@ impl Runtime {
                     network: make_network(&default_infra_spec, enable_fs),
                     fs: make_fs(&default_infra_spec, enable_fs),
                     infra_spec_file: infra_spec_file,
-                    infra_spec: infra_spec
+                    infra_spec: infra_spec,
                 }
-            },
+            }
             None => {
                 let lang = infer_lang(dir);
                 let vars = make_env_vars(
@@ -482,14 +483,14 @@ impl Runtime {
                     fspec.assets.clone(),
                     environment.clone(),
                     lang.to_lang(),
-                    fqn
+                    fqn,
                 );
 
                 Runtime {
                     lang: lang,
                     handler: s!("handler.handler"),
                     package_type: s!("zip"),
-                    uri: as_uri(dir, &fspec.name,  "zip", None),
+                    uri: as_uri(dir, &fspec.name, "zip", None),
                     layers: vec![],
                     environment: vars,
                     tags: make_tags(namespace, &infra_dir),
@@ -503,7 +504,7 @@ impl Runtime {
                     network: None,
                     fs: None,
                     infra_spec_file: infra_spec_file,
-                    infra_spec: infra_spec
+                    infra_spec: infra_spec,
                 }
             }
         }

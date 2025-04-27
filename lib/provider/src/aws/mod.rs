@@ -1,8 +1,9 @@
 pub mod appsync;
 pub mod cloudwatch;
 pub mod dynamo;
-pub mod efs;
+pub mod ecr;
 pub mod ecs;
+pub mod efs;
 pub mod eventbridge;
 pub mod gatewayv2;
 pub mod iam;
@@ -14,4 +15,3 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
-pub mod ecr;

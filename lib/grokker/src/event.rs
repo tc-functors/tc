@@ -1,9 +1,17 @@
-use provider::aws::eventbridge;
-use serde_derive::{Deserialize, Serialize};
-use tabled::{Style, Table, Tabled};
-
-use provider::Env;
 use kit as u;
+use provider::{
+    Env,
+    aws::eventbridge,
+};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 
 #[derive(Tabled, Clone, Debug)]
 struct Event {

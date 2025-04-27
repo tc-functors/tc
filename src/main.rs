@@ -1,10 +1,20 @@
 extern crate serde_derive;
 use std::env;
-use tracing_subscriber::filter::{LevelFilter, Targets};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    filter::{
+        LevelFilter,
+        Targets,
+    },
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 
 extern crate log;
-use clap::{Args, Parser, Subcommand};
+use clap::{
+    Args,
+    Parser,
+    Subcommand,
+};
 
 #[derive(Debug, Parser)]
 struct Tc {
@@ -19,10 +29,10 @@ enum Cmd {
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
     /// Trigger deploy via CI
-    #[clap(name = "ci-deploy",  hide = true)]
+    #[clap(name = "ci-deploy", hide = true)]
     Deploy(DeployArgs),
     /// Trigger release via CI
-    #[clap(name = "ci-release",  hide = true)]
+    #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
     /// List or clear resolver cache
     Cache(CacheArgs),
@@ -296,7 +306,6 @@ pub struct UpgradeArgs {
     trace: bool,
 }
 
-
 #[derive(Debug, Args)]
 pub struct UpdateArgs {
     #[arg(long, short = 'e')]
@@ -443,8 +452,8 @@ pub struct FreezeArgs {
     profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: String,
-   #[arg(long, action)]
-    all:  bool,
+    #[arg(long, action)]
+    all: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -466,7 +475,7 @@ pub struct UnFreezeArgs {
 #[derive(Debug, Args)]
 pub struct DocArgs {
     #[arg(long, short = 's')]
-    spec: Option<String>
+    spec: Option<String>,
 }
 
 async fn version() {
@@ -502,7 +511,7 @@ async fn build(args: BuildArgs) {
         merge: merge,
         image_kind: image,
         lang: lang,
-        publish: publish
+        publish: publish,
     };
     let env = tc::init(profile, None).await;
     tc::build(&env, kind, name, &dir, opts).await;
@@ -631,7 +640,7 @@ async fn invoke(args: InvokeArgs) {
     } = args;
 
     init_tracing(trace);
-    let opts =   tc::InvokeOptions {
+    let opts = tc::InvokeOptions {
         sandbox: sandbox,
         payload: payload,
         name: name,
@@ -755,7 +764,13 @@ async fn bootstrap(args: BootstrapArgs) {
 }
 
 async fn emulate(args: EmulateArgs) {
-    let EmulateArgs { profile, dev, shell, trace, .. } = args;
+    let EmulateArgs {
+        profile,
+        dev,
+        shell,
+        trace,
+        ..
+    } = args;
     init_tracing(trace);
     let env = tc::init_repo_profile(profile).await;
     tc::emulate(env, dev, shell).await;
@@ -799,7 +814,6 @@ async fn release(args: ReleaseArgs) {
     tc::release(service, suffix, unwind).await;
 }
 
-
 async fn cache(args: CacheArgs) {
     let CacheArgs {
         clear,
@@ -816,7 +830,6 @@ async fn cache(args: CacheArgs) {
     }
 }
 
-
 async fn config(_args: DefaultArgs) {
     tc::show_config().await;
 }
@@ -828,10 +841,11 @@ async fn inspect(args: InspectArgs) {
 }
 
 fn init_tracing(trace: bool) {
-    let should_trace = trace || match env::var("TC_TRACE") {
-        Ok(t) => &t == "1",
-        Err(_) => trace
-    };
+    let should_trace = trace
+        || match env::var("TC_TRACE") {
+            Ok(t) => &t == "1",
+            Err(_) => trace,
+        };
     if should_trace {
         let filter = Targets::new()
             .with_target("tc", tracing::Level::DEBUG)
@@ -845,13 +859,12 @@ fn init_tracing(trace: bool) {
     }
 }
 
-
 async fn doc(args: DocArgs) {
     let DocArgs { spec } = args;
 
     match spec {
         Some(s) => tc::generate_doc(&s),
-        None => clap_markdown::print_help_markdown::<Tc>()
+        None => clap_markdown::print_help_markdown::<Tc>(),
     }
 }
 
@@ -860,31 +873,30 @@ async fn run() {
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
-        Cmd::Build(args)     => build(args).await,
-        Cmd::Cache(args)     => cache(args).await,
-        Cmd::Config(args)    => config(args).await,
-        Cmd::Doc(args)       => doc(args).await,
-        Cmd::Compile(args)   => compile(args).await,
-        Cmd::Resolve(args)   => resolve(args).await,
-        Cmd::Create(args)    => create(args).await,
-        Cmd::Delete(args)    => delete(args).await,
-        Cmd::Deploy(args)    => deploy(args).await,
-        Cmd::Emulate(args)   => emulate(args).await,
-        Cmd::Freeze(args)    => freeze(args).await,
-        Cmd::Inspect(args)   => inspect(args).await,
-        Cmd::Invoke(args)    => invoke(args).await,
-        Cmd::List(args)      => list(args).await,
-        Cmd::Publish(args)   => publish(args).await,
-        Cmd::Release(args)   => release(args).await,
-        Cmd::Route(args)     => route(args).await,
-        Cmd::Scaffold(args)  => scaffold(args).await,
-        Cmd::Tag(args)       => tag(args).await,
-        Cmd::Test(args)      => test(args).await,
-        Cmd::Unfreeze(args)  => unfreeze(args).await,
-        Cmd::Update(args)    => update(args).await,
-        Cmd::Upgrade(args)   => upgrade(args).await,
-        Cmd::Version(..)     => version().await,
-
+        Cmd::Build(args) => build(args).await,
+        Cmd::Cache(args) => cache(args).await,
+        Cmd::Config(args) => config(args).await,
+        Cmd::Doc(args) => doc(args).await,
+        Cmd::Compile(args) => compile(args).await,
+        Cmd::Resolve(args) => resolve(args).await,
+        Cmd::Create(args) => create(args).await,
+        Cmd::Delete(args) => delete(args).await,
+        Cmd::Deploy(args) => deploy(args).await,
+        Cmd::Emulate(args) => emulate(args).await,
+        Cmd::Freeze(args) => freeze(args).await,
+        Cmd::Inspect(args) => inspect(args).await,
+        Cmd::Invoke(args) => invoke(args).await,
+        Cmd::List(args) => list(args).await,
+        Cmd::Publish(args) => publish(args).await,
+        Cmd::Release(args) => release(args).await,
+        Cmd::Route(args) => route(args).await,
+        Cmd::Scaffold(args) => scaffold(args).await,
+        Cmd::Tag(args) => tag(args).await,
+        Cmd::Test(args) => test(args).await,
+        Cmd::Unfreeze(args) => unfreeze(args).await,
+        Cmd::Update(args) => update(args).await,
+        Cmd::Upgrade(args) => upgrade(args).await,
+        Cmd::Version(..) => version().await,
     }
 }
 

@@ -1,9 +1,10 @@
+use crate::cache;
 use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
+use axum::response::{
+    Html,
+    IntoResponse,
 };
 use std::collections::HashMap;
-use crate::cache;
 
 async fn build_versions() -> HashMap<String, String> {
     let topologies = cache::find_all_topologies().await;
@@ -18,16 +19,15 @@ async fn build_versions() -> HashMap<String, String> {
 #[derive(Template)]
 #[template(path = "releases/new_versions.html")]
 struct VersionsTemplate {
-    items: HashMap<String, String>
+    items: HashMap<String, String>,
 }
 
 pub async fn versions() -> impl IntoResponse {
     let t = VersionsTemplate {
-        items: build_versions().await
+        items: build_versions().await,
     };
     Html(t.render().unwrap())
 }
-
 
 #[derive(Template)]
 #[template(path = "releases/new.html")]

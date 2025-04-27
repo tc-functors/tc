@@ -1,8 +1,9 @@
-use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
-};
 use crate::cache;
+use askama::Template;
+use axum::response::{
+    Html,
+    IntoResponse,
+};
 
 async fn build_mermaid_str() -> Vec<String> {
     let events = cache::find_all_events().await;
@@ -14,7 +15,8 @@ async fn build_mermaid_str() -> Vec<String> {
             let producer = t.producer_ns;
             let consumer = t.consumer_ns;
 
-            let target_name = &t.name
+            let target_name = &t
+                .name
                 .replace("{{namespace}}_", "")
                 .replace("{{namespace}}-", "")
                 .replace("_{{sandbox}}", "")
@@ -35,23 +37,19 @@ async fn build_mermaid_str() -> Vec<String> {
 #[derive(Template)]
 #[template(path = "overview/graph/sequence.html")]
 struct SequenceTemplate {
-    items: Vec<String>
+    items: Vec<String>,
 }
 
 pub async fn sequence() -> impl IntoResponse {
     let xs = build_mermaid_str().await;
 
-    let temp = SequenceTemplate {
-        items: xs
-    };
+    let temp = SequenceTemplate { items: xs };
     Html(temp.render().unwrap())
 }
 
-
 #[derive(Template)]
 #[template(path = "overview/graph/flow.html")]
-struct FlowTemplate {
-}
+struct FlowTemplate {}
 
 pub async fn flow() -> impl IntoResponse {
     let temp = FlowTemplate {};

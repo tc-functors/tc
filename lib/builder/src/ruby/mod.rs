@@ -1,28 +1,45 @@
-mod layer;
+mod code;
+mod extension;
 mod image;
 mod inline;
-mod extension;
-mod code;
+mod layer;
 pub mod library;
 
 use super::BuildOutput;
-use compiler::spec::{BuildKind, LangRuntime};
-use compiler::{Build, Runtime};
+use compiler::{
+    Build,
+    Runtime,
+    spec::{
+        BuildKind,
+        LangRuntime,
+    },
+};
 use kit::sh;
 
-pub fn build(dir: &str, lang: &LangRuntime, _runtime: &Runtime, name: &str, spec: Build) -> BuildOutput {
-
-    let Build { kind, pre, post, command, .. } = spec;
+pub fn build(
+    dir: &str,
+    lang: &LangRuntime,
+    _runtime: &Runtime,
+    name: &str,
+    spec: Build,
+) -> BuildOutput {
+    let Build {
+        kind,
+        pre,
+        post,
+        command,
+        ..
+    } = spec;
 
     let path = match kind {
-        BuildKind::Code      => code::build(dir, &command),
-        BuildKind::Inline    => inline::build(dir, "inline-deps", &command),
-        BuildKind::Layer     => layer::build(dir, name, &lang, pre, post),
-        BuildKind::Library   => library::build(dir),
+        BuildKind::Code => code::build(dir, &command),
+        BuildKind::Inline => inline::build(dir, "inline-deps", &command),
+        BuildKind::Layer => layer::build(dir, name, &lang, pre, post),
+        BuildKind::Library => library::build(dir),
         BuildKind::Extension => extension::build(dir, name),
-        BuildKind::Image     => image::build(dir, name),
-        BuildKind::Runtime   => todo!(),
-        BuildKind::Slab      => todo!()
+        BuildKind::Image => image::build(dir, name),
+        BuildKind::Runtime => todo!(),
+        BuildKind::Slab => todo!(),
     };
 
     BuildOutput {
@@ -30,7 +47,7 @@ pub fn build(dir: &str, lang: &LangRuntime, _runtime: &Runtime, name: &str, spec
         dir: dir.to_string(),
         artifact: path,
         kind: kind,
-        runtime: lang.clone()
+        runtime: lang.clone(),
     }
 }
 

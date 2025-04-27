@@ -1,20 +1,25 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
+};
+use compiler::{
+    Event,
+    Topology,
 };
 use std::collections::HashMap;
-use compiler::{Topology, Event};
-use crate::cache;
 
 struct Item {
     namespace: String,
     name: String,
     rule_name: String,
     pattern: String,
-    targets: HashMap<String, String>
+    targets: HashMap<String, String>,
 }
-
 
 fn build_events(namespace: &str, evs: HashMap<String, Event>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
@@ -28,7 +33,7 @@ fn build_events(namespace: &str, evs: HashMap<String, Event>) -> Vec<Item> {
             name: event.name.clone(),
             rule_name: event.rule_name.clone(),
             pattern: serde_json::to_string(&event.pattern).unwrap(),
-            targets: targets
+            targets: targets,
         };
         xs.push(e);
     }
@@ -52,13 +57,13 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 #[derive(Template)]
 #[template(path = "overview/list/events.html")]
 struct EventsTemplate {
-    items: Vec<Item>
+    items: Vec<Item>,
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let events = cache::find_events(&root, &namespace).await;
     let temp = EventsTemplate {
-        items: build_events(&namespace, events)
+        items: build_events(&namespace, events),
     };
     Html(temp.render().unwrap())
 }
@@ -66,8 +71,6 @@ pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
 pub async fn list_all() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let events = build(topologies);
-    let temp = EventsTemplate {
-        items: events
-    };
+    let temp = EventsTemplate { items: events };
     Html(temp.render().unwrap())
 }

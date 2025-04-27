@@ -1,15 +1,17 @@
 mod circleci;
 mod dynamo;
-mod tagger;
-mod notifier;
-mod github;
-mod router;
 mod git;
-
-pub use router::{route, freeze, unfreeze};
-
+mod github;
+mod notifier;
+mod router;
+mod tagger;
 
 use provider::Env;
+pub use router::{
+    freeze,
+    route,
+    unfreeze,
+};
 
 pub async fn create_tag(next: &str, prefix: &str, suffix: &str, push: bool, is_dry_run: bool) {
     let tag = tagger::next_tag(&prefix, &next, &suffix);
@@ -52,7 +54,7 @@ pub async fn update_metadata(
     service: &str,
     version: &str,
     deploy_env: &str,
-    dir: &str
+    dir: &str,
 ) {
     match std::env::var("TC_UPDATE_METADATA") {
         Ok(_) => {
@@ -60,7 +62,7 @@ pub async fn update_metadata(
                 dynamo::put_item(env, service, version, deploy_env, dir).await;
             }
         }
-        Err(_) => println!("Not updating metadata")
+        Err(_) => println!("Not updating metadata"),
     }
 }
 
@@ -87,10 +89,10 @@ pub fn should_abort(sandbox: &str) -> bool {
         Ok(_) => false,
         Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
             Ok(_) => false,
-            Err(_) => true
-        }
+            Err(_) => true,
+        },
     };
-    yes && ( sandbox == "stable")
+    yes && (sandbox == "stable")
 }
 
 pub fn guard(sandbox: &str) {

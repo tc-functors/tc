@@ -1,12 +1,11 @@
+use super::LangRuntime;
 use kit as u;
 use kit::sh;
-
-use super::LangRuntime;
 
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
@@ -14,7 +13,7 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let image = find_image(&runtime);
 
     let f = format!(
-            r#"
+        r#"
 FROM {image} as intermediate
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
@@ -32,17 +31,22 @@ RUN dnf -y install libXext libSM libXrender
 RUN --mount=type=ssh /slab.sh
 
 "#
-        );
+    );
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
 }
 
 pub fn build_with_docker(dir: &str) {
     let cmd_str = match std::env::var("DOCKER_SSH") {
-        Ok(e) => format!("docker build --no-cache  --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
-                         &e, u::basedir(dir)),
-        Err(_) => format!("docker build --no-cache  --ssh default --secret id=aws,src=$HOME/.aws/credentials . -t {}",
-                          u::basedir(dir))
+        Ok(e) => format!(
+            "docker build --no-cache  --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
+            &e,
+            u::basedir(dir)
+        ),
+        Err(_) => format!(
+            "docker build --no-cache  --ssh default --secret id=aws,src=$HOME/.aws/credentials . -t {}",
+            u::basedir(dir)
+        ),
     };
     let ret = u::runp(&cmd_str, dir);
     if !ret {
@@ -74,7 +78,6 @@ fn copy_from_docker(dir: &str) {
     sh(&clean, dir);
 }
 
-
 pub fn build(
     dir: &str,
     _name: &str,
@@ -82,7 +85,6 @@ pub fn build(
     _deps_pre: Vec<String>,
     _deps_post: Vec<String>,
 ) -> String {
-
     if !u::path_exists(dir, "slab.sh") {
         panic!("No slab.sh found")
     }

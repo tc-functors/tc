@@ -1,9 +1,14 @@
-use serde_derive::{Deserialize, Serialize};
-use super::spec::ScheduleSpec;
-use super::template;
-use std::collections::HashMap;
-use kit::*;
+use super::{
+    spec::ScheduleSpec,
+    template,
+};
 use kit as u;
+use kit::*;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Schedule {
@@ -32,7 +37,6 @@ pub fn make_all(infra_dir: &str) -> HashMap<String, Schedule> {
         let data = u::slurp(&path);
         let scheds: HashMap<String, ScheduleSpec> = serde_json::from_str(&data).unwrap();
         for (name, spec) in scheds {
-
             let rule_name = format!("tc-schedule-{}", &name);
             let payload = &spec.payload.to_string();
             let role_name = s!("tc-base-event-role");
@@ -44,13 +48,12 @@ pub fn make_all(infra_dir: &str) -> HashMap<String, Schedule> {
                 expression: make_expression(&spec.cron),
                 role_arn: template::role_arn(&role_name),
                 bus: s!("default"),
-                payload: payload.to_string()
+                payload: payload.to_string(),
             };
             h.insert(name.to_string(), s);
         }
         h
-
-     } else {
+    } else {
         HashMap::new()
     }
 }

@@ -1,9 +1,10 @@
 use kit as u;
+use provider::{
+    Env,
+    aws::dynamo,
+};
 
-use provider::aws::dynamo;
-use provider::Env;
-
-pub async fn put_item(env: &Env, service: &str, version: &str, deploy_env: &str, dir: &str)  {
+pub async fn put_item(env: &Env, service: &str, version: &str, deploy_env: &str, dir: &str) {
     let client = dynamo::make_client(env).await;
     let table = "service-version-inventory-tc";
     let deploy_time = u::utc_now();

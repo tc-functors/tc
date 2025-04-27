@@ -1,34 +1,58 @@
 use crate::Env;
 use anyhow::Result;
 use aws_config::BehaviorVersion;
-use aws_sdk_lambda::config as lambda_config;
-use aws_sdk_lambda::config::retry::RetryConfig;
-use aws_sdk_lambda::primitives::Blob;
-use aws_sdk_lambda::types::builders::{
-    DeadLetterConfigBuilder, EnvironmentBuilder, FileSystemConfigBuilder, FunctionCodeBuilder,
-    VpcConfigBuilder,
+use aws_sdk_lambda::{
+    Client,
+    Error,
+    config as lambda_config,
+    config::retry::RetryConfig,
+    primitives::Blob,
+    types::{
+        Architecture,
+        DeadLetterConfig,
+        Environment,
+        FileSystemConfig,
+        FunctionCode,
+        InvocationType,
+        LastUpdateStatus,
+        LogType,
+        LoggingConfig,
+        PackageType,
+        Runtime,
+        SnapStart,
+        SnapStartApplyOn,
+        State,
+        UpdateRuntimeOn,
+        VpcConfig,
+        builders::{
+            DeadLetterConfigBuilder,
+            EnvironmentBuilder,
+            FileSystemConfigBuilder,
+            FunctionCodeBuilder,
+            SnapStartBuilder,
+            VpcConfigBuilder,
+        },
+    },
 };
-use aws_sdk_lambda::types::Architecture;
-use aws_sdk_lambda::types::DeadLetterConfig;
-use aws_sdk_lambda::types::LastUpdateStatus;
-use aws_sdk_lambda::types::{Environment, FunctionCode, PackageType, Runtime, State};
-use aws_sdk_lambda::types::{FileSystemConfig, VpcConfig};
-use aws_sdk_lambda::types::{InvocationType, LogType, LoggingConfig};
-use aws_sdk_lambda::types::UpdateRuntimeOn;
-use aws_sdk_lambda::{Client, Error};
-use aws_sdk_lambda::types::builders::SnapStartBuilder;
-use aws_sdk_lambda::types::SnapStart;
-use aws_sdk_lambda::types::SnapStartApplyOn;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{
+    Engine as _,
+    engine::general_purpose,
+};
 use colored::Colorize;
-use kit::LogUpdate;
-use kit::*;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::stdout;
-use std::io::BufReader;
-use std::io::Read;
-use std::panic;
+use kit::{
+    LogUpdate,
+    *,
+};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{
+        BufReader,
+        Read,
+        stdout,
+    },
+    panic,
+};
 
 fn pp_state(state: &State) -> String {
     match state {
@@ -119,7 +143,10 @@ pub fn make_environment(vars: HashMap<String, String>) -> Environment {
 pub fn make_snapstart(enable_snap: bool) -> Option<SnapStart> {
     if enable_snap {
         let e = SnapStartBuilder::default();
-        Some(e.set_apply_on(Some(SnapStartApplyOn::PublishedVersions)).build())
+        Some(
+            e.set_apply_on(Some(SnapStartApplyOn::PublishedVersions))
+                .build(),
+        )
     } else {
         None
     }
@@ -127,24 +154,24 @@ pub fn make_snapstart(enable_snap: bool) -> Option<SnapStart> {
 
 pub fn make_runtime(lang: &str) -> Runtime {
     match lang {
-        "java11"      => Runtime::Java11,
-        "ruby2.7"     => Runtime::Ruby27,
-        "go"          => "provided.al2023".into(),
-        "python3.7"   => Runtime::Python37,
-        "python3.8"   => Runtime::Python38,
-        "python3.9"   => Runtime::Python39,
-        "python3.10"  => Runtime::Python310,
-        "python3.11"  => Runtime::Python311,
-        "python3.12"  => Runtime::Python312,
-        "python3.13"  => Runtime::Python313,
-        "provided"    => Runtime::Provided,
+        "java11" => Runtime::Java11,
+        "ruby2.7" => Runtime::Ruby27,
+        "go" => "provided.al2023".into(),
+        "python3.7" => Runtime::Python37,
+        "python3.8" => Runtime::Python38,
+        "python3.9" => Runtime::Python39,
+        "python3.10" => Runtime::Python310,
+        "python3.11" => Runtime::Python311,
+        "python3.12" => Runtime::Python312,
+        "python3.13" => Runtime::Python313,
+        "provided" => Runtime::Provided,
         "providedal2" => Runtime::Providedal2,
-        "node22"      => Runtime::Nodejs22x,
-        "node20"      => Runtime::Nodejs20x,
-        "janet"       => "provided.al2023".into(),
-        "rust"        => "provided.al2023".into(),
-        "ruby3.2"     => "ruby3.2".into(),
-        _             => Runtime::Provided,
+        "node22" => Runtime::Nodejs22x,
+        "node20" => Runtime::Nodejs20x,
+        "janet" => "provided.al2023".into(),
+        "rust" => "provided.al2023".into(),
+        "ruby3.2" => "ruby3.2".into(),
+        _ => Runtime::Provided,
     }
 }
 
@@ -391,26 +418,24 @@ impl Function {
 
         let res = match f.package_type {
             PackageType::Image => {
-                self
-                    .client
+                self.client
                     .update_function_code()
                     .function_name(arn)
                     .image_uri(f.uri)
                     .publish(true)
                     .send()
                     .await?
-            },
+            }
             PackageType::Zip => {
-                self
-                    .client
+                self.client
                     .update_function_code()
                     .function_name(arn)
                     .zip_file(f.blob)
                     .publish(true)
                     .send()
                     .await?
-            },
-            _ => panic!("unsupported package type")
+            }
+            _ => panic!("unsupported package type"),
         };
 
         while state != LastUpdateStatus::Successful {
@@ -655,7 +680,7 @@ pub async fn update_tags(client: Client, arn: &str, tags: HashMap<String, String
         .await;
     match res {
         Ok(_) => (),
-        Err(_) => println!("error updating tags")
+        Err(_) => println!("error updating tags"),
     }
 }
 
@@ -837,7 +862,7 @@ pub async fn update_runtime_management_config(client: &Client, name: &str, versi
         .await;
     match res {
         Ok(_) => (),
-        Err(_) => panic!("{:?}", res)
+        Err(_) => panic!("{:?}", res),
     }
 }
 

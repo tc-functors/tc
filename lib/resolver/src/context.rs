@@ -1,5 +1,5 @@
-use provider::Env;
 use kit as u;
+use provider::Env;
 use std::collections::HashMap;
 
 fn abbr(name: &str) -> String {
@@ -17,7 +17,6 @@ pub struct Context {
     pub trace: bool,
 }
 
-
 impl Context {
     pub fn render(&self, s: &str) -> String {
         let mut table: HashMap<&str, &str> = HashMap::new();
@@ -25,10 +24,9 @@ impl Context {
         let region = &self.env.region();
         let abbr_namespace = abbr(&self.namespace);
 
-
         let repo = match std::env::var("TC_ECR_REPO") {
             Ok(r) => &r.to_owned(),
-            Err(_) => &self.env.config.aws.ecr.repo
+            Err(_) => &self.env.config.aws.ecr.repo,
         };
 
         table.insert("account", account);
@@ -42,5 +40,4 @@ impl Context {
         table.insert("repo", repo);
         u::stencil(s, table)
     }
-
 }

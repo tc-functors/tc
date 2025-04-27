@@ -1,12 +1,14 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
 use compiler::Topology;
 use std::collections::HashMap;
-use crate::cache;
 
 struct Item {
     namespace: String,
@@ -14,7 +16,7 @@ struct Item {
     kind: String,
     target: String,
     input: String,
-    output: String
+    output: String,
 }
 
 fn build_aux(topology: &Topology) -> Vec<Item> {
@@ -28,10 +30,9 @@ fn build_aux(topology: &Topology) -> Vec<Item> {
                 kind: resolver.kind.to_str(),
                 target: resolver.target_arn.clone(),
                 input: resolver.input.clone(),
-                output: resolver.output.clone()
-
+                output: resolver.output.clone(),
             };
-        xs.push(e);
+            xs.push(e);
         }
     }
     xs
@@ -54,13 +55,13 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 #[derive(Template)]
 #[template(path = "overview/list/mutations.html")]
 struct MutationsTemplate {
-    items: Vec<Item>
- }
+    items: Vec<Item>,
+}
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let topologies = cache::find_topologies(&root, &namespace).await;
     let temp = MutationsTemplate {
-        items: build(topologies)
+        items: build(topologies),
     };
 
     Html(temp.render().unwrap())
@@ -69,7 +70,7 @@ pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoR
 pub async fn list_all() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let temp = MutationsTemplate {
-        items: build(topologies)
+        items: build(topologies),
     };
 
     Html(temp.render().unwrap())

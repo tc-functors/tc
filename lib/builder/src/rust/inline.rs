@@ -15,7 +15,6 @@ RUN cargo lambda build --release
     u::write_str(&dockerfile, &f);
 }
 
-
 fn copy_from_docker(dir: &str) {
     let temp_cont = &format!("tmp-{}", u::basedir(dir));
     let clean = &format!("docker rm -f {}", &temp_cont);
@@ -26,16 +25,21 @@ fn copy_from_docker(dir: &str) {
     let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
 
-    u::sh(&format!("docker cp {}:/build/target/lambda/bootstrap/bootstrap bootstrap", id), dir);
+    u::sh(
+        &format!(
+            "docker cp {}:/build/target/lambda/bootstrap/bootstrap bootstrap",
+            id
+        ),
+        dir,
+    );
     u::sh(&clean, dir);
     u::sh("rm -f Dockerfile wrapper", dir);
 }
 
 pub fn build(dir: &str) -> String {
-
     let no_docker = match std::env::var("TC_NO_DOCKER_BUILD") {
         Ok(_) => true,
-        Err(_) => false
+        Err(_) => false,
     };
     if no_docker {
         let cmds = vec![
@@ -57,7 +61,7 @@ pub fn build(dir: &str) -> String {
 
     let size = u::path_size(dir, "bootstrap");
 
-   println!("Built bootstrap ({})", u::file_size_human(size));
+    println!("Built bootstrap ({})", u::file_size_human(size));
     let command = "zip -q -r lambda.zip bootstrap";
     u::sh(command, dir);
     format!("{}/lambda.zip", dir)

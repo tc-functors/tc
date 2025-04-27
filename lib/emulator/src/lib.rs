@@ -2,9 +2,8 @@ pub mod lambda;
 pub mod sfn;
 pub mod shell;
 
-use provider::Env;
 use kit as u;
-
+use provider::Env;
 
 fn as_dev_layers(layers: Vec<String>) -> Vec<String> {
     let mut xs: Vec<String> = vec![];

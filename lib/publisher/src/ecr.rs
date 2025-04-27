@@ -1,18 +1,20 @@
-use provider::Env;
-use provider::aws::ecr;
-
-use std::collections::HashMap;
 use kit as u;
+use provider::{
+    Env,
+    aws::ecr,
+};
+use std::collections::HashMap;
 
 fn get_host(env: &Env) -> String {
     format!("{}.dkr.ecr.{}.amazonaws.com", env.account(), env.region())
 }
 
 pub async fn login(env: &Env, dir: &str) {
-    let cmd = format!("AWS_PROFILE={} aws ecr get-login-password --region {} | docker login --username AWS --password-stdin {}",
-                      &env.name,
-                      env.region(),
-                      get_host(env)
+    let cmd = format!(
+        "AWS_PROFILE={} aws ecr get-login-password --region {} | docker login --username AWS --password-stdin {}",
+        &env.name,
+        env.region(),
+        get_host(env)
     );
     u::run(&cmd, dir);
 }

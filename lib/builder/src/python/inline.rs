@@ -1,7 +1,9 @@
-use kit as u;
-use kit::sh;
 use super::LangRuntime;
-use kit::LogUpdate;
+use kit as u;
+use kit::{
+    LogUpdate,
+    sh,
+};
 use std::io::stdout;
 
 fn top_level() -> String {
@@ -13,23 +15,26 @@ fn find_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
         LangRuntime::Python311 => String::from("public.ecr.aws/sam/build-python3.11:latest"),
         LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
 fn gen_req_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
-        format!("pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt")
+        format!(
+            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+        )
     } else {
         format!("echo 1")
     }
-
 }
 
 fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
-        Err(_) => "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
+        Err(_) => {
+            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
+        }
     };
 
     let build_context = &top_level();
@@ -37,7 +42,7 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let req_cmd = gen_req_cmd(dir);
 
     let f = format!(
-            r#"
+        r#"
 FROM {image} AS intermediate
 WORKDIR {dir}
 
@@ -53,7 +58,7 @@ RUN rm -rf /build/python && mkdir -p /build
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
 "#
-        );
+    );
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
 }
@@ -127,7 +132,6 @@ fn build_docker(dir: &str, name: &str, runtime: &LangRuntime, given_command: &st
     sh(&cmd, &format!("{}/build/python", dir));
     sh("rm -rf build build.json", dir);
     sh(given_command, dir);
-
 }
 
 pub fn build(dir: &str, name: &str, runtime: &LangRuntime, given_command: &str) -> String {
@@ -135,7 +139,7 @@ pub fn build(dir: &str, name: &str, runtime: &LangRuntime, given_command: &str) 
 
     match std::env::var("TC_NO_DOCKER") {
         Ok(_) => build_local(dir, given_command),
-        Err(_) => build_docker(dir, name, runtime, given_command)
+        Err(_) => build_docker(dir, name, runtime, given_command),
     }
     format!("{}/lambda.zip", dir)
 }

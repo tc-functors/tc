@@ -1,19 +1,17 @@
 use axum::{
-    extract::{DefaultBodyLimit},
     Router,
+    extract::DefaultBodyLimit,
 };
 
-
+mod cache;
+mod diffs;
 mod functors;
 mod overview;
-mod sandboxes;
 mod releases;
-mod diffs;
-mod cache;
+mod sandboxes;
 mod specs;
 
 pub async fn init() {
-
     let addr = "0.0.0.0:8000";
 
     let app = Router::new()
@@ -21,18 +19,15 @@ pub async fn init() {
         .merge(overview::list_routes())
         .merge(overview::view_routes())
         .merge(overview::post_routes())
-
         .merge(functors::page_routes())
         .merge(functors::entity_routes())
         .merge(functors::functor_routes())
         .merge(functors::function_routes())
         .merge(functors::mutation_routes())
-
         .merge(diffs::routes())
         .merge(sandboxes::routes())
         .merge(releases::routes())
         .merge(specs::routes())
-
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

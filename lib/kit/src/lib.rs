@@ -6,13 +6,15 @@ mod pprint;
 mod text;
 mod time;
 
-pub use self::core::*;
-pub use self::http::*;
-pub use self::io::*;
-pub use self::json::*;
-pub use self::pprint::*;
-pub use self::text::*;
-pub use self::time::*;
+pub use self::{
+    core::*,
+    http::*,
+    io::*,
+    json::*,
+    pprint::*,
+    text::*,
+    time::*,
+};
 
 #[macro_export]
 macro_rules! s {

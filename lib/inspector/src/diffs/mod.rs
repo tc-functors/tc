@@ -1,14 +1,21 @@
 use askama::Template;
 use axum::{
-    routing::{get, post},
     Router,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
+    routing::{
+        get,
+        post,
+    },
 };
 
-mod versions;
 mod functors;
 mod layers;
+mod versions;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -43,16 +50,11 @@ pub async fn index_page() -> impl IntoResponse {
 
 pub fn routes() -> Router {
     Router::new()
-        .route("/diffs",
-               get(index_page))
-        .route("/diffs/functors",
-               get(functors::view))
-        .route("/diffs/versions",
-               get(versions::view))
-        .route("/diffs/layers",
-               get(layers::view))
-        .route("/hx/diffs/versions",
-               post(versions::generate))
+        .route("/diffs", get(index_page))
+        .route("/diffs/functors", get(functors::view))
+        .route("/diffs/versions", get(versions::view))
+        .route("/diffs/layers", get(layers::view))
+        .route("/hx/diffs/versions", post(versions::generate))
         .route("/hx/diffs/layers", get(layers::generate))
         .route("/hx/diffs/layers", post(layers::sync))
 }

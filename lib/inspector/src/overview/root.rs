@@ -1,11 +1,14 @@
-use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
-};
-
-use std::collections::HashMap;
-use compiler::{TopologyCount, Topology};
 use crate::cache;
+use askama::Template;
+use axum::response::{
+    Html,
+    IntoResponse,
+};
+use compiler::{
+    Topology,
+    TopologyCount,
+};
+use std::collections::HashMap;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Functor {
@@ -19,7 +22,7 @@ struct Functor {
     routes: usize,
     mutations: usize,
     states: usize,
-    version: String
+    version: String,
 }
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
@@ -49,14 +52,12 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
 #[derive(Template)]
 #[template(path = "overview/list/root.html")]
 struct FunctorsTemplate {
-    items: Vec<Functor>
+    items: Vec<Functor>,
 }
 
 pub async fn list_all() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let functors = build(topologies);
-        let t = FunctorsTemplate {
-            items: functors
-        };
-        Html(t.render().unwrap())
+    let t = FunctorsTemplate { items: functors };
+    Html(t.render().unwrap())
 }

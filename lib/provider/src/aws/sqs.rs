@@ -1,8 +1,9 @@
-use aws_sdk_sqs::types::QueueAttributeName;
-use aws_sdk_sqs::Client;
-use std::collections::HashMap;
-
 use crate::Env;
+use aws_sdk_sqs::{
+    Client,
+    types::QueueAttributeName,
+};
+use std::collections::HashMap;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;

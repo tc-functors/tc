@@ -1,6 +1,11 @@
-use aws_sdk_appsync::types::builders::HttpDataSourceConfigBuilder;
-use aws_sdk_appsync::types::{DataSourceType, HttpDataSourceConfig};
-use aws_sdk_appsync::Client;
+use aws_sdk_appsync::{
+    Client,
+    types::{
+        DataSourceType,
+        HttpDataSourceConfig,
+        builders::HttpDataSourceConfigBuilder,
+    },
+};
 use colored::Colorize;
 use kit::*;
 

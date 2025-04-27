@@ -1,22 +1,37 @@
-use anyhow::Result;
-use aws_sdk_sfn::config as sfn_config;
-use aws_sdk_sfn::config::retry::RetryConfig;
-use aws_sdk_sfn::operation::start_sync_execution::StartSyncExecutionOutput;
-use aws_sdk_sfn::types::builders::{CloudWatchLogsLogGroupBuilder, LogDestinationBuilder};
-use aws_sdk_sfn::types::builders::{LoggingConfigurationBuilder, TagBuilder};
-use aws_sdk_sfn::types::{LogLevel, LoggingConfiguration};
-use aws_sdk_sfn::types::TracingConfiguration;
-use aws_sdk_sfn::types::{StateMachineStatus, StateMachineType, Tag};
-use aws_sdk_sfn::types::builders::TracingConfigurationBuilder;
-use aws_sdk_sfn::{Client, Error};
-use colored::Colorize;
-use kit::LogUpdate;
-use std::collections::HashMap;
-use std::io::stdout;
-use std::panic;
-
 use crate::Env;
-use kit::*;
+use anyhow::Result;
+use aws_sdk_sfn::{
+    Client,
+    Error,
+    config as sfn_config,
+    config::retry::RetryConfig,
+    operation::start_sync_execution::StartSyncExecutionOutput,
+    types::{
+        LogLevel,
+        LoggingConfiguration,
+        StateMachineStatus,
+        StateMachineType,
+        Tag,
+        TracingConfiguration,
+        builders::{
+            CloudWatchLogsLogGroupBuilder,
+            LogDestinationBuilder,
+            LoggingConfigurationBuilder,
+            TagBuilder,
+            TracingConfigurationBuilder,
+        },
+    },
+};
+use colored::Colorize;
+use kit::{
+    LogUpdate,
+    *,
+};
+use std::{
+    collections::HashMap,
+    io::stdout,
+    panic,
+};
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;
@@ -55,17 +70,17 @@ fn make_log_config(log_group_arn: &str, include_data: bool) -> LoggingConfigurat
 
     let log_level = match std::env::var("TC_SFN_LOG_LEVEL") {
         Ok(v) => match v.as_ref() {
-            "ALL"   => LogLevel::All,
+            "ALL" => LogLevel::All,
             "ERROR" => LogLevel::Error,
             "FATAL" => LogLevel::Fatal,
-            "OFF"   => LogLevel::Off,
-            _       => LogLevel::All
+            "OFF" => LogLevel::Off,
+            _ => LogLevel::All,
         },
-        Err(_) => LogLevel::All
+        Err(_) => LogLevel::All,
     };
 
     let lc = LoggingConfigurationBuilder::default();
-        lc.level(log_level)
+    lc.level(log_level)
         .include_execution_data(include_data)
         .destinations(destination)
         .build()
@@ -296,7 +311,12 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
     }
 }
 
-pub async fn enable_logging(client: Client, arn: &str, log_arn: &str, include_data: bool) -> Result<(), Error> {
+pub async fn enable_logging(
+    client: Client,
+    arn: &str,
+    log_arn: &str,
+    include_data: bool,
+) -> Result<(), Error> {
     let log_config = make_log_config(log_arn, include_data);
     let res = client
         .update_state_machine()

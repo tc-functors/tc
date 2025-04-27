@@ -1,14 +1,17 @@
-use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
+use crate::{
+    cache,
+    cache::Layer,
 };
-
-use provider::Env;
+use askama::Template;
+use axum::response::{
+    Html,
+    IntoResponse,
+};
 use configurator::Config;
-use provider::aws::layer;
-use crate::cache;
-use crate::cache::Layer;
-
+use provider::{
+    Env,
+    aws::layer,
+};
 
 fn build(xs: Vec<String>) -> Vec<Layer> {
     let mut v: Vec<Layer> = vec![];
@@ -16,7 +19,7 @@ fn build(xs: Vec<String>) -> Vec<Layer> {
         let m = Layer {
             name: x,
             dev: 0,
-            stable: 0
+            stable: 0,
         };
         v.push(m);
     }
@@ -26,7 +29,7 @@ fn build(xs: Vec<String>) -> Vec<Layer> {
 #[derive(Template)]
 #[template(path = "diffs/layers_list.html")]
 struct LayersTemplate {
-    items: Vec<Layer>
+    items: Vec<Layer>,
 }
 
 pub async fn generate() -> impl IntoResponse {
@@ -36,15 +39,11 @@ pub async fn generate() -> impl IntoResponse {
     } else {
         layers
     };
-    let t = LayersTemplate {
-        items: xs
-    };
+    let t = LayersTemplate { items: xs };
     Html(t.render().unwrap())
 }
 
-
 pub async fn sync() -> impl IntoResponse {
-
     let layers = cache::find_layers().await;
 
     let cfg = Config::new(None, "");
@@ -62,18 +61,17 @@ pub async fn sync() -> impl IntoResponse {
         let xl = Layer {
             name: layer,
             dev: dev_version,
-            stable: stable_version
+            stable: stable_version,
         };
         resolve_layers.push(xl);
     }
     cache::save_resolved_layers(resolve_layers.clone()).await;
 
     let t = LayersTemplate {
-        items: resolve_layers
+        items: resolve_layers,
     };
     Html(t.render().unwrap())
 }
-
 
 #[derive(Template)]
 #[template(path = "diffs/layers.html")]

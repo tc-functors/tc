@@ -1,17 +1,16 @@
-use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
-};
-
-use std::collections::HashMap;
 use crate::cache;
+use askama::Template;
+use axum::response::{
+    Html,
+    IntoResponse,
+};
+use std::collections::HashMap;
 
 struct Change {
     name: String,
     changes: String,
-    version: String
+    version: String,
 }
-
 
 async fn build_changelog() -> Vec<Change> {
     let topologies = cache::find_all_topologies().await;
@@ -21,7 +20,7 @@ async fn build_changelog() -> Vec<Change> {
         let change = Change {
             name: name,
             changes: changes,
-            version: t.version.clone()
+            version: t.version.clone(),
         };
         xs.push(change);
     }
@@ -31,12 +30,12 @@ async fn build_changelog() -> Vec<Change> {
 #[derive(Template)]
 #[template(path = "releases/current_changelog.html")]
 struct ChangelogTemplate {
-    items: Vec<Change>
+    items: Vec<Change>,
 }
 
 pub async fn changelog() -> impl IntoResponse {
     let t = ChangelogTemplate {
-        items: build_changelog().await
+        items: build_changelog().await,
     };
     Html(t.render().unwrap())
 }
@@ -54,12 +53,12 @@ async fn build_versions() -> HashMap<String, String> {
 #[derive(Template)]
 #[template(path = "releases/current_versions.html")]
 struct VersionsTemplate {
-    items: HashMap<String, String>
+    items: HashMap<String, String>,
 }
 
 pub async fn versions() -> impl IntoResponse {
     let t = VersionsTemplate {
-        items: build_versions().await
+        items: build_versions().await,
     };
     Html(t.render().unwrap())
 }

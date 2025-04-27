@@ -1,12 +1,20 @@
-use aws_sdk_apigatewayv2::types::{
-    AuthorizationType, ConnectionType, IntegrationType, ProtocolType,
-};
-use aws_sdk_apigatewayv2::{Client, Error};
-use std::collections::HashMap;
-
 use crate::Env;
+use aws_sdk_apigatewayv2::{
+    Client,
+    Error,
+    types::{
+        AuthorizationType,
+        ConnectionType,
+        IntegrationType,
+        ProtocolType,
+    },
+};
 use kit::*;
-use log::{debug, info};
+use log::{
+    debug,
+    info,
+};
+use std::collections::HashMap;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;

@@ -1,12 +1,17 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
-use compiler::{Topology, Route};
+use compiler::{
+    Route,
+    Topology,
+};
 use std::collections::HashMap;
-use crate::cache;
 
 struct Item {
     namespace: String,
@@ -29,8 +34,7 @@ fn build_routes(namespace: &str, rs: HashMap<String, Route>) -> Vec<Item> {
             gateway: route.gateway.clone(),
             authorizer: route.authorizer.clone(),
             target_kind: route.target_kind.to_str(),
-            target_arn: route.target_arn.clone()
-
+            target_arn: route.target_arn.clone(),
         };
         xs.push(e);
     }
@@ -54,22 +58,21 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 #[derive(Template)]
 #[template(path = "overview/list/routes.html")]
 struct RoutesTemplate {
-    items: Vec<Item>
+    items: Vec<Item>,
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let routes = cache::find_routes(&root, &namespace).await;
     let temp = RoutesTemplate {
-        items: build_routes(&namespace, routes)
+        items: build_routes(&namespace, routes),
     };
     Html(temp.render().unwrap())
 }
 
-
 pub async fn list_all() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let temp = RoutesTemplate {
-        items: build(topologies)
+        items: build(topologies),
     };
     Html(temp.render().unwrap())
 }

@@ -1,15 +1,18 @@
 pub mod build;
-pub mod runtime;
 pub mod layer;
+pub mod runtime;
 
-use kit as u;
-use kit::*;
-use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
 use super::spec::FunctionSpec;
 use crate::template;
 pub use build::Build;
+use kit as u;
+use kit::*;
 pub use runtime::Runtime;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Test {
@@ -42,13 +45,10 @@ fn is_singular_function_dir() -> bool {
 fn find_fqn(given_fqn: &str, namespace: &str, name: &str, format: &str) -> String {
     if !given_fqn.is_empty() {
         format!("{}_{{{{sandbox}}}}", given_fqn)
-
     } else if !name.is_empty() && namespace.is_empty() {
         format!("{}_{{{{sandbox}}}}", name)
-
     } else if is_singular_function_dir() {
         format!("{}_{{{{sandbox}}}}", namespace)
-
     } else {
         match format {
             "hyphenated" => format!("{}-{}-{{{{sandbox}}}}", namespace, name),
@@ -66,15 +66,13 @@ fn find_fqn(given_fqn: &str, namespace: &str, name: &str, format: &str) -> Strin
 fn make_test() -> Test {
     Test {
         name: u::empty(),
-        commands: vec![]
+        commands: vec![],
     }
 }
 
 fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
     match &fspec.fqn {
-        Some(f) => {
-            find_fqn(&f, namespace, &fspec.name, format)
-        },
+        Some(f) => find_fqn(&f, namespace, &fspec.name, format),
         None => match &fspec.namespace {
             Some(n) => {
                 if format == "hyphenated" {
@@ -94,24 +92,23 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
                     }
                 }
             }
-        }
+        },
     }
 }
 
 impl Function {
-
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
         let fspec = FunctionSpec::new(dir);
 
         let namespace = match fspec.namespace {
             Some(ref n) => n,
-            None => &namespace.to_string()
+            None => &namespace.to_string(),
         };
         let fqn = make_fqn(&fspec, &namespace, format);
 
         let infra_dir = match fspec.infra_dir {
             Some(ref d) => &d,
-            None => topo_infra_dir
+            None => topo_infra_dir,
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn);
@@ -128,7 +125,7 @@ impl Function {
             build: Build::new(dir, &runtime, fspec.build, fspec.tasks),
             runtime: runtime,
             layer_name: fspec.layer_name,
-            test: make_test()
+            test: make_test(),
         }
     }
 

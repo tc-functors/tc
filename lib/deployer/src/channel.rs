@@ -1,6 +1,8 @@
 use compiler::Channel;
-use provider::aws::appsync;
-use provider::Env;
+use provider::{
+    Env,
+    aws::appsync,
+};
 use std::collections::HashMap;
 
 pub async fn create(env: &Env, channels: &HashMap<String, Channel>) {
@@ -13,6 +15,4 @@ pub async fn create(env: &Env, channels: &HashMap<String, Channel>) {
     }
 }
 
-pub async fn delete(_env: &Env, _channels: &HashMap<String, Channel>) {
-
-}
+pub async fn delete(_env: &Env, _channels: &HashMap<String, Channel>) {}

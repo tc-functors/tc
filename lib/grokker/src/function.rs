@@ -1,7 +1,13 @@
-use provider::aws::lambda;
-use provider::Env;
 use kit as u;
-use tabled::{Style, Table, Tabled};
+use provider::{
+    Env,
+    aws::lambda,
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 
 #[derive(Tabled, Clone, Debug, PartialEq)]
 struct Function {

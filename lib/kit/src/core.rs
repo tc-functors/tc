@@ -198,6 +198,6 @@ pub fn maybe_vec_string(t: Option<Vec<String>>) -> String {
 pub fn opt_as_bool(b: Option<bool>) -> bool {
     match b {
         Some(t) => t,
-        None => false
+        None => false,
     }
 }

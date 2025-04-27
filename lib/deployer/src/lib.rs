@@ -1,3 +1,4 @@
+pub mod channel;
 pub mod event;
 pub mod flow;
 pub mod function;
@@ -6,11 +7,12 @@ pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
-pub mod channel;
 
 use colored::Colorize;
-use compiler::Topology;
-use compiler::spec::TopologyKind;
+use compiler::{
+    Topology,
+    spec::TopologyKind,
+};
 use provider::Env;
 
 pub fn maybe_component(c: Option<String>) -> String {
@@ -33,7 +35,7 @@ fn prn_components() {
         "mutations",
         "schedules",
         "queues",
-        "channels"
+        "channels",
     ];
     for x in v {
         println!("{x}");
@@ -126,9 +128,9 @@ pub async fn create(env: &Env, topology: &Topology) {
         &version
     );
 
-     match kind {
+    match kind {
         TopologyKind::StepFunction => create_flow(env, &topology).await,
-        _  => create_function(env, &topology).await,
+        _ => create_function(env, &topology).await,
     }
 }
 
@@ -184,7 +186,6 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         logs,
         ..
     } = topology.clone();
-
 
     println!(
         "Updating functor {}@{}.{}/{}/{}",
@@ -259,8 +260,8 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
             Some(f) => {
                 let sfn_arn = env.sfn_arn(&fqn);
                 flow::enable_logs(&env, &sfn_arn, logs.clone(), &f).await;
-            },
-            None => ()
+            }
+            None => (),
         },
 
         "all" => {
@@ -294,7 +295,6 @@ pub async fn update_component(env: &Env, topology: &Topology, component: Option<
         }
     }
 }
-
 
 pub async fn delete(env: &Env, topology: &Topology) {
     let Topology {
@@ -368,6 +368,6 @@ pub async fn delete_component(env: &Env, topology: Topology, component: Option<S
             Some(f) => flow::delete(&env, f).await,
             None => (),
         },
-        _ => prn_components()
+        _ => prn_components(),
     }
 }

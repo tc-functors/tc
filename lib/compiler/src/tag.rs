@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use kit::*;
-use kit as u;
 use super::version;
+use kit as u;
+use kit::*;
+use std::collections::HashMap;
 
 fn parent_tags_file(dir: &str) -> Option<String> {
     let paths = vec![
@@ -31,9 +31,7 @@ fn load_tags(infra_dir: &str) -> HashMap<String, String> {
                 let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
                 tags
             }
-            None => {
-                HashMap::new()
-            }
+            None => HashMap::new(),
         }
     }
 }

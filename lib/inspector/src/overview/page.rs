@@ -2,7 +2,11 @@ use askama::Template;
 use axum::{
     extract::Path,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
 };
 
 pub struct HtmlTemplate<T>(pub T);
@@ -37,7 +41,6 @@ pub async fn index() -> impl IntoResponse {
     HtmlTemplate(template)
 }
 
-
 #[derive(Template)]
 #[template(path = "overview/list.html")]
 struct ListTemplate {
@@ -56,7 +59,9 @@ pub async fn list_root(Path((root, entity)): Path<(String, String)>) -> impl Int
     })
 }
 
-pub async fn list_ns(Path((root, namespace, entity)): Path<(String, String, String)>) -> impl IntoResponse {
+pub async fn list_ns(
+    Path((root, namespace, entity)): Path<(String, String, String)>,
+) -> impl IntoResponse {
     HtmlTemplate(ListTemplate {
         root: root,
         namespace: namespace,
@@ -73,7 +78,6 @@ pub async fn list_all(Path(entity): Path<String>) -> impl IntoResponse {
         context: String::from("overview"),
     })
 }
-
 
 #[derive(Template)]
 #[template(path = "overview/view.html")]
@@ -96,7 +100,7 @@ pub async fn _view_namespace(Path(id): Path<String>) -> impl IntoResponse {
 }
 
 pub async fn view_entity(
-    Path((root, namespace, entity, id)): Path<(String, String, String, String)>
+    Path((root, namespace, entity, id)): Path<(String, String, String, String)>,
 ) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {
         id: id,
@@ -106,7 +110,6 @@ pub async fn view_entity(
         context: String::from("overview"),
     })
 }
-
 
 pub async fn view_root(Path(root): Path<String>) -> impl IntoResponse {
     HtmlTemplate(ViewTemplate {

@@ -1,23 +1,32 @@
-use aws_sdk_eventbridge::types::builders::AppSyncParametersBuilder;
-use aws_sdk_eventbridge::types::builders::InputTransformerBuilder;
-use aws_sdk_eventbridge::types::builders::PutEventsRequestEntryBuilder;
-use aws_sdk_eventbridge::types::builders::TargetBuilder;
-use aws_sdk_eventbridge::types::AppSyncParameters;
-use aws_sdk_eventbridge::types::InputTransformer;
-use aws_sdk_eventbridge::types::PutEventsRequestEntry;
-use aws_sdk_eventbridge::types::RetryPolicy;
-use aws_sdk_eventbridge::types::builders::RetryPolicyBuilder;
-pub use aws_sdk_eventbridge::types::{Rule, RuleState, Target};
-use aws_sdk_eventbridge::types::ConnectionAuthorizationType;
-use aws_sdk_eventbridge::types::CreateConnectionAuthRequestParameters;
-use aws_sdk_eventbridge::types::ApiDestinationHttpMethod;
-use aws_sdk_eventbridge::types::builders::CreateConnectionAuthRequestParametersBuilder;
-use aws_sdk_eventbridge::types::builders::CreateConnectionApiKeyAuthRequestParametersBuilder;
-use aws_sdk_eventbridge::Client;
-use std::collections::HashMap;
-
 use crate::Env;
+pub use aws_sdk_eventbridge::types::{
+    Rule,
+    RuleState,
+    Target,
+};
+use aws_sdk_eventbridge::{
+    Client,
+    types::{
+        ApiDestinationHttpMethod,
+        AppSyncParameters,
+        ConnectionAuthorizationType,
+        CreateConnectionAuthRequestParameters,
+        InputTransformer,
+        PutEventsRequestEntry,
+        RetryPolicy,
+        builders::{
+            AppSyncParametersBuilder,
+            CreateConnectionApiKeyAuthRequestParametersBuilder,
+            CreateConnectionAuthRequestParametersBuilder,
+            InputTransformerBuilder,
+            PutEventsRequestEntryBuilder,
+            RetryPolicyBuilder,
+            TargetBuilder,
+        },
+    },
+};
 use kit::*;
+use std::collections::HashMap;
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;
@@ -53,26 +62,23 @@ pub fn make_target(
     input_transformer: Option<InputTransformer>,
     appsync: Option<AppSyncParameters>,
 ) -> Target {
-
     let target = TargetBuilder::default();
     let retry_policy = make_retry_policy();
 
     match kind {
-        "sfn" | "stepfunction" => {
-            target.id(id)
-                .arn(arn)
-                .role_arn(role_arn)
-                .retry_policy(retry_policy)
-                .build()
-                .unwrap()
-        }
-        "lambda" | "function" => {
-            target.id(id)
-                .arn(arn)
-                .retry_policy(retry_policy)
-                .build()
-                .unwrap()
-        }
+        "sfn" | "stepfunction" => target
+            .id(id)
+            .arn(arn)
+            .role_arn(role_arn)
+            .retry_policy(retry_policy)
+            .build()
+            .unwrap(),
+        "lambda" | "function" => target
+            .id(id)
+            .arn(arn)
+            .retry_policy(retry_policy)
+            .build()
+            .unwrap(),
         "appsync" | "mutation" => target
             .id(id)
             .arn(String::from(arn))
@@ -90,17 +96,15 @@ pub fn make_target(
             .retry_policy(retry_policy)
             .build()
             .unwrap(),
-        _ => {
-            target.id(id)
-                .arn(arn)
-                .role_arn(role_arn)
-                .retry_policy(retry_policy)
-                .build()
-                .unwrap()
-        }
+        _ => target
+            .id(id)
+            .arn(arn)
+            .role_arn(role_arn)
+            .retry_policy(retry_policy)
+            .build()
+            .unwrap(),
     }
- }
-
+}
 
 pub async fn create_rule(client: &Client, bus: &str, rule_name: &str, pattern: &str) -> String {
     let r = client
@@ -151,7 +155,6 @@ pub async fn delete_rule(client: &Client, bus: &str, rule_name: &str) {
         .await
         .unwrap();
 }
-
 
 fn make_event(bus: &str, detail_type: &str, source: &str, detail: &str) -> PutEventsRequestEntry {
     let e = PutEventsRequestEntryBuilder::default();
@@ -207,28 +210,26 @@ pub async fn list_rules(client: Client, bus: String, prefix: String) -> Vec<Rule
     r.rules.unwrap()
 }
 
-
 pub async fn list_targets(client: &Client, bus: &str, rule_name: &str) -> Vec<String> {
     let res = client
-            .list_targets_by_rule()
-            .event_bus_name(bus)
-            .rule(rule_name)
-            .send()
-            .await
-            .unwrap();
-        let maybe_targets = res.targets;
-        match maybe_targets {
-            Some(v) => {
-                let mut xs: Vec<String> = vec![];
-                for x in v {
-                    xs.push(x.id().to_string())
-                }
-                xs
-            },
-            None => vec![]
+        .list_targets_by_rule()
+        .event_bus_name(bus)
+        .rule(rule_name)
+        .send()
+        .await
+        .unwrap();
+    let maybe_targets = res.targets;
+    match maybe_targets {
+        Some(v) => {
+            let mut xs: Vec<String> = vec![];
+            for x in v {
+                xs.push(x.id().to_string())
+            }
+            xs
         }
+        None => vec![],
+    }
 }
-
 
 pub async fn remove_targets(client: &Client, bus: &str, rule_name: &str, target_id: &str) {
     client
@@ -242,12 +243,15 @@ pub async fn remove_targets(client: &Client, bus: &str, rule_name: &str, target_
         .unwrap();
 }
 
-
 // api destination
 
 fn make_auth_params(api_key: &str) -> CreateConnectionAuthRequestParameters {
     let ret = CreateConnectionApiKeyAuthRequestParametersBuilder::default();
-    let api_key_auth_params = ret.api_key_name(s!("x-api-key")).api_key_value(s!(api_key)).build().unwrap();
+    let api_key_auth_params = ret
+        .api_key_name(s!("x-api-key"))
+        .api_key_value(s!(api_key))
+        .build()
+        .unwrap();
     let b = CreateConnectionAuthRequestParametersBuilder::default();
     b.api_key_auth_parameters(api_key_auth_params).build()
 }
@@ -265,24 +269,19 @@ async fn create_connection(client: &Client, name: &str, api_key: &str) -> String
 }
 
 async fn find_connection(client: &Client, name: &str) -> Option<String> {
-   let res = client
-        .describe_connection()
-        .name(s!(name))
-        .send()
-        .await;
+    let res = client.describe_connection().name(s!(name)).send().await;
     match res {
         Ok(r) => r.connection_arn,
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
 async fn find_or_create_connection(client: &Client, name: &str, api_key: &str) -> String {
     match find_connection(client, name).await {
         Some(c) => c,
-        None => create_connection(client, name, api_key).await
+        None => create_connection(client, name, api_key).await,
     }
 }
-
 
 async fn find_api_destination(client: &Client, name: &str) -> Option<String> {
     let res = client
@@ -292,11 +291,16 @@ async fn find_api_destination(client: &Client, name: &str) -> Option<String> {
         .await;
     match res {
         Ok(r) => r.api_destination_arn,
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
-async fn create_api_destination(client: &Client, name: &str, connection_arn: &str, endpoint: &str) -> String {
+async fn create_api_destination(
+    client: &Client,
+    name: &str,
+    connection_arn: &str,
+    endpoint: &str,
+) -> String {
     let res = client
         .create_api_destination()
         .name(s!(name))
@@ -308,7 +312,12 @@ async fn create_api_destination(client: &Client, name: &str, connection_arn: &st
     res.unwrap().api_destination_arn.unwrap()
 }
 
-pub async fn find_or_create_api_destination(client: &Client, name: &str, endpoint: &str, api_key: &str) -> String {
+pub async fn find_or_create_api_destination(
+    client: &Client,
+    name: &str,
+    endpoint: &str,
+    api_key: &str,
+) -> String {
     match find_api_destination(client, name).await {
         Some(api_dest_arn) => api_dest_arn,
         None => {

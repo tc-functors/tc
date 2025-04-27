@@ -1,12 +1,24 @@
-use provider::Env;
-use compiler::Topology;
-use compiler::spec::{BuildKind, FunctionSpec, BuildSpec, RuntimeInfraSpec};
+use compiler::{
+    Topology,
+    spec::{
+        BuildKind,
+        BuildSpec,
+        FunctionSpec,
+        RuntimeInfraSpec,
+    },
+};
 use configurator::Config;
 use kit as u;
-use std::panic;
-use std::time::Instant;
-use std::str::FromStr;
-use tabled::{Style, Table};
+use provider::Env;
+use std::{
+    panic,
+    str::FromStr,
+    time::Instant,
+};
+use tabled::{
+    Style,
+    Table,
+};
 
 pub struct BuildOpts {
     pub merge: bool,
@@ -16,7 +28,7 @@ pub struct BuildOpts {
     pub dirty: bool,
     pub publish: bool,
     pub image_kind: Option<String>,
-    pub lang: Option<String>
+    pub lang: Option<String>,
 }
 
 pub async fn build(
@@ -24,9 +36,8 @@ pub async fn build(
     kind: Option<String>,
     name: Option<String>,
     dir: &str,
-    opts: BuildOpts
+    opts: BuildOpts,
 ) {
-
     let BuildOpts {
         clean,
         dirty,
@@ -38,10 +49,9 @@ pub async fn build(
     } = opts;
 
     if recursive {
-
         let kind = match kind {
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
-            None => None
+            None => None,
         };
         let builds = builder::build_recursive(dirty, kind, image_kind).await;
         if publish {
@@ -49,14 +59,12 @@ pub async fn build(
                 publisher::publish(&env, build).await;
             }
         }
-
     } else if clean {
         builder::clean_lang(dir);
-
     } else {
         let kind = match kind {
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
-            None => None
+            None => None,
         };
         let builds = builder::build(dir, name, kind, image_kind, lang).await;
         if publish {
@@ -65,22 +73,15 @@ pub async fn build(
             }
         }
     }
-
 }
 
 pub struct PublishOpts {
     pub promote: bool,
     pub demote: bool,
     pub version: Option<String>,
- }
+}
 
-pub async fn publish(
-    env: Env,
-    name: Option<String>,
-    dir: &str,
-    opts: PublishOpts,
-) {
-
+pub async fn publish(env: Env, name: Option<String>, dir: &str, opts: PublishOpts) {
     let PublishOpts {
         promote,
         demote,
@@ -93,10 +94,8 @@ pub async fn publish(
 
     if promote {
         publisher::promote(&env, &bname, &lang.to_str(), version).await;
-
     } else if demote {
         publisher::demote(&env, name, &lang.to_str()).await;
-
     } else {
         let builds = builder::just_build_out(&dir, &bname, &lang.to_str());
 
@@ -145,9 +144,7 @@ pub async fn compile(opts: CompileOpts) -> String {
                 let res = compiler::compile_root(&dir, recursive);
                 compiler::formatter::print_topologies(res);
                 String::from("")
-
             } else {
-
                 let topology = compiler::compile(&dir, recursive);
                 match std::env::var("TC_TRACE") {
                     Ok(_) => {
@@ -155,7 +152,7 @@ pub async fn compile(opts: CompileOpts) -> String {
                         tracing::debug!("Wrote topology.json");
                         String::from("")
                     }
-                    Err(_) => u::pretty_json(topology)
+                    Err(_) => u::pretty_json(topology),
                 }
             }
         }
@@ -167,20 +164,25 @@ pub async fn resolve(
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
-    no_cache: bool
+    no_cache: bool,
 ) -> String {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let resolved_topology = match component.clone() {
         Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
-        None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await
+        None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await,
     };
 
     resolver::pprint(&resolved_topology, component)
 }
 
 async fn run_create_hook(env: &Env, root: &Topology) {
-    let Topology { namespace, sandbox, version, .. } = root;
+    let Topology {
+        namespace,
+        sandbox,
+        version,
+        ..
+    } = root;
     let dir = u::pwd();
     let tag = format!("{}-{}", namespace, version);
     let msg = format!(
@@ -190,7 +192,15 @@ async fn run_create_hook(env: &Env, root: &Topology) {
     releaser::notify(&namespace, &msg).await;
     if env.config.ci.update_metadata {
         let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
-        releaser::update_metadata(&centralized, &sandbox, &namespace, &version, &env.name, &dir).await;
+        releaser::update_metadata(
+            &centralized,
+            &sandbox,
+            &namespace,
+            &version,
+            &env.name,
+            &dir,
+        )
+        .await;
     }
 }
 
@@ -200,8 +210,9 @@ async fn maybe_build(env: &Env, dir: &str, name: &str) {
         Some(String::from(name)),
         None,
         Some(String::from("code")),
-        None
-    ).await;
+        None,
+    )
+    .await;
     let centralized = env.inherit(env.config.aws.ecr.profile.clone());
     for b in builds {
         tracing::debug!("Publishing {}", &b.artifact);
@@ -218,7 +229,6 @@ async fn create_topology(env: &Env, topology: &Topology) {
     deployer::create(env, topology).await;
 
     for (_, node) in &topology.nodes {
-
         for (_, function) in &node.functions {
             let dir = &function.dir;
             maybe_build(env, dir, &function.name).await;
@@ -227,7 +237,6 @@ async fn create_topology(env: &Env, topology: &Topology) {
         deployer::create(env, node).await;
     }
 }
-
 
 async fn read_topology(path: Option<String>) -> Option<Topology> {
     if u::option_exists(path.clone()) {
@@ -238,8 +247,8 @@ async fn read_topology(path: Option<String>) -> Option<Topology> {
                 } else {
                     kit::read_stdin()
                 }
-            },
-            None => kit::read_stdin()
+            }
+            None => kit::read_stdin(),
         };
         let t: Topology = serde_json::from_str(&data).unwrap();
         Some(t)
@@ -254,9 +263,8 @@ pub async fn create(
     notify: bool,
     recursive: bool,
     no_cache: bool,
-    topology_path: Option<String>
+    topology_path: Option<String>,
 ) {
-
     let start = Instant::now();
 
     let maybe_topology = read_topology(topology_path).await;
@@ -282,7 +290,7 @@ pub async fn create(
 
     match std::env::var("TC_INSPECT_BUILD") {
         Ok(_) => (),
-        Err(_) => builder::clean(recursive)
+        Err(_) => builder::clean(recursive),
     }
 
     if notify {
@@ -466,7 +474,6 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
     if local {
         invoker::run_local(payload).await;
     } else {
-
         // FIXME: get dir
         let topology = compiler::compile(&u::pwd(), false);
 
@@ -475,7 +482,7 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
 
         let mode = match topology.flow {
             Some(f) => f.mode,
-            None => "Standard".to_string()
+            None => "Standard".to_string(),
         };
         invoker::invoke(&env, topology.kind, &resolved.fqn, payload, &mode, dumb).await;
     }
@@ -505,7 +512,7 @@ pub async fn tag(
 ) {
     let prefix = match prefix {
         Some(p) => p,
-        None => panic!("No prefix given")
+        None => panic!("No prefix given"),
     };
     let next = u::maybe_string(next, "patch");
     let suffix = u::maybe_string(suffix, "default");
@@ -523,7 +530,7 @@ pub async fn route(
     let sandbox = resolver::maybe_sandbox(sandbox);
     match rule {
         Some(r) => releaser::route(&env, &event, &service, &sandbox, &r).await,
-        None => println!("Rule not specified")
+        None => println!("Rule not specified"),
     }
 }
 
@@ -553,7 +560,7 @@ pub async fn deploy(
     service: Option<String>,
     env: String,
     sandbox: Option<String>,
-    version: String
+    version: String,
 ) {
     let dir = u::pwd();
     let namespace = compiler::topology_name(&dir);
@@ -562,11 +569,7 @@ pub async fn deploy(
     releaser::deploy(&env, &service, &sandbox, &version).await;
 }
 
-pub async fn release(
-    service: Option<String>,
-    suffix: Option<String>,
-    unwind: bool,
-) {
+pub async fn release(service: Option<String>, suffix: Option<String>, unwind: bool) {
     let dir = u::pwd();
     let suffix = u::maybe_string(suffix, "default");
     let namespace = compiler::topology_name(&dir);
@@ -586,14 +589,14 @@ pub async fn show_config() {
 pub async fn download_layer(env: Env, name: Option<String>) {
     match name {
         Some(n) => publisher::download_layer(&env, &n).await,
-        None => println!("provide layer name")
+        None => println!("provide layer name"),
     }
 }
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
     match profile {
         Some(ref p) => provider::init(profile.clone(), assume_role, Config::new(None, &p)).await,
-        None => provider::init(profile, assume_role, Config::new(None, "")).await
+        None => provider::init(profile, assume_role, Config::new(None, "")).await,
     }
 }
 
@@ -619,7 +622,7 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
             let key = resolver::cache::make_key(&n, &env, &sandbox);
             let topology = resolver::cache::read_topology(&key).await;
             println!("{}", kit::pretty_json(&topology));
-        },
+        }
         None => {
             let xs = resolver::cache::list();
             let table = Table::new(xs).with(Style::psql()).to_string();
@@ -629,12 +632,11 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
 }
 
 pub fn generate_doc(spec: &str) {
-
     let schema = match spec {
-        "build"    => doku::to_json::<BuildSpec>(),
-        "infra"    => doku::to_json::<RuntimeInfraSpec>(),
+        "build" => doku::to_json::<BuildSpec>(),
+        "infra" => doku::to_json::<RuntimeInfraSpec>(),
         "function" => doku::to_json::<FunctionSpec>(),
-        _          => doku::to_json::<FunctionSpec>()
+        _ => doku::to_json::<FunctionSpec>(),
     };
     println!("{}", &schema);
     //println!("{}", serde_json::to_string_pretty(&schema).unwrap());

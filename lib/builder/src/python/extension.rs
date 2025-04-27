@@ -1,5 +1,5 @@
-use kit::sh;
 use kit as u;
+use kit::sh;
 
 fn extension_wrapper(name: &str) -> String {
     format!(

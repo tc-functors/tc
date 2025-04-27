@@ -1,31 +1,29 @@
+use crate::cache;
 use askama::Template;
 use axum::{
-    extract::Path,
-    response::{Html, IntoResponse},
     Form,
+    extract::Path,
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
 use serde::Deserialize;
-use crate::cache;
 
 #[derive(Template)]
 #[template(path = "functors/function/build.html")]
-struct FlowTemplate {
-}
+struct FlowTemplate {}
 
 pub async fn build(Path((_root, _namespace)): Path<(String, String)>) -> impl IntoResponse {
-
-    let temp = FlowTemplate {
-    };
+    let temp = FlowTemplate {};
     Html(temp.render().unwrap())
 }
 
 #[derive(Template)]
 #[template(path = "functors/code.html")]
 struct DataTemplate {
-    definition: String
+    definition: String,
 }
-
 
 #[derive(Deserialize, Debug)]
 pub struct FunctionInput {
@@ -34,7 +32,7 @@ pub struct FunctionInput {
 
 pub async fn compile(
     Path((root, namespace)): Path<(String, String)>,
-    Form(payload): Form<FunctionInput>
+    Form(payload): Form<FunctionInput>,
 ) -> impl IntoResponse {
     let FunctionInput { function } = payload;
     let function = cache::find_function(&root, &namespace, &function).await;
@@ -45,14 +43,14 @@ pub async fn compile(
         String::from("")
     };
     let temp = DataTemplate {
-        definition: definition
+        definition: definition,
     };
     Html(temp.render().unwrap())
 }
 
 pub async fn permissions(
     Path((root, namespace)): Path<(String, String)>,
-    Form(payload): Form<FunctionInput>
+    Form(payload): Form<FunctionInput>,
 ) -> impl IntoResponse {
     let FunctionInput { function } = payload;
     let function = cache::find_function(&root, &namespace, &function).await;
@@ -63,7 +61,7 @@ pub async fn permissions(
         String::from("")
     };
     let temp = DataTemplate {
-        definition: definition
+        definition: definition,
     };
     Html(temp.render().unwrap())
 }

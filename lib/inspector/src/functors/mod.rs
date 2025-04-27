@@ -1,14 +1,21 @@
 use askama::Template;
 use axum::{
-    routing::{get, post},
     Router,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
+    routing::{
+        get,
+        post,
+    },
 };
 
-mod functor;
 mod entity;
 mod function;
+mod functor;
 mod list;
 mod mutation;
 
@@ -49,50 +56,70 @@ pub fn page_routes() -> Router {
     Router::new()
         .route("/", get(index_page))
         .route("/functors", get(index_page))
-        .route("/functor/{:root}/{:namespace}",
-               get(entity::page))
-        .route("/hx/functors/list/{:root}/{:namespace}",
-               get(list::functors))
+        .route("/functor/{:root}/{:namespace}", get(entity::page))
+        .route(
+            "/hx/functors/list/{:root}/{:namespace}",
+            get(list::functors),
+        )
         .route("/hx/functors/load", post(list::load))
 }
 
 pub fn entity_routes() -> Router {
     Router::new()
-        .route("/hx/functor/definition/{:root}/{:namespace}",
-               get(entity::definition))
-        .route("/hx/functor/functions/{:root}/{:namespace}",
-               get(entity::functions))
-        .route("/hx/functor/mutations/{:root}/{:namespace}",
-               get(entity::mutations))
-        .route("/hx/functor/states/{:root}/{:namespace}",
-               get(entity::states))
+        .route(
+            "/hx/functor/definition/{:root}/{:namespace}",
+            get(entity::definition),
+        )
+        .route(
+            "/hx/functor/functions/{:root}/{:namespace}",
+            get(entity::functions),
+        )
+        .route(
+            "/hx/functor/mutations/{:root}/{:namespace}",
+            get(entity::mutations),
+        )
+        .route(
+            "/hx/functor/states/{:root}/{:namespace}",
+            get(entity::states),
+        )
 }
-
 
 pub fn functor_routes() -> Router {
     Router::new()
-        .route("/hx/functor/compile/{:root}/{:namespace}",
-               post(functor::compile))
-        .route("/hx/functor/flow/{:root}/{:namespace}",
-               post(functor::flow))
-        .route("/hx/functor/sandbox-form/{:root}/{:namespace}",
-               post(functor::sandbox))
-        .route("/hx/functor/test-form/{:root}/{:namespace}",
-               post(functor::test))
+        .route(
+            "/hx/functor/compile/{:root}/{:namespace}",
+            post(functor::compile),
+        )
+        .route("/hx/functor/flow/{:root}/{:namespace}", post(functor::flow))
+        .route(
+            "/hx/functor/sandbox-form/{:root}/{:namespace}",
+            post(functor::sandbox),
+        )
+        .route(
+            "/hx/functor/test-form/{:root}/{:namespace}",
+            post(functor::test),
+        )
 }
 
 pub fn function_routes() -> Router {
     Router::new()
-        .route("/hx/function/build/{:root}/{:namespace}",
-               post(function::build))
-        .route("/hx/function/compile/{:root}/{:namespace}",
-               post(function::compile))
-        .route("/hx/function/permissions/{:root}/{:namespace}",
-               post(function::permissions))
+        .route(
+            "/hx/function/build/{:root}/{:namespace}",
+            post(function::build),
+        )
+        .route(
+            "/hx/function/compile/{:root}/{:namespace}",
+            post(function::compile),
+        )
+        .route(
+            "/hx/function/permissions/{:root}/{:namespace}",
+            post(function::permissions),
+        )
 }
 
 pub fn mutation_routes() -> Router {
-    Router::new()
-        .route("/hx/mutation/compile/{:root}/{:namespace}",
-               post(mutation::compile))
+    Router::new().route(
+        "/hx/mutation/compile/{:root}/{:namespace}",
+        post(mutation::compile),
+    )
 }

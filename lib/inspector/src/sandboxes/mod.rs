@@ -1,10 +1,17 @@
 use askama::Template;
 use axum::{
-    routing::{get, post},
-    extract::Path,
     Router,
+    extract::Path,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
+    routing::{
+        get,
+        post,
+    },
 };
 
 mod list;
@@ -47,13 +54,9 @@ pub async fn view_page(Path(entity): Path<String>) -> impl IntoResponse {
     })
 }
 
-
 pub fn routes() -> Router {
     Router::new()
-        .route("/sandboxes",
-               get(index_page))
-        .route("/sandboxes/{:entity}",
-               get(view_page))
-        .route("/hx/sandboxes/list",
-               post(list::generate))
+        .route("/sandboxes", get(index_page))
+        .route("/sandboxes/{:entity}", get(view_page))
+        .route("/hx/sandboxes/list", post(list::generate))
 }

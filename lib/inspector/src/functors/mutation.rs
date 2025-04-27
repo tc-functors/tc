@@ -1,11 +1,12 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
-use crate::cache;
-
 
 #[derive(Template)]
 #[template(path = "functors/mutation/gql.html")]
@@ -18,18 +19,20 @@ pub async fn compile(Path((root, namespace)): Path<(String, String)>) -> impl In
     let definition = if let Some(t) = topology {
         let maybe_mut = &t.mutations.get("default");
         match maybe_mut {
-            Some(m) => {
-                m.types.values().cloned().collect::<Vec<String>>().join("\n")
-            }
-            None => String::from("nonce")
+            Some(m) => m
+                .types
+                .values()
+                .cloned()
+                .collect::<Vec<String>>()
+                .join("\n"),
+            None => String::from("nonce"),
         }
     } else {
         String::from("default")
     };
 
-
     let temp = ViewTemplate {
-        definition: definition
+        definition: definition,
     };
     Html(temp.render().unwrap())
 }

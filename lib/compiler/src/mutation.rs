@@ -1,23 +1,30 @@
-use super::spec::{MutationSpec, ResolverSpec};
+use super::{
+    spec::{
+        MutationSpec,
+        ResolverSpec,
+    },
+    template,
+};
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
-use super::template;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum ResolverKind {
     Function,
     Event,
-    Table
+    Table,
 }
 
 impl ResolverKind {
-
     pub fn to_str(&self) -> String {
         match self {
             ResolverKind::Function => s!("function"),
-            ResolverKind::Event  => s!("event"),
-            ResolverKind::Table  => s!("table"),
+            ResolverKind::Event => s!("event"),
+            ResolverKind::Table => s!("table"),
         }
     }
 }
@@ -43,12 +50,11 @@ fn kind_of(r: ResolverSpec) -> (ResolverKind, String) {
     }
 }
 
-
 fn make_target_arn(kind: &ResolverKind, target_name: &str) -> String {
     match kind {
         ResolverKind::Function => template::lambda_arn(target_name),
-        ResolverKind::Event    => template::event_bus_arn("default"),
-        ResolverKind::Table    => kit::empty()
+        ResolverKind::Event => template::event_bus_arn("default"),
+        ResolverKind::Table => kit::empty(),
     }
 }
 

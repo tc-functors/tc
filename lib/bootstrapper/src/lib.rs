@@ -1,15 +1,19 @@
-use provider::Env;
-use provider::aws::iam;
-use provider::aws::iam::Role;
 use configurator::Config;
+use provider::{
+    Env,
+    aws::{
+        iam,
+        iam::Role,
+    },
+};
 mod scaffold;
 
 async fn make_role(env: &Env, name: &str) -> Role {
     let policy_doc = match name {
-        "lambda"  => env.base_lambda_policy(),
-        "sfn"     => env.base_sfn_policy(),
-        "event"   => env.base_event_policy(),
-        "api"     => env.base_api_policy(),
+        "lambda" => env.base_lambda_policy(),
+        "sfn" => env.base_sfn_policy(),
+        "event" => env.base_event_policy(),
+        "api" => env.base_api_policy(),
         "appsync" => env.base_appsync_policy(),
         _ => panic!("No such policy"),
     };
@@ -44,7 +48,6 @@ pub async fn delete_role(env: &Env, name: &str) {
     let out = role.delete().await;
     println!("{:?}", out);
 }
-
 
 pub async fn scaffold_function(name: &str, infra_dir: &str) {
     let role_dir = format!("{}/roles", infra_dir);

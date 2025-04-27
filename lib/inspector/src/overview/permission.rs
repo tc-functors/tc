@@ -1,11 +1,14 @@
-use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
-};
-
-use compiler::{Function, Topology};
-use std::collections::HashMap;
 use crate::cache;
+use askama::Template;
+use axum::response::{
+    Html,
+    IntoResponse,
+};
+use compiler::{
+    Function,
+    Topology,
+};
+use std::collections::HashMap;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Item {
@@ -13,7 +16,7 @@ struct Item {
     name: String,
     dir: String,
     role: String,
-    vars: String
+    vars: String,
 }
 
 fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
@@ -24,7 +27,7 @@ fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
             name: f.actual_name.clone(),
             dir: dir.to_string(),
             role: f.runtime.role.path,
-            vars: String::from("")
+            vars: String::from(""),
         };
         xs.push(fun);
     }
@@ -32,7 +35,6 @@ fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
 }
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
-
     let mut xs: Vec<Item> = vec![];
 
     for (_, topology) in topologies {
@@ -51,14 +53,12 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 #[derive(Template)]
 #[template(path = "overview/list/permissions.html")]
 struct PermissionsTemplate {
-    functions: Vec<Item>
+    functions: Vec<Item>,
 }
 
 pub async fn list_all() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let fns = build(topologies);
-    let temp = PermissionsTemplate {
-        functions: fns
-    };
+    let temp = PermissionsTemplate { functions: fns };
     Html(temp.render().unwrap())
 }

@@ -1,10 +1,20 @@
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use reqwest::Error;
+use crate::{
+    io,
+    json::{
+        json_value,
+        json_value_safe,
+    },
+};
+use reqwest::{
+    Error,
+    header::{
+        HeaderMap,
+        HeaderName,
+        HeaderValue,
+    },
+};
 use serde_json::Value;
 use std::collections::HashMap;
-
-use crate::io;
-use crate::json::{json_value, json_value_safe};
 
 fn as_headers(h: HashMap<String, String>) -> HeaderMap {
     let mut headers = HeaderMap::new();

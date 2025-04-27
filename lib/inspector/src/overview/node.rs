@@ -1,12 +1,17 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
-use compiler::{TopologyCount, Topology};
+use compiler::{
+    Topology,
+    TopologyCount,
+};
 use std::collections::HashMap;
-use crate::cache;
 
 struct Item {
     root: String,
@@ -17,9 +22,8 @@ struct Item {
     queues: usize,
     routes: usize,
     mutations: usize,
-    version: String
+    version: String,
 }
-
 
 fn build_nodes(root: &str, nodes: HashMap<String, Topology>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
@@ -43,40 +47,32 @@ fn build_nodes(root: &str, nodes: HashMap<String, Topology>) -> Vec<Item> {
 }
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
-
     let mut xs: Vec<Item> = vec![];
     for (_, topology) in topologies {
-
         let ns = build_nodes(&topology.namespace, topology.nodes);
         xs.extend(ns)
-
     }
     xs.sort_by(|a, b| b.root.cmp(&a.root));
     xs.reverse();
     xs
 }
 
-
 #[derive(Template)]
 #[template(path = "overview/list/nodes.html")]
 struct NodesTemplate {
-    items: Vec<Item>
- }
+    items: Vec<Item>,
+}
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let topologies = cache::find_topologies(&root, &namespace).await;
     let nodes = build_nodes(&namespace, topologies);
-    let temp = NodesTemplate {
-        items: nodes
-    };
+    let temp = NodesTemplate { items: nodes };
     Html(temp.render().unwrap())
 }
 
 pub async fn list_all() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let nodes = build(topologies);
-    let temp = NodesTemplate {
-        items: nodes
-    };
+    let temp = NodesTemplate { items: nodes };
     Html(temp.render().unwrap())
 }

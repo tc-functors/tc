@@ -1,9 +1,11 @@
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize};
-use std::collections::HashMap;
-use std::fs;
-use std::env;
+use serde_derive::Deserialize;
+use std::{
+    collections::HashMap,
+    env,
+    fs,
+};
 
 pub fn arch_os() -> String {
     let os = env::consts::OS;
@@ -21,27 +23,28 @@ struct Asset {
     id: u64,
     browser_download_url: String,
     size: f64,
-    name: String
+    name: String,
 }
 
 impl Asset {
-
     fn version(&self) -> String {
-        nth(self.browser_download_url.split("/").into_iter().collect(), 7)
+        nth(
+            self.browser_download_url.split("/").into_iter().collect(),
+            7,
+        )
     }
-
 }
 
 #[derive(Clone, Debug)]
 pub struct Github {
-    pub repo: String
+    pub repo: String,
 }
 
 impl Github {
     pub fn init(repo: &str) -> Github {
-    Github {
-            repo: String::from(repo)
-    }
+        Github {
+            repo: String::from(repo),
+        }
     }
 
     fn headers(&self) -> HashMap<String, String> {
@@ -53,10 +56,10 @@ impl Github {
             s!("user-agent"),
             s!("libcurl/7.64.1 r-curl/4.3.2 httr/1.4.2"),
         );
-       h
+        h
     }
 
-     fn with_headers(&self, key: &str, val: &str) -> HashMap<String, String> {
+    fn with_headers(&self, key: &str, val: &str) -> HashMap<String, String> {
         let mut h = self.headers();
         h.insert(s!(key), s!(val));
         h
@@ -84,14 +87,18 @@ impl Github {
         ats
     }
 
-
     async fn download_asset(&self, asset_name: &str, outfile: &str) {
         let assets = self.latest_release_assets().await;
         let headers = self.with_headers("accept", "application/octet-stream");
         for asset in assets {
             let id = &asset.id;
             if &asset.name == asset_name {
-                println!("Upgrading to {} ({}) ref:{}", &asset.version(), file_size_human(asset.size), id);
+                println!(
+                    "Upgrading to {} ({}) ref:{}",
+                    &asset.version(),
+                    file_size_human(asset.size),
+                    id
+                );
                 let path = format!("/releases/assets/{}", id);
                 u::download(&self.url(&path), headers.clone(), outfile).await;
                 replace_exe(outfile);
@@ -106,7 +113,12 @@ impl Github {
         for asset in assets {
             let id = &asset.id;
             if &asset.name == asset_name {
-                println!("Upgrading to {} ({}) ref:{}", &asset.version(), file_size_human(asset.size), id);
+                println!(
+                    "Upgrading to {} ({}) ref:{}",
+                    &asset.version(),
+                    file_size_human(asset.size),
+                    id
+                );
                 let path = format!("/releases/assets/{}", id);
                 u::download(&self.url(&path), headers.clone(), outfile).await;
                 replace_exe(outfile);
@@ -127,6 +139,6 @@ pub async fn self_upgrade(repo: &str, tag: Option<String>) {
     };
     match tag {
         Some(t) => gh.download_asset_by_tag(name, "/tmp/tc", &t).await,
-        None => gh.download_asset(name, "/tmp/tc").await
+        None => gh.download_asset(name, "/tmp/tc").await,
     }
 }

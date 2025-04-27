@@ -1,6 +1,7 @@
 use askama::Template;
-use axum::{
-    response::{Html, IntoResponse},
+use axum::response::{
+    Html,
+    IntoResponse,
 };
 
 #[derive(Template)]
@@ -9,7 +10,7 @@ struct FunctorsTemplate {
     entity: String,
     context: String,
     left: String,
-    right: String
+    right: String,
 }
 
 pub async fn view() -> impl IntoResponse {
@@ -17,7 +18,7 @@ pub async fn view() -> impl IntoResponse {
         entity: String::from("functors"),
         context: String::from("diffs"),
         left: String::from("a"),
-        right: String::from("b")
+        right: String::from("b"),
     };
     Html(temp.render().unwrap())
 }

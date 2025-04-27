@@ -1,12 +1,17 @@
-use provider::aws::gatewayv2;
-use provider::aws::gatewayv2::Api;
-use provider::aws::lambda;
-use std::collections::HashMap;
-
-use compiler::Route;
-use compiler::route::TargetKind;
-use provider::Env;
+use compiler::{
+    Route,
+    route::TargetKind,
+};
 use log::info;
+use provider::{
+    Env,
+    aws::{
+        gatewayv2,
+        gatewayv2::Api,
+        lambda,
+    },
+};
+use std::collections::HashMap;
 
 async fn make_api(env: &Env, role: &str, route: &Route) -> Api {
     let client = gatewayv2::make_client(env).await;
@@ -41,8 +46,8 @@ async fn create_api(env: &Env, api: &Api, integration_type: &TargetKind, lambda_
     let arn = env.api_integration_arn(lambda_arn);
 
     let integration_id = match integration_type {
-        TargetKind::Function     => api.find_or_create_lambda_integration(&api_id, &arn).await,
-        TargetKind::StepFunction => api.find_or_create_sfn_integration(&api_id, &arn).await
+        TargetKind::Function => api.find_or_create_lambda_integration(&api_id, &arn).await,
+        TargetKind::StepFunction => api.find_or_create_sfn_integration(&api_id, &arn).await,
     };
 
     let authorizer_id = api.find_authorizer(&api_id).await;

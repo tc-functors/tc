@@ -1,5 +1,11 @@
-use colored::{ColoredString, Colorize};
-use convert_case::{Case, Casing};
+use colored::{
+    ColoredString,
+    Colorize,
+};
+use convert_case::{
+    Case,
+    Casing,
+};
 use std::collections::HashMap;
 use text_placeholder::Template;
 use uuid::Uuid;

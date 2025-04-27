@@ -1,38 +1,44 @@
-use compiler::Event;
-use compiler::event::TargetKind;
-use provider::aws::{eventbridge, lambda, appsync};
-use provider::Env;
-use std::collections::HashMap;
 use colored::Colorize;
+use compiler::{
+    Event,
+    event::TargetKind,
+};
+use provider::{
+    Env,
+    aws::{
+        appsync,
+        eventbridge,
+        lambda,
+    },
+};
+use std::collections::HashMap;
 
 async fn update_permissions(env: &Env, event: &Event) {
-
     for target in event.targets.clone() {
-
         match target.kind {
             TargetKind::Function => {
                 let client = lambda::make_client(env).await;
                 let principal = "events.amazonaws.com";
                 let statement_id = &event.rule_name;
                 let function_name = &target.name;
-                let _ = lambda::add_permission_basic(client, function_name, principal, statement_id).await;
+                let _ =
+                    lambda::add_permission_basic(client, function_name, principal, statement_id)
+                        .await;
                 println!("Updating permission - function: {}", function_name.cyan());
-            },
-            _ => ()
+            }
+            _ => (),
         }
-
     }
 }
 
 fn should_prune() -> bool {
     match std::env::var("TC_PRUNE_EVENT_RULES") {
         Ok(_) => true,
-        Err(_) => false
+        Err(_) => false,
     }
 }
 
 async fn create_target_dependencies(env: &Env, name: &str) -> String {
-
     let appsync_client = appsync::make_client(env).await;
     let api_creds = appsync::events::find_api_creds(&appsync_client, name).await;
     if let Some(creds) = api_creds {
@@ -59,7 +65,11 @@ async fn create_event(env: &Env, event: &Event) {
     let pattern = serde_json::to_string(&pattern).unwrap();
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern).await;
 
-    println!("Creating Event: {} targets: {}", &rule_name.green(), &event.targets.len());
+    println!(
+        "Creating Event: {} targets: {}",
+        &rule_name.green(),
+        &event.targets.len()
+    );
 
     if should_prune() {
         let existing_targets = eventbridge::list_targets(&client, &bus, &rule_name).await;
@@ -71,7 +81,6 @@ async fn create_event(env: &Env, event: &Event) {
 
     let mut xs: Vec<eventbridge::Target> = vec![];
     for target in &event.targets {
-
         let appsync = eventbridge::make_appsync_params(&target.name);
 
         let input_transformer = match target.input_template.clone() {

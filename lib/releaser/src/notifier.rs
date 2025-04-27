@@ -1,8 +1,11 @@
+use configurator::Config;
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
-use configurator::Config;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Text {
@@ -87,7 +90,7 @@ pub async fn slack(scope: &str, payload: String) {
         Some(u) => {
             let res = u::http_post(&u, headers(), payload.to_string()).await;
             println!("{:?}", res);
-        },
+        }
         None => {
             println!("No notification webhook url found");
         }

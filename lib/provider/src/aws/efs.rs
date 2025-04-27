@@ -1,5 +1,8 @@
 use crate::Env;
-use aws_sdk_efs::{Client, Error};
+use aws_sdk_efs::{
+    Client,
+    Error,
+};
 
 pub async fn make_client(env: &Env) -> Client {
     let shared_config = env.load().await;

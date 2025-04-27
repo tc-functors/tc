@@ -1,12 +1,17 @@
 use askama::Template;
 use axum::{
-    routing::{get},
     Router,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
+    routing::get,
 };
-
+use compiler::spec::{
+    FunctionSpec,
+    RuntimeInfraSpec,
+};
 use configurator::Config;
-use compiler::spec::{FunctionSpec, RuntimeInfraSpec};
 
 #[derive(Template)]
 #[template(path = "specs/index.html")]
@@ -16,13 +21,12 @@ struct PageTemplate {
     data: String,
 }
 
-
 pub async fn function_page() -> impl IntoResponse {
     let fspec = doku::to_json::<FunctionSpec>();
     let temp = PageTemplate {
         context: String::from("specs"),
         entity: String::from("function"),
-        data: fspec
+        data: fspec,
     };
     Html(temp.render().unwrap())
 }
@@ -32,7 +36,7 @@ pub async fn topology_page() -> impl IntoResponse {
     let temp = PageTemplate {
         context: String::from("specs"),
         entity: String::from("topology"),
-        data: fspec
+        data: fspec,
     };
     Html(temp.render().unwrap())
 }
@@ -42,7 +46,7 @@ pub async fn infra_page() -> impl IntoResponse {
     let temp = PageTemplate {
         context: String::from("specs"),
         entity: String::from("infrastructure"),
-        data: fspec
+        data: fspec,
     };
     Html(temp.render().unwrap())
 }
@@ -54,7 +58,7 @@ pub async fn config_page() -> impl IntoResponse {
     let temp = PageTemplate {
         context: String::from("specs"),
         entity: String::from("config"),
-        data: cspec
+        data: cspec,
     };
     Html(temp.render().unwrap())
 }

@@ -1,11 +1,16 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
-use compiler::{Function, TopologySpec};
-use crate::cache;
+use compiler::{
+    Function,
+    TopologySpec,
+};
 use std::collections::HashMap;
 
 #[derive(Template)]
@@ -31,7 +36,6 @@ pub async fn definition(Path((root, namespace)): Path<(String, String)>) -> impl
             definition: definition,
         };
         Html(temp.render().unwrap())
-
     } else {
         let temp = DefinitionTemplate {
             root: root,
@@ -77,7 +81,7 @@ pub async fn functions(Path((root, namespace)): Path<(String, String)>) -> impl 
     let temp = FunctionsTemplate {
         root: root,
         namespace: namespace,
-        items: build_functions(fns)
+        items: build_functions(fns),
     };
     Html(temp.render().unwrap())
 }
@@ -94,7 +98,7 @@ fn lookup_spec(dir: &str) -> TopologySpec {
 struct MutationsTemplate {
     root: String,
     namespace: String,
-    definition: String
+    definition: String,
 }
 
 pub async fn mutations(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
@@ -103,7 +107,7 @@ pub async fn mutations(Path((root, namespace)): Path<(String, String)>) -> impl 
         let spec = lookup_spec(&t.dir);
         match spec.mutations {
             Some(m) => serde_yaml::to_string(&m).unwrap(),
-            None => String::from("")
+            None => String::from(""),
         }
     } else {
         String::from("")
@@ -111,11 +115,10 @@ pub async fn mutations(Path((root, namespace)): Path<(String, String)>) -> impl 
     let temp = MutationsTemplate {
         root: root,
         namespace: namespace,
-        definition: definition
+        definition: definition,
     };
     Html(temp.render().unwrap())
 }
-
 
 // flow
 
@@ -124,7 +127,7 @@ pub async fn mutations(Path((root, namespace)): Path<(String, String)>) -> impl 
 struct StatesTemplate {
     root: String,
     namespace: String,
-    definition: String
+    definition: String,
 }
 
 pub async fn states(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
@@ -133,7 +136,7 @@ pub async fn states(Path((root, namespace)): Path<(String, String)>) -> impl Int
         let spec = lookup_spec(&t.dir);
         match spec.flow {
             Some(m) => serde_yaml::to_string(&m).unwrap(),
-            None => String::from("")
+            None => String::from(""),
         }
     } else {
         String::from("")
@@ -141,7 +144,7 @@ pub async fn states(Path((root, namespace)): Path<(String, String)>) -> impl Int
     let temp = StatesTemplate {
         root: root,
         namespace: namespace,
-        definition: definition
+        definition: definition,
     };
     Html(temp.render().unwrap())
 }

@@ -1,6 +1,11 @@
-use aws_sdk_appsync::types::builders::DynamodbDataSourceConfigBuilder;
-use aws_sdk_appsync::types::{DataSourceType, DynamodbDataSourceConfig};
-use aws_sdk_appsync::Client;
+use aws_sdk_appsync::{
+    Client,
+    types::{
+        DataSourceType,
+        DynamodbDataSourceConfig,
+        builders::DynamodbDataSourceConfigBuilder,
+    },
+};
 use kit::*;
 
 fn make_config(table_name: &str) -> DynamodbDataSourceConfig {

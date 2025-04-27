@@ -1,12 +1,17 @@
+use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
-use compiler::{Function, Topology};
+use compiler::{
+    Function,
+    Topology,
+};
 use std::collections::HashMap;
-use crate::cache;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Item {
@@ -20,7 +25,7 @@ struct Item {
     timeout: i32,
     runtime: String,
     role: String,
-    vars: String
+    vars: String,
 }
 
 fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
@@ -28,7 +33,7 @@ fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
     for (dir, f) in fns {
         let vars = match f.runtime.infra_spec_file {
             Some(f) => f,
-            None => String::from("provided")
+            None => String::from("provided"),
         };
         let fun = Item {
             namespace: namespace.to_string(),
@@ -41,8 +46,7 @@ fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
             timeout: f.runtime.timeout.unwrap(),
             runtime: f.runtime.lang.to_str(),
             role: f.runtime.role.path,
-            vars: vars
-
+            vars: vars,
         };
         xs.push(fun);
     }
@@ -50,7 +54,6 @@ fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
 }
 
 fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
-
     let mut xs: Vec<Item> = vec![];
 
     for (_, topology) in topologies {
@@ -66,19 +69,18 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
     xs
 }
 
-
 #[derive(Template)]
 #[template(path = "overview/list/functions.html")]
 struct FunctionsTemplate {
     root: String,
-    items: Vec<Item>
+    items: Vec<Item>,
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let fns = cache::find_functions(&root, &namespace).await;
     let temp = FunctionsTemplate {
         root: root,
-        items: build_fns(&namespace, fns)
+        items: build_fns(&namespace, fns),
     };
     Html(temp.render().unwrap())
 }
@@ -88,29 +90,28 @@ pub async fn list_all() -> impl IntoResponse {
     let fns = build(topologies);
     let temp = FunctionsTemplate {
         root: String::from(""),
-        items: fns
+        items: fns,
     };
     Html(temp.render().unwrap())
 }
 
 // view
 
-
 #[derive(Template)]
 #[template(path = "overview/view/function.html")]
 struct ViewTemplate {
-    item: String
+    item: String,
 }
 
-pub async fn view(Path((root, namespace, id)): Path<(String, String, String)>) -> impl IntoResponse {
+pub async fn view(
+    Path((root, namespace, id)): Path<(String, String, String)>,
+) -> impl IntoResponse {
     let f = cache::find_function(&root, &namespace, &id).await;
     let f_str = match f {
         Some(r) => serde_json::to_string(&r).unwrap(),
-        None => String::from("none")
+        None => String::from("none"),
     };
 
-    let temp = ViewTemplate {
-        item: f_str
-    };
+    let temp = ViewTemplate { item: f_str };
     Html(temp.render().unwrap())
 }

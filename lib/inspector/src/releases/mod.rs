@@ -1,14 +1,18 @@
 use askama::Template;
 use axum::{
-    routing::{get},
     Router,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
+    routing::get,
 };
 
-mod timeline;
-mod new;
 mod current;
+mod new;
+mod timeline;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>

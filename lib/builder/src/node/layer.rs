@@ -1,15 +1,13 @@
-use kit as u;
-use kit::sh;
-
 use colored::Colorize;
 use compiler::LangRuntime;
-
+use kit as u;
+use kit::sh;
 
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Node22 => String::from("public.ecr.aws/sam/build-nodejs22.x:latest"),
         LangRuntime::Node20 => String::from("public.ecr.aws/sam/build-nodejs20.x:latest"),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
@@ -17,7 +15,7 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let image = find_image(&runtime);
 
     let f = format!(
-            r#"
+        r#"
 FROM {image} as intermediate
 
 COPY package.json ./
@@ -92,7 +90,6 @@ pub fn build(
     _deps_pre: Vec<String>,
     _deps_post: Vec<String>,
 ) -> String {
-
     sh("rm -f deps.zip", dir);
     gen_dockerfile(dir, runtime);
     build_with_docker(dir);

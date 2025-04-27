@@ -1,7 +1,16 @@
-use provider::Env;
-use provider::aws::{lambda, layer};
 use kit as u;
-use tabled::{Style, Table, Tabled};
+use provider::{
+    Env,
+    aws::{
+        lambda,
+        layer,
+    },
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 
 #[derive(Tabled, Clone, Debug, PartialEq)]
 struct Record {

@@ -1,14 +1,20 @@
-use aws_sdk_appsync::Client;
+use aws_sdk_appsync::{
+    Client,
+    types::{
+        Api,
+        AuthMode,
+        AuthProvider,
+        AuthenticationType,
+        EventConfig,
+        builders::{
+            AuthModeBuilder,
+            AuthProviderBuilder,
+            EventConfigBuilder,
+        },
+    },
+};
 use kit::*;
 use std::collections::HashMap;
-use aws_sdk_appsync::types::builders::EventConfigBuilder;
-use aws_sdk_appsync::types::builders::AuthProviderBuilder;
-use aws_sdk_appsync::types::builders::AuthModeBuilder;
-use aws_sdk_appsync::types::AuthProvider;
-use aws_sdk_appsync::types::AuthMode;
-use aws_sdk_appsync::types::EventConfig;
-use aws_sdk_appsync::types::AuthenticationType;
-use aws_sdk_appsync::types::Api;
 
 fn make_auth_provider() -> AuthProvider {
     let b = AuthProviderBuilder::default();
@@ -56,8 +62,7 @@ async fn list_apis(client: &Client) -> HashMap<String, Api> {
         Ok(res) => {
             let apis = res.apis.unwrap();
             for api in apis {
-                h.insert(api.name.clone().unwrap().to_string(),
-                         api);
+                h.insert(api.name.clone().unwrap().to_string(), api);
             }
         }
         Err(e) => panic!("{}", e),
@@ -69,14 +74,14 @@ async fn find_api(client: &Client, name: &str) -> Option<String> {
     let apis = list_apis(client).await;
     match apis.get(name) {
         Some(api) => api.api_id.clone(),
-        None => None
+        None => None,
     }
 }
 
 pub async fn find_or_create_api(client: &Client, name: &str) -> String {
     match find_api(client, name).await {
         Some(id) => id,
-        None => create_api(client, name).await
+        None => create_api(client, name).await,
     }
 }
 
@@ -91,23 +96,15 @@ pub async fn create_channel(client: &Client, api_id: &str, name: &str, handler: 
 }
 
 async fn get_api_key(client: &Client, api_id: &str) -> Option<String> {
-    let res = client
-        .list_api_keys()
-        .api_id(s!(api_id))
-        .send()
-        .await;
+    let res = client.list_api_keys().api_id(s!(api_id)).send().await;
     match res.unwrap().api_keys {
         Some(keys) => keys.into_iter().nth(0).unwrap().id,
-        None => None
+        None => None,
     }
 }
 
 async fn get_api(client: &Client, api_id: &str) -> Api {
-    let res = client
-        .get_api()
-        .api_id(s!(api_id))
-        .send()
-        .await;
+    let res = client.get_api().api_id(s!(api_id)).send().await;
     res.unwrap().api.unwrap()
 }
 
@@ -116,7 +113,7 @@ pub struct ApiCred {
     pub api_arn: String,
     pub api_key: String,
     pub http_domain: String,
-    pub realtime_domain: String
+    pub realtime_domain: String,
 }
 
 pub async fn find_api_creds(client: &Client, name: &str) -> Option<ApiCred> {
@@ -132,10 +129,10 @@ pub async fn find_api_creds(client: &Client, name: &str) -> Option<ApiCred> {
                 api_arn: details.api_arn.unwrap(),
                 api_key: api_key.unwrap(),
                 http_domain: dns.get("HTTP").unwrap().to_string(),
-                realtime_domain: dns.get("REALTIME").unwrap().to_string()
+                realtime_domain: dns.get("REALTIME").unwrap().to_string(),
             };
             Some(ac)
-        },
-        None => None
+        }
+        None => None,
     }
 }

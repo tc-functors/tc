@@ -1,6 +1,11 @@
-use aws_sdk_appsync::types::builders::EventBridgeDataSourceConfigBuilder;
-use aws_sdk_appsync::types::{DataSourceType, EventBridgeDataSourceConfig};
-use aws_sdk_appsync::Client;
+use aws_sdk_appsync::{
+    Client,
+    types::{
+        DataSourceType,
+        EventBridgeDataSourceConfig,
+        builders::EventBridgeDataSourceConfigBuilder,
+    },
+};
 use colored::Colorize;
 use kit::*;
 

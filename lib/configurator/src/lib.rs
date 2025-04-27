@@ -1,12 +1,16 @@
 use derivative::Derivative;
-use serde::{Deserialize, Serialize};
-use std::fs;
-use std::collections::HashMap;
-use std::process::exit;
 use doku::Document;
-
 use kit as u;
 use kit::*;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    collections::HashMap,
+    fs,
+    process::exit,
+};
 
 fn default() -> String {
     s!("")
@@ -76,7 +80,6 @@ fn default_network() -> HashMap<String, Network> {
     HashMap::new()
 }
 
-
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Compiler {
@@ -92,7 +95,6 @@ pub struct Compiler {
     #[serde(default = "default")]
     pub default_infra_path: String,
 }
-
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
@@ -114,7 +116,6 @@ pub struct Resolver {
     pub stable_sandbox: String,
 }
 
-
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Deployer {
@@ -131,7 +132,6 @@ pub struct Deployer {
     pub fallback: String,
 }
 
-
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Notifier {
@@ -147,7 +147,6 @@ pub struct Ci {
     #[serde(default = "default_ci_provider")]
     pub provider: String,
 
-
     #[derivative(Default(value = "default_bool()"))]
     #[serde(default = "default_bool")]
     pub assume_role: bool,
@@ -159,7 +158,6 @@ pub struct Ci {
     #[derivative(Default(value = "default_hashmap()"))]
     #[serde(default = "default_hashmap")]
     pub roles: HashMap<String, String>,
-
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
@@ -182,7 +180,6 @@ pub struct Eventbridge {
     pub default_region: String,
 }
 
-
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Network {
@@ -193,7 +190,6 @@ pub struct Network {
     #[derivative(Default(value = "default_vec()"))]
     #[serde(default)]
     pub security_groups: Vec<String>,
-
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
@@ -294,11 +290,9 @@ pub struct ApiGateway {
     pub default_region: String,
 }
 
-
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Aws {
-
     #[serde(default = "Eventbridge::default")]
     pub eventbridge: Eventbridge,
 
@@ -319,13 +313,11 @@ pub struct Aws {
 
     #[serde(default = "ApiGateway::default")]
     pub api_gateway: ApiGateway,
-
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Config {
-
     #[serde(default = "Compiler::default")]
     pub compiler: Compiler,
 
@@ -341,11 +333,9 @@ pub struct Config {
     #[serde(default = "Notifier::default")]
     pub notifier: Notifier,
 
-   #[serde(default = "Ci::default")]
+    #[serde(default = "Ci::default")]
     pub ci: Ci,
-
 }
-
 
 fn render_template(env: &str, cfg_str: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
@@ -355,16 +345,15 @@ fn render_template(env: &str, cfg_str: &str) -> String {
 
 impl Config {
     pub fn new(path: Option<String>, env: &str) -> Config {
-
         let config_path = match std::env::var("TC_CONFIG_PATH") {
             Ok(p) => kit::expand_path(&p),
-            Err(_) =>  match path {
+            Err(_) => match path {
                 Some(p) => p,
                 None => {
                     let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
                     format!("{}/infrastructure/tc/config.yml", root)
                 }
-            }
+            },
         };
 
         match fs::read_to_string(&config_path) {

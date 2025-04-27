@@ -1,10 +1,21 @@
-use anyhow::{Error, Result};
-use aws_sdk_scheduler::types::builders::FlexibleTimeWindowBuilder;
-use aws_sdk_scheduler::types::builders::TargetBuilder;
-use aws_sdk_scheduler::types::{FlexibleTimeWindow, FlexibleTimeWindowMode, ScheduleState, Target};
-use aws_sdk_scheduler::Client;
-
 use crate::Env;
+use anyhow::{
+    Error,
+    Result,
+};
+use aws_sdk_scheduler::{
+    Client,
+    types::{
+        FlexibleTimeWindow,
+        FlexibleTimeWindowMode,
+        ScheduleState,
+        Target,
+        builders::{
+            FlexibleTimeWindowBuilder,
+            TargetBuilder,
+        },
+    },
+};
 use colored::Colorize;
 use kit::*;
 

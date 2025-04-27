@@ -1,9 +1,14 @@
-use compiler::{Function, Lang};
-use provider::aws::lambda;
-use provider::Env;
+use compiler::{
+    Function,
+    Lang,
+};
 //use aws::ecs;
 //use aws::ecs::TaskDef;
 use configurator::Config;
+use provider::{
+    Env,
+    aws::lambda,
+};
 use std::collections::HashMap;
 
 pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
@@ -25,17 +30,17 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     let arch = lambda::make_arch(&f.runtime.lang.to_str());
     let runtime = match package_type.as_ref() {
         "zip" => Some(lambda::make_runtime(&f.runtime.lang.to_str())),
-        _ => None
+        _ => None,
     };
 
     let handler = match package_type.as_ref() {
         "zip" => Some(f.runtime.handler),
-        _ => None
+        _ => None,
     };
 
     let layers = match package_type.as_ref() {
         "zip" => Some(f.runtime.layers),
-        _ => None
+        _ => None,
     };
 
     let snap_start = lambda::make_snapstart(f.runtime.snapstart);
@@ -66,13 +71,18 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
     }
 }
 
-pub async fn create_function(profile: String, role_arn: Option<String>, config: Config, f: Function) -> String {
+pub async fn create_function(
+    profile: String,
+    role_arn: Option<String>,
+    config: Config,
+    f: Function,
+) -> String {
     let env = Env::new(&profile, role_arn, config);
     match f.runtime.package_type.as_ref() {
         "zip" => {
             let lambda = make_lambda(&env, f.clone()).await;
             lambda.clone().create_or_update().await
-        },
+        }
         _ => {
             let lambda = make_lambda(&env, f.clone()).await;
             lambda.clone().create_or_update().await
@@ -89,7 +99,7 @@ pub async fn create(env: &Env, fns: HashMap<String, Function>) {
                 let config = env.config.to_owned();
                 create_function(p, role, config, function).await;
             }
-        },
+        }
 
         Err(_) => {
             let mut tasks = vec![];
@@ -130,15 +140,13 @@ pub async fn delete_function(env: &Env, f: Function) {
     function.clone().delete().await.unwrap();
 }
 
-
 pub async fn delete(env: &Env, fns: HashMap<String, Function>) {
     for (_name, function) in fns {
-
         match function.runtime.package_type.as_ref() {
             "zip" => {
                 let function = make_lambda(env, function).await;
                 function.clone().delete().await.unwrap();
-            },
+            }
             _ => {
                 let function = make_lambda(env, function).await;
                 function.clone().delete().await.unwrap();
@@ -198,6 +206,6 @@ pub async fn update_runtime_version(env: &Env, fns: HashMap<String, Function>) {
                 }
             }
         }
-        Err(_) => println!("TC_LAMBDA_RUNTIME_VERSION env var is not set")
+        Err(_) => println!("TC_LAMBDA_RUNTIME_VERSION env var is not set"),
     }
 }

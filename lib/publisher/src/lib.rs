@@ -1,33 +1,40 @@
-mod layer;
 mod ecr;
+mod layer;
 
+use compiler::spec::{
+    BuildKind,
+    BuildOutput,
+};
 use provider::Env;
 use std::collections::HashMap;
-use compiler::spec::{BuildKind, BuildOutput};
 
 pub async fn list_layers(env: &Env, layer_names: Vec<String>) -> String {
     layer::list(env, layer_names).await
 }
 
 pub async fn publish(env: &Env, build: BuildOutput) {
-
-    let BuildOutput { dir, kind, artifact, runtime, name, .. } = build;
+    let BuildOutput {
+        dir,
+        kind,
+        artifact,
+        runtime,
+        name,
+        ..
+    } = build;
 
     let lang = runtime.to_str();
     match kind {
         BuildKind::Layer | BuildKind::Library => {
             if layer::should_split(&dir) {
-                layer::publish(env, &lang, &format!("{}-0-dev", &name),
-                               "deps1.zip").await;
-                layer::publish(env, &lang, &format!("{}-1-dev", &name),
-                               "deps2.zip").await;
+                layer::publish(env, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
+                layer::publish(env, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
             } else {
                 let layer_name = format!("{}-dev", &name);
                 layer::publish(env, &lang, &layer_name, &artifact).await;
             }
-        },
+        }
         BuildKind::Image => ecr::publish(env, &artifact).await,
-        _ => ()
+        _ => (),
     }
 }
 
@@ -63,12 +70,12 @@ pub async fn list(env: &Env, kind: &BuildKind) {
             let layer_names = compiler::find_layer_names();
             let table = list_layers(env, layer_names).await;
             println!("{}", table);
-        },
+        }
         BuildKind::Image => {
             let images = ecr::list(env, "xxx").await;
             println!("{:?}", images);
-        },
-        _ => todo!()
+        }
+        _ => todo!(),
     }
 }
 
