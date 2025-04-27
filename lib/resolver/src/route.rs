@@ -15,14 +15,14 @@ pub async fn resolve(context: &Context, topology: &Topology) -> HashMap<String, 
     let sandbox = &context.sandbox;
 
     for (id, route) in &topology.routes {
-        let path = if is_stable(&sandbox) {
-            route.path.to_owned()
+        let gateway = if is_stable(&sandbox) {
+            route.gateway.to_owned()
         } else {
-            format!("/{}{}", sandbox, &route.path)
+            format!("{}_{}", &route.gateway, sandbox)
         };
         let mut r: Route = route.clone();
 
-        r.path = path;
+        r.gateway = gateway;
         routes.insert(id.to_string(), r);
     }
 
