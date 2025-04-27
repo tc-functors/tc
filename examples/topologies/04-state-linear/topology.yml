@@ -1,0 +1,43 @@
+name: 04-state-linear
+
+flow:
+  Comment: ETL
+  startAt: initialize
+  TimeoutSeconds: 600
+  States:
+    initialize:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_initializer_{{sandbox}}'
+        Payload:
+          data.$: $
+      Next: enhance
+    enhance:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_enhancer_{{sandbox}}'
+        Payload:
+          data.$: $
+      Next: transform
+    transform:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_transformer_{{sandbox}}'
+        Payload:
+          data.$: $
+      Next: load
+    load:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_loader_{{sandbox}}'
+        Payload:
+          data.$: $
+      End: true
