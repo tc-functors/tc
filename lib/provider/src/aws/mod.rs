@@ -5,7 +5,7 @@ pub mod ecr;
 pub mod ecs;
 pub mod efs;
 pub mod eventbridge;
-pub mod gatewayv2;
+pub mod gateway;
 pub mod iam;
 pub mod lambda;
 pub mod layer;
