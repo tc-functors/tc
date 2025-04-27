@@ -1,0 +1,43 @@
+name: example-shared-bar
+kind: step-function
+shared_functions:
+  - ../shared/s0
+  - ../shared/s1
+flow:
+  Comment: Basic example
+  StartAt: b0
+  TimeoutSeconds: 1200
+  States:
+    b0:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_b0_{{sandbox}}'
+        Payload:
+          metadata.$: $.metadata
+          execution.$: $$.Execution
+          data.$: $.data
+      Next: s0
+    s0:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_s0_{{sandbox}}'
+        Payload:
+          metadata.$: $.metadata
+          execution.$: $$.Execution
+          data.$: $.data
+      Next: s1
+    s1:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_s1_{{sandbox}}'
+        Payload:
+          metadata.$: $.metadata
+          execution.$: $$.Execution
+          data.$: $.data
+      End: true

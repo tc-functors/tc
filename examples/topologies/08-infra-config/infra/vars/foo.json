@@ -1,0 +1,9 @@
+{
+  "default": {
+    "timeout": 150,
+    "memory_size": 450,
+    "environment": {
+      "HONEYBADGER_API_KEY": "ssm:/tc/api-key",
+    }
+  }
+}

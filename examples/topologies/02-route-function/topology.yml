@@ -1,0 +1,9 @@
+name: 02-route-function
+
+routes:
+  fetch:
+    gateway: api-test
+    kind: http
+    method: GET
+    path: "/api/user"
+    function: '{{namespace}}_fetcher_{{sandbox}}'

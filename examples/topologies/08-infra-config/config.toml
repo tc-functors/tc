@@ -1,0 +1,30 @@
+[general]
+assume_role = "arn:aws:iam::{{account}}:role/my-role"
+
+[eventbridge]
+bus = "my-bus-{{env}}"
+rule_prefix = "tc-"
+default_role = "tc-event-base-role"
+
+[efs]
+subnets = "private-subnet-*"
+security_group = "default-sg"
+dev_ap = "dev-ml-models"
+stable_ap = "stable-ml-models"
+
+[stepfunction]
+default_role = "tc-sfn-base-role"
+
+[lambda]
+default_timeout = 180
+base_role = "tc-lambda-base-role"
+layers_profile = "cicd"
+resolve_env_vars = false
+
+[apigateway]
+api_name = "my-api"
+use_v2 = true
+default_role = "tc-base-api-role"
+
+[appsync]
+generte_vtl = false
