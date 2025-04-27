@@ -1,7 +1,7 @@
 use colored::Colorize;
 use compiler::{
     Event,
-    event::TargetKind,
+    Entity
 };
 use provider::{
     Env,
@@ -15,8 +15,8 @@ use std::collections::HashMap;
 
 async fn update_permissions(env: &Env, event: &Event) {
     for target in event.targets.clone() {
-        match target.kind {
-            TargetKind::Function => {
+        match target.entity {
+            Entity::Function => {
                 let client = lambda::make_client(env).await;
                 let principal = "events.amazonaws.com";
                 let statement_id = &event.rule_name;
@@ -91,7 +91,7 @@ async fn create_event(env: &Env, event: &Event) {
             None => None,
         };
 
-        let target_arn = if &target.kind.to_str() == "channel" {
+        let target_arn = if &target.entity.to_str() == "channel" {
             create_target_dependencies(env, &target.name).await
         } else {
             String::from(&target.arn)
@@ -101,7 +101,7 @@ async fn create_event(env: &Env, event: &Event) {
             &target.id,
             &target_arn,
             &target.role_arn,
-            &target.kind.to_str(),
+            &target.entity.to_str(),
             input_transformer,
             Some(appsync),
         );

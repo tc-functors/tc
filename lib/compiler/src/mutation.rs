@@ -2,6 +2,7 @@ use super::{
     spec::{
         MutationSpec,
         ResolverSpec,
+        Entity
     },
     template,
 };
@@ -13,58 +14,39 @@ use serde_derive::{
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum ResolverKind {
-    Function,
-    Event,
-    Table,
-}
-
-impl ResolverKind {
-    pub fn to_str(&self) -> String {
-        match self {
-            ResolverKind::Function => s!("function"),
-            ResolverKind::Event => s!("event"),
-            ResolverKind::Table => s!("table"),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Resolver {
-    pub kind: ResolverKind,
+    pub entity: Entity,
     pub name: String,
     pub target_arn: String,
     pub input: String,
     pub output: String,
 }
 
-fn kind_of(r: ResolverSpec) -> (ResolverKind, String) {
+fn entity_of(r: ResolverSpec) -> (Entity, String) {
     if let Some(f) = r.function {
-        (ResolverKind::Function, f)
+        (Entity::Function, f)
     } else if let Some(e) = r.event {
-        (ResolverKind::Event, e)
-    } else if let Some(t) = r.table {
-        (ResolverKind::Table, t)
+        (Entity::Event, e)
     } else {
         panic!("Invalid Resolver {:?}", r)
     }
 }
 
-fn make_target_arn(kind: &ResolverKind, target_name: &str) -> String {
-    match kind {
-        ResolverKind::Function => template::lambda_arn(target_name),
-        ResolverKind::Event => template::event_bus_arn("default"),
-        ResolverKind::Table => kit::empty(),
+fn make_target_arn(entity: &Entity, target_name: &str) -> String {
+    match entity {
+        Entity::Function => template::lambda_arn(target_name),
+        Entity::Event => template::event_bus_arn("default"),
+        _ => kit::empty(),
     }
 }
 
 fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Resolver> {
     let mut xs: HashMap<String, Resolver> = HashMap::new();
     for (k, r) in rspecs {
-        let (kind, target_name) = kind_of(r.to_owned());
-        let target_arn = make_target_arn(&kind, &target_name);
+        let (entity, target_name) = entity_of(r.to_owned());
+        let target_arn = make_target_arn(&entity, &target_name);
         let resolver = Resolver {
-            kind: kind,
+            entity: entity,
             name: k.to_owned(),
             target_arn: target_arn,
             input: r.input,

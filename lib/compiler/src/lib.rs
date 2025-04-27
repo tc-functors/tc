@@ -22,7 +22,6 @@ pub use channel::Channel;
 pub use event::{
     Event,
     Target,
-    TargetKind,
 };
 pub use flow::Flow;
 pub use formatter::TopologyCount;
@@ -53,6 +52,7 @@ pub use spec::{
     RuntimeInfraSpec,
     TopologyKind,
     TopologySpec,
+    Entity,
 };
 use std::collections::HashMap;
 pub use topology::Topology;

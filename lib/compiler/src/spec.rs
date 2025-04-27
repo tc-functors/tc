@@ -15,6 +15,57 @@ use std::{
 pub struct ParseError;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Document)]
+pub enum Entity {
+    #[serde(alias = "function")]
+    Function,
+    #[serde(alias = "queue")]
+    Queue,
+    #[serde(alias = "route")]
+    Route,
+    #[serde(alias = "channel")]
+    Channel,
+    #[serde(alias = "event")]
+    Event,
+    #[serde(alias = "state")]
+    State,
+    #[serde(alias = "mutation")]
+    Mutation
+}
+
+impl FromStr for Entity {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "function" => Ok(Entity::Function),
+            "queue"    => Ok(Entity::Queue),
+            "route"    => Ok(Entity::Route),
+            "channel"  => Ok(Entity::Channel),
+            "event"    => Ok(Entity::Event),
+            "state"    => Ok(Entity::State),
+            "mutation" => Ok(Entity::Mutation),
+            _          => Ok(Entity::Function),
+        }
+    }
+}
+
+impl Entity {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            Entity::Function => s!("function"),
+            Entity::Queue    => s!("queue"),
+            Entity::Route    => s!("route"),
+            Entity::Channel  => s!("channel"),
+            Entity::Event    => s!("event"),
+            Entity::Mutation => s!("mutation"),
+            Entity::State    => s!("state")
+        }
+    }
+}
+
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Document)]
 pub enum Lang {
     Python,
     Ruby,

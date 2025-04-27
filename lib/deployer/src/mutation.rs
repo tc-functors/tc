@@ -35,7 +35,8 @@ async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, St
     for (field_name, resolver) in resolvers {
         println!("Creating mutation {}", &field_name);
         let datasource_name = &field_name;
-        let kind = &resolver.kind;
+        let kind = &resolver.entity;
+
         let datasource_input = appsync::DatasourceInput {
             kind: kind.to_str(),
             name: String::from(datasource_name),
