@@ -35,6 +35,7 @@ enum Cmd {
     #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
     /// List or clear resolver cache
+    #[clap(hide = true)]
     Cache(CacheArgs),
     /// Compile a Topology
     Compile(CompileArgs),
@@ -59,14 +60,18 @@ enum Cmd {
     /// Resolve a topology from functions, events, states description
     Resolve(ResolveArgs),
     /// Route events to functors
+    #[clap(hide = true)]
     Route(RouteArgs),
     /// Scaffold roles and infra vars
+    #[clap(hide = true)]
     Scaffold(ScaffoldArgs),
     /// Run unit tests for functions in the topology dir
     Test(TestArgs),
     /// Create semver tags scoped by a topology
+    #[clap(hide = true)]
     Tag(TagArgs),
     /// Unfreeze a sandbox and make it mutable
+    #[clap(hide = true)]
     Unfreeze(UnFreezeArgs),
     /// Update components
     Update(UpdateArgs),
@@ -102,6 +107,8 @@ pub struct BootstrapArgs {
     delete: bool,
     #[arg(long, action)]
     show: bool,
+    #[arg(long, action)]
+    roles: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -757,10 +764,15 @@ async fn bootstrap(args: BootstrapArgs) {
         create,
         delete,
         show,
+        roles,
         ..
     } = args;
     let env = tc::init(profile, None).await;
-    tc::bootstrap(env, role, create, delete, show).await;
+    if roles {
+        bootstrapper::create_roles(&env).await;
+    } else {
+        tc::bootstrap(env, role, create, delete, show).await;
+    }
 }
 
 async fn emulate(args: EmulateArgs) {

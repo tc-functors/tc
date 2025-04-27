@@ -10,12 +10,12 @@ mod scaffold;
 
 async fn make_role(env: &Env, name: &str) -> Role {
     let policy_doc = match name {
-        "lambda" => env.base_lambda_policy(),
-        "sfn" => env.base_sfn_policy(),
-        "event" => env.base_event_policy(),
-        "api" => env.base_api_policy(),
+        "lambda"  => env.base_lambda_policy(),
+        "sfn"     => env.base_sfn_policy(),
+        "event"   => env.base_event_policy(),
+        "api"     => env.base_api_policy(),
         "appsync" => env.base_appsync_policy(),
-        _ => panic!("No such policy"),
+        _         => panic!("No such policy"),
     };
     let client = iam::make_client(env).await;
     let role_fqn = env.base_role(name);
@@ -39,16 +39,23 @@ pub async fn show_role(env: &Env, name: &str) {
 
 pub async fn create_role(env: &Env, name: &str) {
     let role = make_role(env, name).await;
-    let out = role.create_or_update().await;
-    println!("{:?}", out);
+    let _ = role.create_or_update().await;
 }
 
 pub async fn delete_role(env: &Env, name: &str) {
     let role = make_role(env, name).await;
-    let out = role.delete().await;
-    println!("{:?}", out);
+    let _ = role.delete().await;
 }
 
+
+pub async fn create_roles(env: &Env) {
+    let roles = vec!["lambda", "sfn", "event", "api", "appsync"];
+    for role in roles {
+        create_role(env, role).await;
+    }
+}
+
+// scaffold
 pub async fn scaffold_function(name: &str, infra_dir: &str) {
     let role_dir = format!("{}/roles", infra_dir);
     let vars_dir = format!("{}/vars", infra_dir);
