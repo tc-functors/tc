@@ -72,15 +72,35 @@ pub async fn find_or_create(
     let maybe_int = find(client, api_id, lambda_arn).await;
     match maybe_int {
         Some(id) => {
-            println!("Found Lambda Integration {}", id);
+            tracing::debug!("Found Lambda Integration {}", id);
             id
         }
         _ => {
             let id = create(client, api_id, lambda_arn, role_arn)
                 .await
                 .unwrap();
-            println!("Created Lambda Integration {}", id);
+            tracing::debug!("Created Lambda Integration {}", id);
             id
         }
+    }
+}
+
+pub async fn delete(
+    client: &Client,
+    api_id: &str,
+    lambda_arn: &str,
+) {
+
+    let maybe_int = find(client, api_id, lambda_arn).await;
+    match maybe_int {
+        Some(id) => {
+            let _ = client
+                .delete_integration()
+                .api_id(s!(api_id))
+                .integration_id(id)
+                .send()
+                .await;
+        },
+        _ => ()
     }
 }

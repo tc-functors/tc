@@ -33,7 +33,7 @@ fn build_routes(namespace: &str, rs: HashMap<String, Route>) -> Vec<Item> {
             path: route.path.clone(),
             gateway: route.gateway.clone(),
             authorizer: route.authorizer.clone(),
-            target_kind: route.target_kind.to_str(),
+            target_kind: route.entity.to_str(),
             target_arn: route.target_arn.clone(),
         };
         xs.push(e);
