@@ -1,14 +1,13 @@
 name: 03-event-filters
 
 events:
-  consumes:
-    MyRawEvent:
-      filter: '{"detail_type": ["FooBar"]}'
-      function: '{{namespace}}_foo_{{sandbox}}'
-    MyFilterEvent:
-      producer: default
-      filter: '{"metadata": {"type": ["foo"]}}'
-      function: '{{namespace}}_foo_{{sandbox}}'
-    MyAbstractEvent:
-      producer: default
-      function: '{{namespace}}_foo_{{sandbox}}'
+  MyRawEvent:
+    filter: '{"detail_type": ["FooBar"]}'
+    function: '{{namespace}}_foo_{{sandbox}}'
+  MyFilterEvent:
+    producer: default
+    filter: '{"metadata": {"type": ["foo"]}}'
+    function: '{{namespace}}_foo_{{sandbox}}'
+  MyAbstractEvent:
+    producer: default
+    function: '{{namespace}}_foo_{{sandbox}}'
