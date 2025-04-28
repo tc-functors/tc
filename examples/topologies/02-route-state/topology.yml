@@ -1,10 +1,5 @@
 name: 02-route-state
 
-events:
-  consumes:
-    FooAPIEvent:
-      producer: apiHandler
-
 routes:
   api:
     gateway: api-test
