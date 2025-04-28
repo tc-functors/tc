@@ -364,8 +364,8 @@ fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
         Some(xs) => {
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
-                tracing::debug!("route {}", name);
-                let route = Route::new(spec, rspec, config);
+                tracing::debug!("route {}", &name);
+                let route = Route::new(&name, spec, rspec, config);
                 h.insert(name.to_string(), route);
             }
             h

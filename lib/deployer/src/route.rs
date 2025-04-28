@@ -27,6 +27,7 @@ async fn make_api(env: &Env, role: &str, route: &Route) -> Api {
         path: route.to_owned().path,
         authorizer: route.to_owned().authorizer,
         method: route.method.to_owned(),
+        sync: route.sync.to_owned(),
         request_template: route.request_template.clone(),
         response_template: route.response_template.clone(),
     }
@@ -51,18 +52,12 @@ async fn create_api(
     let api_id = api.find_or_create().await;
 
     add_permission(env, target_arn, &api_id).await;
-    let arn = env.api_integration_arn(target_arn);
 
-    let integration_id = match integration_type {
-        Entity::Function => {
-            api.create_integration(&api_id, "lambda", &arn).await
-        }
-        Entity::State => {
-            api.create_integration(&api_id, "sfn", &arn).await
-        }
-        _ => String::from("")
-
-    };
+    let integration_id = api.create_integration(
+        &api_id,
+        &integration_type.to_str(),
+        target_arn,
+    ).await;
 
     let authorizer_id = api.find_authorizer(&api_id).await;
     api.find_or_create_route(&api_id, &integration_id, authorizer_id).await;
@@ -75,7 +70,7 @@ async fn create_api(
 
 async fn create_route(env: &Env, route: &Route, role: &str) {
     let api = make_api(env, role, route).await;
-    create_api(env, &api, &route.target_kind, &route.target_arn).await;
+    create_api(env, &api, &route.entity, &route.target_arn).await;
 }
 
 pub async fn create(env: &Env, role: &str, routes: HashMap<String, Route>) {
@@ -100,6 +95,7 @@ async fn delete_route(env: &Env, route: &Route, role: &str) {
                 }
                 _ => (),
             }
+            api.delete_integration(&id, &route.entity.to_str(), &route.target_arn).await;
             //api.delete(&id).await
         }
         _ => (),

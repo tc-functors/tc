@@ -30,6 +30,7 @@ pub struct Api {
     pub role: String,
     pub path: String,
     pub method: String,
+    pub sync: bool,
     pub authorizer: String,
     pub request_template: String,
     pub response_template: String,
@@ -90,12 +91,12 @@ impl Api {
         let api_id = self.find().await;
         match api_id {
             Some(id) => {
-                println!("Found API {} id: {}", &self.name, &id);
+                tracing::debug!("Found API {} id: {}", &self.name, &id);
                 id
             }
             _ => {
                 let id = self.clone().create().await;
-                println!("Created API {} id: {}", &self.name, &id);
+                tracing::debug!("Created API {} id: {}", &self.name, &id);
                 id
             }
         }
@@ -260,7 +261,6 @@ impl Api {
             .await;
     }
 
-
     pub async fn create_integration(
         &self,
         api_id: &str,
@@ -271,13 +271,46 @@ impl Api {
 
         println!("Creating integration {}", kind);
         match kind {
-            "sfn" => sfn::find_or_create(
-                &self.client, api_id, target_arn, &self.role
+            "state" => sfn::find_or_create(
+                &self.client,
+                api_id,
+                target_arn,
+                &self.role,
+                &self.request_template,
+                &self.method,
+                self.sync
             ).await,
-            "lambda" => lambda::find_or_create(
-                &self.client, api_id, target_arn, &self.role
+            "function" => lambda::find_or_create(
+                &self.client,
+                api_id,
+                target_arn,
+                &self.role
             ).await,
             _ => s!("")
+        }
+    }
+
+    pub async fn delete_integration(
+        &self,
+        api_id: &str,
+        kind: &str,
+        target_arn: &str
+    ) {
+        println!("Deleting integration {}", kind);
+        match kind {
+            "state" => sfn::delete(
+                &self.client,
+                api_id,
+                &self.method
+            ).await,
+
+            "function" => lambda::delete(
+                &self.client,
+                api_id,
+                target_arn
+            ).await,
+
+            _ => todo!()
         }
     }
 }

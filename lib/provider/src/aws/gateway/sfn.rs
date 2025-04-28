@@ -39,19 +39,26 @@ async fn find(client: &Client, api_id: &str, method: &str) -> Option<String> {
     }
 }
 
-async fn create(client: &Client, api_id: &str, sfn_arn: &str, role_arn: &str, method: &str) -> Result<String, Error> {
+async fn create(
+    client: &Client,
+    api_id: &str,
+    sfn_arn: &str,
+    role_arn: &str,
+    request_template: &str,
+    method: &str,
+    sync: bool
+) -> Result<String, Error> {
+
     let mut req: HashMap<String, String> = HashMap::new();
     req.insert("StateMachineArn".to_string(), s!(sfn_arn));
     req.insert("Name".to_string(), format!("sfn-{}", method));
-    if method == "POST" {
-        req.insert("Input".to_string(), "{\"path\": \"${request.path}\", \"detail\": ${request.body.detail}, \"method\": \"${context.httpMethod}\"}".to_string());
+    req.insert("Input".to_string(), request_template.to_string());
+    let subtype = if sync {
+        s!("StepFunctions-StartSyncExecution")
     } else {
-        req.insert(
-            "Input".to_string(),
-            "{\"path\": \"${request.path}\", \"method\": \"${context.httpMethod}\"}"
-                .to_string(),
-        );
-    }
+        s!("StepFunctions-StartExecution")
+    };
+
 
     let res = client
         .create_integration()
@@ -60,7 +67,7 @@ async fn create(client: &Client, api_id: &str, sfn_arn: &str, role_arn: &str, me
         .credentials_arn(s!(role_arn))
         .payload_format_version(s!("1.0"))
         .integration_type(IntegrationType::AwsProxy)
-        .integration_subtype(s!("StepFunctions-StartExecution"))
+        .integration_subtype(subtype)
         .set_request_parameters(Some(req))
         .send()
         .await;
@@ -75,13 +82,44 @@ pub async fn find_or_create(
     client: &Client,
     api_id: &str,
     sfn_arn: &str,
-    role_arn: &str
+    role_arn: &str,
+    request_template: &str,
+    method: &str,
+    sync: bool
 ) -> String {
 
-    let method = "POST";
     let maybe_int = find(client, api_id, method).await;
     match maybe_int {
         Some(id) => id,
-        _ => create(client, api_id, sfn_arn, role_arn, method).await.unwrap(),
+        _ => create(
+            client,
+            api_id,
+            sfn_arn,
+            role_arn,
+            request_template,
+            method,
+            sync
+        ).await.unwrap(),
+    }
+}
+
+
+pub async fn delete(
+    client: &Client,
+    api_id: &str,
+    method: &str
+) {
+
+    let maybe_int = find(client, api_id, method).await;
+    match maybe_int {
+        Some(id) => {
+            let _ = client
+                .delete_integration()
+                .api_id(s!(api_id))
+                .integration_id(id)
+                .send()
+                .await;
+        },
+        _ => ()
     }
 }

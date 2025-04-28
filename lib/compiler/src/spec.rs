@@ -513,10 +513,6 @@ fn default_nodes() -> Nodes {
     }
 }
 
-fn default_route_kind() -> String {
-    s!("http")
-}
-
 fn default_target() -> String {
     s!("")
 }
@@ -633,17 +629,23 @@ pub struct QueueSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RouteSpec {
-    #[serde(default = "default_route_kind")]
-    pub kind: String,
-    pub method: String,
-    pub path: String,
-    pub gateway: String,
+    pub method: Option<String>,
+    pub path: Option<String>,
+    pub gateway: Option<String>,
 
     #[serde(default)]
     pub authorizer: String,
 
     pub proxy: Option<String>,
     pub function: Option<String>,
+    pub state: Option<String>,
+    pub event: Option<String>,
+    pub queue: Option<String>,
+
+    pub request_template: Option<String>,
+    pub response_template: Option<String>,
+    pub sync: Option<bool>,
+
     pub stage: Option<String>,
     pub stage_variables: Option<HashMap<String, String>>,
 }
