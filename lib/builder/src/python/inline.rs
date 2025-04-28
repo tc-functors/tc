@@ -10,6 +10,25 @@ fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
 }
 
+fn gen_dockerignore(dir: &str) {
+    let f = format!(r#"
+**/node_modules/
+**/dist
+**/logs
+**/target
+**/vendor
+**/build
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
+*.zip
+"#);
+    let file = format!("{}/.dockerignore", dir);
+    u::write_str(&file, &f);
+}
+
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
@@ -119,13 +138,14 @@ fn build_docker(dir: &str, name: &str, runtime: &LangRuntime, given_command: &st
 
     let _ = log.render(&format!("Building {name} - Generating Dockerfile"));
     gen_dockerfile(dir, runtime);
+    gen_dockerignore(dir);
 
     let _ = log.render(&format!("Building {name} - Building with Docker"));
     build_with_docker(dir);
 
     let _ = log.render(&format!("Building {name} - Copying from container"));
     copy_from_docker(dir);
-    sh("rm -f Dockerfile wrapper", dir);
+    sh("rm -f Dockerfile wrapper .dockerignore", dir);
 
     let _ = log.render(&format!("Building {name} - Copying dependencies"));
     let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
