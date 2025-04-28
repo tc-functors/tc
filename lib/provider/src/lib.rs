@@ -36,7 +36,7 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>, config: 
     let account = aws::sts::get_account_id(&client).await;
     cache::write(&name, &account).await;
     let mut lock = CACHED_ACC.lock().unwrap();
-    lock.push_str(&account);
+    *lock = account;
     env
 }
 
