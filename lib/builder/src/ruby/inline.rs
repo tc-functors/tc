@@ -5,6 +5,25 @@ fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
 }
 
+fn gen_dockerignore(dir: &str) {
+    let f = format!(r#"
+**/node_modules/
+**/dist
+**/logs
+**/target
+**/vendor
+**/build
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
+*.zip
+"#);
+    let file = format!("{}/.dockerignore", dir);
+    u::write_str(&file, &f);
+}
+
 fn shared_objects() -> Vec<&'static str> {
     vec![
         "cp /usr/lib64/libnghttp2.so.14.20.0 /build/ruby/lib/libnghttp2.so.14",
@@ -95,9 +114,10 @@ fn copy_from_docker(dir: &str) {
 
 fn build_docker(dir: &str) {
     gen_dockerfile(dir);
+    gen_dockerignore(dir);
     build_with_docker(dir);
     copy_from_docker(dir);
-    sh("rm -f Dockerfile wrapper", dir);
+    sh("rm -f Dockerfile wrapper .dockerignore", dir);
     let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
     sh(&cmd, dir);
 }
