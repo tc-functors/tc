@@ -345,12 +345,14 @@ fn make_events(
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
-        for (name, espec) in evs {
-            tracing::debug!("event {}", &name);
-            let targets = event::make_targets(namespace, &name, &espec, fqn);
-            let skip = espec.doc_only;
-            let ev = Event::new(&name, &espec, targets, config, skip);
-            h.insert(name.to_string(), ev);
+        let skip = evs.doc_only;
+        if let Some(c) = &evs.consumes {
+            for (name, ev) in c.clone().into_iter() {
+                tracing::debug!("event {}", &name);
+                let targets = event::make_targets(namespace, &name, &ev, fqn);
+                let ev = Event::new(&name, &ev, targets, config, skip);
+                h.insert(name, ev);
+            }
         }
     }
     h
