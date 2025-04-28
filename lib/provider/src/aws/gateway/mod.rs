@@ -255,6 +255,7 @@ impl Api {
             .client
             .create_stage()
             .api_id(s!(api_id))
+            .auto_deploy(true)
             .stage_name(stage.clone())
             .set_stage_variables(Some(stage_variables))
             .send()
