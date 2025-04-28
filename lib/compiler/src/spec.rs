@@ -554,12 +554,9 @@ pub struct Produces {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EventSpec {
+pub struct Consumes {
     #[serde(default)]
     pub producer: String,
-
-    #[serde(default)]
-    pub doc_only: bool,
 
     pub producer_ns: Option<String>,
 
@@ -593,6 +590,13 @@ pub struct EventSpec {
     pub sandboxes: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EventsSpec {
+    #[serde(default)]
+    pub doc_only: bool,
+    pub consumes: Option<HashMap<String, Consumes>>,
+    pub produces: Option<HashMap<String, Produces>>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HandlerSpec {
@@ -741,7 +745,7 @@ pub struct TopologySpec {
     pub nodes: Nodes,
     #[serde(default = "default_functions")]
     pub functions: Functions,
-    pub events: Option<HashMap<String, EventSpec>>,
+    pub events: Option<EventsSpec>,
     pub routes: Option<HashMap<String, RouteSpec>>,
     pub mutations: Option<MutationSpec>,
     pub queues: Option<HashMap<String, QueueSpec>>,
