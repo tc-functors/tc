@@ -1,5 +1,5 @@
 use super::template;
-use crate::spec::{Consumes, Entity};
+use crate::spec::{EventSpec, Entity};
 use configurator::Config;
 use kit::*;
 use serde_derive::{
@@ -68,10 +68,10 @@ impl Target {
 pub fn make_targets(
     namespace: &str,
     event_name: &str,
-    consumes: &Consumes,
+    espec: &EventSpec,
     fallback_fqn: &str,
 ) -> Vec<Target> {
-    let Consumes {
+    let EventSpec {
         producer_ns,
         producer,
         function,
@@ -80,7 +80,7 @@ pub fn make_targets(
         stepfunction,
         channel,
         ..
-    } = consumes;
+    } = espec;
 
     let mut xs: Vec<Target> = vec![];
 
@@ -258,19 +258,19 @@ pub struct Event {
 impl Event {
     pub fn new(
         event_name: &str,
-        consumer_spec: &Consumes,
+        espec: &EventSpec,
         targets: Vec<Target>,
         config: &Config,
         skip: bool,
     ) -> Event {
-        let Consumes {
+        let EventSpec {
             rule_name,
             producer,
             filter,
             pattern,
             sandboxes,
             ..
-        } = consumer_spec;
+        } = espec;
 
         let pattern = match pattern {
             Some(p) => {
