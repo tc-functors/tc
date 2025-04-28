@@ -15,6 +15,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Env {
@@ -25,12 +26,17 @@ pub struct Env {
 
 // config
 
+static CACHED_ACC: Mutex<String> = Mutex::new(String::new());
+
+
 pub async fn init(profile: Option<String>, assume_role: Option<String>, config: Config) -> Env {
     let name = maybe_string(profile, "dev");
     let env = Env::new(&name, assume_role, config);
     let client = aws::sts::make_client(&env).await;
     let account = aws::sts::get_account_id(&client).await;
     cache::write(&name, &account).await;
+    let mut lock = CACHED_ACC.lock().unwrap();
+    lock.push_str(&account);
     env
 }
 
@@ -73,7 +79,11 @@ impl Env {
     }
 
     pub fn account(&self) -> String {
-        cache::read(&self.name)
+        let acc = cache::read(&self.name);
+        match acc {
+            Some(ac) => ac,
+            None => CACHED_ACC.lock().unwrap().to_string()
+        }
     }
 
     pub fn region(&self) -> String {
