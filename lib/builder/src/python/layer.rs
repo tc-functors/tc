@@ -132,12 +132,12 @@ pub fn gen_requirements_txt(dir: &str, runtime: &LangRuntime) {
 pub fn build_with_docker(dir: &str) {
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
-            "docker build --no-cache  --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
+            "docker build --no-cache  --platform=linux/amd64 --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
             &e,
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker build --no-cache  --ssh default --secret id=aws,src=$HOME/.aws/credentials . -t {}",
+            "docker build --no-cache  --platform=linux/amd64 --ssh default --secret id=aws,src=$HOME/.aws/credentials . -t {}",
             u::basedir(dir)
         ),
     };

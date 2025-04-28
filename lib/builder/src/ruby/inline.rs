@@ -62,12 +62,12 @@ fn build_with_docker(dir: &str) {
     let root = &top_level();
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
-            "docker buildx build --ssh default={} -t {} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-context shared={root} .",
             &e,
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker buildx build --ssh default  -t {} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default  -t {} --build-context shared={root} .",
             u::basedir(dir)
         ),
     };
