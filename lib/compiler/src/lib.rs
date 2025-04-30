@@ -4,6 +4,8 @@ pub mod formatter;
 pub mod spec;
 pub mod topology;
 
+mod lisp;
+
 pub use formatter::TopologyCount;
 use kit as u;
 use kit::*;
@@ -44,7 +46,15 @@ pub fn is_root_dir(dir: &str) -> bool {
 }
 
 pub fn compile(dir: &str, recursive: bool) -> Topology {
-    Topology::new(dir, recursive, false)
+    if u::path_exists(dir, "topology.lisp") {
+        let f = format!("{}/topology.lisp", dir);
+        let data = u::slurp(&f);
+        let program = format!("{{ {data} }}");
+        lisp::load(program);
+        Topology::new(dir, recursive, false)
+    } else {
+        Topology::new(dir, recursive, false)
+    }
 }
 
 pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
