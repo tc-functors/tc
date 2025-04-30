@@ -1,11 +1,5 @@
 use super::layer;
-use crate::{
-    role,
-    role::{
-        Role,
-        RoleKind,
-    },
-    spec::{
+use crate::spec::{
         AssetsSpec,
         BuildKind,
         FunctionSpec,
@@ -13,6 +7,13 @@ use crate::{
         LangRuntime,
         RuntimeInfraSpec,
         RuntimeSpec,
+};
+
+use crate::topology::{
+    role,
+    role::{
+        Role,
+        RoleKind,
     },
     template,
     version,

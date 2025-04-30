@@ -1,12 +1,12 @@
-use super::{
+use crate::{
     spec::{
         RouteSpec,
         TopologySpec,
         Entity,
     },
-    template,
 };
 use configurator::Config;
+use super::template;
 use kit::*;
 use serde_derive::{
     Deserialize,

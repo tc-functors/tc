@@ -1,6 +1,5 @@
-use super::{
+use crate::{
     spec::ScheduleSpec,
-    template,
 };
 use kit as u;
 use kit::*;
@@ -8,6 +7,7 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
+use super::template;
 use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

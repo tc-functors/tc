@@ -2,12 +2,12 @@ pub mod build;
 pub mod layer;
 pub mod runtime;
 
-use super::spec::FunctionSpec;
-use crate::template;
+use crate::spec::FunctionSpec;
 pub use build::Build;
 use kit as u;
 use kit::*;
 pub use runtime::Runtime;
+use super::template;
 use serde_derive::{
     Deserialize,
     Serialize,

@@ -1,10 +1,10 @@
-use crate::template;
 use kit as u;
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
+use super::template;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum RoleKind {

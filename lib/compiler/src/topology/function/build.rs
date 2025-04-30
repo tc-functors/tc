@@ -23,13 +23,13 @@ pub struct Build {
 
 fn infer_kind(package_type: &str) -> BuildKind {
     match package_type {
-        "zip" => BuildKind::Code,
-        "image" | "oci" => BuildKind::Image,
-        "library" => BuildKind::Library,
-        "extension" => BuildKind::Library,
-        "zip-layer" | "layer" => BuildKind::Layer,
+        "zip"                   => BuildKind::Code,
+        "image" | "oci"         => BuildKind::Image,
+        "library"               => BuildKind::Library,
+        "extension"             => BuildKind::Library,
+        "zip-layer" | "layer"   => BuildKind::Layer,
         "zip-inline" | "inline" => BuildKind::Inline,
-        _ => BuildKind::Code,
+        _                       => BuildKind::Code,
     }
 }
 

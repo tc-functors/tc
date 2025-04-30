@@ -1,11 +1,11 @@
-use super::{
+use crate::{
     spec::{
         MutationSpec,
         ResolverSpec,
         Entity
     },
-    template,
 };
+use super::template;
 use kit::*;
 use serde_derive::{
     Deserialize,

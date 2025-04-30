@@ -1,15 +1,11 @@
-use crate::{
-    function::Function,
-    spec::{
-        FunctionSpec,
-        LangRuntime,
-    },
-};
+
 use kit as u;
 use kit::*;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use walkdir::WalkDir;
+use crate::spec::{LangRuntime, FunctionSpec};
+use super::Function;
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
     let function = Function::new(dir, dir, "", "");
