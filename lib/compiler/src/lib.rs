@@ -1,50 +1,12 @@
 use std::path::Path;
 
-mod channel;
-pub mod event;
-mod flow;
 pub mod formatter;
-pub mod function;
-mod graph;
-mod log;
-mod mutation;
-mod queue;
-mod role;
-pub mod route;
-mod schedule;
 pub mod spec;
-mod tag;
-mod template;
 pub mod topology;
-mod version;
 
-pub use channel::Channel;
-pub use event::{
-    Event,
-    Target,
-};
-pub use flow::Flow;
 pub use formatter::TopologyCount;
-pub use function::{
-    Build,
-    Function,
-    Runtime,
-    layer::Layer,
-};
 use kit as u;
 use kit::*;
-pub use log::LogConfig;
-pub use mutation::{
-    Mutation,
-    Resolver,
-};
-pub use queue::Queue;
-pub use role::{
-    Role,
-    RoleKind,
-};
-pub use route::Route;
-pub use schedule::Schedule;
 pub use spec::{
     BuildKind,
     Lang,
@@ -53,6 +15,24 @@ pub use spec::{
     TopologyKind,
     TopologySpec,
     Entity,
+};
+pub use topology::{
+    function,
+    function::Function,
+    function::runtime::Runtime,
+    function::build::Build,
+    function::layer::Layer,
+    event::{Event, Target},
+    mutation,
+    mutation::Mutation,
+    route,
+    route::Route,
+    channel::Channel,
+    flow::Flow,
+    log::LogConfig,
+    queue::Queue,
+    schedule::Schedule,
+    role::Role
 };
 use std::collections::HashMap;
 pub use topology::Topology;

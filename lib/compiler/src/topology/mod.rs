@@ -1,31 +1,35 @@
-use super::{
-    channel,
-    channel::Channel,
-    event,
-    event::Event,
-    flow::Flow,
-    function::{
-        Function,
-        layer,
-        layer::Layer,
-    },
-    graph,
-    graph::Graph,
-    log::LogConfig,
-    mutation,
-    mutation::Mutation,
-    queue::Queue,
-    role::Role,
-    route::Route,
-    schedule,
-    schedule::Schedule,
-    spec::{
-        TopologyKind,
-        TopologySpec,
-    },
-    tag,
-    template,
-    version,
+pub mod channel;
+pub mod queue;
+pub mod event;
+pub mod flow;
+pub mod mutation;
+pub mod function;
+pub mod role;
+pub mod schedule;
+pub mod route;
+pub mod log;
+mod tag;
+mod version;
+mod template;
+
+pub use channel::Channel;
+pub use event::Event;
+pub use flow::Flow;
+pub use function::{
+    Function,
+    layer,
+    layer::Layer,
+};
+
+pub use role::{Role, RoleKind};
+pub use mutation::Mutation;
+pub use log::LogConfig;
+pub use queue::Queue;
+pub use route::Route;
+pub use schedule::Schedule;
+
+use crate::spec::{
+    TopologyKind, TopologySpec,
 };
 use colored::Colorize;
 use configurator::Config;
@@ -649,10 +653,6 @@ impl Topology {
         let data = kit::read_bytes(path);
         let t: Topology = bincode::deserialize(&data).unwrap();
         t
-    }
-
-    pub fn graph(&self) -> Graph {
-        graph::generate(self)
     }
 
     pub fn build_tree(&self) -> StringItem {

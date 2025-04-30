@@ -1,7 +1,7 @@
-use super::{
+use crate::{
     spec::QueueSpec,
-    template,
 };
+use super::template;
 use serde_derive::{
     Deserialize,
     Serialize,

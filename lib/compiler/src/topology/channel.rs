@@ -1,9 +1,9 @@
-use super::{
+use super::template;
+use crate::{
     spec::{
         ChannelSpec,
         HandlerSpec,
     },
-    template,
 };
 use kit as u;
 use serde_derive::{

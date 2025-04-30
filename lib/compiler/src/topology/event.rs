@@ -1,5 +1,5 @@
-use super::template;
 use crate::spec::{EventSpec, Entity};
+use super::template;
 use configurator::Config;
 use kit::*;
 use serde_derive::{
