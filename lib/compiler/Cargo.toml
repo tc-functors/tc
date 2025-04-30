@@ -17,6 +17,9 @@ semver = "0.7.0"
 tabled = "0.10.0"
 tracing = "0.1"
 bincode = "1.2.1"
+nom = "7.1.3"
+rand = { version = "^0.8.4"}
+lazy_static = "1.4"
 chksum = "0.4.0"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
