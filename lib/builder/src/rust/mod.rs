@@ -37,7 +37,7 @@ pub fn build(
     };
 
     BuildOutput {
-        name: u::basename(dir),
+        name: String::from(name),
         dir: dir.to_string(),
         artifact: path,
         kind: kind,

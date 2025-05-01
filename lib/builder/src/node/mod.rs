@@ -11,7 +11,6 @@ use compiler::{
         LangRuntime,
     },
 };
-use kit as u;
 use kit::sh;
 
 pub fn build(
@@ -40,7 +39,7 @@ pub fn build(
         BuildKind::Slab => todo!(),
     };
     BuildOutput {
-        name: u::basename(dir),
+        name: String::from(name),
         dir: dir.to_string(),
         artifact: path,
         kind: kind,
