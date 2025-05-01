@@ -1315,7 +1315,7 @@ dependencies = [
 
 [[package]]
 name = "bootstrapper"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "configurator",
  "kit",
@@ -1324,7 +1324,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "colored",
  "compiler",
@@ -1724,7 +1724,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "bincode",
  "chksum",
@@ -1776,7 +1776,7 @@ dependencies = [
 
 [[package]]
 name = "configurator"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "derivative",
  "doku",
@@ -1977,7 +1977,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "builder",
  "colored",
@@ -2149,7 +2149,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "colored",
  "compiler",
@@ -2462,7 +2462,7 @@ dependencies = [
 
 [[package]]
 name = "grokker"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "colored",
  "compiler",
@@ -2996,7 +2996,7 @@ dependencies = [
 
 [[package]]
 name = "inspector"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "askama",
  "axum",
@@ -3021,7 +3021,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "compiler",
  "kit",
@@ -3110,7 +3110,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "ansi-escapes",
  "base64",
@@ -3831,7 +3831,7 @@ dependencies = [
 
 [[package]]
 name = "provider"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3893,7 +3893,7 @@ dependencies = [
 
 [[package]]
 name = "publisher"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "base64",
  "colored",
@@ -4030,7 +4030,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "releaser"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "colored",
  "configurator",
@@ -4087,7 +4087,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "cacache",
  "compiler",
@@ -4774,7 +4774,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "bootstrapper",
  "builder",
@@ -4839,7 +4839,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.8.46"
+version = "0.8.48"
 dependencies = [
  "compiler",
  "kit",
