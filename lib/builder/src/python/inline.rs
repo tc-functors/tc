@@ -23,6 +23,10 @@ npm-debug.log
 .coverage
 .coverage.*
 .env
+.venv
+.pyenv
+**/.venv/
+**/site-packages/
 *.zip
 "#);
     let file = format!("{}/.dockerignore", dir);
