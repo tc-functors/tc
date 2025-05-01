@@ -34,6 +34,9 @@ enum Cmd {
     /// Trigger release via CI
     #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
+    /// Upgrade CI
+    #[clap(name = "ci-upgrade", hide = true)]
+    UpgradeCI(UpgradeArgs),
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
@@ -803,7 +806,7 @@ async fn tag(args: TagArgs) {
     tc::tag(service, next, dry_run, push, suffix).await;
 }
 
-async fn deploy(args: DeployArgs) {
+async fn ci_deploy(args: DeployArgs) {
     let DeployArgs {
         env,
         sandbox,
@@ -812,10 +815,10 @@ async fn deploy(args: DeployArgs) {
         ..
     } = args;
 
-    tc::deploy(service, env, sandbox, version).await;
+    tc::ci_deploy(service, env, sandbox, version).await;
 }
 
-async fn release(args: ReleaseArgs) {
+async fn ci_release(args: ReleaseArgs) {
     let ReleaseArgs {
         service,
         suffix,
@@ -823,7 +826,16 @@ async fn release(args: ReleaseArgs) {
         ..
     } = args;
 
-    tc::release(service, suffix, unwind).await;
+    tc::ci_release(service, suffix, unwind).await;
+}
+
+async fn ci_upgrade(args: UpgradeArgs) {
+    let UpgradeArgs {
+        version,
+        ..
+    } = args;
+
+    tc::ci_upgrade(version).await;
 }
 
 async fn cache(args: CacheArgs) {
@@ -885,30 +897,31 @@ async fn run() {
 
     match args.cmd {
         Cmd::Bootstrap(args) => bootstrap(args).await,
-        Cmd::Build(args) => build(args).await,
-        Cmd::Cache(args) => cache(args).await,
-        Cmd::Config(args) => config(args).await,
-        Cmd::Doc(args) => doc(args).await,
-        Cmd::Compile(args) => compile(args).await,
-        Cmd::Resolve(args) => resolve(args).await,
-        Cmd::Create(args) => create(args).await,
-        Cmd::Delete(args) => delete(args).await,
-        Cmd::Deploy(args) => deploy(args).await,
-        Cmd::Emulate(args) => emulate(args).await,
-        Cmd::Freeze(args) => freeze(args).await,
-        Cmd::Inspect(args) => inspect(args).await,
-        Cmd::Invoke(args) => invoke(args).await,
-        Cmd::List(args) => list(args).await,
-        Cmd::Publish(args) => publish(args).await,
-        Cmd::Release(args) => release(args).await,
-        Cmd::Route(args) => route(args).await,
-        Cmd::Scaffold(args) => scaffold(args).await,
-        Cmd::Tag(args) => tag(args).await,
-        Cmd::Test(args) => test(args).await,
-        Cmd::Unfreeze(args) => unfreeze(args).await,
-        Cmd::Update(args) => update(args).await,
-        Cmd::Upgrade(args) => upgrade(args).await,
-        Cmd::Version(..) => version().await,
+        Cmd::Build(args)     => build(args).await,
+        Cmd::Cache(args)     => cache(args).await,
+        Cmd::Config(args)    => config(args).await,
+        Cmd::Doc(args)       => doc(args).await,
+        Cmd::Compile(args)   => compile(args).await,
+        Cmd::Resolve(args)   => resolve(args).await,
+        Cmd::Create(args)    => create(args).await,
+        Cmd::Delete(args)    => delete(args).await,
+        Cmd::Emulate(args)   => emulate(args).await,
+        Cmd::Freeze(args)    => freeze(args).await,
+        Cmd::Inspect(args)   => inspect(args).await,
+        Cmd::Invoke(args)    => invoke(args).await,
+        Cmd::List(args)      => list(args).await,
+        Cmd::Publish(args)   => publish(args).await,
+        Cmd::Route(args)     => route(args).await,
+        Cmd::Scaffold(args)  => scaffold(args).await,
+        Cmd::Tag(args)       => tag(args).await,
+        Cmd::Test(args)      => test(args).await,
+        Cmd::Unfreeze(args)  => unfreeze(args).await,
+        Cmd::Update(args)    => update(args).await,
+        Cmd::Upgrade(args)   => upgrade(args).await,
+        Cmd::Version(..)     => version().await,
+        Cmd::Release(args)   => ci_release(args).await,
+        Cmd::UpgradeCI(args) => ci_upgrade(args).await,
+        Cmd::Deploy(args)    => ci_deploy(args).await,
     }
 }
 

@@ -1,22 +1,3 @@
-///////////////////////////////////////////////////////////////
-// ENVIRONMENT AND EVALUATION
-///////////////////////////////////////////////////////////////
-
-/*
- * The environment is a data structure that stores the bindings of values to
- * other values. This is used to evaluate lisp expressions, by looking up the
- * value of atoms in the environment, and performing operations on them.
- *
- * The environment is also used to store built-in functions, variable bindings,
- * or override the default behavior of other atoms. This allows you to extend
- * the language with new functionality, or to create your own standard library
- * of functions and variables.
- *
- * Evaluation is performed with the `eval` or `eval_str` methods, which take
- * expressions and evaluates them in the current environment. This allows you
- * to evaluate lisp expressions in a controlled context.
- */
-
 use std::sync::Arc;
 use std::collections::{BTreeMap, HashMap};
 use super::expr::Expr;

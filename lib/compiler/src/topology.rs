@@ -526,6 +526,7 @@ pub fn is_compilable(dir: &str) -> bool {
 }
 
 impl Topology {
+
     pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
         if is_singular_function_dir() {
             let f = format!("{}/topology.yml", dir);
