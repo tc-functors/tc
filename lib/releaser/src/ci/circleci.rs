@@ -38,7 +38,14 @@ impl Circle {
         )
     }
 
-    fn headers(&self) -> HashMap<String, String> {
+    pub fn context_url(&self, context_id: &str, key: &str) -> String {
+        format!(
+            "https://circleci.com/api/v2/context/{}/environment_variable/{}",
+            context_id, key
+        )
+    }
+
+   fn headers(&self) -> HashMap<String, String> {
         let mut h = HashMap::new();
         h.insert(s!("circle-token"), self.token.clone());
         h.insert(s!("content-type"), s!("application/json"));
@@ -63,6 +70,17 @@ impl Circle {
             self.repo, num
         )
     }
+
+    pub async fn get_context(&self, _name: &str) -> Option<String> {
+        None
+    }
+
+    pub async fn update_context(&self, context: &str, key: &str, payload: &str) {
+        let url = &self.context_url(context, key);
+        let res = u::http_post(url, self.headers(), payload.to_string()).await.unwrap();
+        println!("{:?}", &res)
+    }
+
 }
 
 pub async fn trigger_release(repo: &str, prefix: &str, version: &str, suffix: &str) {
@@ -104,4 +122,23 @@ pub async fn trigger_deploy(repo: &str, env: &str, sandbox: &str, prefix: &str, 
     let url = ci.trigger_workflow(payload).await;
     println!("{}", url);
     open::that(url).unwrap();
+}
+
+
+pub async fn update_var(repo: &str, key: &str, val: &str) {
+    let ci = Circle::init(repo);
+    let payload = format!(
+        r#"
+           {{
+              "value": "{val}",
+           }}"#
+    );
+    let maybe_context_id = ci.get_context("tc").await;
+    match maybe_context_id {
+        Some(cid) => {
+            println!("Updating CICLECI envvar {} {}", key, val);
+            ci.update_context(&cid, key, &payload).await;
+        },
+        None => panic!("No context found")
+    }
 }

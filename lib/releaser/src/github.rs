@@ -128,6 +128,21 @@ impl Github {
     }
 }
 
+pub async fn get_release_id(repo: &str, tag: Option<String>) -> Option<String> {
+    let gh = Github::init(repo);
+    let rel_name = "tc-x86_64-linux";
+    let assets = match tag {
+        Some(t) => gh.release_assets_by_tag(&t).await,
+        None => gh.latest_release_assets().await,
+    };
+    for asset in assets {
+        if &asset.name == rel_name {
+            return Some(asset.id.to_string())
+        }
+    }
+    None
+}
+
 pub async fn self_upgrade(repo: &str, tag: Option<String>) {
     let gh = Github::init(repo);
     let arch_os = arch_os();

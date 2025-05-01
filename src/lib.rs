@@ -192,7 +192,7 @@ async fn run_create_hook(env: &Env, root: &Topology) {
     releaser::notify(&namespace, &msg).await;
     if env.config.ci.update_metadata {
         let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
-        releaser::update_metadata(
+        releaser::ci::update_metadata(
             &centralized,
             &sandbox,
             &namespace,
@@ -555,8 +555,9 @@ pub async fn upgrade(version: Option<String>) {
 }
 
 // ci
+// deprecated
 
-pub async fn deploy(
+pub async fn ci_deploy(
     service: Option<String>,
     env: String,
     sandbox: Option<String>,
@@ -566,10 +567,10 @@ pub async fn deploy(
     let namespace = compiler::topology_name(&dir);
     let service = u::maybe_string(service, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
-    releaser::deploy(&env, &service, &sandbox, &version).await;
+    releaser::ci::deploy(&env, &service, &sandbox, &version).await;
 }
 
-pub async fn release(service: Option<String>, suffix: Option<String>, unwind: bool) {
+pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind: bool) {
     let dir = u::pwd();
     let suffix = u::maybe_string(suffix, "default");
     let namespace = compiler::topology_name(&dir);
@@ -577,7 +578,18 @@ pub async fn release(service: Option<String>, suffix: Option<String>, unwind: bo
     if unwind {
         releaser::unwind(&service);
     } else {
-        releaser::release(&service, &suffix).await
+        releaser::ci::release(&service, &suffix).await
+    }
+}
+
+pub async fn ci_upgrade(version: Option<String>) {
+    let repo = "tc";
+    let maybe_release_id = releaser::get_release_id(&repo, version).await;
+    match maybe_release_id {
+        Some(id) => {
+            releaser::ci::update_var("TC_RELEASE_ID_TEST", &id).await;
+        },
+        None => println!("No release id found")
     }
 }
 
