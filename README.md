@@ -203,5 +203,5 @@ We aim to review all contributions promptly and look forward to collaborating wi
 ## Thanks
 
 - Thanks to [Eric Harvey](https://github.com/EricHarvey) for brainstorming on several core features and ideas.
-- Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/rachel-yujin-chung), (Alper)[https://github.com/alperinformed], (Alex)[https://github.com/GalexyN], [Shreyas Ganesh](https://github.com/ShreyasGanesh257), [Henry Do](https://github.com/henry9do), [Sanjeev](https://github.com/sanjeev247)  for their collaboration, testing and insights.
+- Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/rachel-yujin-chung), (Alper)[https://github.com/alperinformed], [Alex](https://github.com/GalexyN), [Shreyas Ganesh](https://github.com/ShreyasGanesh257), [Henry Do](https://github.com/henry9do), [Sanjeev](https://github.com/sanjeev247)  for their collaboration, testing and insights.
 - Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.
