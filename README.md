@@ -198,3 +198,10 @@ This project follows the Contributor Covenant Code of Conduct. We expect all con
 6. Respond to any feedback
 
 We aim to review all contributions promptly and look forward to collaborating with you!
+
+
+## Thanks
+
+- Thanks to [Eric Harvey](https://github.com/EricHarvey) for brainstorming on several core features and ideas.
+- Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/raaahulss), (Alper)[https://github.com/alperinformed], (Alex)[https://github.com/GalexyN], [Shreyas Ganesh](https://github.com/ShreyasGanesh257), [Henry Do](https://github.com/henry9do), [Sanjeev](https://github.com/sanjeev247)  for their collaboration and insights.
+- Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.
