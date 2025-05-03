@@ -96,6 +96,8 @@ pub struct ScaffoldArgs {}
 pub struct InspectArgs {
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, short = 'p')]
+    port: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -859,9 +861,9 @@ async fn config(_args: DefaultArgs) {
 }
 
 async fn inspect(args: InspectArgs) {
-    let InspectArgs { trace } = args;
+    let InspectArgs { trace, port } = args;
     init_tracing(trace);
-    tc::inspect().await;
+    tc::inspect(port).await;
 }
 
 fn init_tracing(trace: bool) {

@@ -11,8 +11,12 @@ mod releases;
 mod sandboxes;
 mod specs;
 
-pub async fn init() {
-    let addr = "0.0.0.0:8000";
+pub async fn init(port: Option<String>) {
+    let port = match port {
+        Some(p) => p,
+        None => String::from("8000")
+    };
+    let addr = format!("0.0.0.0:{}", port);
 
     let app = Router::new()
         .merge(overview::page_routes())

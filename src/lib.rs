@@ -654,6 +654,6 @@ pub fn generate_doc(spec: &str) {
     //println!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }
 
-pub async fn inspect() {
-    inspector::init().await
+pub async fn inspect(port: Option<String>) {
+    inspector::init(port).await
 }
