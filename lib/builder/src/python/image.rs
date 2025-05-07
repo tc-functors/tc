@@ -1,8 +1,13 @@
 use super::LangRuntime;
-use compiler::spec::{ImageSpec, ConfigSpec};
+use compiler::spec::ImageSpec;
+use configurator::Config;
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
+
+fn top_level() -> String {
+    u::sh("git rev-parse --show-toplevel", &u::pwd())
+}
 
 fn find_build_image(runtime: &LangRuntime) -> String {
     let tag = match runtime {
@@ -53,21 +58,23 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) 
     let req_cmd = gen_req_cmd(dir);
     let pip_cmd = "pip install -vv -r requirements.txt --target /build/python";
 
+    let build_context = &top_level();
+
     let f = format!(
         r#"
 FROM {build_image} AS build-image
-
-WORKDIR /var/task
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 COPY . ./
 
-RUN {req_cmd}
+COPY --from=shared . {build_context}/
+
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {req_cmd}
 
 RUN mkdir -p /model
 
-RUN --mount=type=ssh {pip_cmd}
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
 RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {commands}
 
@@ -100,8 +107,9 @@ CMD [ "handler.handler" ]
 }
 
 fn build_with_docker(dir: &str, name: &str) {
+    let root = &top_level();
     let cmd_str = format!(
-        "docker buildx build --no-cache --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} .",
+        "docker buildx build --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
         name
     );
     match std::env::var("TC_TRACE") {
@@ -164,7 +172,7 @@ pub fn build(
         None => panic!("No image spec specified in build:images"),
     };
 
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None, "dev");
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
