@@ -1,6 +1,6 @@
 use compiler::Queue;
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::{
         lambda,
         lambda::LambdaClient,
@@ -30,25 +30,25 @@ async fn create_consumer(lambda_client: &LambdaClient, name: &str, sqs_arn: &str
     lambda::update_event_invoke_config(&lambda_client, name).await;
 }
 
-pub async fn create(env: &Env, queues: &HashMap<String, Queue>) {
-    let client = sqs::make_client(&env).await;
-    let lambda_client = lambda::make_client(&env).await;
+pub async fn create(auth: &Auth, queues: &HashMap<String, Queue>) {
+    let client = sqs::make_client(&auth).await;
+    let lambda_client = lambda::make_client(&auth).await;
     for (_, queue) in queues {
         println!("Creating queue: {}", &queue.name);
         sqs::create_queue(&client, &queue.name).await;
-        let arn = &env.sqs_arn(&queue.name);
+        let arn = &auth.sqs_arn(&queue.name);
         create_consumer(&lambda_client, &queue.consumer, &arn).await;
         create_producer(&lambda_client, &queue.producer, &arn).await;
     }
 }
 
-pub async fn delete(env: &Env, queues: &HashMap<String, Queue>) {
-    let client = sqs::make_client(&env).await;
-    let lambda_client = lambda::make_client(&env).await;
+pub async fn delete(auth: &Auth, queues: &HashMap<String, Queue>) {
+    let client = sqs::make_client(&auth).await;
+    let lambda_client = lambda::make_client(&auth).await;
     for (_, queue) in queues {
-        let arn = &env.sqs_arn(&queue.name);
+        let arn = &auth.sqs_arn(&queue.name);
         lambda::delete_event_source(&lambda_client, &queue.consumer, &arn).await;
         println!("Deleting queue: {}", &queue.name);
-        sqs::delete_queue(&client, &env.sqs_url(&queue.name)).await;
+        sqs::delete_queue(&client, &auth.sqs_url(&queue.name)).await;
     }
 }

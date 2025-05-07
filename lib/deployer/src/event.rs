@@ -3,8 +3,8 @@ use compiler::{
     Event,
     Entity
 };
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::{
         appsync,
         eventbridge,
@@ -13,11 +13,11 @@ use provider::{
 };
 use std::collections::HashMap;
 
-async fn update_permissions(env: &Env, event: &Event) {
+async fn update_permissions(auth: &Auth, event: &Event) {
     for target in event.targets.clone() {
         match target.entity {
             Entity::Function => {
-                let client = lambda::make_client(env).await;
+                let client = lambda::make_client(auth).await;
                 let principal = "events.amazonaws.com";
                 let statement_id = &event.rule_name;
                 let function_name = &target.name;
@@ -38,12 +38,12 @@ fn should_prune() -> bool {
     }
 }
 
-async fn create_target_dependencies(env: &Env, name: &str) -> String {
-    let appsync_client = appsync::make_client(env).await;
+async fn create_target_dependencies(auth: &Auth, name: &str) -> String {
+    let appsync_client = appsync::make_client(auth).await;
     let api_creds = appsync::events::find_api_creds(&appsync_client, name).await;
     if let Some(creds) = api_creds {
         println!("Creating Event Target dependencies {}", name);
-        let client = eventbridge::make_client(env).await;
+        let client = eventbridge::make_client(auth).await;
         let endpoint = format!("{}/event", &creds.http_domain);
         eventbridge::find_or_create_api_destination(&client, name, &endpoint, &creds.api_key).await
     } else {
@@ -52,7 +52,7 @@ async fn create_target_dependencies(env: &Env, name: &str) -> String {
     }
 }
 
-async fn create_event(env: &Env, event: &Event) {
+async fn create_event(auth: &Auth, event: &Event) {
     let Event {
         rule_name,
         bus,
@@ -60,7 +60,7 @@ async fn create_event(env: &Env, event: &Event) {
         ..
     } = event;
 
-    let client = eventbridge::make_client(&env).await;
+    let client = eventbridge::make_client(&auth).await;
 
     let pattern = serde_json::to_string(&pattern).unwrap();
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern).await;
@@ -92,7 +92,7 @@ async fn create_event(env: &Env, event: &Event) {
         };
 
         let target_arn = if &target.entity.to_str() == "channel" {
-            create_target_dependencies(env, &target.name).await
+            create_target_dependencies(auth, &target.name).await
         } else {
             String::from(&target.arn)
         };
@@ -108,31 +108,31 @@ async fn create_event(env: &Env, event: &Event) {
         xs.push(t)
     }
     eventbridge::put_targets(&client, &bus, &rule_name, xs).await;
-    update_permissions(env, &event).await;
+    update_permissions(auth, &event).await;
 }
 
-pub async fn create(env: &Env, events: &HashMap<String, Event>) {
+pub async fn create(auth: &Auth, events: &HashMap<String, Event>) {
     for (_, event) in events {
         if !&event.skip {
-            create_event(env, event).await;
+            create_event(auth, event).await;
         }
     }
 }
 
-pub async fn delete_event(env: &Env, event: Event) {
+pub async fn delete_event(auth: &Auth, event: Event) {
     println!("Deleting event {}", &event.rule_name);
 
-    let client = eventbridge::make_client(&env).await;
+    let client = eventbridge::make_client(&auth).await;
     for target in event.targets {
         eventbridge::remove_target(&client, &event.bus, &event.rule_name, &target.id).await;
     }
     eventbridge::delete_rule(&client, &event.bus, &event.rule_name).await;
 }
 
-pub async fn delete(env: &Env, events: &HashMap<String, Event>) {
+pub async fn delete(auth: &Auth, events: &HashMap<String, Event>) {
     for (_, event) in events {
         if !&event.skip {
-            delete_event(env, event.clone()).await;
+            delete_event(auth, event.clone()).await;
         }
     }
 }

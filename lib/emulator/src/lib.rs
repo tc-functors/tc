@@ -1,9 +1,10 @@
-pub mod lambda;
+pub mod function;
 pub mod sfn;
 pub mod shell;
+mod aws;
 
 use kit as u;
-use provider::Env;
+use authorizer::Auth;
 
 fn as_dev_layers(layers: Vec<String>) -> Vec<String> {
     let mut xs: Vec<String> = vec![];
@@ -13,7 +14,7 @@ fn as_dev_layers(layers: Vec<String>) -> Vec<String> {
     xs
 }
 
-pub async fn shell(env: &Env, dev: bool) {
+pub async fn shell(auth: &Auth, dev: bool) {
     let dir = u::pwd();
     let function = compiler::current_function(&dir);
     match function {
@@ -25,7 +26,7 @@ pub async fn shell(env: &Env, dev: bool) {
             };
 
             shell::run(
-                env,
+                auth,
                 &f.name,
                 &f.runtime.lang.to_str(),
                 &f.runtime.handler,
@@ -37,7 +38,7 @@ pub async fn shell(env: &Env, dev: bool) {
     }
 }
 
-pub async fn lambda(env: &Env, dev: bool) {
+pub async fn lambda(auth: &Auth, dev: bool) {
     let dir = u::pwd();
     let function = compiler::current_function(&dir);
     match function {
@@ -48,8 +49,8 @@ pub async fn lambda(env: &Env, dev: bool) {
                 f.runtime.layers
             };
 
-            lambda::run(
-                env,
+            function::run(
+                auth,
                 &f.name,
                 &f.runtime.lang.to_str(),
                 layers,

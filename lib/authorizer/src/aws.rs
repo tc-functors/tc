@@ -1,0 +1,73 @@
+use aws_sdk_sts::Client;
+use std::panic;
+use aws_config::{
+    BehaviorVersion,
+    SdkConfig,
+    environment::credentials::EnvironmentVariableCredentialsProvider,
+    sts::AssumeRoleProvider,
+};
+
+// sts
+
+pub async fn make_client(shared_config: &SdkConfig) -> Client {
+    Client::new(&shared_config)
+}
+
+pub async fn get_account_id(client: &Client) -> String {
+    let r = client.get_caller_identity().send().await;
+
+    match r {
+        Ok(res) => match res.account {
+            Some(acc) => acc,
+            None => {
+                panic::set_hook(Box::new(|_| {
+                    println!(
+                        "AWS authentication failed. Please run `aws sso login --profile <profile>"
+                    );
+                }));
+                panic!("Unable to authenticate")
+            }
+        },
+        Err(e) => {
+            println!("{:?}", e);
+            panic::set_hook(Box::new(|_| {
+                println!(
+                    "AWS authentication failed. Please run `aws sso login --profile <profile>"
+                );
+            }));
+            panic!("Unable to authenticate")
+        }
+    }
+}
+
+async fn assume_given_role(role_arn: &str) -> SdkConfig {
+    let session_name = "TcSession";
+    let provider = AssumeRoleProvider::builder(role_arn)
+        .session_name(session_name)
+        .build_from_provider(EnvironmentVariableCredentialsProvider::new())
+        .await;
+    aws_config::from_env()
+        .credentials_provider(provider)
+        .behavior_version(BehaviorVersion::latest())
+        .load()
+        .await
+}
+
+pub async fn get_config(profile: &str, assume_role: Option<String>) -> SdkConfig {
+    match assume_role {
+        Some(role_arn) => {
+            assume_given_role(&role_arn).await
+        }
+        None => {
+            aws_config::from_env().profile_name(profile).load().await
+        }
+    }
+}
+
+
+pub fn get_region() -> String {
+   match std::env::var("AWS_REGION") {
+       Ok(e) => e,
+       Err(_) => String::from("us-west-2"),
+   }
+}

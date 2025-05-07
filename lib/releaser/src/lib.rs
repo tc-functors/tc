@@ -3,6 +3,7 @@ mod github;
 mod router;
 mod tagger;
 mod notifier;
+mod aws;
 
 pub mod ci;
 

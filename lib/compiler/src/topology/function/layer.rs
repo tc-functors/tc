@@ -4,7 +4,7 @@ use kit::*;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use walkdir::WalkDir;
-use crate::spec::{LangRuntime, FunctionSpec};
+use crate::spec::function::{LangRuntime, FunctionSpec};
 use super::Function;
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {

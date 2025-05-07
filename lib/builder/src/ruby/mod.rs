@@ -10,8 +10,8 @@ use compiler::{
     Build,
     Runtime,
     spec::{
-        BuildKind,
-        LangRuntime,
+        function::BuildKind,
+        function::LangRuntime,
     },
 };
 use kit::sh;

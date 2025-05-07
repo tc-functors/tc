@@ -2,8 +2,8 @@ use compiler::{
     Flow,
     LogConfig,
 };
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::{
         cloudwatch,
         iam,
@@ -14,13 +14,13 @@ use provider::{
 };
 use std::collections::HashMap;
 
-pub async fn update_definition(env: &Env, tags: &HashMap<String, String>, flow: Flow) {
+pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: Flow) {
     let name = &flow.name;
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
 
     if !definition.is_empty() {
-        let client = sfn::make_client(env).await;
+        let client = sfn::make_client(auth).await;
         let role = flow.role.clone();
         let role_arn = role.arn;
 
@@ -38,14 +38,14 @@ pub async fn update_definition(env: &Env, tags: &HashMap<String, String>, flow: 
     }
 }
 
-pub async fn create(env: &Env, tags: &HashMap<String, String>, flow: Flow) {
+pub async fn create(auth: &Auth, tags: &HashMap<String, String>, flow: Flow) {
     let name = &flow.name;
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
 
     if !definition.is_empty() {
-        let client = sfn::make_client(env).await;
-        let iam_client = iam::make_client(env).await;
+        let client = sfn::make_client(auth).await;
+        let iam_client = iam::make_client(auth).await;
         let role = flow.role.clone();
         let role_arn = role.arn;
 
@@ -73,14 +73,14 @@ pub async fn create(env: &Env, tags: &HashMap<String, String>, flow: Flow) {
     }
 }
 
-pub async fn delete(env: &Env, flow: Flow) {
+pub async fn delete(auth: &Auth, flow: Flow) {
     let name = flow.clone().name;
 
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
 
     if !definition.is_empty() {
-        let client = sfn::make_client(env).await;
+        let client = sfn::make_client(auth).await;
 
         let sf = StateMachine {
             name: name.clone(),
@@ -95,15 +95,15 @@ pub async fn delete(env: &Env, flow: Flow) {
     }
 }
 
-pub async fn update_tags(env: &Env, name: &str, tags: HashMap<String, String>) {
-    let client = sfn::make_client(env).await;
-    let sfn_arn = env.sfn_arn(name);
+pub async fn update_tags(auth: &Auth, name: &str, tags: HashMap<String, String>) {
+    let client = sfn::make_client(auth).await;
+    let sfn_arn = auth.sfn_arn(name);
     let _ = sfn::update_tags(&client, &sfn_arn, tags).await;
 }
 
-pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig, flow: &Flow) {
-    let sfn_client = sfn::make_client(env).await;
-    let cw_client = cloudwatch::make_client(env).await;
+pub async fn enable_logs(auth: &Auth, sfn_arn: &str, logs: LogConfig, flow: &Flow) {
+    let sfn_client = sfn::make_client(auth).await;
+    let cw_client = cloudwatch::make_client(auth).await;
 
     let aggregator = logs.aggregator;
 
@@ -128,7 +128,7 @@ pub async fn enable_logs(env: &Env, sfn_arn: &str, logs: LogConfig, flow: &Flow)
     let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn, include_exec_data).await;
 }
 
-pub async fn disable_logs(env: &Env, sfn_arn: &str) {
-    let sfn_client = sfn::make_client(env).await;
+pub async fn disable_logs(auth: &Auth, sfn_arn: &str) {
+    let sfn_client = sfn::make_client(auth).await;
     sfn::disable_logging(sfn_client, sfn_arn).await.unwrap();
 }

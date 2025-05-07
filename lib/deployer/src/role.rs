@@ -1,14 +1,14 @@
 use compiler;
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::{
         iam,
         iam::Role,
     },
 };
 
-pub async fn delete(env: &Env, roles: &Vec<compiler::Role>) {
-    let client = iam::make_client(env).await;
+pub async fn delete(auth: &Auth, roles: &Vec<compiler::Role>) {
+    let client = iam::make_client(auth).await;
     for role in roles {
         let r = Role {
             client: client.clone(),
@@ -22,8 +22,8 @@ pub async fn delete(env: &Env, roles: &Vec<compiler::Role>) {
     }
 }
 
-pub async fn create_or_update(env: &Env, roles: &Vec<compiler::Role>) {
-    let client = iam::make_client(env).await;
+pub async fn create_or_update(auth: &Auth, roles: &Vec<compiler::Role>) {
+    let client = iam::make_client(auth).await;
     for role in roles {
         let r = Role {
             client: client.clone(),

@@ -1,20 +1,18 @@
 use compiler::Mutation;
-use provider::{
-    Env,
-    aws::{
-        appsync,
-        lambda,
-    },
-};
+use authorizer::Auth;
 use std::collections::HashMap;
+use crate::{
+    aws::lambda,
+    aws::appsync
+};
 
-async fn add_permission(env: &Env, statement_id: &str, authorizer_arn: &str) {
-    let client = lambda::make_client(env).await;
+async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
+    let client = lambda::make_client(auth).await;
     let principal = "appsync.amazonaws.com";
     let _ = lambda::add_permission_basic(client, authorizer_arn, principal, statement_id).await;
 }
 
-async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, String>) {
+async fn create_mutation(auth: &Auth, mutation: Mutation, tags: HashMap<String, String>) {
     let Mutation {
         api_name,
         authorizer,
@@ -23,15 +21,15 @@ async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, St
         role_arn,
         ..
     } = mutation;
-    let authorizer_arn = env.lambda_arn(&authorizer);
-    let client = appsync::make_client(env).await;
+    let authorizer_arn = auth.lambda_arn(&authorizer);
+    let client = appsync::make_client(auth).await;
     let (api_id, _) =
         appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
 
-    add_permission(env, &api_name, &authorizer_arn).await;
-    appsync::create_types(env, &api_id, types).await;
+    add_permission(auth, &api_name, &authorizer_arn).await;
+    appsync::create_types(auth, &api_id, types).await;
 
-    let client = appsync::make_client(env).await;
+    let client = appsync::make_client(auth).await;
     for (field_name, resolver) in resolvers {
         println!("Creating mutation {}", &field_name);
         let datasource_name = &field_name;
@@ -42,7 +40,6 @@ async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, St
             name: String::from(datasource_name),
             role_arn: role_arn.clone(),
             target_arn: resolver.target_arn.to_owned(),
-            config: HashMap::new(),
         };
 
         appsync::find_or_create_datasource(&client, &api_id, datasource_input).await;
@@ -50,23 +47,23 @@ async fn create_mutation(env: &Env, mutation: Mutation, tags: HashMap<String, St
             .await;
         appsync::find_or_create_resolver(&client, &api_id, &field_name, datasource_name).await;
     }
-    appsync::update_tags(&client, &env.graphql_arn(&api_id), tags.clone()).await;
+    appsync::update_tags(&client, &auth.graphql_arn(&api_id), tags.clone()).await;
 }
 
 pub async fn create(
-    env: &Env,
+    auth: &Auth,
     mutations: &HashMap<String, Mutation>,
     tags: &HashMap<String, String>,
 ) {
     for (_, mutation) in mutations {
-        create_mutation(env, mutation.clone(), tags.clone()).await;
+        create_mutation(auth, mutation.clone(), tags.clone()).await;
     }
 }
 
-pub async fn delete(env: &Env, mutations: &HashMap<String, Mutation>) {
+pub async fn delete(auth: &Auth, mutations: &HashMap<String, Mutation>) {
     for (_, mutation) in mutations {
         let Mutation { api_name, .. } = mutation;
-        let client = appsync::make_client(env).await;
+        let client = appsync::make_client(auth).await;
         appsync::delete_api(&client, &api_name).await;
     }
 }

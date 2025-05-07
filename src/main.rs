@@ -24,8 +24,6 @@ struct Tc {
 
 #[derive(Debug, Subcommand)]
 enum Cmd {
-    /// Bootstrap IAM roles, extensions etc.
-    Bootstrap(BootstrapArgs),
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
     /// Trigger deploy via CI
@@ -65,9 +63,6 @@ enum Cmd {
     /// Route events to functors
     #[clap(hide = true)]
     Route(RouteArgs),
-    /// Scaffold roles and infra vars
-    #[clap(hide = true)]
-    Scaffold(ScaffoldArgs),
     /// Run unit tests for functions in the topology dir
     Test(TestArgs),
     /// Create semver tags scoped by a topology
@@ -98,24 +93,6 @@ pub struct InspectArgs {
     trace: bool,
     #[arg(long, short = 'p')]
     port: Option<String>,
-}
-
-#[derive(Debug, Args)]
-pub struct BootstrapArgs {
-    #[arg(long, short = 'R')]
-    role: Option<String>,
-    #[arg(long, short = 'e')]
-    profile: Option<String>,
-    #[arg(long, action)]
-    create: bool,
-    #[arg(long, action)]
-    delete: bool,
-    #[arg(long, action)]
-    show: bool,
-    #[arg(long, action)]
-    roles: bool,
-    #[arg(long, action, short = 't')]
-    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -692,8 +669,6 @@ async fn publish(args: PublishArgs) {
         promote,
         demote,
         version,
-        list,
-        kind,
         download,
         trace,
         ..
@@ -707,18 +682,12 @@ async fn publish(args: PublishArgs) {
         version: version,
     };
     let dir = kit::pwd();
-    let env = tc::init_repo_profile(profile).await;
-    if list {
-        tc::list_published_assets(env, kind).await
-    } else if download {
+    let env = tc::init(profile, None).await;
+    if download {
         tc::download_layer(env, name).await
     } else {
         tc::publish(env, name, &dir, opts).await;
     }
-}
-
-async fn scaffold(_args: ScaffoldArgs) {
-    tc::scaffold().await;
 }
 
 async fn route(args: RouteArgs) {
@@ -762,24 +731,6 @@ async fn unfreeze(args: UnFreezeArgs) {
     tc::unfreeze(env, service, sandbox).await;
 }
 
-async fn bootstrap(args: BootstrapArgs) {
-    let BootstrapArgs {
-        profile,
-        role,
-        create,
-        delete,
-        show,
-        roles,
-        ..
-    } = args;
-    let env = tc::init(profile, None).await;
-    if roles {
-        bootstrapper::create_roles(&env).await;
-    } else {
-        tc::bootstrap(env, role, create, delete, show).await;
-    }
-}
-
 async fn emulate(args: EmulateArgs) {
     let EmulateArgs {
         profile,
@@ -789,7 +740,7 @@ async fn emulate(args: EmulateArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init_repo_profile(profile).await;
+    let env = tc::init(profile, None).await;
     tc::emulate(env, dev, shell).await;
 }
 
@@ -898,7 +849,6 @@ async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
-        Cmd::Bootstrap(args) => bootstrap(args).await,
         Cmd::Build(args)     => build(args).await,
         Cmd::Cache(args)     => cache(args).await,
         Cmd::Config(args)    => config(args).await,
@@ -914,7 +864,6 @@ async fn run() {
         Cmd::List(args)      => list(args).await,
         Cmd::Publish(args)   => publish(args).await,
         Cmd::Route(args)     => route(args).await,
-        Cmd::Scaffold(args)  => scaffold(args).await,
         Cmd::Tag(args)       => tag(args).await,
         Cmd::Test(args)      => test(args).await,
         Cmd::Unfreeze(args)  => unfreeze(args).await,

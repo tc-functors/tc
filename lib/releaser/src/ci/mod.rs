@@ -1,10 +1,10 @@
 mod circleci;
 mod dynamo;
-use provider::Env;
+use authorizer::Auth;
 use crate::{git, tagger};
 
 pub async fn update_metadata(
-    env: &Env,
+    auth: &Auth,
     sandbox: &str,
     service: &str,
     version: &str,
@@ -14,7 +14,7 @@ pub async fn update_metadata(
     match std::env::var("TC_UPDATE_METADATA") {
         Ok(_) => {
             if sandbox == "stable" {
-                dynamo::put_item(env, service, version, deploy_env, dir).await;
+                dynamo::put_item(auth, service, version, deploy_env, dir).await;
             }
         }
         Err(_) => println!("Not updating metadata"),

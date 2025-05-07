@@ -10,11 +10,10 @@ use compiler::{
 };
 use kit as u;
 use kit::*;
-use provider::{
-    Env,
-    aws::appsync,
-};
+use authorizer::Auth;
 use std::collections::HashMap;
+use crate::aws;
+
 
 fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {
     let Topology { functions, .. } = topology;
@@ -27,12 +26,12 @@ fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {
 }
 
 // appsync targets
-async fn get_graphql_arn_id(env: &Env, name: &str) -> Option<String> {
-    let client = appsync::make_client(env).await;
-    let api = appsync::find_api(&client, name).await;
+async fn get_graphql_arn_id(auth: &Auth, name: &str) -> Option<String> {
+    let client = aws::appsync::make_client(auth).await;
+    let api = aws::appsync::find_api(&client, name).await;
     match api {
-        Some(ap) => {
-            let arn = appsync::get_api_endpoint(&client, &ap.id).await;
+        Some(id) => {
+            let arn = aws::appsync::get_api_endpoint(&client, &id).await;
             match arn {
                 Some(a) => {
                     let tmp = u::split_last(&a, "://");
@@ -80,7 +79,7 @@ async fn find_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> Str
 }
 
 async fn resolve_target(context: &Context, topology: &Topology, mut target: Target) -> Target {
-    let Context { env, .. } = context;
+    let Context { auth, .. } = context;
     let name = topology.fqn.clone();
 
     let target_name = match target.entity {
@@ -92,15 +91,15 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
     };
 
     let target_arn = match target.entity {
-        Entity::Function => env.lambda_arn(&target_name),
+        Entity::Function => auth.lambda_arn(&target_name),
         Entity::Mutation => {
-            let id = get_graphql_arn_id(env, &name).await;
+            let id = get_graphql_arn_id(auth, &name).await;
             match id {
-                Some(gid) => env.graphql_arn(&gid),
+                Some(gid) => auth.graphql_arn(&gid),
                 None => String::from("none"),
             }
         }
-        Entity::State => env.sfn_arn(&target_name),
+        Entity::State => auth.sfn_arn(&target_name),
         Entity::Channel => target.arn,
         _ => target.arn
     };

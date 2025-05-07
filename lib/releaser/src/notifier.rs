@@ -1,6 +1,6 @@
-use configurator::Config;
 use kit as u;
 use kit::*;
+use compiler::ConfigSpec;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -84,7 +84,7 @@ pub fn wrap_msg(s: &str) -> String {
 }
 
 pub async fn slack(scope: &str, payload: String) {
-    let config = Config::new(None, "");
+    let config = ConfigSpec::new(None);
     let url = config.notifier.webhooks.get(scope);
     match url {
         Some(u) => {

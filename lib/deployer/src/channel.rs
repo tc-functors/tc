@@ -1,12 +1,12 @@
 use compiler::Channel;
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::appsync,
 };
 use std::collections::HashMap;
 
-pub async fn create(env: &Env, channels: &HashMap<String, Channel>) {
-    let client = appsync::make_client(&env).await;
+pub async fn create(auth: &Auth, channels: &HashMap<String, Channel>) {
+    let client = appsync::make_client(&auth).await;
 
     for (_, channel) in channels {
         println!("Creating channel: {}", &channel.name);
@@ -15,4 +15,4 @@ pub async fn create(env: &Env, channels: &HashMap<String, Channel>) {
     }
 }
 
-pub async fn delete(_env: &Env, _channels: &HashMap<String, Channel>) {}
+pub async fn delete(_auth: &Auth, _channels: &HashMap<String, Channel>) {}

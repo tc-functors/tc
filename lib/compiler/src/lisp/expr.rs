@@ -1,13 +1,3 @@
-/*
- * Lisp expressions are the core data structure of the interpreter.
- *
- * They represent the syntax of the lisp language, and can be used to
- * represent any kind of data or operation that can be performed in lisp.
- *
- * All expressions are stored as an enum, which allows for a flexible
- * representation of data.
- */
-
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use super::symbol::Symbol;

@@ -10,14 +10,18 @@ pub use formatter::TopologyCount;
 use kit as u;
 use kit::*;
 pub use spec::{
-    BuildKind,
-    Lang,
-    LangRuntime,
-    RuntimeInfraSpec,
     TopologyKind,
     TopologySpec,
     Entity,
+    config::ConfigSpec,
+    function::{
+        BuildKind,
+        Lang,
+        LangRuntime
+    },
+    infra::InfraSpec
 };
+
 pub use topology::{
     function,
     function::Function,
@@ -43,6 +47,11 @@ use walkdir::WalkDir;
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
     topology::is_root_topology(&f)
+}
+
+pub fn config(dir: &str) -> ConfigSpec {
+    let t = Topology::new(dir, false, true);
+    t.config
 }
 
 pub fn compile(dir: &str, recursive: bool) -> Topology {

@@ -12,5 +12,11 @@ tracing = "0.1"
 cacache = "13.0.0"
 tabled = "0.10.0"
 kit = { path = "../kit" }
-provider = { path = "../provider" }
+authorizer = { path = "../authorizer" }
 compiler = { path = "../compiler" }
+aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
+aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
+aws-sdk-ssm = { version = "1.72.0", features = ["behavior-version-latest"] }
+aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
+aws-sdk-efs = { version = "1.67.0", features = ["behavior-version-latest"] }
+aws-config = { version = "1", features = ["behavior-version-latest"] }

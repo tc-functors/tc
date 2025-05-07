@@ -1,11 +1,13 @@
 use kit as u;
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::dynamo,
 };
 
-pub async fn put_item(env: &Env, service: &str, version: &str, deploy_env: &str, dir: &str) {
-    let client = dynamo::make_client(env).await;
+
+// deprecated
+pub async fn put_item(auth: &Auth, service: &str, version: &str, deploy_env: &str, dir: &str) {
+    let client = dynamo::make_client(auth).await;
     let table = "service-version-inventory-tc";
     let deploy_time = u::utc_now();
     let deploy_user = u::env_var("CIRCLE_USERNAME", "default");

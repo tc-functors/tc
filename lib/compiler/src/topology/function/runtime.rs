@@ -1,13 +1,13 @@
 use super::layer;
-use crate::spec::{
+use crate::spec::function::{
         AssetsSpec,
         BuildKind,
         FunctionSpec,
         Lang,
         LangRuntime,
-        RuntimeInfraSpec,
         RuntimeSpec,
 };
+use crate::spec::infra::InfraSpec;
 
 use crate::topology::{
     role,
@@ -61,7 +61,7 @@ pub struct Runtime {
     pub fs: Option<FileSystem>,
     pub role: Role,
     pub infra_spec_file: Option<String>,
-    pub infra_spec: HashMap<String, RuntimeInfraSpec>,
+    pub infra_spec: HashMap<String, InfraSpec>,
 }
 
 fn find_code_version(dir: &str) -> String {
@@ -381,7 +381,7 @@ fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
     }
 }
 
-fn make_network(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<Network> {
+fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
     if enable_fs {
         match &infra_spec.network {
             Some(net) => Some(Network {
@@ -395,7 +395,7 @@ fn make_network(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<Networ
     }
 }
 
-fn make_fs(infra_spec: &RuntimeInfraSpec, enable_fs: bool) -> Option<FileSystem> {
+fn make_fs(infra_spec: &InfraSpec, enable_fs: bool) -> Option<FileSystem> {
     if enable_fs {
         match &infra_spec.filesystem {
             Some(fs) => Some(FileSystem {
@@ -425,10 +425,10 @@ impl Runtime {
         };
         let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
 
-        let infra_spec = RuntimeInfraSpec::new(infra_spec_file.clone());
+        let infra_spec = InfraSpec::new(infra_spec_file.clone());
         //FIXME: handle unwrap
         let default_infra_spec = infra_spec.get("default").unwrap();
-        let RuntimeInfraSpec {
+        let InfraSpec {
             memory_size,
             timeout,
             environment,

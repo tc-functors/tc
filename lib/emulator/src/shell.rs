@@ -1,13 +1,25 @@
 use kit as u;
 use kit::*;
-use provider::{
-    Env,
-    aws::layer,
-};
+use authorizer::Auth;
+use crate::aws;
+use compiler::ConfigSpec;
 use std::{
     collections::HashMap,
     env,
 };
+
+async fn resolve_layers(auth: &Auth, config: &ConfigSpec, layers: Vec<String>) -> Vec<String> {
+    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
+    let client = aws::lambda::make_client(&centralized).await;
+    let mut v: Vec<String> = vec![];
+     for layer in layers {
+         let arn = aws::lambda::find_version(client.clone(), &layer)
+             .await
+             .unwrap();
+         v.push(arn);
+     }
+    v
+}
 
 async fn download(url: &str, target_dir: &str) {
     let tmp_path = env::temp_dir();
@@ -23,14 +35,15 @@ async fn download(url: &str, target_dir: &str) {
     u::sh(&format!("rm -rf {}", tmp_zip_file), &u::pwd());
 }
 
-async fn download_layers(env: &Env, layers: Vec<String>) {
-    let client = layer::make_client(env).await;
-    let resolved_layers = env.resolve_layers(layers).await;
+async fn download_layers(auth: &Auth, layers: Vec<String>) {
+    let client = aws::lambda::make_client(auth).await;
+    let config = ConfigSpec::new(None);
+    let resolved_layers = resolve_layers(auth, &config, layers).await;
     let target_dir = format!("{}/build", &u::pwd());
     u::sh(&format!("rm -rf {}", &target_dir), &u::pwd());
     for layer in resolved_layers {
         println!("Fetching layer: {}", &layer);
-        let maybe_url = layer::get_code_url(&client, &layer).await;
+        let maybe_url = aws::lambda::get_code_url(&client, &layer).await;
         match maybe_url {
             Some(url) => download(&url, &target_dir).await,
             None => (),
@@ -110,8 +123,8 @@ fn get_shell_cmd(lang: &str, name: &str) -> String {
     }
 }
 
-pub async fn run(env: &Env, name: &str, lang: &str, handler: &str, layers: Vec<String>) {
-    download_layers(env, layers).await;
+pub async fn run(auth: &Auth, name: &str, lang: &str, handler: &str, layers: Vec<String>) {
+    download_layers(auth, layers).await;
     let cmd = docker_cmd(name, lang, handler);
     run_docker(name, &cmd);
     let exec_cmd = get_shell_cmd(lang, name);

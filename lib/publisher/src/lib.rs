@@ -1,18 +1,15 @@
-mod ecr;
+mod image;
 mod layer;
+mod aws;
 
 use compiler::spec::{
     BuildKind,
     BuildOutput,
 };
-use provider::Env;
+use authorizer::Auth;
 use std::collections::HashMap;
 
-pub async fn list_layers(env: &Env, layer_names: Vec<String>) -> String {
-    layer::list(env, layer_names).await
-}
-
-pub async fn publish(env: &Env, build: BuildOutput) {
+pub async fn publish(auth: &Auth, build: BuildOutput) {
     let BuildOutput {
         dir,
         kind,
@@ -26,30 +23,30 @@ pub async fn publish(env: &Env, build: BuildOutput) {
     match kind {
         BuildKind::Layer | BuildKind::Library => {
             if layer::should_split(&dir) {
-                layer::publish(env, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
-                layer::publish(env, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
+                layer::publish(auth, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
+                layer::publish(auth, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
             } else {
                 let layer_name = format!("{}-dev", &name);
-                layer::publish(env, &lang, &layer_name, &artifact).await;
+                layer::publish(auth, &lang, &layer_name, &artifact).await;
             }
         }
-        BuildKind::Image => ecr::publish(env, &artifact).await,
+        BuildKind::Image => image::publish(auth, &artifact).await,
         _ => (),
     }
 }
 
-pub async fn publish_as_dev(env: &Env, layer_name: &str, lang: &str) {
-    layer::publish_as_dev(env, layer_name, lang).await
+pub async fn publish_as_dev(auth: &Auth, layer_name: &str, lang: &str) {
+    layer::publish_as_dev(auth, layer_name, lang).await
 }
 
-pub async fn promote(env: &Env, layer_name: &str, lang: &str, version: Option<String>) {
-    layer::promote(env, layer_name, lang, version).await;
+pub async fn promote(auth: &Auth, layer_name: &str, lang: &str, version: Option<String>) {
+    layer::promote(auth, layer_name, lang, version).await;
 }
 
-pub async fn demote(env: &Env, name: Option<String>, lang: &str) {
+pub async fn demote(auth: &Auth, name: Option<String>, lang: &str) {
     match name {
         Some(p) => {
-            publish_as_dev(env, &p, lang).await;
+            publish_as_dev(auth, &p, lang).await;
         }
         None => {
             let layers = compiler::find_layers();
@@ -58,27 +55,12 @@ pub async fn demote(env: &Env, name: Option<String>, lang: &str) {
                 h.insert(layer.name.to_owned(), layer.runtime.to_str());
             }
             for (name, lang) in h {
-                publish_as_dev(env, &name, &lang).await
+                publish_as_dev(auth, &name, &lang).await
             }
         }
     }
 }
 
-pub async fn list(env: &Env, kind: &BuildKind) {
-    match kind {
-        BuildKind::Layer => {
-            let layer_names = compiler::find_layer_names();
-            let table = list_layers(env, layer_names).await;
-            println!("{}", table);
-        }
-        BuildKind::Image => {
-            let images = ecr::list(env, "xxx").await;
-            println!("{:?}", images);
-        }
-        _ => todo!(),
-    }
-}
-
-pub async fn download_layer(env: &Env, name: &str) {
-    layer::download(env, name).await
+pub async fn download_layer(auth: &Auth, name: &str) {
+    layer::download(auth, name).await
 }

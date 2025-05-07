@@ -3,13 +3,13 @@ use compiler::{
     spec::{
         BuildKind,
         BuildSpec,
+        ConfigSpec,
         FunctionSpec,
-        RuntimeInfraSpec,
+        function::InfraSpec,
     },
 };
-use configurator::Config;
 use kit as u;
-use provider::Env;
+use authorizer::Auth;
 use std::{
     panic,
     str::FromStr,
@@ -32,7 +32,7 @@ pub struct BuildOpts {
 }
 
 pub async fn build(
-    env: &Env,
+    auth: &Auth,
     kind: Option<String>,
     name: Option<String>,
     dir: &str,
@@ -56,7 +56,7 @@ pub async fn build(
         let builds = builder::build_recursive(dirty, kind, image_kind).await;
         if publish {
             for build in builds {
-                publisher::publish(&env, build).await;
+                publisher::publish(&auth, build).await;
             }
         }
     } else if clean {
@@ -69,7 +69,7 @@ pub async fn build(
         let builds = builder::build(dir, name, kind, image_kind, lang).await;
         if publish {
             for build in builds {
-                publisher::publish(&env, build).await;
+                publisher::publish(&auth, build).await;
             }
         }
     }
@@ -81,7 +81,7 @@ pub struct PublishOpts {
     pub version: Option<String>,
 }
 
-pub async fn publish(env: Env, name: Option<String>, dir: &str, opts: PublishOpts) {
+pub async fn publish(auth: Auth, name: Option<String>, dir: &str, opts: PublishOpts) {
     let PublishOpts {
         promote,
         demote,
@@ -93,22 +93,16 @@ pub async fn publish(env: Env, name: Option<String>, dir: &str, opts: PublishOpt
     let bname = u::maybe_string(name.clone(), u::basedir(&u::pwd()));
 
     if promote {
-        publisher::promote(&env, &bname, &lang.to_str(), version).await;
+        publisher::promote(&auth, &bname, &lang.to_str(), version).await;
     } else if demote {
-        publisher::demote(&env, name, &lang.to_str()).await;
+        publisher::demote(&auth, name, &lang.to_str()).await;
     } else {
         let builds = builder::just_build_out(&dir, &bname, &lang.to_str());
 
         for build in builds {
-            publisher::publish(&env, build).await;
+            publisher::publish(&auth, build).await;
         }
     }
-}
-
-pub async fn list_published_assets(env: Env, kind: Option<String>) {
-    let k = u::maybe_string(kind, "layer");
-    let kind = BuildKind::from_str(&k).unwrap();
-    publisher::list(&env, &kind).await
 }
 
 pub async fn test() {
@@ -160,51 +154,53 @@ pub async fn compile(opts: CompileOpts) -> String {
 }
 
 pub async fn resolve(
-    env: Env,
+    auth: Auth,
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
     no_cache: bool,
 ) -> String {
+
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let resolved_topology = match component.clone() {
-        Some(c) => resolver::resolve_component(&env, &sandbox, &topology, &c).await,
-        None => resolver::resolve(&env, &sandbox, &topology, !no_cache).await,
+        Some(c) => resolver::resolve_component(&auth, &sandbox, &topology, &c).await,
+        None => resolver::resolve(&auth, &sandbox, &topology, !no_cache).await,
     };
 
     resolver::pprint(&resolved_topology, component)
 }
 
-async fn run_create_hook(env: &Env, root: &Topology) {
+async fn run_create_hook(auth: &Auth, root: &Topology) {
     let Topology {
         namespace,
         sandbox,
         version,
+        config,
         ..
     } = root;
     let dir = u::pwd();
     let tag = format!("{}-{}", namespace, version);
     let msg = format!(
         "Deployed `{}` to *{}*::{}_{}",
-        tag, &env.name, namespace, &sandbox
+        tag, &auth.name, namespace, &sandbox
     );
     releaser::notify(&namespace, &msg).await;
-    if env.config.ci.update_metadata {
-        let centralized = env.inherit(env.config.aws.lambda.layers_profile.to_owned());
+    if config.ci.update_metadata {
+        let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
         releaser::ci::update_metadata(
             &centralized,
             &sandbox,
             &namespace,
             &version,
-            &env.name,
+            &auth.name,
             &dir,
         )
         .await;
     }
 }
 
-async fn maybe_build(env: &Env, dir: &str, name: &str) {
+async fn maybe_build(auth: &Auth, dir: &str, name: &str) {
     let builds = builder::build(
         dir,
         Some(String::from(name)),
@@ -213,28 +209,29 @@ async fn maybe_build(env: &Env, dir: &str, name: &str) {
         None,
     )
     .await;
-    let centralized = env.inherit(env.config.aws.ecr.profile.clone());
+    let config = ConfigSpec::new(None);
+    let centralized = auth.inherit(config.aws.ecr.profile.clone()).await;
     for b in builds {
         tracing::debug!("Publishing {}", &b.artifact);
         publisher::publish(&centralized, b).await;
     }
 }
 
-async fn create_topology(env: &Env, topology: &Topology) {
+async fn create_topology(auth: &Auth, topology: &Topology) {
     let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        maybe_build(env, &function.dir, &function.name).await;
+        maybe_build(auth, &function.dir, &function.name).await;
     }
-    deployer::create(env, topology).await;
+    deployer::create(auth, topology).await;
 
     for (_, node) in &topology.nodes {
         for (_, function) in &node.functions {
             let dir = &function.dir;
-            maybe_build(env, dir, &function.name).await;
+            maybe_build(auth, dir, &function.name).await;
         }
 
-        deployer::create(env, node).await;
+        deployer::create(auth, node).await;
     }
 }
 
@@ -272,21 +269,21 @@ pub async fn create(
     let topology = match maybe_topology {
         Some(t) => t,
         None => {
-            let env = init(profile, None).await;
+            let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
             releaser::guard(&sandbox);
             let dir = u::pwd();
             println!("Compiling topology");
             let ct = compiler::compile(&dir, recursive);
-            let rt = resolver::resolve(&env, &sandbox, &ct, !no_cache).await;
+            let rt = resolver::resolve(&auth, &sandbox, &ct, !no_cache).await;
             rt
         }
     };
 
-    let env = init(Some(topology.env.to_string()), None).await;
+    let auth = init(Some(topology.env.to_string()), None).await;
     let msg = compiler::count_of(&topology);
     println!("{}", msg);
-    create_topology(&env, &topology).await;
+    create_topology(&auth, &topology).await;
 
     match std::env::var("TC_INSPECT_BUILD") {
         Ok(_) => (),
@@ -294,24 +291,24 @@ pub async fn create(
     }
 
     if notify {
-        run_create_hook(&env, &topology).await;
+        run_create_hook(&auth, &topology).await;
     }
 
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
-async fn update_topology(env: &Env, topology: &Topology) {
+async fn update_topology(auth: &Auth, topology: &Topology) {
     let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        maybe_build(env, &function.dir, &function.name).await;
+        maybe_build(auth, &function.dir, &function.name).await;
     }
 
-    deployer::update(env, topology).await;
+    deployer::update(auth, topology).await;
 }
 
-pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache: bool) {
+pub async fn update(auth: Auth, sandbox: Option<String>, recursive: bool, no_cache: bool) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     releaser::guard(&sandbox);
     let start = Instant::now();
@@ -321,11 +318,11 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache
 
     compiler::count_of(&topology);
 
-    let root = resolver::resolve(&env, &sandbox, &topology, !no_cache).await;
-    update_topology(&env, &root).await;
+    let root = resolver::resolve(&auth, &sandbox, &topology, !no_cache).await;
+    update_topology(&auth, &root).await;
 
     for (_, node) in root.nodes {
-        update_topology(&env, &node).await;
+        update_topology(&auth, &node).await;
     }
     builder::clean(recursive);
     let duration = start.elapsed();
@@ -333,7 +330,7 @@ pub async fn update(env: Env, sandbox: Option<String>, recursive: bool, no_cache
 }
 
 pub async fn update_component(
-    env: Env,
+    auth: Auth,
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
@@ -346,31 +343,31 @@ pub async fn update_component(
     compiler::count_of(&topology);
 
     let c = deployer::maybe_component(component.clone());
-    let root = resolver::resolve_component(&env, &sandbox, &topology, &c).await;
-    deployer::update_component(&env, &root, component.clone()).await;
+    let root = resolver::resolve_component(&auth, &sandbox, &topology, &c).await;
+    deployer::update_component(&auth, &root, component.clone()).await;
 
     for (_, node) in root.nodes {
-        deployer::update_component(&env, &node, component.clone()).await;
+        deployer::update_component(&auth, &node, component.clone()).await;
     }
 }
 
-pub async fn delete(env: Env, sandbox: Option<String>, recursive: bool) {
+pub async fn delete(auth: Auth, sandbox: Option<String>, recursive: bool) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     releaser::guard(&sandbox);
     println!("Compiling topology");
     let topology = compiler::compile(&u::pwd(), recursive);
 
     compiler::count_of(&topology);
-    let root = resolver::resolve(&env, &sandbox, &topology, true).await;
+    let root = resolver::resolve(&auth, &sandbox, &topology, true).await;
 
-    deployer::delete(&env, &root).await;
+    deployer::delete(&auth, &root).await;
     for (_, node) in root.nodes {
-        deployer::delete(&env, &node).await
+        deployer::delete(&auth, &node).await
     }
 }
 
 pub async fn delete_component(
-    env: Env,
+    auth: Auth,
     sandbox: Option<String>,
     component: Option<String>,
     recursive: bool,
@@ -382,74 +379,24 @@ pub async fn delete_component(
 
     compiler::count_of(&topology);
     println!("Resolving topology");
-    let root = resolver::resolve(&env, &sandbox, &topology, true).await;
-    deployer::delete_component(&env, root.clone(), component.clone()).await;
+    let root = resolver::resolve(&auth, &sandbox, &topology, true).await;
+    deployer::delete_component(&auth, root.clone(), component.clone()).await;
 
     for (_, node) in root.nodes {
-        deployer::delete_component(&env, node, component.clone()).await
+        deployer::delete_component(&auth, node, component.clone()).await
     }
 }
 
 pub async fn list(
-    env: Env,
+    auth: Auth,
     sandbox: Option<String>,
     component: Option<String>,
     format: Option<String>,
 ) {
     if u::option_exists(component.clone()) {
-        grokker::list_component(&env, sandbox, component, format).await;
+        differ::list_component(&auth, sandbox, component, format).await;
     } else {
-        grokker::list(&env, sandbox).await;
-    }
-}
-
-pub async fn scaffold() {
-    let dir = u::pwd();
-    let kind = compiler::kind_of();
-    match kind.as_ref() {
-        "function" => {
-            let function = compiler::current_function(&dir);
-            match function {
-                Some(f) => bootstrapper::scaffold_function(&f.name, &f.dir).await,
-                None => panic!("No function found"),
-            }
-        }
-        "step-function" => {
-            let functions = compiler::just_functions();
-            for (_, f) in functions {
-                bootstrapper::scaffold_function(&f.name, &f.dir).await;
-            }
-        }
-        _ => {
-            let function = compiler::current_function(&dir);
-            match function {
-                Some(f) => bootstrapper::scaffold_function(&f.name, &f.dir).await,
-                None => panic!("No function found"),
-            }
-        }
-    }
-}
-
-pub async fn bootstrap(
-    env: Env,
-    role_name: Option<String>,
-    create: bool,
-    delete: bool,
-    show: bool,
-) {
-    match role_name {
-        Some(role) => {
-            if create {
-                bootstrapper::create_role(&env, &role).await;
-            } else if delete {
-                bootstrapper::delete_role(&env, &role).await;
-            } else if show {
-                bootstrapper::show_role(&env, &role).await;
-            } else {
-                bootstrapper::show_role(&env, &role).await;
-            }
-        }
-        None => println!("No role name given"),
+        differ::list(&auth, sandbox).await;
     }
 }
 
@@ -462,7 +409,7 @@ pub struct InvokeOptions {
     pub dumb: bool,
 }
 
-pub async fn invoke(env: Env, opts: InvokeOptions) {
+pub async fn invoke(auth: Auth, opts: InvokeOptions) {
     let InvokeOptions {
         sandbox,
         payload,
@@ -478,28 +425,28 @@ pub async fn invoke(env: Env, opts: InvokeOptions) {
         let topology = compiler::compile(&u::pwd(), false);
 
         let sandbox = resolver::maybe_sandbox(sandbox);
-        let resolved = resolver::render(&env, &sandbox, &topology).await;
+        let resolved = resolver::render(&auth, &sandbox, &topology).await;
 
         let mode = match topology.flow {
             Some(f) => f.mode,
             None => "Standard".to_string(),
         };
-        invoker::invoke(&env, topology.kind, &resolved.fqn, payload, &mode, dumb).await;
+        invoker::invoke(&auth, topology.kind, &resolved.fqn, payload, &mode, dumb).await;
     }
 }
 
-pub async fn emulate(env: Env, dev: bool, shell: bool) {
+pub async fn emulate(auth: Auth, dev: bool, shell: bool) {
     let kind = compiler::kind_of();
     match kind.as_ref() {
         "step-function" => emulator::sfn().await,
         "function" => {
             if shell {
-                emulator::shell(&env, dev).await;
+                emulator::shell(&auth, dev).await;
             } else {
-                emulator::lambda(&env, dev).await;
+                emulator::lambda(&auth, dev).await;
             }
         }
-        _ => emulator::lambda(&env, dev).await,
+        _ => emulator::lambda(&auth, dev).await,
     }
 }
 
@@ -520,7 +467,7 @@ pub async fn tag(
 }
 
 pub async fn route(
-    env: Env,
+    auth: Auth,
     event: Option<String>,
     service: String,
     sandbox: Option<String>,
@@ -529,23 +476,23 @@ pub async fn route(
     let event = u::maybe_string(event, "default");
     let sandbox = resolver::maybe_sandbox(sandbox);
     match rule {
-        Some(r) => releaser::route(&env, &event, &service, &sandbox, &r).await,
+        Some(r) => releaser::route(&auth, &event, &service, &sandbox, &r).await,
         None => println!("Rule not specified"),
     }
 }
 
-pub async fn freeze(env: Env, service: Option<String>, sandbox: String) {
+pub async fn freeze(auth: Auth, service: Option<String>, sandbox: String) {
     let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
     let name = format!("{}_{}", &service, &sandbox);
-    releaser::freeze(&env, &name).await;
-    let msg = format!("*{}*::{} is frozen", &env.name, sandbox);
+    releaser::freeze(&auth, &name).await;
+    let msg = format!("*{}*::{} is frozen", &auth.name, sandbox);
     releaser::notify(&service, &msg).await
 }
 
-pub async fn unfreeze(env: Env, service: Option<String>, sandbox: String) {
+pub async fn unfreeze(auth: Auth, service: Option<String>, sandbox: String) {
     let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
     let name = format!("{}_{}", &service, &sandbox);
-    releaser::unfreeze(&env, &name).await;
+    releaser::unfreeze(&auth, &name).await;
     let msg = format!("{} is now unfrozen", &name);
     releaser::notify(&service, &msg).await;
 }
@@ -594,30 +541,36 @@ pub async fn ci_upgrade(version: Option<String>) {
 }
 
 pub async fn show_config() {
-    let config = Config::new(None, "dev");
+    let config = ConfigSpec::new(None);
     println!("{}", config.render());
 }
 
-pub async fn download_layer(env: Env, name: Option<String>) {
+pub async fn download_layer(auth: Auth, name: Option<String>) {
     match name {
-        Some(n) => publisher::download_layer(&env, &n).await,
+        Some(n) => publisher::download_layer(&auth, &n).await,
         None => println!("provide layer name"),
     }
 }
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Env {
-    match profile {
-        Some(ref p) => provider::init(profile.clone(), assume_role, Config::new(None, &p)).await,
-        None => provider::init(profile, assume_role, Config::new(None, "")).await,
-    }
-}
+pub async fn init(
+    profile: Option<String>,
+    assume_role: Option<String>
+) -> Auth {
 
-pub async fn init_repo_profile(profile: Option<String>) -> Env {
-    match profile {
-        Some(ref p) => provider::init(profile.clone(), None, Config::new(None, &p)).await,
-        None => {
-            let given_env = provider::init(profile, None, Config::new(None, "")).await;
-            given_env.inherit(given_env.config.aws.lambda.layers_profile.to_owned())
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            let role = match assume_role {
+                Some(r) => Some(r),
+                None => {
+                    let config = compiler::config(&kit::pwd());
+                    let p = u::maybe_string(profile.clone(), "default");
+                    config.ci.roles.get(&p).cloned()
+                }
+            };
+            Auth::new(profile.clone(), role).await
+        }
+        Err(_) => {
+            Auth::new(profile.clone(), assume_role).await
         }
     }
 }
@@ -646,7 +599,7 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
 pub fn generate_doc(spec: &str) {
     let schema = match spec {
         "build" => doku::to_json::<BuildSpec>(),
-        "infra" => doku::to_json::<RuntimeInfraSpec>(),
+        "infra" => doku::to_json::<InfraSpec>(),
         "function" => doku::to_json::<FunctionSpec>(),
         _ => doku::to_json::<FunctionSpec>(),
     };

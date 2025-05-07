@@ -39,12 +39,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "allocator-api2"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
-
-[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -331,17 +325,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
-name = "async-trait"
-version = "0.1.85"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f934833b4b7233644e5848f235df3f57ed8c80f1528a26c3dfa13d2147fa056"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.96",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -356,6 +339,18 @@ dependencies = [
  "hermit-abi 0.1.19",
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "authorizer"
+version = "0.8.49"
+dependencies = [
+ "aws-config",
+ "aws-credential-types",
+ "aws-sdk-sts",
+ "kit",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -548,29 +543,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aws-sdk-ecr"
-version = "1.71.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b52699e0939eba457d29a4df913531bf0377948044d1246c653166d245f12f3a"
-dependencies = [
- "aws-credential-types",
- "aws-runtime",
- "aws-smithy-async",
- "aws-smithy-http 0.62.1",
- "aws-smithy-json",
- "aws-smithy-runtime",
- "aws-smithy-runtime-api",
- "aws-smithy-types",
- "aws-types",
- "bytes",
- "fastrand",
- "http 0.2.12",
- "once_cell",
- "regex-lite",
- "tracing",
-]
-
-[[package]]
 name = "aws-sdk-ecs"
 version = "1.75.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -685,41 +657,6 @@ dependencies = [
  "once_cell",
  "regex-lite",
  "tracing",
-]
-
-[[package]]
-name = "aws-sdk-s3"
-version = "1.83.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51384750334005f40e1a334b0d54eca822a77eacdcf3c50fdf38f583c5eee7a2"
-dependencies = [
- "aws-credential-types",
- "aws-runtime",
- "aws-sigv4",
- "aws-smithy-async",
- "aws-smithy-checksums",
- "aws-smithy-eventstream",
- "aws-smithy-http 0.62.1",
- "aws-smithy-json",
- "aws-smithy-runtime",
- "aws-smithy-runtime-api",
- "aws-smithy-types",
- "aws-smithy-xml",
- "aws-types",
- "bytes",
- "fastrand",
- "hex",
- "hmac",
- "http 0.2.12",
- "http 1.2.0",
- "http-body 0.4.6",
- "lru",
- "once_cell",
- "percent-encoding",
- "regex-lite",
- "sha2",
- "tracing",
- "url",
 ]
 
 [[package]]
@@ -919,28 +856,6 @@ dependencies = [
  "futures-util",
  "pin-project-lite",
  "tokio",
-]
-
-[[package]]
-name = "aws-smithy-checksums"
-version = "0.63.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b65d21e1ba6f2cdec92044f904356a19f5ad86961acf015741106cdfafd747c0"
-dependencies = [
- "aws-smithy-http 0.62.1",
- "aws-smithy-types",
- "bytes",
- "crc32c",
- "crc32fast",
- "crc64fast-nvme",
- "hex",
- "http 0.2.12",
- "http-body 0.4.6",
- "md-5",
- "pin-project-lite",
- "sha1",
- "sha2",
- "tracing",
 ]
 
 [[package]]
@@ -1314,21 +1229,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "bootstrapper"
-version = "0.8.49"
-dependencies = [
- "configurator",
- "kit",
- "provider",
-]
-
-[[package]]
 name = "builder"
 version = "0.8.49"
 dependencies = [
  "colored",
  "compiler",
- "configurator",
  "glob",
  "kit",
  "log",
@@ -1729,8 +1634,8 @@ dependencies = [
  "bincode",
  "chksum",
  "colored",
- "configurator",
  "daggy",
+ "derivative",
  "doku",
  "kit",
  "lazy_static 1.5.0",
@@ -1772,19 +1677,6 @@ dependencies = [
  "serde_json",
  "toml 0.5.11",
  "yaml-rust",
-]
-
-[[package]]
-name = "configurator"
-version = "0.8.49"
-dependencies = [
- "derivative",
- "doku",
- "kit",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
- "serde_yaml",
 ]
 
 [[package]]
@@ -1851,45 +1743,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "crc"
-version = "3.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69e6e4d7b33a94f0991c26729976b10ebde1d34c3ee82408fb536164fa10d636"
-dependencies = [
- "crc-catalog",
-]
-
-[[package]]
-name = "crc-catalog"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19d374276b40fb8bbdee95aef7c7fa6b5316ec764510eb64b8dd0e2ed0d7e7f5"
-
-[[package]]
-name = "crc32c"
-version = "0.6.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a47af21622d091a8f0fb295b88bc886ac74efcc613efc19f5d0b21de5c89e47"
-dependencies = [
- "rustc_version",
-]
-
-[[package]]
 name = "crc32fast"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if 1.0.0",
-]
-
-[[package]]
-name = "crc64fast-nvme"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4955638f00a809894c947f85a024020a20815b65a5eea633798ea7924edab2b3"
-dependencies = [
- "crc",
 ]
 
 [[package]]
@@ -1979,17 +1838,31 @@ dependencies = [
 name = "deployer"
 version = "0.8.49"
 dependencies = [
+ "anyhow",
+ "authorizer",
+ "aws-config",
+ "aws-sdk-apigatewayv2",
+ "aws-sdk-appsync",
+ "aws-sdk-cloudwatchlogs",
+ "aws-sdk-ecs",
+ "aws-sdk-eventbridge",
+ "aws-sdk-iam",
+ "aws-sdk-lambda",
+ "aws-sdk-scheduler",
+ "aws-sdk-sfn",
+ "aws-sdk-sqs",
+ "base64",
  "builder",
  "colored",
  "compiler",
- "configurator",
  "kit",
  "log",
- "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2020,6 +1893,28 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "differ"
+version = "0.8.49"
+dependencies = [
+ "authorizer",
+ "aws-sdk-apigatewayv2",
+ "aws-sdk-appsync",
+ "aws-sdk-eventbridge",
+ "aws-sdk-lambda",
+ "aws-sdk-sfn",
+ "colored",
+ "compiler",
+ "kit",
+ "log",
+ "resolver",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "tabled",
+ "tokio",
 ]
 
 [[package]]
@@ -2151,10 +2046,13 @@ dependencies = [
 name = "emulator"
 version = "0.8.49"
 dependencies = [
+ "anyhow",
+ "authorizer",
+ "aws-config",
+ "aws-sdk-lambda",
  "colored",
  "compiler",
  "kit",
- "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -2270,12 +2168,6 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
-name = "foldhash"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
 
 [[package]]
 name = "foreign-types"
@@ -2461,23 +2353,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "grokker"
-version = "0.8.49"
-dependencies = [
- "colored",
- "compiler",
- "kit",
- "log",
- "provider",
- "resolver",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
- "tabled",
- "tokio",
-]
-
-[[package]]
 name = "group"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2540,11 +2415,6 @@ name = "hashbrown"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
-dependencies = [
- "allocator-api2",
- "equivalent",
- "foldhash",
-]
 
 [[package]]
 name = "heck"
@@ -2999,15 +2869,14 @@ name = "inspector"
 version = "0.8.49"
 dependencies = [
  "askama",
+ "authorizer",
  "axum",
  "cacache",
  "chrono",
  "compiler",
- "configurator",
+ "differ",
  "doku",
- "grokker",
  "kit",
- "provider",
  "releaser",
  "serde 1.0.217",
  "serde_derive",
@@ -3023,10 +2892,16 @@ dependencies = [
 name = "invoker"
 version = "0.8.49"
 dependencies = [
+ "anyhow",
+ "authorizer",
+ "aws-config",
+ "aws-sdk-eventbridge",
+ "aws-sdk-lambda",
+ "aws-sdk-sfn",
+ "base64",
  "compiler",
  "kit",
  "open",
- "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -3248,15 +3123,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lru"
-version = "0.12.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
-dependencies = [
- "hashbrown 0.15.2",
-]
-
-[[package]]
 name = "matchers"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3270,16 +3136,6 @@ name = "matchit"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
-
-[[package]]
-name = "md-5"
-version = "0.10.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
-dependencies = [
- "cfg-if 1.0.0",
- "digest",
-]
 
 [[package]]
 name = "memchr"
@@ -3830,52 +3686,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "provider"
-version = "0.8.49"
-dependencies = [
- "anyhow",
- "async-trait",
- "aws-config",
- "aws-credential-types",
- "aws-sdk-apigatewayv2",
- "aws-sdk-appsync",
- "aws-sdk-cloudwatchlogs",
- "aws-sdk-dynamodb",
- "aws-sdk-ecr",
- "aws-sdk-ecs",
- "aws-sdk-efs",
- "aws-sdk-eventbridge",
- "aws-sdk-iam",
- "aws-sdk-lambda",
- "aws-sdk-s3",
- "aws-sdk-scheduler",
- "aws-sdk-sfn",
- "aws-sdk-sqs",
- "aws-sdk-ssm",
- "aws-sdk-sts",
- "aws-smithy-http 0.60.11",
- "aws-smithy-types",
- "aws-types",
- "base64",
- "cacache",
- "colored",
- "configurator",
- "kit",
- "lazy_static 1.5.0",
- "log",
- "open",
- "serde 1.0.217",
- "serde_derive",
- "strum",
- "strum_macros",
- "tabled",
- "tokio",
- "toml 0.8.19",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "ptree"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3895,12 +3705,15 @@ dependencies = [
 name = "publisher"
 version = "0.8.49"
 dependencies = [
+ "anyhow",
+ "authorizer",
+ "aws-config",
+ "aws-sdk-lambda",
  "base64",
  "colored",
  "compiler",
  "kit",
  "log",
- "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -4032,11 +3845,16 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 name = "releaser"
 version = "0.8.49"
 dependencies = [
+ "anyhow",
+ "authorizer",
+ "aws-config",
+ "aws-sdk-dynamodb",
+ "aws-sdk-eventbridge",
+ "aws-sdk-sfn",
  "colored",
- "configurator",
+ "compiler",
  "kit",
  "open",
- "provider",
  "regex",
  "self-replace",
  "semver 0.7.0",
@@ -4089,10 +3907,16 @@ dependencies = [
 name = "resolver"
 version = "0.8.49"
 dependencies = [
+ "authorizer",
+ "aws-config",
+ "aws-sdk-appsync",
+ "aws-sdk-efs",
+ "aws-sdk-eventbridge",
+ "aws-sdk-lambda",
+ "aws-sdk-ssm",
  "cacache",
  "compiler",
  "kit",
- "provider",
  "regex",
  "serde 1.0.217",
  "serde_derive",
@@ -4645,28 +4469,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
-name = "strum"
-version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
-dependencies = [
- "strum_macros",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.25.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23dc1fa9ac9c169a78ba62f0b841814b7abae11bdd047b9c58f893439e309ea0"
-dependencies = [
- "heck 0.4.1",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 2.0.96",
-]
-
-[[package]]
 name = "subprocess"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4776,17 +4578,16 @@ dependencies = [
 name = "tc"
 version = "0.8.49"
 dependencies = [
- "bootstrapper",
+ "authorizer",
  "builder",
  "clap",
  "clap-markdown",
  "colored",
  "compiler",
- "configurator",
  "deployer",
+ "differ",
  "doku",
  "emulator",
- "grokker",
  "inspector",
  "invoker",
  "kit",
@@ -4794,7 +4595,6 @@ dependencies = [
  "mockall",
  "openssl",
  "openssl-sys",
- "provider",
  "publisher",
  "releaser",
  "resolver",
