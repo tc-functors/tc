@@ -2,12 +2,28 @@ mod image;
 mod layer;
 mod aws;
 
+use kit as u;
 use compiler::spec::{
     BuildKind,
     BuildOutput,
 };
 use authorizer::Auth;
 use std::collections::HashMap;
+
+fn split(dir: &str) {
+
+    let zipfile = format!("{}/deps.zip", dir);
+    let size;
+    if u::file_exists(&zipfile) {
+        size = u::file_size(&zipfile);
+    } else {
+        panic!("No zip found");
+    }
+    if size >= 70000000.0 {
+        let cmd = format!("zipsplit {} -n 50000000", zipfile);
+        u::runcmd_stream(&cmd, dir);
+    }
+}
 
 pub async fn publish(auth: &Auth, build: BuildOutput) {
     let BuildOutput {
@@ -23,6 +39,7 @@ pub async fn publish(auth: &Auth, build: BuildOutput) {
     match kind {
         BuildKind::Layer | BuildKind::Library => {
             if layer::should_split(&dir) {
+                split(&dir);
                 layer::publish(auth, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
                 layer::publish(auth, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
             } else {
