@@ -176,22 +176,6 @@ fn size_of(dir: &str, zipfile: &str) -> String {
     u::file_size_human(size)
 }
 
-pub fn zip(dir: &str, zipfile: &str) {
-    if u::path_exists(dir, "build") {
-        let cmd = format!("cd build && zip -q -9 -r ../{} . && cd -", zipfile);
-        u::runcmd_quiet(&cmd, dir);
-    }
-}
-
-fn copy(dir: &str) {
-    if u::path_exists(dir, "src") {
-        u::sh("cp -r src/* build/python/", dir);
-    }
-    if u::path_exists(dir, "lib") {
-        u::sh("cp -r lib/* build/python/", dir);
-    }
-}
-
 pub fn build(
     dir: &str,
     name: &str,
@@ -211,9 +195,9 @@ pub fn build(
 
     let size = format!("({})", size_of(dir, "deps.zip").green());
     println!("{} ({}", name, size);
-    // if u::path_exists(dir, "pyproject.toml") {
-    //     sh("rm -f requirements.txt", dir);
-    // }
-    //sh("rm -rf build", dir);
+    if u::path_exists(dir, "pyproject.toml") {
+        sh("rm -f requirements.txt", dir);
+    }
+    sh("rm -rf build", dir);
     format!("{}/deps.zip", dir)
 }

@@ -1,6 +1,5 @@
 use super::LangRuntime;
-use compiler::spec::ImageSpec;
-use configurator::Config;
+use compiler::spec::{ImageSpec, ConfigSpec};
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
@@ -172,7 +171,7 @@ pub fn build(
         None => panic!("No image spec specified in build:images"),
     };
 
-    let config = Config::new(None, "dev");
+    let config = ConfigSpec::new(None);
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
