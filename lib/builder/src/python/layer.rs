@@ -42,6 +42,16 @@ fn find_image(runtime: &LangRuntime) -> String {
     }
 }
 
+fn gen_req_cmd(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        format!(
+            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+        )
+    } else {
+        format!("echo 1")
+    }
+}
+
 fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: Vec<String>, post: Vec<String>) {
     let extra_str = u::vec_to_str(shared_objects());
     let extra_deps_pre = deps_str(pre);
@@ -54,6 +64,7 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: Vec<String>, post: Vec<
         }
     };
 
+    let req_cmd = gen_req_cmd(dir);
     let image = find_image(&runtime);
 
     if runtime == &LangRuntime::Python312 {
@@ -62,13 +73,17 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: Vec<String>, post: Vec<
 FROM {image} as intermediate
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-COPY requirements.txt ./
+
+COPY pyproject.toml ./
+
+RUN {req_cmd}
 
 ENV PATH $HOME/.cargo/bin:$PATH
 
 RUN mkdir -p /build/lib
 
 RUN dnf update -yy
+
 
 RUN dnf -y install libXext libSM libXrender
 
@@ -79,12 +94,16 @@ RUN --mount=type=ssh pip install -vvv -r requirements.txt --target=/build/python
         let dockerfile = format!("{}/Dockerfile", dir);
         u::write_str(&dockerfile, &f);
     } else {
+
         let f = format!(
             r#"
 FROM {image} as intermediate
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-COPY requirements.txt ./
+
+COPY pyproject.toml ./
+
+RUN {req_cmd}
 
 ENV PATH $HOME/.cargo/bin:$PATH
 
@@ -109,25 +128,6 @@ RUN --mount=type=secret,id=aws,target=/root/.aws/credentials {extra_deps_post}
     }
 }
 
-pub fn gen_requirements_txt(dir: &str, runtime: &LangRuntime) {
-    let img = match runtime {
-        LangRuntime::Python312 => "thehale/python-poetry:1.8.3-py3.12-slim",
-        LangRuntime::Python311 => "sunpeek/poetry:py3.11-slim",
-        LangRuntime::Python310 => "sunpeek/poetry:py3.10-slim",
-        LangRuntime::Python39 => "sunpeek/poetry:py3.9-slim",
-        _ => todo!(),
-    };
-
-    let cmd = vec![
-        "docker run --rm --platform=linux/amd64",
-        "-u $(id -u):$(id -g)",
-        "-v `pwd`:`pwd`",
-        "-w `pwd`",
-        &img,
-        "sh -c \"rm -f requirements.txt && poetry export --without-hashes --format=requirements.txt --without dev > requirements.txt\"",
-    ];
-    u::runv(dir, cmd);
-}
 
 pub fn build_with_docker(dir: &str) {
     let cmd_str = match std::env::var("DOCKER_SSH") {
@@ -201,24 +201,19 @@ pub fn build(
 ) -> String {
     sh("rm -f deps.zip", dir);
 
-    if u::path_exists(dir, "pyproject.toml") {
-        gen_requirements_txt(dir, runtime);
-    }
-
     gen_dockerfile(dir, runtime, deps_pre, deps_post);
     build_with_docker(dir);
     copy_from_docker(dir);
     sh("rm -f Dockerfile", dir);
 
-    if !u::path_exists(dir, "function.json") {
-        copy(dir);
-    }
-    zip(dir, "deps.zip");
+    let cmd = "rm -rf build && zip -q -9 -r ../deps.zip .";
+    sh(&cmd, &format!("{}/build", dir));
+
     let size = format!("({})", size_of(dir, "deps.zip").green());
     println!("{} ({}", name, size);
-    if u::path_exists(dir, "pyproject.toml") {
-        sh("rm -f requirements.txt", dir);
-    }
-    sh("rm -rf build", dir);
+    // if u::path_exists(dir, "pyproject.toml") {
+    //     sh("rm -f requirements.txt", dir);
+    // }
+    //sh("rm -rf build", dir);
     format!("{}/deps.zip", dir)
 }
