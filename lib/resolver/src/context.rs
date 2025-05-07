@@ -1,6 +1,7 @@
 use kit as u;
-use provider::Env;
+use authorizer::Auth;
 use std::collections::HashMap;
+use compiler::ConfigSpec;
 
 fn abbr(name: &str) -> String {
     if name.chars().count() > 15 {
@@ -11,22 +12,23 @@ fn abbr(name: &str) -> String {
 }
 
 pub struct Context {
-    pub env: Env,
+    pub auth: Auth,
     pub namespace: String,
     pub sandbox: String,
     pub trace: bool,
+    pub config: ConfigSpec
 }
 
 impl Context {
     pub fn render(&self, s: &str) -> String {
         let mut table: HashMap<&str, &str> = HashMap::new();
-        let account = &self.env.account();
-        let region = &self.env.region();
+        let account = &self.auth.account;
+        let region = &self.auth.region;
         let abbr_namespace = abbr(&self.namespace);
 
         let repo = match std::env::var("TC_ECR_REPO") {
             Ok(r) => &r.to_owned(),
-            Err(_) => &self.env.config.aws.ecr.repo,
+            Err(_) => &self.config.aws.ecr.repo,
         };
 
         table.insert("account", account);
@@ -35,8 +37,8 @@ impl Context {
         table.insert("namespace", &self.namespace);
         table.insert("abbr_namespace", &abbr_namespace);
         table.insert("sandbox", &self.sandbox);
-        table.insert("env", &self.env.name);
-        table.insert("profile", &self.env.name);
+        table.insert("env", &self.auth.name);
+        table.insert("profile", &self.auth.name);
         table.insert("repo", repo);
         u::stencil(s, table)
     }

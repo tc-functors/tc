@@ -17,9 +17,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 chrono = { version = "0.4.*"}
 cacache = "13.0.0"
 compiler = { path = "../compiler" }
-provider = { path = "../provider" }
+authorizer = { path = "../authorizer" }
 kit = { path = "../kit" }
-grokker = { path = "../grokker" }
+differ = { path = "../differ" }
 releaser = { path = "../releaser" }
-configurator = { path = "../configurator" }
 doku = "0.21.1"

@@ -3,9 +3,9 @@ use crate::{
         RouteSpec,
         TopologySpec,
         Entity,
+        config::ConfigSpec,
     },
 };
-use configurator::Config;
 use super::template;
 use kit::*;
 use serde_derive::{
@@ -61,7 +61,7 @@ impl Route {
         name: &str,
         spec: &TopologySpec,
         rspec: &RouteSpec,
-        config: &Config
+        config: &ConfigSpec
 ) -> Route {
 
         let gateway =  match &rspec.gateway {

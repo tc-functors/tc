@@ -8,27 +8,26 @@ use axum::response::{
     IntoResponse,
 };
 use compiler::Topology;
-use configurator::Config;
 use std::collections::HashMap;
 
 async fn build(
-    envs: Vec<String>,
-    topologies: HashMap<String, Topology>,
-    sandbox: &str,
+    _envs: Vec<String>,
+    _topologies: HashMap<String, Topology>,
+    _sandbox: &str,
 ) -> Versions {
-    let mut h: Versions = HashMap::new();
-    for (_, t) in topologies {
-        let mut v: HashMap<String, String> = HashMap::new();
-        for e in &envs {
-            let env = provider::init(Some(e.to_string()), None, Config::new(None, &e)).await;
-            let version = grokker::lookup_version(&env, &t.kind, &t.fqn, sandbox).await;
-            if let Some(ver) = version {
-                v.insert(e.to_string(), ver);
-            }
-        }
-        h.insert(t.namespace, v);
-    }
-    tracing::debug!("{:?}", &h);
+    let h: Versions = HashMap::new();
+    // for (_, t) in topologies {
+    //     let mut v: HashMap<String, String> = HashMap::new();
+    //     for _e in &envs {
+    //         // let env = provider::init(Some(e.to_string()), None, Config::new(None, &e)).await;
+    //         // let version = grokker::lookup_version(&env, &t.kind, &t.fqn, sandbox).await;
+    //         // if let Some(ver) = version {
+    //         //     v.insert(e.to_string(), ver);
+    //         // }
+    //     }
+    //     h.insert(t.namespace, v);
+    // }
+    // tracing::debug!("{:?}", &h);
     h
 }
 

@@ -4,15 +4,14 @@ use compiler::{
 };
 //use aws::ecs;
 //use aws::ecs::TaskDef;
-use configurator::Config;
-use provider::{
-    Env,
+use authorizer::Auth;
+use crate::{
     aws::lambda,
 };
 use std::collections::HashMap;
 
-pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
-    let client = lambda::make_client(env).await;
+pub async fn make_lambda(auth: &Auth, f: Function) -> lambda::Function {
+    let client = lambda::make_client(auth).await;
     let package_type = &f.runtime.package_type;
 
     let uri = f.runtime.uri;
@@ -74,41 +73,38 @@ pub async fn make_lambda(env: &Env, f: Function) -> lambda::Function {
 pub async fn create_function(
     profile: String,
     role_arn: Option<String>,
-    config: Config,
     f: Function,
 ) -> String {
-    let env = Env::new(&profile, role_arn, config);
+    let auth = Auth::new(Some(profile), role_arn).await;
     match f.runtime.package_type.as_ref() {
         "zip" => {
-            let lambda = make_lambda(&env, f.clone()).await;
+            let lambda = make_lambda(&auth, f.clone()).await;
             lambda.clone().create_or_update().await
         }
         _ => {
-            let lambda = make_lambda(&env, f.clone()).await;
+            let lambda = make_lambda(&auth, f.clone()).await;
             lambda.clone().create_or_update().await
         }
     }
 }
 
-pub async fn create(env: &Env, fns: HashMap<String, Function>) {
+pub async fn create(auth: &Auth, fns: HashMap<String, Function>) {
     match std::env::var("TC_SYNC_CREATE") {
         Ok(_) => {
             for (_, function) in fns {
-                let p = env.name.to_string();
-                let role = env.assume_role.to_owned();
-                let config = env.config.to_owned();
-                create_function(p, role, config, function).await;
+                let p = auth.name.to_string();
+                let role = auth.assume_role.to_owned();
+                create_function(p, role, function).await;
             }
         }
 
         Err(_) => {
             let mut tasks = vec![];
             for (_, function) in fns {
-                let p = env.name.to_string();
-                let role = env.assume_role.to_owned();
-                let config = env.config.to_owned();
+                let p = auth.name.to_string();
+                let role = auth.assume_role.to_owned();
                 let h = tokio::spawn(async move {
-                    create_function(p, role, config, function).await;
+                    create_function(p, role, function).await;
                 });
                 tasks.push(h);
             }
@@ -119,14 +115,13 @@ pub async fn create(env: &Env, fns: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_code(env: &Env, fns: HashMap<String, Function>) {
+pub async fn update_code(auth: &Auth, fns: HashMap<String, Function>) {
     let mut tasks = vec![];
     for (_, function) in fns {
-        let p = env.name.to_string();
-        let role = env.assume_role.to_owned();
-        let config = env.config.to_owned();
+        let p = auth.name.to_string();
+        let role = auth.assume_role.to_owned();
         let h = tokio::spawn(async move {
-            create_function(p, role, config, function).await;
+            create_function(p, role, function).await;
         });
         tasks.push(h);
     }
@@ -135,46 +130,46 @@ pub async fn update_code(env: &Env, fns: HashMap<String, Function>) {
     }
 }
 
-pub async fn delete_function(env: &Env, f: Function) {
-    let function = make_lambda(env, f).await;
+pub async fn delete_function(auth: &Auth, f: Function) {
+    let function = make_lambda(auth, f).await;
     function.clone().delete().await.unwrap();
 }
 
-pub async fn delete(env: &Env, fns: HashMap<String, Function>) {
+pub async fn delete(auth: &Auth, fns: HashMap<String, Function>) {
     for (_name, function) in fns {
         match function.runtime.package_type.as_ref() {
             "zip" => {
-                let function = make_lambda(env, function).await;
+                let function = make_lambda(auth, function).await;
                 function.clone().delete().await.unwrap();
             }
             _ => {
-                let function = make_lambda(env, function).await;
+                let function = make_lambda(auth, function).await;
                 function.clone().delete().await.unwrap();
             }
         }
     }
 }
 
-pub async fn update_layers(env: &Env, fns: HashMap<String, Function>) {
+pub async fn update_layers(auth: &Auth, fns: HashMap<String, Function>) {
     for (_, f) in fns {
-        let function = make_lambda(env, f.clone()).await;
-        let arn = env.lambda_arn(&f.fqn);
+        let function = make_lambda(auth, f.clone()).await;
+        let arn = auth.lambda_arn(&f.fqn);
         let _ = function.update_layers(&arn).await;
     }
 }
 
-pub async fn update_vars(env: &Env, funcs: HashMap<String, Function>) {
+pub async fn update_vars(auth: &Auth, funcs: HashMap<String, Function>) {
     for (_, f) in funcs {
         let memory_size = f.runtime.memory_size.expect("memory error");
         println!("mem {}", memory_size);
-        let function = make_lambda(env, f.clone()).await;
+        let function = make_lambda(auth, f.clone()).await;
         let _ = function.update_vars().await;
     }
 }
 
-pub async fn update_concurrency(env: &Env, funcs: HashMap<String, Function>) {
+pub async fn update_concurrency(auth: &Auth, funcs: HashMap<String, Function>) {
     for (_, f) in funcs {
-        let function = make_lambda(env, f.clone()).await;
+        let function = make_lambda(auth, f.clone()).await;
 
         match f.runtime.provisioned_concurrency {
             Some(n) => function.clone().update_provisioned_concurrency(n).await,
@@ -188,16 +183,16 @@ pub async fn update_concurrency(env: &Env, funcs: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_tags(env: &Env, funcs: HashMap<String, Function>) {
-    let client = lambda::make_client(env).await;
+pub async fn update_tags(auth: &Auth, funcs: HashMap<String, Function>) {
+    let client = lambda::make_client(auth).await;
     for (_, f) in funcs {
-        let arn = env.lambda_arn(&f.fqn);
+        let arn = auth.lambda_arn(&f.fqn);
         lambda::update_tags(client.clone(), &arn, f.runtime.tags.clone()).await;
     }
 }
 
-pub async fn update_runtime_version(env: &Env, fns: HashMap<String, Function>) {
-    let client = lambda::make_client(env).await;
+pub async fn update_runtime_version(auth: &Auth, fns: HashMap<String, Function>) {
+    let client = lambda::make_client(auth).await;
     match std::env::var("TC_LAMBDA_RUNTIME_VERSION") {
         Ok(v) => {
             for (_, f) in fns {

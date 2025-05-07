@@ -5,14 +5,15 @@ use super::{
     route,
 };
 use compiler::Topology;
-use provider::Env;
+use authorizer::Auth;
 
-pub async fn resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology {
+pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topology {
     let ctx = Context {
-        env: env.clone(),
+        auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
         sandbox: sandbox.to_string(),
         trace: true,
+        config: topology.config.to_owned()
     };
 
     println!("Resolving topology {}", topology.namespace);
@@ -31,15 +32,17 @@ pub async fn resolve(topology: &Topology, env: &Env, sandbox: &str) -> Topology 
 
 pub async fn resolve_component(
     topology: &Topology,
-    env: &Env,
+    auth: &Auth,
     sandbox: &str,
     component: &str,
 ) -> Topology {
+
     let ctx = Context {
-        env: env.clone(),
+        auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
         sandbox: sandbox.to_string(),
         trace: true,
+        config: topology.config.to_owned()
     };
 
     println!("Resolving topology...");

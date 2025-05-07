@@ -2,7 +2,7 @@ use super::Context;
 use compiler::{
     Function,
     Runtime,
-    RuntimeInfraSpec,
+    InfraSpec,
     Topology,
     function::runtime::{
         FileSystem,
@@ -11,10 +11,61 @@ use compiler::{
 };
 use kit::*;
 use std::collections::HashMap;
+use authorizer::Auth;
+use crate::aws;
 
+// aws
+
+async fn resolve_vars(
+    auth: &Auth,
+    environment: HashMap<String, String>,
+) -> HashMap<String, String> {
+
+    let client = aws::ssm::make_client(auth).await;
+
+    let mut h: HashMap<String, String> = HashMap::new();
+    for (k, v) in environment.iter() {
+        if v.starts_with("ssm:/") {
+            let key = kit::split_last(v, ":");
+            let val = aws::ssm::get(client.clone(), &key).await.unwrap();
+            h.insert(s!(k), val);
+        } else {
+            h.insert(s!(k), s!(v));
+        }
+    }
+    h
+}
+
+
+async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
+    let Context { auth, config, .. } = ctx;
+    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
+    let client = aws::layer::make_client(&centralized).await;
+    aws::layer::find_version(client, layer_name).await.unwrap()
+}
+
+async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
+    let Context { auth, config, .. } = ctx;
+    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
+    aws::efs::get_ap_arn(&centralized, name).await.unwrap()
+}
+
+
+// arn
+fn as_layer_arn(auth: &Auth, name: &str) -> String {
+    format!(
+        "arn:aws:lambda:{}:{}:layer:{}",
+        auth.region,
+        auth.account,
+        name
+    )
+}
+
+
+//
 fn augment_vars(ctx: &Context, lang: &str) -> HashMap<String, String> {
     let mut hmap: HashMap<String, String> = HashMap::new();
-    let profile = &ctx.env.name;
+    let profile = &ctx.auth.name;
     let sandbox = &ctx.sandbox;
     match lang {
         "ruby3.2" => {
@@ -47,7 +98,7 @@ async fn resolve_environment(
     default_vars: &HashMap<String, String>,
     sandbox_vars: Option<HashMap<String, String>>,
 ) -> HashMap<String, String> {
-    let Context { env, .. } = ctx;
+    let Context { auth, .. } = ctx;
     let mut default_vars = default_vars.clone();
 
     let augmented_vars = augment_vars(ctx, lang);
@@ -61,11 +112,11 @@ async fn resolve_environment(
         None => default_vars,
     };
 
-    env.resolve_vars(combined.clone()).await
+    resolve_vars(auth, combined.clone()).await
 }
 
 async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
-    let Context { env, sandbox, .. } = ctx;
+    let Context { sandbox, config, .. } = ctx;
 
     match fs {
         Some(f) => Some(f),
@@ -73,16 +124,16 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
             let ap_name = match std::env::var("TC_EFS_AP") {
                 Ok(t) => t,
                 Err(_) => match sandbox.as_ref() {
-                    "stable" => s!(&env.config.aws.efs.stable_ap),
-                    _ => s!(&env.config.aws.efs.dev_ap),
+                    "stable" => s!(&config.aws.efs.stable_ap),
+                    _ => s!(&config.aws.efs.dev_ap),
                 },
             };
-            let arn = env.access_point_arn(&ap_name).await;
+            let arn = resolve_access_point_arn(ctx, &ap_name).await;
             match arn {
                 Some(a) => {
                     let fs = FileSystem {
                         arn: a,
-                        mount_point: env.config.aws.lambda.fs_mountpoint.to_owned(),
+                        mount_point: config.aws.lambda.fs_mountpoint.to_owned(),
                     };
                     Some(fs)
                 }
@@ -93,13 +144,13 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
 }
 
 async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Network> {
-    let Context { env, .. } = ctx;
+    let Context { auth, config, .. } = ctx;
 
     match network {
         Some(net) => Some(net),
         None => {
-            let cfg = &env.config.aws.efs.network;
-            let cfg_net = cfg.get(&env.name);
+            let cfg = &config.aws.efs.network;
+            let cfg_net = cfg.get(&auth.name);
             match cfg_net {
                 Some(netc) => {
                     let net = Network {
@@ -114,28 +165,29 @@ async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Netw
     }
 }
 
+
 async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
-    let Context { env, sandbox, .. } = ctx;
+    let Context { auth, sandbox, .. } = ctx;
     let mut xs: Vec<String> = vec![];
 
     for layer in layers {
         if layer.contains(":") {
-            xs.push(env.layer_arn(&layer))
+            xs.push(as_layer_arn(&auth, &layer))
         } else if *sandbox != "stable" {
             let name = match std::env::var("TC_USE_STABLE_LAYERS") {
                 Ok(_) => layer,
                 Err(_) => format!("{}-dev", &layer),
             };
-            xs.push(env.resolve_layer(&name).await);
+            xs.push(resolve_layer(ctx, &name).await);
         } else {
-            xs.push(env.resolve_layer(&layer).await)
+            xs.push(resolve_layer(ctx, &layer).await)
         }
     }
     xs
 }
 
-fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> RuntimeInfraSpec {
-    RuntimeInfraSpec {
+fn augment_infra_spec(default: &InfraSpec, s: &InfraSpec) -> InfraSpec {
+    InfraSpec {
         memory_size: match s.memory_size {
             Some(p) => {
                 if p != 128 {
@@ -180,10 +232,10 @@ fn augment_infra_spec(default: &RuntimeInfraSpec, s: &RuntimeInfraSpec) -> Runti
 }
 
 fn get_infra_spec(
-    infra_spec: &HashMap<String, RuntimeInfraSpec>,
+    infra_spec: &HashMap<String, InfraSpec>,
     profile: &str,
     sandbox: &str,
-) -> RuntimeInfraSpec {
+) -> InfraSpec {
     let profile_specific = infra_spec.get(profile);
     let sandbox_specific = infra_spec.get(sandbox);
     let default = infra_spec.get("default").unwrap();
@@ -199,7 +251,7 @@ fn get_infra_spec(
 }
 
 async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
-    let Context { env, sandbox, .. } = ctx;
+    let Context { auth, sandbox, .. } = ctx;
 
     let Runtime {
         layers,
@@ -211,8 +263,8 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     } = runtime;
     let mut r: Runtime = runtime.clone();
 
-    let actual_infra = get_infra_spec(infra_spec, &env.name, sandbox);
-    let RuntimeInfraSpec {
+    let actual_infra = get_infra_spec(infra_spec, &auth.name, sandbox);
+    let InfraSpec {
         memory_size,
         timeout,
         environment,

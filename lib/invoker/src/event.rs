@@ -1,7 +1,7 @@
-use provider::{
-    Env,
-    aws::eventbridge,
-};
+use authorizer::Auth;
+
+use crate::aws::eventbridge;
+
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -17,8 +17,8 @@ struct EventPayload {
     detail: Value,
 }
 
-pub async fn trigger(env: &Env, payload: &str) {
-    let client = eventbridge::make_client(env).await;
+pub async fn trigger(auth: &Auth, payload: &str) {
+    let client = eventbridge::make_client(auth).await;
 
     let input: EventPayload = serde_json::from_str(payload).unwrap();
 

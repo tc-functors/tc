@@ -9,9 +9,23 @@ serde_json = "1.0"
 serde_derive = "1.0"
 colored = "2.0.0"
 log = "0.4"
+anyhow = "1.0.71"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-sdk-apigatewayv2 = { version = "1.66.0", features = ["behavior-version-latest"] }
+aws-sdk-cloudwatchlogs = { version = "1.76.0", features = ["behavior-version-latest"] }
+aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
+aws-sdk-iam = { version = "1.68.0", features = ["behavior-version-latest"] }
+aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
+aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
+aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
+aws-sdk-ecs = { version = "1.75.0", features = ["behavior-version-latest"] }
+aws-sdk-sqs = { version = "1.65.0", features = ["behavior-version-latest"] }
+base64 = "0.21.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 kit = { path = "../kit" }
-provider = { path = "../provider" }
+aws-sdk-scheduler = { version = "1.65.0", features = ["behavior-version-latest"] }
+authorizer = { path = "../authorizer" }
 compiler = { path = "../compiler" }
 builder = { path = "../builder" }
-configurator = { path = "../configurator" }

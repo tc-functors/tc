@@ -1,17 +1,3 @@
-/*
- * Builtin functions are supplied to the interpreter as functions that are
- * defined in Rust. These functions can be called from the lisp environment,
- * and can be used to extend the language with new functionality.
- *
- * All special forms, operators, and standard library functions are implemented
- * as built-in functions. This allows you to create your own standard library
- * of functions, and to override the default behavior of the interpreter.
- *
- * Builtin functions can be defined with the `Builtin::new` constructor, which
- * takes a function pointer and a name for the function. You can also set the
- * `lazy_eval` flag to true, to make the function's return value lazy-evaluated.
- */
-
 use super::expr::Expr;
 use super::env::Env;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};

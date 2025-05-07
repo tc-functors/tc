@@ -199,7 +199,7 @@ pub struct Layer {
     pub stable: i64,
 }
 
-pub async fn save_resolved_layers(layers: Vec<Layer>) {
+pub async fn _save_resolved_layers(layers: Vec<Layer>) {
     write("resolved_layers", &serde_json::to_string(&layers).unwrap()).await;
 }
 

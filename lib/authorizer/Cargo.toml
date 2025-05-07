@@ -1,0 +1,12 @@
+[package]
+name = "authorizer"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-credential-types = "1.1.2"
+aws-sdk-sts = { version = "1.66.0", features = ["behavior-version-latest"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+kit = { path = "../kit" }

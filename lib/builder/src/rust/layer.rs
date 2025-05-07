@@ -1,4 +1,4 @@
-use compiler::spec::LangRuntime;
+use compiler::spec::function::LangRuntime;
 
 pub fn build(
     _dir: &str,

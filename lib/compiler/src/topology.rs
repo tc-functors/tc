@@ -30,9 +30,10 @@ pub use schedule::Schedule;
 
 use crate::spec::{
     TopologyKind, TopologySpec,
+    config::ConfigSpec
 };
+
 use colored::Colorize;
-use configurator::Config;
 use kit as u;
 use kit::*;
 use ptree::{
@@ -72,6 +73,7 @@ pub struct Topology {
     pub tags: HashMap<String, String>,
     pub logs: LogConfig,
     pub flow: Option<Flow>,
+    pub config: ConfigSpec
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -344,7 +346,7 @@ fn make_events(
     namespace: &str,
     spec: &TopologySpec,
     fqn: &str,
-    config: &Config,
+    config: &ConfigSpec,
 ) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
@@ -360,7 +362,7 @@ fn make_events(
     h
 }
 
-fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
+fn make_routes(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {
@@ -376,7 +378,7 @@ fn make_routes(spec: &TopologySpec, config: &Config) -> HashMap<String, Route> {
     }
 }
 
-fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> {
+fn make_queues(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Queue> {
     let mut h: HashMap<String, Queue> = HashMap::new();
     if let Some(queues) = &spec.queues {
         tracing::debug!("Compiling queues");
@@ -387,7 +389,7 @@ fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> 
     h
 }
 
-fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Mutation> {
+fn make_mutations(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Mutation> {
     let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
     if let Some(ref m) = mutations {
@@ -397,7 +399,7 @@ fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Muta
     h
 }
 
-fn make_channels(spec: &TopologySpec, _config: &Config) -> HashMap<String, Channel> {
+fn make_channels(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Channel> {
     match &spec.channels {
         Some(c) => channel::make(&spec.name, c.clone()),
         None => HashMap::new(),
@@ -434,7 +436,8 @@ fn make(
     functions: HashMap<String, Function>,
     nodes: HashMap<String, Topology>,
 ) -> Topology {
-    let config = Config::new(None, "{{env}}");
+
+    let config = ConfigSpec::new(None);
 
     let mut functions = functions;
     let namespace = spec.name.to_owned();
@@ -474,6 +477,7 @@ fn make(
         tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow,
+        config: ConfigSpec::new(None)
     }
 }
 
@@ -518,6 +522,7 @@ fn make_standalone(dir: &str) -> Topology {
         logs: LogConfig::new(),
         tags: HashMap::new(),
         schedules: HashMap::new(),
+        config: ConfigSpec::new(None)
     }
 }
 

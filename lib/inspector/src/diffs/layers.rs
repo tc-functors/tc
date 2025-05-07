@@ -7,11 +7,6 @@ use axum::response::{
     Html,
     IntoResponse,
 };
-use configurator::Config;
-use provider::{
-    Env,
-    aws::layer,
-};
 
 fn build(xs: Vec<String>) -> Vec<Layer> {
     let mut v: Vec<Layer> = vec![];
@@ -44,31 +39,31 @@ pub async fn generate() -> impl IntoResponse {
 }
 
 pub async fn sync() -> impl IntoResponse {
-    let layers = cache::find_layers().await;
+    //let layers = cache::find_layers().await;
 
-    let cfg = Config::new(None, "");
-    let profile = cfg.aws.lambda.layers_profile.unwrap();
-    let env = Env::new(&profile, None, Config::new(None, &profile));
-    let client = layer::make_client(&env).await;
+    // let cfg = Config::new(None, "");
+    // let profile = cfg.aws.lambda.layers_profile.unwrap();
+    // let auth = Auth::new(&profile, None);
+    // let client = lambda::make_client(&auth).await;
 
-    let mut resolve_layers: Vec<Layer> = vec![];
+    // let mut resolve_layers: Vec<Layer> = vec![];
 
-    for layer in layers {
-        let dev = format!("{}-dev", &layer);
-        let dev_version = layer::find_latest_version(&client, &dev).await;
-        let stable_version = layer::find_latest_version(&client, &layer).await;
-        tracing::debug!("dev - {}", &dev_version);
-        let xl = Layer {
-            name: layer,
-            dev: dev_version,
-            stable: stable_version,
-        };
-        resolve_layers.push(xl);
-    }
-    cache::save_resolved_layers(resolve_layers.clone()).await;
+    // for layer in layers {
+    //     let dev = format!("{}-dev", &layer);
+    //     let dev_version = lambda::find_latest_version(&client, &dev).await;
+    //     let stable_version = lambda::find_latest_version(&client, &layer).await;
+    //     tracing::debug!("dev - {}", &dev_version);
+    //     let xl = Layer {
+    //         name: layer,
+    //         dev: dev_version,
+    //         stable: stable_version,
+    //     };
+    //     resolve_layers.push(xl);
+    // }
+    // cache::save_resolved_layers(resolve_layers.clone()).await;
 
     let t = LayersTemplate {
-        items: resolve_layers,
+        items: vec![],
     };
     Html(t.render().unwrap())
 }

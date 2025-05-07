@@ -1,6 +1,5 @@
-use crate::spec::{EventSpec, Entity};
+use crate::spec::{EventSpec, Entity, ConfigSpec};
 use super::template;
-use configurator::Config;
 use kit::*;
 use serde_derive::{
     Deserialize,
@@ -260,7 +259,7 @@ impl Event {
         event_name: &str,
         espec: &EventSpec,
         targets: Vec<Target>,
-        config: &Config,
+        config: &ConfigSpec,
         skip: bool,
     ) -> Event {
         let EventSpec {

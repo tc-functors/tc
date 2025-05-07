@@ -4,11 +4,12 @@ mod event;
 mod function;
 mod route;
 mod topology;
+mod aws;
 
 use compiler::Topology;
 pub use context::Context;
 use kit as u;
-use provider::Env;
+use authorizer::Auth;
 use std::collections::HashMap;
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
@@ -30,10 +31,10 @@ pub async fn read_cached_topology(
     cache::read_topology(&key).await
 }
 
-pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool) -> Topology {
+pub async fn resolve(auth: &Auth, sandbox: &str, topology: &Topology, cache: bool) -> Topology {
     let maybe_topology = if cache {
         match std::env::var("TC_CACHE") {
-            Ok(_) => read_cached_topology(&env.name, &topology.namespace, sandbox).await,
+            Ok(_) => read_cached_topology(&auth.name, &topology.namespace, sandbox).await,
             Err(_) => None,
         }
     } else {
@@ -43,17 +44,17 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool)
     match maybe_topology {
         Some(t) => t,
         None => {
-            let mut root = topology::resolve(topology, env, sandbox).await;
+            let mut root = topology::resolve(topology, auth, sandbox).await;
             let nodes = &topology.nodes;
             let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
             // FIXME: recurse
             for (name, node) in nodes {
-                let node_t = topology::resolve(&node, env, sandbox).await;
+                let node_t = topology::resolve(&node, auth, sandbox).await;
                 resolved_nodes.insert(name.to_string(), node_t);
             }
             root.nodes = resolved_nodes;
             // write it to cache
-            let key = cache::make_key(&root.namespace, &env.name, sandbox);
+            let key = cache::make_key(&root.namespace, &auth.name, sandbox);
             cache::write_topology(&key, &root).await;
             root
         }
@@ -61,29 +62,30 @@ pub async fn resolve(env: &Env, sandbox: &str, topology: &Topology, cache: bool)
 }
 
 pub async fn resolve_component(
-    env: &Env,
+    auth: &Auth,
     sandbox: &str,
     topology: &Topology,
     component: &str,
 ) -> Topology {
-    let mut root = topology::resolve_component(topology, env, sandbox, component).await;
+    let mut root = topology::resolve_component(topology, auth, sandbox, component).await;
     let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
     let nodes = &topology.nodes;
 
     for (name, node) in nodes {
-        let node_t = topology::resolve_component(&node, env, sandbox, component).await;
+        let node_t = topology::resolve_component(&node, auth, sandbox, component).await;
         resolved_nodes.insert(name.to_string(), node_t);
     }
     root.nodes = resolved_nodes;
     root
 }
 
-pub async fn render(env: &Env, sandbox: &str, topology: &Topology) -> Topology {
+pub async fn render(auth: &Auth, sandbox: &str, topology: &Topology) -> Topology {
     let ctx = Context {
-        env: env.clone(),
+        auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
         sandbox: sandbox.to_string(),
         trace: true,
+        config: topology.config.to_owned()
     };
     let v = serde_json::to_string(topology).unwrap();
     let rendered = ctx.render(&v);
@@ -110,12 +112,12 @@ pub fn pprint(t: &Topology, component: Option<String>) -> String {
     }
 }
 
-pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<String> {
+pub async fn functions(dir: &str, auth: &Auth, sandbox: Option<String>) -> Vec<String> {
     let topology = compiler::compile(&dir, true);
     let nodes = &topology.nodes;
 
     let sandbox = maybe_sandbox(sandbox);
-    let t = topology::resolve(&topology, env, &sandbox).await;
+    let t = topology::resolve(&topology, auth, &sandbox).await;
 
     let mut fns: Vec<String> = vec![];
     for (_, f) in t.functions {
@@ -123,7 +125,7 @@ pub async fn functions(dir: &str, env: &Env, sandbox: Option<String>) -> Vec<Str
     }
 
     for (_, node) in nodes {
-        let node_t = topology::resolve(&node, env, &sandbox).await;
+        let node_t = topology::resolve(&node, auth, &sandbox).await;
         for (_, f) in node_t.functions {
             fns.push(f.name)
         }

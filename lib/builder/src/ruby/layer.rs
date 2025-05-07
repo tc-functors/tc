@@ -1,5 +1,5 @@
 use colored::Colorize;
-use compiler::spec::LangRuntime;
+use compiler::spec::function::LangRuntime;
 use kit as u;
 
 fn gen_wrapper(dir: &str) {

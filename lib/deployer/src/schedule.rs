@@ -1,12 +1,11 @@
 use compiler::Schedule;
-use provider::{
-    Env,
-    aws::scheduler,
-};
-use std::collections::HashMap;
 
-pub async fn create_schedule(env: &Env, namespace: &str, schedule: Schedule) {
-    let client = scheduler::make_client(&env).await;
+use authorizer::Auth;
+use std::collections::HashMap;
+use crate::aws;
+
+pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {
+    let client = aws::scheduler::make_client(&auth).await;
     let Schedule {
         name,
         target_arn,
@@ -17,24 +16,24 @@ pub async fn create_schedule(env: &Env, namespace: &str, schedule: Schedule) {
     } = schedule;
 
     if !target_arn.is_empty() {
-        let target = scheduler::make_target(&target_arn, &role_arn, "sfn", &payload);
+        let target = aws::scheduler::make_target(&target_arn, &role_arn, "sfn", &payload);
         let _ =
-            scheduler::create_or_update_schedule(&client, namespace, &name, target, &expression)
+            aws::scheduler::create_or_update_schedule(&client, namespace, &name, target, &expression)
                 .await;
     }
 }
 
-pub async fn create(env: &Env, namespace: &str, schedules: HashMap<String, Schedule>) {
-    let client = scheduler::make_client(&env).await;
-    scheduler::find_or_create_group(&client, namespace).await;
+pub async fn create(auth: &Auth, namespace: &str, schedules: HashMap<String, Schedule>) {
+    let client = aws::scheduler::make_client(&auth).await;
+    aws::scheduler::find_or_create_group(&client, namespace).await;
     for (_, schedule) in schedules {
-        create_schedule(&env, namespace, schedule).await;
+        create_schedule(&auth, namespace, schedule).await;
     }
 }
 
-pub async fn delete(env: &Env, namespace: &str, schedules: HashMap<String, Schedule>) {
-    let client = scheduler::make_client(&env).await;
+pub async fn delete(auth: &Auth, namespace: &str, schedules: HashMap<String, Schedule>) {
+    let client = aws::scheduler::make_client(&auth).await;
     for (_, schedule) in schedules {
-        let _ = scheduler::delete_schedule(&client, namespace, &schedule.name).await;
+        let _ = aws::scheduler::delete_schedule(&client, namespace, &schedule.name).await;
     }
 }

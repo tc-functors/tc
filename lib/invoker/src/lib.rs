@@ -1,11 +1,10 @@
-pub mod event;
-pub mod lambda;
-pub mod local;
-pub mod sfn;
-
+mod aws;
+mod function;
+mod state;
+mod event;
 use compiler::TopologyKind;
 use kit as u;
-use provider::Env;
+use authorizer::Auth;
 
 fn read_payload(dir: &str, s: Option<String>) -> String {
     match s {
@@ -28,7 +27,7 @@ fn read_payload(dir: &str, s: Option<String>) -> String {
 }
 
 pub async fn invoke(
-    env: &Env,
+    auth: &Auth,
     kind: TopologyKind,
     fqn: &str,
     payload: Option<String>,
@@ -39,9 +38,9 @@ pub async fn invoke(
     let payload = read_payload(&dir, payload);
 
     match kind {
-        TopologyKind::Function => lambda::invoke(env, fqn, &payload).await,
-        TopologyKind::StepFunction => sfn::invoke(&env, fqn, &payload, mode, dumb).await,
-        TopologyKind::Evented => event::trigger(env, &payload).await,
+        TopologyKind::Function => function::invoke(auth, fqn, &payload).await,
+        TopologyKind::StepFunction => state::invoke(auth, fqn, &payload, mode, dumb).await,
+        TopologyKind::Evented => event::trigger(auth, &payload).await,
         TopologyKind::Graphql => (),
     }
 }
@@ -49,5 +48,5 @@ pub async fn invoke(
 pub async fn run_local(payload: Option<String>) {
     let dir = u::pwd();
     let payload = read_payload(&dir, payload);
-    local::invoke(&payload).await;
+    function::invoke_local(&payload).await;
 }

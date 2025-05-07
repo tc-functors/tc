@@ -9,10 +9,9 @@ use axum::{
 };
 use compiler::spec::{
     FunctionSpec,
-    RuntimeInfraSpec,
+    function::InfraSpec,
+    ConfigSpec
 };
-use configurator::Config;
-
 #[derive(Template)]
 #[template(path = "specs/index.html")]
 struct PageTemplate {
@@ -42,7 +41,7 @@ pub async fn topology_page() -> impl IntoResponse {
 }
 
 pub async fn infra_page() -> impl IntoResponse {
-    let fspec = doku::to_json::<RuntimeInfraSpec>();
+    let fspec = doku::to_json::<InfraSpec>();
     let temp = PageTemplate {
         context: String::from("specs"),
         entity: String::from("infrastructure"),
@@ -52,7 +51,7 @@ pub async fn infra_page() -> impl IntoResponse {
 }
 
 pub async fn config_page() -> impl IntoResponse {
-    let cspec = doku::to_toml::<Config>();
+    let cspec = doku::to_toml::<ConfigSpec>();
     //let config = Config::new(None, "dev");
     //let cfg = serde_json::to_string(&config).unwrap();
     let temp = PageTemplate {
