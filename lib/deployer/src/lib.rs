@@ -38,6 +38,7 @@ fn prn_components() {
         "schedules",
         "queues",
         "channels",
+        "base-roles"
     ];
     for x in v {
         println!("{x}");
@@ -257,6 +258,8 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
         "queues" => queue::create(&auth, &queues).await,
 
         "channels" => channel::create(&auth, &channels).await,
+
+        "base-roles" => base::create_roles(&auth).await,
 
         "logs" => match flow {
             Some(f) => {
