@@ -13,12 +13,10 @@ fn zip(dir: &str, zipfile: &str) {
     }
 }
 
-pub fn build(dir: &str, name: &str) -> String {
+pub fn build(dir: &str) -> String {
     u::sh("rm -rf node_modules lib/nodejs/node_modules", dir);
     u::sh("npm install --omit=dev", dir);
     u::sh("mv node_modules lib/nodejs", dir);
     zip(dir, "deps.zip");
-    let size = format!("({})", size_of(dir, "deps.zip").green());
-    println!("{} ({}", name, size);
     format!("{}/lambda.zip", dir)
 }

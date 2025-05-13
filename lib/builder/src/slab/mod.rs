@@ -80,10 +80,7 @@ fn copy_from_docker(dir: &str) {
 
 pub fn build(
     dir: &str,
-    _name: &str,
     runtime: &LangRuntime,
-    _deps_pre: Vec<String>,
-    _deps_post: Vec<String>,
 ) -> String {
     if !u::path_exists(dir, "slab.sh") {
         panic!("No slab.sh found")

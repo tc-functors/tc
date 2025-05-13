@@ -1,28 +1,7 @@
 use kit as u;
-use kit::sh;
 
 fn top_level() -> String {
     u::sh("git rev-parse --show-toplevel", &u::pwd())
-}
-
-fn gen_dockerignore(dir: &str) {
-    let f = format!(r#"
-**/node_modules/
-**/dist
-**/logs
-**/target
-**/vendor
-**/build
-.git
-npm-debug.log
-.coverage
-.coverage.*
-.env
-**/venv
-*.zip
-"#);
-    let file = format!("{}/.dockerignore", dir);
-    u::write_str(&file, &f);
 }
 
 fn shared_objects() -> Vec<&'static str> {
@@ -44,7 +23,8 @@ fn shared_objects() -> Vec<&'static str> {
     ]
 }
 
-fn gen_dockerfile(dir: &str) {
+
+pub fn gen_dockerfile(dir: &str) {
     let build_context = &top_level();
     let extra_str = u::vec_to_str(shared_objects());
     let f = format!(
@@ -76,57 +56,4 @@ RUN {extra_str}
     );
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
-}
-
-fn build_with_docker(dir: &str) {
-    let root = &top_level();
-    let cmd_str = match std::env::var("DOCKER_SSH") {
-        Ok(e) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-context shared={root} .",
-            &e,
-            u::basedir(dir)
-        ),
-        Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default  -t {} --build-context shared={root} .",
-            u::basedir(dir)
-        ),
-    };
-    let status = u::runp(&cmd_str, dir);
-    if !status {
-        sh("rm -f Dockerfile wrapper", dir);
-        panic!("Failed to build");
-    }
-}
-
-fn copy_from_docker(dir: &str) {
-    let temp_cont = &format!("tmp-{}", u::basedir(dir));
-    let clean = &format!("docker rm -f {}", &temp_cont);
-
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
-    sh(&clean, dir);
-    sh(&run, dir);
-    let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
-    tracing::debug!("Container id: {}", &id);
-
-    sh(&format!("docker cp {}:/build build", id), dir);
-    sh(&clean, dir);
-    sh("rm -f Dockerfile wrapper", dir);
-}
-
-fn build_docker(dir: &str) {
-    gen_dockerfile(dir);
-    gen_dockerignore(dir);
-    build_with_docker(dir);
-    copy_from_docker(dir);
-    sh("rm -f Dockerfile wrapper .dockerignore", dir);
-    let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
-    sh(&cmd, dir);
-}
-
-pub fn build(dir: &str, _name: &str, given_command: &str) -> String {
-    sh("rm -f lambda.zip deps.zip build", dir);
-    build_docker(dir);
-    sh(given_command, dir);
-    sh("rm -rf build build.json", dir);
-    format!("{}/lambda.zip", dir)
 }

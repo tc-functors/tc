@@ -1,5 +1,4 @@
 use colored::Colorize;
-use compiler::spec::function::LangRuntime;
 use kit as u;
 
 fn gen_wrapper(dir: &str) {
@@ -139,15 +138,9 @@ fn build_with_docker(dir: &str) {
     }
 }
 
-pub fn build(
-    dir: &str,
-    name: &str,
-    _runtime: &LangRuntime,
-    _pre: Vec<String>,
-    _post: Vec<String>,
-) -> String {
+pub fn build(dir: &str, name: &str) -> String {
+
     u::sh("rm -f deps.zip", dir);
-    println!("Building   {}", name.blue());
     gen_wrapper(dir);
     gen_dockerfile(dir);
     build_with_docker(dir);
@@ -158,6 +151,6 @@ pub fn build(
     zip(dir, "deps.zip");
     u::runcmd_quiet("rm -rf vendor && rm -rf bundler", dir);
     let size = format!("({})", size_of(dir, "deps.zip").green());
-    println!("Size: {}", size);
+    println!("Size: {} {}", name, size);
     format!("{}/deps.zip", dir)
 }

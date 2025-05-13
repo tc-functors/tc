@@ -23,16 +23,6 @@ fn shared_objects() -> Vec<&'static str> {
     ]
 }
 
-fn deps_str(deps: Vec<String>) -> String {
-    if deps.len() >= 2 {
-        deps.join(" && ")
-    } else if deps.len() == 1 {
-        deps.first().unwrap().to_string()
-    } else {
-        String::from("echo 1")
-    }
-}
-
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
@@ -52,10 +42,8 @@ fn gen_req_cmd(dir: &str) -> String {
     }
 }
 
-fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: Vec<String>, post: Vec<String>) {
+fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let extra_str = u::vec_to_str(shared_objects());
-    let extra_deps_pre = deps_str(pre);
-    let extra_deps_post = deps_str(post);
 
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
@@ -113,13 +101,9 @@ RUN yum update -yy
 
 RUN yum -y install libXext libSM libXrender
 
-RUN {extra_deps_pre}
-
 RUN {extra_str}
 
 RUN --mount=type=ssh {pip_cmd}
-
-RUN --mount=type=secret,id=aws,target=/root/.aws/credentials {extra_deps_post}
 
 "#
         );
@@ -176,16 +160,10 @@ fn size_of(dir: &str, zipfile: &str) -> String {
     u::file_size_human(size)
 }
 
-pub fn build(
-    dir: &str,
-    name: &str,
-    runtime: &LangRuntime,
-    deps_pre: Vec<String>,
-    deps_post: Vec<String>,
-) -> String {
+pub fn build(dir: &str, name: &str, runtime: &LangRuntime) -> String {
     sh("rm -f deps.zip", dir);
 
-    gen_dockerfile(dir, runtime, deps_pre, deps_post);
+    gen_dockerfile(dir, runtime);
     build_with_docker(dir);
     copy_from_docker(dir);
     sh("rm -f Dockerfile", dir);
