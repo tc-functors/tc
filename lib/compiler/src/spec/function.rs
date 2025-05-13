@@ -125,7 +125,7 @@ impl LangRuntime {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug, Document, PartialEq, Eq)]
 pub enum BuildKind {
     #[serde(alias = "code")]
     Code,

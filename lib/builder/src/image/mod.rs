@@ -40,7 +40,7 @@ fn build_with_docker(dir: &str, name: &str) {
     }
 }
 
-fn render_uri(uri: &str, repo: &str) -> String {
+pub fn render_uri(uri: &str, repo: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
     table.insert("repo", repo);
     u::stencil(uri, table)
@@ -141,5 +141,12 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, artifact, .. } = build;
     aws_ecr::login(auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
+    u::run(&cmd, &dir);
+}
+
+pub async fn sync(auth: &Auth, build: &BuildOutput) {
+    let BuildOutput { dir, artifact, .. } = build;
+    aws_ecr::login(auth, &dir).await;
+    let cmd = format!("AWS_PROFILE={} docker pull {}", &auth.name, artifact);
     u::run(&cmd, &dir);
 }

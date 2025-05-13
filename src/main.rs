@@ -191,15 +191,13 @@ pub struct BuildArgs {
     #[arg(long, action)]
     dirty: bool,
     #[arg(long, action)]
-    merge: bool,
-    #[arg(long, action)]
-    split: bool,
-    #[arg(long, action)]
     task: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
     #[arg(long, action, short = 'p')]
     publish: bool,
+    #[arg(long, action, short = 's', alias = "sync-to-local")]
+    sync: bool,
     #[arg(long, action)]
     lang: Option<String>,
 }
@@ -258,18 +256,6 @@ pub struct CreateArgs {
     recursive: bool,
     #[arg(long, action)]
     no_cache: bool,
-    #[arg(long, action, short = 't')]
-    trace: bool,
-}
-
-#[derive(Debug, Args)]
-pub struct SyncArgs {
-    #[arg(long, short = 'f')]
-    from: String,
-    #[arg(long, short = 't')]
-    to: String,
-    #[arg(long, action)]
-    dry_run: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -466,12 +452,11 @@ async fn build(args: BuildArgs) {
         recursive,
         clean,
         dirty,
-        merge,
-        split,
         trace,
         image,
         publish,
         profile,
+        sync,
         lang,
         ..
     } = args;
@@ -483,14 +468,12 @@ async fn build(args: BuildArgs) {
         clean: clean,
         dirty: dirty,
         recursive: recursive,
-        split: split,
-        merge: merge,
-        image_kind: image,
+        image: image,
+        sync: sync,
         lang: lang,
         publish: publish,
     };
-    let env = tc::init(profile, None).await;
-    tc::build(&env, kind, name, &dir, opts).await;
+    tc::build(profile, kind, name, &dir, opts).await;
 }
 
 async fn test(_args: TestArgs) {
