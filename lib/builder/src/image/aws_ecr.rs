@@ -15,10 +15,3 @@ pub async fn login(auth: &Auth, dir: &str) {
     );
     u::run(&cmd, dir);
 }
-
-pub async fn publish(auth: &Auth, image_name: &str) {
-    let dir = kit::pwd();
-    login(auth, &dir).await;
-    let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, image_name);
-    u::run(&cmd, &dir);
-}

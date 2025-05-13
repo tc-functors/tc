@@ -1232,6 +1232,11 @@ dependencies = [
 name = "builder"
 version = "0.8.49"
 dependencies = [
+ "anyhow",
+ "authorizer",
+ "aws-config",
+ "aws-sdk-lambda",
+ "base64",
  "colored",
  "compiler",
  "glob",
@@ -3702,26 +3707,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "publisher"
-version = "0.8.49"
-dependencies = [
- "anyhow",
- "authorizer",
- "aws-config",
- "aws-sdk-lambda",
- "base64",
- "colored",
- "compiler",
- "kit",
- "log",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
- "tabled",
- "tokio",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4595,7 +4580,6 @@ dependencies = [
  "mockall",
  "openssl",
  "openssl-sys",
- "publisher",
  "releaser",
  "resolver",
  "serde 1.0.217",

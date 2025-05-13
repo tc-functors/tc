@@ -47,6 +47,7 @@ enum Cmd {
     /// Delete a sandboxed topology
     Delete(DeleteArgs),
     /// Freeze a sandbox and make it immutable
+    #[clap(hide = true)]
     Freeze(FreezeArgs),
     /// Emulate Runtime environments
     Emulate(EmulateArgs),
@@ -56,14 +57,16 @@ enum Cmd {
     Invoke(InvokeArgs),
     /// List created entities
     List(ListArgs),
-    /// Publish layers
-    Publish(PublishArgs),
+    /// Promote assets between sandboxes
+    #[clap(hide = true)]
+    Promote(PromoteArgs),
     /// Resolve a topology from functions, events, states description
     Resolve(ResolveArgs),
     /// Route events to functors
     #[clap(hide = true)]
     Route(RouteArgs),
     /// Run unit tests for functions in the topology dir
+    #[clap(hide = true)]
     Test(TestArgs),
     /// Create semver tags scoped by a topology
     #[clap(hide = true)]
@@ -202,29 +205,13 @@ pub struct BuildArgs {
 }
 
 #[derive(Debug, Args)]
-pub struct PublishArgs {
+pub struct PromoteArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'R')]
-    role: Option<String>,
-    #[arg(long, short = 'k')]
-    kind: Option<String>,
     #[arg(long, action)]
     name: Option<String>,
     #[arg(long, action)]
-    list: bool,
-    #[arg(long, action)]
-    promote: bool,
-    #[arg(long, action)]
-    demote: bool,
-    #[arg(long, action)]
-    download: bool,
-    #[arg(long, action)]
     version: Option<String>,
-    #[arg(long, action)]
-    task: Option<String>,
-    #[arg(long, action)]
-    target: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -662,32 +649,19 @@ async fn list(args: ListArgs) {
     tc::list(env, sandbox, component, format).await;
 }
 
-async fn publish(args: PublishArgs) {
-    let PublishArgs {
+async fn promote(args: PromoteArgs) {
+    let PromoteArgs {
         profile,
         name,
-        promote,
-        demote,
         version,
-        download,
         trace,
         ..
     } = args;
 
     init_tracing(trace);
 
-    let opts = tc::PublishOpts {
-        promote: promote,
-        demote: demote,
-        version: version,
-    };
-    let dir = kit::pwd();
     let env = tc::init(profile, None).await;
-    if download {
-        tc::download_layer(env, name).await
-    } else {
-        tc::publish(env, name, &dir, opts).await;
-    }
+    tc::promote(env, name, version).await;
 }
 
 async fn route(args: RouteArgs) {
@@ -862,7 +836,7 @@ async fn run() {
         Cmd::Inspect(args)   => inspect(args).await,
         Cmd::Invoke(args)    => invoke(args).await,
         Cmd::List(args)      => list(args).await,
-        Cmd::Publish(args)   => publish(args).await,
+        Cmd::Promote(args)   => promote(args).await,
         Cmd::Route(args)     => route(args).await,
         Cmd::Tag(args)       => tag(args).await,
         Cmd::Test(args)      => test(args).await,

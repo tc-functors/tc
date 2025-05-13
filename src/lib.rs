@@ -55,9 +55,7 @@ pub async fn build(
         };
         let builds = builder::build_recursive(dirty, kind, image_kind).await;
         if publish {
-            for build in builds {
-                publisher::publish(&auth, build).await;
-            }
+            builder::publish(&auth, builds).await;
         }
     } else if clean {
         builder::clean_lang(dir);
@@ -68,41 +66,14 @@ pub async fn build(
         };
         let builds = builder::build(dir, name, kind, image_kind, lang).await;
         if publish {
-            for build in builds {
-                publisher::publish(&auth, build).await;
-            }
+            builder::publish(&auth, builds).await;
         }
     }
 }
 
-pub struct PublishOpts {
-    pub promote: bool,
-    pub demote: bool,
-    pub version: Option<String>,
-}
-
-pub async fn publish(auth: Auth, name: Option<String>, dir: &str, opts: PublishOpts) {
-    let PublishOpts {
-        promote,
-        demote,
-        version,
-        ..
-    } = opts;
-
-    let lang = &compiler::guess_runtime(&dir);
-    let bname = u::maybe_string(name.clone(), u::basedir(&u::pwd()));
-
-    if promote {
-        publisher::promote(&auth, &bname, &lang.to_str(), version).await;
-    } else if demote {
-        publisher::demote(&auth, name, &lang.to_str()).await;
-    } else {
-        let builds = builder::just_build_out(&dir, &bname, &lang.to_str());
-
-        for build in builds {
-            publisher::publish(&auth, build).await;
-        }
-    }
+pub async fn promote(auth: Auth, name: Option<String>, version: Option<String>) {
+    let dir = &u::pwd();
+    builder::promote(&auth, name, dir, version).await;
 }
 
 pub async fn test() {
@@ -211,10 +182,7 @@ async fn maybe_build(auth: &Auth, dir: &str, name: &str) {
     .await;
     let config = ConfigSpec::new(None);
     let centralized = auth.inherit(config.aws.ecr.profile.clone()).await;
-    for b in builds {
-        tracing::debug!("Publishing {}", &b.artifact);
-        publisher::publish(&centralized, b).await;
-    }
+    builder::publish(&centralized, builds).await;
 }
 
 async fn create_topology(auth: &Auth, topology: &Topology) {
@@ -543,13 +511,6 @@ pub async fn ci_upgrade(version: Option<String>) {
 pub async fn show_config() {
     let config = ConfigSpec::new(None);
     println!("{}", config.render());
-}
-
-pub async fn download_layer(auth: Auth, name: Option<String>) {
-    match name {
-        Some(n) => publisher::download_layer(&auth, &n).await,
-        None => println!("provide layer name"),
-    }
 }
 
 pub async fn init(

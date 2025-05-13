@@ -1,7 +1,8 @@
-mod node;
-mod python;
-mod ruby;
-mod rust;
+mod library;
+mod image;
+mod layer;
+mod inline;
+mod extension;
 
 use colored::Colorize;
 use compiler::{
@@ -9,87 +10,18 @@ use compiler::{
     spec::{
         BuildKind,
         BuildOutput,
-        Lang,
         LangRuntime,
     },
 };
-use glob::glob;
+use authorizer::Auth;
 use kit as u;
 use kit::sh;
 use std::str::FromStr;
 
-fn _should_split(dir: &str) -> bool {
-    let zipfile = "deps.zip";
-    let size;
-    if u::path_exists(dir, zipfile) {
-        size = u::path_size(dir, zipfile);
-    } else {
-        return false;
-    }
-    size >= 70000000.0
-}
-
-#[rustfmt::skip]
-fn _split(
-    dir: &str,
-    name: &str,
-    kind: &BuildKind,
-    runtime: &LangRuntime
-) -> Vec<BuildOutput> {
-
-    let zipfile = format!("{}/deps.zip", dir);
-    let size;
-    if u::file_exists(&zipfile) {
-        size = u::file_size(&zipfile);
-    } else {
-        panic!("No zip found");
-    }
-    if size >= 70000000.0 {
-        let cmd = format!("zipsplit {} -n 50000000", zipfile);
-        u::runcmd_stream(&cmd, dir);
-    }
-    let zips = glob("deps*.zip").expect("Failed to read glob pattern");
-    let mut outs: Vec<BuildOutput> = vec![];
-    for (n, entry) in zips.enumerate() {
-        match entry {
-            Ok(z) => {
-                if &z.to_string_lossy() != &zipfile && n != 0 {
-                    let zname = format!("{}-{}", name, n);
-                    let out = BuildOutput {
-                        name: zname,
-                        dir: dir.to_string(),
-                        runtime: runtime.clone(),
-                        kind: kind.clone(),
-                        artifact: z.to_string_lossy().to_string(),
-                    };
-                    outs.push(out);
-                }
-            }
-            Err(_e) => (),
-        }
-    }
-    outs
-}
-
-#[rustfmt::skip]
-pub fn just_build_out(
-    dir: &str,
-    name: &str,
-    lang_str: &str
-) -> Vec<BuildOutput> {
-
-    let runtime = LangRuntime::from_str(lang_str)
-        .expect("Failed to parse lang str");
-
-    let zipfile = format!("{}/deps.zip", dir);
-    let out = BuildOutput {
-        name: name.to_owned(),
-        dir: dir.to_string(),
-        runtime: runtime,
-        kind: BuildKind::Code,
-        artifact: zipfile,
-    };
-    vec![out]
+pub fn build_code(dir: &str, command: &str) -> String {
+    let c = format!(r"{}", command);
+    sh(&c, dir);
+    format!("{}/lambda.zip", dir)
 }
 
 #[rustfmt::skip]
@@ -116,29 +48,39 @@ pub async fn build(
         let kind_str = &kind.to_str();
 
         let runtime = &f.runtime;
-        let lang = match lang {
+        let langr = match lang {
             Some(n) => &LangRuntime::from_str(&n).unwrap(),
             None => &f.runtime.lang
         };
 
         let name = u::maybe_string(name, &f.name);
 
-        spec.kind = kind;
+        spec.kind = kind.clone();
 
         sh("rm -f *.zip", dir);
 
         let image_kind = u::maybe_string(image, "code");
 
         println!("Building {} ({}/{})",
-                 &name, &lang.to_str(), kind_str.blue());
+                 &name, &langr.to_str(), kind_str.blue());
 
-        let out = match lang.to_lang() {
-            Lang::Ruby    => ruby::build(dir, lang, runtime, &name, spec),
-            Lang::Python  => python::build(dir, lang, runtime,  &name, spec, &image_kind),
-            Lang::Rust    => rust::build(dir, lang, runtime, &name, spec),
-            Lang::Node    => node::build(dir, lang, runtime, &name, spec),
-            Lang::Clojure => todo!(),
-            Lang::Go      => todo!(),
+        let path = match kind {
+            BuildKind::Image => image::build(dir, &name, langr, &spec.images, &image_kind, &runtime.uri),
+            BuildKind::Inline => inline::build(dir, &name, langr, &spec.command),
+            BuildKind::Layer => layer::build(dir, &name, langr),
+            BuildKind::Library => library::build(dir, langr),
+            BuildKind::Slab => library::build(dir, langr),
+            BuildKind::Code => build_code(dir, &spec.command),
+            BuildKind::Extension => extension::build(dir, &name),
+            BuildKind::Runtime => todo!()
+        };
+
+        let out = BuildOutput {
+            name: String::from(name),
+            dir: dir.to_string(),
+            artifact: path,
+            kind: kind,
+            runtime: langr.clone(),
         };
         vec![out]
     } else {
@@ -160,6 +102,8 @@ pub async fn build_recursive(
     image_kind: Option<String>,
 ) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
+
+    //TODO  parallelize
 
     let knd = match kind {
         Some(k) => k,
@@ -210,16 +154,7 @@ pub async fn build_recursive(
 }
 
 pub fn clean_lang(dir: &str) {
-    let lang = compiler::guess_lang(dir);
-
-    match lang {
-        Lang::Ruby => ruby::clean(dir),
-        Lang::Python => python::clean(dir),
-        Lang::Rust => rust::clean(dir),
-        Lang::Node => node::clean(dir),
-        Lang::Clojure => todo!(),
-        Lang::Go => todo!(),
-    }
+     sh("rm -rf lambda.zip dist __pycache__ vendor deps.zip build", dir);
 }
 
 pub fn clean(recursive: bool) {
@@ -230,4 +165,26 @@ pub fn clean(recursive: bool) {
             &b.dir,
         );
     }
+}
+
+pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
+    for build in builds {
+        tracing::debug!("Publishing {}", &build.artifact);
+        match build.kind {
+            BuildKind::Layer | BuildKind::Library => layer::publish(auth, &build).await,
+            BuildKind::Image => image::publish(auth, &build).await,
+            _ => todo!()
+        }
+    }
+}
+
+pub async fn promote(
+    auth: &Auth,
+    name: Option<String>,
+    dir: &str,
+    version: Option<String>
+) {
+    let lang = &compiler::guess_runtime(dir);
+    let layer_name = u::maybe_string(name.clone(), u::basedir(dir));
+    layer::promote(auth, &layer_name, &lang.to_str(), version).await;
 }
