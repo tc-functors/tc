@@ -70,6 +70,7 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, runtime, name, artifact, .. } = build;
     let lang = runtime.to_str();
     if should_split(&dir) {
+        println!("Split layer into two parts {}", &name);
         split(&dir);
         do_publish(auth, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
         do_publish(auth, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
