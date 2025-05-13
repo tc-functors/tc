@@ -21,18 +21,17 @@ use tabled::{
 };
 
 pub struct BuildOpts {
-    pub merge: bool,
     pub recursive: bool,
     pub clean: bool,
-    pub split: bool,
     pub dirty: bool,
     pub publish: bool,
-    pub image_kind: Option<String>,
+    pub sync: bool,
+    pub image: Option<String>,
     pub lang: Option<String>,
 }
 
 pub async fn build(
-    auth: &Auth,
+    profile: Option<String>,
     kind: Option<String>,
     name: Option<String>,
     dir: &str,
@@ -42,7 +41,8 @@ pub async fn build(
         clean,
         dirty,
         recursive,
-        image_kind,
+        image,
+        sync,
         publish,
         lang,
         ..
@@ -53,10 +53,18 @@ pub async fn build(
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None,
         };
-        let builds = builder::build_recursive(dirty, kind, image_kind).await;
-        if publish {
-            builder::publish(&auth, builds).await;
+        if sync {
+            let auth = init(profile, None).await;
+            let builds = builder::just_images(recursive);
+            builder::sync(&auth, builds).await;
+        } else {
+            let builds = builder::build_recursive(dirty, kind, image).await;
+            if publish {
+                let auth = init(profile.clone(), None).await;
+                builder::publish(&auth, builds.clone()).await;
+            }
         }
+
     } else if clean {
         builder::clean_lang(dir);
     } else {
@@ -64,9 +72,16 @@ pub async fn build(
             Some(s) => Some(BuildKind::from_str(&s).unwrap()),
             None => None,
         };
-        let builds = builder::build(dir, name, kind, image_kind, lang).await;
-        if publish {
-            builder::publish(&auth, builds).await;
+        if sync {
+            let auth = init(profile, None).await;
+            let builds = builder::just_images(false);
+            builder::sync(&auth, builds).await;
+        } else {
+            let builds = builder::build(dir, name, kind, image, lang).await;
+            if publish {
+                let auth = init(profile.clone(), None).await;
+                builder::publish(&auth, builds.clone()).await;
+            }
         }
     }
 }

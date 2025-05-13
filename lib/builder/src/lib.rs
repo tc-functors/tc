@@ -10,6 +10,7 @@ use compiler::{
     spec::{
         BuildKind,
         BuildOutput,
+        ConfigSpec,
         LangRuntime,
     },
 };
@@ -17,6 +18,39 @@ use authorizer::Auth;
 use kit as u;
 use kit::sh;
 use std::str::FromStr;
+
+
+
+pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
+    let buildables = compiler::find_buildables(&u::pwd(), recursive);
+    let config = ConfigSpec::new(None);
+    let mut outs: Vec<BuildOutput> = vec![];
+    let repo = match std::env::var("TC_ECR_REPO") {
+        Ok(r) => &r.to_owned(),
+        Err(_) => &config.aws.ecr.repo,
+    };
+
+    for ref b in buildables {
+        if b.kind == BuildKind::Image {
+            let function = compiler::current_function(&b.dir);
+            if let Some(ref f) = function {
+                for (image, _) in &b.images {
+                    if image == "base" {
+                        let out = BuildOutput {
+                            name: f.name.clone(),
+                            dir: b.dir.clone(),
+                            artifact: image::render_uri(&f.runtime.uri, repo),
+                            kind: b.kind.clone(),
+                            runtime: f.runtime.lang.clone(),
+                        };
+                        outs.push(out);
+                    }
+                }
+            }
+        }
+    }
+    outs
+}
 
 pub fn build_code(dir: &str, command: &str) -> String {
     let c = format!(r"{}", command);
@@ -173,6 +207,21 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
         match build.kind {
             BuildKind::Layer | BuildKind::Library => layer::publish(auth, &build).await,
             BuildKind::Image => image::publish(auth, &build).await,
+            _ => todo!()
+        }
+    }
+}
+
+pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
+    println!("Attempting to sync latest code images for the following functions. This may take a while zzz...");
+    for b in &builds {
+        println!("{} - {}", b.name, b.artifact);
+    }
+
+    for build in builds {
+        println!("Syncing {}", &build.artifact);
+        match build.kind {
+            BuildKind::Image => image::sync(auth, &build).await,
             _ => todo!()
         }
     }
