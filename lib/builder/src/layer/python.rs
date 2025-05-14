@@ -17,9 +17,6 @@ fn shared_objects() -> Vec<&'static str> {
         "&& cp /usr/lib64/libunistring.so.0.1.2 /build/lib/libunistring.so.0",
         "&& cp /usr/lib64/libsasl2.so.3.0.0 /build/lib/libsasl2.so.3",
         "&& cp /usr/lib64/libssh2.so.1.0.1 /build/lib/libssh2.so.1",
-        "&& cp --preserve=links /usr/lib64/libSM.so.6* /build/lib/",
-        "&& cp --preserve=links /usr/lib64/libXrender.so.1* /build/lib/",
-        "&& cp --preserve=links /usr/lib64/libXext.so.6* /build/lib/",
     ]
 }
 
@@ -43,85 +40,52 @@ fn gen_req_cmd(dir: &str) -> String {
 }
 
 fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
-    let extra_str = u::vec_to_str(shared_objects());
+    let _extra_str = u::vec_to_str(shared_objects());
 
-    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
+    let _pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
         Err(_) => {
             "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
         }
     };
 
+    let build_context = &u::root();
     let req_cmd = gen_req_cmd(dir);
     let image = find_image(&runtime);
 
-    if runtime == &LangRuntime::Python312 {
-        let f = format!(
+    let f = format!(
             r#"
-FROM {image} as intermediate
+FROM {image} AS intermediate
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 COPY pyproject.toml ./
 
-RUN {req_cmd}
-
-ENV PATH $HOME/.cargo/bin:$PATH
-
-RUN mkdir -p /build/lib
-
-RUN dnf update -yy
-
-
-RUN dnf -y install libXext libSM libXrender
-
-RUN --mount=type=ssh pip install -vvv -r requirements.txt --target=/build/python --implementation cp --only-binary=:all: --upgrade
-
-"#
-        );
-        let dockerfile = format!("{}/Dockerfile", dir);
-        u::write_str(&dockerfile, &f);
-    } else {
-
-        let f = format!(
-            r#"
-FROM {image} as intermediate
-
-RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-COPY pyproject.toml ./
+COPY --from=shared . {build_context}/
 
 RUN {req_cmd}
 
-ENV PATH $HOME/.cargo/bin:$PATH
-
 RUN mkdir -p /build/lib
 
-RUN yum update -yy
-
-RUN yum -y install libXext libSM libXrender
-
-RUN {extra_str}
-
-RUN --mount=type=ssh {pip_cmd}
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. pip install -vvv -r requirements.txt --target=/build/python --implementation cp --only-binary=:all: --upgrade
 
 "#
         );
-        let dockerfile = format!("{}/Dockerfile", dir);
-        u::write_str(&dockerfile, &f);
-    }
+    let dockerfile = format!("{}/Dockerfile", dir);
+    u::write_str(&dockerfile, &f);
 }
 
 
 pub fn build_with_docker(dir: &str) {
+    let root = &u::root();
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
-            "docker build --no-cache  --platform=linux/amd64 --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
+            "docker build --no-cache  --platform=linux/amd64 --ssh default={} --secret id=aws,src=$HOME/.aws/credentials --build-context shared={root} . -t {}",
             &e,
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker build --no-cache  --platform=linux/amd64 --ssh default --secret id=aws,src=$HOME/.aws/credentials . -t {}",
+            "docker build --no-cache  --platform=linux/amd64 --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-context shared={root} . -t {}",
             u::basedir(dir)
         ),
     };

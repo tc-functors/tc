@@ -1,7 +1,6 @@
 mod python;
 mod ruby;
 mod aws_lambda;
-
 use colored::Colorize;
 use kit as u;
 use compiler::{LangRuntime, Lang};
@@ -70,10 +69,18 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, runtime, name, artifact, .. } = build;
     let lang = runtime.to_str();
     if should_split(&dir) {
-        println!("Split layer into two parts {}", &name);
+        println!("Split layer ... {}", &name);
         split(&dir);
-        do_publish(auth, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
-        do_publish(auth, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
+        if u::path_exists(dir, "deps1.zip") {
+            do_publish(auth, &lang, &format!("{}-0-dev", &name), "deps1.zip").await;
+        }
+        if u::path_exists(dir, "deps2.zip") {
+            do_publish(auth, &lang, &format!("{}-1-dev", &name), "deps2.zip").await;
+        }
+        if u::path_exists(dir, "deps3.zip") {
+            do_publish(auth, &lang, &format!("{}-2-dev", &name), "deps3.zip").await;
+        }
+
     } else {
         let layer_name = format!("{}-dev", &name);
         do_publish(auth, &lang, &layer_name, &artifact).await;
