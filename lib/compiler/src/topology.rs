@@ -7,6 +7,7 @@ pub mod function;
 pub mod role;
 pub mod schedule;
 pub mod route;
+pub mod trigger;
 pub mod log;
 mod tag;
 mod version;
@@ -70,6 +71,7 @@ pub struct Topology {
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
     pub channels: HashMap<String, Channel>,
+    pub triggers: HashMap<String, String>,
     pub tags: HashMap<String, String>,
     pub logs: LogConfig,
     pub flow: Option<Flow>,
@@ -406,6 +408,13 @@ fn make_channels(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, C
     }
 }
 
+fn make_triggers(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, String> {
+    match &spec.triggers {
+        Some(c) => trigger::make(&spec.name, c.clone()),
+        None => HashMap::new(),
+    }
+}
+
 fn find_kind(
     given_kind: &Option<TopologyKind>,
     flow: &Option<Flow>,
@@ -474,6 +483,7 @@ fn make(
         queues: make_queues(&spec, &config),
         mutations: mutations,
         channels: make_channels(&spec, &config),
+        triggers: make_triggers(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow,
@@ -521,6 +531,7 @@ fn make_standalone(dir: &str) -> Topology {
         channels: HashMap::new(),
         logs: LogConfig::new(),
         tags: HashMap::new(),
+        triggers: HashMap::new(),
         schedules: HashMap::new(),
         config: ConfigSpec::new(None)
     }

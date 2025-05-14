@@ -218,6 +218,10 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             let topology = compile(&dir, recursive);
             u::pretty_json(&topology.channels)
         }
+        "triggers" => {
+            let topology = compile(&dir, recursive);
+            u::pretty_json(&topology.triggers)
+        }
         "functions" => {
             let topology = compile(&dir, recursive);
             match format {
