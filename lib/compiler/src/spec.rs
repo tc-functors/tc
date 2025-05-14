@@ -271,6 +271,12 @@ pub struct ScheduleSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TriggerSpec {
+    #[serde(default)]
+    pub function: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TopologyKind {
     #[serde(alias = "step-function", alias = "state-machine")]
     StepFunction,
@@ -323,6 +329,7 @@ pub struct TopologySpec {
     pub mutations: Option<MutationSpec>,
     pub queues: Option<HashMap<String, QueueSpec>>,
     pub channels: Option<HashMap<String, ChannelSpec>>,
+    pub triggers: Option<HashMap<String, TriggerSpec>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
 }
@@ -352,6 +359,7 @@ impl TopologySpec {
                 queues: None,
                 mutations: None,
                 channels: None,
+                triggers: None
             }
         }
     }

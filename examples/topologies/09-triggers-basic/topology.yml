@@ -1,0 +1,13 @@
+name: 09-triggers
+
+triggers:
+  PRE_SIGN_UP:
+    function: signup
+  PRE_AUTHENTICATION:
+    function: pre-auth
+  POST_AUTHENTICATION:
+    function: post-auth
+  CREATE_AUTH_CHALLENGE:
+    function: challenger
+  VERIFY_AUTH_CHALLENGE_RESPONSE:
+    function: challenger

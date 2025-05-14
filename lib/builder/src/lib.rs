@@ -207,7 +207,7 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
         match build.kind {
             BuildKind::Layer | BuildKind::Library => layer::publish(auth, &build).await,
             BuildKind::Image => image::publish(auth, &build).await,
-            _ => todo!()
+            _ => ()
         }
     }
 }
