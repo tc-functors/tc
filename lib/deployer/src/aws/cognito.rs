@@ -3,6 +3,7 @@ use aws_sdk_cognitoidentityprovider::{
 };
 use aws_sdk_cognitoidentityprovider::types::LambdaConfigType;
 use aws_sdk_cognitoidentityprovider::types::builders::LambdaConfigTypeBuilder;
+use aws_sdk_cognitoidentityprovider::types::VerifiedAttributeType;
 use kit::*;
 use authorizer::Auth;
 use std::collections::HashMap;
@@ -47,12 +48,17 @@ async fn find_pool(client: &Client, name: &str) -> Option<String> {
 
 async fn update_pool(client: &Client, id: &str, triggers: LambdaConfigType) {
     println!("Updating pool ({})", id);
-    let _ = client
+    let res = client
         .update_user_pool()
         .user_pool_id(s!(id))
         .lambda_config(triggers)
+        .auto_verified_attributes(VerifiedAttributeType::Email)
         .send()
         .await;
+    match res {
+        Ok(_) => (),
+        Err(e) => panic!("{:?}", e)
+    }
 }
 
 pub async fn create_pool(client: &Client, name: &str, triggers: LambdaConfigType) {
