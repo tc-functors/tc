@@ -42,7 +42,9 @@ pub enum Entity {
     #[serde(alias = "state")]
     State,
     #[serde(alias = "mutation")]
-    Mutation
+    Mutation,
+    #[serde(alias = "trigger")]
+    Trigger
 }
 
 impl FromStr for Entity {
@@ -50,13 +52,14 @@ impl FromStr for Entity {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "function" => Ok(Entity::Function),
-            "queue"    => Ok(Entity::Queue),
-            "route"    => Ok(Entity::Route),
-            "channel"  => Ok(Entity::Channel),
-            "event"    => Ok(Entity::Event),
-            "state"    => Ok(Entity::State),
-            "mutation" => Ok(Entity::Mutation),
+            "function" | "functions" => Ok(Entity::Function),
+            "queue"    | "queues" => Ok(Entity::Queue),
+            "route"    | "routes" => Ok(Entity::Route),
+            "channel"  | "channels" => Ok(Entity::Channel),
+            "event"    | "events" => Ok(Entity::Event),
+            "state"    | "states" => Ok(Entity::State),
+            "mutation" | "mutations" => Ok(Entity::Mutation),
+            "trigger" | "triggers" => Ok(Entity::Trigger),
             _          => Ok(Entity::Function),
         }
     }
@@ -72,7 +75,8 @@ impl Entity {
             Entity::Channel  => s!("channel"),
             Entity::Event    => s!("event"),
             Entity::Mutation => s!("mutation"),
-            Entity::State    => s!("state")
+            Entity::State    => s!("state"),
+            Entity::Trigger  => s!("trigger")
         }
     }
 }
