@@ -24,10 +24,17 @@ pub fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image: &str, c
 
 fn build_with_docker(dir: &str, name: &str) {
     let root = &u::root();
-    let cmd_str = format!(
-        "docker buildx build --ssh default --platform linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
+    let cmd_str = match std::env::var("TC_FORCE_BUILD") {
+        Ok(_) => format!(
+        "docker buildx build --platform=linux/amd64 --provenance=false -t {} --build-context shared={root} .",
         name
-    );
+        ),
+        Err(_) => format!(
+        "docker buildx build --ssh=default --platform=linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
+        name
+        )
+    };
+
     match std::env::var("TC_TRACE") {
         Ok(_) => u::runcmd_stream(&cmd_str, dir),
         Err(_) => {
