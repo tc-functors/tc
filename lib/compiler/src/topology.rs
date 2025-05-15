@@ -63,6 +63,7 @@ pub struct Topology {
     pub sandbox: String,
     pub hyphenated_names: bool,
     pub version: String,
+    pub pools: Vec<String>,
     pub nodes: HashMap<String, Topology>,
     pub events: HashMap<String, Event>,
     pub routes: HashMap<String, Route>,
@@ -438,6 +439,13 @@ fn find_kind(
     }
 }
 
+fn make_pools(given: &Option<Vec<String>>, fqn: &str) -> Vec<String> {
+    match given {
+        Some(p) => p.to_owned(),
+        None => vec![fqn.to_string()]
+    }
+}
+
 fn make(
     root_dir: &str,
     dir: &str,
@@ -477,6 +485,7 @@ fn make(
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
         functions: functions,
+        pools: make_pools(&spec.pools, &fqn),
         events: make_events(&namespace, &spec, &fqn, &config),
         schedules: schedule::make_all(&infra_dir),
         routes: make_routes(&spec, &config),
@@ -524,6 +533,7 @@ fn make_standalone(dir: &str) -> Topology {
         events: HashMap::new(),
         routes: HashMap::new(),
         flow: None,
+        pools: vec![],
         functions: functions,
         nodes: HashMap::new(),
         mutations: HashMap::new(),

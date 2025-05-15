@@ -324,6 +324,9 @@ pub struct TopologySpec {
     #[serde(default)]
     pub hyphenated_names: bool,
 
+    #[serde(default)]
+    pub pools: Option<Vec<String>>,
+
     #[serde(default = "default_nodes")]
     pub nodes: Nodes,
     #[serde(default = "default_functions")]
@@ -354,6 +357,7 @@ impl TopologySpec {
                 infra: None,
                 config: None,
                 mode: None,
+                pools: None,
                 functions: Functions { shared: vec![] },
                 routes: None,
                 events: None,

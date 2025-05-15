@@ -96,7 +96,6 @@ async fn create_flow(auth: &Auth, topology: &Topology) {
 
 async fn create_function(auth: &Auth, topology: &Topology) {
     let Topology {
-        fqn,
         functions,
         routes,
         events,
@@ -104,6 +103,7 @@ async fn create_function(auth: &Auth, topology: &Topology) {
         mutations,
         tags,
         triggers,
+        pools,
         ..
     } = topology;
     role::create_or_update(&auth, &topology.roles()).await;
@@ -111,7 +111,7 @@ async fn create_function(auth: &Auth, topology: &Topology) {
     mutation::create(&auth, mutations, tags).await;
     queue::create(&auth, queues).await;
     event::create(&auth, events).await;
-    trigger::create(&auth, fqn, triggers.clone()).await;
+    trigger::create(&auth, pools.clone(), triggers.clone()).await;
     function::update_concurrency(&auth, functions.clone()).await;
 
     let role_name = "tc-base-api-role";
@@ -193,6 +193,7 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
         channels,
         logs,
         triggers,
+        pools,
         ..
     } = topology.clone();
 
@@ -275,7 +276,7 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
             None => (),
         },
 
-        "triggers" => trigger::create(&auth, &fqn, triggers).await,
+        "triggers" => trigger::create(&auth, pools, triggers).await,
 
         "all" => {
             role::create_or_update(&auth, &topology.roles()).await;
@@ -341,7 +342,6 @@ pub async fn delete(auth: &Auth, topology: &Topology) {
     function::delete(&auth, functions).await;
     role::delete(&auth, &topology.roles()).await;
     route::delete(&auth, "", routes).await;
-    trigger::delete(&auth, &fqn).await;
 
     mutation::delete(&auth, &mutations).await;
     queue::delete(&auth, &queues).await;
@@ -350,7 +350,6 @@ pub async fn delete(auth: &Auth, topology: &Topology) {
 pub async fn delete_component(auth: &Auth, topology: Topology, component: Option<String>) {
     let component = maybe_component(component);
     let Topology {
-        fqn,
         namespace,
         functions,
         events,
@@ -360,6 +359,7 @@ pub async fn delete_component(auth: &Auth, topology: Topology, component: Option
         flow,
         sandbox,
         version,
+        pools,
         ..
     } = topology;
 
@@ -378,7 +378,7 @@ pub async fn delete_component(auth: &Auth, topology: Topology, component: Option
         "routes" => route::delete(&auth, "", routes).await,
         "functions" => function::delete(&auth, functions).await,
         "mutations" => mutation::delete(&auth, &mutations).await,
-        "triggers" => trigger::delete(&auth, &fqn).await,
+        "triggers" => trigger::delete(&auth, pools).await,
         "flow" => match flow {
             Some(f) => flow::delete(&auth, f).await,
             None => (),

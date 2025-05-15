@@ -22,6 +22,7 @@ pub fn make_lambda_mappings(h: HashMap<String, String>) -> LambdaConfigType {
         .set_post_authentication(h.get("POST_AUTHENTICATION").cloned())
         .set_create_auth_challenge(h.get("CREATE_AUTH_CHALLENGE").cloned())
         .set_verify_auth_challenge_response(h.get("VERIFY_AUTH_CHALLENGE_RESPONSE").cloned())
+        .set_custom_message(h.get("CUSTOM_MESSAGE").cloned())
         .build()
 }
 
@@ -45,6 +46,7 @@ async fn find_pool(client: &Client, name: &str) -> Option<String> {
 }
 
 async fn update_pool(client: &Client, id: &str, triggers: LambdaConfigType) {
+    println!("Updating pool ({})", id);
     let _ = client
         .update_user_pool()
         .user_pool_id(s!(id))
@@ -54,6 +56,7 @@ async fn update_pool(client: &Client, id: &str, triggers: LambdaConfigType) {
 }
 
 pub async fn create_pool(client: &Client, name: &str, triggers: LambdaConfigType) {
+    println!("Creating pool {}", name);
     let _ = client
         .create_user_pool()
         .pool_name(s!(name))
@@ -70,10 +73,11 @@ pub async fn create_or_update_pool(client: &Client, name: &str, triggers: Lambda
     }
 }
 
-pub async fn delete_pool(client: &Client, name: &str) {
+pub async fn _delete_pool(client: &Client, name: &str) {
     let maybe_pool_id = find_pool(client, name).await;
     match maybe_pool_id {
         Some(id) => {
+            println!("Deleting pool {} ({})", name, &id);
             let _ = client
                 .delete_user_pool()
                 .user_pool_id(s!(id))
