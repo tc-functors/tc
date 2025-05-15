@@ -16,7 +16,7 @@ fn should_split(dir: &str) -> bool {
     } else {
         return false;
     }
-    size >= 70000000.0
+    size >= 60000000.0
 }
 
 fn split(dir: &str) {
@@ -28,7 +28,7 @@ fn split(dir: &str) {
     } else {
         panic!("No zip found");
     }
-    if size >= 70000000.0 {
+    if size >= 60000000.0 {
         let cmd = format!("zipsplit {} -n 50000000", zipfile);
         u::runcmd_stream(&cmd, dir);
     }
