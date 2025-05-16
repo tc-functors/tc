@@ -36,18 +36,21 @@ async fn resolve_vars(
     h
 }
 
+async fn make_layer_auth(ctx: &Context) -> Auth {
+    let Context { auth, config, .. } = ctx;
+    let profile = config.aws.lambda.layers_profile.clone();
+    auth.assume(profile.clone(), config.role_to_assume(profile)).await
+}
 
 async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
-    let Context { auth, config, .. } = ctx;
-    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
-    let client = aws::layer::make_client(&centralized).await;
+    let auth = make_layer_auth(ctx).await;
+    let client = aws::layer::make_client(&auth).await;
     aws::layer::find_version(client, layer_name).await.unwrap()
 }
 
 async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
-    let Context { auth, config, .. } = ctx;
-    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
-    aws::efs::get_ap_arn(&centralized, name).await.unwrap()
+    let auth = make_layer_auth(ctx).await;
+    aws::efs::get_ap_arn(&auth, name).await.unwrap()
 }
 
 

@@ -1,7 +1,6 @@
 mod aws;
 mod gcp;
 
-use std::env::var;
 use aws_config::SdkConfig;
 
 #[derive(Clone, Debug)]
@@ -40,28 +39,12 @@ impl Auth {
         }
     }
 
-    pub async fn inherit(&self, profile: Option<String>) -> Auth {
+    pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>) -> Auth {
         match profile {
-            Some(_) => {
-                let role = match var("TC_CENTRALIZED_ASSUME_ROLE") {
-                    Ok(r) => Some(r),
-                    Err(_) => self.assume_role.clone(),
-                };
-                Auth::new(profile, role).await
-            }
-            None => match std::env::var("AWS_PROFILE") {
-                Ok(p) => {
-                    let role = match var("TC_CENTRALIZED_ASSUME_ROLE") {
-                        Ok(r) => Some(r),
-                        Err(_) => self.assume_role.clone(),
-                    };
-                    Auth::new(Some(p), role).await
-                }
-                Err(_) => self.clone(),
-            },
+            Some(_) => Auth::new(profile, assume_role).await,
+            None => self.clone()
         }
     }
-
 
     pub fn sfn_uri(&self) -> String {
         format!(
