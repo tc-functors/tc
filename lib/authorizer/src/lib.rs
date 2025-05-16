@@ -41,7 +41,10 @@ impl Auth {
 
     pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>) -> Auth {
         match profile {
-            Some(_) => Auth::new(profile, assume_role).await,
+            Some(_) => match std::env::var("TC_ASSUME_ROLE") {
+                Ok(_) => Auth::new(profile, assume_role).await,
+                Err(_) => Auth::new(profile, None).await
+            }
             None => self.clone()
         }
     }
