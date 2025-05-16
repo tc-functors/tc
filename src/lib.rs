@@ -173,7 +173,8 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     );
     releaser::notify(&namespace, &msg).await;
     if config.ci.update_metadata {
-        let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
+        let profile = config.aws.lambda.layers_profile.clone();
+        let centralized = auth.assume(profile.clone(), config.role_to_assume(profile)).await;
         releaser::ci::update_metadata(
             &centralized,
             &sandbox,
@@ -196,7 +197,8 @@ async fn maybe_build(auth: &Auth, dir: &str, name: &str) {
     )
     .await;
     let config = ConfigSpec::new(None);
-    let centralized = auth.inherit(config.aws.ecr.profile.clone()).await;
+    let profile = config.aws.lambda.layers_profile.clone();
+    let centralized = auth.assume(profile.clone(), config.role_to_assume(profile)).await;
     builder::publish(&centralized, builds).await;
 }
 

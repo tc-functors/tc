@@ -387,4 +387,14 @@ impl ConfigSpec {
     pub fn notification_webhook(&self, env: &str) -> Option<String> {
         self.notifier.webhooks.get(env).cloned()
     }
+
+    // FIXME: move from ci
+    pub fn role_to_assume(&self, profile: Option<String>) -> Option<String> {
+        match profile {
+            Some(p) => self.ci.roles.get(&p).cloned(),
+            None => None
+        }
+    }
+
+
 }

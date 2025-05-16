@@ -8,9 +8,14 @@ use std::{
     env,
 };
 
+async fn make_layer_auth(auth: &Auth, config: &ConfigSpec) -> Auth {
+    let profile = config.aws.lambda.layers_profile.clone();
+    auth.assume(profile.clone(), config.role_to_assume(profile)).await
+}
+
 async fn resolve_layers(auth: &Auth, config: &ConfigSpec, layers: Vec<String>) -> Vec<String> {
-    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
-    let client = aws::lambda::make_client(&centralized).await;
+    let auth = make_layer_auth(auth, config).await;
+    let client = aws::lambda::make_client(&auth).await;
     let mut v: Vec<String> = vec![];
      for layer in layers {
          let arn = aws::lambda::find_version(client.clone(), &layer)

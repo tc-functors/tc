@@ -22,6 +22,11 @@ struct Function {
     tc_version: String,
 }
 
+async fn make_layer_auth(config: &ConfigSpec) -> Auth {
+    let profile = config.aws.lambda.layers_profile.clone();
+    Auth::new(profile.clone(), config.role_to_assume(profile)).await
+}
+
 async fn find(auth: &Auth, fns: Vec<String>) -> Vec<Function> {
     let client = lambda::make_client(auth).await;
     let mut rows: Vec<Function> = vec![];
@@ -75,7 +80,7 @@ fn parse_arn(arn: &str) -> (String, String) {
 
 pub async fn list_layers(auth: &Auth, fns: Vec<String>) {
     let config = ConfigSpec::new(None);
-    let centralized = auth.inherit(config.aws.lambda.layers_profile.to_owned()).await;
+    let centralized = make_layer_auth(&config).await;
     let mut rows: Vec<Record> = vec![];
     let client = lambda::make_client(&centralized).await;
     let cc = lambda::make_client(&auth).await;
