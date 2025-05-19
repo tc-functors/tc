@@ -1,22 +1,23 @@
-use colored::Colorize;
 use kit as u;
 
-fn size_of(dir: &str, zipfile: &str) -> String {
-    let size = u::path_size(dir, zipfile);
-    u::file_size_human(size)
-}
 
-fn zip(dir: &str, zipfile: &str) {
-    if u::path_exists(dir, "build") {
-        let cmd = format!("cd build && zip -q -9 -r ../{} . && cd -", zipfile);
-        u::runcmd_quiet(&cmd, dir);
-    }
-}
+pub fn gen_dockerfile(dir: &str) {
+    let install_cmd = "npm install";
+    let image = "public.ecr.aws/sam/build-nodejs20.x:latest";
 
-pub fn build(dir: &str) -> String {
-    u::sh("rm -rf node_modules lib/nodejs/node_modules", dir);
-    u::sh("npm install --omit=dev", dir);
-    u::sh("mv node_modules lib/nodejs", dir);
-    zip(dir, "deps.zip");
-    format!("{}/lambda.zip", dir)
+    let f = format!(
+        r#"
+FROM {image} AS intermediate
+WORKDIR /build
+
+RUN rm -rf /build/node_modules && mkdir -p /build
+RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+COPY package.json /build/
+
+RUN {install_cmd}
+
+"#
+    );
+    let dockerfile = format!("{}/Dockerfile", dir);
+    u::write_str(&dockerfile, &f);
 }
