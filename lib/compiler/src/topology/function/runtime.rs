@@ -299,7 +299,13 @@ fn make_env_vars(
                 hmap.insert(s!("DEPS_PATH"), deps_path);
                 hmap.insert(s!("BASE_DEPS_PATH"), base_deps_path);
             }
-        }
+        },
+        Lang::Node => match build_kind {
+            BuildKind::Inline => {
+                hmap.insert(s!("NODE_PATH"), s!("/var/task/node_modules"));
+            },
+            _ => (),
+        },
         _ => (),
     }
 

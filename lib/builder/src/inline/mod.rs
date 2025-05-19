@@ -1,6 +1,7 @@
 mod python;
 mod ruby;
 mod rust;
+mod node;
 
 use kit as u;
 use kit::LogUpdate;
@@ -14,6 +15,7 @@ fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
         Lang::Python => python::gen_dockerfile(dir, langr),
         Lang::Ruby => ruby::gen_dockerfile(dir),
         Lang::Rust => rust::gen_dockerfile(dir),
+        Lang::Node => node::gen_dockerfile(dir),
         _ => todo!()
     }
 }
@@ -86,6 +88,30 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
     sh("rm -f Dockerfile wrapper", dir);
 }
 
+fn zip(dir: &str, langr: &LangRuntime) {
+    match langr.to_lang() {
+        Lang::Python => {
+            let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
+            sh(&cmd, &format!("{}/build/python", dir));
+
+        },
+        Lang::Ruby => {
+            let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
+            sh(&cmd, dir);
+        },
+        Lang::Node => {
+            let cmd = "cd build && zip -q -9 -r ../lambda.zip . && cd -";
+            sh(&cmd, dir);
+        },
+        Lang::Rust => {
+            let command = "zip -q -r lambda.zip bootstrap";
+            sh(command, dir);
+        },
+        _ => todo!()
+    }
+}
+
+
 pub fn build(
     dir: &str,
     name: &str,
@@ -105,12 +131,13 @@ pub fn build(
     build_with_docker(dir);
 
     let _ = log.render(&format!("Building {name} - Copying from container"));
+
     copy_from_docker(dir, langr);
     sh("rm -f Dockerfile wrapper .dockerignore", dir);
 
     let _ = log.render(&format!("Building {name} - Copying dependencies"));
-    let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
-    sh(&cmd, &format!("{}/build/python", dir));
+    zip(dir, langr);
+
     sh("rm -rf build build.json", dir);
     sh(given_command, dir);
     format!("{}/lambda.zip", dir)

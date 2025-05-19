@@ -1,0 +1,8 @@
+{
+  "name": "tc",
+  "version": "0.0.1",
+  "devDependencies": {
+    "moment": "2.30.1"
+  },
+  "type": "module"
+}
