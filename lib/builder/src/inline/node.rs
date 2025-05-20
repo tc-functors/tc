@@ -2,7 +2,7 @@ use kit as u;
 
 
 pub fn gen_dockerfile(dir: &str) {
-    let install_cmd = "NODE_ENV=production yarn install --production";
+    let install_cmd = "NODE_ENV=production yarn install --no-lockfile --production";
     let image = "node:22-alpine3.19";
 
     let token = match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
