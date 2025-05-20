@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.8.60 "
+version = "0.8.60"
 
 [dependencies]
 serde = "1.0"
