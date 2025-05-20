@@ -43,21 +43,31 @@ npm-debug.log
     u::write_str(&file, &f);
 }
 
+fn get_token() -> String {
+    match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
+        Ok(t) => t,
+        Err(_) => String::from("")
+    }
+}
+
 fn build_with_docker(dir: &str) {
     let root = &u::root();
+    let token = get_token();
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             &e,
+            &token,
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default  -t {} --build-context shared={root} .",
-            u::basedir(dir)
+            "docker buildx build --platform=linux/amd64 --ssh default  -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+            u::basedir(dir),
+            &token
         ),
     };
     let status = u::runp(&cmd_str, dir);
-    if !status {
+     if !status {
         sh("rm -f Dockerfile wrapper", dir);
         panic!("Failed to build");
     }
@@ -82,8 +92,6 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
         }
     }
 
-
-
     sh(&clean, dir);
     sh("rm -f Dockerfile wrapper", dir);
 }
@@ -100,7 +108,7 @@ fn zip(dir: &str, langr: &LangRuntime) {
             sh(&cmd, dir);
         },
         Lang::Node => {
-            let cmd = "cd build && zip -q -9 -r ../lambda.zip . && cd -";
+            let cmd = "cd build && zip -q -9 -r ../lambda.zip node_modules && cd -";
             sh(&cmd, dir);
         },
         Lang::Rust => {
@@ -115,7 +123,7 @@ fn zip(dir: &str, langr: &LangRuntime) {
 pub fn build(
     dir: &str,
     name: &str,
-    langr: &LangRuntime,
+      langr: &LangRuntime,
     given_command: &str
 ) -> String {
 
