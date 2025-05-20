@@ -166,6 +166,43 @@ impl Api {
         }
     }
 
+    pub async fn update_route(
+        &self,
+        api_id: &str,
+        route_id: &str,
+        target: &str,
+        authorizer: Option<String>,
+    ) -> String {
+        match authorizer {
+            Some(auth) => {
+                let res = self
+                    .client
+                    .update_route()
+                    .api_id(s!(api_id))
+                    .route_id(route_id)
+                    .target(target)
+                    .authorization_type(AuthorizationType::Custom)
+                    .authorizer_id(auth)
+                    .send()
+                    .await
+                    .unwrap();
+                res.route_id.unwrap()
+            }
+            _ => {
+                let res = self
+                    .client
+                    .update_route()
+                    .api_id(s!(api_id))
+                    .route_id(route_id)
+                    .target(target)
+                    .send()
+                    .await
+                    .unwrap();
+                res.route_id.unwrap()
+            }
+        }
+    }
+
     pub async fn find_or_create_route(
         &self,
         api_id: &str,
@@ -177,14 +214,17 @@ impl Api {
         let maybe_route = self.find_route(api_id, &route_key).await;
 
         match maybe_route {
-            Some(_) => {
-                tracing::debug!("Found route key {}", &route_key);
+            Some(route_id) => {
+                println!("Updating route {} ({})", &route_key, &route_id);
+                self
+                    .update_route(api_id, &route_id, &target, authorizer_id)
+                    .await;
             }
             None => {
+                println!("Creating route key {}", &route_key);
                 self
                     .create_route(api_id, &route_key, &target, authorizer_id)
                     .await;
-                tracing::debug!("Created route key {}", &route_key);
             }
         }
     }
