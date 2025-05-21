@@ -67,7 +67,7 @@ impl Github {
 
     fn url(&self, path: &str) -> String {
         format!(
-            "https://api.github.com/repos/informed-labs/{}{}",
+            "https://api.github.com/repos/tc-functors/{}{}",
             self.repo, path
         )
     }

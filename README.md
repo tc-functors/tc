@@ -2,7 +2,7 @@
 
 A graph-based, stateless, serverless application & infrastructure composer.
 
-[![Build](https://github.com/informed-labs/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/informed-labs/tc/actions/workflows/ci.yml)
+[![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
 
 
 `tc` defines, creates and manages the lifecycle of serveless entities such as functions, mutations, events, routes, states, queues and channels. tc compiles a tree of entities defined in the filesystem as a topology. This namespaced, sandboxed, versioned and isomorphic topology is called a `Cloud Functor`.
@@ -116,7 +116,7 @@ The output of the compiler, the resolver and the sandbox's metadata as seen abov
 
 ## Resources
 
-Documentation: [https://informed-labs.github.io/tc/](https://informed-labs.github.io/tc/)
+Documentation: [https://tc-functors.github.io/tc/](https://tc-functors.github.io/tc/)
 
 Video Presentation on tc from AWS Community Day - Bay Area Sept 2024
 [Higher Order Abstraction & Tooling for Step Functions & Serverless](https://youtu.be/1gqDGulszzQ?si=dtHcUkQF2nhZ_td8)
@@ -176,17 +176,17 @@ This project follows the Contributor Covenant Code of Conduct. We expect all con
 
 ### Getting Started
 
-1. Try out tc by following the [installation guide](https://informed-labs.github.io/tc/installation.html)
+1. Try out tc by following the [installation guide](https://tc-functors.github.io/tc/installation.html)
 2. Build from source:
-   - Follow the [build instructions](https://informed-labs.github.io/tc/installation.html#building-your-own) to compile tc locally
+   - Follow the [build instructions](https://tc-functors.github.io/tc/installation.html#building-your-own) to compile tc locally
    - This is a great way to understand the codebase and start contributing
 
 ### Ways to Contribute
 
-- **Report Issues**: Found a bug or have a suggestion? Open an issue on our [tc GitHub Issues](https://github.com/informed-labs/tc/issues) page
-- **Submit Pull Requests**: Have a fix or enhancement? PRs are welcome! [tc Github PRs](https://github.com/informed-labs/tc/pulls)
+- **Report Issues**: Found a bug or have a suggestion? Open an issue on our [tc GitHub Issues](https://github.com/tc-functors/tc/issues) page
+- **Submit Pull Requests**: Have a fix or enhancement? PRs are welcome! [tc Github PRs](https://github.com/tc-functors/tc/pulls)
 - **Improve Documentation**: Help make our docs better by fixing errors or adding examples
-- **Join Discussions**: Participate in [GitHub Discussions](https://github.com/orgs/informed-labs/discussions) to share ideas, ask questions, and help others
+- **Join Discussions**: Participate in [GitHub Discussions](https://github.com/orgs/tc-functors/discussions) to share ideas, ask questions, and help others
 
 ### Development Process
 
