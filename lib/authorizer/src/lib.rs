@@ -56,6 +56,14 @@ impl Auth {
         )
     }
 
+    pub fn lambda_uri(&self, name: &str) -> String {
+        format!("arn:aws:apigateway:{}:lambda:path/2015-03-31/functions/arn:aws:lambda:{}:{}:function:{}/invocations",
+                &self.region,
+                &self.region,
+                &self.account,
+                name)
+    }
+
     pub fn sfn_arn(&self, name: &str) -> String {
         format!(
             "arn:aws:states:{}:{}:stateMachine:{}",
