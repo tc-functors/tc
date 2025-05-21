@@ -6,6 +6,6 @@ functions:
     - foo:
         uri: https://github.com/foo/foo
     - bar:
-        uri: git@github.com:informed-labs/bar.git
+        uri: git@github.com:tc-functors/bar.git
     - baz:
         uri: file:///home/baz/baz
