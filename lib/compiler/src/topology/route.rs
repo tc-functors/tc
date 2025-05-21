@@ -104,7 +104,7 @@ impl Route {
 
         let stage = match &rspec.stage {
             Some(s) => s.clone(),
-            None => s!("test")
+            None => s!("$default")
         };
 
         Route {
