@@ -79,7 +79,11 @@ pub async fn create_function(
     match f.runtime.package_type.as_ref() {
         "zip" => {
             let lambda = make_lambda(&auth, f.clone()).await;
-            lambda.clone().create_or_update().await
+            let id = lambda.clone().create_or_update().await;
+            if f.runtime.snapstart {
+                lambda.publish_version().await;
+            }
+            id
         }
         _ => {
             let lambda = make_lambda(&auth, f.clone()).await;

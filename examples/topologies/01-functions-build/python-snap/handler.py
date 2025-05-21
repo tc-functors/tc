@@ -1,9 +1,9 @@
-from importer import LambdaImporter
+
+INIT = False
+
+if not INIT:
+  print("Initializing")
 
 def handler(event, context):
-  imp = LambdaImporter(bucket_name=BUCKET)
-  a = imp.import_package("torch_zip", "libtorch.zip")
-  print(a)
-  b = imp.import_package("torch", "torch.whl")
-  print(b)
+  INIT = True
   return {'data': 123}

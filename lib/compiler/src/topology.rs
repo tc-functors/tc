@@ -439,10 +439,10 @@ fn find_kind(
     }
 }
 
-fn make_pools(given: &Option<Vec<String>>, fqn: &str) -> Vec<String> {
+fn make_pools(given: &Option<Vec<String>>, _fqn: &str) -> Vec<String> {
     match given {
         Some(p) => p.to_owned(),
-        None => vec![fqn.to_string()]
+        None => vec![]
     }
 }
 
