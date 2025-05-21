@@ -7,6 +7,7 @@ mod extension;
 use colored::Colorize;
 use compiler::{
     Layer,
+    Lang,
     spec::{
         BuildKind,
         BuildOutput,
@@ -52,10 +53,15 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     outs
 }
 
-pub fn build_code(dir: &str, command: &str) -> String {
+pub fn build_code(dir: &str, name: &str, langr: &LangRuntime, command: &str) -> String {
     let c = format!(r"{}", command);
-    sh(&c, dir);
-    format!("{}/lambda.zip", dir)
+    match langr.to_lang() {
+        Lang::Rust => inline::build(dir, name, langr, command),
+        _ => {
+            sh(&c, dir);
+            format!("{}/lambda.zip", dir)
+        }
+    }
 }
 
 #[rustfmt::skip]
@@ -104,7 +110,7 @@ pub async fn build(
             BuildKind::Layer => layer::build(dir, &name, langr),
             BuildKind::Library => library::build(dir, langr),
             BuildKind::Slab => library::build(dir, langr),
-            BuildKind::Code => build_code(dir, &spec.command),
+            BuildKind::Code => build_code(dir, &name, langr, &spec.command),
             BuildKind::Extension => extension::build(dir, &name),
             BuildKind::Runtime => todo!()
         };

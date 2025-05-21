@@ -123,7 +123,7 @@ fn zip(dir: &str, langr: &LangRuntime) {
 pub fn build(
     dir: &str,
     name: &str,
-      langr: &LangRuntime,
+    langr: &LangRuntime,
     given_command: &str
 ) -> String {
 
