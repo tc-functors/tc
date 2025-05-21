@@ -11,6 +11,10 @@ use std::{
     str::FromStr,
 };
 
+use std::path::PathBuf;
+use yaml_include::Transformer;
+
+
 pub mod function;
 pub mod config;
 pub mod infra;
@@ -341,13 +345,32 @@ pub struct TopologySpec {
     pub flow: Option<Value>,
 }
 
+
 impl TopologySpec {
+
     pub fn new(topology_spec_file: &str) -> TopologySpec {
+
         if u::file_exists(topology_spec_file) {
             tracing::debug!("Loading topology {}", topology_spec_file);
-            let data: String = u::slurp(topology_spec_file);
-            let spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
-            spec
+            let path = PathBuf::from(topology_spec_file);
+
+            match std::env::var("TC_SPEC_SIMPLE") {
+                Ok(_) => {
+                    let data: String = u::slurp(topology_spec_file);
+                    let spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
+                    spec
+                },
+                Err(_) => {
+                    let tn = Transformer::new(path, false);
+                    let v = match tn {
+                        Ok(transformer) => transformer.parse(),
+                        Err(e) => panic!("{:?}", e)
+                    };
+                    let spec: TopologySpec = serde_yaml::from_value(v).unwrap();
+                    spec
+                }
+            }
+
         } else {
             TopologySpec {
                 name: s!("tc"),
