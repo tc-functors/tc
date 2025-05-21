@@ -5,10 +5,9 @@
     "lang": "python3.12",
     "package_type": "zip",
     "snapstart": true,
-    "handler": "handler.handler",
-    "layers": ["snaptest"]
+    "handler": "handler.handler"
   },
-  
+
   "test": {
     "fixture": "python run-fixture.py",
     "command": "poetry test"

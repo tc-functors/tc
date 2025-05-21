@@ -301,6 +301,7 @@ impl Function {
             .set_vpc_config(f.vpc_config)
             .architectures(f.architecture)
             .set_file_system_configs(f.filesystem_config)
+            .publish(true)
             .send()
             .await?;
 
@@ -565,6 +566,18 @@ impl Function {
             .await
             .unwrap();
     }
+
+    pub async fn publish_version(self) {
+        self.clone().wait(&self.name).await;
+        let res = self
+            .client
+            .publish_version()
+            .function_name(s!(self.name))
+            .send()
+            .await;
+        println!("Published version {} ({})", &self.name, res.unwrap().version.unwrap());
+    }
+
 }
 
 pub async fn add_permission(
@@ -716,5 +729,6 @@ pub async fn update_runtime_management_config(client: &Client, name: &str, versi
         Err(_) => panic!("{:?}", res),
     }
 }
+
 
 pub type LambdaClient = Client;
