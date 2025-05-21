@@ -1,10 +1,12 @@
 use authorizer::Auth;
+use colored::Colorize;
 use aws_sdk_apigatewayv2::{
     Client,
     Error,
     types::{
         AuthorizationType,
         ProtocolType,
+        AuthorizerType
     },
 };
 use kit::*;
@@ -89,13 +91,12 @@ impl Api {
         let api_id = self.find().await;
         match api_id {
             Some(id) => {
-                tracing::debug!("Found API {} id: {}", &self.name, &id);
+                println!("Found API {} ({})", &self.name.green(), &id);
                 id
             }
             _ => {
-                let id = self.clone().create().await;
-                tracing::debug!("Created API {} id: {}", &self.name, &id);
-                id
+                println!("Creating API {}", &self.name.blue());
+                self.clone().create().await
             }
         }
     }
@@ -215,13 +216,13 @@ impl Api {
 
         match maybe_route {
             Some(route_id) => {
-                println!("Updating route {} ({})", &route_key, &route_id);
+                println!("Updating route {} ({})", &route_key.green(), &route_id);
                 self
                     .update_route(api_id, &route_id, &target, authorizer_id)
                     .await;
             }
             None => {
-                println!("Creating route key {}", &route_key);
+                println!("Creating route {}", &route_key.blue());
                 self
                     .create_route(api_id, &route_key, &target, authorizer_id)
                     .await;
@@ -281,14 +282,37 @@ impl Api {
         }
     }
 
-    pub async fn _create_authorizer(&self) {
-        todo!()
+    pub async fn create_authorizer(&self, api_id: &str, name: &str, uri: &str) -> String {
+        println!("Creating authorizer: {}", name.blue());
+        let res = self
+            .client
+            .create_authorizer()
+            .name(s!(name))
+            .api_id(s!(api_id))
+            .authorizer_type(AuthorizerType::Request)
+            .authorizer_uri(s!(uri))
+            .authorizer_payload_format_version(s!("2.0"))
+            .identity_source(s!("$request.header.Authorization"))
+            .send()
+            .await;
+        res.unwrap().authorizer_id.unwrap()
+    }
+
+    pub async fn find_or_create_authorizer(&self, api_id: &str, name: &str, uri: &str) -> String {
+        let maybe_authorizer_id = self.find_authorizer(api_id).await;
+        match maybe_authorizer_id {
+            Some(id) => {
+                println!("Found authorizer {}", name.green());
+                id
+            }
+            None => self.create_authorizer(api_id, name, uri).await
+        }
     }
 
     pub async fn create_stage(&self, api_id: &str) {
         let stage = self.clone().stage;
         let stage_variables = self.stage_variables.to_owned();
-        println!("Creating gateway stage {}", &stage);
+        println!("Creating stage {}", &stage.green());
         let _ = self
             .client
             .create_stage()
@@ -308,7 +332,7 @@ impl Api {
 
     ) -> String {
 
-        println!("Creating integration {}", kind);
+        println!("Creating integration {}", kind.blue());
         match kind {
             "state" => sfn::find_or_create(
                 &self.client,
@@ -335,7 +359,7 @@ impl Api {
         kind: &str,
         target_arn: &str
     ) {
-        println!("Deleting integration {}", kind);
+        println!("Deleting integration {}", kind.red());
         match kind {
             "state" => sfn::delete(
                 &self.client,

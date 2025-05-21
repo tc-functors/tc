@@ -39,6 +39,15 @@ async fn add_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
     ).await;
 }
 
+async fn create_authorizer(api_id: &str, api: &Api, uri: &str) -> Option<String> {
+    if api.authorizer.is_empty() {
+        None
+    } else {
+        let authorizer_id = api.find_or_create_authorizer(&api_id, &api.authorizer, uri).await;
+        Some(authorizer_id)
+    }
+}
+
 async fn create_api(
     auth: &Auth,
     api: &Api,
@@ -47,6 +56,8 @@ async fn create_api(
 ) {
 
     let api_id = api.find_or_create().await;
+    let auth_uri = auth.lambda_uri(&api.authorizer);
+    let authorizer_id = create_authorizer(&api_id, api, &auth_uri).await;
 
     add_permission(auth, target_arn, &api_id).await;
 
@@ -56,7 +67,6 @@ async fn create_api(
         target_arn,
     ).await;
 
-    let authorizer_id = api.find_authorizer(&api_id).await;
     api.find_or_create_route(&api_id, &integration_id, authorizer_id).await;
     api.create_stage(&api_id).await;
     api.create_deployment(&api_id, &api.stage).await;
