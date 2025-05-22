@@ -39,11 +39,22 @@ async fn add_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
     ).await;
 }
 
-async fn create_authorizer(api_id: &str, api: &Api, uri: &str) -> Option<String> {
+async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
+    let client = lambda::make_client(auth).await;
+    let source_arn = auth.authorizer_arn(api_id);
+    let principal = "apigateway.amazonaws.com";
+    let _ = lambda::add_permission(
+        client, lambda_arn, principal, &source_arn, api_id
+    ).await;
+}
+
+async fn create_authorizer(auth: &Auth, api_id: &str, api: &Api, uri: &str) -> Option<String> {
+    let lambda_arn = auth.lambda_arn(&api.authorizer);
     if api.authorizer.is_empty() {
         None
     } else {
-        let authorizer_id = api.find_or_create_authorizer(&api_id, &api.authorizer, uri).await;
+        add_auth_permission(auth, &lambda_arn, &api_id).await;
+        let authorizer_id = api.create_or_update_authorizer(&api_id, &api.authorizer, uri).await;
         Some(authorizer_id)
     }
 }
@@ -57,7 +68,7 @@ async fn create_api(
 
     let api_id = api.find_or_create().await;
     let auth_uri = auth.lambda_uri(&api.authorizer);
-    let authorizer_id = create_authorizer(&api_id, api, &auth_uri).await;
+    let authorizer_id = create_authorizer(auth, &api_id, api, &auth_uri).await;
 
     add_permission(auth, target_arn, &api_id).await;
 
