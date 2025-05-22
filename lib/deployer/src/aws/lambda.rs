@@ -574,7 +574,10 @@ impl Function {
             .function_name(s!(self.name))
             .send()
             .await;
-        res.unwrap().name
+        match res {
+            Ok(r) => r.name,
+            Err(_) => None
+        }
     }
 
     async fn update_alias(&self, version: &str) {
