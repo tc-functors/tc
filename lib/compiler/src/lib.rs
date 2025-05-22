@@ -4,7 +4,7 @@ pub mod formatter;
 pub mod spec;
 pub mod topology;
 
-mod lisp;
+mod parser;
 
 pub use formatter::TopologyCount;
 use kit as u;
@@ -60,7 +60,7 @@ pub fn compile(dir: &str, recursive: bool) -> Topology {
         let f = format!("{}/topology.lisp", dir);
         let data = u::slurp(&f);
         let program = format!("{{ {data} }}");
-        lisp::load(program);
+        parser::lisp::load(program);
         Topology::new(dir, recursive, false)
     } else {
         Topology::new(dir, recursive, false)

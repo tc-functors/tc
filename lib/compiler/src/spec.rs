@@ -12,12 +12,14 @@ use std::{
 };
 
 use std::path::PathBuf;
-use yaml_include::Transformer;
-
 
 pub mod function;
 pub mod config;
 pub mod infra;
+
+use crate::parser;
+
+use parser::yaml::Transformer;
 
 pub use function::{
     FunctionSpec, BuildOutput, BuildKind,

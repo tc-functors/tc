@@ -25,4 +25,4 @@ chksum = "0.4.0"
 kit = { path = "../kit" }
 daggy = { version = "0.8.1", features = ["serde-1"] }
 doku = "0.21.1"
-yaml-include = "0.7.0"
+anyhow = "1.0.71"
