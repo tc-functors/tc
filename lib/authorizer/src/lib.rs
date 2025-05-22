@@ -164,6 +164,16 @@ impl Auth {
         )
     }
 
+
+    pub fn authorizer_arn(&self, api_id: &str) -> String {
+        format!(
+            "arn:aws:execute-api:{}:{}:{}/*/*",
+            &self.region,
+            &self.account,
+            api_id
+        )
+    }
+
     pub fn graphql_arn(&self, id: &str) -> String {
         format!(
             "arn:aws:appsync:{}:{}:endpoints/graphql-api/{}",
