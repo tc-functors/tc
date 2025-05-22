@@ -152,7 +152,7 @@ pub async fn self_upgrade(repo: &str, tag: Option<String>) {
         "aarch64-macos" => "tc-aarch64-macos",
         _ => panic!("unknown os {}", arch_os),
     };
-    println!("Fetching release from https://github.com/{}", repo);
+    println!("Fetching release from https://github.com/tc-functors/{}", repo);
     match tag {
         Some(t) => gh.download_asset_by_tag(name, "/tmp/tc", &t).await,
         None => gh.download_asset(name, "/tmp/tc").await,
