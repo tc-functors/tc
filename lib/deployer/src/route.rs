@@ -39,9 +39,9 @@ async fn add_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
     ).await;
 }
 
-async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
+async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str, auth_name: &str) {
     let client = lambda::make_client(auth).await;
-    let source_arn = auth.authorizer_arn(api_id);
+    let source_arn = auth.authorizer_arn(api_id, auth_name);
     let principal = "apigateway.amazonaws.com";
     let _ = lambda::add_permission(
         client, lambda_arn, principal, &source_arn, api_id
@@ -53,7 +53,7 @@ async fn create_authorizer(auth: &Auth, api_id: &str, api: &Api, uri: &str) -> O
     if api.authorizer.is_empty() {
         None
     } else {
-        add_auth_permission(auth, &lambda_arn, &api_id).await;
+        add_auth_permission(auth, &lambda_arn, &api_id, &api.authorizer).await;
         let authorizer_id = api.create_or_update_authorizer(&api_id, &api.authorizer, uri).await;
         Some(authorizer_id)
     }
@@ -114,7 +114,12 @@ async fn delete_route(auth: &Auth, route: &Route, role: &str) {
                 _ => (),
             }
             api.delete_integration(&id, &route.entity.to_str(), &route.target_arn).await;
-            //api.delete(&id).await
+            api.delete_authorizer(&id, &api.authorizer).await;
+            match std::env::var("TC_DELETE_ROOT") {
+                Ok(_) => api.delete(&id).await,
+                Err(_) => ()
+            }
+
         }
         _ => (),
     }

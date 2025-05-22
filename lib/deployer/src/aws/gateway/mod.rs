@@ -51,7 +51,7 @@ impl Api {
         r.api_id.unwrap()
     }
 
-    pub async fn _delete(self, api_id: &str) {
+    pub async fn delete(self, api_id: &str) {
         self.client
             .delete_api()
             .api_id(api_id)
@@ -325,6 +325,25 @@ impl Api {
             None => self.create_authorizer(api_id, name, uri).await
         }
     }
+
+    pub async fn delete_authorizer(&self, api_id: &str, name: &str) {
+        let maybe_authorizer_id = self.find_authorizer(api_id).await;
+        match maybe_authorizer_id {
+            Some(id) => {
+                println!("Deleting authorizer {} ({})", name.green(), &id);
+                let _ = self
+                    .client
+                    .delete_authorizer()
+                    .authorizer_id(s!(id))
+                    .api_id(s!(api_id))
+                    .authorizer_id(s!(id))
+                    .send()
+                    .await;
+            }
+            None => ()
+        }
+    }
+
 
     pub async fn create_stage(&self, api_id: &str) {
         let stage = self.clone().stage;

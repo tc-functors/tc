@@ -165,12 +165,12 @@ impl Auth {
     }
 
 
-    pub fn authorizer_arn(&self, api_id: &str) -> String {
+    pub fn authorizer_arn(&self, api_id: &str, _name: &str) -> String {
         format!(
             "arn:aws:execute-api:{}:{}:{}/*/*",
             &self.region,
             &self.account,
-            api_id
+            api_id,
         )
     }
 
