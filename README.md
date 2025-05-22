@@ -27,10 +27,9 @@ routes:
     event: MyEvent
 
 events:
-  consumes:
-    MyEvent:
-      function: foo
-      channel: room1
+  MyEvent:
+    function: foo
+    channel: room1
 
 channels:
   room1:
