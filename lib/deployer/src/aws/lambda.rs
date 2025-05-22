@@ -389,7 +389,6 @@ impl Function {
                     .update_function_code()
                     .function_name(arn)
                     .image_uri(f.uri)
-                    .publish(true)
                     .send()
                     .await?
             }
@@ -398,7 +397,6 @@ impl Function {
                     .update_function_code()
                     .function_name(arn)
                     .zip_file(f.blob)
-                    .publish(true)
                     .send()
                     .await?
             }
@@ -567,7 +565,42 @@ impl Function {
             .unwrap();
     }
 
-    pub async fn publish_version(self) {
+
+    async fn find_alias(&self) -> Option<String> {
+        let res = self
+            .client
+            .get_alias()
+            .name(self.name.to_string())
+            .function_name(s!(self.name))
+            .send()
+            .await;
+        res.unwrap().name
+    }
+
+    async fn update_alias(&self, version: &str) {
+        let _ = self
+            .client
+            .update_alias()
+            .name(self.name.to_string())
+            .function_name(s!(self.name))
+            .function_version(version)
+            .send()
+            .await;
+
+    }
+
+    async fn create_alias(&self, version: &str) {
+        let _ = self
+            .client
+            .create_alias()
+            .name(self.name.to_string())
+            .function_name(s!(self.name))
+            .function_version(version)
+            .send()
+            .await;
+    }
+
+    pub async fn publish_version(&self) {
         self.clone().wait(&self.name).await;
         let res = self
             .client
@@ -575,7 +608,15 @@ impl Function {
             .function_name(s!(self.name))
             .send()
             .await;
-        println!("Published version {} ({})", &self.name, res.unwrap().version.unwrap());
+        let version = res.unwrap().version;
+
+        let maybe_alias = self.find_alias().await;
+        match maybe_alias {
+            Some(_) => self.update_alias(&version.clone().unwrap()).await,
+            None => self.create_alias(&version.clone().unwrap()).await
+        }
+
+        println!("Published alias {} with version ({})", &self.name, &version.unwrap());
     }
 
 }
