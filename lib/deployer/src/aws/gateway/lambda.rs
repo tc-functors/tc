@@ -43,8 +43,6 @@ async fn create(
     role_arn: &str
 ) -> Result<String, Error> {
 
-    println!("role_arn {}", role_arn);
-
     let res = client
         .create_integration()
         .api_id(s!(api_id))
