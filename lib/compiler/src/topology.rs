@@ -217,7 +217,15 @@ fn function_dirs(dir: &str) -> Vec<String> {
 
 fn ignore_function(dir: &str, root_dir: &str) -> bool {
     let ignore_file = u::path_of(root_dir, ".tcignore");
-    if dir.contains(".circleci") || dir.contains(".git") || dir.contains(".vendor") {
+    if dir.contains(".circleci")
+        || dir.contains(".git")
+        || dir.contains(".vendor")
+        || dir.contains(".venv")
+        || dir.contains(".env")
+        || dir.contains("node_modules")
+        || dir.ends_with("states")
+        || dir.ends_with("topology")
+    {
         return true;
     }
     if u::file_exists(&ignore_file) {
