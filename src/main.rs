@@ -196,6 +196,8 @@ pub struct BuildArgs {
     trace: bool,
     #[arg(long, action, short = 'p')]
     publish: bool,
+    #[arg(long, action)]
+    shell: bool,
     #[arg(long, action, short = 's', alias = "sync-to-local")]
     sync: bool,
     #[arg(long, action)]
@@ -458,6 +460,7 @@ async fn build(args: BuildArgs) {
         profile,
         sync,
         lang,
+        shell,
         ..
     } = args;
 
@@ -472,6 +475,7 @@ async fn build(args: BuildArgs) {
         sync: sync,
         lang: lang,
         publish: publish,
+        shell: shell
     };
     tc::build(profile, kind, name, &dir, opts).await;
 }

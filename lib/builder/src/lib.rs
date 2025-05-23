@@ -243,3 +243,19 @@ pub async fn promote(
     let layer_name = u::maybe_string(name.clone(), u::basedir(dir));
     layer::promote(auth, &layer_name, &lang.to_str(), version).await;
 }
+
+
+pub fn shell(dir: &str) {
+    let function = compiler::current_function(dir);
+
+    if let Some(f) = function {
+
+        let spec = f.build;
+        match spec.kind {
+            BuildKind::Image => image::shell(dir, &f.runtime.uri),
+            _ => todo!()
+        }
+    } else {
+        println!("No function found");
+    }
+}

@@ -157,3 +157,15 @@ pub async fn sync(auth: &Auth, build: &BuildOutput) {
     let cmd = format!("AWS_PROFILE={} docker pull {}", &auth.name, artifact);
     u::run(&cmd, &dir);
 }
+
+pub fn shell(dir: &str, uri: &str) {
+    let config = ConfigSpec::new(None);
+    let repo = match std::env::var("TC_ECR_REPO") {
+        Ok(r) => &r.to_owned(),
+        Err(_) => &config.aws.ecr.repo,
+    };
+    let uri = render_uri(uri, repo);
+    let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
+    println!("{}", cmd);
+    u::runcmd_stream(&cmd, dir);
+}
