@@ -7,7 +7,7 @@ pub mod function;
 pub mod role;
 pub mod schedule;
 pub mod route;
-pub mod trigger;
+pub mod pool;
 pub mod log;
 mod tag;
 mod version;
@@ -28,6 +28,7 @@ pub use log::LogConfig;
 pub use queue::Queue;
 pub use route::Route;
 pub use schedule::Schedule;
+pub use pool::Pool;
 
 use crate::spec::{
     TopologyKind, TopologySpec,
@@ -63,7 +64,6 @@ pub struct Topology {
     pub sandbox: String,
     pub hyphenated_names: bool,
     pub version: String,
-    pub pools: Vec<String>,
     pub nodes: HashMap<String, Topology>,
     pub events: HashMap<String, Event>,
     pub routes: HashMap<String, Route>,
@@ -72,7 +72,7 @@ pub struct Topology {
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
     pub channels: HashMap<String, Channel>,
-    pub triggers: HashMap<String, String>,
+    pub pools: HashMap<String, Pool>,
     pub tags: HashMap<String, String>,
     pub logs: LogConfig,
     pub flow: Option<Flow>,
@@ -417,9 +417,13 @@ fn make_channels(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, C
     }
 }
 
-fn make_triggers(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, String> {
+fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool> {
+    let pools = match &spec.pools {
+        Some(p) => p.clone(),
+        None => vec![]
+    };
     match &spec.triggers {
-        Some(c) => trigger::make(&spec.name, c.clone()),
+        Some(c) => pool::make(pools, c.clone(), config),
         None => HashMap::new(),
     }
 }
@@ -444,13 +448,6 @@ fn find_kind(
                 }
             }
         },
-    }
-}
-
-fn make_pools(given: &Option<Vec<String>>, _fqn: &str) -> Vec<String> {
-    match given {
-        Some(p) => p.to_owned(),
-        None => vec![]
     }
 }
 
@@ -493,14 +490,13 @@ fn make(
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
         functions: functions,
-        pools: make_pools(&spec.pools, &fqn),
         events: make_events(&namespace, &spec, &fqn, &config),
         schedules: schedule::make_all(&infra_dir),
         routes: make_routes(&spec, &fqn, &config),
         queues: make_queues(&spec, &config),
         mutations: mutations,
         channels: make_channels(&spec, &config),
-        triggers: make_triggers(&spec, &config),
+        pools: make_pools(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow,
@@ -541,7 +537,7 @@ fn make_standalone(dir: &str) -> Topology {
         events: HashMap::new(),
         routes: HashMap::new(),
         flow: None,
-        pools: vec![],
+        pools: HashMap::new(),
         functions: functions,
         nodes: HashMap::new(),
         mutations: HashMap::new(),
@@ -549,7 +545,6 @@ fn make_standalone(dir: &str) -> Topology {
         channels: HashMap::new(),
         logs: LogConfig::new(),
         tags: HashMap::new(),
-        triggers: HashMap::new(),
         schedules: HashMap::new(),
         config: ConfigSpec::new(None)
     }

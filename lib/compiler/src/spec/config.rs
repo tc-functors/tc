@@ -56,6 +56,10 @@ fn default_sfn_role() -> String {
     s!("tc-sfn-base-role")
 }
 
+fn default_email() -> String {
+    s!("test@test.com")
+}
+
 fn default_timeout() -> u8 {
     180
 }
@@ -292,6 +296,15 @@ pub struct ApiGateway {
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
+pub struct Cognito {
+    #[derivative(Default(value = "default_email()"))]
+    #[serde(default = "default_email")]
+    pub from_email_address: String,
+}
+
+
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derivative(Debug, Default)]
 pub struct Aws {
     #[serde(default = "Eventbridge::default")]
     pub eventbridge: Eventbridge,
@@ -313,6 +326,9 @@ pub struct Aws {
 
     #[serde(default = "ApiGateway::default")]
     pub api_gateway: ApiGateway,
+
+    #[serde(default = "Cognito::default")]
+    pub cognito: Cognito,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]

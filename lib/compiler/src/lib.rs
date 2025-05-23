@@ -218,9 +218,9 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
             let topology = compile(&dir, recursive);
             u::pretty_json(&topology.channels)
         }
-        "triggers" => {
+        "pools" => {
             let topology = compile(&dir, recursive);
-            u::pretty_json(&topology.triggers)
+            u::pretty_json(&topology.pools)
         }
         "functions" => {
             let topology = compile(&dir, recursive);

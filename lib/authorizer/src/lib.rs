@@ -164,6 +164,14 @@ impl Auth {
         )
     }
 
+    pub fn pool_arn(&self, pool_id: &str) -> String {
+        format!(
+            "arn:aws:cognito-idp:{}:{}:userpool/{}",
+            &self.region,
+            &self.account,
+            pool_id
+        )
+    }
 
     pub fn authorizer_arn(&self, api_id: &str, _name: &str) -> String {
         format!(
