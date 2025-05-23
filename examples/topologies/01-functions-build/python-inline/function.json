@@ -9,6 +9,7 @@
   },
   "build": {
     "kind": "Inline",
+    "force": true,
     "command": "zip -9 -q lambda.zip *.py"
   },
   "test": {

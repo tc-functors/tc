@@ -21,11 +21,15 @@ fn gen_req_cmd(dir: &str) -> String {
     }
 }
 
-pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
-    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
-        Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
-        Err(_) => {
-            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
+pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, force: bool) {
+    let pip_cmd = if force {
+        "pip install -r requirements.txt --target=/build/python"
+    } else {
+        match std::env::var("TC_FORCE_BUILD") {
+            Ok(_) => "pip install -r requirements.txt --target=/build/python",
+            Err(_) => {
+                "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all:"
+            }
         }
     };
 

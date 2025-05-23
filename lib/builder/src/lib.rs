@@ -14,6 +14,7 @@ use compiler::{
         ConfigSpec,
         LangRuntime,
     },
+    Build
 };
 use authorizer::Auth;
 use kit as u;
@@ -53,11 +54,11 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     outs
 }
 
-pub fn build_code(dir: &str, name: &str, langr: &LangRuntime, command: &str) -> String {
-    let c = format!(r"{}", command);
+pub fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) -> String {
     match langr.to_lang() {
-        Lang::Rust => inline::build(dir, name, langr, command),
+        Lang::Rust => inline::build(dir, name, langr, spec),
         _ => {
+            let c = format!(r"{}", &spec.command);
             sh(&c, dir);
             format!("{}/lambda.zip", dir)
         }
@@ -70,8 +71,7 @@ pub async fn build(
     name: Option<String>,
     kind: Option<BuildKind>,
     image: Option<String>,
-    lang: Option<String>
-
+    lang: Option<String>,
 ) -> Vec<BuildOutput> {
 
     let function = compiler::current_function(dir);
@@ -97,22 +97,20 @@ pub async fn build(
 
         spec.kind = kind.clone();
 
-        sh("rm -f *.zip", dir);
-
         let image_kind = u::maybe_string(image, "code");
 
         println!("Building {} ({}/{})",
                  &name, &langr.to_str(), kind_str.blue());
 
         let path = match kind {
-            BuildKind::Image => image::build(dir, &name, langr, &spec.images, &image_kind, &runtime.uri),
-            BuildKind::Inline => inline::build(dir, &name, langr, &spec.command),
-            BuildKind::Layer => layer::build(dir, &name, langr),
-            BuildKind::Library => library::build(dir, langr),
-            BuildKind::Slab => library::build(dir, langr),
-            BuildKind::Code => build_code(dir, &name, langr, &spec.command),
+            BuildKind::Image     => image::build(dir, &name, langr, &spec.images, &image_kind, &runtime.uri),
+            BuildKind::Inline    => inline::build(dir, &name, langr, &spec),
+            BuildKind::Layer     => layer::build(dir, &name, langr),
+            BuildKind::Library   => library::build(dir, langr),
+            BuildKind::Slab      => library::build(dir, langr),
+            BuildKind::Code      => build_code(dir, &name, langr, &spec),
             BuildKind::Extension => extension::build(dir, &name),
-            BuildKind::Runtime => todo!()
+            BuildKind::Runtime   => todo!()
         };
 
         let out = BuildOutput {
@@ -194,16 +192,23 @@ pub async fn build_recursive(
 }
 
 pub fn clean_lang(dir: &str) {
-     sh("rm -rf lambda.zip dist __pycache__ vendor deps.zip build", dir);
+     sh("rm -rf dist __pycache__ vendor deps.zip build", dir);
 }
 
 pub fn clean(recursive: bool) {
     let buildables = compiler::find_buildables(&u::pwd(), recursive);
     for b in buildables {
-        kit::sh(
-            "rm -f lambda.zip && rm -rf build && rm -f bootstrap",
-            &b.dir,
-        );
+        if b.kind == BuildKind::Inline {
+            kit::sh(
+                "rm -rf build && rm -f bootstrap",
+                &b.dir,
+            );
+        } else {
+            kit::sh(
+                "rm -rf lambda.zip deps.zip build && rm -f bootstrap",
+                &b.dir,
+            );
+        }
     }
 }
 

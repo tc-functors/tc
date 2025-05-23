@@ -8,11 +8,11 @@ use kit::LogUpdate;
 use std::io::stdout;
 use kit::sh;
 
-use compiler::{LangRuntime, Lang};
+use compiler::{LangRuntime, Lang, Build};
 
-fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
+fn gen_dockerfile(dir: &str, langr: &LangRuntime, force: bool) {
     match langr.to_lang() {
-        Lang::Python => python::gen_dockerfile(dir, langr),
+        Lang::Python => python::gen_dockerfile(dir, langr, force),
         Lang::Ruby => ruby::gen_dockerfile(dir),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
@@ -120,33 +120,49 @@ fn zip(dir: &str, langr: &LangRuntime) {
 }
 
 
+fn should_build_deps() -> bool {
+    match std::env::var("TC_SKIP_BUILD") {
+        Ok(_) => false,
+        Err(_) => true
+    }
+}
+
 pub fn build(
     dir: &str,
     name: &str,
     langr: &LangRuntime,
-    given_command: &str
+    bs: &Build
 ) -> String {
 
-    sh("rm -rf lambda.zip deps.zip build", &dir);
+    let Build { command, force, .. } = bs;
 
-    let mut log = LogUpdate::new(stdout()).unwrap();
+    if should_build_deps() {
 
-    let _ = log.render(&format!("Building {name} - Generating Dockerfile"));
-    gen_dockerfile(dir, langr);
-    gen_dockerignore(dir);
+        sh("rm -rf lambda.zip deps.zip build", &dir);
 
-    let _ = log.render(&format!("Building {name} - Building with Docker"));
-    build_with_docker(dir);
+        let mut log = LogUpdate::new(stdout()).unwrap();
 
-    let _ = log.render(&format!("Building {name} - Copying from container"));
+        let _ = log.render(&format!("Building {name} - Generating Dockerfile"));
+        gen_dockerfile(dir, langr, *force);
+        gen_dockerignore(dir);
 
-    copy_from_docker(dir, langr);
-    sh("rm -f Dockerfile wrapper .dockerignore", dir);
+        let _ = log.render(&format!("Building {name} - Building with Docker"));
+        build_with_docker(dir);
 
-    let _ = log.render(&format!("Building {name} - Copying dependencies"));
-    zip(dir, langr);
+        let _ = log.render(&format!("Building {name} - Copying from container"));
 
-    sh("rm -rf build build.json", dir);
-    sh(given_command, dir);
+        copy_from_docker(dir, langr);
+        sh("rm -f Dockerfile wrapper .dockerignore", dir);
+
+        let _ = log.render(&format!("Building {name} - Copying dependencies"));
+        zip(dir, langr);
+
+        sh("rm -rf build build.json", dir);
+        sh(command, dir);
+
+    } else {
+        println!("Skipping Inline build");
+        sh(command, dir);
+    }
     format!("{}/lambda.zip", dir)
 }
