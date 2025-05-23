@@ -2,7 +2,6 @@ use super::{
     Context,
     event,
     function,
-    route,
 };
 use compiler::Topology;
 use authorizer::Auth;
@@ -21,8 +20,6 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topolog
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
-    tracing::debug!("Resolving routes");
-    partial_t.routes = route::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving events");
     partial_t.events = event::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving functions");
@@ -54,9 +51,6 @@ pub async fn resolve_component(
     match component {
         "events" => {
             partial_t.events = event::resolve(&ctx, &partial_t).await;
-        }
-        "routes" => {
-            partial_t.routes = route::resolve(&ctx, &partial_t).await;
         }
         "functions" => {
             partial_t.functions = function::resolve(&ctx, &partial_t).await;
