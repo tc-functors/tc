@@ -231,9 +231,15 @@ pub struct BuildSpec {
     #[serde(default)]
     pub post: Vec<String>,
 
+    #[serde(default)]
+    pub package_manager: Option<String>,
+
+    #[serde(default)]
+    pub force: Option<bool>,
+
     /// Command to use when build kind is Code
     #[serde(default = "default_command")]
-    #[doku(example = "zip -9 lambda.zip *.py")]
+    #[doku(example = "zip -9 lambda.zip .")]
     pub command: String,
 
     #[serde(default)]

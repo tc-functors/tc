@@ -1,6 +1,5 @@
 use kit as u;
 
-
 pub fn gen_dockerfile(dir: &str) {
     let install_cmd = "yarn install --no-lockfile --production";
     let image = "node:22-alpine3.19";
