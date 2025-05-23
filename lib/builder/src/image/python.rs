@@ -91,6 +91,9 @@ FROM {base_image}
 
 RUN {commands}
 
+ENV PATH=$PATH:/model/bin
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/model/lib
+
 COPY . /var/task
 
 CMD [ "handler.handler" ]
