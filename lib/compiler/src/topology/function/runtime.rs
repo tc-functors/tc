@@ -283,7 +283,7 @@ fn make_env_vars(
             if let Some(assets) = maybe_assets {
                 let base_deps_path = as_str(assets.base_deps_path, "/var/python");
                 let deps_path = as_str(assets.deps_path, "/var/python");
-                let model_path = as_str(assets.model_path, "/var/python");
+                let model_path = as_str(assets.model_path, "/model");
 
                 hmap.insert(
                     s!("PYTHONPATH"),
@@ -292,8 +292,15 @@ fn make_env_vars(
                         &base_deps_path, &deps_path, &model_path
                     ),
                 );
+                hmap.insert(
+                    s!("PATH"),
+                    format!(
+                        "/opt/python:/var/runtime:/model/bin:{}/python:{}/python:{}",
+                        &base_deps_path, &deps_path, &model_path
+                    ),
+                );
                 hmap.insert(s!("LD_LIBRARY_PATH"),
-                            format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib", &deps_path));
+                            format!("/var/lang/lib:/lib64:/usr/lib64:/var/runtime:/var/runtime/lib:/var/task:/var/task/lib:/opt/lib:{}/lib:/model/lib", &deps_path));
 
                 hmap.insert(s!("MODEL_PATH"), model_path);
                 hmap.insert(s!("DEPS_PATH"), deps_path);
