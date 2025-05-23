@@ -4,6 +4,9 @@ use aws_sdk_cognitoidentityprovider::{
 use aws_sdk_cognitoidentityprovider::types::LambdaConfigType;
 use aws_sdk_cognitoidentityprovider::types::builders::LambdaConfigTypeBuilder;
 use aws_sdk_cognitoidentityprovider::types::VerifiedAttributeType;
+use aws_sdk_cognitoidentityprovider::types::EmailConfigurationType;
+use aws_sdk_cognitoidentityprovider::types::EmailSendingAccountType;
+use aws_sdk_cognitoidentityprovider::types::builders::EmailConfigurationTypeBuilder;
 use kit::*;
 use authorizer::Auth;
 use std::collections::HashMap;
@@ -27,6 +30,15 @@ pub fn make_lambda_mappings(h: HashMap<String, String>) -> LambdaConfigType {
         .build()
 }
 
+pub fn make_email_config(from: &str, source_arn: &str) -> EmailConfigurationType {
+    let it = EmailConfigurationTypeBuilder::default();
+    it
+        .email_sending_account(EmailSendingAccountType::Developer)
+        .from(String::from(from))
+        .source_arn(String::from(source_arn))
+        .build()
+}
+
 async fn list_pools(client: &Client) -> HashMap<String, String> {
     let res = client
         .list_user_pools()
@@ -46,36 +58,40 @@ async fn find_pool(client: &Client, name: &str) -> Option<String> {
     pools.get(name).cloned()
 }
 
-async fn update_pool(client: &Client, id: &str, triggers: LambdaConfigType) {
+async fn update_pool(client: &Client, id: &str, triggers: LambdaConfigType, email_config: EmailConfigurationType) -> String {
     println!("Updating pool ({})", id);
     let res = client
         .update_user_pool()
         .user_pool_id(s!(id))
         .lambda_config(triggers)
         .auto_verified_attributes(VerifiedAttributeType::Email)
+        .email_configuration(email_config)
         .send()
         .await;
     match res {
-        Ok(_) => (),
+        Ok(_) => id.to_string(),
         Err(e) => panic!("{:?}", e)
     }
 }
 
-pub async fn create_pool(client: &Client, name: &str, triggers: LambdaConfigType) {
+pub async fn create_pool(client: &Client, name: &str, triggers: LambdaConfigType, email_config: EmailConfigurationType) -> String {
     println!("Creating pool {}", name);
-    let _ = client
+    let res = client
         .create_user_pool()
         .pool_name(s!(name))
         .lambda_config(triggers)
+        .auto_verified_attributes(VerifiedAttributeType::Email)
+        .email_configuration(email_config)
         .send()
         .await;
+    res.unwrap().user_pool.unwrap().id.expect("Not found")
 }
 
-pub async fn create_or_update_pool(client: &Client, name: &str, triggers: LambdaConfigType) {
+pub async fn create_or_update_pool(client: &Client, name: &str, triggers: LambdaConfigType, email_config: EmailConfigurationType) -> String {
     let maybe_pool_id = find_pool(client, name).await;
     match maybe_pool_id {
-        Some(id) => update_pool(client, &id, triggers).await,
-        None => create_pool(client, name, triggers).await
+        Some(id) => update_pool(client, &id, triggers, email_config).await,
+        None => create_pool(client, name, triggers, email_config).await
     }
 }
 

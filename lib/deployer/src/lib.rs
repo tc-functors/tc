@@ -8,7 +8,7 @@ pub mod role;
 pub mod route;
 pub mod schedule;
 pub mod base;
-pub mod trigger;
+pub mod pool;
 mod aws;
 
 use colored::Colorize;
@@ -40,7 +40,7 @@ fn prn_components() {
         "queues",
         "channels",
         "base-roles",
-        "triggers"
+        "pools"
     ];
     for x in v {
         println!("{x}");
@@ -102,7 +102,6 @@ async fn create_function(auth: &Auth, topology: &Topology) {
         queues,
         mutations,
         tags,
-        triggers,
         pools,
         ..
     } = topology;
@@ -111,7 +110,7 @@ async fn create_function(auth: &Auth, topology: &Topology) {
     mutation::create(&auth, mutations, tags).await;
     queue::create(&auth, queues).await;
     event::create(&auth, events).await;
-    trigger::create(&auth, pools.clone(), triggers.clone()).await;
+    pool::create(&auth, pools.clone()).await;
     function::update_concurrency(&auth, functions.clone()).await;
 
     let role_name = "tc-base-api-role";
@@ -192,7 +191,6 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
         tags,
         channels,
         logs,
-        triggers,
         pools,
         ..
     } = topology.clone();
@@ -276,7 +274,7 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
             None => (),
         },
 
-        "triggers" => trigger::create(&auth, pools, triggers).await,
+        "pools" => pool::create(&auth, pools).await,
 
         "all" => {
             role::create_or_update(&auth, &topology.roles()).await;
@@ -378,7 +376,7 @@ pub async fn delete_component(auth: &Auth, topology: Topology, component: Option
         "routes" => route::delete(&auth, "", routes).await,
         "functions" => function::delete(&auth, functions).await,
         "mutations" => mutation::delete(&auth, &mutations).await,
-        "triggers" => trigger::delete(&auth, pools).await,
+        "pools" => pool::delete(&auth, pools).await,
         "flow" => match flow {
             Some(f) => flow::delete(&auth, f).await,
             None => (),
