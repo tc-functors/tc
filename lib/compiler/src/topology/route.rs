@@ -58,15 +58,16 @@ fn find_target_arn(target_name: &str, entity: &Entity) -> String {
 
 impl Route {
     pub fn new(
+        fqn: &str,
         name: &str,
         spec: &TopologySpec,
         rspec: &RouteSpec,
-        config: &ConfigSpec
+        _config: &ConfigSpec
 ) -> Route {
 
         let gateway =  match &rspec.gateway {
             Some(gw) => gw.clone(),
-            None => config.aws.api_gateway.api_name.clone()
+            None => s!(fqn)
         };
 
         let path = match &rspec.path {

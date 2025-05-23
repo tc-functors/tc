@@ -2,7 +2,6 @@ pub mod cache;
 mod context;
 mod event;
 mod function;
-mod route;
 mod topology;
 mod aws;
 

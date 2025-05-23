@@ -373,14 +373,14 @@ fn make_events(
     h
 }
 
-fn make_routes(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Route> {
+fn make_routes(spec: &TopologySpec, fqn: &str, config: &ConfigSpec) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
                 tracing::debug!("route {}", &name);
-                let route = Route::new(&name, spec, rspec, config);
+                let route = Route::new(fqn, &name, spec, rspec, config);
                 h.insert(name.to_string(), route);
             }
             h
@@ -496,7 +496,7 @@ fn make(
         pools: make_pools(&spec.pools, &fqn),
         events: make_events(&namespace, &spec, &fqn, &config),
         schedules: schedule::make_all(&infra_dir),
-        routes: make_routes(&spec, &config),
+        routes: make_routes(&spec, &fqn, &config),
         queues: make_queues(&spec, &config),
         mutations: mutations,
         channels: make_channels(&spec, &config),
