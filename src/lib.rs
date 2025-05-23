@@ -26,6 +26,7 @@ pub struct BuildOpts {
     pub dirty: bool,
     pub publish: bool,
     pub sync: bool,
+    pub shell: bool,
     pub image: Option<String>,
     pub lang: Option<String>,
 }
@@ -45,6 +46,7 @@ pub async fn build(
         sync,
         publish,
         lang,
+        shell,
         ..
     } = opts;
 
@@ -76,6 +78,8 @@ pub async fn build(
             let auth = init(profile, None).await;
             let builds = builder::just_images(false);
             builder::sync(&auth, builds).await;
+        } else if shell {
+            builder::shell(dir);
         } else {
             let builds = builder::build(dir, name, kind, image, lang).await;
             if publish {
