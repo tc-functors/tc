@@ -200,28 +200,37 @@ fn lookup_role(
     namespace: &str,
     function_name: &str,
 ) -> Role {
+
     match rspec {
         Some(r) => {
-            let path = match &r.role_file {
-                Some(f) => Some(follow_path(&f)),
+
+            match &r.role {
+                Some(given) => role::use_given(RoleKind::Function, &given),
                 None => {
-                    let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                    if u::file_exists(&f) { Some(f) } else { None }
+                    let path = match &r.role_file {
+                        Some(f) => Some(follow_path(&f)),
+                        None => {
+                            let f = format!("{}/roles/{}.json", infra_dir, function_name);
+                            if u::file_exists(&f) { Some(f) } else { None }
+                        }
+                    };
+
+                    if let Some(p) = path {
+                        let abbr = if function_name.chars().count() > 15 {
+                            u::abbreviate(function_name, "-")
+                        } else {
+                            function_name.to_string()
+                        };
+                        let policy_name = format!("tc-{}-{{{{sandbox}}}}-{}-policy", namespace, abbr);
+                        let role_name = format!("tc-{}-{{{{sandbox}}}}-{}-role", namespace, abbr);
+
+                        Role::new(RoleKind::Function, &p, &role_name, &policy_name)
+                    } else {
+                        role::default(RoleKind::Function)
+                    }
+
+
                 }
-            };
-
-            if let Some(p) = path {
-                let abbr = if function_name.chars().count() > 15 {
-                    u::abbreviate(function_name, "-")
-                } else {
-                    function_name.to_string()
-                };
-                let policy_name = format!("tc-{}-{{{{sandbox}}}}-{}-policy", namespace, abbr);
-                let role_name = format!("tc-{}-{{{{sandbox}}}}-{}-role", namespace, abbr);
-
-                Role::new(RoleKind::Function, &p, &role_name, &policy_name)
-            } else {
-                role::default(RoleKind::Function)
             }
         }
         None => role::default(RoleKind::Function),
