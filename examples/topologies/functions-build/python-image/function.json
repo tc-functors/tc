@@ -1,5 +1,5 @@
 {
-  "name": "pyp",
+  "name": "python-image",
   "description": "example function",
   "runtime": {
     "lang": "python3.10",

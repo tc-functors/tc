@@ -76,13 +76,6 @@ pub fn list_routes() -> Router {
         )
 }
 
-pub fn view_routes() -> Router {
-    Router::new().route(
-        "/hx/overview/view/{:root}/{:namespace}/function/{:id}",
-        get(function::view),
-    )
-}
-
 pub fn post_routes() -> Router {
     Router::new()
         .route("/hx/overview/flow", post(graph::flow))

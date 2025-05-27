@@ -243,3 +243,8 @@ pub async fn find_versions() -> Option<Versions> {
         None
     }
 }
+
+pub async fn init() {
+    let topologies = compiler::compile_root(&kit::pwd(), true);
+    write("root", &serde_json::to_string(&topologies).unwrap()).await;
+}

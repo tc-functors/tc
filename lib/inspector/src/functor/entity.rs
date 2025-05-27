@@ -14,7 +14,7 @@ use compiler::{
 use std::collections::HashMap;
 
 #[derive(Template)]
-#[template(path = "functors/functor.html")]
+#[template(path = "functor/topology.html")]
 struct DefinitionTemplate {
     root: String,
     namespace: String,
@@ -55,7 +55,7 @@ struct Item {
 }
 
 #[derive(Template)]
-#[template(path = "functors/functions.html")]
+#[template(path = "functor/functions.html")]
 struct FunctionsTemplate {
     root: String,
     namespace: String,
@@ -94,7 +94,7 @@ fn lookup_spec(dir: &str) -> TopologySpec {
 }
 
 #[derive(Template)]
-#[template(path = "functors/mutations.html")]
+#[template(path = "functor/mutations.html")]
 struct MutationsTemplate {
     root: String,
     namespace: String,
@@ -123,7 +123,7 @@ pub async fn mutations(Path((root, namespace)): Path<(String, String)>) -> impl 
 // flow
 
 #[derive(Template)]
-#[template(path = "functors/states.html")]
+#[template(path = "functor/states.html")]
 struct StatesTemplate {
     root: String,
     namespace: String,
@@ -149,10 +149,8 @@ pub async fn states(Path((root, namespace)): Path<(String, String)>) -> impl Int
     Html(temp.render().unwrap())
 }
 
-// main
-
 #[derive(Template)]
-#[template(path = "functors/index.html")]
+#[template(path = "index.html")]
 struct PageTemplate {
     context: String,
     root: String,

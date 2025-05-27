@@ -11,7 +11,7 @@ use axum::{
 use serde::Deserialize;
 
 #[derive(Template)]
-#[template(path = "functors/function/build.html")]
+#[template(path = "functor/function/build.html")]
 struct FlowTemplate {}
 
 pub async fn build(Path((_root, _namespace)): Path<(String, String)>) -> impl IntoResponse {
@@ -20,7 +20,7 @@ pub async fn build(Path((_root, _namespace)): Path<(String, String)>) -> impl In
 }
 
 #[derive(Template)]
-#[template(path = "functors/code.html")]
+#[template(path = "functor/code.html")]
 struct DataTemplate {
     definition: String,
 }

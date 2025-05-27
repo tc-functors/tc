@@ -9,7 +9,7 @@ use axum::{
 };
 
 #[derive(Template)]
-#[template(path = "functors/functor/flow.html")]
+#[template(path = "functor/topology/flow.html")]
 struct FlowTemplate {}
 
 pub async fn flow(Path((_root, _namespace)): Path<(String, String)>) -> impl IntoResponse {
@@ -18,7 +18,7 @@ pub async fn flow(Path((_root, _namespace)): Path<(String, String)>) -> impl Int
 }
 
 #[derive(Template)]
-#[template(path = "functors/functor/sandbox_form.html")]
+#[template(path = "functor/topology/sandbox_form.html")]
 struct SandboxTemplate {}
 
 pub async fn sandbox(Path((_root, _namespace)): Path<(String, String)>) -> impl IntoResponse {
@@ -27,7 +27,7 @@ pub async fn sandbox(Path((_root, _namespace)): Path<(String, String)>) -> impl 
 }
 
 #[derive(Template)]
-#[template(path = "functors/functor/test_form.html")]
+#[template(path = "functor/topology/test_form.html")]
 struct FormTemplate {}
 
 pub async fn test(Path((_root, _namespace)): Path<(String, String)>) -> impl IntoResponse {
@@ -36,21 +36,27 @@ pub async fn test(Path((_root, _namespace)): Path<(String, String)>) -> impl Int
 }
 
 #[derive(Template)]
-#[template(path = "functors/functor/topology.html")]
+#[template(path = "functor/topology.html")]
 struct ViewTemplate {
-    topology: String,
+    root: String,
+    namespace: String,
+    definition: String,
 }
 
 pub async fn compile(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let f = cache::find_topology(&root, &namespace).await;
     if let Some(t) = f {
         let temp = ViewTemplate {
-            topology: t.to_str(),
+            root: root,
+            namespace: namespace,
+            definition: t.to_str(),
         };
         Html(temp.render().unwrap())
     } else {
         let temp = ViewTemplate {
-            topology: String::from("test"),
+            root: root,
+            namespace: namespace,
+            definition: String::from("test"),
         };
         Html(temp.render().unwrap())
     }

@@ -4,34 +4,29 @@ use axum::{
 };
 
 mod cache;
-mod diffs;
-mod functors;
+mod functor;
 mod overview;
-mod releases;
-mod sandboxes;
-mod specs;
+mod list;
 
 pub async fn init(port: Option<String>) {
     let port = match port {
         Some(p) => p,
         None => String::from("8000")
     };
-    let addr = format!("0.0.0.0:{}", port);
+    let addr = format!("0.0.0.0:{}", &port);
+
+    println!("Loading current directory..");
+    cache::init().await;
 
     let app = Router::new()
+        .merge(list::routes())
+        .merge(functor::page_routes())
+        .merge(functor::entity_routes())
+        .merge(functor::topology_routes())
+        .merge(functor::function_routes())
+        .merge(functor::mutation_routes())
         .merge(overview::page_routes())
         .merge(overview::list_routes())
-        .merge(overview::view_routes())
-        .merge(overview::post_routes())
-        .merge(functors::page_routes())
-        .merge(functors::entity_routes())
-        .merge(functors::functor_routes())
-        .merge(functors::function_routes())
-        .merge(functors::mutation_routes())
-        .merge(diffs::routes())
-        .merge(sandboxes::routes())
-        .merge(releases::routes())
-        .merge(specs::routes())
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
@@ -41,5 +36,7 @@ pub async fn init(port: Option<String>) {
 
     println!("Listening on {}", listener.local_addr().unwrap());
 
+    //let url = format!("http://localhost:{}", &port);
+    //open::that(url).unwrap();
     axum::serve(listener, app).await.unwrap();
-}
+ }

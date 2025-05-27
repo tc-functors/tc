@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+
+<br/>
+<div id="tabs"
+     class="spaced"
+     hx-target="#tab-contents"
+     role="tablist"
+     hx-on:htmx-after-on-load="let currentTab = document.querySelector('[aria-selected=true]');
+			       currentTab.setAttribute('aria-selected', 'false')
+			       currentTab.classList.remove('selected')
+			       currentTab.classList.remove('outline')
+			       let newTab = event.target
+			       newTab.setAttribute('aria-selected', 'true')
+			       newTab.classList.add('selected')">
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="true"
+	  hx-get="/hx/functor/topology/{{root}}/{{namespace}}"
+	  class="tab selected">
+    Topology
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/functions/{{root}}/{{namespace}}">
+    Functions
+  </button>
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
+    Mutations
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/states/{{root}}/{{namespace}}">
+    States
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+    Events
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+    Routes
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+    Channels
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+    Queues
+  </button>
+
+</div>
+
+<div id="tab-contents"
+     class="functor spaced"
+     role="tabpanel"
+     hx-get="/hx/functor/definition/{{root}}/{{namespace}}"
+     hx-trigger="load">
+</div>
+
+
+{% endblock %}

@@ -1,4 +1,4 @@
-name: test-route
+name: 02-route-auth
 
 routes:
   /foo:

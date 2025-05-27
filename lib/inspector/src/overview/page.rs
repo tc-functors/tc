@@ -29,12 +29,16 @@ where
 #[derive(Template)]
 #[template(path = "overview/index.html")]
 struct IndexTemplate {
+    root: String,
+    namespace: String,
     entity: String,
     context: String,
 }
 
 pub async fn index() -> impl IntoResponse {
     let template = IndexTemplate {
+        root: "root".to_string(),
+        namespace: "root".to_string(),
         entity: "functors".to_string(),
         context: "overview".to_string(),
     };

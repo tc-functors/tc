@@ -9,7 +9,7 @@ use axum::{
 };
 
 #[derive(Template)]
-#[template(path = "functors/mutation/gql.html")]
+#[template(path = "functor/mutation/gql.html")]
 struct ViewTemplate {
     definition: String,
 }

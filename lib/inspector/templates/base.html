@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8">
     <title>tc inspector</title>
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
     <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script defer src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
@@ -13,7 +13,7 @@
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/graphql.min.js"></script>
@@ -31,7 +31,7 @@
 	--pico-border-radius: 0.3rem;
 	/* Original: 0.25rem */
 
-        --pico-typography-spacing-vertical: 0.8rem;
+      --pico-typography-spacing-vertical: 0.8rem;
 
       --pico-nav-element-spacing-vertical: 0.6rem;
       }
@@ -97,15 +97,6 @@
 	line-height: 0.7rem;
       }
 
-      .reveal pre code, .hljs {
-	background-color: transparent;
-	color: #DCDCDC;
-	padding: 5px;
-	overflow: auto;
-	word-wrap: normal;
-      }
-
-
       .sidebar {
 	height: 100dvh;
 	line-height: 1.7rem;
@@ -113,35 +104,49 @@
 	border-right: 1px solid var(--pico-secondary-focus);
       }
 
-      .functors {
+      .functor {
 	margin-left: 1rem;
-	line-height: 1.8rem;
-	background-color: rgb(64 64 64 / 0.2);
-	border: 1px solid var(--pico-muted-border-color);
-      border-radius: 10px;
-      height: 84dvh;
+	line-height: 1.7rem;
+	border: 2px solid #a9a9a9;
+	border-radius: 0px;
+	height: 92dvh;
       }
 
-      .navbg {
-	margin-right: 10px;
-	background-color: var(--pico-table-row-stripped-background-color);
-	border-bottom: 1px solid var(--pico-secondary-focus);
-      }
+      .tab {
+	border-radius: 1px;
+	color: #555555;
+	padding: 5px 10px;
+	border: 2px solid #a9a9a9;
+        border-bottom: none;
+	background-color: #ffffff;
+	transition: background-color 0.3s ease;
+	}
+
+	.selected {
+	border-radius: 1px;
+	color: #555555;
+	padding: 5px 10px;
+	border: 2px solid #a9a9a9;
+        border-bottom: none;
+	background-color: var(--pico-secondary-focus);
+	transition: background-color 0.3s ease;
+	}
+
 
       .container-action {
 	margin-top: 1em;
 	margin-right: 1em;
 	margin-bottom: 2em;
-	background-color: #1a1f28;
+	background-color: #f9f9f9;
 	border: 1px solid var(--pico-muted-border-color);
-      border-radius: 10px;
-      height: 80dvh;
+	border-radius: 10px;
+	height: 80dvh;
       }
 
       .container-entity {
-      margin-top: 3rem;
-      margin-right: 1rem;
-      margin-bottom: 1rem;
+	margin-top: 1rem;
+	margin-right: 0.1rem;
+	margin-bottom: 0.1rem;
       }
 
       .bordered-table {
@@ -153,9 +158,9 @@
       article {
 	border: 1px solid var(--pico-muted-border-color);
 
-      border-radius: calc(var(--pico-border-radius) * 2);
-      /* Original: var(--pico-border-radius) */
+	border-radius: calc(var(--pico-border-radius) * 2);
       }
+
       article>footer {
 	border-radius: calc(var(--pico-border-radius) * 2);
 	/* Original: var(--pico-border-radius) */
@@ -246,18 +251,17 @@
 	}
 
 	.mbtn {
-	padding: 4px 8px;
-	padding-right: 10px;
+	padding: 4px 6px;
+	padding-right: 8px;
 	min-width: 10px;
 	border: none;
 	font: inherit;
-	color: #eeeeee;
+	color: #353839;
 	border-radius: 2px;
 	outline: none;
 	text-decoration: none;
 	font-weight: 400;
-	background: #4D4C5C;
-	background-color: #4D4C5C;
+	background-color: #dcdcdc;
 	// border: 1px solid #ccc;
 	transition: background-color 0.3s ease;
 	box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.30), 0px 1px 1px rgba(0, 0, 0, .4);
@@ -273,34 +277,9 @@
 	opacity: 0.7;
 	}
 
-	.selected {
-	color: #eeeeee;
-	text-decoration-line: underline;
-	text-decoration-color: #e9967a;
-	text-decoration-thickness: 2px;
-	text-underline-offset: 4px;
-	background-color: rgb(64 64 64 / 0.2);
-	transition: background-color 0.3s ease;
-	}
-
 	.side-selected {
-	color: #e9967a;
+	color: #000000;
 	text-decoration-line: none;
-	background-color: transparent;
-	transition: background-color 0.3s ease;
-	}
-
-	.logo {
-	color: #a1caf1;
-	background-color: transparent;
-	transition: background-color 0.3s ease;
-	}
-
-	.tab {
-	border: none;
-	border-radius: 0px;
-	color: #ffffff;
-	padding: 10px 20px;
 	background-color: transparent;
 	transition: background-color 0.3s ease;
 	}
@@ -329,77 +308,22 @@
   </head>
 
   <body>
+
     <div class="x">
-      <div class="x10 sidebar">
-	<div class="spaced">
-	  <br/>
-	  <span class="logo">tc-inspector</span>
-	  <br/>
-	  <br/>
-
-	  <aside>
-	    <nav>
-	      <ul>
-		<li>
-		  {% if context == "functors" %}
-		  <span class="side-selected">Functors</span>
-		  {% else %}
-		  <a href="/functors">Functors</a>
-		  {% endif %}
-		</li>
-		<li>
-		  {% if context == "overview" %}
-		  <span class="side-selected">Overview</span>
-		  {% else %}
-		  <a href="/overview">Overview</a>
-		  {% endif %}
-		</li>
-
-		<li>
-		  {% if context == "sandboxes" %}
-		  <span class="side-selected">Sandboxes</span>
-		  {% else %}
-		  <a href="/sandboxes">Sandboxes</a>
-		  {% endif %}
-		</li>
-		<li>
-		  {% if context == "releases" %}
-		  <span class="side-selected">Releases</span>
-		  {% else %}
-		  <a href="/releases">Releases</a>
-		  {% endif %}
-
-		</li>
-
-		<li>
-		  {% if context == "diffs" %}
-		  <span class="side-selected">Diffs</span>
-		  {% else %}
-		  <a href="/diffs">Diffs</a>
-		  {% endif %}
-		</li>
-
-		<li>
-		  {% if context == "specs" %}
-		  <span class="side-selected">Specs</span>
-		  {% else %}
-		  <a href="/specs">Specs</a>
-		  {% endif %}
-		</li>
-
-	      </ul>
-	    </nav>
-	  </aside>
-
-
+      <div class="x5 sidebar">
+	<br/>
+	<div class="overflow-auto" style="height: 88dvh;">
+	  <div class="spaced"
+	       id="functors"
+	       hx-trigger="load"
+	       hx-get="/hx/functors/list/{{root}}/{{namespace}}">
+	  </div>
 	</div>
       </div>
 
-
-      <div class="xg">
+      <div class="xg spaced" style="height: 90dvh;">
 	{% block content %}{% endblock %}
       </div>
-
     </div>
   </body>
 </html>

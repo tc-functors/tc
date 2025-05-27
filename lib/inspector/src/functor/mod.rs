@@ -12,12 +12,10 @@ use axum::{
         post,
     },
 };
-
-mod entity;
 mod function;
-mod functor;
-mod list;
 mod mutation;
+mod topology;
+mod entity;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -37,7 +35,7 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "functors/index.html")]
+#[template(path = "index.html")]
 struct IndexTemplate {
     root: String,
     namespace: String,
@@ -57,11 +55,6 @@ pub fn page_routes() -> Router {
         .route("/", get(index_page))
         .route("/functors", get(index_page))
         .route("/functor/{:root}/{:namespace}", get(entity::page))
-        .route(
-            "/hx/functors/list/{:root}/{:namespace}",
-            get(list::functors),
-        )
-        .route("/hx/functors/load", post(list::load))
 }
 
 pub fn entity_routes() -> Router {
@@ -84,20 +77,22 @@ pub fn entity_routes() -> Router {
         )
 }
 
-pub fn functor_routes() -> Router {
+
+pub fn topology_routes() -> Router {
     Router::new()
         .route(
             "/hx/functor/compile/{:root}/{:namespace}",
-            post(functor::compile),
+            post(topology::compile),
         )
-        .route("/hx/functor/flow/{:root}/{:namespace}", post(functor::flow))
+        .route("/hx/functor/flow/{:root}/{:namespace}",
+               post(topology::flow))
         .route(
             "/hx/functor/sandbox-form/{:root}/{:namespace}",
-            post(functor::sandbox),
+            post(topology::sandbox),
         )
         .route(
             "/hx/functor/test-form/{:root}/{:namespace}",
-            post(functor::test),
+            post(topology::test),
         )
 }
 
