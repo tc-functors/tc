@@ -39,14 +39,12 @@ where
 struct IndexTemplate {
     root: String,
     namespace: String,
-    context: String,
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
         root: String::from("default"),
         namespace: String::from("default"),
-        context: String::from("functors"),
     })
 }
 

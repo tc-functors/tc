@@ -2,7 +2,11 @@
   <nav>
     <ul>
       <li>
+	{% if namespace == "overview" %}
+	Overview
+	{% else %}
 	<a href="/overview">Overview</a>
+	{% endif %}
       </li>
       {% for item in items %}
       <li>

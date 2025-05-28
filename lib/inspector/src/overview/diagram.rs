@@ -35,7 +35,7 @@ async fn build_mermaid_str() -> Vec<String> {
 }
 
 #[derive(Template)]
-#[template(path = "overview/graph/sequence.html")]
+#[template(path = "overview/diagram.html")]
 struct SequenceTemplate {
     items: Vec<String>,
 }
@@ -44,14 +44,5 @@ pub async fn sequence() -> impl IntoResponse {
     let xs = build_mermaid_str().await;
 
     let temp = SequenceTemplate { items: xs };
-    Html(temp.render().unwrap())
-}
-
-#[derive(Template)]
-#[template(path = "overview/graph/flow.html")]
-struct FlowTemplate {}
-
-pub async fn flow() -> impl IntoResponse {
-    let temp = FlowTemplate {};
     Html(temp.render().unwrap())
 }

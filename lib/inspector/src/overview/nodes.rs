@@ -1,7 +1,6 @@
 use crate::cache;
 use askama::Template;
 use axum::{
-    extract::Path,
     response::{
         Html,
         IntoResponse,
@@ -58,19 +57,12 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 }
 
 #[derive(Template)]
-#[template(path = "overview/list/nodes.html")]
+#[template(path = "overview/nodes.html")]
 struct NodesTemplate {
     items: Vec<Item>,
 }
 
-pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let topologies = cache::find_topologies(&root, &namespace).await;
-    let nodes = build_nodes(&namespace, topologies);
-    let temp = NodesTemplate { items: nodes };
-    Html(temp.render().unwrap())
-}
-
-pub async fn list_all() -> impl IntoResponse {
+pub async fn list() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let nodes = build(topologies);
     let temp = NodesTemplate { items: nodes };

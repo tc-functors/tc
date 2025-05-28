@@ -1,11 +1,10 @@
-{% if items.len() > 0 %}
-
-<table class="striped" width="90%">
+<table class="striped">
   <thead>
     <tr>
       <td></td>
+      <td></td>
       <td>Namespace</td>
-      <td>Kind</td>
+      <td>Version</td>
       <td>Nodes</td>
       <td>Functions</td>
       <td>Events</td>
@@ -17,24 +16,27 @@
   <tbody>
     {% for item in items %}
     <tr>
+      <td><input type="checkbox" name={{item.namespace}}/></td>
       <td>{{loop.index}}</td>
-      <td><a href="/definition/view/{{item.namespace}}">{{item.namespace}}<a/></td>
-      <td>{{item.kind}}</td>
+      <td>
+	<a href="/definition/{{item.namespace}}">{{item.namespace}}<a/>
+      </td>
+      <td>{{item.version}}</td>
       <td>
 	{% if item.nodes != 0 %}
-	<a href="/definitions/list/{{item.namespace}}/nodes">{{item.nodes}}</a>
+	<a href="/definitions/{{item.namespace}}/nodes">{{item.nodes}}</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.functions != 0 %}
-	<a href="/definitions/list/{{item.namespace}}/functions">
+	<a href="/definitions/{{item.namespace}}/functions">
 	  {{item.functions}}
 	</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.events != 0 %}
-	<a href="/definitions/list/{{item.namespace}}/events">
+	<a href="/definitions/{{item.namespace}}/events">
 	  {{item.events}}
 	</a>
 	{% endif %}
@@ -46,14 +48,14 @@
       </td>
       <td>
 	{% if item.mutations != 0 %}
-	<a href="/definitions/list/{{item.namespace}}/mutations">
+	<a href="/definitions/{{item.namespace}}/mutations">
 	  {{item.mutations}}
 	</a>
 	{% endif %}
       </td>
       <td>
 	{% if item.routes != 0 %}
-	<a href="/definitions/list/{{item.namespace}}/routes">
+	<a href="/definitions/{{item.namespace}}/routes">
 	  {{item.routes}}
 	</a>
 	{% endif %}
@@ -63,19 +65,3 @@
   </tbody>
 
 </table>
-{% else %}
-
-<div align="center">
-  Nothing here yet. Please load the functors by clicking the button below
-  <br/>
-  <br/>
-    <button class="custom-button primary"
-	    hx-post="/hx/def/compile"
-	    hx-indicator="#status"
-	    hx-target="#functors"
-	    hx-swap="outerHtml">
-      Load functors
-    </button>
-</div>
-
-{% endif %}

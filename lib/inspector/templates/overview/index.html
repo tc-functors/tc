@@ -17,9 +17,9 @@
   <button role="tab"
 	  aria-controls="tab-contents"
 	  aria-selected="true"
-	  hx-get="/hx/overview/list"
+	  hx-get="/hx/overview/functors"
 	  class="tab selected">
-    Table
+    Functors
   </button>
 
   <button role="tab"
@@ -30,16 +30,78 @@
     Sequence Diagram
   </button>
 
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/functions">
+    Functions
+  </button>
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/events">
+    Events
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/routes">
+    Routes
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/channels">
+    Channels
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/queues">
+    Queues
+  </button>
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/mutations">
+    Mutations
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/states">
+    States
+  </button>
+
+
 </div>
 
 <div id="tab-contents"
-     class="functor spaced"
-     role="tabpanel">
+     class="functor spaced overflow-auto"
+     role="tabpanel"
+     style="height 70dvh;">
 
+  <br/>
   <div id="functors"
        class="spaced"
        hx-trigger="load"
-       hx-get="/hx/overview/list/all/all/functors"
+       hx-get="/hx/overview/functors"
        hx-swap="innerHTML">
 
     <div class="grid">

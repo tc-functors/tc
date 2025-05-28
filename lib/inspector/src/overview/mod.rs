@@ -1,83 +1,71 @@
-mod event;
-mod function;
-mod graph;
-mod mutation;
-mod node;
-mod page;
-mod permission;
-mod root;
-mod route;
+mod functors;
+mod events;
+mod functions;
+mod mutations;
+mod nodes;
+mod routes;
+mod diagram;
 
+use askama::Template;
 use axum::{
     Router,
+    http::StatusCode,
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
     routing::{
         get,
-        post,
     },
 };
 
+pub struct HtmlTemplate<T>(pub T);
+impl<T> IntoResponse for HtmlTemplate<T>
+where
+    T: Template,
+{
+    fn into_response(self) -> Response {
+        match self.0.render() {
+            Ok(html) => Html(html).into_response(),
+            Err(err) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to render template. Error: {}", err),
+            )
+                .into_response(),
+        }
+    }
+}
+
+#[derive(Template)]
+#[template(path = "overview/index.html")]
+struct IndexTemplate {
+    root: String,
+    namespace: String,
+}
+
+pub async fn index() -> impl IntoResponse {
+    let template = IndexTemplate {
+        root: "overview".to_string(),
+        namespace: "overview".to_string(),
+    };
+    HtmlTemplate(template)
+}
+
 pub fn page_routes() -> Router {
     Router::new()
-        .route("/overview", get(page::index))
-        .route("/overview/view/{:root}", get(page::view_root))
-        .route(
-            "/overview/view/{:root}/{:namespace}/{:entity}/{:id}",
-            get(page::view_entity),
-        )
-        .route("/overview/list", get(page::index))
-        .route("/overview/list/{:entity}/all", get(page::list_all))
-        .route("/overview/list/{:root}/{:entity}", get(page::list_root))
-        .route(
-            "/overview/list/{:root}/{:namespace}/{:entity}",
-            get(page::list_ns),
-        )
+        .route("/overview", get(index))
 }
 
 // fragments
 
 pub fn list_routes() -> Router {
     Router::new()
-        .route("/hx/overview/list", get(root::list_all))
-        .route("/hx/overview/list/all/all/functors", get(root::list_all))
-        .route(
-            "/hx/overview/list/all/all/functions",
-            get(function::list_all),
-        )
-        .route("/hx/overview/list/all/all/nodes", get(node::list_all))
-        .route("/hx/overview/list/all/all/events", get(event::list_all))
-        .route("/hx/overview/list/all/all/routes", get(route::list_all))
-        .route(
-            "/hx/overview/list/all/all/mutations",
-            get(mutation::list_all),
-        )
-        .route(
-            "/hx/overview/list/all/all/permissions",
-            get(permission::list_all),
-        )
-        .route(
-            "/hx/overview/list/{:root}/{:namespace}/functions",
-            get(function::list),
-        )
-        .route(
-            "/hx/overview/list/{:root}/{:namespace}/nodes",
-            get(node::list),
-        )
-        .route(
-            "/hx/overview/list/{:root}/{:namespace}/events",
-            get(event::list),
-        )
-        .route(
-            "/hx/overview/list/{:root}/{:namespace}/mutations",
-            get(mutation::list),
-        )
-        .route(
-            "/hx/overview/list/{:root}/{:namespace}/routes",
-            get(route::list),
-        )
-}
-
-pub fn post_routes() -> Router {
-    Router::new()
-        .route("/hx/overview/flow", post(graph::flow))
-        .route("/hx/overview/sequence", post(graph::sequence))
+        .route("/hx/overview/functors", get(functors::list))
+        .route("/hx/overview/functions", get(functions::list))
+        .route("/hx/overview/nodes", get(nodes::list))
+        .route("/hx/overview/diagram", get(diagram::sequence))
+        .route("/hx/overview/events", get(events::list))
+        .route("/hx/overview/routes", get(routes::list))
+        .route("/hx/overview/mutations", get(mutations::list))
 }

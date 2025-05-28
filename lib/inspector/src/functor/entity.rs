@@ -152,14 +152,12 @@ pub async fn states(Path((root, namespace)): Path<(String, String)>) -> impl Int
 #[derive(Template)]
 #[template(path = "index.html")]
 struct PageTemplate {
-    context: String,
     root: String,
     namespace: String,
 }
 
 pub async fn page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
     let temp = PageTemplate {
-        context: String::from("functors"),
         root: root,
         namespace: namespace,
     };

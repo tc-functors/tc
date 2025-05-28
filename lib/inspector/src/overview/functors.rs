@@ -50,12 +50,12 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Functor> {
 }
 
 #[derive(Template)]
-#[template(path = "overview/list/root.html")]
+#[template(path = "overview/functors.html")]
 struct FunctorsTemplate {
     items: Vec<Functor>,
 }
 
-pub async fn list_all() -> impl IntoResponse {
+pub async fn list() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let functors = build(topologies);
     let t = FunctorsTemplate { items: functors };

@@ -34,22 +34,6 @@
 	  aria-controls="tab-contents"
 	  aria-selected="false"
 	  class="tab"
-	  hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
-    Mutations
-  </button>
-
-  <button role="tab"
-	  aria-controls="tab-contents"
-	  aria-selected="false"
-	  class="tab"
-	  hx-get="/hx/functor/states/{{root}}/{{namespace}}">
-    States
-  </button>
-
-  <button role="tab"
-	  aria-controls="tab-contents"
-	  aria-selected="false"
-	  class="tab"
 	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
     Events
   </button>
@@ -77,6 +61,23 @@
 	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
     Queues
   </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
+    Mutations
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/states/{{root}}/{{namespace}}">
+    States
+  </button>
+
 
 </div>
 

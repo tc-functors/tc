@@ -1,8 +1,10 @@
 use crate::cache;
 use askama::Template;
-use axum::response::{
-    Html,
-    IntoResponse,
+use axum::{
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
 use compiler::{
     Function,
@@ -14,7 +16,13 @@ use std::collections::HashMap;
 struct Item {
     namespace: String,
     name: String,
+    package_type: String,
     dir: String,
+    fqn: String,
+    layers: Vec<String>,
+    memory: i32,
+    timeout: i32,
+    runtime: String,
     role: String,
     vars: String,
 }
@@ -22,12 +30,22 @@ struct Item {
 fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
     for (dir, f) in fns {
+        let vars = match f.runtime.infra_spec_file {
+            Some(f) => f,
+            None => String::from("provided"),
+        };
         let fun = Item {
             namespace: namespace.to_string(),
             name: f.actual_name.clone(),
             dir: dir.to_string(),
+            fqn: f.fqn.clone(),
+            package_type: f.runtime.package_type.clone(),
+            layers: f.runtime.layers.clone(),
+            memory: f.runtime.memory_size.unwrap(),
+            timeout: f.runtime.timeout.unwrap(),
+            runtime: f.runtime.lang.to_str(),
             role: f.runtime.role.path,
-            vars: String::from(""),
+            vars: vars,
         };
         xs.push(fun);
     }
@@ -51,14 +69,18 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 }
 
 #[derive(Template)]
-#[template(path = "overview/list/permissions.html")]
-struct PermissionsTemplate {
-    functions: Vec<Item>,
+#[template(path = "overview/functions.html")]
+struct FunctionsTemplate {
+    root: String,
+    items: Vec<Item>,
 }
 
-pub async fn list_all() -> impl IntoResponse {
+pub async fn list() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let fns = build(topologies);
-    let temp = PermissionsTemplate { functions: fns };
+    let temp = FunctionsTemplate {
+        root: String::from(""),
+        items: fns,
+    };
     Html(temp.render().unwrap())
 }

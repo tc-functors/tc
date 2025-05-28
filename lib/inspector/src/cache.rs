@@ -1,12 +1,7 @@
 use compiler::{
     Event,
     Function,
-    Route,
     Topology,
-};
-use serde_derive::{
-    Deserialize,
-    Serialize,
 };
 use std::collections::HashMap;
 
@@ -51,20 +46,6 @@ pub async fn find_all_topologies() -> HashMap<String, Topology> {
     }
 }
 
-pub async fn find_topologies(root: &str, namespace: &str) -> HashMap<String, Topology> {
-    let topologies = find_all_topologies().await;
-    if root == namespace {
-        topologies.get(root).unwrap().nodes.clone()
-    } else {
-        let rt = topologies.get(root);
-        if let Some(t) = rt {
-            t.nodes.get(namespace).unwrap().nodes.clone()
-        } else {
-            HashMap::new()
-        }
-    }
-}
-
 pub async fn find_functions(root: &str, namespace: &str) -> HashMap<String, Function> {
     let topologies = find_all_topologies().await;
     let rt = topologies.get(root);
@@ -79,50 +60,6 @@ pub async fn find_functions(root: &str, namespace: &str) -> HashMap<String, Func
                 let node = t.nodes.get(namespace);
                 match node {
                     Some(n) => n.functions.clone(),
-                    None => HashMap::new(),
-                }
-            }
-            None => HashMap::new(),
-        }
-    }
-}
-
-pub async fn find_events(root: &str, namespace: &str) -> HashMap<String, Event> {
-    let topologies = find_all_topologies().await;
-    let rt = topologies.get(root);
-    if root == namespace {
-        match rt {
-            Some(t) => t.events.clone(),
-            None => HashMap::new(),
-        }
-    } else {
-        match rt {
-            Some(t) => {
-                let node = t.nodes.get(namespace);
-                match node {
-                    Some(n) => n.events.clone(),
-                    None => HashMap::new(),
-                }
-            }
-            None => HashMap::new(),
-        }
-    }
-}
-
-pub async fn find_routes(root: &str, namespace: &str) -> HashMap<String, Route> {
-    let topologies = find_all_topologies().await;
-    let rt = topologies.get(root);
-    if root == namespace {
-        match rt {
-            Some(t) => t.routes.clone(),
-            None => HashMap::new(),
-        }
-    } else {
-        match rt {
-            Some(t) => {
-                let node = t.nodes.get(namespace);
-                match node {
-                    Some(n) => n.routes.clone(),
                     None => HashMap::new(),
                 }
             }
@@ -174,47 +111,6 @@ pub async fn find_function(root: &str, namespace: &str, id: &str) -> Option<Func
     }
 }
 
-pub async fn find_layers() -> Vec<String> {
-    let mut xs: Vec<String> = vec![];
-    let topologies = find_all_topologies().await;
-    for (_, node) in topologies {
-        for (_, f) in node.functions {
-            xs.extend(f.runtime.layers)
-        }
-        for (_, n) in node.nodes {
-            for (_, f) in n.functions {
-                xs.extend(f.runtime.layers)
-            }
-        }
-    }
-    xs.sort();
-    xs.dedup();
-    xs
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Layer {
-    pub name: String,
-    pub dev: i64,
-    pub stable: i64,
-}
-
-pub async fn _save_resolved_layers(layers: Vec<Layer>) {
-    write("resolved_layers", &serde_json::to_string(&layers).unwrap()).await;
-}
-
-pub async fn find_resolved_layers() -> Vec<Layer> {
-    let key = "resolved_layers";
-    if has_key(key) {
-        tracing::info!("Found cache: {}", key);
-        let s = read(key);
-        let r: Vec<Layer> = serde_json::from_str(&s).unwrap();
-        r
-    } else {
-        vec![]
-    }
-}
-
 pub async fn find_root_namespaces() -> Vec<String> {
     let ts = find_all_topologies().await;
     let mut xs: Vec<String> = vec![];
@@ -226,23 +122,6 @@ pub async fn find_root_namespaces() -> Vec<String> {
     xs
 }
 
-pub type Versions = HashMap<String, HashMap<String, String>>;
-
-pub async fn save_versions(vers: Versions) {
-    write("versions", &serde_json::to_string(&vers).unwrap()).await;
-}
-
-pub async fn find_versions() -> Option<Versions> {
-    let key = "versions";
-    if has_key(key) {
-        tracing::info!("Found cache: {}", key);
-        let s = read(key);
-        let r: Versions = serde_json::from_str(&s).unwrap();
-        Some(r)
-    } else {
-        None
-    }
-}
 
 pub async fn init() {
     let topologies = compiler::compile_root(&kit::pwd(), true);
