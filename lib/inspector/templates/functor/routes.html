@@ -1,9 +1,9 @@
 <div class="grid">
 
   <div class="overflow-auto spaced" style="height: 82dvh;">
+
     <br/>
 
-    {% include "code.html" %}
 
   </div>
 
@@ -11,10 +11,9 @@
     <nav class="navbar">
       <ul></ul>
       <ul>
-
 	<li>
 	  <button class="mbtn"
-		  hx-post="/hx/functor/state/compile/{{root}}/{{namespace}}"
+		  hx-post="/hx/functor/route/compile/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
@@ -24,17 +23,7 @@
 
 	<li>
 	  <button class="mbtn"
-		  hx-post="/hx/functor/state/diagram/{{root}}/{{namespace}}"
-		  hx-indicator="#viewer-status"
-		  hx-target="#functor-viewer"
-		  hx-swap="innerHtml">
-	    Diagram
-	  </button>
-	</li>
-
-	<li>
-	  <button class="mbtn"
-		  hx-post="/hx/functor/state/test/{{root}}/{{namespace}}"
+		  hx-post="/hx/functor/route/test/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">

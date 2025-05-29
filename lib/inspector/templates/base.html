@@ -11,7 +11,6 @@
     <script defer src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
     <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js"></script>
     <script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
@@ -94,9 +93,6 @@
 	margin-right: 0.7rem;
       }
 
-      .button {
-	line-height: 0.7rem;
-      }
 
       .sidebar {
 	height: 100dvh;
@@ -262,7 +258,7 @@
 	outline: none;
 	text-decoration: none;
 	font-weight: 400;
-	background-color: #dcdcdc;
+	background-color: #dbdbdb;
 	// border: 1px solid #ccc;
 	transition: background-color 0.3s ease;
 	box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.30), 0px 1px 1px rgba(0, 0, 0, .4);
@@ -311,9 +307,8 @@
   <body>
 
     <div class="x">
-      <div class="x5 sidebar">
-	<br/>
-	<div class="overflow-auto" style="height: 88dvh;">
+      <div class="x6 sidebar">
+	<div class="overflow-auto" style="height: 92dvh;">
 	  <div class="spaced"
 	       id="functors"
 	       hx-trigger="load"

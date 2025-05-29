@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+
 <script type="module">
 
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
@@ -26,7 +29,7 @@
   });
 </script>
 
-
+<script src="https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js"></script>
 <div class="overflow-auto">
 <div class="diagram-container" id="diagram-container">
   <div class="mermaid">
@@ -38,3 +41,5 @@
   </div>
 </div>
 </div>
+
+{% endblock %}

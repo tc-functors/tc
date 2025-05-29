@@ -1,19 +1,21 @@
 <div class="grid">
 
-  <div class="overflow-auto spaced" style="height: 82dvh;">
+  <div class="overflow-auto spaced" style="height: 84dvh;">
+    <br/>
 
     {% include "code.html" %}
 
   </div>
 
-  <div class="container-action">
-    <div class="spaced">
+  <div class="spaced">
     <nav class="navbar">
+      <ul></ul>
       <ul>
 
 	<li>
 	  <button class="mbtn"
-		  hx-post="/hx/functor/compile/{{root}}/{{namespace}}"
+		  hx-trigger="click"
+		  hx-post="/hx/functor/topology/compile/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
@@ -23,27 +25,38 @@
 
 	<li>
 	  <button class="mbtn"
-		  hx-post="/hx/functor/flow/{{root}}/{{namespace}}"
+		  hx-trigger="click"
+		  hx-post="/hx/functor/topology/flow/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
 		  hx-target="#functor-viewer"
 		  hx-swap="innerHtml">
-	    Flow Diagram
+	    Diagram
 	  </button>
 	</li>
 
 	<li>
 	    <button class="mbtn"
-		    hx-post="/hx/functor/sandbox-form/{{root}}/{{namespace}}"
+		    hx-post="/hx/functor/topology/resolve/{{root}}/{{namespace}}"
 		    hx-indicator="#viewer-status"
 		    hx-target="#functor-viewer"
 		    hx-swap="innerHtml">
-	        Sandbox
+	      Resolve
 	      </button>
 	  </li>
 
 	<li>
 	    <button class="mbtn"
-		    hx-post="/hx/functor/test-form/{{root}}/{{namespace}}"
+		    hx-post="/hx/functor/topology/sandbox-form/{{root}}/{{namespace}}"
+		    hx-indicator="#viewer-status"
+		    hx-target="#functor-viewer"
+		    hx-swap="innerHtml">
+	        Sandbox
+	      </button>
+	</li>
+
+	<li>
+	    <button class="mbtn"
+		    hx-post="/hx/functor/topology/test-form/{{root}}/{{namespace}}"
 		    hx-indicator="#viewer-status"
 		    hx-target="#functor-viewer"
 		    hx-swap="innerHtml">
@@ -54,8 +67,7 @@
       </ul>
 
     </nav>
-    </div>
-    <div id="functor-viewer" class="overflow-auto" style="height: 76dvh;">
+    <div id="functor-viewer" class="overflow-auto" style="height: 84dvh;">
       <span class="htmx-indicator" id="viewer-status" aria-busy="true">
 	  Loading...
       </span>

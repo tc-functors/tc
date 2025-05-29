@@ -1,6 +1,7 @@
 <aside>
   <nav>
     <ul>
+      <li><strong>tc 0.8.72</strong></li>
       <li>
 	{% if namespace == "overview" %}
 	Overview
@@ -8,6 +9,7 @@
 	<a href="/overview">Overview</a>
 	{% endif %}
       </li>
+      <hr/>
       {% for item in items %}
       <li>
 	{% if namespace == item|lower %}

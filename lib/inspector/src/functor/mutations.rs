@@ -8,6 +8,9 @@ use axum::{
     },
 };
 
+use compiler::{
+    TopologySpec,
+};
 #[derive(Template)]
 #[template(path = "functor/mutation/gql.html")]
 struct ViewTemplate {
@@ -32,6 +35,38 @@ pub async fn compile(Path((root, namespace)): Path<(String, String)>) -> impl In
     };
 
     let temp = ViewTemplate {
+        definition: definition,
+    };
+    Html(temp.render().unwrap())
+}
+
+fn lookup_spec(dir: &str) -> TopologySpec {
+    let f = format!("{}/topology.yml", dir);
+    TopologySpec::new(&f)
+}
+
+#[derive(Template)]
+#[template(path = "functor/mutations.html")]
+struct ListTemplate {
+    root: String,
+    namespace: String,
+    definition: String,
+}
+
+pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let topology = cache::find_topology(&root, &namespace).await;
+    let definition = if let Some(t) = topology {
+        let spec = lookup_spec(&t.dir);
+        match spec.mutations {
+            Some(m) => serde_yaml::to_string(&m).unwrap(),
+            None => String::from(""),
+        }
+    } else {
+        String::from("")
+    };
+    let temp = ListTemplate {
+        root: root,
+        namespace: namespace,
         definition: definition,
     };
     Html(temp.render().unwrap())

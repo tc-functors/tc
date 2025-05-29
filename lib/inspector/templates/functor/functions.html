@@ -27,11 +27,10 @@
 
 	<li>
 	  <button class="mbtn"
-		  hx-trigger="click"
-		  hx-post="/hx/function/compile/{{root}}/{{namespace}}"
+		  hx-post="/hx/functor/function/compile/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
-		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"
+		  hx-include="[name='function']"
 		  hx-swap="innerHtml">
 	    Compile
 	  </button>
@@ -39,11 +38,10 @@
 
 	<li>
 	  <button class="mbtn"
-		  hx-trigger="click"
-		  hx-post="/hx/function/permissions/{{root}}/{{namespace}}"
-		  hx-indicator="#status"
-		  hx-include="[name='function']"
+		  hx-post="/hx/functor/function/permissions/{{root}}/{{namespace}}"
+		  hx-indicator="#viewestatus"
 		  hx-target="#functor-viewer"
+		  hx-include="[name='function']"
 		  hx-swap="innerHtml">
 	    Permissions
 	  </button>
@@ -51,7 +49,7 @@
 	<li>
 	  <button class="mbtn"
 		  hx-trigger="click"
-		  hx-post="/hx/function/build/{{root}}/{{namespace}}"
+		  hx-post="/hx/functor/function/build/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
 		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"
@@ -63,7 +61,7 @@
 	<li>
 	  <button class="mbtn"
 		  hx-trigger="click"
-		  hx-post="/hx/function/test/{{root}}/{{namespace}}"
+		  hx-post="/hx/functor/function/test/{{root}}/{{namespace}}"
 		  hx-indicator="#viewer-status"
 		  hx-include="[name='function']"
 		  hx-target="#functor-viewer"

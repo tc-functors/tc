@@ -1,8 +1,16 @@
 use crate::cache;
 use askama::Template;
-use axum::response::{
-    Html,
-    IntoResponse,
+use axum::{
+    Router,
+    http::StatusCode,
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
+    routing::{
+        get,
+    },
 };
 
 async fn build_mermaid_str() -> Vec<String> {
@@ -34,15 +42,44 @@ async fn build_mermaid_str() -> Vec<String> {
     xs
 }
 
+
+pub struct HtmlTemplate<T>(pub T);
+impl<T> IntoResponse for HtmlTemplate<T>
+where
+    T: Template,
+{
+    fn into_response(self) -> Response {
+        match self.0.render() {
+            Ok(html) => Html(html).into_response(),
+            Err(err) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to render template. Error: {}", err),
+            )
+                .into_response(),
+        }
+    }
+}
+
 #[derive(Template)]
-#[template(path = "overview/diagram.html")]
+#[template(path = "diagram/index.html")]
 struct SequenceTemplate {
+    root: String,
+    namespace: String,
     items: Vec<String>,
 }
 
 pub async fn sequence() -> impl IntoResponse {
     let xs = build_mermaid_str().await;
 
-    let temp = SequenceTemplate { items: xs };
+    let temp = SequenceTemplate {
+        root: "diagram".to_string(),
+        namespace: "diagram".to_string(),
+        items: xs
+    };
     Html(temp.render().unwrap())
+}
+
+pub fn page_routes() -> Router {
+    Router::new()
+        .route("/diagram", get(sequence))
 }

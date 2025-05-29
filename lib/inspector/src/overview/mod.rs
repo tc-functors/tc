@@ -4,7 +4,9 @@ mod functions;
 mod mutations;
 mod nodes;
 mod routes;
-mod diagram;
+mod channels;
+mod queues;
+mod states;
 
 use askama::Template;
 use axum::{
@@ -64,8 +66,10 @@ pub fn list_routes() -> Router {
         .route("/hx/overview/functors", get(functors::list))
         .route("/hx/overview/functions", get(functions::list))
         .route("/hx/overview/nodes", get(nodes::list))
-        .route("/hx/overview/diagram", get(diagram::sequence))
         .route("/hx/overview/events", get(events::list))
+        .route("/hx/overview/channels", get(channels::list))
+        .route("/hx/overview/queues", get(queues::list))
         .route("/hx/overview/routes", get(routes::list))
+        .route("/hx/overview/states", get(states::list))
         .route("/hx/overview/mutations", get(mutations::list))
 }

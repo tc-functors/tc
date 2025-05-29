@@ -26,7 +26,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/functions/{{root}}/{{namespace}}">
-    Functions
+    Functions <small>(2)</small>
   </button>
 
 
@@ -42,7 +42,7 @@
 	  aria-controls="tab-contents"
 	  aria-selected="false"
 	  class="tab"
-	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+	  hx-get="/hx/functor/routes/{{root}}/{{namespace}}">
     Routes
   </button>
 
@@ -50,16 +50,16 @@
 	  aria-controls="tab-contents"
 	  aria-selected="false"
 	  class="tab"
-	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
-    Channels
+	  hx-get="/hx/functor/queues/{{root}}/{{namespace}}">
+    Queues
   </button>
 
   <button role="tab"
 	  aria-controls="tab-contents"
 	  aria-selected="false"
 	  class="tab"
-	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
-    Queues
+	  hx-get="/hx/functor/channels/{{root}}/{{namespace}}">
+    Channels
   </button>
 
   <button role="tab"
@@ -84,7 +84,7 @@
 <div id="tab-contents"
      class="functor spaced"
      role="tabpanel"
-     hx-get="/hx/functor/definition/{{root}}/{{namespace}}"
+     hx-get="/hx/functor/topology/{{root}}/{{namespace}}"
      hx-trigger="load">
 </div>
 

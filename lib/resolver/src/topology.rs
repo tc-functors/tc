@@ -15,7 +15,6 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topolog
         config: topology.config.to_owned()
     };
 
-    println!("Resolving topology {}", topology.namespace);
     let templated = topology.to_str();
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
@@ -42,12 +41,10 @@ pub async fn resolve_component(
         config: topology.config.to_owned()
     };
 
-    println!("Resolving topology...");
     let templated = topology.to_str();
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
-    println!("Resolving {}...", component);
     match component {
         "events" => {
             partial_t.events = event::resolve(&ctx, &partial_t).await;

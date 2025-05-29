@@ -36,10 +36,8 @@ pub async fn test(Path((_root, _namespace)): Path<(String, String)>) -> impl Int
 }
 
 #[derive(Template)]
-#[template(path = "functor/topology.html")]
+#[template(path = "functor/topology/compile.html")]
 struct ViewTemplate {
-    root: String,
-    namespace: String,
     definition: String,
 }
 
@@ -47,13 +45,43 @@ pub async fn compile(Path((root, namespace)): Path<(String, String)>) -> impl In
     let f = cache::find_topology(&root, &namespace).await;
     if let Some(t) = f {
         let temp = ViewTemplate {
-            root: root,
-            namespace: namespace,
             definition: t.to_str(),
         };
         Html(temp.render().unwrap())
     } else {
         let temp = ViewTemplate {
+            definition: String::from("test"),
+        };
+        Html(temp.render().unwrap())
+    }
+}
+
+
+#[derive(Template)]
+#[template(path = "functor/topology.html")]
+struct DefinitionTemplate {
+    root: String,
+    namespace: String,
+    definition: String,
+}
+
+fn lookup_definition(dir: &str) -> String {
+    let f = format!("{}/topology.yml", dir);
+    kit::slurp(&f)
+}
+
+pub async fn definition(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let f = cache::find_topology(&root, &namespace).await;
+    if let Some(t) = f {
+        let definition = lookup_definition(&t.dir);
+        let temp = DefinitionTemplate {
+            root: root,
+            namespace: namespace,
+            definition: definition,
+        };
+        Html(temp.render().unwrap())
+    } else {
+        let temp = DefinitionTemplate {
             root: root,
             namespace: namespace,
             definition: String::from("test"),

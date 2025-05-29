@@ -2,6 +2,7 @@ use askama::Template;
 use axum::{
     Router,
     http::StatusCode,
+    extract::Path,
     response::{
         Html,
         IntoResponse,
@@ -12,10 +13,14 @@ use axum::{
         post,
     },
 };
-mod function;
-mod mutation;
 mod topology;
-mod entity;
+mod functions;
+mod mutations;
+mod routes;
+mod queues;
+mod events;
+mod states;
+mod channels;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -35,7 +40,7 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "index.html")]
+#[template(path = "functor/index.html")]
 struct IndexTemplate {
     root: String,
     namespace: String,
@@ -48,30 +53,55 @@ pub async fn index_page() -> impl IntoResponse {
     })
 }
 
+pub async fn main_page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let temp = IndexTemplate {
+        root: root,
+        namespace: namespace,
+    };
+    Html(temp.render().unwrap())
+}
+
+
 pub fn page_routes() -> Router {
     Router::new()
         .route("/", get(index_page))
         .route("/functors", get(index_page))
-        .route("/functor/{:root}/{:namespace}", get(entity::page))
+        .route("/functor/{:root}/{:namespace}", get(main_page))
 }
 
-pub fn entity_routes() -> Router {
+pub fn list_routes() -> Router {
     Router::new()
         .route(
-            "/hx/functor/definition/{:root}/{:namespace}",
-            get(entity::definition),
+            "/hx/functor/topology/{:root}/{:namespace}",
+            get(topology::definition),
         )
         .route(
             "/hx/functor/functions/{:root}/{:namespace}",
-            get(entity::functions),
+            get(functions::list),
         )
         .route(
             "/hx/functor/mutations/{:root}/{:namespace}",
-            get(entity::mutations),
+            get(mutations::list),
         )
         .route(
             "/hx/functor/states/{:root}/{:namespace}",
-            get(entity::states),
+            get(states::list),
+        )
+        .route(
+            "/hx/functor/events/{:root}/{:namespace}",
+            get(events::list),
+        )
+        .route(
+            "/hx/functor/routes/{:root}/{:namespace}",
+            get(routes::list),
+        )
+        .route(
+            "/hx/functor/channels/{:root}/{:namespace}",
+            get(channels::list),
+        )
+        .route(
+            "/hx/functor/queues/{:root}/{:namespace}",
+            get(queues::list),
         )
 }
 
@@ -79,17 +109,17 @@ pub fn entity_routes() -> Router {
 pub fn topology_routes() -> Router {
     Router::new()
         .route(
-            "/hx/functor/compile/{:root}/{:namespace}",
+            "/hx/functor/topology/compile/{:root}/{:namespace}",
             post(topology::compile),
         )
-        .route("/hx/functor/flow/{:root}/{:namespace}",
+        .route("/hx/functor/topology/flow/{:root}/{:namespace}",
                post(topology::flow))
         .route(
-            "/hx/functor/sandbox-form/{:root}/{:namespace}",
+            "/hx/functor/topology/sandbox-form/{:root}/{:namespace}",
             post(topology::sandbox),
         )
         .route(
-            "/hx/functor/test-form/{:root}/{:namespace}",
+            "/hx/functor/topology/test-form/{:root}/{:namespace}",
             post(topology::test),
         )
 }
@@ -97,22 +127,22 @@ pub fn topology_routes() -> Router {
 pub fn function_routes() -> Router {
     Router::new()
         .route(
-            "/hx/function/build/{:root}/{:namespace}",
-            post(function::build),
+            "/hx/functor/function/build/{:root}/{:namespace}",
+            post(functions::build),
         )
         .route(
-            "/hx/function/compile/{:root}/{:namespace}",
-            post(function::compile),
+            "/hx/functor/function/compile/{:root}/{:namespace}",
+            post(functions::compile),
         )
         .route(
-            "/hx/function/permissions/{:root}/{:namespace}",
-            post(function::permissions),
+            "/hx/functor/function/permissions/{:root}/{:namespace}",
+            post(functions::permissions),
         )
 }
 
 pub fn mutation_routes() -> Router {
     Router::new().route(
-        "/hx/mutation/compile/{:root}/{:namespace}",
-        post(mutation::compile),
+        "/hx/functor/mutation/compile/{:root}/{:namespace}",
+        post(mutations::compile),
     )
 }

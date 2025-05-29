@@ -71,7 +71,6 @@ fn build(topologies: HashMap<String, Topology>) -> Vec<Item> {
 #[derive(Template)]
 #[template(path = "overview/functions.html")]
 struct FunctionsTemplate {
-    root: String,
     items: Vec<Item>,
 }
 
@@ -79,7 +78,6 @@ pub async fn list() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let fns = build(topologies);
     let temp = FunctionsTemplate {
-        root: String::from(""),
         items: fns,
     };
     Html(temp.render().unwrap())

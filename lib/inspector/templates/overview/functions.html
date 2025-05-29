@@ -10,7 +10,6 @@
       <td>Memory</td>
       <td>Timeout</td>
       <td>Role</td>
-      <td>Vars</td>
     </tr>
   </thead>
   <tbody>
@@ -18,14 +17,10 @@
     <tr>
       <td>{{loop.index}}</td>
       <td>
-	<a href="/definition/{{function.namespace}}">
 	{{function.namespace}}
-	</a>
       </td>
       <td>
-	<a href="/definition/{{root}}/{{function.namespace}}/function/{{function.name}}">
-	  {{function.name}}
-      </a>
+	{{function.name}}
       </td>
       <td>{{function.package_type}}</td>
       <td>
@@ -33,7 +28,7 @@
       </td>
       <td>
 	{% for layer in function.layers %}
-	<a href="#">{{layer}}</a>
+	{{layer}}
 	<br>
 	{% endfor %}
       </td>
@@ -44,14 +39,7 @@
 	{{function.timeout}}
       </td>
       <td>
-	{% if function.role != "provided" %}
-	<a href="#">view</a>
-	{% endif %}
-      </td>
-      <td>
-	{% if function.vars != "provided" %}
-	<a href="#">view</a>
-	{% endif %}
+	{{function.role}}
       </td>
     </tr>
     {% endfor %}

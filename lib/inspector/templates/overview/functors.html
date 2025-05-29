@@ -2,7 +2,6 @@
   <thead>
     <tr>
       <td></td>
-      <td></td>
       <td>Namespace</td>
       <td>Version</td>
       <td>Nodes</td>
@@ -16,29 +15,22 @@
   <tbody>
     {% for item in items %}
     <tr>
-      <td><input type="checkbox" name={{item.namespace}}/></td>
       <td>{{loop.index}}</td>
-      <td>
-	<a href="/definition/{{item.namespace}}">{{item.namespace}}<a/>
-      </td>
+      <td>{{item.namespace}}</td>
       <td>{{item.version}}</td>
       <td>
 	{% if item.nodes != 0 %}
-	<a href="/definitions/{{item.namespace}}/nodes">{{item.nodes}}</a>
+	{{item.nodes}}
 	{% endif %}
       </td>
       <td>
 	{% if item.functions != 0 %}
-	<a href="/definitions/{{item.namespace}}/functions">
-	  {{item.functions}}
-	</a>
+	{{item.functions}}
 	{% endif %}
       </td>
       <td>
 	{% if item.events != 0 %}
-	<a href="/definitions/{{item.namespace}}/events">
 	  {{item.events}}
-	</a>
 	{% endif %}
       </td>
       <td>
@@ -48,16 +40,12 @@
       </td>
       <td>
 	{% if item.mutations != 0 %}
-	<a href="/definitions/{{item.namespace}}/mutations">
-	  {{item.mutations}}
-	</a>
+	{{item.mutations}}
 	{% endif %}
       </td>
       <td>
 	{% if item.routes != 0 %}
-	<a href="/definitions/{{item.namespace}}/routes">
-	  {{item.routes}}
-	</a>
+	{{item.routes}}
 	{% endif %}
       </td>
       <td> </td>
