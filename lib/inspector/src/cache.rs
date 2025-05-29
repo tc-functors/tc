@@ -1,5 +1,6 @@
 use compiler::{
     Event,
+    Route,
     Function,
     Topology,
 };
@@ -80,6 +81,54 @@ pub async fn find_all_events() -> HashMap<String, Event> {
     h
 }
 
+// by namespace
+
+pub async fn find_events(root: &str, namespace: &str) -> HashMap<String, Event> {
+    let topologies = find_all_topologies().await;
+    let rt = topologies.get(root);
+    if root == namespace {
+        match rt {
+            Some(t) => t.events.clone(),
+            None => HashMap::new(),
+        }
+    } else {
+        match rt {
+            Some(t) => {
+                let node = t.nodes.get(namespace);
+                match node {
+                    Some(n) => n.events.clone(),
+                    None => HashMap::new(),
+                }
+            }
+            None => HashMap::new(),
+        }
+    }
+}
+
+pub async fn find_routes(root: &str, namespace: &str) -> HashMap<String, Route> {
+    let topologies = find_all_topologies().await;
+    let rt = topologies.get(root);
+    if root == namespace {
+        match rt {
+            Some(t) => t.routes.clone(),
+            None => HashMap::new(),
+        }
+    } else {
+        match rt {
+            Some(t) => {
+                let node = t.nodes.get(namespace);
+                match node {
+                    Some(n) => n.routes.clone(),
+                    None => HashMap::new(),
+                }
+            }
+            None => HashMap::new(),
+        }
+    }
+}
+
+
+
 // singular
 
 pub async fn find_topology(root: &str, namespace: &str) -> Option<Topology> {
@@ -95,6 +144,8 @@ pub async fn find_topology(root: &str, namespace: &str) -> Option<Topology> {
         }
     }
 }
+
+
 
 pub async fn find_function(root: &str, namespace: &str, id: &str) -> Option<Function> {
     let topologies = find_all_topologies().await;

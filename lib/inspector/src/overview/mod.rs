@@ -7,6 +7,7 @@ mod routes;
 mod channels;
 mod queues;
 mod states;
+mod diagram;
 
 use askama::Template;
 use axum::{
@@ -72,4 +73,5 @@ pub fn list_routes() -> Router {
         .route("/hx/overview/routes", get(routes::list))
         .route("/hx/overview/states", get(states::list))
         .route("/hx/overview/mutations", get(mutations::list))
+        .route("/hx/overview/diagram", get(diagram::sequence))
 }

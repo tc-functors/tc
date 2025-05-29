@@ -6,7 +6,6 @@ use axum::{
 mod cache;
 mod functor;
 mod overview;
-mod diagram;
 mod list;
 
 pub async fn init(port: Option<String>) {
@@ -28,7 +27,6 @@ pub async fn init(port: Option<String>) {
         .merge(functor::mutation_routes())
         .merge(overview::page_routes())
         .merge(overview::list_routes())
-        .merge(diagram::page_routes())
         .layer(DefaultBodyLimit::disable())
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

@@ -8,37 +8,37 @@ use axum::{
     },
 };
 use compiler::{
+    Event,
     TopologySpec,
 };
+use std::collections::HashMap;
+
+struct Item {
+    name: String,
+    pattern: String,
+    kind: String,
+    target: String,
+}
 
 #[derive(Template)]
-#[template(path = "functor/states.html")]
+#[template(path = "functor/events.html")]
 struct ListTemplate {
     root: String,
     namespace: String,
-    definition: String,
+    items: Vec<Item>,
 }
 
-fn lookup_spec(dir: &str) -> TopologySpec {
-    let f = format!("{}/topology.yml", dir);
-    TopologySpec::new(&f)
+fn build(events: HashMap<String, Event>) -> Vec<Item> {
+    vec![]
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let topology = cache::find_topology(&root, &namespace).await;
-    let definition = if let Some(t) = topology {
-        let spec = lookup_spec(&t.dir);
-        match spec.flow {
-            Some(m) => serde_yaml::to_string(&m).unwrap(),
-            None => String::from(""),
-        }
-    } else {
-        String::from("")
-    };
+    let events = cache::find_events(&root, &namespace).await;
+    let items = build(events);
     let temp = ListTemplate {
         root: root,
         namespace: namespace,
-        definition: definition,
+        items: items,
     };
     Html(temp.render().unwrap())
 }

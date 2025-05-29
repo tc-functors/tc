@@ -61,7 +61,7 @@ where
 }
 
 #[derive(Template)]
-#[template(path = "diagram/index.html")]
+#[template(path = "overview/diagram.html")]
 struct SequenceTemplate {
     root: String,
     namespace: String,
