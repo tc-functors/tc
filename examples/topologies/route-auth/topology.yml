@@ -1,4 +1,4 @@
-name: 02-route-auth
+name: route-auth
 
 routes:
   /foo:

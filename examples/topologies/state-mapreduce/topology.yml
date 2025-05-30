@@ -1,4 +1,4 @@
-name: 04-state-mapreduce
+name: state-mapreduce
 
 flow:
   Comment: Example Mapper

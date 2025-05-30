@@ -1,4 +1,4 @@
-name: 02-route-async-channel
+name: route-async-channel
 
 routes:
   post-message:

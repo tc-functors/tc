@@ -1,1 +1,5 @@
-name: 06-channel-function
+name: channel-function
+
+channels:
+  my-channel:
+    function: foo
