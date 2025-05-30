@@ -1,0 +1,15 @@
+name: 02-http-async
+
+routes:
+  /start-etl:
+    authorizer: authorizer
+    method: POST
+    function: initalizer
+
+events:
+  StartETL:
+    channel: output-channel
+
+channels:
+  output-channel:
+    function: transformer
