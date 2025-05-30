@@ -27,7 +27,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/functions/{{root}}/{{namespace}}">
-    Functions <small>({{functions}})</small>
+    Functions {% if functions != 0 %}<small>({{functions}})</small>{% endif %}
   </button>
 
 
@@ -36,7 +36,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
-    Events <small>({{events}})</small>
+    Events {% if events != 0 %}<small>({{events}})</small>{% endif %}
   </button>
 
   <button role="tab"
@@ -44,7 +44,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/routes/{{root}}/{{namespace}}">
-    Routes <small>({{routes}})</small>
+    Routes {% if routes != 0 %}<small>({{routes}})</small>{% endif %}
   </button>
 
   <button role="tab"
@@ -52,7 +52,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/queues/{{root}}/{{namespace}}">
-    Queues <small>({{queues}})</small>
+    Queues {% if queues != 0 %}<small>({{queues}})</small>{% endif %}
   </button>
 
   <button role="tab"
@@ -60,7 +60,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/channels/{{root}}/{{namespace}}">
-    Channels <small>({{channels}})</small>
+    Channels {% if channels != 0 %}<small>({{channels}})</small>{% endif %}
   </button>
 
   <button role="tab"
@@ -68,7 +68,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
-    Mutations <small>({{mutations}})</small>
+    Mutations {% if mutations != 0 %}<small>({{mutations}})</small>{% endif %}
   </button>
 
   <button role="tab"
@@ -76,9 +76,8 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/states/{{root}}/{{namespace}}">
-    States <small>({{states}})</small>
+    States {% if states != 0 %}<small>({{states}})</small>{% endif %}
   </button>
-
 
 </div>
 

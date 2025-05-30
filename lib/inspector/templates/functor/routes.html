@@ -4,6 +4,29 @@
 
     <br/>
 
+    <table class="bordered-table">
+
+      <tbody>
+
+	{% for item in items %}
+	<tr>
+	  <td><input type="radio" name="event" id="{{item.path}}" value="{{item.path}}"/></td>
+	  <td>{{item.path}}</td>
+	  <td>
+	    {{item.method}}
+	  </td>
+	  <td>
+	    {{item.kind}}
+	  </td>
+	  <td>
+	    {{item.target}}
+	  </td>
+
+	</tr>
+	{% endfor %}
+
+    </table>
+
 
   </div>
 

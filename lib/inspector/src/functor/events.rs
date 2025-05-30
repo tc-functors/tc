@@ -14,7 +14,6 @@ use std::collections::HashMap;
 
 struct Item {
     name: String,
-    pattern: String,
     kind: String,
     target: String,
 }
@@ -28,7 +27,18 @@ struct ListTemplate {
 }
 
 fn build(events: HashMap<String, Event>) -> Vec<Item> {
-    vec![]
+    let mut xs: Vec<Item> = vec![];
+    for (name, ev) in events {
+        for target in ev.targets {
+            let item = Item {
+                name: name.clone(),
+                kind: target.entity.to_str(),
+                target: target.name
+            };
+            xs.push(item);
+        }
+    }
+    xs
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {

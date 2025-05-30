@@ -106,7 +106,7 @@ pub async fn find_events(root: &str, namespace: &str) -> HashMap<String, Event> 
     }
 }
 
-pub async fn find_channels(root: &str, namespace: &str) -> HashMap<String, Channel> {
+pub async fn _find_channels(root: &str, namespace: &str) -> HashMap<String, Channel> {
     let topologies = find_all_topologies().await;
     let rt = topologies.get(root);
     if root == namespace {

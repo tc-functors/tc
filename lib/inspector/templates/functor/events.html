@@ -9,10 +9,14 @@
 
 	{% for item in items %}
 	<tr>
-	  <td><input type="radio" name="function" id="{{item.name}}" value="{{item.name}}"/></td>
+	  <td><input type="radio" name="event" id="{{item.name}}" value="{{item.name}}"/></td>
 	  <td>{{item.name}}</td>
-	  <td>{{item.kind}}</td>
-	  <td>{{item.target}}</td>
+	  <td>
+	    {{item.kind}}
+	  </td>
+	  <td>
+	    {{item.target}}
+	  </td>
 
 	</tr>
 	{% endfor %}

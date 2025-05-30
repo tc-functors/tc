@@ -1,15 +1,11 @@
 use crate::cache;
 use askama::Template;
 use axum::{
-    Router,
     http::StatusCode,
     response::{
         Html,
         IntoResponse,
         Response,
-    },
-    routing::{
-        get,
     },
 };
 
@@ -63,8 +59,6 @@ where
 #[derive(Template)]
 #[template(path = "overview/diagram.html")]
 struct SequenceTemplate {
-    root: String,
-    namespace: String,
     items: Vec<String>,
 }
 
@@ -72,14 +66,7 @@ pub async fn sequence() -> impl IntoResponse {
     let xs = build_mermaid_str().await;
 
     let temp = SequenceTemplate {
-        root: "diagram".to_string(),
-        namespace: "diagram".to_string(),
         items: xs
     };
     Html(temp.render().unwrap())
-}
-
-pub fn page_routes() -> Router {
-    Router::new()
-        .route("/diagram", get(sequence))
 }
