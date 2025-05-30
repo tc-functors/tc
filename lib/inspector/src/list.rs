@@ -15,6 +15,7 @@ use axum::{
 #[derive(Template)]
 #[template(path = "list.html")]
 struct ListTemplate {
+    root: String,
     namespace: String,
     items: Vec<String>,
 }
@@ -25,6 +26,7 @@ pub async fn _load() -> impl IntoResponse {
     let mut functors = Vec::from_iter(topologies.keys().cloned());
     functors.sort();
     let t = ListTemplate {
+        root: compiler::topology_name(&kit::pwd()),
         namespace: String::from(""),
         items: functors,
     };
@@ -36,6 +38,7 @@ pub async fn functors(Path((_root, namespace)): Path<(String, String)>) -> impl 
     let mut functors = Vec::from_iter(topologies.keys().cloned());
     functors.sort();
     let t = ListTemplate {
+        root: compiler::topology_name(&kit::pwd()),
         namespace: namespace,
         items: functors,
     };

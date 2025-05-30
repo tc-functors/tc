@@ -55,9 +55,10 @@ struct IndexTemplate {
 }
 
 pub async fn index_page() -> impl IntoResponse {
+    let name = topology::name_of();
     HtmlTemplate(IndexTemplate {
-        root: String::from("default"),
-        namespace: String::from("default"),
+        root: String::from(&name),
+        namespace: name,
         functions: 0,
         events: 0,
         routes: 0,

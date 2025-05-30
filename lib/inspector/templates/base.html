@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8">
     <title>tc inspector</title>
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.slate.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
     <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script defer src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
@@ -13,7 +13,7 @@
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/graphql.min.js"></script>
@@ -93,10 +93,14 @@
 	margin-right: 0.7rem;
       }
 
+      .right-bordered {
+	border-right: 1px solid var(--pico-muted-border-color);
+      }
 
       .sidebar {
 	height: 100dvh;
 	line-height: 1.7rem;
+	color: #fff;
 	background-color: var(--pico-table-row-stripped-background-color);
 	border-right: 1px solid var(--pico-secondary-focus);
       }
@@ -104,50 +108,32 @@
       .functor {
 	margin-left: 1rem;
 	line-height: 1.7rem;
-	border: 2px solid #a9a9a9;
+	border: 2px solid var(--pico-secondary-focus);
 	border-radius: 0px;
 	height: 92dvh;
       }
 
       .tab {
 	border-radius: 1px;
-	color: #555555;
 	padding: 5px 10px;
-	border: 2px solid #a9a9a9;
+	border: 2px solid var(--pico-muted-border-color);
         border-bottom: none;
-	background-color: #ffffff;
+	background-color: transparent;
 	transition: background-color 0.3s ease;
 	}
 
 	.selected {
 	border-radius: 1px;
-	color: #555555;
+	color: #ffffff;
 	padding: 5px 10px;
-	border: 2px solid #a9a9a9;
+	border: 2px solid var(--pico-secondary-focus);
         border-bottom: none;
 	background-color: var(--pico-secondary-focus);
 	transition: background-color 0.3s ease;
 	}
 
-
-      .container-action {
-	margin-top: 1em;
-	margin-right: 1em;
-	margin-bottom: 2em;
-	background-color: #f9f9f9;
-	border: 1px solid var(--pico-muted-border-color);
-	border-radius: 10px;
-	height: 80dvh;
-      }
-
-      .container-entity {
-	margin-top: 1rem;
-	margin-right: 0.1rem;
-	margin-bottom: 0.1rem;
-      }
-
       .bordered-table {
-	background-color: #1a1f28;
+	background-color: none;
 	border: 1px solid var(--pico-muted-border-color);
 	border-radius: 10px;
       }
@@ -253,13 +239,12 @@
 	min-width: 10px;
 	border: none;
 	font: inherit;
-	color: #353839;
+	color: #eeeeee;
 	border-radius: 2px;
 	outline: none;
 	text-decoration: none;
 	font-weight: 400;
-	background-color: #fffcf0;
-	border: 1px solid #ccc;
+	background-color: #4D4C5C;
 	transition: background-color 0.3s ease;
 	box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.30), 0px 1px 1px rgba(0, 0, 0, .4);
 
@@ -275,7 +260,16 @@
 	}
 
 	.side-selected {
-	color: #000000;
+	color: #ffffff;
+	text-decoration-line: none;
+	background-color: transparent;
+	transition: background-color 0.3s ease;
+	}
+
+
+	.title {
+	color: #eda790;
+	padding: 4px 6px;
 	text-decoration-line: none;
 	background-color: transparent;
 	transition: background-color 0.3s ease;
@@ -298,6 +292,14 @@
 	display: flex;
 	gap: 20px;
 	justify-content: center;
+	}
+
+	.reveal pre code, .hljs {
+	background-color: transparent;
+	color: #DCDCDC;
+	padding: 5px;
+	overflow: auto;
+	word-wrap: normal;
 	}
 
     </style>

@@ -126,3 +126,7 @@ pub async fn count_of(root: &str, namespace: &str) -> TopologyCount {
         }
     }
 }
+
+pub fn name_of() -> String {
+    compiler::topology_name(&kit::pwd())
+}

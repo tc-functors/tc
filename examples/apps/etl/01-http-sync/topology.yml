@@ -1,0 +1,6 @@
+name: 01-http-sync
+
+routes:
+  /start-etl:
+    method: POST
+    function: initializer

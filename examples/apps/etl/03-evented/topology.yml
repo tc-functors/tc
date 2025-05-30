@@ -1,0 +1,18 @@
+name: 03-evented
+
+events:
+  InitializationComplete:
+    producer: adHoc
+    function: enhance
+
+  EnhancerComplete:
+    producer: adHoc
+    mutation: transform
+
+  TransformerComplete:
+    producer: adHoc
+    mutation: load
+
+  LoaderComplete:
+    producer: adHoc
+    mutation: complete

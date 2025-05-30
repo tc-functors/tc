@@ -1,9 +1,8 @@
-name: job-tracker
+name: 05-job-tracker
 events:
-  consumes:
-    CompleteTask:
-      producer: adHoc
-      mutation: completeJob
+  CompleteTask:
+    producer: adHoc
+    mutation: completeJob
 
 mutations:
   authorizer: '{{namespace}}_authorizer_{{sandbox}}'
