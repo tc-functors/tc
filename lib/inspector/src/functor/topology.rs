@@ -89,3 +89,40 @@ pub async fn definition(Path((root, namespace)): Path<(String, String)>) -> impl
         Html(temp.render().unwrap())
     }
 }
+
+
+pub struct TopologyCount {
+    pub functions: usize,
+    pub events: usize,
+    pub routes: usize,
+    pub mutations: usize,
+    pub queues: usize,
+    pub channels: usize,
+    pub states: usize
+}
+
+pub async fn count_of(root: &str, namespace: &str) -> TopologyCount {
+    let f = cache::find_topology(root, namespace).await;
+    if let Some(t) = f {
+
+        TopologyCount {
+            functions: t.functions.len(),
+            events: t.events.len(),
+            routes: t.routes.len(),
+            mutations: t.mutations.len(),
+            queues: t.queues.len(),
+            channels: t.channels.len(),
+            states: 0
+        }
+    } else {
+        TopologyCount {
+            functions: 0,
+            events: 0,
+            routes: 0,
+            mutations: 0,
+            queues: 0,
+            channels: 0,
+            states: 0
+        }
+    }
+}

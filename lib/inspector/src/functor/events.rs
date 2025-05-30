@@ -9,7 +9,6 @@ use axum::{
 };
 use compiler::{
     Event,
-    TopologySpec,
 };
 use std::collections::HashMap;
 

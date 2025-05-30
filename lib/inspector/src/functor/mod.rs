@@ -22,6 +22,7 @@ mod events;
 mod states;
 mod channels;
 
+
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
 where
@@ -44,19 +45,42 @@ where
 struct IndexTemplate {
     root: String,
     namespace: String,
+    functions: usize,
+    events: usize,
+    routes: usize,
+    queues: usize,
+    channels: usize,
+    mutations: usize,
+    states: usize
 }
 
 pub async fn index_page() -> impl IntoResponse {
     HtmlTemplate(IndexTemplate {
         root: String::from("default"),
         namespace: String::from("default"),
+        functions: 0,
+        events: 0,
+        routes: 0,
+        queues: 0,
+        channels: 0,
+        mutations: 0,
+        states: 0
     })
 }
 
 pub async fn main_page(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
+    let count = topology::count_of(&root, &namespace).await;
     let temp = IndexTemplate {
         root: root,
         namespace: namespace,
+        functions: count.functions,
+        events: count.events,
+        routes: count.routes,
+        queues: count.queues,
+        channels: count.channels,
+        mutations: count.mutations,
+        states: count.states
+
     };
     Html(temp.render().unwrap())
 }

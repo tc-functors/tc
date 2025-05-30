@@ -27,7 +27,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/functions/{{root}}/{{namespace}}">
-    Functions <small>(2)</small>
+    Functions <small>({{functions}})</small>
   </button>
 
 
@@ -36,7 +36,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
-    Events
+    Events <small>({{events}})</small>
   </button>
 
   <button role="tab"
@@ -44,7 +44,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/routes/{{root}}/{{namespace}}">
-    Routes
+    Routes <small>({{routes}})</small>
   </button>
 
   <button role="tab"
@@ -52,7 +52,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/queues/{{root}}/{{namespace}}">
-    Queues
+    Queues <small>({{queues}})</small>
   </button>
 
   <button role="tab"
@@ -60,7 +60,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/channels/{{root}}/{{namespace}}">
-    Channels
+    Channels <small>({{channels}})</small>
   </button>
 
   <button role="tab"
@@ -68,7 +68,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
-    Mutations
+    Mutations <small>({{mutations}})</small>
   </button>
 
   <button role="tab"
@@ -76,7 +76,7 @@
 	  aria-selected="false"
 	  class="tab"
 	  hx-get="/hx/functor/states/{{root}}/{{namespace}}">
-    States
+    States <small>({{states}})</small>
   </button>
 
 

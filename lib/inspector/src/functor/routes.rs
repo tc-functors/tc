@@ -9,7 +9,6 @@ use axum::{
 };
 use compiler::{
     Route,
-    TopologySpec,
 };
 use std::collections::HashMap;
 
