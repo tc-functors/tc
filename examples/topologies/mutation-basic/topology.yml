@@ -1,4 +1,4 @@
-name: 05-mutation-basic
+name: mutation-basic
 
 events:
   consumes:

@@ -1,4 +1,4 @@
-name: 09-triggers
+name: triggers
 
 triggers:
   PRE_SIGN_UP:

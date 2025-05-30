@@ -1,4 +1,4 @@
-name: 04-state-map-distributed
+name: state-map-distributed
 
 flow:
   Comment: dist-map

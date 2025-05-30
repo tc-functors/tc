@@ -1,4 +1,4 @@
-name: 04-states-parallel
+name: state-parallel
 
 flow:
   Comment: Parallel Example

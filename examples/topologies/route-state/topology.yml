@@ -1,4 +1,4 @@
-name: 02-route-state
+name: route-state
 
 routes:
   api:
