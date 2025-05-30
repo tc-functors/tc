@@ -8,37 +8,37 @@ use axum::{
     },
 };
 use compiler::{
+    Route,
     TopologySpec,
 };
+use std::collections::HashMap;
+
+struct Item {
+    path: String,
+    kind: String,
+    target: String,
+}
 
 #[derive(Template)]
 #[template(path = "functor/routes.html")]
 struct ListTemplate {
     root: String,
     namespace: String,
-    definition: String,
+    items: Vec<Item>,
 }
 
-fn lookup_spec(dir: &str) -> TopologySpec {
-    let f = format!("{}/topology.yml", dir);
-    TopologySpec::new(&f)
+
+fn build(routes: HashMap<String, Route>) -> Vec<Item> {
+    vec![]
 }
 
 pub async fn list(Path((root, namespace)): Path<(String, String)>) -> impl IntoResponse {
-    let topology = cache::find_topology(&root, &namespace).await;
-    let definition = if let Some(t) = topology {
-        let spec = lookup_spec(&t.dir);
-        match spec.flow {
-            Some(m) => serde_yaml::to_string(&m).unwrap(),
-            None => String::from(""),
-        }
-    } else {
-        String::from("")
-    };
+    let routes = cache::find_routes(&root, &namespace).await;
+    let items = build(routes);
     let temp = ListTemplate {
         root: root,
         namespace: namespace,
-        definition: definition,
+        items: items,
     };
     Html(temp.render().unwrap())
 }

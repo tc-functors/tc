@@ -1,6 +1,7 @@
 use compiler::{
     Event,
     Route,
+    Channel,
     Function,
     Topology,
 };
@@ -105,6 +106,28 @@ pub async fn find_events(root: &str, namespace: &str) -> HashMap<String, Event> 
     }
 }
 
+pub async fn find_channels(root: &str, namespace: &str) -> HashMap<String, Channel> {
+    let topologies = find_all_topologies().await;
+    let rt = topologies.get(root);
+    if root == namespace {
+        match rt {
+            Some(t) => t.channels.clone(),
+            None => HashMap::new(),
+        }
+    } else {
+        match rt {
+            Some(t) => {
+                let node = t.nodes.get(namespace);
+                match node {
+                    Some(n) => n.channels.clone(),
+                    None => HashMap::new(),
+                }
+            }
+            None => HashMap::new(),
+        }
+    }
+}
+
 pub async fn find_routes(root: &str, namespace: &str) -> HashMap<String, Route> {
     let topologies = find_all_topologies().await;
     let rt = topologies.get(root);
@@ -144,8 +167,6 @@ pub async fn find_topology(root: &str, namespace: &str) -> Option<Topology> {
         }
     }
 }
-
-
 
 pub async fn find_function(root: &str, namespace: &str, id: &str) -> Option<Function> {
     let topologies = find_all_topologies().await;
