@@ -1,23 +1,24 @@
-use super::layer;
+use super::{layer, role};
 use crate::spec::function::{
-        AssetsSpec,
-        BuildKind,
-        FunctionSpec,
-        Lang,
-        LangRuntime,
-        RuntimeSpec,
+    AssetsSpec,
+    BuildKind,
+    FunctionSpec,
+    Lang,
+    Platform,
+    LangRuntime,
+    RuntimeSpec,
 };
 use crate::spec::infra::InfraSpec;
 
 use crate::topology::{
-    role,
     role::{
         Role,
-        RoleKind,
     },
     template,
     version,
 };
+
+
 use chksum::sha1;
 use kit as u;
 use kit::*;
@@ -45,6 +46,7 @@ pub struct FileSystem {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Runtime {
     pub lang: LangRuntime,
+    pub platform: Platform,
     pub handler: String,
     pub package_type: String,
     pub uri: String,
@@ -52,6 +54,7 @@ pub struct Runtime {
     pub tags: HashMap<String, String>,
     pub environment: HashMap<String, String>,
     pub memory_size: Option<i32>,
+    pub cpu: Option<i32>,
     pub timeout: Option<i32>,
     pub snapstart: bool,
     pub provisioned_concurrency: Option<i32>,
@@ -60,8 +63,8 @@ pub struct Runtime {
     pub network: Option<Network>,
     pub fs: Option<FileSystem>,
     pub role: Role,
-    pub infra_spec_file: Option<String>,
     pub infra_spec: HashMap<String, InfraSpec>,
+    pub cluster: Option<String>
 }
 
 fn find_code_version(dir: &str) -> String {
@@ -205,7 +208,7 @@ fn lookup_role(
         Some(r) => {
 
             match &r.role {
-                Some(given) => role::use_given(RoleKind::Function, &given),
+                Some(given) => role::use_given(&given),
                 None => {
                     let path = match &r.role_file {
                         Some(f) => Some(follow_path(&f)),
@@ -224,16 +227,16 @@ fn lookup_role(
                         let policy_name = format!("tc-{}-{{{{sandbox}}}}-{}-policy", namespace, abbr);
                         let role_name = format!("tc-{}-{{{{sandbox}}}}-{}-role", namespace, abbr);
 
-                        Role::new(RoleKind::Function, &p, &role_name, &policy_name)
+                        role::make(&p, &role_name, &policy_name)
                     } else {
-                        role::default(RoleKind::Function)
+                        role::default(r.platform.clone())
                     }
 
 
                 }
             }
         }
-        None => role::default(RoleKind::Function),
+        None => role::default(None),
     }
 }
 
@@ -431,7 +434,164 @@ fn make_fs(infra_spec: &InfraSpec, enable_fs: bool) -> Option<FileSystem> {
     }
 }
 
+fn lookup_infraspec(dir: &str, infra_dir: &str, fspec: &FunctionSpec) -> InfraSpec {
+    let rspec = fspec.runtime;
+    let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
+    let infra_spec = InfraSpec::new(infra_spec_file.clone());
+    let default_infra_spec = infra_spec.get("default").unwrap();
+    default_infra_spec
+}
+
+fn make_default(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec) -> Runtime {
+    let lang = infer_lang(dir);
+    let rspec = fspec.runtime;
+    let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
+
+    let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
+
+    let InfraSpec {
+        memory_size,
+        timeout,
+        environment,
+        ..
+    } = infra_spec;
+
+
+    let vars = make_env_vars(
+        dir,
+        namespace,
+        BuildKind::Code,
+        fspec.assets.clone(),
+        environment.clone(),
+        lang.to_lang(),
+        fqn,
+    );
+
+     Runtime {
+         lang: lang,
+         platform: Platform::Lambda,
+         handler: s!("handler.handler"),
+         package_type: s!("zip"),
+         uri: as_uri(dir, &fspec.name, "zip", None),
+         layers: vec![],
+         environment: vars,
+         tags: make_tags(namespace, &infra_dir),
+         provisioned_concurrency: infra_spec.provisioned_concurrency.clone(),
+         reserved_concurrency: infra_spec.reserved_concurrency.clone(),
+         role: role,
+         memory_size: *memory_size,
+         timeout: *timeout,
+         snapstart: false,
+         enable_fs: false,
+         network: None,
+         fs: None,
+         infra_spec: infra_spec,
+     }
+}
+
+fn make_lambda(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec) -> Runtime {
+    let r = fspec.runtime.unwrap();
+    let layer_name = find_implicit_layer_name(dir, namespace, fspec);
+    let layers = consolidate_layers(&mut r.extensions, &mut r.layers, layer_name);
+    let package_type = &r.package_type;
+    let uri = as_uri(dir, &fspec.name, package_type, r.uri);
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
+    let role = lookup_role(&infra_dir, &r, namespace, &fspec.name);
+    let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
+    let build_kind = find_build_kind(&fspec);
+
+    let infra_spec = lookup_infraspec();
+    let InfraSpec {
+        memory_size,
+        timeout,
+        environment,
+        ..
+    } = infra_spec;
+
+    let vars = make_env_vars(
+        dir,
+        namespace,
+        BuildKind::Code,
+        fspec.assets.clone(),
+        environment.clone(),
+        r.lang.to_lang(),
+        fqn,
+    );
+
+    Runtime {
+        lang: r.lang,
+        platform: r.platform.unwrap(),
+        handler: r.handler,
+        package_type: package_type.to_string(),
+        uri: uri,
+        layers: layers,
+        tags: make_tags(namespace, &infra_dir),
+        environment: vars,
+        provisioned_concurrency: infra_spec.provisioned_concurrency.clone(),
+        reserved_concurrency: infra_spec.reserved_concurrency.clone(),
+        memory_size: *memory_size,
+        timeout: *timeout,
+        snapstart: u::opt_as_bool(r.snapstart),
+        role: role,
+        enable_fs: enable_fs,
+        network: make_network(&infra_spec, enable_fs),
+        fs: make_fs(&infra_spec, enable_fs),
+        infra_spec: infra_spec,
+        cluster: None
+    }
+}
+
+fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpec, c: &Config) -> Runtime {
+    let r = fspec.runtime.unwrap();
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
+    let uri = as_uri(dir, &fspec.name, package_type, r.uri);
+    let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
+    let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
+
+    let InfraSpec {
+        memory_size,
+        timeout,
+        environment,
+        ..
+    } = infra_spec;
+
+
+    let vars = make_env_vars(
+        dir,
+        namespace,
+        BuildKind::Code,
+        fspec.assets.clone(),
+        environment.clone(),
+        lang.to_lang(),
+        fqn,
+    );
+
+    Runtime {
+        lang: r.lang,
+        platform: Platform::Fargate,
+        handler: r.handler,
+        package_type: s!("Image"),
+        uri: as_uri(dir, &fspec.name, package_type, r.uri),
+        layers: vec![],
+        tags: make_tags(namespace, &infra_dir),
+        environment: vars,
+        provisioned_concurrency: None,
+        reserved_concurrency: None,
+        memory_size: *memory_size,
+        cpu: *cpu,
+        timeout: *timeout,
+        snapstart: false,
+        role: role,
+        enable_fs: enable_fs,
+        network: make_network(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, enable_fs),
+        infra_spec: infra_spec,
+        cluster: cluster
+    }
+}
+
 impl Runtime {
+
     pub fn new(
         dir: &str,
         t_infra_dir: &str,
@@ -445,27 +605,10 @@ impl Runtime {
             Some(p) => p.to_string(),
             None => as_infra_dir(dir, t_infra_dir),
         };
-        let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
-
-        let infra_spec = InfraSpec::new(infra_spec_file.clone());
-        //FIXME: handle unwrap
-        let default_infra_spec = infra_spec.get("default").unwrap();
-        let InfraSpec {
-            memory_size,
-            timeout,
-            environment,
-            ..
-        } = default_infra_spec;
-
-        let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
-        let build_kind = find_build_kind(&fspec);
 
         match rspec {
             Some(mut r) => {
-                let layer_name = find_implicit_layer_name(dir, namespace, fspec);
-                let layers = consolidate_layers(&mut r.extensions, &mut r.layers, layer_name);
-                let package_type = &r.package_type;
-                let vars = make_env_vars(
+              let vars = make_env_vars(
                     dir,
                     namespace,
                     build_kind,
@@ -475,61 +618,13 @@ impl Runtime {
                     fqn,
                 );
 
-                let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
-                Runtime {
-                    lang: r.lang,
-                    handler: r.handler,
-                    package_type: package_type.to_string(),
-                    uri: as_uri(dir, &fspec.name, package_type, r.uri),
-                    layers: layers,
-                    tags: make_tags(namespace, &infra_dir),
-                    environment: vars,
-                    provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
-                    reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
-                    memory_size: *memory_size,
-                    timeout: *timeout,
-                    snapstart: u::opt_as_bool(r.snapstart),
-                    role: role,
-                    enable_fs: enable_fs,
-                    network: make_network(&default_infra_spec, enable_fs),
-                    fs: make_fs(&default_infra_spec, enable_fs),
-                    infra_spec_file: infra_spec_file,
-                    infra_spec: infra_spec,
+                match r.platform {
+                    Platform::Lambda => make_lambda(dir, &infra_dir, fspec, r),
+                    Platform::Fargate => make_fargate(dir, &infra_dir, fpsec, r)
                 }
-            }
-            None => {
-                let lang = infer_lang(dir);
-                let vars = make_env_vars(
-                    dir,
-                    namespace,
-                    build_kind,
-                    fspec.assets.clone(),
-                    environment.clone(),
-                    lang.to_lang(),
-                    fqn,
-                );
 
-                Runtime {
-                    lang: lang,
-                    handler: s!("handler.handler"),
-                    package_type: s!("zip"),
-                    uri: as_uri(dir, &fspec.name, "zip", None),
-                    layers: vec![],
-                    environment: vars,
-                    tags: make_tags(namespace, &infra_dir),
-                    provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
-                    reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
-                    role: role,
-                    memory_size: *memory_size,
-                    timeout: *timeout,
-                    snapstart: false,
-                    enable_fs: false,
-                    network: None,
-                    fs: None,
-                    infra_spec_file: infra_spec_file,
-                    infra_spec: infra_spec,
-                }
             }
+            None => make_default()
         }
     }
 }
