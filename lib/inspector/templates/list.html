@@ -3,14 +3,12 @@
     <ul>
       <li><strong>tc 0.8.72</strong></li>
       <li>
-	{% if namespace == "overview" %}
-	<span class="side-selected">Overview</span>
+	{% if namespace == root %}
+	<span class="side-selected">{{root}}</span>
 	{% else %}
-	<a href="/overview">Overview</a>
+	<a href="/overview">{{root}}</a>
 	{% endif %}
       </li>
-      <hr/>
-      <span class="title">{{root}}</titled>
       {% for item in items %}
       <li>
 	{% if namespace == item|lower %}
