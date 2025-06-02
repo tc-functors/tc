@@ -1,13 +1,15 @@
-# tc
+# tc (Topology Composer)
 
 A graph-based, stateless, serverless application & infrastructure composer.
 
 [![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
 
+`tc` allows developers to compose cloud applications using high-level abstractions called `Cloud Functors` without getting bogged down in provider-specific infrastructure details.
+The central concept in `tc` is the `Cloud Functor` - a namespaced, sandboxed, versioned, and isomorphic topology of serverless components. The term "functor" is borrowed from OCaml's parameterized modules, emphasizing first-class, composable units.
 
-`tc` defines, creates and manages the lifecycle of serveless entities such as functions, mutations, events, routes, states, queues and channels. tc compiles a tree of entities defined in the filesystem as a topology. This namespaced, sandboxed, versioned and isomorphic topology is called a `Cloud Functor`.
+`tc` defines, creates and manages the lifecycle of serveless entities such as functions, mutations, events, routes, states, queues and channels.
+It represents a higher-level abstraction for serverless development, focusing on the logical relationships between these entities rather than the underlying infrastructure details.
 
-The word functor was popularized by Ocaml's parameterized modules. These modules, called functors, are first class. Cloud functors are similar in that they are treated as first class and are composable much like Ocaml's elegant modules.
 
 ## Key features of functors using tc
 
@@ -113,6 +115,15 @@ The resolver can also be written in any language that is easy to use and query t
 The output of the compiler, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
 
 
+## Use Cases
+
+`tc` is particularly well-suited for:
+1. Serverless microservices architectures
+2. Event-driven applications
+3. API-based services
+4. Teams wanting to standardize serverless development practices
+5. Projects requiring isolated testing environments
+
 ## Resources
 
 Documentation: https://tc-functors.org/
@@ -129,7 +140,6 @@ Usage: tc <COMMAND>
 Commands:
   build    Build layers, extensions and pack function code
   compile  Compile a Topology
-  config   Show config
   create   Create a sandboxed topology
   delete   Delete a sandboxed topology
   emulate  Emulate Runtime environments
@@ -173,6 +183,23 @@ This project follows the Contributor Covenant Code of Conduct. We expect all con
 - **Improve Documentation**: Help make our docs better by fixing errors or adding examples
 - **Join Discussions**: Participate in [GitHub Discussions](https://github.com/orgs/tc-functors/discussions) to share ideas, ask questions, and help others
 
+## Project Structure
+
+The codebase is organized as a Rust workspace with multiple libraries:
+
+- **Main CLI (`src/`)**: Command-line interface for TC
+- **Libraries (`lib/`)**:
+  - `authorizer`: Authentication and authorization
+  - `builder`: Building and packaging functions
+  - `compiler`: Compiling topologies
+  - `deployer`: Deploying to cloud providers
+  - `differ`: Comparing topologies
+  - `emulator`: Local emulation
+  - `inspector`: Visualization and inspection
+  - `invoker`: Invoking functions
+  - `releaser`: Release management
+  - `resolver`: Resolving template variables
+
 ### Development Process
 
 1. Fork the repository
@@ -185,8 +212,9 @@ This project follows the Contributor Covenant Code of Conduct. We expect all con
 We aim to review all contributions promptly and look forward to collaborating with you!
 
 
-## Thanks
+## Thanks & Credits
 
 - Thanks to [Eric Harvey](https://github.com/EricHarvey) for brainstorming on several core features and ideas.
-- Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/rachel-yujin-chung), [Alper](https://github.com/alperinformed), [Alex](https://github.com/GalexyN), [Shreyas Ganesh](https://github.com/ShreyasGanesh257), [Henry Do](https://github.com/henry9do), [Sanjeev](https://github.com/sanjeev247)  for their collaboration, testing and insights.
+- Thanks to [Abhijith Gopal](https://github.com/abhijith) for his thoughts and ideas on graph-based computations.
+- Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/rachel-yujin-chung), [Alper](https://github.com/alperinformed), [Alex](https://github.com/GalexyN), [Sanjeev](https://github.com/sanjeev247)  for their collaboration, testing and insights.
 - Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.
