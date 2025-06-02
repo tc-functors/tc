@@ -2,13 +2,40 @@ use compiler::{
     Function,
     Lang,
 };
-//use aws::ecs;
-//use aws::ecs::TaskDef;
+use aws::ecs;
+use aws::ecs::TaskDef;
 use authorizer::Auth;
 use crate::{
     aws::lambda,
 };
 use std::collections::HashMap;
+
+// async fn create_container_task(
+//     env: &Env,
+//     fn_name: &str,
+// ) -> String {
+//     let ContainerTask { task_role_arn,
+//                         cluster, image_uri, cpu, mem,
+//                         subnets, command,
+//                         .. } = ct;
+
+//     let client = ecs::make_client(env).await;
+//     let tdf = TaskDef::new(fn_name, &task_role_arn, &mem, &cpu);
+//     let cdf = ecs::make_cdf(s!(fn_name), image_uri, command);
+//     let net = ecs::make_network_config(subnets);
+//     println!("Creating task def {}", fn_name);
+//     let taskdef_arn  = ecs::create_taskdef(&client, tdf, cdf).await;
+
+//     println!("Creating ecs service {}", fn_name);
+//     ecs::create_service(
+//         &client,
+//         &cluster,
+//         &fn_name,
+//         &taskdef_arn,
+//         net
+//     ).await;
+//     taskdef_arn
+// }
 
 pub async fn make_lambda(auth: &Auth, f: Function) -> lambda::Function {
     let client = lambda::make_client(auth).await;

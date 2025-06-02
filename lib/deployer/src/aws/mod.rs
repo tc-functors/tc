@@ -8,3 +8,4 @@ pub mod scheduler;
 pub mod sfn;
 pub mod sqs;
 pub mod cognito;
+pub mod ecs;

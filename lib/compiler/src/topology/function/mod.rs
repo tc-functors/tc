@@ -1,8 +1,9 @@
 pub mod build;
 pub mod layer;
 pub mod runtime;
+mod role;
 
-use crate::spec::FunctionSpec;
+use crate::spec::{FunctionSpec, ConfigSpec};
 pub use build::Build;
 use kit as u;
 use kit::*;
@@ -97,7 +98,7 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
 }
 
 impl Function {
-    pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
+    pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str, config: &ConfigSpec) -> Function {
         let fspec = FunctionSpec::new(dir);
 
         let namespace = match fspec.namespace {

@@ -101,18 +101,6 @@ pub fn default(kind: RoleKind) -> Role {
     }
 }
 
-pub fn use_given(_kind: RoleKind, role_name: &str) -> Role {
-    Role {
-        name: role_name.to_string(),
-        path: s!("provided"),
-        trust: s!("provided"),
-        arn: template::role_arn(&role_name),
-        policy: s!("provided"),
-        policy_name: s!("tc-base-lambda-policy"),
-        policy_arn: template::policy_arn("tc-base-lambda-policy"),
-    }
-}
-
 impl Role {
     pub fn new(kind: RoleKind, role_file: &str, role_name: &str, policy_name: &str) -> Role {
         if u::file_exists(&role_file) {
