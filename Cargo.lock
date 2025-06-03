@@ -520,6 +520,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-sdk-codeartifact"
+version = "1.74.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6daf1c564b0ff15ed37f49039cd66a32c348112840ce281f0c245ff8103dd93"
+dependencies = [
+ "aws-credential-types",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-http 0.62.1",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
+ "fastrand",
+ "http 0.2.12",
+ "regex-lite",
+ "tracing",
+]
+
+[[package]]
 name = "aws-sdk-cognitoidentityprovider"
 version = "1.80.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1258,6 +1280,7 @@ dependencies = [
  "anyhow",
  "authorizer",
  "aws-config",
+ "aws-sdk-codeartifact",
  "aws-sdk-lambda",
  "base64",
  "colored",

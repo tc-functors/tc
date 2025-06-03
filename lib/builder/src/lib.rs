@@ -54,9 +54,9 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     outs
 }
 
-pub fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) -> String {
+pub async fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) -> String {
     match langr.to_lang() {
-        Lang::Rust => inline::build(dir, name, langr, spec),
+        Lang::Rust => inline::build(dir, name, langr, spec).await,
         _ => {
             let c = format!(r"{}", &spec.command);
             sh(&c, dir);
@@ -104,11 +104,11 @@ pub async fn build(
 
         let path = match kind {
             BuildKind::Image     => image::build(dir, &name, langr, &spec.images, &image_kind, &runtime.uri),
-            BuildKind::Inline    => inline::build(dir, &name, langr, &spec),
+            BuildKind::Inline    => inline::build(dir, &name, langr, &spec).await,
             BuildKind::Layer     => layer::build(dir, &name, langr),
             BuildKind::Library   => library::build(dir, langr),
             BuildKind::Slab      => library::build(dir, langr),
-            BuildKind::Code      => build_code(dir, &name, langr, &spec),
+            BuildKind::Code      => build_code(dir, &name, langr, &spec).await,
             BuildKind::Extension => extension::build(dir, &name),
             BuildKind::Runtime   => todo!()
         };
