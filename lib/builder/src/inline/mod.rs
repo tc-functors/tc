@@ -2,7 +2,9 @@ mod python;
 mod ruby;
 mod rust;
 mod node;
+mod aws;
 
+use authorizer::Auth;
 use kit as u;
 use kit::LogUpdate;
 use std::io::stdout;
@@ -43,16 +45,40 @@ npm-debug.log
     u::write_str(&file, &f);
 }
 
-fn get_token() -> String {
-    match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
-        Ok(t) => t,
-        Err(_) => String::from("")
+async fn init() -> Auth {
+    let config = compiler::config(&kit::pwd());
+    let profile = config.aws.lambda.layers_profile.clone();
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            match profile.clone() {
+                Some(p) => {
+                    let role = config.ci.roles.get(&p).cloned();
+                    Auth::new(profile.clone(), role).await
+                },
+                None => Auth::new(None, None).await
+            }
+        },
+        Err(_) => {
+            Auth::new(profile.clone(), None).await
+        }
     }
 }
 
-fn build_with_docker(dir: &str) {
+async fn get_token() -> String {
+    match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
+        Ok(t) => t,
+        Err(_) => {
+            let auth = init().await;
+            let client = aws::codeartifact::make_client(&auth).await;
+            aws::codeartifact::get_auth_token(&client, &auth.name, &auth.account).await
+        }
+    }
+}
+
+async fn build_with_docker(dir: &str) {
     let root = &u::root();
-    let token = get_token();
+    let token = get_token().await;
+    println!("Found token: {}", &token);
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
             "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
@@ -127,7 +153,7 @@ fn should_build_deps() -> bool {
     }
 }
 
-pub fn build(
+pub async fn build(
     dir: &str,
     name: &str,
     langr: &LangRuntime,
@@ -147,7 +173,7 @@ pub fn build(
         gen_dockerignore(dir);
 
         let _ = log.render(&format!("Building {name} - Building with Docker"));
-        build_with_docker(dir);
+        build_with_docker(dir).await;
 
         let _ = log.render(&format!("Building {name} - Copying from container"));
 
