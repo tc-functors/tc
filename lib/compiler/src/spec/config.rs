@@ -102,6 +102,12 @@ pub struct Compiler {
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
+pub struct Builder {
+    pub cluster: Option<String>,
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derivative(Debug, Default)]
 pub struct Resolver {
     #[derivative(Default(value = "default_bool()"))]
     #[serde(default = "default_bool")]
@@ -336,6 +342,9 @@ pub struct Aws {
 pub struct ConfigSpec {
     #[serde(default = "Compiler::default")]
     pub compiler: Compiler,
+
+    #[serde(default = "Builder::default")]
+    pub builder: Builder,
 
     #[serde(default = "Resolver::default")]
     pub resolver: Resolver,
