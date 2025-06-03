@@ -5,10 +5,12 @@ use serde_derive::Serialize;
 use std::collections::HashMap;
 use walkdir::WalkDir;
 use crate::spec::function::{LangRuntime, FunctionSpec};
+use crate::spec::ConfigSpec;
 use super::Function;
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
-    let function = Function::new(dir, dir, "", "");
+    let c = ConfigSpec::new(None);
+    let function = Function::new(dir, dir, "", "", &c);
     function.runtime.lang
 }
 
@@ -105,7 +107,7 @@ fn external_layers(dir: &str) -> Vec<Layer> {
 }
 
 fn function_layer(dir: &str) -> Layer {
-    let fspec = Function::new(dir, dir, "", "");
+    let fspec = Function::new(dir, dir, "", "", &ConfigSpec::new(None));
     let name = match fspec.layer_name {
         Some(fln) => fln,
         None => u::basedir(dir).to_string(),

@@ -112,7 +112,7 @@ impl Function {
             None => topo_infra_dir,
         };
 
-        let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn);
+        let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, config);
 
         Function {
             name: fspec.name.to_string(),

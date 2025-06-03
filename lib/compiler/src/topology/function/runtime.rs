@@ -9,6 +9,7 @@ use crate::spec::function::{
     RuntimeSpec,
 };
 use crate::spec::infra::InfraSpec;
+use crate::spec::ConfigSpec;
 
 use crate::topology::{
     role::{
@@ -203,6 +204,8 @@ fn lookup_role(
     namespace: &str,
     function_name: &str,
 ) -> Role {
+
+
 
     match rspec {
         Some(r) => {
@@ -439,7 +442,7 @@ fn lookup_infraspec(dir: &str, infra_dir: &str, fspec: &FunctionSpec) -> InfraSp
     let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
     let infra_spec = InfraSpec::new(infra_spec_file.clone());
     let default_infra_spec = infra_spec.get("default").unwrap();
-    default_infra_spec
+    default_infra_spec.clone()
 }
 
 fn make_default(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec) -> Runtime {
@@ -479,13 +482,14 @@ fn make_default(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &
          provisioned_concurrency: infra_spec.provisioned_concurrency.clone(),
          reserved_concurrency: infra_spec.reserved_concurrency.clone(),
          role: role,
-         memory_size: *memory_size,
-         timeout: *timeout,
+         memory_size: memory_size,
+         timeout: timeout,
          snapstart: false,
          enable_fs: false,
          network: None,
          fs: None,
          infra_spec: infra_spec,
+         cluster: None
      }
 }
 
@@ -541,15 +545,20 @@ fn make_lambda(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &F
     }
 }
 
-fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpec, c: &Config) -> Runtime {
-    let r = fspec.runtime.unwrap();
-    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
-    let uri = as_uri(dir, &fspec.name, package_type, r.uri);
+fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec, c: &ConfigSpec) -> Runtime {
+    let rspec = fspec.runtime.unwrap();
+    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
+    let package_type = s!("Image");
+    let uri = as_uri(dir, &fspec.name, &package_type, rspec.uri);
     let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
     let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
 
+    let lang = rspec.lang;
+    let cluster = c.builder.cluster;
+
     let InfraSpec {
         memory_size,
+        cpu,
         timeout,
         environment,
         ..
@@ -567,11 +576,11 @@ fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpe
     );
 
     Runtime {
-        lang: r.lang,
+        lang: lang,
         platform: Platform::Fargate,
-        handler: r.handler,
-        package_type: s!("Image"),
-        uri: as_uri(dir, &fspec.name, package_type, r.uri),
+        handler: rspec.handler,
+        package_type: package_type,
+        uri: uri,
         layers: vec![],
         tags: make_tags(namespace, &infra_dir),
         environment: vars,
@@ -583,8 +592,8 @@ fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fspec: &FunctionSpe
         snapstart: false,
         role: role,
         enable_fs: enable_fs,
-        network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, enable_fs),
+        network: make_network(&infra_spec, enable_fs),
+        fs: make_fs(&infra_spec, enable_fs),
         infra_spec: infra_spec,
         cluster: cluster
     }
@@ -608,19 +617,9 @@ impl Runtime {
 
         match rspec {
             Some(mut r) => {
-              let vars = make_env_vars(
-                    dir,
-                    namespace,
-                    build_kind,
-                    fspec.assets.clone(),
-                    environment.clone(),
-                    r.lang.to_lang(),
-                    fqn,
-                );
-
                 match r.platform {
                     Platform::Lambda => make_lambda(dir, &infra_dir, fspec, r),
-                    Platform::Fargate => make_fargate(dir, &infra_dir, fpsec, r)
+                    Platform::Fargate => make_fargate(dir, &infra_dir, fspec, r)
                 }
 
             }
