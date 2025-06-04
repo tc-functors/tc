@@ -1,5 +1,6 @@
 use kit as u;
 
+
 pub fn gen_dockerfile(dir: &str) {
     let install_cmd = "yarn install --no-lockfile --production";
     let image = "node:22-alpine3.19";
@@ -8,6 +9,13 @@ pub fn gen_dockerfile(dir: &str) {
         Ok(t) => t,
         Err(_) => String::from("")
     };
+
+    let extra_cmd =
+        if u::path_exists(dir, "build.js") {
+            "node build.js"
+        } else {
+            "echo 1"
+        };
 
     let f = format!(
         r#"
@@ -23,6 +31,8 @@ RUN rm -rf /build/node_modules && mkdir -p /build
 COPY . /build
 
 RUN {install_cmd}
+
+RUN {extra_cmd}
 
 "#
     );
