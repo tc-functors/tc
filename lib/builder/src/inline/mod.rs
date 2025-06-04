@@ -78,7 +78,6 @@ async fn get_token() -> String {
 async fn build_with_docker(dir: &str) {
     let root = &u::root();
     let token = get_token().await;
-    println!("Found token: {}", &token);
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
             "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
@@ -183,8 +182,8 @@ pub async fn build(
         let _ = log.render(&format!("Building {name} - Copying dependencies"));
         zip(dir, langr);
 
-        sh("rm -rf build build.json", dir);
         sh(command, dir);
+        sh("rm -rf build build.json", dir);
 
     } else {
         println!("Skipping Inline build");
