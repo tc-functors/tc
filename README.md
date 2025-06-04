@@ -114,15 +114,9 @@ The resolver can also be written in any language that is easy to use and query t
 
 The output of the compiler, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
 
+## Install
 
-## Use Cases
-
-`tc` is particularly well-suited for:
-1. Serverless microservices architectures
-2. Event-driven applications
-3. API-based services
-4. Teams wanting to standardize serverless development practices
-5. Projects requiring isolated testing environments
+See [installation guide](https://tc-functors.org/docs/installation.html)
 
 ## Resources
 
@@ -130,6 +124,7 @@ Documentation: https://tc-functors.org/
 
 Video Presentation on tc from AWS Community Day - Bay Area Sept 2024
 [Higher Order Abstraction & Tooling for Step Functions & Serverless](https://youtu.be/1gqDGulszzQ?si=dtHcUkQF2nhZ_td8)
+
 
 ## Basic Usage
 
@@ -169,13 +164,6 @@ We welcome contributions from the community! Whether you're just giving feedback
 
 This project follows the Contributor Covenant Code of Conduct. We expect all contributors to adhere to its guidelines to maintain a welcoming and inclusive environment. Please read our [Code of Conduct](code_of_conduct.md) before participating.
 
-### Getting Started
-
-1. Try out tc by following the [installation guide](https://tc-functors.github.io/tc/installation.html)
-2. Build from source:
-   - Follow the [build instructions](https://tc-functors.github.io/tc/installation.html#building-your-own) to compile tc locally
-   - This is a great way to understand the codebase and start contributing
-
 ### Ways to Contribute
 
 - **Report Issues**: Found a bug or have a suggestion? Open an issue on our [tc GitHub Issues](https://github.com/tc-functors/tc/issues) page
@@ -183,7 +171,7 @@ This project follows the Contributor Covenant Code of Conduct. We expect all con
 - **Improve Documentation**: Help make our docs better by fixing errors or adding examples
 - **Join Discussions**: Participate in [GitHub Discussions](https://github.com/orgs/tc-functors/discussions) to share ideas, ask questions, and help others
 
-## Project Structure
+### Project Structure
 
 The codebase is organized as a Rust workspace with multiple libraries:
 
