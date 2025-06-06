@@ -3,6 +3,7 @@
 A graph-based, stateless, serverless application & infrastructure composer.
 
 [![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
+[![Ask DeepWiki (useful but watch  for hallucinations)](https://deepwiki.com/badge.svg)](https://deepwiki.com/tc-functors/tc) <--(Useful but watch for hallucinations)
 
 `tc` allows developers to compose cloud applications using high-level abstractions called `Cloud Functors` without getting bogged down in provider-specific infrastructure details.
 The central concept in `tc` is the `Cloud Functor` - a namespaced, sandboxed, versioned, and isomorphic topology of serverless components. The term "functor" is borrowed from OCaml's parameterized modules, emphasizing first-class, composable units.
