@@ -30,12 +30,11 @@ routes:
 
 functions:
   enhancer:
-    uri: enhancer
     function: transformer
   transformer:
-    uri: transformer
     function: loader
   loader:
+	uri: ../loader
     event: Notify
 
 events:
@@ -44,7 +43,7 @@ events:
 
 channels:
   Subscription:
-    handler: default
+    function: default
 
 ```
 
