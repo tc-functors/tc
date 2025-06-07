@@ -1,7 +1,7 @@
 use crate::{
     spec::{
         MutationSpec,
-        ResolverSpec,
+        mutation::ResolverSpec,
         Entity
     },
 };

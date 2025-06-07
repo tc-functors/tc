@@ -2,7 +2,7 @@ use super::template;
 use crate::{
     spec::{
         ChannelSpec,
-        HandlerSpec,
+        channel::HandlerSpec,
     },
 };
 use kit as u;

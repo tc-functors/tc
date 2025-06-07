@@ -16,6 +16,8 @@ use std::collections::HashMap;
 async fn make_api(auth: &Auth, role: &str, route: &Route) -> Api {
     let client = gateway::make_client(auth).await;
 
+    let cors = gateway::make_cors(route.cors.methods.clone(), route.cors.origins.clone());
+
     Api {
         name: route.to_owned().gateway,
         client: client,
@@ -27,6 +29,7 @@ async fn make_api(auth: &Auth, role: &str, route: &Route) -> Api {
         method: route.method.to_owned(),
         sync: route.sync.to_owned(),
         request_template: route.request_template.clone(),
+        cors: cors
     }
 }
 
@@ -66,7 +69,7 @@ async fn create_api(
     target_arn: &str
 ) {
 
-    let api_id = api.find_or_create().await;
+    let api_id = api.create_or_update().await;
     let auth_uri = auth.lambda_uri(&api.authorizer);
     let authorizer_id = create_authorizer(auth, &api_id, api, &auth_uri).await;
 

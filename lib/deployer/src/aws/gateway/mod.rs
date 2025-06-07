@@ -6,7 +6,9 @@ use aws_sdk_apigatewayv2::{
     types::{
         AuthorizationType,
         ProtocolType,
-        AuthorizerType
+        AuthorizerType,
+        Cors,
+        builders::CorsBuilder
     },
 };
 use kit::*;
@@ -34,6 +36,17 @@ pub struct Api {
     pub sync: bool,
     pub authorizer: String,
     pub request_template: String,
+    pub cors: Cors
+}
+
+
+pub fn make_cors(methods: Vec<String>, origins: Vec<String>) -> Cors {
+    let f = CorsBuilder::default();
+    f
+        .allow_credentials(true)
+        .set_allow_methods(Some(methods))
+        .set_allow_origins(Some(origins))
+        .build()
 }
 
 impl Api {
@@ -45,6 +58,7 @@ impl Api {
             .create_api()
             .name(api.name)
             .protocol_type(ProtocolType::Http)
+            .cors_configuration(self.cors)
             .send()
             .await
             .unwrap();
@@ -87,12 +101,25 @@ impl Api {
         }
     }
 
-    pub async fn find_or_create(&self) -> String {
+    pub async fn update(&self, api_id: &str) -> String {
+        let _ = self
+            .clone()
+            .client
+            .update_api()
+            .api_id(s!(api_id))
+            .cors_configuration(self.cors.clone())
+            .send()
+            .await
+            .unwrap();
+        s!(api_id)
+    }
+
+    pub async fn create_or_update(&self) -> String {
         let api_id = self.find().await;
         match api_id {
             Some(id) => {
                 println!("Found API {} ({})", &self.name.green(), &id);
-                id
+                self.clone().update(&id).await
             }
             _ => {
                 println!("Creating API {}", &self.name.blue());

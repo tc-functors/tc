@@ -1,9 +1,9 @@
 name: route-function
 
 routes:
-  fetch:
-    gateway: api-test
-    kind: http
+  /api/foo:
     method: GET
-    path: "/api/user"
-    function: '{{namespace}}_fetcher_{{sandbox}}'
+    function: foo
+    cors:
+      methods: ["GET", "POST"]
+      origins: ["*"]
