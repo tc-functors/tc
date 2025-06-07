@@ -8,7 +8,6 @@
   },
   "build": {
     "kind": "Image",
-    "command": "zip -9 -q lambda.zip *.py",
     "images": {
       "base": {
 	"version": "0.1.2",

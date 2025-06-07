@@ -2,7 +2,7 @@ use kit as u;
 use kit::*;
 
 use super::template;
-use crate::spec::function::Platform;
+use crate::spec::function::Provider;
 use crate::topology::role::Role;
 
 fn read_policy(path: &str) -> String {
@@ -32,20 +32,20 @@ fn function_trust_policy() -> String {
     )
 }
 
-fn find_default_role(platform: Platform) -> String {
+fn find_default_role(provider: Provider) -> String {
 
-    match platform {
-        Platform::Lambda => s!("tc-base-lambda-role"),
-        Platform::Fargate => s!("tc-base-task-role"),
+    match provider {
+        Provider::Lambda => s!("tc-base-lambda-role"),
+        Provider::Fargate => s!("tc-base-task-role"),
     }
 }
 
-pub fn default(platform: Option<Platform>) -> Role {
-    let platform = match platform {
+pub fn default(provider: Option<Provider>) -> Role {
+    let provider = match provider {
         Some(p) => p,
-        None => Platform::Lambda
+        None => Provider::Lambda
     };
-    let role_name = find_default_role(platform);
+    let role_name = find_default_role(provider);
     Role {
         name: role_name.clone(),
         path: s!("provided"),

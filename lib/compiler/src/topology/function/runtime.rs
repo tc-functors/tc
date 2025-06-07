@@ -4,7 +4,7 @@ use crate::spec::function::{
     BuildKind,
     FunctionSpec,
     Lang,
-    Platform,
+    Provider,
     LangRuntime,
     RuntimeSpec,
 };
@@ -47,7 +47,7 @@ pub struct FileSystem {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Runtime {
     pub lang: LangRuntime,
-    pub platform: Platform,
+    pub provider: Provider,
     pub handler: String,
     pub package_type: String,
     pub uri: String,
@@ -65,7 +65,7 @@ pub struct Runtime {
     pub fs: Option<FileSystem>,
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
-    pub cluster: Option<String>
+    pub cluster: String
 }
 
 fn find_code_version(dir: &str) -> String {
@@ -76,7 +76,7 @@ fn find_code_version(dir: &str) -> String {
 
 fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
     match package_type {
-        "image" | "oci" => match uri {
+        "Image" | "image" | "oci" => match uri {
             Some(u) => u,
             None => {
                 let version = find_code_version(dir);
@@ -88,13 +88,15 @@ fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> Str
 }
 
 fn consolidate_layers(
-    extensions: &mut Vec<String>,
-    given_layers: &mut Vec<String>,
+    extensions: Vec<String>,
+    given_layers: Vec<String>,
     implicit_layer: Option<String>,
 ) -> Vec<String> {
     let mut layers: Vec<String> = vec![];
-    layers.append(given_layers);
-    layers.append(extensions);
+    let mut e: Vec<String> = extensions;
+    let mut g: Vec<String> = given_layers;
+    layers.append(&mut e);
+    layers.append(&mut g);
 
     match implicit_layer {
         Some(m) => layers.push(m),
@@ -180,7 +182,7 @@ fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
 
 fn as_infra_spec_file(
     infra_dir: &str,
-    rspec: &Option<RuntimeSpec>,
+    rspec: &RuntimeSpec,
     function_name: &str,
 ) -> Option<String> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
@@ -188,11 +190,8 @@ fn as_infra_spec_file(
     if u::file_exists(&actual_f) {
         Some(actual_f)
     } else {
-        match rspec {
-            Some(r) => match &r.vars_file {
-                Some(p) => Some(follow_path(&p)),
-                None => None,
-            },
+        match &rspec.vars_file {
+            Some(p) => Some(follow_path(&p)),
             None => None,
         }
     }
@@ -200,48 +199,41 @@ fn as_infra_spec_file(
 
 fn lookup_role(
     infra_dir: &str,
-    rspec: &Option<RuntimeSpec>,
+    r: &RuntimeSpec,
     namespace: &str,
     function_name: &str,
 ) -> Role {
 
-
-
-    match rspec {
-        Some(r) => {
-
-            match &r.role {
-                Some(given) => role::use_given(&given),
+    match &r.role {
+        Some(given) => role::use_given(&given),
+        None => {
+            let path = match &r.role_file {
+                Some(f) => Some(follow_path(&f)),
                 None => {
-                    let path = match &r.role_file {
-                        Some(f) => Some(follow_path(&f)),
-                        None => {
-                            let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                            if u::file_exists(&f) { Some(f) } else { None }
-                        }
-                    };
-
-                    if let Some(p) = path {
-                        let abbr = if function_name.chars().count() > 15 {
-                            u::abbreviate(function_name, "-")
-                        } else {
-                            function_name.to_string()
-                        };
-                        let policy_name = format!("tc-{}-{{{{sandbox}}}}-{}-policy", namespace, abbr);
-                        let role_name = format!("tc-{}-{{{{sandbox}}}}-{}-role", namespace, abbr);
-
-                        role::make(&p, &role_name, &policy_name)
-                    } else {
-                        role::default(r.platform.clone())
-                    }
-
-
+                    let f = format!("{}/roles/{}.json", infra_dir, function_name);
+                    if u::file_exists(&f) { Some(f) } else { None }
                 }
+            };
+
+            if let Some(p) = path {
+                let abbr = if function_name.chars().count() > 15 {
+                    u::abbreviate(function_name, "-")
+                } else {
+                    function_name.to_string()
+                };
+                let policy_name = format!("tc-{}-{{{{sandbox}}}}-{}-policy", namespace, abbr);
+                let role_name = format!("tc-{}-{{{{sandbox}}}}-{}-role", namespace, abbr);
+
+                role::make(&p, &role_name, &policy_name)
+            } else {
+                role::default(r.provider.clone())
             }
+
+
         }
-        None => role::default(None),
     }
 }
+
 
 fn as_str(v: Option<String>, default: &str) -> String {
     match v {
@@ -437,27 +429,29 @@ fn make_fs(infra_spec: &InfraSpec, enable_fs: bool) -> Option<FileSystem> {
     }
 }
 
-fn lookup_infraspec(dir: &str, infra_dir: &str, fspec: &FunctionSpec) -> InfraSpec {
-    let rspec = fspec.runtime;
-    let infra_spec_file = as_infra_spec_file(&infra_dir, &rspec, &fspec.name);
-    let infra_spec = InfraSpec::new(infra_spec_file.clone());
-    let default_infra_spec = infra_spec.get("default").unwrap();
-    default_infra_spec.clone()
+fn lookup_infraspec(infra_dir: &str, name: &str, rspec: &RuntimeSpec) -> HashMap<String, InfraSpec> {
+    let infra_spec_file = as_infra_spec_file(&infra_dir, rspec, name);
+    InfraSpec::new(infra_spec_file.clone())
 }
 
-fn make_default(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec) -> Runtime {
+fn make_default(
+    dir: &str,
+    infra_dir: &str,
+    namespace: &str,
+    fqn: &str,
+    fspec: &FunctionSpec
+) -> Runtime {
     let lang = infer_lang(dir);
-    let rspec = fspec.runtime;
-    let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
-
-    let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
+    let role = role::default(Some(Provider::Lambda));
+    let infra_spec = InfraSpec::new(None);
+    let default_infra_spec = infra_spec.get("default").unwrap();
 
     let InfraSpec {
         memory_size,
         timeout,
         environment,
         ..
-    } = infra_spec;
+    } = default_infra_spec;
 
 
     let vars = make_env_vars(
@@ -472,50 +466,59 @@ fn make_default(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &
 
      Runtime {
          lang: lang,
-         platform: Platform::Lambda,
+         provider: Provider::Lambda,
          handler: s!("handler.handler"),
          package_type: s!("zip"),
          uri: as_uri(dir, &fspec.name, "zip", None),
          layers: vec![],
          environment: vars,
          tags: make_tags(namespace, &infra_dir),
-         provisioned_concurrency: infra_spec.provisioned_concurrency.clone(),
-         reserved_concurrency: infra_spec.reserved_concurrency.clone(),
+         provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
+         reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
          role: role,
-         memory_size: memory_size,
-         timeout: timeout,
+         memory_size: *memory_size,
+         cpu: None,
+         timeout: *timeout,
          snapstart: false,
          enable_fs: false,
          network: None,
          fs: None,
          infra_spec: infra_spec,
-         cluster: None
+         cluster: String::from("")
      }
 }
 
-fn make_lambda(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec) -> Runtime {
-    let r = fspec.runtime.unwrap();
+fn make_lambda(
+    dir: &str,
+    infra_dir: &str,
+    namespace: &str,
+    fqn: &str,
+    fspec: &FunctionSpec,
+    r: &RuntimeSpec
+) -> Runtime {
+
     let layer_name = find_implicit_layer_name(dir, namespace, fspec);
-    let layers = consolidate_layers(&mut r.extensions, &mut r.layers, layer_name);
+    let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
     let package_type = &r.package_type;
-    let uri = as_uri(dir, &fspec.name, package_type, r.uri);
+    let uri = as_uri(dir, &fspec.name, package_type, r.uri.clone());
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
     let role = lookup_role(&infra_dir, &r, namespace, &fspec.name);
-    let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
-    let build_kind = find_build_kind(&fspec);
 
-    let infra_spec = lookup_infraspec();
+    let build_kind = find_build_kind(&fspec);
+    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
+    let default_infra_spec = infra_spec.get("default").unwrap();
+
     let InfraSpec {
         memory_size,
         timeout,
         environment,
         ..
-    } = infra_spec;
+    } = default_infra_spec;
 
     let vars = make_env_vars(
         dir,
         namespace,
-        BuildKind::Code,
+        build_kind,
         fspec.assets.clone(),
         environment.clone(),
         r.lang.to_lang(),
@@ -523,46 +526,56 @@ fn make_lambda(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &F
     );
 
     Runtime {
-        lang: r.lang,
-        platform: r.platform.unwrap(),
-        handler: r.handler,
+        lang: r.lang.clone(),
+        provider: r.provider.clone().unwrap().clone(),
+        handler: r.handler.clone(),
         package_type: package_type.to_string(),
         uri: uri,
         layers: layers,
         tags: make_tags(namespace, &infra_dir),
         environment: vars,
-        provisioned_concurrency: infra_spec.provisioned_concurrency.clone(),
-        reserved_concurrency: infra_spec.reserved_concurrency.clone(),
+        provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
+        reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
         memory_size: *memory_size,
         timeout: *timeout,
+        cpu: None,
         snapstart: u::opt_as_bool(r.snapstart),
         role: role,
         enable_fs: enable_fs,
-        network: make_network(&infra_spec, enable_fs),
-        fs: make_fs(&infra_spec, enable_fs),
+        network: make_network(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, enable_fs),
         infra_spec: infra_spec,
-        cluster: None
+        cluster: String::from("")
     }
 }
 
-fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &FunctionSpec, c: &ConfigSpec) -> Runtime {
-    let rspec = fspec.runtime.unwrap();
+fn make_fargate(
+    dir: &str,
+    infra_dir: &str,
+    namespace: &str,
+    fqn: &str,
+    fspec: &FunctionSpec,
+    rspec: &RuntimeSpec,
+    c: &ConfigSpec
+) -> Runtime {
     let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
     let package_type = s!("Image");
-    let uri = as_uri(dir, &fspec.name, &package_type, rspec.uri);
+    let uri = as_uri(dir, &fspec.name, &package_type, rspec.uri.clone());
     let role = lookup_role(&infra_dir, &rspec, namespace, &fspec.name);
-    let infra_spec = lookup_infraspec(dir, infra_dir, fspec);
+    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
+    let default_infra_spec = infra_spec.get("default").unwrap();
 
-    let lang = rspec.lang;
-    let cluster = c.builder.cluster;
+    let lang = rspec.lang.clone();
+    let cluster = match &c.builder.cluster {
+        Some(c) => c,
+        None => &template::topology_fqn(namespace, false)
+    };
 
     let InfraSpec {
-        memory_size,
-        cpu,
         timeout,
         environment,
         ..
-    } = infra_spec;
+    } = default_infra_spec;
 
 
     let vars = make_env_vars(
@@ -577,8 +590,8 @@ fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &
 
     Runtime {
         lang: lang,
-        platform: Platform::Fargate,
-        handler: rspec.handler,
+        provider: Provider::Fargate,
+        handler: rspec.handler.clone(),
         package_type: package_type,
         uri: uri,
         layers: vec![],
@@ -586,16 +599,16 @@ fn make_fargate(dir: &str, infra_dir: &str, namespace: &str, fqn: &str, fspec: &
         environment: vars,
         provisioned_concurrency: None,
         reserved_concurrency: None,
-        memory_size: *memory_size,
-        cpu: *cpu,
+        memory_size: Some(2048),
+        cpu: Some(1024),
         timeout: *timeout,
         snapstart: false,
         role: role,
         enable_fs: enable_fs,
-        network: make_network(&infra_spec, enable_fs),
-        fs: make_fs(&infra_spec, enable_fs),
+        network: make_network(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, enable_fs),
         infra_spec: infra_spec,
-        cluster: cluster
+        cluster: cluster.to_string()
     }
 }
 
@@ -607,7 +620,9 @@ impl Runtime {
         namespace: &str,
         fspec: &FunctionSpec,
         fqn: &str,
+        cspec: &ConfigSpec
     ) -> Runtime {
+
         let rspec = fspec.runtime.clone();
 
         let infra_dir = match &fspec.infra_dir {
@@ -616,14 +631,49 @@ impl Runtime {
         };
 
         match rspec {
-            Some(mut r) => {
-                match r.platform {
-                    Platform::Lambda => make_lambda(dir, &infra_dir, fspec, r),
-                    Platform::Fargate => make_fargate(dir, &infra_dir, fspec, r)
+            Some(r) => {
+                if let Some(ref provider) = r.provider {
+                    match provider {
+                        Provider::Lambda =>
+                            make_lambda(
+                                dir,
+                                &infra_dir,
+                                namespace,
+                                fqn,
+                                fspec,
+                                &r
+                            ),
+
+                        Provider::Fargate =>
+                            make_fargate(
+                                dir,
+                                &infra_dir,
+                                namespace,
+                                fqn,
+                                fspec,
+                                &r,
+                                cspec
+                            )
+                    }
+                } else {
+                    make_lambda(
+                        dir,
+                        &infra_dir,
+                        namespace,
+                        fqn,
+                        fspec,
+                        &r
+                    )
                 }
 
             }
-            None => make_default()
+            None => make_default(
+                dir,
+                &infra_dir,
+                namespace,
+                fqn,
+                fspec
+            )
         }
     }
 }
