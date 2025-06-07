@@ -23,9 +23,8 @@ At it's core, `tc` provides 7 entities (functions, events, mutations, queues, ro
 name: etl
 
 routes:
-  myposts:
-    path: /api/etl
-    method: GET
+  /api/etl:
+    method: POST
     function: enhancer
 
 functions:
@@ -47,7 +46,7 @@ channels:
 
 ```
 
-`/api/etl` HTTP route calls function `initalizer` which generates an event `StartETL` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, loader finally triggers a channel notification with the event's payload. We just defined the flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
+`/api/etl` HTTP route calls function `enhancer` which then triggers a pipeline of functions which are either local (subdirectories) or remote (git repos). In this example, loader finally generates an event `Notify` whose target is a websocket Channel called `Subscription`. We just defined an entire ETL flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
 
 `tc compile` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
 
