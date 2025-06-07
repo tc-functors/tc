@@ -259,34 +259,34 @@ impl BuildSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
-pub enum Platform {
+pub enum Provider {
     Lambda,
     Fargate,
 }
 
-impl FromStr for Platform {
+impl FromStr for Provider {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "lambda" | "Lambda"  => Ok(Platform::Lambda),
-            "farget" | "Fargate" => Ok(Platform::Fargate),
-            _                    => Ok(Platform::Lambda),
+            "lambda" | "Lambda"  => Ok(Provider::Lambda),
+            "farget" | "Fargate" => Ok(Provider::Fargate),
+            _                    => Ok(Provider::Lambda),
         }
     }
 }
 
-impl Platform {
+impl Provider {
     pub fn to_str(&self) -> String {
         match self {
-            Platform::Lambda => s!("lambda"),
-            Platform::Fargate => s!("fargate"),
+            Provider::Lambda => s!("lambda"),
+            Provider::Fargate => s!("fargate"),
         }
     }
 }
 
-fn default_platform() -> Option<Platform> {
-    Some(Platform::Lambda)
+fn default_provider() -> Option<Provider> {
+    Some(Provider::Lambda)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
@@ -300,8 +300,8 @@ pub struct RuntimeSpec {
     #[serde(default = "default_package_type")]
     pub package_type: String,
 
-    #[serde(default = "default_platform")]
-    pub platform: Option<Platform>,
+    #[serde(default = "default_provider")]
+    pub provider: Option<Provider>,
 
     pub vars_file: Option<String>,
     pub role_file: Option<String>,

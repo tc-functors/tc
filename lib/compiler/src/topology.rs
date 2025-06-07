@@ -610,22 +610,22 @@ impl Topology {
         let mut t = TreeBuilder::new(s!(self.namespace.blue()));
 
         for (_, f) in &self.functions {
-            let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
+            //let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
             t.begin_child(s!(f.name.green()));
             t.add_empty_child(f.runtime.lang.to_str());
             t.add_empty_child(f.runtime.role.path.to_string());
-            t.add_empty_child(vars);
+            //t.add_empty_child(vars);
             t.end_child();
         }
 
         for (_, node) in &self.nodes {
             t.begin_child(s!(&node.namespace.green()));
             for (_, f) in &node.functions {
-                let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
+                // let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
                 t.begin_child(s!(&f.fqn));
                 t.add_empty_child(f.runtime.lang.to_str());
                 t.add_empty_child(f.runtime.role.path.to_string());
-                t.add_empty_child(vars);
+                //t.add_empty_child(vars);
                 t.end_child();
             }
             t.end_child();

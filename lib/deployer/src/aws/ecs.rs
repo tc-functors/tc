@@ -47,9 +47,13 @@ impl TaskDef {
     }
 }
 
-pub fn make_cdf(name: String, image: String, command: String) -> ContainerDefinition {
+pub fn make_cdf(name: &str, image: &str, command: &str) -> ContainerDefinition {
     let f = ContainerDefinitionBuilder::default();
-    f.name(name).image(image).command(command).build()
+    f
+        .name(s!(name))
+        .image(s!(image))
+        .command(s!(command))
+        .build()
 }
 
 pub fn make_network_config(subnets: Vec<String>) -> NetworkConfiguration {
@@ -98,6 +102,45 @@ pub async fn create_taskdef(client: &Client, tdf: TaskDef, cdf: ContainerDefinit
     }
 }
 
+async fn list_clusters(client: &Client) -> Vec<String> {
+   let res = client
+        .list_clusters()
+        .send()
+        .await
+        .unwrap();
+    res.cluster_arns.unwrap()
+}
+
+async fn find_cluster(client: &Client, name: &str) -> Option<String> {
+    let cluster_arns = list_clusters(client).await;
+    for arn in cluster_arns {
+        if arn.ends_with(name) {
+            return Some(name.to_string())
+        }
+    }
+    None
+}
+
+async fn create_cluster(client: &Client, name: &str) -> String {
+    let res = client
+        .create_cluster()
+        .cluster_name(s!(name))
+        .send()
+        .await;
+    println!("{:?}", res);
+    s!(name)
+}
+
+
+pub async fn find_or_create_cluster(client: &Client, name: &str) -> String {
+    let cluster = find_cluster(client, name).await;
+    match cluster {
+        Some(c) => c,
+        None => create_cluster(client, name).await
+    }
+}
+
+
 pub async fn create_service(
     client: &Client,
     cluster: &str,
@@ -124,6 +167,25 @@ pub async fn delete_service(client: &Client, cluster: &str, name: &str) {
         .cluster(s!(cluster))
         .service(s!(name))
         .force(true)
+        .send()
+        .await;
+}
+
+
+pub async fn run_task(
+    client: &Client,
+    cluster: &str,
+    name: &str,
+    task_definition_arn: &str,
+    netcfg: NetworkConfiguration,
+) {
+    let _res = client
+        .run_task()
+        .cluster(cluster)
+        .task_definition(s!(task_definition_arn))
+        .launch_type(LaunchType::Fargate)
+        .count(1)
+        .network_configuration(netcfg)
         .send()
         .await;
 }

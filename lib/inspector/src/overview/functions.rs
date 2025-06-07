@@ -24,16 +24,11 @@ struct Item {
     timeout: i32,
     runtime: String,
     role: String,
-    vars: String,
 }
 
 fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
     for (dir, f) in fns {
-        let vars = match f.runtime.infra_spec_file {
-            Some(f) => f,
-            None => String::from("provided"),
-        };
         let fun = Item {
             namespace: namespace.to_string(),
             name: f.actual_name.clone(),
@@ -45,7 +40,6 @@ fn build_fns(namespace: &str, fns: HashMap<String, Function>) -> Vec<Item> {
             timeout: f.runtime.timeout.unwrap(),
             runtime: f.runtime.lang.to_str(),
             role: f.runtime.role.path,
-            vars: vars,
         };
         xs.push(fun);
     }

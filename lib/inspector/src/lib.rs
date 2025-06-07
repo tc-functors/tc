@@ -39,4 +39,4 @@ pub async fn init(port: Option<String>) {
     // let url = format!("http://localhost:{}", &port);
     // open::that(url).unwrap();
     axum::serve(listener, app).await.unwrap();
- }
+}
