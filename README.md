@@ -3,14 +3,15 @@
 A graph-based, stateless, serverless application & infrastructure composer.
 
 [![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
-[![Ask DeepWiki (useful but watch  for hallucinations)](https://deepwiki.com/badge.svg)](https://deepwiki.com/tc-functors/tc) <--(Useful but watch for hallucinations)
+[![Ask DeepWiki (useful but watch  for hallucinations)](https://deepwiki.com/badge.svg)](https://deepwiki.com/tc-functors/tc)
 
-`tc` allows developers to compose cloud applications using high-level abstractions called `Cloud Functors` without getting bogged down in provider-specific infrastructure details.
+tc's core value proposition is enabling developers to focus on business logic and component relationships rather than infrastructure management, while maintaining the ability to deploy consistently across environments and providers.
+
+`tc` enables developers to compose cloud applications using high-level abstractions called `Cloud Functors` without getting bogged down in provider-specific infrastructure details.
 The central concept in `tc` is the `Cloud Functor` - a namespaced, sandboxed, versioned, and isomorphic topology of serverless components. The term "functor" is borrowed from OCaml's parameterized modules, emphasizing first-class, composable units.
 
 `tc` defines, creates and manages the lifecycle of serveless entities such as functions, mutations, events, routes, states, queues and channels.
 It represents a higher-level abstraction for serverless development, focusing on the logical relationships between these entities rather than the underlying infrastructure details.
-
 
 ## Key features of functors using tc
 
@@ -19,34 +20,35 @@ It represents a higher-level abstraction for serverless development, focusing on
 At it's core, `tc` provides 7 entities (functions, events, mutations, queues, routes, states and channels) that are agnostic to any cloud provider. These entities are core primitives to define the topology of any serverless system. For example, consider the following topology definition:
 
 ```yaml
-
-name: example
+name: etl
 
 routes:
   myposts:
-    path: /api/posts
+    path: /api/etl
     method: GET
-    function: bar
-    event: MyEvent
-
-events:
-  MyEvent:
-    function: foo
-    channel: room1
-
-channels:
-  room1:
-    handler: default
+    function: enhancer
 
 functions:
-  remote:
-    foo: github.com/bar/bar
-  local:
-    bar: ./bar
+  enhancer:
+    uri: enhancer
+    function: transformer
+  transformer:
+    uri: transformer
+    function: loader
+  loader:
+    event: Notify
+
+events:
+  Notify:
+    channel: Subscription
+
+channels:
+  Subscription:
+    handler: default
 
 ```
 
-Now, `/api/posts` route calls function `bar` and generates an event `MyEvent` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, the event finally triggers a channel notification with the event's payload. We just defined the flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests, almost magically.
+`/api/etl` HTTP route calls function `initalizer` which generates an event `StartETL` which are handled by functions that are locally defined (subdirectories) or remote (git repos). In this example, loader finally triggers a channel notification with the event's payload. We just defined the flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
 
 `tc compile` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
 
@@ -204,6 +206,6 @@ We aim to review all contributions promptly and look forward to collaborating wi
 ## Thanks & Credits
 
 - Thanks to [Eric Harvey](https://github.com/EricHarvey) for brainstorming on several core features and ideas.
-- Thanks to [Abhijith Gopal](https://github.com/abhijith) for his thoughts and ideas on graph-based computations.
 - Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/rachel-yujin-chung), [Alper](https://github.com/alperinformed), [Alex](https://github.com/GalexyN), [Sanjeev](https://github.com/sanjeev247)  for their collaboration, testing and insights.
+- Thanks to [Abhijith Gopal](https://github.com/abhijith) for his thoughts and ideas on graph-based computations.
 - Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.
