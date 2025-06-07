@@ -33,7 +33,6 @@ functions:
   transformer:
     function: loader
   loader:
-	uri: ../loader
     event: Notify
 
 events:
