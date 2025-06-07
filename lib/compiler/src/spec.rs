@@ -16,6 +16,11 @@ use std::path::PathBuf;
 pub mod function;
 pub mod config;
 pub mod infra;
+pub mod event;
+pub mod route;
+pub mod mutation;
+pub mod queue;
+pub mod channel;
 
 use crate::parser;
 
@@ -29,6 +34,11 @@ pub use function::{
     ImageSpec
 };
 pub use config::ConfigSpec;
+pub use event::EventSpec;
+pub use route::RouteSpec;
+pub use queue::QueueSpec;
+pub use channel::ChannelSpec;
+pub use mutation::MutationSpec;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -97,137 +107,8 @@ fn default_nodes() -> Nodes {
     }
 }
 
-fn default_target() -> String {
-    s!("")
-}
-
-fn default_function() -> Option<String> {
-    None
-}
-
-fn default_source() -> Vec<String> {
-    vec![]
-}
-
-fn default_targets() -> Vec<String> {
-    vec![]
-}
-
 fn default_functions() -> Functions {
     Functions { shared: vec![] }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MutationConsumer {
-    pub name: String,
-    pub mapping: HashMap<String, String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Produces {
-    pub consumer: String,
-
-    #[serde(default = "default_source")]
-    pub source: Vec<String>,
-
-    #[serde(default)]
-    pub filter: Option<String>,
-
-    #[serde(default = "default_target")]
-    pub target: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EventSpec {
-    #[serde(default)]
-    pub producer: String,
-
-    #[serde(default)]
-    pub doc_only: bool,
-
-    pub producer_ns: Option<String>,
-
-    pub nth: Option<u8>,
-
-    #[serde(default)]
-    pub filter: Option<String>,
-
-    #[serde(default)]
-    pub rule_name: Option<String>,
-
-    #[serde(default = "default_function")]
-    pub function: Option<String>,
-
-    #[serde(default = "default_targets")]
-    pub functions: Vec<String>,
-
-    #[serde(default)]
-    pub mutation: Option<String>,
-
-    #[serde(default)]
-    pub channel: Option<String>,
-
-    #[serde(default)]
-    pub stepfunction: Option<String>,
-
-    #[serde(default)]
-    pub pattern: Option<String>,
-
-    #[serde(default)]
-    pub sandboxes: Vec<String>,
-}
-
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct HandlerSpec {
-    #[serde(default)]
-    pub handler: Option<String>,
-
-    #[serde(default)]
-    pub event: Option<String>,
-
-    #[serde(default)]
-    pub function: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ChannelSpec {
-    #[serde(default)]
-    pub doc_only: bool,
-    pub on_publish: Option<HandlerSpec>,
-    pub on_subscribe: Option<HandlerSpec>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct QueueSpec {
-    #[serde(default)]
-    pub producer: String,
-
-    #[serde(default)]
-    pub consumer: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct RouteSpec {
-    pub method: Option<String>,
-    pub path: Option<String>,
-    pub gateway: Option<String>,
-
-    #[serde(default)]
-    pub authorizer: String,
-
-    pub proxy: Option<String>,
-    pub function: Option<String>,
-    pub state: Option<String>,
-    pub event: Option<String>,
-    pub queue: Option<String>,
-
-    pub request_template: Option<String>,
-    pub response_template: Option<String>,
-    pub sync: Option<bool>,
-
-    pub stage: Option<String>,
-    pub stage_variables: Option<HashMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -243,34 +124,6 @@ pub struct Nodes {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Functions {
     pub shared: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ResolverSpec {
-    pub input: String,
-
-    pub output: String,
-
-    #[serde(default)]
-    pub function: Option<String>,
-
-    #[serde(default)]
-    pub event: Option<String>,
-
-    #[serde(default)]
-    pub table: Option<String>,
-
-    pub subscribe: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MutationSpec {
-    #[serde(default)]
-    pub authorizer: String,
-
-    #[serde(default)]
-    pub types: HashMap<String, HashMap<String, String>>,
-    pub resolvers: HashMap<String, ResolverSpec>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -346,7 +199,6 @@ pub struct TopologySpec {
     pub states: Option<Value>,
     pub flow: Option<Value>,
 }
-
 
 impl TopologySpec {
 

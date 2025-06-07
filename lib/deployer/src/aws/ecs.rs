@@ -175,7 +175,7 @@ pub async fn delete_service(client: &Client, cluster: &str, name: &str) {
 pub async fn run_task(
     client: &Client,
     cluster: &str,
-    name: &str,
+    _name: &str,
     task_definition_arn: &str,
     netcfg: NetworkConfiguration,
 ) {
