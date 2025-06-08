@@ -169,23 +169,50 @@ fn is_singular_function_dir() -> bool {
     u::file_exists(function_file) && u::file_exists(topology_file)
 }
 
+fn is_shared(uri: Option<String>) -> bool {
+    match uri {
+        Some(p) => p.starts_with(".."),
+        None => false,
+    }
+}
+
+fn find_dir(root_dir: &str, name: &str, uri: Option<String>) -> String {
+    match uri {
+        Some(p) => {
+            u::absolute_dir(root_dir, &p)
+        },
+        None => format!("{}/{}", root_dir, name)
+    }
+}
+
 fn intern_functions(
     root_dir: &str,
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
-    let shared = &spec.functions.shared;
+
+    let inline_fns = match &spec.functions {
+        Some(f) => f,
+        None => &HashMap::new()
+    };
+
+    let mut fns: HashMap<String, Function> = HashMap::new();
     let namespace = &spec.name;
 
-    let mut functions: HashMap<String, Function> = HashMap::new();
-    for d in shared {
-        let abs_dir = u::absolute_dir(root_dir, &d);
-        if u::is_dir(&abs_dir) {
+    for (name, f) in inline_fns {
+
+        let abs_dir = find_dir(root_dir, &name, f.uri.clone());
+
+        if is_shared(f.uri.clone()) || u::path_exists(&abs_dir, "function.json") {
             let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
-            functions.insert(abs_dir, function);
+            fns.insert(s!(name), function);
+        } else {
+            let fspec = f.intern(namespace, &abs_dir, infra_dir, &name);
+            let function = Function::from_spec(&fspec, namespace, &abs_dir, infra_dir);
+            fns.insert(s!(name), function);
         }
     }
-    functions
+    fns
 }
 
 fn is_inferred_dir(dir: &str) -> bool {
