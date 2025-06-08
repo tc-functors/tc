@@ -1,0 +1,23 @@
+name: etl
+
+routes:
+  /api/etl:
+    method: POST
+    authorizer: custom-authorizer
+    function: enhancer
+
+functions:
+  enhancer:
+    function: transformer
+  transformer:
+    function: loader
+  loader:
+    event: Notify
+
+events:
+  Notify:
+    channel: Subscription
+
+channels:
+  Subscription:
+    function: default
