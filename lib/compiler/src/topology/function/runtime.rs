@@ -374,7 +374,6 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h.insert(s!("namespace"), s!(namespace));
     h.insert(s!("sandbox"), template::sandbox());
     h.insert(s!("version"), version);
-    h.insert(s!("git_branch"), version::branch_name());
     h.insert(s!("deployer"), s!("tc"));
     h.insert(s!("updated_at"), u::utc_now());
     h.insert(s!("tc_version"), tc_version);

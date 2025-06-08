@@ -4,6 +4,7 @@ pub mod runtime;
 mod role;
 
 use crate::spec::{FunctionSpec, ConfigSpec};
+use crate::Entity;
 pub use build::Build;
 use kit as u;
 use kit::*;
@@ -22,6 +23,12 @@ pub struct Test {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Target {
+    pub entity: Entity,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Function {
     pub name: String,
     pub actual_name: String,
@@ -35,6 +42,7 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: Test,
+    pub targets: Vec<Target>
 }
 
 fn is_singular_function_dir() -> bool {
@@ -97,6 +105,7 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
     }
 }
 
+
 impl Function {
     pub fn new(
         dir: &str,
@@ -135,6 +144,7 @@ impl Function {
             runtime: runtime,
             layer_name: fspec.layer_name,
             test: make_test(),
+            targets: vec![]
         }
     }
 
@@ -167,6 +177,7 @@ impl Function {
             runtime: runtime,
             layer_name: fspec.layer_name.clone(),
             test: make_test(),
+            targets: vec![]
         }
     }
 

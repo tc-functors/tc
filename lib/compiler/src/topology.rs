@@ -76,7 +76,7 @@ pub struct Topology {
     pub tags: HashMap<String, String>,
     pub logs: LogConfig,
     pub flow: Option<Flow>,
-    pub config: ConfigSpec
+    pub config: ConfigSpec,
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -580,6 +580,7 @@ fn make_standalone(dir: &str) -> Topology {
 pub fn is_compilable(dir: &str) -> bool {
     is_standalone_function_dir(dir) || is_relative_topology_dir(dir) || is_topology_dir(dir)
 }
+
 
 impl Topology {
 

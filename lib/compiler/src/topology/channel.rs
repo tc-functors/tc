@@ -1,5 +1,6 @@
 use super::template;
 use crate::{
+    Entity,
     spec::{
         ChannelSpec,
         channel::HandlerSpec,
@@ -29,14 +30,20 @@ fn event_handler(_event_name: &str) -> String {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Target {
+    pub entity: Entity,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Channel {
     pub handler: String,
     pub name: String,
     pub api_name: String,
+    pub targets: Vec<Target>
 }
 
 fn find_handler(hs: &HandlerSpec) -> String {
-    println!("{:?}", &hs);
     let HandlerSpec { handler, event, .. } = hs;
     if let Some(h) = handler {
         match h.as_ref() {
@@ -60,9 +67,10 @@ pub fn make(namespace: &str, spec: HashMap<String, ChannelSpec>) -> HashMap<Stri
         };
 
         let c = Channel {
-            name: name.clone(),
+            name: format!("{}-{{{{sandbox}}}}", name),
             handler: handler,
             api_name: template::topology_fqn(namespace, false),
+            targets: vec![]
         };
         h.insert(name, c);
     }
