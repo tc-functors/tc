@@ -437,6 +437,7 @@ pub struct BuildOutput {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InlineFunctionSpec {
     pub uri: Option<String>,
+    pub root: Option<bool>,
     pub functions: Option<Vec<String>>,
     pub function: Option<String>,
     pub event: Option<String>,

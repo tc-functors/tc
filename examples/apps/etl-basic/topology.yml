@@ -8,6 +8,7 @@ routes:
 
 functions:
   enhancer:
+    root: true
     function: transformer
   transformer:
     function: loader
