@@ -28,6 +28,7 @@ use parser::yaml::Transformer;
 
 pub use function::{
     FunctionSpec, BuildOutput, BuildKind,
+    InlineFunctionSpec,
     LangRuntime,
     Lang,
     BuildSpec,
@@ -107,10 +108,6 @@ fn default_nodes() -> Nodes {
     }
 }
 
-fn default_functions() -> Functions {
-    Functions { shared: vec![] }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Nodes {
     #[serde(default)]
@@ -188,8 +185,7 @@ pub struct TopologySpec {
 
     #[serde(default = "default_nodes")]
     pub nodes: Nodes,
-    #[serde(default = "default_functions")]
-    pub functions: Functions,
+    pub functions: Option<HashMap<String, InlineFunctionSpec>>,
     pub events: Option<HashMap<String, EventSpec>>,
     pub routes: Option<HashMap<String, RouteSpec>>,
     pub mutations: Option<MutationSpec>,
@@ -235,7 +231,7 @@ impl TopologySpec {
                 config: None,
                 mode: None,
                 pools: None,
-                functions: Functions { shared: vec![] },
+                functions: None,
                 routes: None,
                 events: None,
                 nodes: default_nodes(),

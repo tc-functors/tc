@@ -425,7 +425,6 @@ impl FunctionSpec {
     }
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildOutput {
     pub name: String,
@@ -433,4 +432,38 @@ pub struct BuildOutput {
     pub runtime: LangRuntime,
     pub kind: BuildKind,
     pub artifact: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct InlineFunctionSpec {
+    pub uri: Option<String>,
+    pub functions: Option<Vec<String>>,
+    pub function: Option<String>,
+    pub event: Option<String>,
+    pub queue: Option<String>,
+    pub fqn: Option<String>,
+    pub runtime: Option<RuntimeSpec>,
+    pub build: Option<BuildSpec>
+}
+
+impl InlineFunctionSpec {
+
+    pub fn intern(&self, namespace: &str, dir: &str, infra_dir: &str, name: &str) -> FunctionSpec {
+        FunctionSpec {
+            name: s!(name),
+            dir: Some(s!(dir)),
+            description: None,
+            namespace: Some(s!(namespace)),
+            fqn: self.fqn.clone(),
+            layer_name: None,
+            version: None,
+            revision: None,
+            runtime: self.runtime.clone(),
+            build: self.build.clone(),
+            infra: None,
+            assets: None,
+            infra_dir: Some(s!(infra_dir)),
+            tasks: HashMap::new(),
+        }
+    }
 }

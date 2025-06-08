@@ -138,6 +138,38 @@ impl Function {
         }
     }
 
+    pub fn from_spec(fspec: &FunctionSpec, namespace: &str, dir: &str, infra_dir: &str) -> Function {
+
+        let config = ConfigSpec::new(None);
+        let namespace = match fspec.namespace {
+            Some(ref n) => n,
+            None => &namespace.to_string(),
+        };
+        let fqn = make_fqn(&fspec, &namespace, "");
+
+        let infra_dir = match fspec.infra_dir {
+            Some(ref d) => &d,
+            None => infra_dir,
+        };
+
+        let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
+
+        Function {
+            name: fspec.name.to_string(),
+            actual_name: fspec.name.to_string(),
+            arn: template::lambda_arn(&fqn),
+            version: s!(""),
+            fqn: fqn.clone(),
+            description: None,
+            dir: dir.to_string(),
+            namespace: namespace.to_string(),
+            build: Build::new(dir, &runtime, fspec.build.clone(), fspec.tasks.clone()),
+            runtime: runtime,
+            layer_name: fspec.layer_name.clone(),
+            test: make_test(),
+        }
+    }
+
     pub fn to_map(function: Function) -> HashMap<String, Function> {
         let mut fns: HashMap<String, Function> = HashMap::new();
         fns.insert(function.name.to_string(), function);
