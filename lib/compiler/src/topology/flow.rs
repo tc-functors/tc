@@ -13,6 +13,9 @@ use serde_derive::{
 };
 use serde_json::Value;
 
+mod sfn;
+mod sfn_ext;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flow {
     pub name: String,
@@ -20,21 +23,6 @@ pub struct Flow {
     pub definition: Value,
     pub mode: String,
     pub role: Role,
-}
-
-fn read_definition(dir: &str, def: Value) -> Value {
-    match def.as_str() {
-        Some(p) => {
-            let path = format!("{}/{}", dir, &p);
-            if (path.ends_with(".json") || path.ends_with(".yml")) && u::file_exists(&path) {
-                let data = u::slurp(&path);
-                u::json_value(&data)
-            } else {
-                def
-            }
-        }
-        None => def,
-    }
 }
 
 fn make_role(infra_dir: &str, fqn: &str) -> Role {
@@ -48,12 +36,25 @@ fn make_role(infra_dir: &str, fqn: &str) -> Role {
     }
 }
 
+fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
+    match &spec.flow {
+        Some(f) => Some(sfn_ext::read(dir, f.clone())),
+        None => {
+            match &spec.states {
+                Some(s) => Some(s.clone()),
+                None => match &spec.functions {
+                    Some(fns) => Some(sfn::read(fns.clone())),
+                    None => None
+                }
+            }
+        }
+    }
+}
+
 impl Flow {
     pub fn new(dir: &str, infra_dir: &str, fqn: &str, spec: &TopologySpec) -> Option<Flow> {
-        let def = match &spec.flow {
-            Some(f) => Some(read_definition(dir, f.clone())),
-            None => spec.states.to_owned(),
-        };
+
+        let def = find_definition(dir, spec);
 
         let mode = match &spec.mode {
             Some(m) => m.to_string(),
