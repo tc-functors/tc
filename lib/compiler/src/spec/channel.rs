@@ -19,6 +19,7 @@ pub struct HandlerSpec {
 pub struct ChannelSpec {
     #[serde(default)]
     pub doc_only: bool,
+    pub function: Option<String>,
     pub on_publish: Option<HandlerSpec>,
     pub on_subscribe: Option<HandlerSpec>,
 }

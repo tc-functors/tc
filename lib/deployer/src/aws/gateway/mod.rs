@@ -43,7 +43,6 @@ pub struct Api {
 pub fn make_cors(methods: Vec<String>, origins: Vec<String>) -> Cors {
     let f = CorsBuilder::default();
     f
-        .allow_credentials(true)
         .set_allow_methods(Some(methods))
         .set_allow_origins(Some(origins))
         .build()

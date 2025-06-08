@@ -8,6 +8,5 @@ pub struct QueueSpec {
     #[serde(default)]
     pub producer: String,
 
-    #[serde(default)]
-    pub consumer: String,
+    pub function: Option<String>,
 }

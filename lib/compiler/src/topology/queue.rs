@@ -1,4 +1,5 @@
 use crate::{
+    Entity,
     spec::QueueSpec,
 };
 use super::template;
@@ -8,20 +9,35 @@ use serde_derive::{
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Target {
+    pub entity: Entity,
+    pub name: String,
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Queue {
     pub name: String,
     pub arn: String,
-    pub consumer: String,
-    pub producer: String,
+    pub targets: Vec<Target>,
 }
 
 impl Queue {
     pub fn new(name: &str, qspec: &QueueSpec) -> Queue {
+
+        let mut targets: Vec<Target> = vec![];
+        if let Some(f) = &qspec.function {
+            let t = Target {
+                entity: Entity::Function,
+                name: f.to_string()
+            };
+            targets.push(t);
+        }
+
         Queue {
             name: String::from(name),
             arn: template::sqs_arn(&name),
-            producer: qspec.producer.clone(),
-            consumer: qspec.consumer.clone(),
+            targets: targets
         }
     }
 }

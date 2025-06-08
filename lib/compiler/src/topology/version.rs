@@ -25,7 +25,3 @@ pub fn current_semver(prefix: &str) -> String {
         extract_version(&out)
     }
 }
-
-pub fn branch_name() -> String {
-    sh("git rev-parse --abbrev-ref HEAD", &pwd())
-}

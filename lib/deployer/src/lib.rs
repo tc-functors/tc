@@ -65,6 +65,7 @@ async fn create_flow(auth: &Auth, topology: &Topology) {
         queues,
         logs,
         tags,
+        channels,
         ..
     } = topology;
 
@@ -89,6 +90,7 @@ async fn create_flow(auth: &Auth, topology: &Topology) {
         }
     }
 
+    channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
     queue::create(&auth, queues).await;
     event::create(&auth, events).await;
@@ -103,10 +105,12 @@ async fn create_function(auth: &Auth, topology: &Topology) {
         mutations,
         tags,
         pools,
+        channels,
         ..
     } = topology;
     role::create_or_update(&auth, &topology.roles()).await;
     function::create(&auth, functions.clone()).await;
+    channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, tags).await;
     queue::create(&auth, queues).await;
     event::create(&auth, events).await;
