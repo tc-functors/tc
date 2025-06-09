@@ -99,7 +99,7 @@ pub async fn find_or_create_api(client: &Client, name: &str) -> String {
 }
 
 pub async fn create_channel(client: &Client, api_id: &str, name: &str, handler: &str) {
-    let res = client
+    let _ = client
         .create_channel_namespace()
         .api_id(s!(api_id))
         .name(s!(name))

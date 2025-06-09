@@ -12,7 +12,7 @@ use std::collections::HashMap;
 async fn _create_lambda_producer(lambda_client: &LambdaClient, name: &str, sqs_arn: &str) {
     if !name.is_empty() {
         println!("Updating function: {} (producer)", name);
-        lambda::update_dlq(lambda_client, name, sqs_arn).await;
+        lambda::_update_dlq(lambda_client, name, sqs_arn).await;
     }
 }
 
