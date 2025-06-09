@@ -4,6 +4,7 @@ mod event;
 mod function;
 mod topology;
 mod aws;
+mod pool;
 
 use compiler::Topology;
 pub use context::Context;

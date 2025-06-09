@@ -306,6 +306,8 @@ pub struct Cognito {
     #[derivative(Default(value = "default_email()"))]
     #[serde(default = "default_email")]
     pub from_email_address: String,
+    #[serde(default)]
+    pub from_email_address_map: Option<HashMap<String, String>>,
 }
 
 
