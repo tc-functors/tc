@@ -9,7 +9,7 @@ use aws_sdk_apigatewayv2::{
 use kit::*;
 use std::collections::HashMap;
 
-async fn find(client: &Client, api_id: &str, method: &str) -> Option<String> {
+async fn find(client: &Client, api_id: &str, int_name: &str) -> Option<String> {
     let r = client
         .get_integrations()
         .api_id(api_id.to_string())
@@ -24,7 +24,7 @@ async fn find(client: &Client, api_id: &str, method: &str) -> Option<String> {
                 match int.request_parameters {
                     Some(req) => match req.get("Name") {
                         Some(name) => {
-                            if name == &format!("sfn-{}", method) {
+                            if name == int_name {
                                 return int.integration_id;
                             }
                         }
@@ -42,23 +42,16 @@ async fn find(client: &Client, api_id: &str, method: &str) -> Option<String> {
 async fn create(
     client: &Client,
     api_id: &str,
-    sfn_arn: &str,
     role_arn: &str,
-    request_template: &str,
-    method: &str,
-    sync: bool
+    request_params: HashMap<String, String>,
+    sync: bool,
 ) -> Result<String, Error> {
 
-    let mut req: HashMap<String, String> = HashMap::new();
-    req.insert("StateMachineArn".to_string(), s!(sfn_arn));
-    req.insert("Name".to_string(), format!("sfn-{}", method));
-    req.insert("Input".to_string(), request_template.to_string());
     let subtype = if sync {
         s!("StepFunctions-StartSyncExecution")
     } else {
         s!("StepFunctions-StartExecution")
     };
-
 
     let res = client
         .create_integration()
@@ -68,7 +61,7 @@ async fn create(
         .payload_format_version(s!("1.0"))
         .integration_type(IntegrationType::AwsProxy)
         .integration_subtype(subtype)
-        .set_request_parameters(Some(req))
+        .set_request_parameters(Some(request_params))
         .send()
         .await;
     match res {
@@ -81,23 +74,21 @@ async fn create(
 pub async fn find_or_create(
     client: &Client,
     api_id: &str,
-    sfn_arn: &str,
     role_arn: &str,
-    request_template: &str,
-    method: &str,
-    sync: bool
+    request_params: HashMap<String, String>,
+    sync: bool,
+    name: &str,
+
 ) -> String {
 
-    let maybe_int = find(client, api_id, method).await;
+    let maybe_int = find(client, api_id, name).await;
     match maybe_int {
         Some(id) => id,
         _ => create(
             client,
             api_id,
-            sfn_arn,
             role_arn,
-            request_template,
-            method,
+            request_params,
             sync
         ).await.unwrap(),
     }
@@ -107,10 +98,10 @@ pub async fn find_or_create(
 pub async fn delete(
     client: &Client,
     api_id: &str,
-    method: &str
+    name: &str
 ) {
 
-    let maybe_int = find(client, api_id, method).await;
+    let maybe_int = find(client, api_id, name).await;
     match maybe_int {
         Some(id) => {
             let _ = client

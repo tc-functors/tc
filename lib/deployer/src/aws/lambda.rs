@@ -674,13 +674,13 @@ pub async fn update_tags(client: Client, arn: &str, tags: HashMap<String, String
     }
 }
 
-pub fn make_deadletter(sqs_arn: &str) -> DeadLetterConfig {
+pub fn _make_deadletter(sqs_arn: &str) -> DeadLetterConfig {
     let v = DeadLetterConfigBuilder::default();
     v.set_target_arn(Some(s!(sqs_arn))).build()
 }
 
-pub async fn update_dlq(client: &Client, name: &str, sqs_arn: &str) {
-    let config = make_deadletter(sqs_arn);
+pub async fn _update_dlq(client: &Client, name: &str, sqs_arn: &str) {
+    let config = _make_deadletter(sqs_arn);
     let _ = client
         .update_function_configuration()
         .function_name(s!(name))

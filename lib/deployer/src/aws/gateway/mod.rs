@@ -16,8 +16,8 @@ use std::collections::HashMap;
 
 mod lambda;
 mod sfn;
-// mod eventbridge;
-// mod sqs;
+mod eventbridge;
+mod sqs;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -117,7 +117,7 @@ impl Api {
         let api_id = self.find().await;
         match api_id {
             Some(id) => {
-                println!("Found API {} ({})", &self.name.green(), &id);
+                tracing::debug!("Found API {} ({})", &self.name.green(), &id);
                 self.clone().update(&id).await
             }
             _ => {
@@ -386,56 +386,81 @@ impl Api {
             .await;
     }
 
-    pub async fn create_integration(
+    pub async fn create_lambda_integration(&self, api_id: &str, target_arn: &str) -> String {
+        lambda::find_or_create(
+            &self.client,
+            api_id,
+            target_arn,
+            &self.role
+        ).await
+    }
+
+    pub async fn create_sfn_integration(
         &self,
         api_id: &str,
-        kind: &str,
-        target_arn: &str
-
+        name: &str,
+        request_params: HashMap<String, String>,
     ) -> String {
 
-        println!("Creating integration {}", kind.blue());
-        match kind {
-            "state" => sfn::find_or_create(
-                &self.client,
-                api_id,
-                target_arn,
-                &self.role,
-                &self.request_template,
-                &self.method,
-                self.sync
-            ).await,
-            "function" => lambda::find_or_create(
-                &self.client,
-                api_id,
-                target_arn,
-                &self.role
-            ).await,
-            _ => s!("")
-        }
+        sfn::find_or_create(
+            &self.client,
+            api_id,
+            &self.role,
+            request_params,
+            self.sync,
+            name
+        ).await
     }
 
-    pub async fn delete_integration(
+
+    pub async fn create_event_integration(
         &self,
         api_id: &str,
-        kind: &str,
-        target_arn: &str
-    ) {
-        println!("Deleting integration {}", kind.red());
-        match kind {
-            "state" => sfn::delete(
-                &self.client,
-                api_id,
-                &self.method
-            ).await,
+        name: &str,
+        request_params: HashMap<String, String>
+    ) -> String {
 
-            "function" => lambda::delete(
-                &self.client,
-                api_id,
-                target_arn
-            ).await,
-
-            _ => todo!()
-        }
+        eventbridge::find_or_create(
+            &self.client,
+            api_id,
+            &self.role,
+            request_params,
+            name
+        ).await
     }
+
+
+    pub async fn create_sqs_integration(
+        &self,
+        api_id: &str,
+        name: &str,
+        request_params: HashMap<String, String>
+    ) -> String {
+
+        sqs::find_or_create(
+            &self.client,
+            api_id,
+            &self.role,
+            request_params,
+            name
+        ).await
+    }
+
+
+    pub async fn delete_lambda_integration(&self, api_id: &str, target_arn: &str) {
+        lambda::delete(&self.client, api_id, target_arn).await
+    }
+
+    pub async fn delete_sfn_integration(&self, api_id: &str, name: &str) {
+        sfn::delete(&self.client, api_id, name).await
+    }
+
+    pub async fn delete_event_integration(&self, api_id: &str, name: &str) {
+        eventbridge::delete(&self.client, api_id, name).await
+    }
+
+    pub async fn delete_sqs_integration(&self, api_id: &str, name: &str) {
+        sqs::delete(&self.client, api_id, name).await
+    }
+
 }
