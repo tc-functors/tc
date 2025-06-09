@@ -2,6 +2,7 @@ use super::{
     Context,
     event,
     function,
+    pool
 };
 use compiler::Topology;
 use authorizer::Auth;
@@ -21,6 +22,8 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topolog
 
     tracing::debug!("Resolving events");
     partial_t.events = event::resolve(&ctx, &partial_t).await;
+    tracing::debug!("Resolving pools");
+    partial_t.pools = pool::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving functions");
     partial_t.functions = function::resolve(&ctx, &partial_t).await;
     partial_t
@@ -54,7 +57,11 @@ pub async fn resolve_component(
         }
         "layers" => {
             partial_t.functions = function::resolve(&ctx, &partial_t).await;
+        },
+        "pools" => {
+            partial_t.pools = pool::resolve(&ctx, &partial_t).await;
         }
+
 
         _ => (),
     }
