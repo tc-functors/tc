@@ -164,6 +164,8 @@ pub struct TopologySpec {
     #[serde(default)]
     pub name: String,
 
+    pub dir: Option<String>,
+
     pub kind: Option<TopologyKind>,
 
     #[serde(default)]
@@ -207,7 +209,8 @@ impl TopologySpec {
             match std::env::var("TC_SPEC_SIMPLE") {
                 Ok(_) => {
                     let data: String = u::slurp(topology_spec_file);
-                    let spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
+                    let mut spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
+                    spec.dir = Some(u::parent_dir(topology_spec_file));
                     spec
                 },
                 Err(_) => {
@@ -216,7 +219,8 @@ impl TopologySpec {
                         Ok(transformer) => transformer.parse(),
                         Err(e) => panic!("{:?}", e)
                     };
-                    let spec: TopologySpec = serde_yaml::from_value(v).unwrap();
+                    let mut spec: TopologySpec = serde_yaml::from_value(v).unwrap();
+                    spec.dir = Some(u::parent_dir(topology_spec_file));
                     spec
                 }
             }
@@ -225,6 +229,7 @@ impl TopologySpec {
             TopologySpec {
                 name: s!("tc"),
                 kind: Some(TopologyKind::Function),
+                dir: Some(u::pwd()),
                 hyphenated_names: false,
                 version: None,
                 infra: None,

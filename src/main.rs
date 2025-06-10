@@ -178,20 +178,16 @@ pub struct ResolveArgs {
 pub struct BuildArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'k')]
-    kind: Option<String>,
     #[arg(long, short = 'n')]
     name: Option<String>,
     #[arg(long, short = 'i')]
     image: Option<String>,
+    #[arg(long, short = 'l')]
+    layer: Option<String>,
     #[arg(long, action)]
     clean: bool,
     #[arg(long, action, short = 'r')]
     recursive: bool,
-    #[arg(long, action)]
-    dirty: bool,
-    #[arg(long, action)]
-    task: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
     #[arg(long, action, short = 'p')]
@@ -201,7 +197,9 @@ pub struct BuildArgs {
     #[arg(long, action, short = 's', alias = "sync-to-local")]
     sync: bool,
     #[arg(long, action)]
-    lang: Option<String>,
+    parallel: bool,
+    #[arg(long, action)]
+    remote: bool,
 }
 
 #[derive(Debug, Args)]
@@ -449,17 +447,17 @@ async fn version() {
 
 async fn build(args: BuildArgs) {
     let BuildArgs {
-        kind,
         name,
         recursive,
         clean,
-        dirty,
         trace,
         image,
+        layer,
         publish,
         profile,
+        parallel,
         sync,
-        lang,
+        remote,
         shell,
         ..
     } = args;
@@ -469,15 +467,16 @@ async fn build(args: BuildArgs) {
     let dir = kit::pwd();
     let opts = tc::BuildOpts {
         clean: clean,
-        dirty: dirty,
         recursive: recursive,
         image: image,
+        layer: layer,
         sync: sync,
-        lang: lang,
         publish: publish,
+        parallel: parallel,
+        remote: remote,
         shell: shell
     };
-    tc::build(profile, kind, name, &dir, opts).await;
+    tc::build(profile, name, &dir, opts).await;
 }
 
 async fn test(_args: TestArgs) {

@@ -1,7 +1,7 @@
 use compiler::{
     Topology,
+    Function,
     spec::{
-        BuildKind,
         BuildSpec,
         ConfigSpec,
         FunctionSpec,
@@ -12,7 +12,6 @@ use kit as u;
 use authorizer::Auth;
 use std::{
     panic,
-    str::FromStr,
     time::Instant,
 };
 use tabled::{
@@ -22,45 +21,42 @@ use tabled::{
 
 pub struct BuildOpts {
     pub recursive: bool,
+    pub parallel: bool,
     pub clean: bool,
-    pub dirty: bool,
     pub publish: bool,
+    pub remote: bool,
     pub sync: bool,
     pub shell: bool,
     pub image: Option<String>,
-    pub lang: Option<String>,
+    pub layer: Option<String>,
 }
 
 pub async fn build(
     profile: Option<String>,
-    kind: Option<String>,
     name: Option<String>,
     dir: &str,
     opts: BuildOpts,
 ) {
     let BuildOpts {
         clean,
-        dirty,
         recursive,
         image,
+        layer,
         sync,
         publish,
-        lang,
         shell,
+        parallel,
         ..
     } = opts;
 
     if recursive {
-        let kind = match kind {
-            Some(s) => Some(BuildKind::from_str(&s).unwrap()),
-            None => None,
-        };
         if sync {
             let auth = init(profile, None).await;
             let builds = builder::just_images(recursive);
             builder::sync(&auth, builds).await;
+
         } else {
-            let builds = builder::build_recursive(dirty, kind, image).await;
+            let builds = builder::build_recursive(dir, parallel, image, layer).await;
             if publish {
                 let auth = init(profile.clone(), None).await;
                 builder::publish(&auth, builds.clone()).await;
@@ -70,10 +66,6 @@ pub async fn build(
     } else if clean {
         builder::clean_lang(dir);
     } else {
-        let kind = match kind {
-            Some(s) => Some(BuildKind::from_str(&s).unwrap()),
-            None => None,
-        };
         if sync {
             let auth = init(profile, None).await;
             let builds = builder::just_images(false);
@@ -81,10 +73,16 @@ pub async fn build(
         } else if shell {
             builder::shell(dir);
         } else {
-            let builds = builder::build(dir, name, kind, image, lang).await;
-            if publish {
-                let auth = init(profile.clone(), None).await;
-                builder::publish(&auth, builds.clone()).await;
+            let maybe_fn = compiler::current_function(dir);
+            match maybe_fn {
+                Some(f) =>   {
+                    let builds = builder::build(&f, name, image, layer).await;
+                    if publish {
+                        let auth = init(profile.clone(), None).await;
+                        builder::publish(&auth, builds.clone()).await;
+                    }
+                },
+                None => println!("No function found. Try --recursive or build from a function dir")
             }
         }
     }
@@ -191,15 +189,8 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     }
 }
 
-async fn maybe_build(auth: &Auth, dir: &str, name: &str) {
-    let builds = builder::build(
-        dir,
-        Some(String::from(name)),
-        None,
-        Some(String::from("code")),
-        None,
-    )
-    .await;
+async fn maybe_build(auth: &Auth, function: &Function) {
+    let builds = builder::build(function, None, Some(String::from("code")), None).await;
     let config = ConfigSpec::new(None);
     let profile = config.aws.lambda.layers_profile.clone();
     let centralized = auth.assume(profile.clone(), config.role_to_assume(profile)).await;
@@ -210,14 +201,13 @@ async fn create_topology(auth: &Auth, topology: &Topology) {
     let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        maybe_build(auth, &function.dir, &function.name).await;
+        maybe_build(auth, &function).await;
     }
     deployer::create(auth, topology).await;
 
     for (_, node) in &topology.nodes {
         for (_, function) in &node.functions {
-            let dir = &function.dir;
-            maybe_build(auth, dir, &function.name).await;
+            maybe_build(auth, &function).await;
         }
 
         deployer::create(auth, node).await;
@@ -291,7 +281,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     let Topology { functions, .. } = topology;
 
     for (_, function) in functions {
-        maybe_build(auth, &function.dir, &function.name).await;
+        maybe_build(auth, &function).await;
     }
 
     deployer::update(auth, topology).await;

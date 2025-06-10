@@ -176,17 +176,17 @@ fn is_shared(uri: Option<String>) -> bool {
     }
 }
 
-fn find_dir(root_dir: &str, name: &str, uri: Option<String>) -> String {
+fn abs_shared_dir(root_dir: &str, uri: Option<String>) -> String {
     match uri {
         Some(p) => {
-            u::absolute_dir(root_dir, &p)
+            u::absolute_dir(&root_dir, &p)
         },
-        None => format!("{}/{}", root_dir, name)
+        None => panic!("Shared uri not specified")
     }
 }
 
 fn intern_functions(
-    root_dir: &str,
+    _root_dir: &str,
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
@@ -198,17 +198,19 @@ fn intern_functions(
 
     let mut fns: HashMap<String, Function> = HashMap::new();
     let namespace = &spec.name;
+    let root_dir = &spec.dir.clone().unwrap();
 
     for (name, f) in inline_fns {
 
-        let abs_dir = find_dir(root_dir, &name, f.uri.clone());
-
-        if is_shared(f.uri.clone()) || u::path_exists(&abs_dir, "function.json") {
+        if is_shared(f.uri.clone()) {
+            let abs_dir = abs_shared_dir(root_dir, f.uri.clone());
             let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
             fns.insert(s!(name), function);
+
         } else {
-            let fspec = f.intern(namespace, &abs_dir, infra_dir, &name);
-            let function = Function::from_spec(&fspec, namespace, &abs_dir, infra_dir);
+            let dir = format!("{}/{}", root_dir, name);
+            let fspec = f.intern(namespace, &dir, infra_dir, &name);
+            let function = Function::from_spec(&fspec, namespace, &dir, infra_dir);
             fns.insert(s!(name), function);
         }
     }
@@ -634,6 +636,16 @@ impl Topology {
         fns.clone()
     }
 
+    pub fn current_function(&self, dir: &str) -> Option<Function> {
+        let fns: HashMap<String, Function> = self.clone().functions;
+        for (_, f) in fns {
+            if f.dir == dir {
+                return Some(f)
+            }
+        }
+        None
+    }
+
     pub fn build_functions_tree(&self) -> StringItem {
         let mut t = TreeBuilder::new(s!(self.namespace.blue()));
 
@@ -642,7 +654,8 @@ impl Topology {
             t.begin_child(s!(f.name.green()));
             t.add_empty_child(f.runtime.lang.to_str());
             t.add_empty_child(f.runtime.role.path.to_string());
-            //t.add_empty_child(vars);
+            t.add_empty_child(f.dir.to_string());
+            t.add_empty_child(f.build.kind.to_str());
             t.end_child();
         }
 
@@ -653,7 +666,8 @@ impl Topology {
                 t.begin_child(s!(&f.fqn));
                 t.add_empty_child(f.runtime.lang.to_str());
                 t.add_empty_child(f.runtime.role.path.to_string());
-                //t.add_empty_child(vars);
+                t.add_empty_child(f.dir.to_string());
+                t.add_empty_child(f.build.kind.to_str());
                 t.end_child();
             }
             t.end_child();
