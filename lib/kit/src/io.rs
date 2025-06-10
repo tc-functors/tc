@@ -200,6 +200,7 @@ fn trim(input: &str) -> &str {
 
 #[cfg(not(test))]
 pub fn sh(path: &str, dir: &str) -> String {
+
     let out = Exec::shell(path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)
@@ -345,6 +346,12 @@ pub fn path_exists(dir: &str, f: &str) -> bool {
 
 pub fn path_size(dir: &str, f: &str) -> f64 {
     file_size(&path_of(dir, f))
+}
+
+pub fn parent_dir(f: &str) -> String {
+    let path = PathBuf::from(f);
+    let dir = path.parent().unwrap();
+    dir.to_str().unwrap().to_string()
 }
 
 pub fn dir_of(d: &str) -> String {

@@ -234,6 +234,14 @@ pub fn show_component(component: &str, format: &str, recursive: bool) -> String 
                 _ => u::pretty_json(&topology.functions),
             }
         }
+        "function" | "."  => {
+            let maybe_fn = current_function(&dir);
+            if let Some(f) = maybe_fn {
+                u::pretty_json(&f)
+            } else {
+                u::empty()
+            }
+        }
         "mutations" => {
             let topology = compile(&dir, recursive);
             if format == "graphql" {
@@ -322,13 +330,7 @@ pub fn topology_name(dir: &str) -> String {
 
 pub fn current_function(dir: &str) -> Option<Function> {
     let topology = Topology::new(dir, false, true);
-    topology
-        .functions
-        .values()
-        .cloned()
-        .collect::<Vec<_>>()
-        .first()
-        .cloned()
+    topology.current_function(dir)
 }
 
 pub fn kind_of() -> String {

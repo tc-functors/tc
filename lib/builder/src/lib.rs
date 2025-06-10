@@ -6,7 +6,7 @@ mod extension;
 
 use colored::Colorize;
 use compiler::{
-    Layer,
+    Function,
     Lang,
     spec::{
         BuildKind,
@@ -19,9 +19,6 @@ use compiler::{
 use authorizer::Auth;
 use kit as u;
 use kit::sh;
-use std::str::FromStr;
-
-
 
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = compiler::find_buildables(&u::pwd(), recursive);
@@ -65,128 +62,63 @@ pub async fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build
     }
 }
 
-#[rustfmt::skip]
 pub async fn build(
-    dir: &str,
+    function: &Function,
     name: Option<String>,
-    kind: Option<BuildKind>,
     image: Option<String>,
-    lang: Option<String>,
+    _layer: Option<String>
 ) -> Vec<BuildOutput> {
 
-    let function = compiler::current_function(dir);
+    let Function { dir, build, runtime, .. } = function;
+    let Build { kind, images, .. } = build;
 
-    if let Some(f) = function {
+    let kind_str = &kind.to_str();
+    let langr = &runtime.lang;
 
-        let mut spec = f.build;
+    let image_kind = u::maybe_string(image, "code");
+    let name = u::maybe_string(name, &function.name);
 
-        let kind = match kind {
-            Some(k) => k,
-            None => spec.kind
-        };
+    println!("Building {} ({}/{})",
+             &name, &langr.to_str(), kind_str.blue());
 
-        let kind_str = &kind.to_str();
+    let path = match kind {
+        BuildKind::Image     => image::build(dir, &name, langr, &images, &image_kind, &runtime.uri),
+        BuildKind::Inline    => inline::build(dir, &name, langr, &build).await,
+        BuildKind::Layer     => layer::build(dir, &name, langr),
+        BuildKind::Library   => library::build(dir, langr),
+        BuildKind::Slab      => library::build(dir, langr),
+        BuildKind::Code      => build_code(dir, &name, langr, &build).await,
+        BuildKind::Extension => extension::build(dir, &name),
+        BuildKind::Runtime   => todo!()
+    };
 
-        let runtime = &f.runtime;
-        let langr = match lang {
-            Some(n) => &LangRuntime::from_str(&n).unwrap(),
-            None => &f.runtime.lang
-        };
-
-        let name = u::maybe_string(name, &f.name);
-
-        spec.kind = kind.clone();
-
-        let image_kind = u::maybe_string(image, "code");
-
-        println!("Building {} ({}/{})",
-                 &name, &langr.to_str(), kind_str.blue());
-
-        let path = match kind {
-            BuildKind::Image     => image::build(dir, &name, langr, &spec.images, &image_kind, &runtime.uri),
-            BuildKind::Inline    => inline::build(dir, &name, langr, &spec).await,
-            BuildKind::Layer     => layer::build(dir, &name, langr),
-            BuildKind::Library   => library::build(dir, langr),
-            BuildKind::Slab      => library::build(dir, langr),
-            BuildKind::Code      => build_code(dir, &name, langr, &spec).await,
-            BuildKind::Extension => extension::build(dir, &name),
-            BuildKind::Runtime   => todo!()
-        };
-
-        let out = BuildOutput {
-            name: String::from(name),
-            dir: dir.to_string(),
-            artifact: path,
-            kind: kind,
-            runtime: langr.clone(),
-        };
-        vec![out]
-    } else {
-        vec![]
-    }
-}
-
-fn should_build(layer: &Layer, dirty: bool) -> bool {
-    if dirty {
-        layer.dirty
-    } else {
-        &layer.kind == "implicit" || &layer.kind == "default"
-    }
+    let out = BuildOutput {
+        name: String::from(name),
+        dir: dir.to_string(),
+        artifact: path,
+        kind: kind.clone(),
+        runtime: langr.clone(),
+    };
+    vec![out]
 }
 
 pub async fn build_recursive(
-    dirty: bool,
-    kind: Option<BuildKind>,
-    image_kind: Option<String>,
+    dir: &str,
+    _parallel: bool,
+    image: Option<String>,
+    layer: Option<String>
+
 ) -> Vec<BuildOutput> {
+
     let mut outs: Vec<BuildOutput> = vec![];
 
     //TODO  parallelize
 
-    let knd = match kind {
-        Some(k) => k,
-        None => BuildKind::Code,
-    };
+    let topology = compiler::compile(dir, true);
 
-    match knd {
-        BuildKind::Code => {
-            let buildables = compiler::find_buildables(&u::pwd(), true);
-            tracing::debug!("Building recursively {}", buildables.len());
-            for b in buildables {
-                let mut out = build(
-                    &b.dir,
-                    None,
-                    Some(BuildKind::Code),
-                    image_kind.clone(),
-                    None,
-                )
-                .await;
-                outs.append(&mut out);
-            }
-        }
-
-        BuildKind::Layer => {
-            let layers = compiler::find_layers();
-            for layer in layers.clone() {
-                if should_build(&layer, dirty) {
-                    let mut out = build(
-                        &layer.path,
-                        Some(layer.name),
-                        Some(BuildKind::Layer),
-                        None,
-                        None,
-                    )
-                    .await;
-                    outs.append(&mut out)
-                }
-            }
-        }
-
-        BuildKind::Inline => {
-            println!("building inline")
-        }
-
-        _ => todo!(),
+    for (_, function) in topology.functions {
+        let mut out = build(&function, None, image.clone(), layer.clone()).await;
+        outs.append(&mut out);
     }
     outs
 }
