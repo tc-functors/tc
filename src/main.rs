@@ -180,6 +180,8 @@ pub struct BuildArgs {
     profile: Option<String>,
     #[arg(long, short = 'n')]
     name: Option<String>,
+    #[arg(long, short = 'k')]
+    kind: Option<String>,
     #[arg(long, short = 'i')]
     image: Option<String>,
     #[arg(long, short = 'l')]
@@ -451,6 +453,7 @@ async fn build(args: BuildArgs) {
         recursive,
         clean,
         trace,
+        kind,
         image,
         layer,
         publish,
@@ -468,6 +471,7 @@ async fn build(args: BuildArgs) {
     let opts = tc::BuildOpts {
         clean: clean,
         recursive: recursive,
+        kind: kind,
         image: image,
         layer: layer,
         sync: sync,

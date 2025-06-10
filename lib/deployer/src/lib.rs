@@ -296,7 +296,7 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
                 let c = kit::strip(&component, "/").replace("_", "-");
                 match functions.get(&c) {
                     Some(f) => {
-                        builder::build(&f, None, None, None).await;
+                        builder::build(&f, None, None, None, None).await;
                         let p = auth.name.to_string();
                         let role = auth.assume_role.to_owned();
                         function::create_function(p, role, f.clone()).await;

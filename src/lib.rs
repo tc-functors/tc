@@ -27,6 +27,7 @@ pub struct BuildOpts {
     pub remote: bool,
     pub sync: bool,
     pub shell: bool,
+    pub kind: Option<String>,
     pub image: Option<String>,
     pub layer: Option<String>,
 }
@@ -42,6 +43,7 @@ pub async fn build(
         recursive,
         image,
         layer,
+        kind,
         sync,
         publish,
         shell,
@@ -76,7 +78,7 @@ pub async fn build(
             let maybe_fn = compiler::current_function(dir);
             match maybe_fn {
                 Some(f) =>   {
-                    let builds = builder::build(&f, name, image, layer).await;
+                    let builds = builder::build(&f, name, image, layer, kind).await;
                     if publish {
                         let auth = init(profile.clone(), None).await;
                         builder::publish(&auth, builds.clone()).await;
@@ -192,7 +194,7 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
 }
 
 async fn maybe_build(auth: &Auth, function: &Function) {
-    let builds = builder::build(function, None, Some(String::from("code")), None).await;
+    let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
     let config = ConfigSpec::new(None);
     let profile = config.aws.lambda.layers_profile.clone();
     let centralized = auth.assume(profile.clone(), config.role_to_assume(profile)).await;
