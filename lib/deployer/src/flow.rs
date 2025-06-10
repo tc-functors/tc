@@ -121,7 +121,7 @@ pub async fn enable_logs(auth: &Auth, sfn_arn: &str, logs: LogConfig, flow: &Flo
     cloudwatch::create_log_group(cw_client.clone(), &aggregator.states)
         .await
         .unwrap();
-    println!(
+    tracing::debug!(
         "Updating log-config {} ({}) include_exec_data: {}",
         flow.name, flow.mode, include_exec_data
     );

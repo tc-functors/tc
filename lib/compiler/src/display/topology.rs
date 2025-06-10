@@ -6,6 +6,14 @@ use tabled::{
     Tabled,
 };
 
+use kit::*;
+
+use ptree::{
+    builder::TreeBuilder,
+    item::StringItem,
+};
+use colored::Colorize;
+
 #[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct TopologyCount {
     pub name: String,
@@ -85,4 +93,19 @@ pub fn print_topologies(topologies: HashMap<String, Topology>) {
     xs.reverse();
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
+}
+
+pub fn build_tree(topology: &Topology) -> StringItem {
+    let mut t = TreeBuilder::new(s!(topology.namespace.blue()));
+    t.begin_child(s!("functions"));
+    for (_, f) in &topology.functions {
+        t.add_empty_child(f.name.clone());
+    }
+    t.end_child();
+    t.begin_child(s!("events"));
+    for (_, f) in &topology.events {
+        t.add_empty_child(f.name.clone());
+    }
+    t.end_child();
+    t.build()
 }

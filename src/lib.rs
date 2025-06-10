@@ -104,37 +104,39 @@ pub async fn test() {
 pub struct CompileOpts {
     pub versions: bool,
     pub recursive: bool,
-    pub component: Option<String>,
+    pub entity: Option<String>,
     pub format: Option<String>,
 }
 
-pub async fn compile(opts: CompileOpts) -> String {
+pub async fn compile(opts: CompileOpts) {
     let CompileOpts {
         recursive,
-        component,
+        entity,
         format,
         ..
     } = opts;
 
     let dir = u::pwd();
-    let format = u::maybe_string(format, "json");
+    let fmt = u::maybe_string(format.clone(), "json");
 
-    match component {
-        Some(c) => compiler::show_component(&c, &format, recursive),
+    match entity {
+        Some(e) => compiler::display_entity(&dir, &e, &fmt, recursive),
         None => {
-            if compiler::is_root_dir(&dir) {
-                let res = compiler::compile_root(&dir, recursive);
-                compiler::formatter::print_topologies(res);
-                String::from("")
-            } else {
-                let topology = compiler::compile(&dir, recursive);
-                match std::env::var("TC_TRACE") {
-                    Ok(_) => {
-                        kit::write_str("topology.json", &topology.to_str());
-                        tracing::debug!("Wrote topology.json");
-                        String::from("")
+            match format {
+                Some(fmt) => compiler::display_topology(&dir, &fmt, recursive),
+                None => {
+                    if compiler::is_root_dir(&dir) {
+                        compiler::display_root();
+                    } else {
+                        let topology = compiler::compile(&dir, recursive);
+                        match std::env::var("TC_DUMP_TOPOLOGY") {
+                            Ok(_) => {
+                                kit::write_str("topology.json", &topology.to_str());
+                                tracing::debug!("Wrote topology.json");
+                            }
+                            Err(_) => u::pp_json(topology)
+                        }
                     }
-                    Err(_) => u::pretty_json(topology),
                 }
             }
         }
@@ -252,8 +254,9 @@ pub async fn create(
             let sandbox = resolver::maybe_sandbox(sandbox);
             releaser::guard(&sandbox);
             let dir = u::pwd();
-            println!("Compiling topology");
+            println!("Compiling topology {} ...", &compiler::topology_name(&dir));
             let ct = compiler::compile(&dir, recursive);
+            println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, !no_cache).await;
             rt
         }

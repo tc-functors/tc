@@ -1,12 +1,10 @@
-use std::path::Path;
-
-pub mod formatter;
 pub mod spec;
 pub mod topology;
-
 mod parser;
+mod display;
 
-pub use formatter::TopologyCount;
+use std::str::FromStr;
+pub use display::topology::TopologyCount;
 use kit as u;
 use kit::*;
 pub use spec::{
@@ -23,6 +21,7 @@ pub use spec::{
     infra::InfraSpec
 };
 
+use display::Format;
 pub use topology::{
     function,
     function::Function,
@@ -86,26 +85,6 @@ pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     h
 }
 
-pub fn just_functions() -> HashMap<String, Function> {
-    let mut functions: HashMap<String, Function> = HashMap::new();
-    let dir = u::pwd();
-
-    for entry in WalkDir::new(dir.clone())
-        .follow_links(false)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_dir())
-    {
-        let p = entry.path().to_string_lossy();
-        if topology::is_topology_dir(&p) {
-            let topology = Topology::new(&p, false, false);
-            let fns = topology.functions();
-            functions.extend(fns);
-        }
-    }
-    functions
-}
-
 pub fn find_layers() -> Vec<Layer> {
     let dir = u::pwd();
     if topology::is_compilable(&dir) {
@@ -139,187 +118,40 @@ pub fn guess_runtime(dir: &str) -> LangRuntime {
     function::runtime::infer_lang(dir)
 }
 
-pub fn guess_build_runtime(dir: &str, kind: BuildKind) -> LangRuntime {
-    match kind {
-        BuildKind::Code => function::runtime::infer_lang(dir),
-        BuildKind::Layer | BuildKind::Library => function::runtime::infer_lang(&dir),
-        _ => function::runtime::infer_lang(dir),
-    }
-}
-
-pub fn guess_lang(dir: &str) -> Lang {
-    function::runtime::infer_lang(dir).to_lang()
-}
-
 pub fn is_topology_dir(dir: &str) -> bool {
     topology::is_topology_dir(dir)
 }
 
-pub fn show_component(component: &str, format: &str, recursive: bool) -> String {
-    let dir = u::pwd();
-    match component {
-        "spec" => {
-            let f = format!("{}/topology.yml", &u::pwd());
-            let spec = TopologySpec::new(&f);
-            u::pretty_json(spec)
-        }
-        "layers" => {
-            let layers = find_layers();
-            u::pretty_json(layers)
-        }
-        "flow" => {
-            let topology = compile(&dir, recursive);
-            match topology.flow {
-                Some(f) => u::pretty_json(&f),
-                None => u::empty(),
-            }
-        }
-        "routes" => {
-            let topology = compile(&dir, recursive);
-            u::pretty_json(&topology.routes)
-        }
-        "runtime" => {
-            let topology = compile(&dir, recursive);
-            let functions = topology.functions();
-            for (_dir, f) in functions {
-                println!("{}", u::pretty_json(f.runtime));
-            }
-            u::empty()
-        }
-        "vars" => {
-            let topology = compile(&dir, recursive);
-            let functions = topology.functions();
-            for (_dir, f) in functions {
-                println!("{}", u::pretty_json(f.runtime));
-            }
-            u::empty()
-        }
-        "events" => {
-            if recursive {
-                let topologies = list_topologies();
-                let mut h: HashMap<String, Event> = HashMap::new();
-                for (_dir, t) in topologies {
-                    let Topology { events, .. } = t;
-                    h.extend(events);
-                }
-                println!("{}", u::pretty_json(h));
-                u::empty()
-            } else {
-                let topology = compile(&dir, false);
-                u::pretty_json(&topology.events)
-            }
-        }
-        "schedules" => {
-            let topology = compile(&dir, recursive);
-            u::pretty_json(&topology.schedules)
-        }
+pub fn display_root() {
+    let topologies = list_topologies();
+    display::topology::print_topologies(topologies)
+}
 
-        "channels" => {
-            let topology = compile(&dir, recursive);
-            u::pretty_json(&topology.channels)
+pub fn display_topology(dir: &str, format: &str, recursive: bool) {
+    let topology = compile(&dir, recursive);
+    match format {
+        "tree" => {
+            let tree = display::topology::build_tree(&topology);
+            kit::print_tree(tree);
         }
-        "pools" => {
-            let topology = compile(&dir, recursive);
-            u::pretty_json(&topology.pools)
-        }
-        "functions" => {
-            let topology = compile(&dir, recursive);
-            match format {
-                "tree" => {
-                    let tree = topology.build_functions_tree();
-                    kit::print_tree(tree);
-                    u::empty()
-                }
-                "json" => u::pretty_json(&topology.functions),
-                _ => u::pretty_json(&topology.functions),
-            }
-        }
-        "function" | "."  => {
-            let maybe_fn = current_function(&dir);
-            if let Some(f) = maybe_fn {
-                u::pretty_json(&f)
-            } else {
-                u::empty()
-            }
-        }
-        "mutations" => {
-            let topology = compile(&dir, recursive);
-            if format == "graphql" {
-                mutation::print_graphql(
-                    &topology
-                        .mutations
-                        .values()
-                        .into_iter()
-                        .nth(0)
-                        .unwrap()
-                        .types,
-                );
-                u::empty()
-            } else {
-                u::pretty_json(&topology.mutations)
-            }
-        }
-
-        "nodes" => {
-            let topology = compile(&dir, recursive);
-            match format {
-                "tree" => {
-                    let tree = topology.build_nodes_tree();
-                    kit::print_tree(tree);
-                    u::empty()
-                }
-                "json" => u::pretty_json(&topology.nodes),
-                _ => u::pretty_json(&topology.nodes),
-            }
-        }
-
-        "topologies" => {
-            let topologies = list_topologies();
-            match format {
-                "table" => formatter::print_topologies(topologies),
-                _ => {
-                    for (dir, basic_spec) in topologies {
-                        let Topology { namespace, .. } = basic_spec;
-                        println!("{} - {}", &namespace, u::second(&dir, "/services/"));
-                    }
-                }
-            }
-
-            u::empty()
-        }
-
-        "dirs" => {
-            let topologies = list_topology_dirs();
-            for (name, dir) in topologies {
-                println!("{} - {}", &name, &dir);
-            }
-            u::empty()
-        }
-
-        "all" => {
-            let topology = compile(&dir, false);
-            match format {
-                "tree" => {
-                    let tree = topology.build_tree();
-                    kit::print_tree(tree);
-                    u::empty()
-                }
-                _ => u::empty(),
-            }
-        }
-
-        _ => {
-            let topology = compile(&dir, recursive);
-            if u::file_exists(&component) {
-                let functions = topology.functions;
-                let fn_dir = format!("{}/{}", &dir, component);
-                let f = functions.get(&fn_dir).unwrap();
-                u::pretty_json(f)
-            } else {
-                u::empty()
-            }
-        }
+        _ => ()
     }
+}
+
+pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
+    let entity = Entity::from_str(e).unwrap();
+    let format = Format::from_str(f).unwrap();
+
+    let topology = compile(&dir, recursive);
+
+    if e == "." {
+        if let Some(f) = topology.current_function(dir) {
+            u::pp_json(&f)
+        }
+    } else {
+        display::display(entity, format, &topology);
+    }
+
 }
 
 pub fn topology_name(dir: &str) -> String {
@@ -360,29 +192,6 @@ pub fn list_topologies() -> HashMap<String, Topology> {
                 names.push(spec.namespace.to_string());
                 topologies.insert(p.to_string(), spec);
             }
-        }
-    }
-    topologies
-}
-
-fn is_ci_dir(dir: &str) -> bool {
-    //FIXME: handle hidden dirs
-    let ci_dir = format!("{}/.circleci", dir);
-    Path::new(&ci_dir).exists()
-}
-
-pub fn list_topology_dirs() -> HashMap<String, String> {
-    let mut topologies: HashMap<String, String> = HashMap::new();
-    for entry in WalkDir::new(u::pwd())
-        .follow_links(false)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_dir())
-    {
-        let p = entry.path().to_string_lossy();
-        if is_topology_dir(&p) && is_ci_dir(&p) {
-            let spec = Topology::new(&p, false, true);
-            topologies.insert(spec.namespace.to_string(), p.to_string());
         }
     }
     topologies
