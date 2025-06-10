@@ -1,4 +1,97 @@
 
-pub fn display() {
+use crate::spec::Entity;
+use crate::Topology;
 
+use std::collections::HashMap;
+use std::str::FromStr;
+use kit as u;
+
+pub mod topology;
+mod functions;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParseError;
+
+pub enum Format {
+    Tree,
+    Table,
+    JSON,
+    YAML,
+    Graphql
+}
+
+impl FromStr for Format {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "json" => Ok(Format::JSON),
+            "tree" => Ok(Format::Tree),
+            "table" => Ok(Format::Table),
+            "yaml" => Ok(Format::YAML),
+            "graphql" | "gql" => Ok(Format::Graphql),
+            _      => Ok(Format::JSON),
+        }
+    }
+}
+
+pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
+
+    let Topology { events, routes, flow, channels, .. } = topology;
+
+    match entity {
+
+        Entity::State => {
+            if let Some(f) = flow {
+                match fmt {
+                    Format::JSON => u::pp_json(&f),
+                    _ => u::pp_json(&f)
+                }
+            }
+        }
+
+        Entity::Route => u::pp_json(routes),
+        Entity::Event => u::pp_json(events),
+        Entity::Channel => u::pp_json(channels),
+
+        Entity::Function => {
+            match fmt {
+                Format::Tree =>  {
+                    let tree = functions::build_tree(topology);
+                    kit::print_tree(tree);
+                },
+                Format::JSON => {
+                    u::pp_json(&topology.functions)
+                },
+                Format::Table => {
+                    u::pp_json(&topology.functions)
+                },
+                _ => todo!()
+            }
+        },
+
+        Entity::Mutation => {
+            match fmt {
+                Format::Graphql => {
+                    print_graphql(
+                        &topology
+                            .mutations
+                            .values()
+                            .into_iter()
+                            .nth(0)
+                            .unwrap()
+                            .types,
+                    );
+                },
+                _ => u::pp_json(&topology.mutations)
+            }
+        },
+        _ => ()
+    }
+}
+
+fn print_graphql(types: &HashMap<String, String>) {
+    for (_, v) in types {
+        println!("{}", v)
+    }
 }

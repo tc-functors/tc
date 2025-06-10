@@ -221,7 +221,7 @@ pub struct CompileArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, short = 'c')]
-    component: Option<String>,
+    entity: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
     #[arg(long, action, short = 't')]
@@ -547,7 +547,7 @@ async fn compile(args: CompileArgs) {
     let CompileArgs {
         versions,
         recursive,
-        component,
+        entity,
         format,
         trace,
         ..
@@ -558,11 +558,11 @@ async fn compile(args: CompileArgs) {
     let opts = tc::CompileOpts {
         versions: versions,
         recursive: recursive,
-        component: component,
+        entity: entity,
         format,
     };
-    let topology = tc::compile(opts).await;
-    println!("{topology}");
+    tc::compile(opts).await;
+
 }
 
 async fn resolve(args: ResolveArgs) {

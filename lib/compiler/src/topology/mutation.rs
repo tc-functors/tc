@@ -205,9 +205,3 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
         None => None,
     }
 }
-
-pub fn print_graphql(types: &HashMap<String, String>) {
-    for (_, v) in types {
-        println!("{}", v)
-    }
-}

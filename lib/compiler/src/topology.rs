@@ -35,13 +35,8 @@ use crate::spec::{
     config::ConfigSpec
 };
 
-use colored::Colorize;
 use kit as u;
 use kit::*;
-use ptree::{
-    builder::TreeBuilder,
-    item::StringItem,
-};
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -646,51 +641,6 @@ impl Topology {
         None
     }
 
-    pub fn build_functions_tree(&self) -> StringItem {
-        let mut t = TreeBuilder::new(s!(self.namespace.blue()));
-
-        for (_, f) in &self.functions {
-            //let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
-            t.begin_child(s!(f.name.green()));
-            t.add_empty_child(f.runtime.lang.to_str());
-            t.add_empty_child(f.runtime.role.path.to_string());
-            t.add_empty_child(f.dir.to_string());
-            t.add_empty_child(f.build.kind.to_str());
-            t.end_child();
-        }
-
-        for (_, node) in &self.nodes {
-            t.begin_child(s!(&node.namespace.green()));
-            for (_, f) in &node.functions {
-                // let vars = u::maybe_string(f.runtime.infra_spec_file.clone(), "");
-                t.begin_child(s!(&f.fqn));
-                t.add_empty_child(f.runtime.lang.to_str());
-                t.add_empty_child(f.runtime.role.path.to_string());
-                t.add_empty_child(f.dir.to_string());
-                t.add_empty_child(f.build.kind.to_str());
-                t.end_child();
-            }
-            t.end_child();
-        }
-        t.build()
-    }
-
-    pub fn build_nodes_tree(&self) -> StringItem {
-        let mut t = TreeBuilder::new(s!(self.namespace.blue()));
-
-        for (_, node) in &self.nodes {
-            t.begin_child(s!(&node.namespace.green()));
-            for (_, n) in &node.nodes {
-                t.begin_child(s!(&n.namespace));
-                t.add_empty_child(n.infra.to_string());
-                t.end_child();
-            }
-            t.end_child();
-        }
-
-        t.build()
-    }
-
     pub fn layers(&self) -> Vec<Layer> {
         let fns = self.functions();
         layer::find(fns)
@@ -725,20 +675,5 @@ impl Topology {
         let data = kit::read_bytes(path);
         let t: Topology = bincode::deserialize(&data).unwrap();
         t
-    }
-
-    pub fn build_tree(&self) -> StringItem {
-        let mut t = TreeBuilder::new(s!(self.namespace.blue()));
-        t.begin_child(s!("functions"));
-        for (_, f) in &self.functions {
-            t.add_empty_child(f.fqn.clone());
-        }
-        t.end_child();
-        t.begin_child(s!("events"));
-        for (_, f) in &self.events {
-            t.add_empty_child(f.name.clone());
-        }
-        t.end_child();
-        t.build()
     }
 }

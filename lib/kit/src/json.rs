@@ -42,6 +42,15 @@ pub fn pretty_json<T: std::fmt::Debug + Serialize>(x: T) -> String {
         .unwrap()
 }
 
+pub fn pp_json<T: std::fmt::Debug + Serialize>(x: T) {
+    let m = serde_json::to_string_pretty(&x)
+        .unwrap()
+        .to_colored_json_auto()
+        .unwrap();
+    println!("{}", &m);
+}
+
+
 pub fn json_to_string<T: std::fmt::Debug + Serialize>(x: T) -> String {
     serde_json::to_string(&x).unwrap()
 }
