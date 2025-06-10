@@ -4,6 +4,7 @@ mod layer;
 mod inline;
 mod extension;
 
+use std::str::FromStr;
 use colored::Colorize;
 use compiler::{
     Function,
@@ -66,14 +67,20 @@ pub async fn build(
     function: &Function,
     name: Option<String>,
     image: Option<String>,
-    _layer: Option<String>
+    _layer: Option<String>,
+    kind: Option<String>
 ) -> Vec<BuildOutput> {
 
     let Function { dir, build, runtime, .. } = function;
-    let Build { kind, images, .. } = build;
+    let Build { images, .. } = build;
 
-    let kind_str = &kind.to_str();
     let langr = &runtime.lang;
+
+    let kind = match kind {
+        Some(k) => BuildKind::from_str(&k).unwrap(),
+        None => build.kind.clone()
+    };
+    let kind_str = &kind.to_str();
 
     let image_kind = u::maybe_string(image, "code");
     let name = u::maybe_string(name, &function.name);
@@ -117,7 +124,7 @@ pub async fn build_recursive(
     let topology = compiler::compile(dir, true);
 
     for (_, function) in topology.functions {
-        let mut out = build(&function, None, image.clone(), layer.clone()).await;
+        let mut out = build(&function, None, image.clone(), layer.clone(), None).await;
         outs.append(&mut out);
     }
     outs
