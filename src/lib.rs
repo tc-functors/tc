@@ -575,17 +575,23 @@ pub async fn inspect(port: Option<String>) {
     inspector::init(port).await
 }
 
-pub async fn snapshot(auth: Auth, sandbox: Option<String>, format: Option<String>) {
+pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, format: Option<String>) {
     let dir = u::pwd();
     let format = u::maybe_string(format, "json");
-    match sandbox {
-        Some(s) => {
-            let records = snapshotter::snapshot(&auth, &dir, &s).await;
-            snapshotter::pretty_print(records, &format);
+    let sandbox = u::maybe_string(sandbox, "stable");
+
+    match profile {
+        Some(ref p) => {
+            let profiles: Vec<String> = p.split(",").map(|v| v.to_string()).collect();
+            if profiles.len() > 1 {
+                snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
+            } else {
+                let auth = init(profile.clone(), None).await;
+                let records = snapshotter::snapshot(&auth, &dir, &sandbox).await;
+                snapshotter::pretty_print(records, &format);
+            }
         },
-        None => {
-            println!("Showing snapshot matrix...");
-        }
+        None => println!("Please specify profile")
     }
 }
 

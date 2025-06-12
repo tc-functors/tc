@@ -3,6 +3,7 @@ use compiler::{
 };
 use authorizer::Auth;
 
+use kit::*;
 use kit as u;
 use crate::aws::{
     appsync,
@@ -17,7 +18,9 @@ use serde_derive::{
 
 use std::collections::HashMap;
 use tabled::{
-    Tabled
+    Tabled,
+    builder::Builder,
+    settings::Style,
 };
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -70,6 +73,8 @@ fn render(s: &str, sandbox: &str) -> String {
     u::stencil(s, table)
 }
 
+
+
 pub async fn find(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
     let topologies = compiler::compile_root(dir, false);
     let mut rows: Vec<Record> = vec![];
@@ -93,4 +98,36 @@ pub async fn find(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
         }
     }
     rows
+}
+
+pub async fn find_by_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
+
+    let topologies = compiler::compile_root(dir, false);
+
+    let mut builder = Builder::default();
+
+    let mut cols: Vec<String> = vec![];
+    cols.push(s!("Topology"));
+    cols.extend(profiles.clone());
+
+    builder.push_record(cols);
+
+
+    for (_, node) in topologies {
+        let mut row: Vec<String> = vec![];
+        let name = render(&node.fqn, sandbox);
+
+        row.push(s!(&node.namespace));
+
+        for profile in &profiles {
+            let auth = Auth::new(Some(s!(profile)), None).await;
+            let tags = lookup_tags(&auth, &node.kind, &name).await;
+            let version = u::safe_unwrap(tags.get("version"));
+            row.push(version);
+        }
+        builder.push_record(row);
+    }
+
+    let mut table = builder.build();
+    println!("{}", table.with(Style::psql()));
 }

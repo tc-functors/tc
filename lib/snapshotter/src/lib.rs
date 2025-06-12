@@ -9,7 +9,7 @@ use versions::Record;
 use topology::Topology;
 
 use tabled::{
-    Style,
+    settings::Style,
     Table,
 };
 
@@ -32,9 +32,9 @@ pub fn pretty_print(records: Vec<Record>, format: &str) {
     }
 }
 
-
-
-// list_all
+pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
+    versions::find_by_profiles(dir, sandbox, profiles).await;
+}
 
 pub async fn snapshot_topology(auth: &Auth, dir: &str, sandbox: &str) {
     let t = Topology::new(auth, dir, sandbox).await;
