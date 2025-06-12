@@ -764,10 +764,13 @@ async fn inspect(args: InspectArgs) {
 
 async fn snapshot (args: SnapshotArgs) {
     let SnapshotArgs { profile, sandbox, format, entity, .. } = args;
-    let env = tc::init(profile, None).await;
+
     match entity {
-        Some(e) => tc::snapshot_entity(env, sandbox, &e).await,
-        None => tc::snapshot(env, sandbox, format).await
+        Some(e) => {
+            let env = tc::init(profile.clone(), None).await;
+            tc::snapshot_entity(env, sandbox, &e).await;
+        },
+        None => tc::snapshot(profile, sandbox, format).await
     }
 }
 
