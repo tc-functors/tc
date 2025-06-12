@@ -1,8 +1,10 @@
 use authorizer::Auth;
-
 use aws_sdk_eventbridge::{
     Client,
-    types::{PutEventsRequestEntry, builders::PutEventsRequestEntryBuilder},
+    types::{
+        PutEventsRequestEntry,
+        builders::PutEventsRequestEntryBuilder,
+    },
 };
 
 pub async fn make_client(auth: &Auth) -> Client {

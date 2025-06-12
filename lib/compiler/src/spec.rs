@@ -1,11 +1,16 @@
 use doku::Document;
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
-use std::{collections::HashMap, str::FromStr};
-
-use std::path::PathBuf;
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    str::FromStr,
+};
 
 pub mod channel;
 pub mod config;
@@ -17,17 +22,21 @@ pub mod queue;
 pub mod route;
 
 use crate::parser;
-
-use parser::yaml::Transformer;
-
 pub use channel::ChannelSpec;
 pub use config::ConfigSpec;
 pub use event::EventSpec;
 pub use function::{
-    BuildKind, BuildOutput, BuildSpec, FunctionSpec, ImageSpec, InlineFunctionSpec, Lang,
+    BuildKind,
+    BuildOutput,
+    BuildSpec,
+    FunctionSpec,
+    ImageSpec,
+    InlineFunctionSpec,
+    Lang,
     LangRuntime,
 };
 pub use mutation::MutationSpec;
+use parser::yaml::Transformer;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
 

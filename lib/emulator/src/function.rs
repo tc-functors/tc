@@ -1,10 +1,9 @@
+use crate::aws;
 use authorizer::Auth;
 use colored::Colorize;
+use compiler::ConfigSpec;
 use kit as u;
 use kit::*;
-
-use crate::aws;
-use compiler::ConfigSpec;
 use std::collections::HashMap;
 
 async fn make_layer_auth(auth: &Auth, config: &ConfigSpec) -> Auth {

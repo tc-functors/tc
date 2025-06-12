@@ -1,9 +1,12 @@
-use crate::Topology;
-use crate::spec::Entity;
-
+use crate::{
+    Topology,
+    spec::Entity,
+};
 use kit as u;
-use std::collections::HashMap;
-use std::str::FromStr;
+use std::{
+    collections::HashMap,
+    str::FromStr,
+};
 
 mod functions;
 pub mod topology;

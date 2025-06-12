@@ -1,6 +1,8 @@
+use crate::aws::{
+    iam,
+    iam::Role,
+};
 use authorizer::Auth;
-
-use crate::aws::{iam, iam::Role};
 
 // TODO defaults. Move to compiler
 

@@ -1,14 +1,22 @@
+use crate::aws::{
+    appsync,
+    lambda,
+    sfn,
+};
 use authorizer::Auth;
 use compiler::TopologyKind;
-
-use crate::aws::{appsync, lambda, sfn};
 use kit as u;
 use kit::*;
-
-use serde_derive::{Deserialize, Serialize};
-
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
-use tabled::{Tabled, builder::Builder, settings::Style};
+use tabled::{
+    Tabled,
+    builder::Builder,
+    settings::Style,
+};
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Record {

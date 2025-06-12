@@ -1,7 +1,11 @@
 use kit as u;
 use kit::*;
 use serde_derive::Deserialize;
-use std::{collections::HashMap, env, fs};
+use std::{
+    collections::HashMap,
+    env,
+    fs,
+};
 
 pub fn arch_os() -> String {
     let os = env::consts::OS;

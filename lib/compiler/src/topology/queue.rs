@@ -1,6 +1,12 @@
 use super::template;
-use crate::{Entity, spec::QueueSpec};
-use serde_derive::{Deserialize, Serialize};
+use crate::{
+    Entity,
+    spec::QueueSpec,
+};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {

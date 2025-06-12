@@ -1,5 +1,10 @@
 use authorizer::Auth;
-use aws_sdk_sfn::{Client, Error, config as sfn_config, config::retry::RetryConfig};
+use aws_sdk_sfn::{
+    Client,
+    Error,
+    config as sfn_config,
+    config::retry::RetryConfig,
+};
 use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {

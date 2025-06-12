@@ -1,4 +1,8 @@
-use kit::{pwd, sh, triml};
+use kit::{
+    pwd,
+    sh,
+    triml,
+};
 use regex::Regex;
 use semver::Version;
 

@@ -1,7 +1,10 @@
 use authorizer::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
-    Client, Error, config as lambda_config, config::retry::RetryConfig,
+    Client,
+    Error,
+    config as lambda_config,
+    config::retry::RetryConfig,
     types::LayerVersionsListItem,
 };
 

@@ -1,18 +1,36 @@
-use super::symbol::Symbol;
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-use std::collections::{BTreeMap, HashMap};
-use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
-use std::hash::{Hash, Hasher};
-use std::sync::Arc;
-
-use super::builtin::Builtin;
-use super::env::Env;
-use super::parser;
-
+use super::{
+    builtin::Builtin,
+    env::Env,
+    parser,
+    symbol::Symbol,
+};
 use nom::{
     Err,
-    error::{VerboseError, convert_error},
+    error::{
+        VerboseError,
+        convert_error,
+    },
+};
+use serde::{
+    Serialize,
+    de::DeserializeOwned,
+};
+use std::{
+    collections::{
+        BTreeMap,
+        HashMap,
+    },
+    fmt::{
+        Debug,
+        Display,
+        Formatter,
+        Result as FmtResult,
+    },
+    hash::{
+        Hash,
+        Hasher,
+    },
+    sync::Arc,
 };
 
 /// A lisp expression to be evaluated
@@ -35,57 +53,69 @@ pub enum Expr {
 
     /// A list of expressions.
     ///
-    /// When evaluated, this is used to represent function calls, where the first element
-    /// is the function to call, and the rest of the elements are the arguments.
+    /// When evaluated, this is used to represent function calls, where the
+    /// first element is the function to call, and the rest of the elements
+    /// are the arguments.
     ///
-    /// When used as a data structure, this is used to represent a list of values.
-    /// It can be indexed by position, and can be used to store a sequence of values.
+    /// When used as a data structure, this is used to represent a list of
+    /// values. It can be indexed by position, and can be used to store a
+    /// sequence of values.
     ///
-    /// This is stored as a vector, not a linked list, so that it can be indexed efficiently.
+    /// This is stored as a vector, not a linked list, so that it can be indexed
+    /// efficiently.
     List(Vec<Expr>),
     /// An ordered map of expressions.
     ///
-    /// This is helpful when the user desires the ordered properties of a BTreeMap,
-    /// such as ordering by key, but with worse time complexities than a HashMap.
+    /// This is helpful when the user desires the ordered properties of a
+    /// BTreeMap, such as ordering by key, but with worse time complexities
+    /// than a HashMap.
     Tree(BTreeMap<Expr, Expr>),
     /// A map of expressions.
     ///
-    /// This is helpful when the user wants the time complexities associated with
-    /// a HashMap, such as O(1) for insertion, deletion, and lookup, but with no ordering.
+    /// This is helpful when the user wants the time complexities associated
+    /// with a HashMap, such as O(1) for insertion, deletion, and lookup,
+    /// but with no ordering.
     Map(HashMap<Expr, Expr>),
 
     /// A block of expressions to be evaluated in order.
     ///
-    /// This is used to group multiple expressions together, and to evaluate them in sequence.
-    /// The result of the block is the result of the last expression in the block.
+    /// This is used to group multiple expressions together, and to evaluate
+    /// them in sequence. The result of the block is the result of the last
+    /// expression in the block.
     ///
-    /// This is useful for defining functions, where you want to evaluate multiple expressions
-    /// in order, and return the result of the last expression as the result of the function.
+    /// This is useful for defining functions, where you want to evaluate
+    /// multiple expressions in order, and return the result of the last
+    /// expression as the result of the function.
     Many(Arc<Vec<Expr>>),
 
     /// A quoted expression.
     ///
-    /// This allows for lazy evaluation of expressions: when a quoted expression is evaluated,
-    /// it returns the expression itself, without evaluating it. This is useful for defining
-    /// special forms, or for returning unevaluated expressions from functions, like symbols.
+    /// This allows for lazy evaluation of expressions: when a quoted expression
+    /// is evaluated, it returns the expression itself, without evaluating
+    /// it. This is useful for defining special forms, or for returning
+    /// unevaluated expressions from functions, like symbols.
     Quote(Box<Expr>),
     /// An error.
     ///
-    /// When an error occurs during evaluation, this is used to wrap an error value
-    /// that is propagated up the call stack. This allows for error handling in the interpreter.
+    /// When an error occurs during evaluation, this is used to wrap an error
+    /// value that is propagated up the call stack. This allows for error
+    /// handling in the interpreter.
     Err(Box<Self>),
 
     /// A function closure.
     ///
-    /// This is used to represent a function that takes arguments and returns a value.
-    /// The function is defined by a list of arguments, and a body expression to evaluate.
+    /// This is used to represent a function that takes arguments and returns a
+    /// value. The function is defined by a list of arguments, and a body
+    /// expression to evaluate.
     ///
-    /// Internally, the function also keeps track of the environment in which it was defined,
-    /// which allows it to capture bindings to variables defined outside the function.
+    /// Internally, the function also keeps track of the environment in which it
+    /// was defined, which allows it to capture bindings to variables
+    /// defined outside the function.
     Function(Option<Box<Env>>, Vec<Expr>, Box<Expr>),
     /// A builtin function.
     ///
-    /// This is used to represent a function that is defined in Rust, and can be called from lisp.
+    /// This is used to represent a function that is defined in Rust, and can be
+    /// called from lisp.
     Builtin(Builtin),
 }
 
@@ -117,7 +147,8 @@ impl From<i64> for Expr {
 
 /// Convert an f64 to an Expr conveniently.
 ///
-/// This will return a Lisp expression that represents the floating point number.
+/// This will return a Lisp expression that represents the floating point
+/// number.
 impl From<f64> for Expr {
     fn from(f: f64) -> Self {
         Self::Float(f)
@@ -139,8 +170,8 @@ where
 /// Allow Serde to convert a serde_json::Value to an Expr.
 ///
 /// This is a convenience method for converting JSON data into Lisp expressions,
-/// which will allow us to connect the interpreter to other systems that can serialize
-/// data into JSON, and then deserialize it into Lisp expressions.
+/// which will allow us to connect the interpreter to other systems that can
+/// serialize data into JSON, and then deserialize it into Lisp expressions.
 impl From<serde_json::Value> for Expr {
     fn from(value: serde_json::Value) -> Self {
         use serde_json::Value::*;
@@ -168,8 +199,9 @@ impl From<serde_json::Value> for Expr {
 /// Allow Serde to convert an Expr to a serde_json::Value.
 ///
 /// This is a convenience method for converting Lisp expressions into JSON data,
-/// which will allow us to connect the interpreter to other systems that can deserialize
-/// JSON data into Lisp expressions, and then serialize it into JSON data.
+/// which will allow us to connect the interpreter to other systems that can
+/// deserialize JSON data into Lisp expressions, and then serialize it into JSON
+/// data.
 impl From<Expr> for serde_json::Value {
     fn from(expr: Expr) -> Self {
         use serde_json::Value::*;
@@ -222,7 +254,8 @@ impl Expr {
 
     /// Wrap another expression in an error value.
     ///
-    /// This is useful for propagating errors up the call stack, and for handling errors in the interpreter.
+    /// This is useful for propagating errors up the call stack, and for
+    /// handling errors in the interpreter.
     #[inline]
     pub fn error(message: impl Into<Self>) -> Self {
         Self::Err(Box::new(message.into()))
@@ -244,8 +277,9 @@ impl Expr {
 
     /// Parse a string into a Lisp expression.
     ///
-    /// If the string is a valid Lisp expression, it will return the parsed expression.
-    /// If the string is not a valid Lisp expression, it will return an error message.
+    /// If the string is a valid Lisp expression, it will return the parsed
+    /// expression. If the string is not a valid Lisp expression, it will
+    /// return an error message.
     pub fn parse(input: &str) -> Result<Expr, String> {
         let input = Self::remove_comments(input);
         let result = parser::parse_program::<VerboseError<&str>>(input.trim())
@@ -332,8 +366,8 @@ impl PartialEq for Expr {
 
 /// Compare two expressions for ordering.
 ///
-/// This allows you to compare two expressions using the `<`, `>`, `<=`, and `>=` operators,
-/// as well as to sort expressions in a collection.
+/// This allows you to compare two expressions using the `<`, `>`, `<=`, and
+/// `>=` operators, as well as to sort expressions in a collection.
 impl PartialOrd for Expr {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         use Expr::*;
@@ -383,8 +417,9 @@ impl Ord for Expr {
 
 /// Hash an expression for use in a hash map or set.
 ///
-/// This allows you to use expressions as keys in a hash map or set, which is useful
-/// for storing data in a way that allows for fast lookups and comparisons.
+/// This allows you to use expressions as keys in a hash map or set, which is
+/// useful for storing data in a way that allows for fast lookups and
+/// comparisons.
 impl Hash for Expr {
     fn hash<H: Hasher>(&self, state: &mut H) {
         use Expr::*;
@@ -430,7 +465,8 @@ impl Hash for Expr {
 
 /// Implement display for Lisp expressions.
 ///
-/// This allows you to print a Lisp expression as a string, which is useful for debugging.
+/// This allows you to print a Lisp expression as a string, which is useful for
+/// debugging.
 impl Display for Expr {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         use Expr::*;

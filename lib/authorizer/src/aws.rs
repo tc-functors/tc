@@ -1,5 +1,7 @@
 use aws_config::{
-    BehaviorVersion, SdkConfig, environment::credentials::EnvironmentVariableCredentialsProvider,
+    BehaviorVersion,
+    SdkConfig,
+    environment::credentials::EnvironmentVariableCredentialsProvider,
     sts::AssumeRoleProvider,
 };
 use aws_sdk_sts::Client;

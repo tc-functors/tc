@@ -1,6 +1,15 @@
-use crate::{aws::ecs, aws::ecs::TaskDef, aws::lambda};
+use crate::aws::{
+    ecs,
+    ecs::TaskDef,
+    lambda,
+};
 use authorizer::Auth;
-use compiler::{Function, Lang, function::Runtime, spec::function::Provider};
+use compiler::{
+    Function,
+    Lang,
+    function::Runtime,
+    spec::function::Provider,
+};
 use std::collections::HashMap;
 
 async fn create_container(auth: &Auth, function: &Function) -> String {

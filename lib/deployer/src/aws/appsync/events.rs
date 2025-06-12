@@ -1,8 +1,16 @@
 use aws_sdk_appsync::{
     Client,
     types::{
-        Api, AuthMode, AuthProvider, AuthenticationType, EventConfig,
-        builders::{AuthModeBuilder, AuthProviderBuilder, EventConfigBuilder},
+        Api,
+        AuthMode,
+        AuthProvider,
+        AuthenticationType,
+        EventConfig,
+        builders::{
+            AuthModeBuilder,
+            AuthProviderBuilder,
+            EventConfigBuilder,
+        },
     },
 };
 use kit::*;

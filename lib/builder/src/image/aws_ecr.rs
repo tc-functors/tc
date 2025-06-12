@@ -1,6 +1,5 @@
-use kit as u;
-
 use authorizer::Auth;
+use kit as u;
 
 fn get_host(auth: &Auth) -> String {
     format!("{}.dkr.ecr.{}.amazonaws.com", auth.account, auth.region)

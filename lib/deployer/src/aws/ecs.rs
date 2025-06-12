@@ -2,10 +2,17 @@ use authorizer::Auth;
 use aws_sdk_ecs::{
     Client,
     types::{
-        Compatibility, ContainerDefinition, EfsVolumeConfiguration, LaunchType,
-        NetworkConfiguration, NetworkMode, Volume,
+        Compatibility,
+        ContainerDefinition,
+        EfsVolumeConfiguration,
+        LaunchType,
+        NetworkConfiguration,
+        NetworkMode,
+        Volume,
         builders::{
-            AwsVpcConfigurationBuilder, ContainerDefinitionBuilder, NetworkConfigurationBuilder,
+            AwsVpcConfigurationBuilder,
+            ContainerDefinitionBuilder,
+            NetworkConfigurationBuilder,
             VolumeBuilder,
         },
     },

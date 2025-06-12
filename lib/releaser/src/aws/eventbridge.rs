@@ -3,8 +3,13 @@ pub use aws_sdk_eventbridge::types::Target;
 use aws_sdk_eventbridge::{
     Client,
     types::{
-        AppSyncParameters, InputTransformer, RetryPolicy,
-        builders::{RetryPolicyBuilder, TargetBuilder},
+        AppSyncParameters,
+        InputTransformer,
+        RetryPolicy,
+        builders::{
+            RetryPolicyBuilder,
+            TargetBuilder,
+        },
     },
 };
 

@@ -2,7 +2,10 @@ use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
 use compiler::TopologySpec;
 

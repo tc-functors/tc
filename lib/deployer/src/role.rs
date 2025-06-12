@@ -1,4 +1,7 @@
-use crate::aws::{iam, iam::Role};
+use crate::aws::{
+    iam,
+    iam::Role,
+};
 use authorizer::Auth;
 use compiler;
 

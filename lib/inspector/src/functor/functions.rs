@@ -3,7 +3,10 @@ use askama::Template;
 use axum::{
     Form,
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
 use compiler::Function;
 use serde::Deserialize;

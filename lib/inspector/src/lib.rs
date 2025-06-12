@@ -1,4 +1,7 @@
-use axum::{Router, extract::DefaultBodyLimit};
+use axum::{
+    Router,
+    extract::DefaultBodyLimit,
+};
 
 mod cache;
 mod functor;

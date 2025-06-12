@@ -1,4 +1,10 @@
-use compiler::{Channel, Event, Function, Route, Topology};
+use compiler::{
+    Channel,
+    Event,
+    Function,
+    Route,
+    Topology,
+};
 use std::collections::HashMap;
 
 fn cache_dir() -> String {

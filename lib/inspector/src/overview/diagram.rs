@@ -2,7 +2,11 @@ use crate::cache;
 use askama::Template;
 use axum::{
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
 };
 
 async fn build_mermaid_str() -> Vec<String> {

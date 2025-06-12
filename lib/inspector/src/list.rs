@@ -3,7 +3,10 @@ use askama::Template;
 use axum::{
     Router,
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
     routing::get,
 };
 

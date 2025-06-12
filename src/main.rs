@@ -1,13 +1,20 @@
 extern crate serde_derive;
 use std::env;
 use tracing_subscriber::{
-    filter::{LevelFilter, Targets},
+    filter::{
+        LevelFilter,
+        Targets,
+    },
     layer::SubscriberExt,
     util::SubscriberInitExt,
 };
 
 extern crate log;
-use clap::{Args, Parser, Subcommand};
+use clap::{
+    Args,
+    Parser,
+    Subcommand,
+};
 
 #[derive(Debug, Parser)]
 struct Tc {

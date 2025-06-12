@@ -1,10 +1,16 @@
 use super::template;
 use crate::{
     Entity,
-    spec::{ChannelSpec, channel::HandlerSpec},
+    spec::{
+        ChannelSpec,
+        channel::HandlerSpec,
+    },
 };
 use kit as u;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
 
 fn default_handler() -> String {

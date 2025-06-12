@@ -2,19 +2,24 @@ use anyhow::Result;
 use authorizer::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
-    Client, config as lambda_config,
+    Client,
+    config as lambda_config,
     config::retry::RetryConfig,
     primitives::Blob,
     types::{
-        LayerVersionContentInput, LayerVersionsListItem, Runtime,
+        LayerVersionContentInput,
+        LayerVersionsListItem,
+        Runtime,
         builders::LayerVersionContentInputBuilder,
     },
 };
-
 use kit::*;
 use std::{
     fs::File,
-    io::{BufReader, Read},
+    io::{
+        BufReader,
+        Read,
+    },
     panic,
 };
 

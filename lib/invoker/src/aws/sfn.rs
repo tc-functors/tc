@@ -1,9 +1,10 @@
 use authorizer::Auth;
 use aws_sdk_sfn::{
-    Client, config as sfn_config, config::retry::RetryConfig,
+    Client,
+    config as sfn_config,
+    config::retry::RetryConfig,
     operation::start_sync_execution::StartSyncExecutionOutput,
 };
-
 use std::panic;
 
 pub async fn make_client(auth: &Auth) -> Client {

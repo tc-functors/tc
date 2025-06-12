@@ -13,7 +13,11 @@ use askama::Template;
 use axum::{
     Router,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
     routing::get,
 };
 

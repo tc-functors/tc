@@ -1,5 +1,8 @@
 use super::Function;
-use crate::spec::function::{FunctionSpec, LangRuntime};
+use crate::spec::function::{
+    FunctionSpec,
+    LangRuntime,
+};
 use kit as u;
 use kit::*;
 use serde_derive::Serialize;

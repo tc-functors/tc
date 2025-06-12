@@ -7,8 +7,15 @@ mod library;
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::{
-    Build, Function, Lang,
-    spec::{BuildKind, BuildOutput, ConfigSpec, LangRuntime},
+    Build,
+    Function,
+    Lang,
+    spec::{
+        BuildKind,
+        BuildOutput,
+        ConfigSpec,
+        LangRuntime,
+    },
 };
 use kit as u;
 use kit::sh;

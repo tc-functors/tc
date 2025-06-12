@@ -1,8 +1,14 @@
 use doku::Document;
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
-use std::{collections::HashMap, str::FromStr};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    collections::HashMap,
+    str::FromStr,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;

@@ -3,8 +3,15 @@ use axum::{
     Router,
     extract::Path,
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
-    routing::{get, post},
+    response::{
+        Html,
+        IntoResponse,
+        Response,
+    },
+    routing::{
+        get,
+        post,
+    },
 };
 mod channels;
 mod events;

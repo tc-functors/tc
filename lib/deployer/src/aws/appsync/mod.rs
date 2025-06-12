@@ -2,9 +2,15 @@ use authorizer::Auth;
 use aws_sdk_appsync::{
     Client,
     types::{
-        AdditionalAuthenticationProvider, AuthenticationType, LambdaAuthorizerConfig, ResolverKind,
+        AdditionalAuthenticationProvider,
+        AuthenticationType,
+        LambdaAuthorizerConfig,
+        ResolverKind,
         TypeDefinitionFormat,
-        builders::{AdditionalAuthenticationProviderBuilder, LambdaAuthorizerConfigBuilder},
+        builders::{
+            AdditionalAuthenticationProviderBuilder,
+            LambdaAuthorizerConfigBuilder,
+        },
     },
 };
 use colored::Colorize;

@@ -2,9 +2,11 @@ use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{Html, IntoResponse},
+    response::{
+        Html,
+        IntoResponse,
+    },
 };
-
 use compiler::TopologySpec;
 #[derive(Template)]
 #[template(path = "functor/mutation/gql.html")]

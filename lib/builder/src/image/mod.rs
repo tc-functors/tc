@@ -2,8 +2,15 @@ mod aws_ecr;
 mod python;
 
 use authorizer::Auth;
-use compiler::LangRuntime;
-use compiler::spec::{BuildOutput, ConfigSpec, ImageSpec, Lang};
+use compiler::{
+    LangRuntime,
+    spec::{
+        BuildOutput,
+        ConfigSpec,
+        ImageSpec,
+        Lang,
+    },
+};
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;

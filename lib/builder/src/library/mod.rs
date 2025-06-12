@@ -1,7 +1,10 @@
 mod python;
 mod ruby;
 
-use compiler::{Lang, LangRuntime};
+use compiler::{
+    Lang,
+    LangRuntime,
+};
 
 pub fn build(dir: &str, langr: &LangRuntime) -> String {
     match langr.to_lang() {

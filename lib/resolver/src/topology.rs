@@ -1,4 +1,9 @@
-use super::{Context, event, function, pool};
+use super::{
+    Context,
+    event,
+    function,
+    pool,
+};
 use authorizer::Auth;
 use compiler::Topology;
 

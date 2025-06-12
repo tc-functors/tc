@@ -1,7 +1,13 @@
 use crate::cache;
 use askama::Template;
-use axum::response::{Html, IntoResponse};
-use compiler::{Route, Topology};
+use axum::response::{
+    Html,
+    IntoResponse,
+};
+use compiler::{
+    Route,
+    Topology,
+};
 use std::collections::HashMap;
 
 struct Item {

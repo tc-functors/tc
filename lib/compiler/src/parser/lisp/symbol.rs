@@ -1,7 +1,16 @@
 use lazy_static::lazy_static;
-use std::collections::HashMap;
-use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::sync::{Arc, RwLock};
+use std::{
+    collections::HashMap,
+    fmt::{
+        Debug,
+        Formatter,
+        Result as FmtResult,
+    },
+    sync::{
+        Arc,
+        RwLock,
+    },
+};
 
 /*
  * The symbol table is a hash map that maps strings to symbols.
@@ -26,8 +35,9 @@ pub struct Symbol(Arc<String>);
 impl Symbol {
     /// Create a new symbol from a string
     ///
-    /// If the symbol already exists in the symbol table, it will return the existing symbol.
-    /// Otherwise, it will create a new symbol and add it to the symbol table.
+    /// If the symbol already exists in the symbol table, it will return the
+    /// existing symbol. Otherwise, it will create a new symbol and add it
+    /// to the symbol table.
     pub fn new(name: &str) -> Self {
         // Check if the symbol already exists
         let mut symbols = SYMBOLS.write().unwrap();
@@ -45,7 +55,8 @@ impl Symbol {
 
     /// Get the name of the symbol as a string
     ///
-    /// This is useful when you need the internal string representation of the symbol.
+    /// This is useful when you need the internal string representation of the
+    /// symbol.
     pub fn name(&self) -> &str {
         &self.0
     }
@@ -79,8 +90,8 @@ impl From<String> for Symbol {
 /// First, it checks if the two symbols are the same object in memory.
 /// If they are not, it compares the internal strings of the symbols.
 ///
-/// This is faster than comparing the strings directly, because a pointer comparison
-/// is faster than a string comparison.
+/// This is faster than comparing the strings directly, because a pointer
+/// comparison is faster than a string comparison.
 impl PartialEq for Symbol {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
@@ -109,8 +120,9 @@ impl PartialOrd for Symbol {
 
 /// Print a symbol as debug output
 ///
-/// Since a symbol is meant to be an identifier, it is printed as a normal string.
-/// This is useful for debugging, because it allows you to distinguish symbols from strings.
+/// Since a symbol is meant to be an identifier, it is printed as a normal
+/// string. This is useful for debugging, because it allows you to distinguish
+/// symbols from strings.
 impl Debug for Symbol {
     #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {

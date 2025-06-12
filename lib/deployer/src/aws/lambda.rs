@@ -2,26 +2,49 @@ use anyhow::Result;
 use authorizer::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
-    Client, Error, config as lambda_config,
+    Client,
+    Error,
+    config as lambda_config,
     config::retry::RetryConfig,
     primitives::Blob,
     types::{
-        Architecture, DeadLetterConfig, Environment, FileSystemConfig, FunctionCode,
-        LastUpdateStatus, LoggingConfig, PackageType, Runtime, SnapStart, SnapStartApplyOn, State,
-        UpdateRuntimeOn, VpcConfig,
+        Architecture,
+        DeadLetterConfig,
+        Environment,
+        FileSystemConfig,
+        FunctionCode,
+        LastUpdateStatus,
+        LoggingConfig,
+        PackageType,
+        Runtime,
+        SnapStart,
+        SnapStartApplyOn,
+        State,
+        UpdateRuntimeOn,
+        VpcConfig,
         builders::{
-            DeadLetterConfigBuilder, EnvironmentBuilder, FileSystemConfigBuilder,
-            FunctionCodeBuilder, SnapStartBuilder, VpcConfigBuilder,
+            DeadLetterConfigBuilder,
+            EnvironmentBuilder,
+            FileSystemConfigBuilder,
+            FunctionCodeBuilder,
+            SnapStartBuilder,
+            VpcConfigBuilder,
         },
     },
 };
-
 use colored::Colorize;
-use kit::{LogUpdate, *};
+use kit::{
+    LogUpdate,
+    *,
+};
 use std::{
     collections::HashMap,
     fs::File,
-    io::{BufReader, Read, stdout},
+    io::{
+        BufReader,
+        Read,
+        stdout,
+    },
     panic,
 };
 

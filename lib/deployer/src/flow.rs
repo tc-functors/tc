@@ -1,6 +1,15 @@
-use crate::aws::{cloudwatch, iam, iam::Role, sfn, sfn::StateMachine};
+use crate::aws::{
+    cloudwatch,
+    iam,
+    iam::Role,
+    sfn,
+    sfn::StateMachine,
+};
 use authorizer::Auth;
-use compiler::{Flow, LogConfig};
+use compiler::{
+    Flow,
+    LogConfig,
+};
 use std::collections::HashMap;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: Flow) {

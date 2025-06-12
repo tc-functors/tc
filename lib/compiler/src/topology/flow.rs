@@ -1,9 +1,16 @@
-use super::template;
-use super::{Role, RoleKind, role};
+use super::{
+    Role,
+    RoleKind,
+    role,
+    template,
+};
 use crate::spec::TopologySpec;
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
 
 mod sfn;

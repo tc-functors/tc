@@ -1,11 +1,17 @@
 use authorizer::Auth;
-use aws_sdk_cognitoidentityprovider::Client;
-use aws_sdk_cognitoidentityprovider::types::EmailConfigurationType;
-use aws_sdk_cognitoidentityprovider::types::EmailSendingAccountType;
-use aws_sdk_cognitoidentityprovider::types::LambdaConfigType;
-use aws_sdk_cognitoidentityprovider::types::VerifiedAttributeType;
-use aws_sdk_cognitoidentityprovider::types::builders::EmailConfigurationTypeBuilder;
-use aws_sdk_cognitoidentityprovider::types::builders::LambdaConfigTypeBuilder;
+use aws_sdk_cognitoidentityprovider::{
+    Client,
+    types::{
+        EmailConfigurationType,
+        EmailSendingAccountType,
+        LambdaConfigType,
+        VerifiedAttributeType,
+        builders::{
+            EmailConfigurationTypeBuilder,
+            LambdaConfigTypeBuilder,
+        },
+    },
+};
 use kit::*;
 use std::collections::HashMap;
 

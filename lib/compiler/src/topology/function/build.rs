@@ -1,7 +1,17 @@
 use super::Runtime;
-use crate::spec::{BuildKind, BuildSpec, function::ImageSpec, function::LayerSpec};
+use crate::spec::{
+    BuildKind,
+    BuildSpec,
+    function::{
+        ImageSpec,
+        LayerSpec,
+    },
+};
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

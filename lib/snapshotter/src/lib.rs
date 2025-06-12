@@ -4,10 +4,12 @@ mod aws;
 mod topology;
 mod versions;
 
+use tabled::{
+    Table,
+    settings::Style,
+};
 use topology::Topology;
 use versions::Record;
-
-use tabled::{Table, settings::Style};
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
     versions::find(auth, dir, sandbox).await

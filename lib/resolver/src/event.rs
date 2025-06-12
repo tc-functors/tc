@@ -1,7 +1,15 @@
-use super::{Context, Topology};
+use super::{
+    Context,
+    Topology,
+};
 use crate::aws;
 use authorizer::Auth;
-use compiler::{Entity, Event, Mutation, Target};
+use compiler::{
+    Entity,
+    Event,
+    Mutation,
+    Target,
+};
 use kit as u;
 use kit::*;
 use std::collections::HashMap;

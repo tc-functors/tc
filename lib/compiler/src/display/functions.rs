@@ -1,7 +1,10 @@
 use crate::Topology;
 use colored::Colorize;
 use kit::*;
-use ptree::{builder::TreeBuilder, item::StringItem};
+use ptree::{
+    builder::TreeBuilder,
+    item::StringItem,
+};
 
 pub fn build_tree(topology: &Topology) -> StringItem {
     let mut t = TreeBuilder::new(s!(topology.namespace.blue()));
