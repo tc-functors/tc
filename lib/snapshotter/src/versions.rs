@@ -1,22 +1,24 @@
 use compiler::{
-    Topology,
     TopologyKind,
 };
-use kit as u;
 use authorizer::Auth;
-use crate::{
-    aws::{
-        appsync,
-        lambda,
-        sfn,
-    },
+
+use kit as u;
+use crate::aws::{
+    appsync,
+    lambda,
+    sfn,
 };
+
 use serde_derive::{
     Deserialize,
     Serialize,
 };
+
 use std::collections::HashMap;
-use tabled::Tabled;
+use tabled::{
+    Tabled
+};
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Record {
@@ -24,6 +26,7 @@ pub struct Record {
     pub sandbox: String,
     pub version: String,
     pub frozen: String,
+    pub tc_version: String,
     pub updated_at: String,
 }
 
@@ -36,7 +39,7 @@ async fn get_graphql_api_arn(auth: &Auth, name: &str) -> Option<String> {
     }
 }
 
-pub async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
+async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
     match kind {
         TopologyKind::StepFunction => {
             let client = sfn::make_client(auth).await;
@@ -61,13 +64,14 @@ pub async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMa
     }
 }
 
-pub fn render(s: &str, sandbox: &str) -> String {
+fn render(s: &str, sandbox: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
     table.insert("sandbox", sandbox);
     u::stencil(s, table)
 }
 
-pub async fn list(auth: &Auth, sandbox: &str, topologies: &HashMap<String, Topology>) -> Vec<Record> {
+pub async fn find(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
+    let topologies = compiler::compile_root(dir, false);
     let mut rows: Vec<Record> = vec![];
     for (_, node) in topologies {
         let name = render(&node.fqn, sandbox);
@@ -81,6 +85,7 @@ pub async fn list(auth: &Auth, sandbox: &str, topologies: &HashMap<String, Topol
                     sandbox: u::safe_unwrap(tags.get("sandbox")),
                     version: version,
                     frozen: u::safe_unwrap(tags.get("freeze")),
+                    tc_version: u::safe_unwrap(tags.get("tc_version")),
                     updated_at: u::safe_unwrap(tags.get("updated_at")),
                 };
                 rows.push(row)

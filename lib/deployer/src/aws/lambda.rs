@@ -775,4 +775,4 @@ pub async fn update_runtime_management_config(client: &Client, name: &str, versi
 }
 
 
-pub type LambdaClient = Client;
+//pub type LambdaClient = Client;

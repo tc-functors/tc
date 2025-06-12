@@ -371,19 +371,6 @@ pub async fn delete_component(
     }
 }
 
-pub async fn list(
-    auth: Auth,
-    sandbox: Option<String>,
-    component: Option<String>,
-    format: Option<String>,
-) {
-    if u::option_exists(component.clone()) {
-        differ::list_component(&auth, sandbox, component, format).await;
-    } else {
-        differ::list(&auth, sandbox).await;
-    }
-}
-
 pub struct InvokeOptions {
     pub sandbox: Option<String>,
     pub payload: Option<String>,
@@ -586,4 +573,28 @@ pub fn generate_doc(spec: &str) {
 
 pub async fn inspect(port: Option<String>) {
     inspector::init(port).await
+}
+
+pub async fn snapshot(auth: Auth, sandbox: Option<String>, format: Option<String>) {
+    let dir = u::pwd();
+    let format = u::maybe_string(format, "json");
+    match sandbox {
+        Some(s) => {
+            let records = snapshotter::snapshot(&auth, &dir, &s).await;
+            snapshotter::pretty_print(records, &format);
+        },
+        None => {
+            println!("Showing snapshot matrix...");
+        }
+    }
+}
+
+pub async fn snapshot_entity(auth: Auth, sandbox: Option<String>, entity: &str) {
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let dir = u::pwd();
+    if entity == "topology" {
+        snapshotter::snapshot_topology(&auth, &dir, &sandbox).await;
+    } else {
+        snapshotter::snapshot_topology(&auth, &dir, &sandbox).await;
+    }
 }
