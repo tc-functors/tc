@@ -5,7 +5,6 @@ use aws_sdk_sfn::{
     config as sfn_config,
     config::retry::RetryConfig,
 };
-use kit::*;
 use std::{
     collections::HashMap,
 };
@@ -42,36 +41,4 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
 
         Err(_) => Ok(HashMap::new()),
     }
-}
-
-pub async fn list(client: Client) -> Vec<HashMap<String, String>> {
-    let res = client
-        .clone()
-        .list_state_machines()
-        .max_results(1000)
-        .send()
-        .await
-        .unwrap();
-    let sfns = res.state_machines;
-    let mut out: Vec<HashMap<String, String>> = vec![];
-    for sfn in sfns {
-        let mut h: HashMap<String, String> = HashMap::new();
-        let arn = sfn.state_machine_arn;
-        h.insert(s!("type"), sfn.r#type.as_str().to_string());
-        let tags = list_tags(&client, &arn).await.unwrap();
-        let namespace = tags.get("namespace");
-        match namespace {
-            Some(name) => {
-                if !name.is_empty() {
-                    h.insert(s!("version"), safe_unwrap(tags.get("version")));
-                    h.insert(s!("namespace"), name.to_string());
-                    h.insert(s!("sandbox"), safe_unwrap(tags.get("sandbox")));
-                    h.insert(s!("updated_at"), safe_unwrap(tags.get("updated_at")));
-                    out.push(h);
-                }
-            }
-            None => (),
-        }
-    }
-    out
 }

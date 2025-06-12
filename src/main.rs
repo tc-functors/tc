@@ -55,8 +55,6 @@ enum Cmd {
     Inspect(InspectArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
-    /// List created entities
-    List(ListArgs),
     /// Promote assets between sandboxes
     #[clap(hide = true)]
     Promote(PromoteArgs),
@@ -65,6 +63,8 @@ enum Cmd {
     /// Route events to functors
     #[clap(hide = true)]
     Route(RouteArgs),
+    /// Snapshot of current sandbox and env
+    Snapshot(SnapshotArgs),
     /// Run unit tests for functions in the topology dir
     #[clap(hide = true)]
     Test(TestArgs),
@@ -172,6 +172,18 @@ pub struct ResolveArgs {
     no_cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct SnapshotArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'f')]
+    format: Option<String>,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -358,22 +370,6 @@ pub struct ReplArgs {
     profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
-    #[arg(long, action, short = 't')]
-    trace: bool,
-}
-
-#[derive(Debug, Args)]
-pub struct ListArgs {
-    #[arg(long, short = 'e')]
-    profile: Option<String>,
-    #[arg(long, short = 'r')]
-    role: Option<String>,
-    #[arg(long, short = 's')]
-    sandbox: Option<String>,
-    #[arg(long, short = 'c')]
-    component: Option<String>,
-    #[arg(long, short = 'f')]
-    format: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -624,21 +620,6 @@ async fn upgrade(args: UpgradeArgs) {
     tc::upgrade(version).await
 }
 
-async fn list(args: ListArgs) {
-    let ListArgs {
-        profile,
-        role,
-        sandbox,
-        component,
-        format,
-        trace,
-        ..
-    } = args;
-    init_tracing(trace);
-    let env = tc::init(profile, role).await;
-    tc::list(env, sandbox, component, format).await;
-}
-
 async fn promote(args: PromoteArgs) {
     let PromoteArgs {
         profile,
@@ -781,6 +762,15 @@ async fn inspect(args: InspectArgs) {
     tc::inspect(port).await;
 }
 
+async fn snapshot (args: SnapshotArgs) {
+    let SnapshotArgs { profile, sandbox, format, entity, .. } = args;
+    let env = tc::init(profile, None).await;
+    match entity {
+        Some(e) => tc::snapshot_entity(env, sandbox, &e).await,
+        None => tc::snapshot(env, sandbox, format).await
+    }
+}
+
 fn init_tracing(trace: bool) {
     let should_trace = trace
         || match env::var("TC_TRACE") {
@@ -825,9 +815,9 @@ async fn run() {
         Cmd::Freeze(args)    => freeze(args).await,
         Cmd::Inspect(args)   => inspect(args).await,
         Cmd::Invoke(args)    => invoke(args).await,
-        Cmd::List(args)      => list(args).await,
         Cmd::Promote(args)   => promote(args).await,
         Cmd::Route(args)     => route(args).await,
+        Cmd::Snapshot(args)  => snapshot(args).await,
         Cmd::Tag(args)       => tag(args).await,
         Cmd::Test(args)      => test(args).await,
         Cmd::Unfreeze(args)  => unfreeze(args).await,

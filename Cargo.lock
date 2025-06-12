@@ -4436,6 +4436,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
+name = "snapshotter"
+version = "0.8.74"
+dependencies = [
+ "authorizer",
+ "aws-sdk-apigatewayv2",
+ "aws-sdk-appsync",
+ "aws-sdk-eventbridge",
+ "aws-sdk-lambda",
+ "aws-sdk-sfn",
+ "colored",
+ "compiler",
+ "kit",
+ "log",
+ "resolver",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "tabled",
+ "tokio",
+]
+
+[[package]]
 name = "socket2"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4634,6 +4656,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "snapshotter",
  "tabled",
  "tester",
  "tokio",

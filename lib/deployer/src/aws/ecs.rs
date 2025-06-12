@@ -2,18 +2,15 @@ use authorizer::Auth;
 use aws_sdk_ecs::{
     Client,
     types::{
-        CapacityProviderStrategyItem,
         Compatibility,
         ContainerDefinition,
         EfsVolumeConfiguration,
         LaunchType,
         NetworkConfiguration,
         NetworkMode,
-        SchedulingStrategy,
         Volume,
         builders::{
             AwsVpcConfigurationBuilder,
-            CapacityProviderStrategyItemBuilder,
             ContainerDefinitionBuilder,
             NetworkConfigurationBuilder,
             VolumeBuilder,
@@ -63,18 +60,9 @@ pub fn make_network_config(subnets: Vec<String>) -> NetworkConfiguration {
     net.awsvpc_configuration(vpc).build()
 }
 
-pub fn make_volume(name: String, efs_config: EfsVolumeConfiguration) -> Volume {
+pub fn _make_volume(name: String, efs_config: EfsVolumeConfiguration) -> Volume {
     let f = VolumeBuilder::default();
     f.name(name).efs_volume_configuration(efs_config).build()
-}
-
-pub fn make_capacity_provider() -> CapacityProviderStrategyItem {
-    let f = CapacityProviderStrategyItemBuilder::default();
-    f.capacity_provider("s!(FARGATE)")
-        .weight(1)
-        .base(0)
-        .build()
-        .unwrap()
 }
 
 pub async fn create_taskdef(client: &Client, tdf: TaskDef, cdf: ContainerDefinition) -> String {
@@ -139,38 +127,6 @@ pub async fn find_or_create_cluster(client: &Client, name: &str) -> String {
         None => create_cluster(client, name).await
     }
 }
-
-
-pub async fn create_service(
-    client: &Client,
-    cluster: &str,
-    name: &str,
-    task_definition_arn: &str,
-    netcfg: NetworkConfiguration,
-) {
-    let _ = client
-        .create_service()
-        .cluster(s!(cluster))
-        .service_name(s!(name))
-        .task_definition(s!(task_definition_arn))
-        .launch_type(LaunchType::Fargate)
-        .desired_count(1)
-        .network_configuration(netcfg)
-        .scheduling_strategy(SchedulingStrategy::Replica)
-        .send()
-        .await;
-}
-
-pub async fn delete_service(client: &Client, cluster: &str, name: &str) {
-    let _ = client
-        .delete_service()
-        .cluster(s!(cluster))
-        .service(s!(name))
-        .force(true)
-        .send()
-        .await;
-}
-
 
 pub async fn run_task(
     client: &Client,

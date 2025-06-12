@@ -3,16 +3,16 @@ use authorizer::Auth;
 use crate::{
     aws::{
         lambda,
-        lambda::LambdaClient,
         sqs,
     },
 };
 use std::collections::HashMap;
 
-async fn _create_lambda_producer(lambda_client: &LambdaClient, name: &str, sqs_arn: &str) {
+async fn _create_lambda_producer(auth: &Auth, name: &str, sqs_arn: &str) {
+    let lambda_client = lambda::make_client(&auth).await;
     if !name.is_empty() {
         println!("Updating function: {} (producer)", name);
-        lambda::_update_dlq(lambda_client, name, sqs_arn).await;
+        lambda::_update_dlq(&lambda_client, name, sqs_arn).await;
     }
 }
 

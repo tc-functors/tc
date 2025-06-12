@@ -90,24 +90,3 @@ pub async fn find_function_layers(
         Err(_) => Ok(HashMap::new()),
     }
 }
-
-pub async fn find_latest_version(client: &Client, layer_name: &str) -> i64 {
-    let res = client
-        .list_layer_versions()
-        .layer_name(layer_name)
-        .send()
-        .await;
-    match res {
-        Ok(r) => match r.layer_versions {
-            Some(xs) => {
-                if xs.len() > 0 {
-                    xs.first().unwrap().version
-                } else {
-                    0
-                }
-            }
-            _ => 0,
-        },
-        Err(e) => panic!("{:?}", e),
-    }
-}

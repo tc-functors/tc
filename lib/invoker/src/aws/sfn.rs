@@ -37,7 +37,7 @@ pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
     }
 }
 
-pub async fn start_sync_execution(
+pub async fn _start_sync_execution(
     client: Client,
     arn: &str,
     input: &str,
