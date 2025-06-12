@@ -1,7 +1,16 @@
 use super::template;
-use crate::spec::{Entity, RouteSpec, TopologySpec, config::ConfigSpec, route::CorsSpec};
+use crate::spec::{
+    Entity,
+    RouteSpec,
+    TopologySpec,
+    config::ConfigSpec,
+    route::CorsSpec,
+};
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

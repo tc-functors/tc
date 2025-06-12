@@ -1,7 +1,14 @@
 use authorizer::Auth;
 use aws_sdk_apigatewayv2::{
-    Client, Error,
-    types::{AuthorizationType, AuthorizerType, Cors, ProtocolType, builders::CorsBuilder},
+    Client,
+    Error,
+    types::{
+        AuthorizationType,
+        AuthorizerType,
+        Cors,
+        ProtocolType,
+        builders::CorsBuilder,
+    },
 };
 use colored::Colorize;
 use kit::*;

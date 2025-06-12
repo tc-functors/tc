@@ -3,7 +3,10 @@ use super::template;
 use crate::spec::function::InlineFunctionSpec;
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
 use std::collections::HashMap;
 

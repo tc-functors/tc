@@ -1,4 +1,7 @@
-use kit::{pwd, sh};
+use kit::{
+    pwd,
+    sh,
+};
 use regex::Regex;
 
 fn extract_version(s: &str) -> String {

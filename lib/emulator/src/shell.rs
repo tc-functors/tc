@@ -3,7 +3,10 @@ use authorizer::Auth;
 use compiler::ConfigSpec;
 use kit as u;
 use kit::*;
-use std::{collections::HashMap, env};
+use std::{
+    collections::HashMap,
+    env,
+};
 
 async fn make_layer_auth(auth: &Auth, config: &ConfigSpec) -> Auth {
     let profile = config.aws.lambda.layers_profile.clone();

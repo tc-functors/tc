@@ -1,6 +1,13 @@
-use super::env::Env;
-use super::expr::Expr;
-use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use super::{
+    env::Env,
+    expr::Expr,
+};
+use std::fmt::{
+    Debug,
+    Display,
+    Formatter,
+    Result as FmtResult,
+};
 
 #[derive(Debug, Clone)]
 pub struct Builtin {

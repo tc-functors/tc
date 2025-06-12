@@ -13,26 +13,40 @@ mod tag;
 mod template;
 mod version;
 
+use crate::spec::{
+    TopologyKind,
+    TopologySpec,
+    config::ConfigSpec,
+};
 pub use channel::Channel;
 pub use event::Event;
 pub use flow::Flow;
-pub use function::{Function, layer, layer::Layer};
-
+pub use function::{
+    Function,
+    layer,
+    layer::Layer,
+};
+use kit as u;
+use kit::*;
 pub use log::LogConfig;
 pub use mutation::Mutation;
 pub use pool::Pool;
 pub use queue::Queue;
-pub use role::{Role, RoleKind};
+pub use role::{
+    Role,
+    RoleKind,
+};
 pub use route::Route;
 pub use schedule::Schedule;
-
-use crate::spec::{TopologyKind, TopologySpec, config::ConfigSpec};
-
-use kit as u;
-use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::HashMap,
+    path::Path,
+};
 use walkdir::WalkDir;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -1,5 +1,8 @@
 use authorizer::Auth;
-use aws_sdk_sqs::{Client, types::QueueAttributeName};
+use aws_sdk_sqs::{
+    Client,
+    types::QueueAttributeName,
+};
 use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {

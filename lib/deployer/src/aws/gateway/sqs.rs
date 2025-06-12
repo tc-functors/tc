@@ -1,6 +1,10 @@
 use aws_sdk_apigatewayv2::{
-    Client, Error,
-    types::{ConnectionType, IntegrationType},
+    Client,
+    Error,
+    types::{
+        ConnectionType,
+        IntegrationType,
+    },
 };
 use kit::*;
 use std::collections::HashMap;

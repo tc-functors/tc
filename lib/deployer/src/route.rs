@@ -1,6 +1,13 @@
-use crate::aws::{gateway, gateway::Api, lambda};
+use crate::aws::{
+    gateway,
+    gateway::Api,
+    lambda,
+};
 use authorizer::Auth;
-use compiler::{Entity, Route};
+use compiler::{
+    Entity,
+    Route,
+};
 use kit::*;
 use log::info;
 use std::collections::HashMap;

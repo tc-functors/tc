@@ -2,8 +2,14 @@ use super::Context;
 use crate::aws;
 use authorizer::Auth;
 use compiler::{
-    Function, InfraSpec, Runtime, Topology,
-    function::runtime::{FileSystem, Network},
+    Function,
+    InfraSpec,
+    Runtime,
+    Topology,
+    function::runtime::{
+        FileSystem,
+        Network,
+    },
 };
 use kit::*;
 use std::collections::HashMap;

@@ -1,20 +1,36 @@
 use anyhow::Result;
 use authorizer::Auth;
 use aws_sdk_sfn::{
-    Client, Error, config as sfn_config,
+    Client,
+    Error,
+    config as sfn_config,
     config::retry::RetryConfig,
     types::{
-        LogLevel, LoggingConfiguration, StateMachineStatus, StateMachineType, Tag,
+        LogLevel,
+        LoggingConfiguration,
+        StateMachineStatus,
+        StateMachineType,
+        Tag,
         TracingConfiguration,
         builders::{
-            CloudWatchLogsLogGroupBuilder, LogDestinationBuilder, LoggingConfigurationBuilder,
-            TagBuilder, TracingConfigurationBuilder,
+            CloudWatchLogsLogGroupBuilder,
+            LogDestinationBuilder,
+            LoggingConfigurationBuilder,
+            TagBuilder,
+            TracingConfigurationBuilder,
         },
     },
 };
 use colored::Colorize;
-use kit::{LogUpdate, *};
-use std::{collections::HashMap, io::stdout, panic};
+use kit::{
+    LogUpdate,
+    *,
+};
+use std::{
+    collections::HashMap,
+    io::stdout,
+    panic,
+};
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

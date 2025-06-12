@@ -4,13 +4,21 @@ mod role;
 pub mod runtime;
 
 use super::template;
-use crate::Entity;
-use crate::spec::{ConfigSpec, FunctionSpec};
+use crate::{
+    Entity,
+    spec::{
+        ConfigSpec,
+        FunctionSpec,
+    },
+};
 pub use build::Build;
 use kit as u;
 use kit::*;
 pub use runtime::Runtime;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

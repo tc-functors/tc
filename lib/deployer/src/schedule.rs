@@ -1,7 +1,6 @@
-use compiler::Schedule;
-
 use crate::aws;
 use authorizer::Auth;
+use compiler::Schedule;
 use std::collections::HashMap;
 
 pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {

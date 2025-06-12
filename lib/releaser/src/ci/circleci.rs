@@ -1,6 +1,10 @@
 use kit as u;
 use kit::*;
-use std::{collections::HashMap, env, panic};
+use std::{
+    collections::HashMap,
+    env,
+    panic,
+};
 
 #[derive(Clone, Debug)]
 pub struct Circle {

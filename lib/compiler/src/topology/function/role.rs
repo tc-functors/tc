@@ -1,9 +1,10 @@
+use super::template;
+use crate::{
+    spec::function::Provider,
+    topology::role::Role,
+};
 use kit as u;
 use kit::*;
-
-use super::template;
-use crate::spec::function::Provider;
-use crate::topology::role::Role;
 
 fn read_policy(path: &str) -> String {
     u::slurp(path)

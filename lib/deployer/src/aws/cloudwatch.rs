@@ -1,5 +1,8 @@
 use authorizer::Auth;
-use aws_sdk_cloudwatchlogs::{Client, Error};
+use aws_sdk_cloudwatchlogs::{
+    Client,
+    Error,
+};
 use kit::*;
 
 pub async fn make_client(auth: &Auth) -> Client {

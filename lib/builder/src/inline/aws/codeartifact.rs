@@ -1,6 +1,5 @@
 use authorizer::Auth;
 use aws_sdk_codeartifact::Client;
-
 use kit::*;
 
 pub async fn make_client(auth: &Auth) -> Client {

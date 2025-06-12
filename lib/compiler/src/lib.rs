@@ -3,29 +3,42 @@ mod parser;
 pub mod spec;
 pub mod topology;
 
+use display::Format;
 pub use display::topology::TopologyCount;
 use kit as u;
 use kit::*;
 pub use spec::{
-    Entity, TopologyKind, TopologySpec,
+    Entity,
+    TopologyKind,
+    TopologySpec,
     config::ConfigSpec,
-    function::{BuildKind, BuildOutput, Lang, LangRuntime},
+    function::{
+        BuildKind,
+        BuildOutput,
+        Lang,
+        LangRuntime,
+    },
     infra::InfraSpec,
 };
-use std::str::FromStr;
-
-use display::Format;
-use std::collections::HashMap;
-pub use topology::Topology;
+use std::{
+    collections::HashMap,
+    str::FromStr,
+};
 pub use topology::{
+    Topology,
     channel::Channel,
-    event::{Event, Target},
+    event::{
+        Event,
+        Target,
+    },
     flow::Flow,
     function,
-    function::Function,
-    function::build::Build,
-    function::layer::Layer,
-    function::runtime::Runtime,
+    function::{
+        Function,
+        build::Build,
+        layer::Layer,
+        runtime::Runtime,
+    },
     log::LogConfig,
     mutation,
     mutation::Mutation,

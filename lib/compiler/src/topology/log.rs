@@ -1,6 +1,9 @@
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 
 fn lambda_arn(name: &str) -> String {
     format!(

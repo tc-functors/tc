@@ -5,12 +5,17 @@ mod ruby;
 mod rust;
 
 use authorizer::Auth;
+use compiler::{
+    Build,
+    Lang,
+    LangRuntime,
+};
 use kit as u;
-use kit::LogUpdate;
-use kit::sh;
+use kit::{
+    LogUpdate,
+    sh,
+};
 use std::io::stdout;
-
-use compiler::{Build, Lang, LangRuntime};
 
 fn gen_dockerfile(dir: &str, langr: &LangRuntime, force: bool) {
     match langr.to_lang() {

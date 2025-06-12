@@ -13,7 +13,10 @@ pub mod schedule;
 
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::{Topology, spec::TopologyKind};
+use compiler::{
+    Topology,
+    spec::TopologyKind,
+};
 
 pub fn maybe_component(c: Option<String>) -> String {
     match c {

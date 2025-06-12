@@ -3,8 +3,11 @@ mod python;
 mod ruby;
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::spec::BuildOutput;
-use compiler::{Lang, LangRuntime};
+use compiler::{
+    Lang,
+    LangRuntime,
+    spec::BuildOutput,
+};
 use kit as u;
 use std::collections::HashMap;
 

@@ -1,8 +1,11 @@
 use aws_sdk_apigatewayv2::{
-    Client, Error,
-    types::{ConnectionType, IntegrationType},
+    Client,
+    Error,
+    types::{
+        ConnectionType,
+        IntegrationType,
+    },
 };
-
 use kit::*;
 
 async fn find(client: &Client, api_id: &str, lambda_arn: &str) -> Option<String> {

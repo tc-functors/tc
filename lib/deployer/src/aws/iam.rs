@@ -1,5 +1,10 @@
 use authorizer::Auth;
-use aws_sdk_iam::{Client, Error, config as iam_config, config::retry::RetryConfig};
+use aws_sdk_iam::{
+    Client,
+    Error,
+    config as iam_config,
+    config::retry::RetryConfig,
+};
 use kit::*;
 
 pub async fn make_client(auth: &Auth) -> Client {

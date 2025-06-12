@@ -1,11 +1,23 @@
 use authorizer::Auth;
 use compiler::{
-    Function, Topology,
-    spec::{BuildSpec, ConfigSpec, FunctionSpec, function::InfraSpec},
+    Function,
+    Topology,
+    spec::{
+        BuildSpec,
+        ConfigSpec,
+        FunctionSpec,
+        function::InfraSpec,
+    },
 };
 use kit as u;
-use std::{panic, time::Instant};
-use tabled::{Style, Table};
+use std::{
+    panic,
+    time::Instant,
+};
+use tabled::{
+    Style,
+    Table,
+};
 
 pub struct BuildOpts {
     pub recursive: bool,

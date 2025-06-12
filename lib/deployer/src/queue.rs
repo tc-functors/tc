@@ -1,6 +1,12 @@
-use crate::aws::{lambda, sqs};
+use crate::aws::{
+    lambda,
+    sqs,
+};
 use authorizer::Auth;
-use compiler::{Entity, Queue};
+use compiler::{
+    Entity,
+    Queue,
+};
 use std::collections::HashMap;
 
 async fn _create_lambda_producer(auth: &Auth, name: &str, sqs_arn: &str) {

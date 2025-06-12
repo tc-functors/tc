@@ -1,9 +1,11 @@
 use anyhow::Result;
 use authorizer::Auth;
 use aws_sdk_lambda::{
-    Client, config as lambda_config, config::retry::RetryConfig, types::LayerVersionsListItem,
+    Client,
+    config as lambda_config,
+    config::retry::RetryConfig,
+    types::LayerVersionsListItem,
 };
-
 use kit::*;
 use std::panic;
 

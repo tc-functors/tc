@@ -1,4 +1,7 @@
-use crate::{aws::appsync, aws::lambda};
+use crate::aws::{
+    appsync,
+    lambda,
+};
 use authorizer::Auth;
 use compiler::Mutation;
 use std::collections::HashMap;

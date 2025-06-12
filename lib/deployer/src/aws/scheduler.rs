@@ -1,10 +1,19 @@
-use anyhow::{Error, Result};
+use anyhow::{
+    Error,
+    Result,
+};
 use authorizer::Auth;
 use aws_sdk_scheduler::{
     Client,
     types::{
-        FlexibleTimeWindow, FlexibleTimeWindowMode, ScheduleState, Target,
-        builders::{FlexibleTimeWindowBuilder, TargetBuilder},
+        FlexibleTimeWindow,
+        FlexibleTimeWindowMode,
+        ScheduleState,
+        Target,
+        builders::{
+            FlexibleTimeWindowBuilder,
+            TargetBuilder,
+        },
     },
 };
 use colored::Colorize;

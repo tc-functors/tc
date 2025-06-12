@@ -1,17 +1,38 @@
-use super::{layer, role};
-use crate::spec::ConfigSpec;
-use crate::spec::function::{
-    AssetsSpec, BuildKind, FunctionSpec, Lang, LangRuntime, Provider, RuntimeSpec,
+use super::{
+    layer,
+    role,
 };
-use crate::spec::infra::InfraSpec;
-
-use crate::topology::{role::Role, template, version};
-
+use crate::{
+    spec::{
+        ConfigSpec,
+        function::{
+            AssetsSpec,
+            BuildKind,
+            FunctionSpec,
+            Lang,
+            LangRuntime,
+            Provider,
+            RuntimeSpec,
+        },
+        infra::InfraSpec,
+    },
+    topology::{
+        role::Role,
+        template,
+        version,
+    },
+};
 use chksum::sha1;
 use kit as u;
 use kit::*;
-use serde_derive::{Deserialize, Serialize};
-use std::{collections::HashMap, fs::read_dir};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    collections::HashMap,
+    fs::read_dir,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {

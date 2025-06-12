@@ -7,7 +7,11 @@ mod tagger;
 
 pub mod ci;
 
-pub use router::{freeze, route, unfreeze};
+pub use router::{
+    freeze,
+    route,
+    unfreeze,
+};
 
 pub async fn create_tag(next: &str, prefix: &str, suffix: &str, push: bool, is_dry_run: bool) {
     let tag = tagger::next_tag(&prefix, &next, &suffix);

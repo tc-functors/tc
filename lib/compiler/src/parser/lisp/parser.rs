@@ -1,20 +1,48 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
-
+use super::expr::Expr;
 use nom::{
     IResult,
     branch::alt,
-    bytes::complete::{escaped_transform, tag, take_while, take_while1},
-    character::complete::{char, digit1, multispace0, none_of, one_of},
-    combinator::{cut, eof, map, opt, value},
-    error::{ContextError, ErrorKind, ParseError, context},
+    bytes::complete::{
+        escaped_transform,
+        tag,
+        take_while,
+        take_while1,
+    },
+    character::complete::{
+        char,
+        digit1,
+        multispace0,
+        none_of,
+        one_of,
+    },
+    combinator::{
+        cut,
+        eof,
+        map,
+        opt,
+        value,
+    },
+    error::{
+        ContextError,
+        ErrorKind,
+        ParseError,
+        context,
+    },
     multi::many0,
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{
+        delimited,
+        pair,
+        preceded,
+        terminated,
+    },
 };
-
-use super::expr::Expr;
+use std::{
+    collections::{
+        BTreeMap,
+        HashMap,
+    },
+    sync::Arc,
+};
 
 fn parse_int_literal<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     input: &'a str,
@@ -154,10 +182,11 @@ fn parse_tree<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 /// Parse a program from a string.
-/// This will directly use the nom parser combinator library to parse the input string,
-/// and return the parsed expression.
+/// This will directly use the nom parser combinator library to parse the input
+/// string, and return the parsed expression.
 ///
-/// It's recommended to use the parsing method for `Expr` instead of this method.
+/// It's recommended to use the parsing method for `Expr` instead of this
+/// method.
 pub fn parse_program<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     input: &'a str,
 ) -> IResult<&'a str, Expr, E> {
@@ -171,10 +200,11 @@ pub fn parse_program<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 /// Parse a program from a string.
-/// This will directly use the nom parser combinator library to parse the input string,
-/// and return the parsed expression.
+/// This will directly use the nom parser combinator library to parse the input
+/// string, and return the parsed expression.
 ///
-/// It's recommended to use the parsing method for `Expr` instead of this method.
+/// It's recommended to use the parsing method for `Expr` instead of this
+/// method.
 pub fn parse_expr<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     input: &'a str,
 ) -> IResult<&'a str, Expr, E> {

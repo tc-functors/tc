@@ -1,5 +1,8 @@
 use authorizer::Auth;
-use aws_sdk_appsync::{Client, Error};
+use aws_sdk_appsync::{
+    Client,
+    Error,
+};
 use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {

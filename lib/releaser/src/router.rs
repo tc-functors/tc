@@ -1,4 +1,7 @@
-use crate::aws::{eventbridge, sfn};
+use crate::aws::{
+    eventbridge,
+    sfn,
+};
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::ConfigSpec;

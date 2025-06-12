@@ -1,4 +1,7 @@
-use crate::aws::{cognito, lambda};
+use crate::aws::{
+    cognito,
+    lambda,
+};
 use authorizer::Auth;
 use compiler::topology::Pool;
 use std::collections::HashMap;

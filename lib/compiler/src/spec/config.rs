@@ -2,8 +2,15 @@ use derivative::Derivative;
 use doku::Document;
 use kit as u;
 use kit::*;
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs, process::exit};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    collections::HashMap,
+    fs,
+    process::exit,
+};
 
 fn default() -> String {
     s!("")

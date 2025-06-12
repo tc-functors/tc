@@ -1,8 +1,13 @@
 use super::template;
-use crate::spec::{ConfigSpec, TriggerSpec};
+use crate::spec::{
+    ConfigSpec,
+    TriggerSpec,
+};
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
-
-use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Pool {
