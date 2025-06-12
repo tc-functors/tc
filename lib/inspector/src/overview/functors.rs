@@ -1,13 +1,7 @@
 use crate::cache;
 use askama::Template;
-use axum::response::{
-    Html,
-    IntoResponse,
-};
-use compiler::{
-    Topology,
-    TopologyCount,
-};
+use axum::response::{Html, IntoResponse};
+use compiler::{Topology, TopologyCount};
 use std::collections::HashMap;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]

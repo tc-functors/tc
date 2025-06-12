@@ -1,10 +1,10 @@
+mod aws;
 pub mod function;
 pub mod sfn;
 pub mod shell;
-mod aws;
 
-use kit as u;
 use authorizer::Auth;
+use kit as u;
 
 fn as_dev_layers(layers: Vec<String>) -> Vec<String> {
     let mut xs: Vec<String> = vec![];

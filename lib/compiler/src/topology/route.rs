@@ -1,18 +1,7 @@
-use crate::{
-    spec::{
-        RouteSpec,
-        TopologySpec,
-        Entity,
-        config::ConfigSpec,
-        route::CorsSpec
-    },
-};
 use super::template;
+use crate::spec::{Entity, RouteSpec, TopologySpec, config::ConfigSpec, route::CorsSpec};
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -29,7 +18,7 @@ pub struct Route {
     pub sync: bool,
     pub request_template: String,
     pub response_template: String,
-    pub cors: CorsSpec
+    pub cors: CorsSpec,
 }
 
 fn make_response_template() -> String {
@@ -40,11 +29,13 @@ fn make_request_template(method: &str, request_template: Option<String>) -> Stri
     if method == "POST" {
         match request_template {
             Some(r) => match r.as_ref() {
-                "detail" => s!("\"{\"path\": \"${request.path}\", \"detail\": ${request.body.detail}, \"method\": \"${context.httpMethod}\"}\""),
+                "detail" => s!(
+                    "\"{\"path\": \"${request.path}\", \"detail\": ${request.body.detail}, \"method\": \"${context.httpMethod}\"}\""
+                ),
                 "merged" => s!("\"{\"path\": $request.path, \"body\": $request.body}\""),
-                _ => r
+                _ => r,
             },
-            None => s!("${request.body}")
+            None => s!("${request.body}"),
         }
     } else {
         s!("\"{\"path\": \"${request.path}\", \"method\": \"${context.httpMethod}\"}\"")
@@ -65,22 +56,21 @@ impl Route {
         name: &str,
         spec: &TopologySpec,
         rspec: &RouteSpec,
-        _config: &ConfigSpec
-) -> Route {
-
-        let gateway =  match &rspec.gateway {
+        _config: &ConfigSpec,
+    ) -> Route {
+        let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
-            None => s!(fqn)
+            None => s!(fqn),
         };
 
         let path = match &rspec.path {
             Some(p) => p.clone(),
-            None => s!(name)
+            None => s!(name),
         };
 
         let method = match &rspec.method {
             Some(m) => m.clone(),
-            None => s!("POST")
+            None => s!("POST"),
         };
 
         let entity = match &rspec.proxy {
@@ -103,12 +93,12 @@ impl Route {
 
         let sync = match rspec.sync {
             Some(s) => s,
-            None => false
+            None => false,
         };
 
         let stage = match &rspec.stage {
             Some(s) => s.clone(),
-            None => s!("$default")
+            None => s!("$default"),
         };
 
         Route {
@@ -124,7 +114,7 @@ impl Route {
             sync: sync,
             request_template: make_request_template(&method, rspec.request_template.clone()),
             response_template: make_response_template(),
-            cors: rspec.cors.clone().unwrap()
+            cors: rspec.cors.clone().unwrap(),
         }
     }
 }

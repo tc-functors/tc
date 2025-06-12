@@ -2,10 +2,7 @@ use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{
-        Html,
-        IntoResponse,
-    },
+    response::{Html, IntoResponse},
 };
 
 #[derive(Template)]
@@ -56,7 +53,6 @@ pub async fn compile(Path((root, namespace)): Path<(String, String)>) -> impl In
     }
 }
 
-
 #[derive(Template)]
 #[template(path = "functor/topology.html")]
 struct DefinitionTemplate {
@@ -90,7 +86,6 @@ pub async fn definition(Path((root, namespace)): Path<(String, String)>) -> impl
     }
 }
 
-
 pub struct TopologyCount {
     pub functions: usize,
     pub events: usize,
@@ -98,13 +93,12 @@ pub struct TopologyCount {
     pub mutations: usize,
     pub queues: usize,
     pub channels: usize,
-    pub states: usize
+    pub states: usize,
 }
 
 pub async fn count_of(root: &str, namespace: &str) -> TopologyCount {
     let f = cache::find_topology(root, namespace).await;
     if let Some(t) = f {
-
         TopologyCount {
             functions: t.functions.len(),
             events: t.events.len(),
@@ -112,7 +106,7 @@ pub async fn count_of(root: &str, namespace: &str) -> TopologyCount {
             mutations: t.mutations.len(),
             queues: t.queues.len(),
             channels: t.channels.len(),
-            states: 0
+            states: 0,
         }
     } else {
         TopologyCount {
@@ -122,7 +116,7 @@ pub async fn count_of(root: &str, namespace: &str) -> TopologyCount {
             mutations: 0,
             queues: 0,
             channels: 0,
-            states: 0
+            states: 0,
         }
     }
 }

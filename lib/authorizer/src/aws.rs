@@ -1,11 +1,9 @@
-use aws_sdk_sts::Client;
-use std::panic;
 use aws_config::{
-    BehaviorVersion,
-    SdkConfig,
-    environment::credentials::EnvironmentVariableCredentialsProvider,
+    BehaviorVersion, SdkConfig, environment::credentials::EnvironmentVariableCredentialsProvider,
     sts::AssumeRoleProvider,
 };
+use aws_sdk_sts::Client;
+use std::panic;
 
 // sts
 
@@ -55,19 +53,14 @@ async fn assume_given_role(role_arn: &str) -> SdkConfig {
 
 pub async fn get_config(profile: &str, assume_role: Option<String>) -> SdkConfig {
     match assume_role {
-        Some(role_arn) => {
-            assume_given_role(&role_arn).await
-        }
-        None => {
-            aws_config::from_env().profile_name(profile).load().await
-        }
+        Some(role_arn) => assume_given_role(&role_arn).await,
+        None => aws_config::from_env().profile_name(profile).load().await,
     }
 }
 
-
 pub fn get_region() -> String {
-   match std::env::var("AWS_REGION") {
-       Ok(e) => e,
-       Err(_) => String::from("us-west-2"),
-   }
+    match std::env::var("AWS_REGION") {
+        Ok(e) => e,
+        Err(_) => String::from("us-west-2"),
+    }
 }

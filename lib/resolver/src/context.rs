@@ -1,7 +1,7 @@
-use kit as u;
 use authorizer::Auth;
-use std::collections::HashMap;
 use compiler::ConfigSpec;
+use kit as u;
+use std::collections::HashMap;
 
 fn abbr(name: &str) -> String {
     if name.chars().count() > 15 {
@@ -16,7 +16,7 @@ pub struct Context {
     pub namespace: String,
     pub sandbox: String,
     pub trace: bool,
-    pub config: ConfigSpec
+    pub config: ConfigSpec,
 }
 
 impl Context {

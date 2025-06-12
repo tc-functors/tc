@@ -1,17 +1,15 @@
-use std::sync::Arc;
-use std::collections::{BTreeMap, HashMap};
-use super::expr::Expr;
 use super::builtin::Builtin;
+use super::expr::Expr;
 use super::symbol::Symbol;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 #[derive(Debug, Default, Clone)]
 pub struct Env {
-
     bindings: Arc<HashMap<Expr, Arc<Expr>>>,
 }
 
 impl Env {
-
     #[inline]
     pub fn new() -> Self {
         Self::default()

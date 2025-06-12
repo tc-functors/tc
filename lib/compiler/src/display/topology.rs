@@ -1,18 +1,11 @@
 use super::Topology;
 use std::collections::HashMap;
-use tabled::{
-    Style,
-    Table,
-    Tabled,
-};
+use tabled::{Style, Table, Tabled};
 
 use kit::*;
 
-use ptree::{
-    builder::TreeBuilder,
-    item::StringItem,
-};
 use colored::Colorize;
+use ptree::{builder::TreeBuilder, item::StringItem};
 
 #[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct TopologyCount {

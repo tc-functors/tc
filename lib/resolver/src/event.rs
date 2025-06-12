@@ -1,19 +1,10 @@
-use super::{
-    Context,
-    Topology,
-};
-use compiler::{
-    Event,
-    Mutation,
-    Target,
-    Entity,
-};
+use super::{Context, Topology};
+use crate::aws;
+use authorizer::Auth;
+use compiler::{Entity, Event, Mutation, Target};
 use kit as u;
 use kit::*;
-use authorizer::Auth;
 use std::collections::HashMap;
-use crate::aws;
-
 
 fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {
     let Topology { functions, .. } = topology;
@@ -87,7 +78,7 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
         Entity::Mutation => find_mutation(&target.name, &topology.mutations).await,
         Entity::State => name.clone(),
         Entity::Channel => name.clone(),
-        _ => name.clone()
+        _ => name.clone(),
     };
 
     let target_arn = match target.entity {
@@ -101,7 +92,7 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
         }
         Entity::State => auth.sfn_arn(&target_name),
         Entity::Channel => target.arn,
-        _ => target.arn
+        _ => target.arn,
     };
     target.name = target_name;
     target.arn = target_arn;
@@ -109,7 +100,9 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
 }
 
 pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Event> {
-    let Context { sandbox, config, .. } = ctx;
+    let Context {
+        sandbox, config, ..
+    } = ctx;
     let mut events: HashMap<String, Event> = HashMap::new();
 
     for (name, mut event) in topology.events.clone() {
@@ -129,7 +122,6 @@ pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Even
         } else {
             events.insert(name.to_string(), event.clone());
         }
-
     }
     events
 }

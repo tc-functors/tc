@@ -1,16 +1,16 @@
+mod aws;
+mod node;
 mod python;
 mod ruby;
 mod rust;
-mod node;
-mod aws;
 
 use authorizer::Auth;
 use kit as u;
 use kit::LogUpdate;
-use std::io::stdout;
 use kit::sh;
+use std::io::stdout;
 
-use compiler::{LangRuntime, Lang, Build};
+use compiler::{Build, Lang, LangRuntime};
 
 fn gen_dockerfile(dir: &str, langr: &LangRuntime, force: bool) {
     match langr.to_lang() {
@@ -18,12 +18,13 @@ fn gen_dockerfile(dir: &str, langr: &LangRuntime, force: bool) {
         Lang::Ruby => ruby::gen_dockerfile(dir),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
 fn gen_dockerignore(dir: &str) {
-    let f = format!(r#"
+    let f = format!(
+        r#"
 **/node_modules/
 **/dist
 **/logs
@@ -40,7 +41,8 @@ npm-debug.log
 **/.venv/
 **/site-packages/
 *.zip
-"#);
+"#
+    );
     let file = format!("{}/.dockerignore", dir);
     u::write_str(&file, &f);
 }
@@ -49,18 +51,14 @@ async fn init() -> Auth {
     let config = compiler::config(&kit::pwd());
     let profile = config.aws.lambda.layers_profile.clone();
     match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => {
-            match profile.clone() {
-                Some(p) => {
-                    let role = config.ci.roles.get(&p).cloned();
-                    Auth::new(profile.clone(), role).await
-                },
-                None => Auth::new(None, None).await
+        Ok(_) => match profile.clone() {
+            Some(p) => {
+                let role = config.ci.roles.get(&p).cloned();
+                Auth::new(profile.clone(), role).await
             }
+            None => Auth::new(None, None).await,
         },
-        Err(_) => {
-            Auth::new(profile.clone(), None).await
-        }
+        Err(_) => Auth::new(profile.clone(), None).await,
     }
 }
 
@@ -92,7 +90,7 @@ async fn build_with_docker(dir: &str) {
         ),
     };
     let status = u::runp(&cmd_str, dir);
-     if !status {
+    if !status {
         sh("rm -f Dockerfile wrapper", dir);
         panic!("Failed to build");
     }
@@ -110,8 +108,14 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
 
     match langr.to_lang() {
         Lang::Rust => {
-            sh(&format!("docker cp {}:/build/target/lambda/bootstrap/bootstrap bootstrap", id), dir);
-        },
+            sh(
+                &format!(
+                    "docker cp {}:/build/target/lambda/bootstrap/bootstrap bootstrap",
+                    id
+                ),
+                dir,
+            );
+        }
         _ => {
             sh(&format!("docker cp {}:/build build", id), dir);
         }
@@ -126,43 +130,34 @@ fn zip(dir: &str, langr: &LangRuntime) {
         Lang::Python => {
             let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
             sh(&cmd, &format!("{}/build/python", dir));
-
-        },
+        }
         Lang::Ruby => {
             let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
             sh(&cmd, dir);
-        },
+        }
         Lang::Node => {
             let cmd = "cd build && zip -q -9 -r ../lambda.zip node_modules && cd -";
             sh(&cmd, dir);
-        },
+        }
         Lang::Rust => {
             let command = "zip -q -r lambda.zip bootstrap";
             sh(command, dir);
-        },
-        _ => todo!()
+        }
+        _ => todo!(),
     }
 }
-
 
 fn should_build_deps() -> bool {
     match std::env::var("TC_SKIP_BUILD") {
         Ok(_) => false,
-        Err(_) => true
+        Err(_) => true,
     }
 }
 
-pub async fn build(
-    dir: &str,
-    name: &str,
-    langr: &LangRuntime,
-    bs: &Build
-) -> String {
-
+pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> String {
     let Build { command, force, .. } = bs;
 
     if should_build_deps() {
-
         sh("rm -rf lambda.zip deps.zip build", &dir);
 
         let mut log = LogUpdate::new(stdout()).unwrap();
@@ -184,7 +179,6 @@ pub async fn build(
 
         sh(command, dir);
         sh("rm -rf build build.json", dir);
-
     } else {
         println!("Skipping Inline build");
         sh(command, dir);

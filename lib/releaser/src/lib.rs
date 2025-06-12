@@ -1,17 +1,13 @@
+mod aws;
 mod git;
 mod github;
+mod notifier;
 mod router;
 mod tagger;
-mod notifier;
-mod aws;
 
 pub mod ci;
 
-pub use router::{
-    freeze,
-    route,
-    unfreeze,
-};
+pub use router::{freeze, route, unfreeze};
 
 pub async fn create_tag(next: &str, prefix: &str, suffix: &str, push: bool, is_dry_run: bool) {
     let tag = tagger::next_tag(&prefix, &next, &suffix);
@@ -70,7 +66,7 @@ pub fn guard(sandbox: &str) {
     }
 }
 
-pub async fn get_release_id(repo: &str, version: Option<String>) -> Option<String>{
+pub async fn get_release_id(repo: &str, version: Option<String>) -> Option<String> {
     github::get_release_id(repo, version).await
 }
 

@@ -1,26 +1,20 @@
-mod functors;
+mod channels;
+mod diagram;
 mod events;
 mod functions;
+mod functors;
 mod mutations;
 mod nodes;
-mod routes;
-mod channels;
 mod queues;
+mod routes;
 mod states;
-mod diagram;
 
 use askama::Template;
 use axum::{
     Router,
     http::StatusCode,
-    response::{
-        Html,
-        IntoResponse,
-        Response,
-    },
-    routing::{
-        get,
-    },
+    response::{Html, IntoResponse, Response},
+    routing::get,
 };
 
 pub struct HtmlTemplate<T>(pub T);
@@ -56,8 +50,7 @@ pub async fn index() -> impl IntoResponse {
 }
 
 pub fn page_routes() -> Router {
-    Router::new()
-        .route("/overview", get(index))
+    Router::new().route("/overview", get(index))
 }
 
 // fragments

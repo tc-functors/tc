@@ -1,12 +1,12 @@
+mod builtin;
 mod env;
 mod expr;
-mod builtin;
-mod symbol;
 mod parser;
+mod symbol;
 
-use std::io::BufRead;
 use env::Env;
 use expr::Expr;
+use std::io::BufRead;
 use symbol::Symbol;
 
 fn make_env() -> Env {
@@ -794,11 +794,11 @@ fn make_env() -> Env {
         };
 
         let (a, b) = match (a, b) {
-                (Expr::Int(a), Expr::Int(b)) => (a, b),
-                (Expr::Float(a), Expr::Float(b)) => (a as i64, b as i64),
-                (Expr::Int(a), Expr::Float(b)) => (a, b as i64),
-                (Expr::Float(a), Expr::Int(b)) => (a as i64, b),
-                (a, b) => return Expr::error(format!("Invalid expr range {} {}", a, b)),
+            (Expr::Int(a), Expr::Int(b)) => (a, b),
+            (Expr::Float(a), Expr::Float(b)) => (a as i64, b as i64),
+            (Expr::Int(a), Expr::Float(b)) => (a, b as i64),
+            (Expr::Float(a), Expr::Int(b)) => (a as i64, b),
+            (a, b) => return Expr::error(format!("Invalid expr range {} {}", a, b)),
         };
 
         let c = match c {
@@ -913,7 +913,6 @@ fn make_env() -> Env {
 }
 
 pub fn load(mut program: String) {
-
     let mut env = make_env();
     //let mut program = "(+ 2 2)";
 

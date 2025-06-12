@@ -2,14 +2,9 @@ use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{
-        Html,
-        IntoResponse,
-    },
+    response::{Html, IntoResponse},
 };
-use compiler::{
-    Route,
-};
+use compiler::Route;
 use std::collections::HashMap;
 
 struct Item {
@@ -27,7 +22,6 @@ struct ListTemplate {
     items: Vec<Item>,
 }
 
-
 fn build(routes: HashMap<String, Route>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
     for (_, route) in routes {
@@ -35,7 +29,7 @@ fn build(routes: HashMap<String, Route>) -> Vec<Item> {
             path: route.path,
             method: route.method,
             kind: route.entity.to_str(),
-            target: route.target_name
+            target: route.target_name,
         };
         xs.push(item);
     }

@@ -1,19 +1,16 @@
 pub mod build;
 pub mod layer;
-pub mod runtime;
 mod role;
+pub mod runtime;
 
-use crate::spec::{FunctionSpec, ConfigSpec};
+use super::template;
 use crate::Entity;
+use crate::spec::{ConfigSpec, FunctionSpec};
 pub use build::Build;
 use kit as u;
 use kit::*;
 pub use runtime::Runtime;
-use super::template;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -42,7 +39,7 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: Test,
-    pub targets: Vec<Target>
+    pub targets: Vec<Target>,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -105,15 +102,8 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
     }
 }
 
-
 impl Function {
-    pub fn new(
-        dir: &str,
-        topo_infra_dir: &str,
-        namespace: &str,
-        format: &str,
-) -> Function {
-
+    pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
         let config = ConfigSpec::new(None);
 
         let fspec = FunctionSpec::new(dir);
@@ -144,12 +134,16 @@ impl Function {
             runtime: runtime,
             layer_name: fspec.layer_name,
             test: make_test(),
-            targets: vec![]
+            targets: vec![],
         }
     }
 
-    pub fn from_spec(fspec: &FunctionSpec, namespace: &str, dir: &str, infra_dir: &str) -> Function {
-
+    pub fn from_spec(
+        fspec: &FunctionSpec,
+        namespace: &str,
+        dir: &str,
+        infra_dir: &str,
+    ) -> Function {
         let config = ConfigSpec::new(None);
         let namespace = match fspec.namespace {
             Some(ref n) => n,
@@ -177,7 +171,7 @@ impl Function {
             runtime: runtime,
             layer_name: fspec.layer_name.clone(),
             test: make_test(),
-            targets: vec![]
+            targets: vec![],
         }
     }
 

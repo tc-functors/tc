@@ -3,15 +3,10 @@ use askama::Template;
 use axum::{
     Form,
     extract::Path,
-    response::{
-        Html,
-        IntoResponse,
-    },
+    response::{Html, IntoResponse},
 };
+use compiler::Function;
 use serde::Deserialize;
-use compiler::{
-    Function,
-};
 use std::collections::HashMap;
 
 #[derive(Template)]
@@ -69,7 +64,6 @@ pub async fn permissions(
     };
     Html(temp.render().unwrap())
 }
-
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct Item {

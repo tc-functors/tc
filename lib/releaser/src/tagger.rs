@@ -1,8 +1,4 @@
-use crate::{
-    git,
-    notifier,
-    notifier::RichText,
-};
+use crate::{git, notifier, notifier::RichText};
 use kit as u;
 use kit::*;
 

@@ -1,7 +1,6 @@
 use super::LangRuntime;
 use kit as u;
 
-
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),

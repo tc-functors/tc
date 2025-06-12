@@ -1,17 +1,6 @@
-use compiler::{
-    Flow,
-    LogConfig,
-};
+use crate::aws::{cloudwatch, iam, iam::Role, sfn, sfn::StateMachine};
 use authorizer::Auth;
-use crate::{
-    aws::{
-        cloudwatch,
-        iam,
-        iam::Role,
-        sfn,
-        sfn::StateMachine,
-    },
-};
+use compiler::{Flow, LogConfig};
 use std::collections::HashMap;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: Flow) {
@@ -123,7 +112,9 @@ pub async fn enable_logs(auth: &Auth, sfn_arn: &str, logs: LogConfig, flow: &Flo
         .unwrap();
     tracing::debug!(
         "Updating log-config {} ({}) include_exec_data: {}",
-        flow.name, flow.mode, include_exec_data
+        flow.name,
+        flow.mode,
+        include_exec_data
     );
     let _ = sfn::enable_logging(sfn_client, sfn_arn, &aggregator.arn, include_exec_data).await;
 }

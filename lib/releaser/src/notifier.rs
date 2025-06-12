@@ -1,10 +1,7 @@
+use compiler::ConfigSpec;
 use kit as u;
 use kit::*;
-use compiler::ConfigSpec;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

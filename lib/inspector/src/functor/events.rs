@@ -2,14 +2,9 @@ use crate::cache;
 use askama::Template;
 use axum::{
     extract::Path,
-    response::{
-        Html,
-        IntoResponse,
-    },
+    response::{Html, IntoResponse},
 };
-use compiler::{
-    Event,
-};
+use compiler::Event;
 use std::collections::HashMap;
 
 struct Item {
@@ -33,7 +28,7 @@ fn build(events: HashMap<String, Event>) -> Vec<Item> {
             let item = Item {
                 name: name.clone(),
                 kind: target.entity.to_str(),
-                target: target.name
+                target: target.name,
             };
             xs.push(item);
         }

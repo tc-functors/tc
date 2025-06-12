@@ -1,13 +1,8 @@
-use crate::{
-    spec::{TriggerSpec, ConfigSpec},
-};
 use super::template;
+use crate::spec::{ConfigSpec, TriggerSpec};
 use std::collections::HashMap;
 
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Pool {
@@ -19,10 +14,9 @@ pub struct Pool {
 pub fn make_triggers(spec: HashMap<String, TriggerSpec>) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
     for (name, s) in spec {
-
         let f = match s.function {
             Some(f) => f,
-            None => panic!("No function specified for trigger")
+            None => panic!("No function specified for trigger"),
         };
 
         let realf = if f.starts_with("{{namespace") {
@@ -36,13 +30,17 @@ pub fn make_triggers(spec: HashMap<String, TriggerSpec>) -> HashMap<String, Stri
     h
 }
 
-pub fn make(pools: Vec<String>, spec: HashMap<String, TriggerSpec>, config: &ConfigSpec) -> HashMap<String, Pool> {
+pub fn make(
+    pools: Vec<String>,
+    spec: HashMap<String, TriggerSpec>,
+    config: &ConfigSpec,
+) -> HashMap<String, Pool> {
     let mut h: HashMap<String, Pool> = HashMap::new();
     for pool in pools {
         let p = Pool {
             name: pool.clone(),
             from_email: config.aws.cognito.from_email_address.clone(),
-            triggers: make_triggers(spec.clone())
+            triggers: make_triggers(spec.clone()),
         };
         h.insert(pool, p);
     }

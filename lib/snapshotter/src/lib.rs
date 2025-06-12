@@ -1,18 +1,13 @@
-
-use kit as u;
 use authorizer::Auth;
+use kit as u;
 mod aws;
-mod versions;
 mod topology;
+mod versions;
 
-use versions::Record;
 use topology::Topology;
+use versions::Record;
 
-use tabled::{
-    settings::Style,
-    Table,
-};
-
+use tabled::{Table, settings::Style};
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
     versions::find(auth, dir, sandbox).await

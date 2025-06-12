@@ -1,7 +1,5 @@
 use authorizer::Auth;
-use aws_sdk_appsync::{
-    Client,
-};
+use aws_sdk_appsync::Client;
 use kit::*;
 use std::collections::HashMap;
 

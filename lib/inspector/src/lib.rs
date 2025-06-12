@@ -1,17 +1,14 @@
-use axum::{
-    Router,
-    extract::DefaultBodyLimit,
-};
+use axum::{Router, extract::DefaultBodyLimit};
 
 mod cache;
 mod functor;
-mod overview;
 mod list;
+mod overview;
 
 pub async fn init(port: Option<String>) {
     let port = match port {
         Some(p) => p,
-        None => String::from("8000")
+        None => String::from("8000"),
     };
     let addr = format!("0.0.0.0:{}", &port);
 

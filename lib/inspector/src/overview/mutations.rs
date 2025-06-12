@@ -1,11 +1,6 @@
 use crate::cache;
 use askama::Template;
-use axum::{
-    response::{
-        Html,
-        IntoResponse,
-    },
-};
+use axum::response::{Html, IntoResponse};
 use compiler::Topology;
 use std::collections::HashMap;
 

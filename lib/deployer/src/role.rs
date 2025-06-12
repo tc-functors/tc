@@ -1,11 +1,6 @@
-use compiler;
+use crate::aws::{iam, iam::Role};
 use authorizer::Auth;
-use crate::{
-    aws::{
-        iam,
-        iam::Role,
-    },
-};
+use compiler;
 
 pub async fn delete(auth: &Auth, roles: &Vec<compiler::Role>) {
     let client = iam::make_client(auth).await;

@@ -1,13 +1,8 @@
-use crate::{
-    spec::ScheduleSpec,
-};
+use super::template;
+use crate::spec::ScheduleSpec;
 use kit as u;
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
-use super::template;
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

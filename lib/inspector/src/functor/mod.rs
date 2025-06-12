@@ -1,27 +1,19 @@
 use askama::Template;
 use axum::{
     Router,
-    http::StatusCode,
     extract::Path,
-    response::{
-        Html,
-        IntoResponse,
-        Response,
-    },
-    routing::{
-        get,
-        post,
-    },
+    http::StatusCode,
+    response::{Html, IntoResponse, Response},
+    routing::{get, post},
 };
-mod topology;
+mod channels;
+mod events;
 mod functions;
 mod mutations;
-mod routes;
 mod queues;
-mod events;
+mod routes;
 mod states;
-mod channels;
-
+mod topology;
 
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
@@ -51,7 +43,7 @@ struct IndexTemplate {
     queues: usize,
     channels: usize,
     mutations: usize,
-    states: usize
+    states: usize,
 }
 
 pub async fn index_page() -> impl IntoResponse {
@@ -65,7 +57,7 @@ pub async fn index_page() -> impl IntoResponse {
         queues: 0,
         channels: 0,
         mutations: 0,
-        states: 0
+        states: 0,
     })
 }
 
@@ -80,12 +72,10 @@ pub async fn main_page(Path((root, namespace)): Path<(String, String)>) -> impl 
         queues: count.queues,
         channels: count.channels,
         mutations: count.mutations,
-        states: count.states
-
+        states: count.states,
     };
     Html(temp.render().unwrap())
 }
-
 
 pub fn page_routes() -> Router {
     Router::new()
@@ -108,28 +98,15 @@ pub fn list_routes() -> Router {
             "/hx/functor/mutations/{:root}/{:namespace}",
             get(mutations::list),
         )
-        .route(
-            "/hx/functor/states/{:root}/{:namespace}",
-            get(states::list),
-        )
-        .route(
-            "/hx/functor/events/{:root}/{:namespace}",
-            get(events::list),
-        )
-        .route(
-            "/hx/functor/routes/{:root}/{:namespace}",
-            get(routes::list),
-        )
+        .route("/hx/functor/states/{:root}/{:namespace}", get(states::list))
+        .route("/hx/functor/events/{:root}/{:namespace}", get(events::list))
+        .route("/hx/functor/routes/{:root}/{:namespace}", get(routes::list))
         .route(
             "/hx/functor/channels/{:root}/{:namespace}",
             get(channels::list),
         )
-        .route(
-            "/hx/functor/queues/{:root}/{:namespace}",
-            get(queues::list),
-        )
+        .route("/hx/functor/queues/{:root}/{:namespace}", get(queues::list))
 }
-
 
 pub fn topology_routes() -> Router {
     Router::new()
@@ -137,8 +114,10 @@ pub fn topology_routes() -> Router {
             "/hx/functor/topology/compile/{:root}/{:namespace}",
             post(topology::compile),
         )
-        .route("/hx/functor/topology/flow/{:root}/{:namespace}",
-               post(topology::flow))
+        .route(
+            "/hx/functor/topology/flow/{:root}/{:namespace}",
+            post(topology::flow),
+        )
         .route(
             "/hx/functor/topology/sandbox-form/{:root}/{:namespace}",
             post(topology::sandbox),

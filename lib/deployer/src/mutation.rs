@@ -1,10 +1,7 @@
-use compiler::Mutation;
+use crate::{aws::appsync, aws::lambda};
 use authorizer::Auth;
+use compiler::Mutation;
 use std::collections::HashMap;
-use crate::{
-    aws::lambda,
-    aws::appsync
-};
 
 async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
     let client = lambda::make_client(auth).await;

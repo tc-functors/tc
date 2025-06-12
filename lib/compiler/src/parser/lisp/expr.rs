@@ -1,20 +1,19 @@
+use super::symbol::Symbol;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use super::symbol::Symbol;
 use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
-use std::hash::{Hash, Hasher};
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
-
-use super::env::Env;
 use super::builtin::Builtin;
+use super::env::Env;
 use super::parser;
 
 use nom::{
-    error::{convert_error, VerboseError}, Err
+    Err,
+    error::{VerboseError, convert_error},
 };
-
 
 /// A lisp expression to be evaluated
 #[derive(Debug, Default, Clone)]
@@ -201,7 +200,6 @@ impl From<Expr> for serde_json::Value {
         }
     }
 }
-
 
 impl Expr {
     /// Serialize a value into a Lisp expression.

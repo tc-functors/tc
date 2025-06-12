@@ -1,15 +1,7 @@
 use crate::cache;
 use askama::Template;
-use axum::{
-    response::{
-        Html,
-        IntoResponse,
-    },
-};
-use compiler::{
-    Function,
-    Topology,
-};
+use axum::response::{Html, IntoResponse};
+use compiler::{Function, Topology};
 use std::collections::HashMap;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -71,8 +63,6 @@ struct FunctionsTemplate {
 pub async fn list() -> impl IntoResponse {
     let topologies = cache::find_all_topologies().await;
     let fns = build(topologies);
-    let temp = FunctionsTemplate {
-        items: fns,
-    };
+    let temp = FunctionsTemplate { items: fns };
     Html(temp.render().unwrap())
 }

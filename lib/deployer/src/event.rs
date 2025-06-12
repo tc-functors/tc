@@ -1,16 +1,7 @@
-use colored::Colorize;
-use compiler::{
-    Event,
-    Entity
-};
+use crate::aws::{appsync, eventbridge, lambda};
 use authorizer::Auth;
-use crate::{
-    aws::{
-        appsync,
-        eventbridge,
-        lambda,
-    },
-};
+use colored::Colorize;
+use compiler::{Entity, Event};
 use std::collections::HashMap;
 
 async fn update_permissions(auth: &Auth, event: &Event) {

@@ -1,22 +1,19 @@
+mod aws;
+pub mod base;
 pub mod channel;
 pub mod event;
 pub mod flow;
 pub mod function;
 pub mod mutation;
+pub mod pool;
 pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
-pub mod base;
-pub mod pool;
-mod aws;
 
-use colored::Colorize;
-use compiler::{
-    Topology,
-    spec::TopologyKind,
-};
 use authorizer::Auth;
+use colored::Colorize;
+use compiler::{Topology, spec::TopologyKind};
 
 pub fn maybe_component(c: Option<String>) -> String {
     match c {
@@ -40,7 +37,7 @@ fn prn_components() {
         "queues",
         "channels",
         "base-roles",
-        "pools"
+        "pools",
     ];
     for x in v {
         println!("{x}");

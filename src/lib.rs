@@ -1,23 +1,11 @@
+use authorizer::Auth;
 use compiler::{
-    Topology,
-    Function,
-    spec::{
-        BuildSpec,
-        ConfigSpec,
-        FunctionSpec,
-        function::InfraSpec,
-    },
+    Function, Topology,
+    spec::{BuildSpec, ConfigSpec, FunctionSpec, function::InfraSpec},
 };
 use kit as u;
-use authorizer::Auth;
-use std::{
-    panic,
-    time::Instant,
-};
-use tabled::{
-    Style,
-    Table,
-};
+use std::{panic, time::Instant};
+use tabled::{Style, Table};
 
 pub struct BuildOpts {
     pub recursive: bool,
@@ -32,12 +20,7 @@ pub struct BuildOpts {
     pub layer: Option<String>,
 }
 
-pub async fn build(
-    profile: Option<String>,
-    name: Option<String>,
-    dir: &str,
-    opts: BuildOpts,
-) {
+pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
     let BuildOpts {
         clean,
         recursive,
@@ -56,7 +39,6 @@ pub async fn build(
             let auth = init(profile, None).await;
             let builds = builder::just_images(recursive);
             builder::sync(&auth, builds).await;
-
         } else {
             let builds = builder::build_recursive(dir, parallel, image, layer).await;
             if publish {
@@ -64,7 +46,6 @@ pub async fn build(
                 builder::publish(&auth, builds.clone()).await;
             }
         }
-
     } else if clean {
         builder::clean_lang(dir);
     } else {
@@ -77,14 +58,14 @@ pub async fn build(
         } else {
             let maybe_fn = compiler::current_function(dir);
             match maybe_fn {
-                Some(f) =>   {
+                Some(f) => {
                     let builds = builder::build(&f, name, image, layer, kind).await;
                     if publish {
                         let auth = init(profile.clone(), None).await;
                         builder::publish(&auth, builds.clone()).await;
                     }
-                },
-                None => println!("No function found. Try --recursive or build from a function dir")
+                }
+                None => println!("No function found. Try --recursive or build from a function dir"),
             }
         }
     }
@@ -123,25 +104,23 @@ pub async fn compile(opts: CompileOpts) {
 
     match entity {
         Some(e) => compiler::display_entity(&dir, &e, &fmt, recursive),
-        None => {
-            match format {
-                Some(fmt) => compiler::display_topology(&dir, &fmt, recursive),
-                None => {
-                    if compiler::is_root_dir(&dir) {
-                        compiler::display_root();
-                    } else {
-                        let topology = compiler::compile(&dir, recursive);
-                        match std::env::var("TC_DUMP_TOPOLOGY") {
-                            Ok(_) => {
-                                kit::write_str("topology.json", &topology.to_str());
-                                tracing::debug!("Wrote topology.json");
-                            }
-                            Err(_) => u::pp_json(topology)
+        None => match format {
+            Some(fmt) => compiler::display_topology(&dir, &fmt, recursive),
+            None => {
+                if compiler::is_root_dir(&dir) {
+                    compiler::display_root();
+                } else {
+                    let topology = compiler::compile(&dir, recursive);
+                    match std::env::var("TC_DUMP_TOPOLOGY") {
+                        Ok(_) => {
+                            kit::write_str("topology.json", &topology.to_str());
+                            tracing::debug!("Wrote topology.json");
                         }
+                        Err(_) => u::pp_json(topology),
                     }
                 }
             }
-        }
+        },
     }
 }
 
@@ -152,7 +131,6 @@ pub async fn resolve(
     recursive: bool,
     no_cache: bool,
 ) -> String {
-
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let resolved_topology = match component.clone() {
@@ -180,7 +158,9 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     releaser::notify(&namespace, &msg).await;
     if config.ci.update_metadata {
         let profile = config.aws.lambda.layers_profile.clone();
-        let centralized = auth.assume(profile.clone(), config.role_to_assume(profile)).await;
+        let centralized = auth
+            .assume(profile.clone(), config.role_to_assume(profile))
+            .await;
         releaser::ci::update_metadata(
             &centralized,
             &sandbox,
@@ -197,7 +177,9 @@ async fn maybe_build(auth: &Auth, function: &Function) {
     let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
     let config = ConfigSpec::new(None);
     let profile = config.aws.lambda.layers_profile.clone();
-    let centralized = auth.assume(profile.clone(), config.role_to_assume(profile)).await;
+    let centralized = auth
+        .assume(profile.clone(), config.role_to_assume(profile))
+        .await;
     builder::publish(&centralized, builds).await;
 }
 
@@ -506,8 +488,8 @@ pub async fn ci_upgrade(version: Option<String>) {
     match maybe_release_id {
         Some(id) => {
             releaser::ci::update_var("TC_RELEASE_ID_TEST", &id).await;
-        },
-        None => println!("No release id found")
+        }
+        None => println!("No release id found"),
     }
 }
 
@@ -516,11 +498,7 @@ pub async fn show_config() {
     println!("{}", config.render());
 }
 
-pub async fn init(
-    profile: Option<String>,
-    assume_role: Option<String>
-) -> Auth {
-
+pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = match assume_role {
@@ -533,9 +511,7 @@ pub async fn init(
             };
             Auth::new(profile.clone(), role).await
         }
-        Err(_) => {
-            Auth::new(profile.clone(), assume_role).await
-        }
+        Err(_) => Auth::new(profile.clone(), assume_role).await,
     }
 }
 
@@ -590,8 +566,8 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, format: 
                 let records = snapshotter::snapshot(&auth, &dir, &sandbox).await;
                 snapshotter::pretty_print(records, &format);
             }
-        },
-        None => println!("Please specify profile")
+        }
+        None => println!("Please specify profile"),
     }
 }
 

@@ -1,10 +1,4 @@
-use compiler::{
-    Event,
-    Route,
-    Channel,
-    Function,
-    Topology,
-};
+use compiler::{Channel, Event, Function, Route, Topology};
 use std::collections::HashMap;
 
 fn cache_dir() -> String {
@@ -150,8 +144,6 @@ pub async fn find_routes(root: &str, namespace: &str) -> HashMap<String, Route> 
     }
 }
 
-
-
 // singular
 
 pub async fn find_topology(root: &str, namespace: &str) -> Option<Topology> {
@@ -193,7 +185,6 @@ pub async fn find_root_namespaces() -> Vec<String> {
     }
     xs
 }
-
 
 pub async fn init() {
     let topologies = compiler::compile_root(&kit::pwd(), true);

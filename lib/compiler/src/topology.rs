@@ -1,51 +1,38 @@
 pub mod channel;
-pub mod queue;
 pub mod event;
 pub mod flow;
-pub mod mutation;
 pub mod function;
-pub mod role;
-pub mod schedule;
-pub mod route;
-pub mod pool;
 pub mod log;
+pub mod mutation;
+pub mod pool;
+pub mod queue;
+pub mod role;
+pub mod route;
+pub mod schedule;
 mod tag;
-mod version;
 mod template;
+mod version;
 
 pub use channel::Channel;
 pub use event::Event;
 pub use flow::Flow;
-pub use function::{
-    Function,
-    layer,
-    layer::Layer,
-};
+pub use function::{Function, layer, layer::Layer};
 
-pub use role::{Role, RoleKind};
-pub use mutation::Mutation;
 pub use log::LogConfig;
+pub use mutation::Mutation;
+pub use pool::Pool;
 pub use queue::Queue;
+pub use role::{Role, RoleKind};
 pub use route::Route;
 pub use schedule::Schedule;
-pub use pool::Pool;
 
-use crate::spec::{
-    TopologyKind, TopologySpec,
-    config::ConfigSpec
-};
+use crate::spec::{TopologyKind, TopologySpec, config::ConfigSpec};
 
 use kit as u;
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{
-    collections::HashMap,
-    path::Path,
-};
+use std::{collections::HashMap, path::Path};
 use walkdir::WalkDir;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -173,10 +160,8 @@ fn is_shared(uri: Option<String>) -> bool {
 
 fn abs_shared_dir(root_dir: &str, uri: Option<String>) -> String {
     match uri {
-        Some(p) => {
-            u::absolute_dir(&root_dir, &p)
-        },
-        None => panic!("Shared uri not specified")
+        Some(p) => u::absolute_dir(&root_dir, &p),
+        None => panic!("Shared uri not specified"),
     }
 }
 
@@ -185,10 +170,9 @@ fn intern_functions(
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
-
     let inline_fns = match &spec.functions {
         Some(f) => f,
-        None => &HashMap::new()
+        None => &HashMap::new(),
     };
 
     let mut fns: HashMap<String, Function> = HashMap::new();
@@ -196,12 +180,10 @@ fn intern_functions(
     let root_dir = &spec.dir.clone().unwrap();
 
     for (name, f) in inline_fns {
-
         if is_shared(f.uri.clone()) {
             let abs_dir = abs_shared_dir(root_dir, f.uri.clone());
             let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
             fns.insert(s!(name), function);
-
         } else {
             let dir = format!("{}/{}", root_dir, name);
             let fspec = f.intern(namespace, &dir, infra_dir, &name);
@@ -444,7 +426,7 @@ fn make_channels(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, C
 fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool> {
     let pools = match &spec.pools {
         Some(p) => p.clone(),
-        None => vec![]
+        None => vec![],
     };
     match &spec.triggers {
         Some(c) => pool::make(pools, c.clone(), config),
@@ -482,7 +464,6 @@ fn make(
     functions: HashMap<String, Function>,
     nodes: HashMap<String, Topology>,
 ) -> Topology {
-
     let config = ConfigSpec::new(None);
 
     let mut functions = functions;
@@ -524,7 +505,7 @@ fn make(
         tags: tag::make(&spec.name, &infra_dir),
         logs: LogConfig::new(),
         flow: flow,
-        config: ConfigSpec::new(None)
+        config: ConfigSpec::new(None),
     }
 }
 
@@ -570,7 +551,7 @@ fn make_standalone(dir: &str) -> Topology {
         logs: LogConfig::new(),
         tags: HashMap::new(),
         schedules: HashMap::new(),
-        config: ConfigSpec::new(None)
+        config: ConfigSpec::new(None),
     }
 }
 
@@ -578,9 +559,7 @@ pub fn is_compilable(dir: &str) -> bool {
     is_standalone_function_dir(dir) || is_relative_topology_dir(dir) || is_topology_dir(dir)
 }
 
-
 impl Topology {
-
     pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
         if is_singular_function_dir() {
             let f = format!("{}/topology.yml", dir);
@@ -635,7 +614,7 @@ impl Topology {
         let fns: HashMap<String, Function> = self.clone().functions;
         for (_, f) in fns {
             if f.dir == dir {
-                return Some(f)
+                return Some(f);
             }
         }
         None

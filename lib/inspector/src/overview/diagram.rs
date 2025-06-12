@@ -2,11 +2,7 @@ use crate::cache;
 use askama::Template;
 use axum::{
     http::StatusCode,
-    response::{
-        Html,
-        IntoResponse,
-        Response,
-    },
+    response::{Html, IntoResponse, Response},
 };
 
 async fn build_mermaid_str() -> Vec<String> {
@@ -38,7 +34,6 @@ async fn build_mermaid_str() -> Vec<String> {
     xs
 }
 
-
 pub struct HtmlTemplate<T>(pub T);
 impl<T> IntoResponse for HtmlTemplate<T>
 where
@@ -65,8 +60,6 @@ struct SequenceTemplate {
 pub async fn sequence() -> impl IntoResponse {
     let xs = build_mermaid_str().await;
 
-    let temp = SequenceTemplate {
-        items: xs
-    };
+    let temp = SequenceTemplate { items: xs };
     Html(temp.render().unwrap())
 }

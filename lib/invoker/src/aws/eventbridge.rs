@@ -2,19 +2,13 @@ use authorizer::Auth;
 
 use aws_sdk_eventbridge::{
     Client,
-    types::{
-        PutEventsRequestEntry,
-        builders::{
-            PutEventsRequestEntryBuilder,
-        },
-    },
+    types::{PutEventsRequestEntry, builders::PutEventsRequestEntryBuilder},
 };
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
     Client::new(shared_config)
 }
-
 
 fn make_event(bus: &str, detail_type: &str, source: &str, detail: &str) -> PutEventsRequestEntry {
     let e = PutEventsRequestEntryBuilder::default();

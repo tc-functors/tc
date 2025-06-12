@@ -3,13 +3,8 @@ use askama::Template;
 use axum::{
     Router,
     extract::Path,
-    response::{
-        Html,
-        IntoResponse,
-    },
-    routing::{
-        get,
-    },
+    response::{Html, IntoResponse},
+    routing::get,
 };
 
 #[derive(Template)]
@@ -45,7 +40,6 @@ pub async fn functors(Path((_root, namespace)): Path<(String, String)>) -> impl 
     Html(t.render().unwrap())
 }
 
-pub fn routes()  -> Router {
-    Router::new()
-        .route("/hx/functors/list/{:root}/{:namespace}", get(functors))
+pub fn routes() -> Router {
+    Router::new().route("/hx/functors/list/{:root}/{:namespace}", get(functors))
 }

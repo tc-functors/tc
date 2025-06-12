@@ -1,9 +1,8 @@
-use authorizer::Auth;
 use crate::aws::lambda;
+use authorizer::Auth;
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
-
 
 pub async fn invoke(auth: &Auth, name: &str, payload: &str) {
     let client = lambda::make_client(auth).await;

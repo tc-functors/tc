@@ -82,7 +82,6 @@ COPY --from=build-image /model /model
     u::write_str(&dockerfile, &f);
 }
 
-
 pub fn gen_code_dockerfile(dir: &str, base_image: &str, commands: Vec<String>) {
     let commands = deps_str(commands);
     let f = format!(

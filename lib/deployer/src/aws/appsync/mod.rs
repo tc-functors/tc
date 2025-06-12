@@ -2,15 +2,9 @@ use authorizer::Auth;
 use aws_sdk_appsync::{
     Client,
     types::{
-        AdditionalAuthenticationProvider,
-        AuthenticationType,
-        LambdaAuthorizerConfig,
-        ResolverKind,
+        AdditionalAuthenticationProvider, AuthenticationType, LambdaAuthorizerConfig, ResolverKind,
         TypeDefinitionFormat,
-        builders::{
-            AdditionalAuthenticationProviderBuilder,
-            LambdaAuthorizerConfigBuilder,
-        },
+        builders::{AdditionalAuthenticationProviderBuilder, LambdaAuthorizerConfigBuilder},
     },
 };
 use colored::Colorize;
@@ -53,7 +47,6 @@ pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     let apis = list_apis(client).await;
     apis.get(name).cloned()
 }
-
 
 fn make_lambda_authorizer(authorizer_arn: &str) -> LambdaAuthorizerConfig {
     let v = LambdaAuthorizerConfigBuilder::default();

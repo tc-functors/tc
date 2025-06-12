@@ -1,10 +1,6 @@
 use aws_sdk_appsync::{
     Client,
-    types::{
-        DataSourceType,
-        LambdaDataSourceConfig,
-        builders::LambdaDataSourceConfigBuilder,
-    },
+    types::{DataSourceType, LambdaDataSourceConfig, builders::LambdaDataSourceConfigBuilder},
 };
 use kit::*;
 

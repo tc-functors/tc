@@ -1,24 +1,29 @@
-mod python;
 mod aws_ecr;
+mod python;
 
+use authorizer::Auth;
 use compiler::LangRuntime;
-use compiler::spec::{ImageSpec, ConfigSpec, Lang, BuildOutput};
+use compiler::spec::{BuildOutput, ConfigSpec, ImageSpec, Lang};
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
-use authorizer::Auth;
 
 pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
     match runtime.to_lang() {
         Lang::Python => python::gen_base_dockerfile(dir, runtime, commands),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
-pub fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image: &str, commands: Vec<String>) {
+pub fn gen_code_dockerfile(
+    dir: &str,
+    runtime: &LangRuntime,
+    base_image: &str,
+    commands: Vec<String>,
+) {
     match runtime.to_lang() {
         Lang::Python => python::gen_code_dockerfile(dir, base_image, commands),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
@@ -26,13 +31,13 @@ fn build_with_docker(dir: &str, name: &str) {
     let root = &u::root();
     let cmd_str = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => format!(
-        "docker buildx build --platform=linux/amd64 --provenance=false -t {} --build-context shared={root} .",
-        name
+            "docker buildx build --platform=linux/amd64 --provenance=false -t {} --build-context shared={root} .",
+            name
         ),
         Err(_) => format!(
-        "docker buildx build --ssh=default --platform=linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
-        name
-        )
+            "docker buildx build --ssh=default --platform=linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
+            name
+        ),
     };
 
     match std::env::var("TC_TRACE") {
@@ -52,7 +57,6 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
     table.insert("repo", repo);
     u::stencil(uri, table)
 }
-
 
 fn find_base_image_name(
     repo: &str,
@@ -89,9 +93,8 @@ pub fn build(
     langr: &LangRuntime,
     images: &HashMap<String, ImageSpec>,
     image_kind: &str,
-    uri: &str
+    uri: &str,
 ) -> String {
-
     let image_spec = match images.get(image_kind) {
         Some(p) => p,
         None => panic!("No image spec specified in build:images"),
@@ -113,23 +116,21 @@ pub fn build(
     match image_kind {
         "code" => {
             let parent_image_name =
-                find_parent_image_name(
-                    repo, name, &images, image_spec.parent.clone()
-                );
+                find_parent_image_name(repo, name, &images, image_spec.parent.clone());
             gen_code_dockerfile(
-                image_dir, langr, &parent_image_name, image_spec.commands.clone()
+                image_dir,
+                langr,
+                &parent_image_name,
+                image_spec.commands.clone(),
             );
-            tracing::debug!("Building {} with parent {}",
-                            uri, &parent_image_name);
+            tracing::debug!("Building {} with parent {}", uri, &parent_image_name);
             build_with_docker(image_dir, &uri);
             sh("rm -rf Dockerfile build build.json", image_dir);
             uri.to_string()
         }
         "base" => {
             let base_image_name = find_base_image_name(repo, name, images);
-            gen_base_dockerfile(
-                image_dir, langr, image_spec.commands.clone()
-            );
+            gen_base_dockerfile(image_dir, langr, image_spec.commands.clone());
             tracing::debug!(
                 "Building image dir: {} name: {}",
                 image_dir,
@@ -142,7 +143,6 @@ pub fn build(
         _ => panic!("Invalid image kind"),
     }
 }
-
 
 pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, artifact, .. } = build;

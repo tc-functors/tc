@@ -1,17 +1,10 @@
 use authorizer::Auth;
-pub use aws_sdk_eventbridge::types::{
-    Target,
-};
+pub use aws_sdk_eventbridge::types::Target;
 use aws_sdk_eventbridge::{
     Client,
     types::{
-        AppSyncParameters,
-        InputTransformer,
-        RetryPolicy,
-        builders::{
-            RetryPolicyBuilder,
-            TargetBuilder,
-        },
+        AppSyncParameters, InputTransformer, RetryPolicy,
+        builders::{RetryPolicyBuilder, TargetBuilder},
     },
 };
 
@@ -24,7 +17,6 @@ pub fn make_retry_policy() -> RetryPolicy {
     let ret = RetryPolicyBuilder::default();
     ret.maximum_retry_attempts(1).build()
 }
-
 
 pub fn make_target(
     id: &str,
@@ -77,7 +69,6 @@ pub fn make_target(
             .unwrap(),
     }
 }
-
 
 pub async fn put_target(client: Client, bus: String, rule_name: String, target: Target) {
     client

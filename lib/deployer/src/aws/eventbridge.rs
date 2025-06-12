@@ -1,24 +1,14 @@
 use authorizer::Auth;
-pub use aws_sdk_eventbridge::types::{
-    RuleState,
-    Target,
-};
+pub use aws_sdk_eventbridge::types::{RuleState, Target};
 use aws_sdk_eventbridge::{
     Client,
     types::{
-        ApiDestinationHttpMethod,
-        AppSyncParameters,
-        ConnectionAuthorizationType,
-        CreateConnectionAuthRequestParameters,
-        InputTransformer,
-        RetryPolicy,
+        ApiDestinationHttpMethod, AppSyncParameters, ConnectionAuthorizationType,
+        CreateConnectionAuthRequestParameters, InputTransformer, RetryPolicy,
         builders::{
-            AppSyncParametersBuilder,
-            CreateConnectionApiKeyAuthRequestParametersBuilder,
-            CreateConnectionAuthRequestParametersBuilder,
-            InputTransformerBuilder,
-            RetryPolicyBuilder,
-            TargetBuilder,
+            AppSyncParametersBuilder, CreateConnectionApiKeyAuthRequestParametersBuilder,
+            CreateConnectionAuthRequestParametersBuilder, InputTransformerBuilder,
+            RetryPolicyBuilder, TargetBuilder,
         },
     },
 };

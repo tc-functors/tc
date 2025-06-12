@@ -1,47 +1,40 @@
+mod display;
+mod parser;
 pub mod spec;
 pub mod topology;
-mod parser;
-mod display;
 
-use std::str::FromStr;
 pub use display::topology::TopologyCount;
 use kit as u;
 use kit::*;
 pub use spec::{
-    TopologyKind,
-    TopologySpec,
-    Entity,
+    Entity, TopologyKind, TopologySpec,
     config::ConfigSpec,
-    function::{
-        BuildKind,
-        BuildOutput,
-        Lang,
-        LangRuntime
-    },
-    infra::InfraSpec
+    function::{BuildKind, BuildOutput, Lang, LangRuntime},
+    infra::InfraSpec,
 };
+use std::str::FromStr;
 
 use display::Format;
-pub use topology::{
-    function,
-    function::Function,
-    function::runtime::Runtime,
-    function::build::Build,
-    function::layer::Layer,
-    event::{Event, Target},
-    mutation,
-    mutation::Mutation,
-    route,
-    route::Route,
-    channel::Channel,
-    flow::Flow,
-    log::LogConfig,
-    queue::Queue,
-    schedule::Schedule,
-    role::Role
-};
 use std::collections::HashMap;
 pub use topology::Topology;
+pub use topology::{
+    channel::Channel,
+    event::{Event, Target},
+    flow::Flow,
+    function,
+    function::Function,
+    function::build::Build,
+    function::layer::Layer,
+    function::runtime::Runtime,
+    log::LogConfig,
+    mutation,
+    mutation::Mutation,
+    queue::Queue,
+    role::Role,
+    route,
+    route::Route,
+    schedule::Schedule,
+};
 use walkdir::WalkDir;
 
 pub fn is_root_dir(dir: &str) -> bool {
@@ -134,7 +127,7 @@ pub fn display_topology(dir: &str, format: &str, recursive: bool) {
             let tree = display::topology::build_tree(&topology);
             kit::print_tree(tree);
         }
-        _ => ()
+        _ => (),
     }
 }
 
@@ -151,7 +144,6 @@ pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
     } else {
         display::display(entity, format, &topology);
     }
-
 }
 
 pub fn topology_name(dir: &str) -> String {

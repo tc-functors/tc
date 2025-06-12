@@ -1,10 +1,6 @@
 use aws_sdk_apigatewayv2::{
-    Client,
-    Error,
-    types::{
-        ConnectionType,
-        IntegrationType,
-    },
+    Client, Error,
+    types::{ConnectionType, IntegrationType},
 };
 use kit::*;
 use std::collections::HashMap;
@@ -43,10 +39,8 @@ async fn create(
     client: &Client,
     api_id: &str,
     role_arn: &str,
-    request_parameters: HashMap<String, String>
-
+    request_parameters: HashMap<String, String>,
 ) -> Result<String, Error> {
-
     let subtype = s!("SQS-SendMessage");
 
     let res = client
@@ -66,34 +60,23 @@ async fn create(
     }
 }
 
-
 pub async fn find_or_create(
     client: &Client,
     api_id: &str,
     role_arn: &str,
     request_parameters: HashMap<String, String>,
-    name: &str
+    name: &str,
 ) -> String {
-
     let maybe_int = find(client, api_id, name).await;
     match maybe_int {
         Some(id) => id,
-        _ => create(
-            client,
-            api_id,
-            role_arn,
-            request_parameters
-        ).await.unwrap(),
+        _ => create(client, api_id, role_arn, request_parameters)
+            .await
+            .unwrap(),
     }
 }
 
-
-pub async fn delete(
-    client: &Client,
-    api_id: &str,
-    name: &str
-) {
-
+pub async fn delete(client: &Client, api_id: &str, name: &str) {
     let maybe_int = find(client, api_id, name).await;
     match maybe_int {
         Some(id) => {
@@ -103,7 +86,7 @@ pub async fn delete(
                 .integration_id(id)
                 .send()
                 .await;
-        },
-        _ => ()
+        }
+        _ => (),
     }
 }

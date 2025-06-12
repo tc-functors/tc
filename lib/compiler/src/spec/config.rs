@@ -1,16 +1,9 @@
 use derivative::Derivative;
 use doku::Document;
-use kit::*;
 use kit as u;
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use std::{
-    collections::HashMap,
-    fs,
-    process::exit,
-};
+use kit::*;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, fs, process::exit};
 
 fn default() -> String {
     s!("")
@@ -310,7 +303,6 @@ pub struct Cognito {
     pub from_email_address_map: Option<HashMap<String, String>>,
 }
 
-
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
 pub struct Aws {
@@ -363,7 +355,6 @@ pub struct ConfigSpec {
     #[serde(default = "Ci::default")]
     pub ci: Ci,
 }
-
 
 fn render(s: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
@@ -419,9 +410,7 @@ impl ConfigSpec {
     pub fn role_to_assume(&self, profile: Option<String>) -> Option<String> {
         match profile {
             Some(p) => self.ci.roles.get(&p).cloned(),
-            None => None
+            None => None,
         }
     }
-
-
 }

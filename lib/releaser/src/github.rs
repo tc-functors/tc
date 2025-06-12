@@ -1,11 +1,7 @@
 use kit as u;
 use kit::*;
 use serde_derive::Deserialize;
-use std::{
-    collections::HashMap,
-    env,
-    fs,
-};
+use std::{collections::HashMap, env, fs};
 
 pub fn arch_os() -> String {
     let os = env::consts::OS;
@@ -137,7 +133,7 @@ pub async fn get_release_id(repo: &str, tag: Option<String>) -> Option<String> {
     };
     for asset in assets {
         if &asset.name == rel_name {
-            return Some(asset.id.to_string())
+            return Some(asset.id.to_string());
         }
     }
     None
@@ -152,7 +148,10 @@ pub async fn self_upgrade(repo: &str, tag: Option<String>) {
         "aarch64-macos" => "tc-aarch64-macos",
         _ => panic!("unknown os {}", arch_os),
     };
-    println!("Fetching release from https://github.com/tc-functors/{}", repo);
+    println!(
+        "Fetching release from https://github.com/tc-functors/{}",
+        repo
+    );
     match tag {
         Some(t) => gh.download_asset_by_tag(name, "/tmp/tc", &t).await,
         None => gh.download_asset(name, "/tmp/tc").await,

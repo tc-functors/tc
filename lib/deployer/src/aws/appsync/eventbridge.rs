@@ -1,9 +1,7 @@
 use aws_sdk_appsync::{
     Client,
     types::{
-        DataSourceType,
-        EventBridgeDataSourceConfig,
-        builders::EventBridgeDataSourceConfigBuilder,
+        DataSourceType, EventBridgeDataSourceConfig, builders::EventBridgeDataSourceConfigBuilder,
     },
 };
 use colored::Colorize;
