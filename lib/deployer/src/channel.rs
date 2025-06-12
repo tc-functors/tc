@@ -1,8 +1,6 @@
-use compiler::Channel;
+use crate::aws::appsync;
 use authorizer::Auth;
-use crate::{
-    aws::appsync,
-};
+use compiler::Channel;
 use std::collections::HashMap;
 
 pub async fn create(auth: &Auth, channels: &HashMap<String, Channel>) {

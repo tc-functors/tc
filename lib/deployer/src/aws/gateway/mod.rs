@@ -1,22 +1,15 @@
 use authorizer::Auth;
-use colored::Colorize;
 use aws_sdk_apigatewayv2::{
-    Client,
-    Error,
-    types::{
-        AuthorizationType,
-        ProtocolType,
-        AuthorizerType,
-        Cors,
-        builders::CorsBuilder
-    },
+    Client, Error,
+    types::{AuthorizationType, AuthorizerType, Cors, ProtocolType, builders::CorsBuilder},
 };
+use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
 
+mod eventbridge;
 mod lambda;
 mod sfn;
-mod eventbridge;
 mod sqs;
 
 pub async fn make_client(auth: &Auth) -> Client {
@@ -36,14 +29,12 @@ pub struct Api {
     pub sync: bool,
     pub authorizer: String,
     pub request_template: String,
-    pub cors: Cors
+    pub cors: Cors,
 }
-
 
 pub fn make_cors(methods: Vec<String>, origins: Vec<String>) -> Cors {
     let f = CorsBuilder::default();
-    f
-        .set_allow_methods(Some(methods))
+    f.set_allow_methods(Some(methods))
         .set_allow_origins(Some(origins))
         .build()
 }
@@ -162,7 +153,6 @@ impl Api {
         target: &str,
         authorizer: Option<String>,
     ) -> String {
-
         match authorizer {
             Some(auth) => {
                 let res = self
@@ -243,14 +233,12 @@ impl Api {
         match maybe_route {
             Some(route_id) => {
                 println!("Updating route {} ({})", &route_key.green(), &route_id);
-                self
-                    .update_route(api_id, &route_id, &target, authorizer_id)
+                self.update_route(api_id, &route_id, &target, authorizer_id)
                     .await;
             }
             None => {
                 println!("Creating route {}", &route_key.blue());
-                self
-                    .create_route(api_id, &route_key, &target, authorizer_id)
+                self.create_route(api_id, &route_key, &target, authorizer_id)
                     .await;
             }
         }
@@ -348,7 +336,7 @@ impl Api {
                 println!("Updating authorizer {}", name.green());
                 self.update_authorizer(&id, api_id, uri).await
             }
-            None => self.create_authorizer(api_id, name, uri).await
+            None => self.create_authorizer(api_id, name, uri).await,
         }
     }
 
@@ -366,10 +354,9 @@ impl Api {
                     .send()
                     .await;
             }
-            None => ()
+            None => (),
         }
     }
-
 
     pub async fn create_stage(&self, api_id: &str) {
         let stage = self.clone().stage;
@@ -387,12 +374,7 @@ impl Api {
     }
 
     pub async fn create_lambda_integration(&self, api_id: &str, target_arn: &str) -> String {
-        lambda::find_or_create(
-            &self.client,
-            api_id,
-            target_arn,
-            &self.role
-        ).await
+        lambda::find_or_create(&self.client, api_id, target_arn, &self.role).await
     }
 
     pub async fn create_sfn_integration(
@@ -401,51 +383,34 @@ impl Api {
         name: &str,
         request_params: HashMap<String, String>,
     ) -> String {
-
         sfn::find_or_create(
             &self.client,
             api_id,
             &self.role,
             request_params,
             self.sync,
-            name
-        ).await
+            name,
+        )
+        .await
     }
-
 
     pub async fn create_event_integration(
         &self,
         api_id: &str,
         name: &str,
-        request_params: HashMap<String, String>
+        request_params: HashMap<String, String>,
     ) -> String {
-
-        eventbridge::find_or_create(
-            &self.client,
-            api_id,
-            &self.role,
-            request_params,
-            name
-        ).await
+        eventbridge::find_or_create(&self.client, api_id, &self.role, request_params, name).await
     }
-
 
     pub async fn create_sqs_integration(
         &self,
         api_id: &str,
         name: &str,
-        request_params: HashMap<String, String>
+        request_params: HashMap<String, String>,
     ) -> String {
-
-        sqs::find_or_create(
-            &self.client,
-            api_id,
-            &self.role,
-            request_params,
-            name
-        ).await
+        sqs::find_or_create(&self.client, api_id, &self.role, request_params, name).await
     }
-
 
     pub async fn delete_lambda_integration(&self, api_id: &str, target_arn: &str) {
         lambda::delete(&self.client, api_id, target_arn).await
@@ -462,5 +427,4 @@ impl Api {
     pub async fn delete_sqs_integration(&self, api_id: &str, name: &str) {
         sqs::delete(&self.client, api_id, name).await
     }
-
 }

@@ -1,25 +1,19 @@
-use compiler::{
-    Function,
-    function::Runtime,
-    spec::function::Provider,
-    Lang,
-};
+use crate::{aws::ecs, aws::ecs::TaskDef, aws::lambda};
 use authorizer::Auth;
-use crate::{
-    aws::lambda,
-    aws::ecs,
-    aws::ecs::TaskDef
-};
+use compiler::{Function, Lang, function::Runtime, spec::function::Provider};
 use std::collections::HashMap;
 
-async fn create_container(
-    auth: &Auth,
-    function: &Function,
-) -> String {
-
-    let Runtime { cluster, role, uri,
-                  memory_size, cpu, handler,
-                  network, .. } = &function.runtime;
+async fn create_container(auth: &Auth, function: &Function) -> String {
+    let Runtime {
+        cluster,
+        role,
+        uri,
+        memory_size,
+        cpu,
+        handler,
+        network,
+        ..
+    } = &function.runtime;
     let fn_name = &function.name;
 
     let subnets = match network {
@@ -36,21 +30,14 @@ async fn create_container(
     let cdf = ecs::make_cdf(&fn_name, &uri, &handler);
     let net = ecs::make_network_config(subnets);
     println!("Creating task def {}", fn_name);
-    let taskdef_arn  = ecs::create_taskdef(&client, tdf, cdf).await;
+    let taskdef_arn = ecs::create_taskdef(&client, tdf, cdf).await;
 
     let cluster = ecs::find_or_create_cluster(&client, &cluster).await;
 
     // create service or run-task
 
-
     println!("Run ecs task {}", &fn_name);
-    ecs::run_task(
-        &client,
-        &cluster,
-        &fn_name,
-        &taskdef_arn,
-        net
-    ).await;
+    ecs::run_task(&client, &cluster, &fn_name, &taskdef_arn, net).await;
     taskdef_arn
 }
 
@@ -131,16 +118,12 @@ pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
     }
 }
 
-pub async fn create_function(
-    profile: String,
-    role_arn: Option<String>,
-    f: Function,
-) -> String {
+pub async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
     let auth = Auth::new(Some(profile), role_arn).await;
 
     match f.runtime.provider {
-        Provider::Lambda  => create_lambda(&auth, &f).await,
-        Provider::Fargate => create_container(&auth, &f).await
+        Provider::Lambda => create_lambda(&auth, &f).await,
+        Provider::Fargate => create_container(&auth, &f).await,
     }
 }
 

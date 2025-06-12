@@ -1,10 +1,7 @@
-use crate::spec::{EventSpec, Entity, ConfigSpec};
 use super::template;
+use crate::spec::{ConfigSpec, Entity, EventSpec};
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 fn as_ns(given: &Option<String>, s: &str) -> String {

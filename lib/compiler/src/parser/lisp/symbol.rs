@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
-use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::sync::{Arc, RwLock};
 
 /*
  * The symbol table is a hash map that maps strings to symbols.

@@ -1,16 +1,9 @@
-use crate::spec::TopologySpec;
 use super::template;
-use super::{
-    Role,
-    RoleKind,
-    role,
-};
+use super::{Role, RoleKind, role};
+use crate::spec::TopologySpec;
 use kit as u;
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 
 mod sfn;
@@ -39,21 +32,18 @@ fn make_role(infra_dir: &str, fqn: &str) -> Role {
 fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
     match &spec.flow {
         Some(f) => Some(sfn_ext::read(dir, f.clone())),
-        None => {
-            match &spec.states {
-                Some(s) => Some(s.clone()),
-                None => match &spec.functions {
-                    Some(fns) => Some(sfn::read(fns.clone())),
-                    None => None
-                }
-            }
-        }
+        None => match &spec.states {
+            Some(s) => Some(s.clone()),
+            None => match &spec.functions {
+                Some(fns) => Some(sfn::read(fns.clone())),
+                None => None,
+            },
+        },
     }
 }
 
 impl Flow {
     pub fn new(dir: &str, infra_dir: &str, fqn: &str, spec: &TopologySpec) -> Option<Flow> {
-
         let def = find_definition(dir, spec);
 
         let mode = match &spec.mode {

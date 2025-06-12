@@ -1,16 +1,8 @@
 use aws_sdk_appsync::{
     Client,
     types::{
-        Api,
-        AuthMode,
-        AuthProvider,
-        AuthenticationType,
-        EventConfig,
-        builders::{
-            AuthModeBuilder,
-            AuthProviderBuilder,
-            EventConfigBuilder,
-        },
+        Api, AuthMode, AuthProvider, AuthenticationType, EventConfig,
+        builders::{AuthModeBuilder, AuthProviderBuilder, EventConfigBuilder},
     },
 };
 use kit::*;
@@ -79,13 +71,8 @@ async fn find_api(client: &Client, name: &str) -> Option<String> {
 }
 
 async fn create_api_key(client: &Client, api_id: &str) {
-    let _ = client
-        .create_api_key()
-        .api_id(s!(api_id))
-        .send()
-        .await;
+    let _ = client.create_api_key().api_id(s!(api_id)).send().await;
 }
-
 
 pub async fn find_or_create_api(client: &Client, name: &str) -> String {
     match find_api(client, name).await {

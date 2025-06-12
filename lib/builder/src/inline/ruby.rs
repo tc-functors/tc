@@ -23,7 +23,6 @@ fn shared_objects() -> Vec<&'static str> {
     ]
 }
 
-
 pub fn gen_dockerfile(dir: &str) {
     let build_context = &top_level();
     let extra_str = u::vec_to_str(shared_objects());

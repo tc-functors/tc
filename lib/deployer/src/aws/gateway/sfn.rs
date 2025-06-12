@@ -1,10 +1,6 @@
 use aws_sdk_apigatewayv2::{
-    Client,
-    Error,
-    types::{
-        ConnectionType,
-        IntegrationType,
-    },
+    Client, Error,
+    types::{ConnectionType, IntegrationType},
 };
 use kit::*;
 use std::collections::HashMap;
@@ -46,7 +42,6 @@ async fn create(
     request_params: HashMap<String, String>,
     sync: bool,
 ) -> Result<String, Error> {
-
     let subtype = if sync {
         s!("StepFunctions-StartSyncExecution")
     } else {
@@ -70,7 +65,6 @@ async fn create(
     }
 }
 
-
 pub async fn find_or_create(
     client: &Client,
     api_id: &str,
@@ -78,29 +72,17 @@ pub async fn find_or_create(
     request_params: HashMap<String, String>,
     sync: bool,
     name: &str,
-
 ) -> String {
-
     let maybe_int = find(client, api_id, name).await;
     match maybe_int {
         Some(id) => id,
-        _ => create(
-            client,
-            api_id,
-            role_arn,
-            request_params,
-            sync
-        ).await.unwrap(),
+        _ => create(client, api_id, role_arn, request_params, sync)
+            .await
+            .unwrap(),
     }
 }
 
-
-pub async fn delete(
-    client: &Client,
-    api_id: &str,
-    name: &str
-) {
-
+pub async fn delete(client: &Client, api_id: &str, name: &str) {
     let maybe_int = find(client, api_id, name).await;
     match maybe_int {
         Some(id) => {
@@ -110,7 +92,7 @@ pub async fn delete(
                 .integration_id(id)
                 .send()
                 .await;
-        },
-        _ => ()
+        }
+        _ => (),
     }
 }

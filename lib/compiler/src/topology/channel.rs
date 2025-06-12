@@ -1,16 +1,10 @@
 use super::template;
 use crate::{
     Entity,
-    spec::{
-        ChannelSpec,
-        channel::HandlerSpec,
-    },
+    spec::{ChannelSpec, channel::HandlerSpec},
 };
 use kit as u;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 fn default_handler() -> String {
@@ -40,7 +34,7 @@ pub struct Channel {
     pub handler: String,
     pub name: String,
     pub api_name: String,
-    pub targets: Vec<Target>
+    pub targets: Vec<Target>,
 }
 
 fn find_handler(hs: &HandlerSpec) -> String {
@@ -70,7 +64,7 @@ pub fn make(namespace: &str, spec: HashMap<String, ChannelSpec>) -> HashMap<Stri
             name: format!("{}-{{{{sandbox}}}}", name),
             handler: handler,
             api_name: template::topology_fqn(namespace, false),
-            targets: vec![]
+            targets: vec![],
         };
         h.insert(name, c);
     }

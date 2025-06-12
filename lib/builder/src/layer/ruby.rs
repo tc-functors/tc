@@ -139,7 +139,6 @@ fn build_with_docker(dir: &str) {
 }
 
 pub fn build(dir: &str, name: &str) -> String {
-
     u::sh("rm -f deps.zip", dir);
     gen_wrapper(dir);
     gen_dockerfile(dir);

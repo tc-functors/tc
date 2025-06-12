@@ -1,14 +1,11 @@
 #![allow(non_snake_case)]
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
-use crate::spec::function::InlineFunctionSpec;
 use super::template;
+use crate::spec::function::InlineFunctionSpec;
+use kit as u;
+use kit::*;
+use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use kit::*;
-use kit as u;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Step {
@@ -17,27 +14,25 @@ struct Step {
     #[serde(skip_serializing_if = "Option::is_none")]
     Next: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    End: Option<bool>
+    End: Option<bool>,
 }
 
 impl Step {
-
     fn new(name: &str, next: &str) -> Step {
-
         let fn_name = format!("{{{{namespace}}}}_{name}_{{{{sandbox}}}}");
         if next == "end" {
             Step {
                 Type: s!("Task"),
                 Resource: template::lambda_arn(&fn_name),
                 Next: None,
-                End: Some(true)
+                End: Some(true),
             }
         } else {
             Step {
                 Type: s!("Task"),
                 Resource: template::lambda_arn(&fn_name),
                 Next: Some(s!(next)),
-                End: None
+                End: None,
             }
         }
     }
@@ -48,14 +43,11 @@ struct StepFunction {
     Comment: String,
     StartAt: String,
     TimeoutSeconds: u16,
-    States: HashMap<String, Step>
+    States: HashMap<String, Step>,
 }
 
-
 impl StepFunction {
-
     fn new(root: &str, graph: HashMap<String, String>) -> StepFunction {
-
         let mut steps: HashMap<String, Step> = HashMap::new();
         for (name, next) in graph {
             let step = Step::new(&name, &next);
@@ -66,16 +58,15 @@ impl StepFunction {
             Comment: s!(""),
             StartAt: s!(root),
             TimeoutSeconds: 600,
-            States: steps
+            States: steps,
         }
     }
-
 }
 
 fn as_bool(b: Option<bool>) -> bool {
     match b {
         Some(p) => p,
-        None => false
+        None => false,
     }
 }
 
@@ -88,7 +79,7 @@ pub fn read(fns: HashMap<String, InlineFunctionSpec>) -> Value {
         }
         let next = match f.function {
             Some(child) => child,
-            None => s!("end")
+            None => s!("end"),
         };
         graph.insert(name, next);
     }

@@ -2,17 +2,10 @@ use authorizer::Auth;
 use aws_sdk_ecs::{
     Client,
     types::{
-        Compatibility,
-        ContainerDefinition,
-        EfsVolumeConfiguration,
-        LaunchType,
-        NetworkConfiguration,
-        NetworkMode,
-        Volume,
+        Compatibility, ContainerDefinition, EfsVolumeConfiguration, LaunchType,
+        NetworkConfiguration, NetworkMode, Volume,
         builders::{
-            AwsVpcConfigurationBuilder,
-            ContainerDefinitionBuilder,
-            NetworkConfigurationBuilder,
+            AwsVpcConfigurationBuilder, ContainerDefinitionBuilder, NetworkConfigurationBuilder,
             VolumeBuilder,
         },
     },
@@ -46,8 +39,7 @@ impl TaskDef {
 
 pub fn make_cdf(name: &str, image: &str, command: &str) -> ContainerDefinition {
     let f = ContainerDefinitionBuilder::default();
-    f
-        .name(s!(name))
+    f.name(s!(name))
         .image(s!(image))
         .command(s!(command))
         .build()
@@ -91,11 +83,7 @@ pub async fn create_taskdef(client: &Client, tdf: TaskDef, cdf: ContainerDefinit
 }
 
 async fn list_clusters(client: &Client) -> Vec<String> {
-   let res = client
-        .list_clusters()
-        .send()
-        .await
-        .unwrap();
+    let res = client.list_clusters().send().await.unwrap();
     res.cluster_arns.unwrap()
 }
 
@@ -103,28 +91,23 @@ async fn find_cluster(client: &Client, name: &str) -> Option<String> {
     let cluster_arns = list_clusters(client).await;
     for arn in cluster_arns {
         if arn.ends_with(name) {
-            return Some(name.to_string())
+            return Some(name.to_string());
         }
     }
     None
 }
 
 async fn create_cluster(client: &Client, name: &str) -> String {
-    let res = client
-        .create_cluster()
-        .cluster_name(s!(name))
-        .send()
-        .await;
+    let res = client.create_cluster().cluster_name(s!(name)).send().await;
     println!("{:?}", res);
     s!(name)
 }
-
 
 pub async fn find_or_create_cluster(client: &Client, name: &str) -> String {
     let cluster = find_cluster(client, name).await;
     match cluster {
         Some(c) => c,
-        None => create_cluster(client, name).await
+        None => create_cluster(client, name).await,
     }
 }
 

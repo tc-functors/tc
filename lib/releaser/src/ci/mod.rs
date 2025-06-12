@@ -1,7 +1,7 @@
 mod circleci;
 mod dynamo;
-use authorizer::Auth;
 use crate::{git, tagger};
+use authorizer::Auth;
 
 pub async fn update_metadata(
     auth: &Auth,

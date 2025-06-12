@@ -1,16 +1,7 @@
-use crate::{
-    spec::{
-        MutationSpec,
-        mutation::ResolverSpec,
-        Entity
-    },
-};
 use super::template;
+use crate::spec::{Entity, MutationSpec, mutation::ResolverSpec};
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

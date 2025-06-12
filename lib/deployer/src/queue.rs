@@ -1,11 +1,6 @@
-use compiler::{Queue, Entity};
+use crate::aws::{lambda, sqs};
 use authorizer::Auth;
-use crate::{
-    aws::{
-        lambda,
-        sqs,
-    },
-};
+use compiler::{Entity, Queue};
 use std::collections::HashMap;
 
 async fn _create_lambda_producer(auth: &Auth, name: &str, sqs_arn: &str) {
@@ -39,7 +34,7 @@ pub async fn create(auth: &Auth, queues: &HashMap<String, Queue>) {
             println!("Creating queue: {}", &queue.name);
             match target.entity {
                 Entity::Function => create_lambda_consumer(auth, &target.name, &queue.arn).await,
-                _ => ()
+                _ => (),
             }
         }
     }
@@ -56,7 +51,7 @@ pub async fn delete(auth: &Auth, queues: &HashMap<String, Queue>) {
         for target in &queue.targets {
             match target.entity {
                 Entity::Function => delete_lambda_consumer(auth, &target.name, &queue.arn).await,
-                _ => ()
+                _ => (),
             }
         }
         println!("Deleting queue: {}", &queue.name);

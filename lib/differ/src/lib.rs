@@ -1,9 +1,3 @@
+pub async fn changelog() {}
 
-
-pub async fn changelog() {
-
-}
-
-pub async fn diff() {
-
-}
+pub async fn diff() {}

@@ -1,13 +1,12 @@
-
-use crate::spec::Entity;
 use crate::Topology;
+use crate::spec::Entity;
 
+use kit as u;
 use std::collections::HashMap;
 use std::str::FromStr;
-use kit as u;
 
-pub mod topology;
 mod functions;
+pub mod topology;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -17,7 +16,7 @@ pub enum Format {
     Table,
     JSON,
     YAML,
-    Graphql
+    Graphql,
 }
 
 impl FromStr for Format {
@@ -30,22 +29,26 @@ impl FromStr for Format {
             "table" => Ok(Format::Table),
             "yaml" => Ok(Format::YAML),
             "graphql" | "gql" => Ok(Format::Graphql),
-            _      => Ok(Format::JSON),
+            _ => Ok(Format::JSON),
         }
     }
 }
 
 pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
-
-    let Topology { events, routes, flow, channels, .. } = topology;
+    let Topology {
+        events,
+        routes,
+        flow,
+        channels,
+        ..
+    } = topology;
 
     match entity {
-
         Entity::State => {
             if let Some(f) = flow {
                 match fmt {
                     Format::JSON => u::pp_json(&f),
-                    _ => u::pp_json(&f)
+                    _ => u::pp_json(&f),
                 }
             }
         }
@@ -54,39 +57,31 @@ pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
         Entity::Event => u::pp_json(events),
         Entity::Channel => u::pp_json(channels),
 
-        Entity::Function => {
-            match fmt {
-                Format::Tree =>  {
-                    let tree = functions::build_tree(topology);
-                    kit::print_tree(tree);
-                },
-                Format::JSON => {
-                    u::pp_json(&topology.functions)
-                },
-                Format::Table => {
-                    u::pp_json(&topology.functions)
-                },
-                _ => todo!()
+        Entity::Function => match fmt {
+            Format::Tree => {
+                let tree = functions::build_tree(topology);
+                kit::print_tree(tree);
             }
+            Format::JSON => u::pp_json(&topology.functions),
+            Format::Table => u::pp_json(&topology.functions),
+            _ => todo!(),
         },
 
-        Entity::Mutation => {
-            match fmt {
-                Format::Graphql => {
-                    print_graphql(
-                        &topology
-                            .mutations
-                            .values()
-                            .into_iter()
-                            .nth(0)
-                            .unwrap()
-                            .types,
-                    );
-                },
-                _ => u::pp_json(&topology.mutations)
+        Entity::Mutation => match fmt {
+            Format::Graphql => {
+                print_graphql(
+                    &topology
+                        .mutations
+                        .values()
+                        .into_iter()
+                        .nth(0)
+                        .unwrap()
+                        .types,
+                );
             }
+            _ => u::pp_json(&topology.mutations),
         },
-        _ => ()
+        _ => (),
     }
 }
 

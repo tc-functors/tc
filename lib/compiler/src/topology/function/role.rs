@@ -33,7 +33,6 @@ fn function_trust_policy() -> String {
 }
 
 fn find_default_role(provider: Provider) -> String {
-
     match provider {
         Provider::Lambda => s!("tc-base-lambda-role"),
         Provider::Fargate => s!("tc-base-task-role"),
@@ -43,7 +42,7 @@ fn find_default_role(provider: Provider) -> String {
 pub fn default(provider: Option<Provider>) -> Role {
     let provider = match provider {
         Some(p) => p,
-        None => Provider::Lambda
+        None => Provider::Lambda,
     };
     let role_name = find_default_role(provider);
     Role {
@@ -56,7 +55,6 @@ pub fn default(provider: Option<Provider>) -> Role {
         policy_arn: template::policy_arn("tc-base-lambda-policy"),
     }
 }
-
 
 pub fn use_given(role_name: &str) -> Role {
     Role {

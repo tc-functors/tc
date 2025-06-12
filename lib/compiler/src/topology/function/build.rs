@@ -1,15 +1,7 @@
 use super::Runtime;
-use crate::spec::{
-    BuildKind,
-    BuildSpec,
-    function::ImageSpec,
-    function::LayerSpec
-};
+use crate::spec::{BuildKind, BuildSpec, function::ImageSpec, function::LayerSpec};
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -27,20 +19,20 @@ pub struct Build {
 
 fn infer_kind(package_type: &str) -> BuildKind {
     match package_type {
-        "zip"                   => BuildKind::Code,
-        "image" | "oci"         => BuildKind::Image,
-        "library"               => BuildKind::Library,
-        "extension"             => BuildKind::Library,
-        "zip-layer" | "layer"   => BuildKind::Layer,
+        "zip" => BuildKind::Code,
+        "image" | "oci" => BuildKind::Image,
+        "library" => BuildKind::Library,
+        "extension" => BuildKind::Library,
+        "zip-layer" | "layer" => BuildKind::Layer,
         "zip-inline" | "inline" => BuildKind::Inline,
-        _                       => BuildKind::Code,
+        _ => BuildKind::Code,
     }
 }
 
 fn should_force(s: Option<bool>) -> bool {
     match s {
         Some(b) => b,
-        None => false
+        None => false,
     }
 }
 
@@ -61,7 +53,7 @@ impl Build {
                 force: should_force(b.force),
                 images: b.images,
                 environment: HashMap::new(),
-                layers: b.layers
+                layers: b.layers,
             },
             None => {
                 let command = match tasks.get("build") {
@@ -78,7 +70,7 @@ impl Build {
                     force: false,
                     images: HashMap::new(),
                     layers: HashMap::new(),
-                    environment: HashMap::new()
+                    environment: HashMap::new(),
                 }
             }
         }

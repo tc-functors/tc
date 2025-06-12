@@ -1,18 +1,12 @@
 use super::Context;
+use crate::aws;
+use authorizer::Auth;
 use compiler::{
-    Function,
-    Runtime,
-    InfraSpec,
-    Topology,
-    function::runtime::{
-        FileSystem,
-        Network,
-    },
+    Function, InfraSpec, Runtime, Topology,
+    function::runtime::{FileSystem, Network},
 };
 use kit::*;
 use std::collections::HashMap;
-use authorizer::Auth;
-use crate::aws;
 
 // aws
 
@@ -20,7 +14,6 @@ async fn resolve_vars(
     auth: &Auth,
     environment: HashMap<String, String>,
 ) -> HashMap<String, String> {
-
     let client = aws::ssm::make_client(auth).await;
 
     let mut h: HashMap<String, String> = HashMap::new();
@@ -39,7 +32,8 @@ async fn resolve_vars(
 async fn make_layer_auth(ctx: &Context) -> Auth {
     let Context { auth, config, .. } = ctx;
     let profile = config.aws.lambda.layers_profile.clone();
-    auth.assume(profile.clone(), config.role_to_assume(profile)).await
+    auth.assume(profile.clone(), config.role_to_assume(profile))
+        .await
 }
 
 async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
@@ -53,17 +47,13 @@ async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
     aws::efs::get_ap_arn(&auth, name).await.unwrap()
 }
 
-
 // arn
 fn as_layer_arn(auth: &Auth, name: &str) -> String {
     format!(
         "arn:aws:lambda:{}:{}:layer:{}",
-        auth.region,
-        auth.account,
-        name
+        auth.region, auth.account, name
     )
 }
-
 
 //
 fn augment_vars(ctx: &Context, lang: &str) -> HashMap<String, String> {
@@ -119,7 +109,9 @@ async fn resolve_environment(
 }
 
 async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
-    let Context { sandbox, config, .. } = ctx;
+    let Context {
+        sandbox, config, ..
+    } = ctx;
 
     match fs {
         Some(f) => Some(f),
@@ -167,7 +159,6 @@ async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Netw
         }
     }
 }
-
 
 async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
     let Context { auth, sandbox, .. } = ctx;

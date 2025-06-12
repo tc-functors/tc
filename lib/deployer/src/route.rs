@@ -1,18 +1,9 @@
-use compiler::{
-    Route,
-    Entity
-};
-use log::info;
+use crate::aws::{gateway, gateway::Api, lambda};
 use authorizer::Auth;
-use crate::{
-    aws::{
-        gateway,
-        gateway::Api,
-        lambda,
-    },
-};
-use std::collections::HashMap;
+use compiler::{Entity, Route};
 use kit::*;
+use log::info;
+use std::collections::HashMap;
 
 async fn make_api(auth: &Auth, role: &str, route: &Route) -> Api {
     let client = gateway::make_client(auth).await;
@@ -30,7 +21,7 @@ async fn make_api(auth: &Auth, role: &str, route: &Route) -> Api {
         method: route.method.to_owned(),
         sync: route.sync.to_owned(),
         request_template: route.request_template.clone(),
-        cors: cors
+        cors: cors,
     }
 }
 
@@ -38,18 +29,14 @@ async fn add_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
     let client = lambda::make_client(auth).await;
     let source_arn = auth.api_arn(api_id);
     let principal = "apigateway.amazonaws.com";
-    let _ = lambda::add_permission(
-        client, lambda_arn, principal, &source_arn, api_id
-    ).await;
+    let _ = lambda::add_permission(client, lambda_arn, principal, &source_arn, api_id).await;
 }
 
 async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str, auth_name: &str) {
     let client = lambda::make_client(auth).await;
     let source_arn = auth.authorizer_arn(api_id, auth_name);
     let principal = "apigateway.amazonaws.com";
-    let _ = lambda::add_permission(
-        client, lambda_arn, principal, &source_arn, api_id
-    ).await;
+    let _ = lambda::add_permission(client, lambda_arn, principal, &source_arn, api_id).await;
 }
 
 async fn create_authorizer(auth: &Auth, api_id: &str, api: &Api, uri: &str) -> Option<String> {
@@ -58,11 +45,12 @@ async fn create_authorizer(auth: &Auth, api_id: &str, api: &Api, uri: &str) -> O
         None
     } else {
         add_auth_permission(auth, &lambda_arn, &api_id, &api.authorizer).await;
-        let authorizer_id = api.create_or_update_authorizer(&api_id, &api.authorizer, uri).await;
+        let authorizer_id = api
+            .create_or_update_authorizer(&api_id, &api.authorizer, uri)
+            .await;
         Some(authorizer_id)
     }
 }
-
 
 fn integration_name(entity: &Entity, api: &Api) -> String {
     format!("{}-{}", entity.to_str(), api.method)
@@ -71,7 +59,7 @@ fn integration_name(entity: &Entity, api: &Api) -> String {
 fn make_request_params(entity: &Entity, api: &Api, target_arn: &str) -> HashMap<String, String> {
     let mut req: HashMap<String, String> = HashMap::new();
 
-    let name =  integration_name(entity, api);
+    let name = integration_name(entity, api);
 
     // TODO: get target for event and queue
 
@@ -80,17 +68,17 @@ fn make_request_params(entity: &Entity, api: &Api, target_arn: &str) -> HashMap<
             req.insert(s!("StateMachineArn"), s!(target_arn));
             req.insert(s!("Name"), name);
             req.insert(s!("Input"), api.request_template.to_string());
-        },
+        }
         Entity::Event => {
             req.insert(s!("Detail"), s!(""));
             req.insert(s!("DetailType"), s!(""));
             req.insert(s!("Source"), s!(""));
-        },
+        }
         Entity::Queue => {
             req.insert(s!("QueueUrl"), s!(""));
             req.insert(s!("MessageBody"), s!(""));
-        },
-        _ => ()
+        }
+        _ => (),
     }
     req
 }
@@ -100,20 +88,23 @@ async fn create_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
     let int_name = integration_name(entity, api);
     match entity {
         Entity::Function => api.create_lambda_integration(api_id, target_arn).await,
-        Entity::State => api.create_sfn_integration(api_id, &int_name, req_params).await,
-        Entity::Event => api.create_event_integration(api_id, &int_name, req_params).await,
-        Entity::Queue => api.create_sqs_integration(api_id, &int_name, req_params).await,
-        _ => todo!()
+        Entity::State => {
+            api.create_sfn_integration(api_id, &int_name, req_params)
+                .await
+        }
+        Entity::Event => {
+            api.create_event_integration(api_id, &int_name, req_params)
+                .await
+        }
+        Entity::Queue => {
+            api.create_sqs_integration(api_id, &int_name, req_params)
+                .await
+        }
+        _ => todo!(),
     }
 }
 
-async fn create_api(
-    auth: &Auth,
-    api: &Api,
-    entity: &Entity,
-    target_arn: &str
-) {
-
+async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
     let api_id = api.create_or_update().await;
     let auth_uri = auth.lambda_uri(&api.authorizer);
     let authorizer_id = create_authorizer(auth, &api_id, api, &auth_uri).await;
@@ -121,7 +112,8 @@ async fn create_api(
     add_permission(auth, target_arn, &api_id).await;
 
     let integration_id = create_integration(entity, api, &api_id, target_arn).await;
-    api.find_or_create_route(&api_id, &integration_id, authorizer_id).await;
+    api.find_or_create_route(&api_id, &integration_id, authorizer_id)
+        .await;
     api.create_stage(&api_id).await;
     api.create_deployment(&api_id, &api.stage).await;
 
@@ -148,7 +140,7 @@ async fn delete_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
         Entity::State => api.delete_sfn_integration(api_id, &int_name).await,
         Entity::Event => api.delete_event_integration(api_id, &int_name).await,
         Entity::Queue => api.delete_sqs_integration(api_id, &int_name).await,
-        _ => ()
+        _ => (),
     }
 }
 
@@ -171,19 +163,16 @@ async fn delete_route(auth: &Auth, route: &Route, role: &str) {
             api.delete_authorizer(&id, &api.authorizer).await;
             match std::env::var("TC_DELETE_ROOT") {
                 Ok(_) => api.delete(&id).await,
-                Err(_) => ()
+                Err(_) => (),
             }
-
         }
         _ => (),
     }
-
 }
 
 pub async fn delete(auth: &Auth, role: &str, routes: HashMap<String, Route>) {
     for (name, route) in routes {
         info!("Deleting route {}", &name);
         delete_route(auth, &route, role).await;
-
     }
 }

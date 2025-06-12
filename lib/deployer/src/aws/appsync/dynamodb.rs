@@ -1,10 +1,6 @@
 use aws_sdk_appsync::{
     Client,
-    types::{
-        DataSourceType,
-        DynamodbDataSourceConfig,
-        builders::DynamodbDataSourceConfigBuilder,
-    },
+    types::{DataSourceType, DynamodbDataSourceConfig, builders::DynamodbDataSourceConfigBuilder},
 };
 use kit::*;
 

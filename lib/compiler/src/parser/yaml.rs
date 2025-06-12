@@ -1,13 +1,13 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use serde_yaml::{
-    value::{Tag, TaggedValue},
     Mapping, Value,
+    value::{Tag, TaggedValue},
 };
 
 use std::{
     collections::HashSet,
     fmt,
-    fs::{canonicalize, read_to_string, File},
+    fs::{File, canonicalize, read_to_string},
     path::PathBuf,
 };
 
@@ -26,7 +26,6 @@ pub struct Transformer {
 }
 
 impl Transformer {
-
     pub fn new(root_path: PathBuf, strict: bool) -> Result<Self> {
         Self::new_node(root_path, strict, None)
     }
@@ -122,7 +121,7 @@ impl Transformer {
                 // inlining markdow and text files
                 Some("txt") | Some("markdown") | Some("md") => {
                     Value::String(read_to_string(normalized_file_path).unwrap())
-                },
+                }
                 None | Some(&_) => todo!(),
             },
             _ => panic!("{:?} path missing file extension", normalized_file_path),

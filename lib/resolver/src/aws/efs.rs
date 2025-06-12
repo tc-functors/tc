@@ -1,8 +1,5 @@
 use authorizer::Auth;
-use aws_sdk_efs::{
-    Client,
-    Error,
-};
+use aws_sdk_efs::{Client, Error};
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

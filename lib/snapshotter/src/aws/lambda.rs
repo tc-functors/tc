@@ -1,15 +1,8 @@
 use authorizer::Auth;
-use aws_sdk_lambda::{
-    Client,
-    Error,
-    config as lambda_config,
-    config::retry::RetryConfig,
-};
+use aws_sdk_lambda::{Client, Error, config as lambda_config, config::retry::RetryConfig};
 
 use kit::*;
-use std::{
-    collections::HashMap,
-};
+use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

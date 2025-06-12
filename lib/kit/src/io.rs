@@ -1,28 +1,14 @@
 use human_bytes::human_bytes;
 use path_absolutize::*;
 use std::{
-    env,
-    fs,
+    env, fs,
     fs::File,
-    io::{
-        self,
-        BufRead,
-        BufReader,
-        Read,
-        Write,
-    },
-    path::{
-        Path,
-        PathBuf,
-    },
+    io::{self, BufRead, BufReader, Read, Write},
+    path::{Path, PathBuf},
     thread,
     time::Duration,
 };
-use subprocess::{
-    CaptureData,
-    Exec,
-    Redirection,
-};
+use subprocess::{CaptureData, Exec, Redirection};
 
 pub fn basedir(path: &str) -> &str {
     let parts: Vec<&str> = path.split("/").collect();
@@ -200,7 +186,6 @@ fn trim(input: &str) -> &str {
 
 #[cfg(not(test))]
 pub fn sh(path: &str, dir: &str) -> String {
-
     let out = Exec::shell(path)
         .stdout(Redirection::Pipe)
         .stderr(Redirection::Merge)

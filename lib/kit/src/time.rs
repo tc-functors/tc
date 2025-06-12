@@ -1,11 +1,7 @@
 use chrono::prelude::*;
 use floating_duration::TimeFormat;
 use ms_converter::get_duration_by_postfix;
-use std::time::{
-    Duration,
-    SystemTime,
-    UNIX_EPOCH,
-};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn utc_now() -> String {
     let date = Utc::now();

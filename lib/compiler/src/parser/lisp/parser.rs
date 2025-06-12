@@ -4,17 +4,14 @@ use std::{
 };
 
 use nom::{
+    IResult,
     branch::alt,
     bytes::complete::{escaped_transform, tag, take_while, take_while1},
-    character::complete::{
-        char, digit1, multispace0,
-        none_of, one_of,
-    },
+    character::complete::{char, digit1, multispace0, none_of, one_of},
     combinator::{cut, eof, map, opt, value},
-    error::{context, ContextError, ErrorKind, ParseError},
+    error::{ContextError, ErrorKind, ParseError, context},
     multi::many0,
     sequence::{delimited, pair, preceded, terminated},
-    IResult,
 };
 
 use super::expr::Expr;

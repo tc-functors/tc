@@ -1,11 +1,6 @@
 use authorizer::Auth;
-pub use aws_sdk_eventbridge::types::{
-    Rule,
-};
-use aws_sdk_eventbridge::{
-    Client,
-};
-
+use aws_sdk_eventbridge::Client;
+pub use aws_sdk_eventbridge::types::Rule;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

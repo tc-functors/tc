@@ -54,7 +54,7 @@ fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let image = find_image(&runtime);
 
     let f = format!(
-            r#"
+        r#"
 FROM {image} AS intermediate
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
@@ -70,11 +70,10 @@ RUN mkdir -p /build/lib
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. pip install -vvv -r requirements.txt --target=/build/python --implementation cp --only-binary=:all: --upgrade
 
 "#
-        );
+    );
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
 }
-
 
 pub fn build_with_docker(dir: &str) {
     let root = &u::root();

@@ -1,27 +1,14 @@
-use compiler::{
-    TopologyKind,
-};
 use authorizer::Auth;
+use compiler::TopologyKind;
 
-use kit::*;
+use crate::aws::{appsync, lambda, sfn};
 use kit as u;
-use crate::aws::{
-    appsync,
-    lambda,
-    sfn,
-};
+use kit::*;
 
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 
 use std::collections::HashMap;
-use tabled::{
-    Tabled,
-    builder::Builder,
-    settings::Style,
-};
+use tabled::{Tabled, builder::Builder, settings::Style};
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Record {
@@ -73,8 +60,6 @@ fn render(s: &str, sandbox: &str) -> String {
     u::stencil(s, table)
 }
 
-
-
 pub async fn find(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
     let topologies = compiler::compile_root(dir, false);
     let mut rows: Vec<Record> = vec![];
@@ -101,7 +86,6 @@ pub async fn find(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
 }
 
 pub async fn find_by_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
-
     let topologies = compiler::compile_root(dir, false);
 
     let mut builder = Builder::default();
@@ -111,7 +95,6 @@ pub async fn find_by_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
     cols.extend(profiles.clone());
 
     builder.push_record(cols);
-
 
     for (_, node) in topologies {
         let mut row: Vec<String> = vec![];

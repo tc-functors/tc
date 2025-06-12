@@ -1,14 +1,11 @@
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CorsSpec {
     pub methods: Vec<String>,
-    pub origins: Vec<String>
+    pub origins: Vec<String>,
 }
 
 fn default_cors() -> Option<CorsSpec> {
@@ -18,7 +15,6 @@ fn default_cors() -> Option<CorsSpec> {
     };
     Some(c)
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RouteSpec {
@@ -42,5 +38,5 @@ pub struct RouteSpec {
     pub stage: Option<String>,
     pub stage_variables: Option<HashMap<String, String>>,
     #[serde(default = "default_cors")]
-    pub cors: Option<CorsSpec>
+    pub cors: Option<CorsSpec>,
 }

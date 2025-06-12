@@ -1,10 +1,6 @@
 use aws_sdk_apigatewayv2::{
-    Client,
-    Error,
-    types::{
-        ConnectionType,
-        IntegrationType,
-    },
+    Client, Error,
+    types::{ConnectionType, IntegrationType},
 };
 
 use kit::*;
@@ -40,9 +36,8 @@ async fn create(
     client: &Client,
     api_id: &str,
     lambda_arn: &str,
-    role_arn: &str
+    role_arn: &str,
 ) -> Result<String, Error> {
-
     let res = client
         .create_integration()
         .api_id(s!(api_id))
@@ -64,9 +59,7 @@ pub async fn find_or_create(
     api_id: &str,
     lambda_arn: &str,
     role_arn: &str,
-
 ) -> String {
-
     let maybe_int = find(client, api_id, lambda_arn).await;
     match maybe_int {
         Some(id) => {
@@ -74,21 +67,14 @@ pub async fn find_or_create(
             id
         }
         _ => {
-            let id = create(client, api_id, lambda_arn, role_arn)
-                .await
-                .unwrap();
+            let id = create(client, api_id, lambda_arn, role_arn).await.unwrap();
             tracing::debug!("Created Lambda Integration {}", id);
             id
         }
     }
 }
 
-pub async fn delete(
-    client: &Client,
-    api_id: &str,
-    lambda_arn: &str,
-) {
-
+pub async fn delete(client: &Client, api_id: &str, lambda_arn: &str) {
     let maybe_int = find(client, api_id, lambda_arn).await;
     match maybe_int {
         Some(id) => {
@@ -98,7 +84,7 @@ pub async fn delete(
                 .integration_id(id)
                 .send()
                 .await;
-        },
-        _ => ()
+        }
+        _ => (),
     }
 }

@@ -50,7 +50,6 @@ pub fn pp_json<T: std::fmt::Debug + Serialize>(x: T) {
     println!("{}", &m);
 }
 
-
 pub fn json_to_string<T: std::fmt::Debug + Serialize>(x: T) -> String {
     serde_json::to_string(&x).unwrap()
 }

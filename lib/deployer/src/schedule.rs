@@ -1,8 +1,8 @@
 use compiler::Schedule;
 
+use crate::aws;
 use authorizer::Auth;
 use std::collections::HashMap;
-use crate::aws;
 
 pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {
     let client = aws::scheduler::make_client(&auth).await;
@@ -17,9 +17,14 @@ pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {
 
     if !target_arn.is_empty() {
         let target = aws::scheduler::make_target(&target_arn, &role_arn, "sfn", &payload);
-        let _ =
-            aws::scheduler::create_or_update_schedule(&client, namespace, &name, target, &expression)
-                .await;
+        let _ = aws::scheduler::create_or_update_schedule(
+            &client,
+            namespace,
+            &name,
+            target,
+            &expression,
+        )
+        .await;
     }
 }
 

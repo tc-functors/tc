@@ -1,10 +1,10 @@
 mod aws;
+mod event;
 mod function;
 mod state;
-mod event;
+use authorizer::Auth;
 use compiler::TopologyKind;
 use kit as u;
-use authorizer::Auth;
 
 fn read_payload(dir: &str, s: Option<String>) -> String {
     match s {

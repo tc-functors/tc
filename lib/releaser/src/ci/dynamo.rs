@@ -1,9 +1,6 @@
-use kit as u;
+use crate::aws::dynamo;
 use authorizer::Auth;
-use crate::{
-    aws::dynamo,
-};
-
+use kit as u;
 
 // deprecated
 pub async fn put_item(auth: &Auth, service: &str, version: &str, deploy_env: &str, dir: &str) {

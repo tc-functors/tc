@@ -1,51 +1,27 @@
-use authorizer::Auth;
 use anyhow::Result;
+use authorizer::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
-    Client,
-    Error,
-    config as lambda_config,
+    Client, Error, config as lambda_config,
     config::retry::RetryConfig,
     primitives::Blob,
     types::{
-        Architecture,
-        DeadLetterConfig,
-        Environment,
-        FileSystemConfig,
-        FunctionCode,
-        LastUpdateStatus,
-        LoggingConfig,
-        PackageType,
-        Runtime,
-        SnapStart,
-        SnapStartApplyOn,
-        State,
-        UpdateRuntimeOn,
-        VpcConfig,
+        Architecture, DeadLetterConfig, Environment, FileSystemConfig, FunctionCode,
+        LastUpdateStatus, LoggingConfig, PackageType, Runtime, SnapStart, SnapStartApplyOn, State,
+        UpdateRuntimeOn, VpcConfig,
         builders::{
-            DeadLetterConfigBuilder,
-            EnvironmentBuilder,
-            FileSystemConfigBuilder,
-            FunctionCodeBuilder,
-            SnapStartBuilder,
-            VpcConfigBuilder,
+            DeadLetterConfigBuilder, EnvironmentBuilder, FileSystemConfigBuilder,
+            FunctionCodeBuilder, SnapStartBuilder, VpcConfigBuilder,
         },
     },
 };
 
 use colored::Colorize;
-use kit::{
-    LogUpdate,
-    *,
-};
+use kit::{LogUpdate, *};
 use std::{
     collections::HashMap,
     fs::File,
-    io::{
-        BufReader,
-        Read,
-        stdout,
-    },
+    io::{BufReader, Read, stdout},
     panic,
 };
 
@@ -565,7 +541,6 @@ impl Function {
             .unwrap();
     }
 
-
     async fn find_alias(&self) -> Option<String> {
         let res = self
             .client
@@ -576,7 +551,7 @@ impl Function {
             .await;
         match res {
             Ok(r) => r.name,
-            Err(_) => None
+            Err(_) => None,
         }
     }
 
@@ -589,7 +564,6 @@ impl Function {
             .function_version(version)
             .send()
             .await;
-
     }
 
     async fn create_alias(&self, version: &str) {
@@ -616,12 +590,15 @@ impl Function {
         let maybe_alias = self.find_alias().await;
         match maybe_alias {
             Some(_) => self.update_alias(&version.clone().unwrap()).await,
-            None => self.create_alias(&version.clone().unwrap()).await
+            None => self.create_alias(&version.clone().unwrap()).await,
         }
 
-        println!("Published alias {} with version ({})", &self.name, &version.unwrap());
+        println!(
+            "Published alias {} with version ({})",
+            &self.name,
+            &version.unwrap()
+        );
     }
-
 }
 
 pub async fn add_permission(
@@ -773,6 +750,5 @@ pub async fn update_runtime_management_config(client: &Client, name: &str, versi
         Err(_) => panic!("{:?}", res),
     }
 }
-
 
 //pub type LambdaClient = Client;

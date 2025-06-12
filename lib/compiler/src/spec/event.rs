@@ -1,7 +1,4 @@
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 
 fn default_function() -> Option<String> {
     None

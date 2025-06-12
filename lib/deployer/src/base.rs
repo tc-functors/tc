@@ -1,11 +1,6 @@
 use authorizer::Auth;
 
-use crate::{
-    aws::{
-        iam,
-        iam::Role,
-    },
-};
+use crate::aws::{iam, iam::Role};
 
 // TODO defaults. Move to compiler
 
@@ -32,7 +27,6 @@ fn base_trust_policy() -> String {
      }}"#
     )
 }
-
 
 fn base_lambda_policy() -> String {
     format!(
@@ -292,7 +286,7 @@ fn base_role_name(name: &str) -> String {
 }
 
 fn base_policy_name(name: &str) -> String {
-        format!("tc-base-{}-policy", name)
+    format!("tc-base-{}-policy", name)
 }
 
 fn policy_arn(account: &str, name: &str) -> String {
@@ -301,12 +295,12 @@ fn policy_arn(account: &str, name: &str) -> String {
 
 async fn make_role(auth: &Auth, name: &str) -> Role {
     let policy_doc = match name {
-        "lambda"  => base_lambda_policy(),
-        "sfn"     => base_sfn_policy(),
-        "event"   => base_event_policy(&auth.region, &auth.account),
-        "api"     => base_api_policy(),
+        "lambda" => base_lambda_policy(),
+        "sfn" => base_sfn_policy(),
+        "event" => base_event_policy(&auth.region, &auth.account),
+        "api" => base_api_policy(),
         "appsync" => base_appsync_policy(&auth.region, &auth.account),
-        _         => panic!("No such policy"),
+        _ => panic!("No such policy"),
     };
     let client = iam::make_client(auth).await;
     let role_fqn = base_role_name(name);

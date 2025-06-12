@@ -1,14 +1,8 @@
 use doku::Document;
 use kit as u;
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
-use std::{
-    collections::HashMap,
-    str::FromStr,
-};
+use serde_derive::{Deserialize, Serialize};
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -78,17 +72,17 @@ impl FromStr for LangRuntime {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "python3.13"                  => Ok(LangRuntime::Python313),
-            "python3.12"                  => Ok(LangRuntime::Python312),
-            "python3.11"                  => Ok(LangRuntime::Python311),
-            "python3.10"                  => Ok(LangRuntime::Python310),
-            "python3.9"                   => Ok(LangRuntime::Python39),
+            "python3.13" => Ok(LangRuntime::Python313),
+            "python3.12" => Ok(LangRuntime::Python312),
+            "python3.11" => Ok(LangRuntime::Python311),
+            "python3.10" => Ok(LangRuntime::Python310),
+            "python3.9" => Ok(LangRuntime::Python39),
             "ruby3.2" | "ruby" | "ruby32" => Ok(LangRuntime::Ruby32),
-            "clojure" | "java21"          => Ok(LangRuntime::Java21),
-            "rust"                        => Ok(LangRuntime::Rust),
-            "node22"                      => Ok(LangRuntime::Node22),
-            "node20"                      => Ok(LangRuntime::Node20),
-            _                             => Ok(LangRuntime::Python311),
+            "clojure" | "java21" => Ok(LangRuntime::Java21),
+            "rust" => Ok(LangRuntime::Rust),
+            "node22" => Ok(LangRuntime::Node22),
+            "node20" => Ok(LangRuntime::Node20),
+            _ => Ok(LangRuntime::Python311),
         }
     }
 }
@@ -100,12 +94,12 @@ impl LangRuntime {
             LangRuntime::Python312 => String::from("python3.12"),
             LangRuntime::Python311 => String::from("python3.11"),
             LangRuntime::Python310 => String::from("python3.10"),
-            LangRuntime::Python39  => String::from("python3.9"),
-            LangRuntime::Ruby32    => String::from("ruby3.2"),
-            LangRuntime::Java21    => String::from("java21"),
-            LangRuntime::Node22    => String::from("node22"),
-            LangRuntime::Node20    => String::from("node20"),
-            LangRuntime::Rust      => String::from("rust"),
+            LangRuntime::Python39 => String::from("python3.9"),
+            LangRuntime::Ruby32 => String::from("ruby3.2"),
+            LangRuntime::Java21 => String::from("java21"),
+            LangRuntime::Node22 => String::from("node22"),
+            LangRuntime::Node20 => String::from("node20"),
+            LangRuntime::Rust => String::from("rust"),
         }
     }
 
@@ -115,12 +109,12 @@ impl LangRuntime {
             LangRuntime::Python312 => Lang::Python,
             LangRuntime::Python311 => Lang::Python,
             LangRuntime::Python310 => Lang::Python,
-            LangRuntime::Python39  => Lang::Python,
-            LangRuntime::Ruby32    => Lang::Ruby,
-            LangRuntime::Java21    => Lang::Clojure,
-            LangRuntime::Rust      => Lang::Rust,
-            LangRuntime::Node20    => Lang::Node,
-            LangRuntime::Node22    => Lang::Node,
+            LangRuntime::Python39 => Lang::Python,
+            LangRuntime::Ruby32 => Lang::Ruby,
+            LangRuntime::Java21 => Lang::Clojure,
+            LangRuntime::Rust => Lang::Rust,
+            LangRuntime::Node20 => Lang::Node,
+            LangRuntime::Node22 => Lang::Node,
         }
     }
 }
@@ -269,9 +263,9 @@ impl FromStr for Provider {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "lambda" | "Lambda"  => Ok(Provider::Lambda),
+            "lambda" | "Lambda" => Ok(Provider::Lambda),
             "farget" | "Fargate" => Ok(Provider::Fargate),
-            _                    => Ok(Provider::Lambda),
+            _ => Ok(Provider::Lambda),
         }
     }
 }
@@ -444,11 +438,10 @@ pub struct InlineFunctionSpec {
     pub queue: Option<String>,
     pub fqn: Option<String>,
     pub runtime: Option<RuntimeSpec>,
-    pub build: Option<BuildSpec>
+    pub build: Option<BuildSpec>,
 }
 
 impl InlineFunctionSpec {
-
     pub fn intern(&self, namespace: &str, dir: &str, infra_dir: &str, name: &str) -> FunctionSpec {
         FunctionSpec {
             name: s!(name),

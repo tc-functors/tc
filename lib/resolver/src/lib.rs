@@ -1,15 +1,15 @@
+mod aws;
 pub mod cache;
 mod context;
 mod event;
 mod function;
-mod topology;
-mod aws;
 mod pool;
+mod topology;
 
+use authorizer::Auth;
 use compiler::Topology;
 pub use context::Context;
 use kit as u;
-use authorizer::Auth;
 use std::collections::HashMap;
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
@@ -85,7 +85,7 @@ pub async fn render(auth: &Auth, sandbox: &str, topology: &Topology) -> Topology
         namespace: topology.namespace.to_owned(),
         sandbox: sandbox.to_string(),
         trace: true,
-        config: topology.config.to_owned()
+        config: topology.config.to_owned(),
     };
     let v = serde_json::to_string(topology).unwrap();
     let rendered = ctx.render(&v);

@@ -2,20 +2,13 @@ use anyhow::Result;
 use authorizer::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
-    Client,
-    config as lambda_config,
+    Client, config as lambda_config,
     config::retry::RetryConfig,
     primitives::Blob,
-    types::{
-        LogType,
-        InvocationType,
-    }
+    types::{InvocationType, LogType},
 };
 
-use base64::{
-    Engine as _,
-    engine::general_purpose,
-};
+use base64::{Engine as _, engine::general_purpose};
 
 pub fn make_blob_from_str(payload: &str) -> Blob {
     let buffer = payload.as_bytes();

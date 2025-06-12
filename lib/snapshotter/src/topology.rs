@@ -1,38 +1,28 @@
-use kit as u;
+use crate::{aws::appsync, aws::eventbridge, aws::lambda};
 use authorizer::Auth;
-use crate::{
-    aws::appsync,
-    aws::eventbridge,
-    aws::lambda
-};
+use kit as u;
 
 use serde_json::Value;
 
 use std::collections::HashMap;
 
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
-
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Mutation {
     id: String,
     https: String,
-    wss: String
+    wss: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct States {
     mode: String,
-    definition: Value
+    definition: Value,
 }
-
 
 async fn find_states(_auth: &Auth, _fqn: &str) -> Option<States> {
     None
-
 }
 
 async fn find_routes(_auth: &Auth, _fqn: &str) -> HashMap<String, String> {
@@ -47,14 +37,13 @@ async fn find_mutations(auth: &Auth, fqn: &str) -> Option<Mutation> {
             let m = Mutation {
                 id: a.id.clone(),
                 https: a.https.clone(),
-                wss: a.wss
+                wss: a.wss,
             };
             Some(m)
         }
         _ => None,
     }
 }
-
 
 // events
 #[derive(Serialize, Deserialize, Debug)]
@@ -94,7 +83,6 @@ pub async fn find_events(auth: &Auth, namespace: &str) -> HashMap<String, Event>
     evs
 }
 
-
 // functions
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -108,7 +96,6 @@ struct Function {
     layers: HashMap<String, i64>,
     tc_version: String,
 }
-
 
 async fn find_functions(auth: &Auth, fns: Vec<String>) -> HashMap<String, Function> {
     let client = lambda::make_client(auth).await;
@@ -131,7 +118,7 @@ async fn find_functions(auth: &Auth, fns: Vec<String>) -> HashMap<String, Functi
                     revision: cfg.revision,
                     tc_version: u::safe_unwrap(tags.get("tc_version")),
                     updated: u::safe_unwrap(tags.get("updated_at")),
-                    layers: layers
+                    layers: layers,
                 };
                 h.insert(f, row);
             }
@@ -148,7 +135,6 @@ pub fn render(s: &str, namespace: &str, sandbox: &str) -> String {
     u::stencil(s, table)
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Topology {
     namespace: String,
@@ -156,11 +142,10 @@ pub struct Topology {
     events: HashMap<String, Event>,
     routes: HashMap<String, String>,
     mutations: Option<Mutation>,
-    states: Option<States>
+    states: Option<States>,
 }
 
 impl Topology {
-
     pub async fn new(auth: &Auth, dir: &str, sandbox: &str) -> Topology {
         let t = compiler::compile(dir, true);
         let mut fns: Vec<String> = vec![];
@@ -175,9 +160,7 @@ impl Topology {
             events: find_events(auth, &t.namespace).await,
             mutations: find_mutations(auth, &t.namespace).await,
             routes: find_routes(auth, &t.namespace).await,
-            states: find_states(auth, &t.fqn).await
-
+            states: find_states(auth, &t.fqn).await,
         }
     }
-
 }

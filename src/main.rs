@@ -1,20 +1,13 @@
 extern crate serde_derive;
 use std::env;
 use tracing_subscriber::{
-    filter::{
-        LevelFilter,
-        Targets,
-    },
+    filter::{LevelFilter, Targets},
     layer::SubscriberExt,
     util::SubscriberInitExt,
 };
 
 extern crate log;
-use clap::{
-    Args,
-    Parser,
-    Subcommand,
-};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 struct Tc {
@@ -474,7 +467,7 @@ async fn build(args: BuildArgs) {
         publish: publish,
         parallel: parallel,
         remote: remote,
-        shell: shell
+        shell: shell,
     };
     tc::build(profile, name, &dir, opts).await;
 }
@@ -562,7 +555,6 @@ async fn compile(args: CompileArgs) {
         format,
     };
     tc::compile(opts).await;
-
 }
 
 async fn resolve(args: ResolveArgs) {
@@ -728,10 +720,7 @@ async fn ci_release(args: ReleaseArgs) {
 }
 
 async fn ci_upgrade(args: UpgradeArgs) {
-    let UpgradeArgs {
-        version,
-        ..
-    } = args;
+    let UpgradeArgs { version, .. } = args;
 
     tc::ci_upgrade(version).await;
 }
@@ -762,15 +751,21 @@ async fn inspect(args: InspectArgs) {
     tc::inspect(port).await;
 }
 
-async fn snapshot (args: SnapshotArgs) {
-    let SnapshotArgs { profile, sandbox, format, entity, .. } = args;
+async fn snapshot(args: SnapshotArgs) {
+    let SnapshotArgs {
+        profile,
+        sandbox,
+        format,
+        entity,
+        ..
+    } = args;
 
     match entity {
         Some(e) => {
             let env = tc::init(profile.clone(), None).await;
             tc::snapshot_entity(env, sandbox, &e).await;
-        },
-        None => tc::snapshot(profile, sandbox, format).await
+        }
+        None => tc::snapshot(profile, sandbox, format).await,
     }
 }
 
@@ -806,30 +801,30 @@ async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
-        Cmd::Build(args)     => build(args).await,
-        Cmd::Cache(args)     => cache(args).await,
-        Cmd::Config(args)    => config(args).await,
-        Cmd::Doc(args)       => doc(args).await,
-        Cmd::Compile(args)   => compile(args).await,
-        Cmd::Resolve(args)   => resolve(args).await,
-        Cmd::Create(args)    => create(args).await,
-        Cmd::Delete(args)    => delete(args).await,
-        Cmd::Emulate(args)   => emulate(args).await,
-        Cmd::Freeze(args)    => freeze(args).await,
-        Cmd::Inspect(args)   => inspect(args).await,
-        Cmd::Invoke(args)    => invoke(args).await,
-        Cmd::Promote(args)   => promote(args).await,
-        Cmd::Route(args)     => route(args).await,
-        Cmd::Snapshot(args)  => snapshot(args).await,
-        Cmd::Tag(args)       => tag(args).await,
-        Cmd::Test(args)      => test(args).await,
-        Cmd::Unfreeze(args)  => unfreeze(args).await,
-        Cmd::Update(args)    => update(args).await,
-        Cmd::Upgrade(args)   => upgrade(args).await,
-        Cmd::Version(..)     => version().await,
-        Cmd::Release(args)   => ci_release(args).await,
+        Cmd::Build(args) => build(args).await,
+        Cmd::Cache(args) => cache(args).await,
+        Cmd::Config(args) => config(args).await,
+        Cmd::Doc(args) => doc(args).await,
+        Cmd::Compile(args) => compile(args).await,
+        Cmd::Resolve(args) => resolve(args).await,
+        Cmd::Create(args) => create(args).await,
+        Cmd::Delete(args) => delete(args).await,
+        Cmd::Emulate(args) => emulate(args).await,
+        Cmd::Freeze(args) => freeze(args).await,
+        Cmd::Inspect(args) => inspect(args).await,
+        Cmd::Invoke(args) => invoke(args).await,
+        Cmd::Promote(args) => promote(args).await,
+        Cmd::Route(args) => route(args).await,
+        Cmd::Snapshot(args) => snapshot(args).await,
+        Cmd::Tag(args) => tag(args).await,
+        Cmd::Test(args) => test(args).await,
+        Cmd::Unfreeze(args) => unfreeze(args).await,
+        Cmd::Update(args) => update(args).await,
+        Cmd::Upgrade(args) => upgrade(args).await,
+        Cmd::Version(..) => version().await,
+        Cmd::Release(args) => ci_release(args).await,
         Cmd::UpgradeCI(args) => ci_upgrade(args).await,
-        Cmd::Deploy(args)    => ci_deploy(args).await,
+        Cmd::Deploy(args) => ci_deploy(args).await,
     }
 }
 

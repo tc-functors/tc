@@ -1,13 +1,8 @@
 use doku::Document;
 use kit as u;
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
-use std::{
-    collections::HashMap,
-};
+use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Document)]
 pub struct NetworkSpec {

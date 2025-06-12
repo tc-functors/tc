@@ -9,19 +9,14 @@ pub struct Auth {
     pub assume_role: Option<String>,
     pub aws_config: SdkConfig,
     pub account: String,
-    pub region: String
+    pub region: String,
 }
 
 impl Auth {
-
-    pub async fn new(
-        profile: Option<String>,
-        assume_role: Option<String>
-    ) -> Auth {
-
+    pub async fn new(profile: Option<String>, assume_role: Option<String>) -> Auth {
         let name = match profile {
             Some(p) => p,
-            None => "default".to_string()
+            None => "default".to_string(),
         };
 
         let config = aws::get_config(&name, assume_role.clone()).await;
@@ -35,7 +30,7 @@ impl Auth {
             assume_role: assume_role,
             aws_config: config,
             account: account,
-            region: region
+            region: region,
         }
     }
 
@@ -43,9 +38,9 @@ impl Auth {
         match profile {
             Some(_) => match std::env::var("TC_ASSUME_ROLE") {
                 Ok(_) => Auth::new(profile, assume_role).await,
-                Err(_) => Auth::new(profile, None).await
-            }
-            None => self.clone()
+                Err(_) => Auth::new(profile, None).await,
+            },
+            None => self.clone(),
         }
     }
 
@@ -57,37 +52,30 @@ impl Auth {
     }
 
     pub fn lambda_uri(&self, name: &str) -> String {
-        format!("arn:aws:apigateway:{}:lambda:path/2015-03-31/functions/arn:aws:lambda:{}:{}:function:{}/invocations",
-                &self.region,
-                &self.region,
-                &self.account,
-                name)
+        format!(
+            "arn:aws:apigateway:{}:lambda:path/2015-03-31/functions/arn:aws:lambda:{}:{}:function:{}/invocations",
+            &self.region, &self.region, &self.account, name
+        )
     }
 
     pub fn sfn_arn(&self, name: &str) -> String {
         format!(
             "arn:aws:states:{}:{}:stateMachine:{}",
-            &self.region,
-            self.account,
-            name
+            &self.region, self.account, name
         )
     }
 
     pub fn lambda_arn(&self, name: &str) -> String {
         format!(
             "arn:aws:lambda:{}:{}:function:{}",
-            &self.region,
-            &self.account,
-            name
+            &self.region, &self.account, name
         )
     }
 
     pub fn layer_arn(&self, name: &str) -> String {
         format!(
             "arn:aws:lambda:{}:{}:layer:{}",
-            &self.region,
-            &self.account,
-            name
+            &self.region, &self.account, name
         )
     }
 
@@ -102,30 +90,21 @@ impl Auth {
     pub fn event_bus_arn(&self, bus_name: &str) -> String {
         format!(
             "arn:aws:events:{}:{}:event-bus/{}",
-            &self.region,
-            &self.account,
-            bus_name
+            &self.region, &self.account, bus_name
         )
     }
 
     pub fn api_endpoint(&self, api_id: &str, stage: &str) -> String {
         format!(
             "https://{}.execute-api.{}.amazonaws.com/{}",
-            api_id,
-            self.region,
-            stage
+            api_id, self.region, stage
         )
     }
 
     pub fn sfn_url(&self, name: &str, id: &str) -> String {
         format!(
             "https://{}.console.aws.amazon.com/states/home?region={}#/v2/executions/details/arn:aws:states:{}:{}:execution:{}:{}",
-            &self.region,
-            &self.region,
-            &self.region,
-            &self.account,
-            name,
-            id
+            &self.region, &self.region, &self.region, &self.account, name, id
         )
     }
 
@@ -158,55 +137,39 @@ impl Auth {
     pub fn api_arn(&self, api_id: &str) -> String {
         format!(
             "arn:aws:execute-api:{}:{}:{}/*/*/*",
-            &self.region,
-            &self.account,
-            api_id
+            &self.region, &self.account, api_id
         )
     }
 
     pub fn pool_arn(&self, pool_id: &str) -> String {
         format!(
             "arn:aws:cognito-idp:{}:{}:userpool/{}",
-            &self.region,
-            &self.account,
-            pool_id
+            &self.region, &self.account, pool_id
         )
     }
 
     pub fn authorizer_arn(&self, api_id: &str, _name: &str) -> String {
         format!(
             "arn:aws:execute-api:{}:{}:{}/*/*",
-            &self.region,
-            &self.account,
-            api_id,
+            &self.region, &self.account, api_id,
         )
     }
 
     pub fn graphql_arn(&self, id: &str) -> String {
         format!(
             "arn:aws:appsync:{}:{}:endpoints/graphql-api/{}",
-            &self.region,
-            &self.account,
-            id
+            &self.region, &self.account, id
         )
     }
 
     pub fn sqs_arn(&self, name: &str) -> String {
-        format!(
-            "arn:aws:sqs:{}:{}:{}",
-            &self.region,
-            &self.account,
-            name
-        )
+        format!("arn:aws:sqs:{}:{}:{}", &self.region, &self.account, name)
     }
 
     pub fn sqs_url(&self, name: &str) -> String {
         format!(
             "https://sqs.{}.amazonaws.com/{}/{}",
-            &self.region,
-            &self.account,
-            name
+            &self.region, &self.account, name
         )
     }
-
 }

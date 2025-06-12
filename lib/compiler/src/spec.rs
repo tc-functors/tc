@@ -1,45 +1,35 @@
 use doku::Document;
 use kit as u;
 use kit::*;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{
-    collections::HashMap,
-    str::FromStr,
-};
+use std::{collections::HashMap, str::FromStr};
 
 use std::path::PathBuf;
 
-pub mod function;
+pub mod channel;
 pub mod config;
-pub mod infra;
 pub mod event;
-pub mod route;
+pub mod function;
+pub mod infra;
 pub mod mutation;
 pub mod queue;
-pub mod channel;
+pub mod route;
 
 use crate::parser;
 
 use parser::yaml::Transformer;
 
-pub use function::{
-    FunctionSpec, BuildOutput, BuildKind,
-    InlineFunctionSpec,
-    LangRuntime,
-    Lang,
-    BuildSpec,
-    ImageSpec
-};
+pub use channel::ChannelSpec;
 pub use config::ConfigSpec;
 pub use event::EventSpec;
-pub use route::RouteSpec;
-pub use queue::QueueSpec;
-pub use channel::ChannelSpec;
+pub use function::{
+    BuildKind, BuildOutput, BuildSpec, FunctionSpec, ImageSpec, InlineFunctionSpec, Lang,
+    LangRuntime,
+};
 pub use mutation::MutationSpec;
+pub use queue::QueueSpec;
+pub use route::RouteSpec;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -61,7 +51,7 @@ pub enum Entity {
     #[serde(alias = "mutation")]
     Mutation,
     #[serde(alias = "trigger")]
-    Trigger
+    Trigger,
 }
 
 impl FromStr for Entity {
@@ -70,30 +60,29 @@ impl FromStr for Entity {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "function" | "functions" => Ok(Entity::Function),
-            "queue"    | "queues" => Ok(Entity::Queue),
-            "route"    | "routes" => Ok(Entity::Route),
-            "channel"  | "channels" => Ok(Entity::Channel),
-            "event"    | "events" => Ok(Entity::Event),
-            "state"    | "states" => Ok(Entity::State),
+            "queue" | "queues" => Ok(Entity::Queue),
+            "route" | "routes" => Ok(Entity::Route),
+            "channel" | "channels" => Ok(Entity::Channel),
+            "event" | "events" => Ok(Entity::Event),
+            "state" | "states" => Ok(Entity::State),
             "mutation" | "mutations" => Ok(Entity::Mutation),
             "trigger" | "triggers" => Ok(Entity::Trigger),
-            _          => Ok(Entity::Function),
+            _ => Ok(Entity::Function),
         }
     }
 }
 
 impl Entity {
-
     pub fn to_str(&self) -> String {
         match self {
             Entity::Function => s!("function"),
-            Entity::Queue    => s!("queue"),
-            Entity::Route    => s!("route"),
-            Entity::Channel  => s!("channel"),
-            Entity::Event    => s!("event"),
+            Entity::Queue => s!("queue"),
+            Entity::Route => s!("route"),
+            Entity::Channel => s!("channel"),
+            Entity::Event => s!("event"),
             Entity::Mutation => s!("mutation"),
-            Entity::State    => s!("state"),
-            Entity::Trigger  => s!("trigger")
+            Entity::State => s!("state"),
+            Entity::Trigger => s!("trigger"),
         }
     }
 }
@@ -199,9 +188,7 @@ pub struct TopologySpec {
 }
 
 impl TopologySpec {
-
     pub fn new(topology_spec_file: &str) -> TopologySpec {
-
         if u::file_exists(topology_spec_file) {
             tracing::debug!("Loading topology {}", topology_spec_file);
             let path = PathBuf::from(topology_spec_file);
@@ -212,19 +199,18 @@ impl TopologySpec {
                     let mut spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
                     spec.dir = Some(u::parent_dir(topology_spec_file));
                     spec
-                },
+                }
                 Err(_) => {
                     let tn = Transformer::new(path, false);
                     let v = match tn {
                         Ok(transformer) => transformer.parse(),
-                        Err(e) => panic!("{:?}", e)
+                        Err(e) => panic!("{:?}", e),
                     };
                     let mut spec: TopologySpec = serde_yaml::from_value(v).unwrap();
                     spec.dir = Some(u::parent_dir(topology_spec_file));
                     spec
                 }
             }
-
         } else {
             TopologySpec {
                 name: s!("tc"),
@@ -245,7 +231,7 @@ impl TopologySpec {
                 queues: None,
                 mutations: None,
                 channels: None,
-                triggers: None
+                triggers: None,
             }
         }
     }

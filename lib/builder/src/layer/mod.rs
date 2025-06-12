@@ -1,11 +1,11 @@
+mod aws_lambda;
 mod python;
 mod ruby;
-mod aws_lambda;
-use colored::Colorize;
-use kit as u;
-use compiler::{LangRuntime, Lang};
-use compiler::spec::BuildOutput;
 use authorizer::Auth;
+use colored::Colorize;
+use compiler::spec::BuildOutput;
+use compiler::{Lang, LangRuntime};
+use kit as u;
 use std::collections::HashMap;
 
 fn should_split(dir: &str) -> bool {
@@ -20,7 +20,6 @@ fn should_split(dir: &str) -> bool {
 }
 
 fn split(dir: &str) {
-
     let zipfile = format!("{}/deps.zip", dir);
     let size;
     if u::file_exists(&zipfile) {
@@ -34,13 +33,7 @@ fn split(dir: &str) {
     }
 }
 
-pub async fn do_publish(
-    auth: &Auth,
-    lang: &str,
-    layer_name: &str,
-    zipfile: &str
-) {
-
+pub async fn do_publish(auth: &Auth, lang: &str, layer_name: &str, zipfile: &str) {
     println!("Using profile {}", auth.name);
     let client = aws_lambda::make_client(auth).await;
 
@@ -66,7 +59,13 @@ async fn layer_arn(auth: &Auth, name: &str, version: Option<String>) -> String {
 }
 
 pub async fn publish(auth: &Auth, build: &BuildOutput) {
-    let BuildOutput { dir, runtime, name, artifact, .. } = build;
+    let BuildOutput {
+        dir,
+        runtime,
+        name,
+        artifact,
+        ..
+    } = build;
     let lang = runtime.to_str();
     if should_split(&dir) {
         println!("Split layer ... {}", &name);
@@ -80,19 +79,13 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
         if u::path_exists(dir, "deps3.zip") {
             do_publish(auth, &lang, &format!("{}-2-dev", &name), "deps3.zip").await;
         }
-
     } else {
         let layer_name = format!("{}-dev", &name);
         do_publish(auth, &lang, &layer_name, &artifact).await;
     }
 }
 
-pub async fn promote(
-    auth: &Auth,
-    layer_name: &str,
-    lang: &str,
-    version: Option<String>
-) {
+pub async fn promote(auth: &Auth, layer_name: &str, lang: &str, version: Option<String>) {
     let client = aws_lambda::make_client(&auth).await;
     let dev_layer_name = format!("{}-dev", layer_name);
 
@@ -125,11 +118,9 @@ pub async fn promote(
 }
 
 pub fn build(dir: &str, name: &str, langr: &LangRuntime) -> String {
-
     match langr.to_lang() {
         Lang::Python => python::build(dir, name, langr),
         Lang::Ruby => ruby::build(dir, name),
-        _ => todo!()
+        _ => todo!(),
     }
-
 }

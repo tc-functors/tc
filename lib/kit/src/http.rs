@@ -1,17 +1,10 @@
 use crate::{
     io,
-    json::{
-        json_value,
-        json_value_safe,
-    },
+    json::{json_value, json_value_safe},
 };
 use reqwest::{
     Error,
-    header::{
-        HeaderMap,
-        HeaderName,
-        HeaderValue,
-    },
+    header::{HeaderMap, HeaderName, HeaderValue},
 };
 use serde_json::Value;
 use std::collections::HashMap;

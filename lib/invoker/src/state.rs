@@ -1,12 +1,9 @@
-use kit as u;
-use kit::*;
 use crate::aws::sfn;
 use authorizer::Auth;
+use kit as u;
+use kit::*;
 
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
