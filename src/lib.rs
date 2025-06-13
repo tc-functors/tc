@@ -592,3 +592,23 @@ pub async fn snapshot_entity(auth: Auth, sandbox: Option<String>, entity: &str) 
         snapshotter::snapshot_topology(&auth, &dir, &sandbox).await;
     }
 }
+
+pub async fn changelog(between: Option<String>, search: Option<String>, verbose: bool) {
+    let dir = u::pwd();
+    let namespace = compiler::topology_name(&dir);
+    match search {
+        Some(s) => {
+            let is_root = compiler::is_root_dir(&dir);
+            if is_root {
+                let namespaces = compiler::root_namespaces(&dir);
+                for (_, namespace) in namespaces {
+                    let version = releaser::find_version_history(&namespace, &s).await;
+                    if let Some(v) = version {
+                        println!("{},{},{}", &s, &namespace, &v);
+                    }
+                }
+            }
+        }
+        None => releaser::changelog(&namespace, between, verbose)
+    }
+}

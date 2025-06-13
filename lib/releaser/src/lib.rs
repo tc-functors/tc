@@ -4,8 +4,11 @@ mod github;
 mod notifier;
 mod router;
 mod tagger;
+mod changelog;
 
 pub mod ci;
+
+use kit as u;
 
 pub use router::{
     freeze,
@@ -76,4 +79,21 @@ pub async fn get_release_id(repo: &str, version: Option<String>) -> Option<Strin
 
 pub async fn notify(scope: &str, msg: &str) {
     notifier::notify(scope, &notifier::wrap_msg(msg)).await;
+}
+
+pub fn changelog(
+    namespace: &str,
+    between: Option<String>,
+    verbose: bool
+) {
+    if u::option_exists(between.clone()) {
+        changelog::between(namespace, between)
+    } else {
+        changelog::list(namespace, verbose);
+    }
+}
+
+pub async fn find_version_history(namespace: &str, term: &str) -> Option<String> {
+    let version = changelog::find_version(namespace, term);
+    version
 }

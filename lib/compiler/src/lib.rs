@@ -91,6 +91,22 @@ pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     h
 }
 
+pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
+    let f = format!("{}/topology.yml", dir);
+    let spec = TopologySpec::new(&f);
+    let given_root_dirs = match &spec.nodes.dirs {
+        Some(dirs) => dirs,
+        None => &list_dirs(dir),
+    };
+    let mut h: HashMap<String, String> = HashMap::new();
+    for d in given_root_dirs {
+        let name = topology_name(d);
+        h.insert(d.to_string(), name);
+    }
+    h
+}
+
+
 pub fn find_layers() -> Vec<Layer> {
     let dir = u::pwd();
     if topology::is_compilable(&dir) {
