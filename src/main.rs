@@ -38,6 +38,9 @@ enum Cmd {
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
+    /// changelog search
+    #[clap(hide = true)]
+    Changelog(ChangelogArgs),
     /// Compile a Topology
     Compile(CompileArgs),
     /// Show config
@@ -372,6 +375,16 @@ pub struct ReplArgs {
     sandbox: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ChangelogArgs {
+    #[arg(long, short = 'b')]
+    between: Option<String>,
+    #[arg(long, short = 's')]
+    search: Option<String>,
+    #[arg(long, action, short = 'v')]
+    verbose: bool,
 }
 
 #[derive(Debug, Args)]
@@ -776,6 +789,17 @@ async fn snapshot(args: SnapshotArgs) {
     }
 }
 
+async fn changelog(args: ChangelogArgs) {
+    let ChangelogArgs {
+        search,
+        between,
+        verbose,
+        ..
+    } = args;
+
+    tc::changelog(between, search, verbose).await;
+}
+
 fn init_tracing(trace: bool) {
     let should_trace = trace
         || match env::var("TC_TRACE") {
@@ -828,6 +852,7 @@ async fn run() {
         Cmd::Unfreeze(args) => unfreeze(args).await,
         Cmd::Update(args) => update(args).await,
         Cmd::Upgrade(args) => upgrade(args).await,
+        Cmd::Changelog(args) => changelog(args).await,
         Cmd::Version(..) => version().await,
         Cmd::Release(args) => ci_release(args).await,
         Cmd::UpgradeCI(args) => ci_upgrade(args).await,

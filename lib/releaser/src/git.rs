@@ -98,3 +98,22 @@ pub fn current_repo() -> String {
         &pwd(),
     )
 }
+
+pub fn list_tags(prefix: &str) -> Vec<String> {
+        let cmd = format!(
+            "git log --pretty=format:'%d %s' --abbrev-commit --tags={}-*  --no-walk",
+        prefix
+    );
+    let out = sh(&cmd, &pwd());
+    kit::split_lines(&out).into_iter().map(|s| String::from(s)).collect()
+}
+
+pub fn extract_tag(prefix: &str, s: &str) -> String {
+    let f = format!(r"{}-(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)(-\w+)?", prefix);
+    let re: Regex = Regex::new(&f).unwrap();
+    let matches = re.find(s);
+    match matches {
+        Some(m) => m.as_str().to_string(),
+        _ => "".to_string(),
+    }
+}

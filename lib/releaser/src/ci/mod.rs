@@ -1,5 +1,5 @@
 mod circleci;
-mod dynamo;
+pub mod dynamo;
 use crate::{
     git,
     tagger,
