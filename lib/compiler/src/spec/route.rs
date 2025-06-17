@@ -9,14 +9,14 @@ pub struct CorsSpec {
     pub methods: Vec<String>,
     pub origins: Vec<String>,
     #[serde(alias = "headers", alias = "allowed_headers")]
-    pub headers: Vec<String>,
+    pub headers: Option<Vec<String>>,
 }
 
 fn default_cors() -> Option<CorsSpec> {
     let c = CorsSpec {
         methods: vec![String::from("GET"), String::from("POST")],
         origins: vec![String::from("*")],
-        headers: vec![String::from("*")],
+        headers: None,
     };
     Some(c)
 }
