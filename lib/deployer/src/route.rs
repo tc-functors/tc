@@ -15,7 +15,11 @@ use std::collections::HashMap;
 async fn make_api(auth: &Auth, role: &str, route: &Route) -> Api {
     let client = gateway::make_client(auth).await;
 
-    let cors = gateway::make_cors(route.cors.methods.clone(), route.cors.origins.clone());
+    let cors = gateway::make_cors(
+        route.cors.methods.clone(),
+        route.cors.origins.clone(),
+        route.cors.headers.clone()
+    );
 
     Api {
         name: route.to_owned().gateway,
