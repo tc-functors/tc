@@ -39,10 +39,11 @@ pub struct Api {
     pub cors: Cors,
 }
 
-pub fn make_cors(methods: Vec<String>, origins: Vec<String>) -> Cors {
+pub fn make_cors(methods: Vec<String>, origins: Vec<String>, headers: Vec<String>) -> Cors {
     let f = CorsBuilder::default();
     f.set_allow_methods(Some(methods))
         .set_allow_origins(Some(origins))
+        .set_allow_headers(Some(headers))
         .build()
 }
 
