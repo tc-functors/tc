@@ -36,7 +36,7 @@ pub struct Api {
     pub sync: bool,
     pub authorizer: String,
     pub request_template: String,
-    pub cors: Cors,
+    pub cors: Option<Cors>,
 }
 
 pub fn make_cors(methods: Vec<String>, origins: Vec<String>, headers: Option<Vec<String>>) -> Cors {
@@ -56,7 +56,7 @@ impl Api {
             .create_api()
             .name(api.name)
             .protocol_type(ProtocolType::Http)
-            .cors_configuration(self.cors)
+            .set_cors_configuration(self.cors)
             .send()
             .await
             .unwrap();
@@ -105,7 +105,7 @@ impl Api {
             .client
             .update_api()
             .api_id(s!(api_id))
-            .cors_configuration(self.cors.clone())
+            .set_cors_configuration(self.cors.clone())
             .send()
             .await
             .unwrap();
