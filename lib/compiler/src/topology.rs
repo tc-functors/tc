@@ -167,7 +167,7 @@ fn is_singular_function_dir() -> bool {
 
 fn is_shared(uri: Option<String>) -> bool {
     match uri {
-        Some(p) => p.starts_with(".."),
+        Some(p) => p.starts_with("."),
         None => false,
     }
 }
