@@ -3,6 +3,7 @@ use crate::aws::{
     gateway::Api,
     lambda,
 };
+use itertools::Itertools;
 use authorizer::Auth;
 use compiler::{
     Entity,
@@ -11,15 +12,29 @@ use compiler::{
 use kit::*;
 use log::info;
 use std::collections::HashMap;
+use aws_sdk_apigatewayv2::types::Cors;
 
-async fn make_api(auth: &Auth, role: &str, route: &Route) -> Api {
+fn make_cors(routes: &HashMap<String, Route>) -> Cors {
+
+    let mut methods: Vec<String> = vec![];
+    let mut origins: Vec<String> = vec![];
+    let mut headers: Vec<String> = vec![];
+    for (_, route) in routes {
+        methods.extend(route.cors.methods.clone());
+        origins.extend(route.cors.origins.clone());
+        if let Some(h) = &route.cors.headers {
+            headers.extend(h.clone());
+        }
+    }
+
+    gateway::make_cors(methods.into_iter().unique().collect(),
+                       origins.into_iter().unique().collect(),
+                       Some(headers.into_iter().unique().collect()))
+
+}
+
+async fn make_api(auth: &Auth, role: &str, route: &Route, cors: Option<Cors>) -> Api {
     let client = gateway::make_client(auth).await;
-
-    let cors = gateway::make_cors(
-        route.cors.methods.clone(),
-        route.cors.origins.clone(),
-        route.cors.headers.clone()
-    );
 
     Api {
         name: route.to_owned().gateway,
@@ -123,6 +138,7 @@ async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
     add_permission(auth, target_arn, &api_id).await;
 
     let integration_id = create_integration(entity, api, &api_id, target_arn).await;
+
     api.find_or_create_route(&api_id, &integration_id, authorizer_id)
         .await;
     api.create_stage(&api_id).await;
@@ -132,15 +148,17 @@ async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
     println!("Endpoint {}", &endpoint);
 }
 
-async fn create_route(auth: &Auth, route: &Route, role: &str) {
-    let api = make_api(auth, role, route).await;
+async fn create_route(auth: &Auth, route: &Route, role: &str, cors: Cors) {
+    let api = make_api(auth, role, route, Some(cors)).await;
     create_api(auth, &api, &route.entity, &route.target_arn).await;
 }
 
 pub async fn create(auth: &Auth, role: &str, routes: HashMap<String, Route>) {
+    let cors = make_cors(&routes);
+    tracing::debug!("Updating cors: {:?}", cors);
     for (_, route) in routes {
         //println!("Creating route {} {}", &route.method, &route.path);
-        create_route(auth, &route, role).await;
+        create_route(auth, &route, role, cors.clone()).await;
     }
 }
 
@@ -156,7 +174,7 @@ async fn delete_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
 }
 
 async fn delete_route(auth: &Auth, route: &Route, role: &str) {
-    let api = make_api(auth, role, route).await;
+    let api = make_api(auth, role, route, None).await;
     let api_id = api.clone().find().await;
     let route_key = format!("{} {}", &route.method, &route.path);
 
