@@ -119,8 +119,8 @@ pub struct CacheArgs {
 
 #[derive(Debug, Args)]
 pub struct DeployArgs {
-    #[arg(long, short = 'S')]
-    service: Option<String>,
+    #[arg(long, short = 't', alias = "service")]
+    topology: Option<String>,
     #[arg(long, short = 'e')]
     env: String,
     #[arg(long, short = 's')]
@@ -128,15 +128,15 @@ pub struct DeployArgs {
     #[arg(long)]
     manifest: Option<String>,
     #[arg(long, short = 'v')]
-    version: String,
-    #[arg(long, action, short = 't')]
-    trace: bool,
+    version: Option<String>,
+    #[arg(long, short = 'b')]
+    branch: Option<String>,
 }
 
 #[derive(Debug, Args)]
 pub struct ReleaseArgs {
-    #[arg(long, short = 's')]
-    service: Option<String>,
+    #[arg(long, short = 't', alias = "service")]
+    topology: Option<String>,
     #[arg(long, short = 'v')]
     version: Option<String>,
     #[arg(long, short = 'r')]
@@ -151,8 +151,6 @@ pub struct ReleaseArgs {
     tag: Option<String>,
     #[arg(long)]
     asset: Option<String>,
-    #[arg(long, action, short = 't')]
-    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -720,23 +718,23 @@ async fn ci_deploy(args: DeployArgs) {
     let DeployArgs {
         env,
         sandbox,
-        service,
+        topology,
         version,
         ..
     } = args;
 
-    tc::ci_deploy(service, env, sandbox, version).await;
+    tc::ci_deploy(topology, env, sandbox, version).await;
 }
 
 async fn ci_release(args: ReleaseArgs) {
     let ReleaseArgs {
-        service,
+        topology,
         suffix,
         unwind,
         ..
     } = args;
 
-    tc::ci_release(service, suffix, unwind).await;
+    tc::ci_release(topology, suffix, unwind).await;
 }
 
 async fn ci_upgrade(args: UpgradeArgs) {

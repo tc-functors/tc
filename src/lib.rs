@@ -470,16 +470,18 @@ pub async fn upgrade(version: Option<String>) {
 // deprecated
 
 pub async fn ci_deploy(
-    service: Option<String>,
+    topology: Option<String>,
     env: String,
     sandbox: Option<String>,
-    version: String,
+    version: Option<String>,
 ) {
     let dir = u::pwd();
     let namespace = compiler::topology_name(&dir);
-    let service = u::maybe_string(service, &namespace);
+    let current_version =  compiler::topology_version(&namespace);
+    let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
-    releaser::ci::deploy(&env, &service, &sandbox, &version).await;
+    let version = u::maybe_string(version, &current_version);
+    releaser::ci::deploy(&env, &name, &sandbox, &version).await;
 }
 
 pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind: bool) {

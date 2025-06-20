@@ -11,7 +11,7 @@ pub mod route;
 pub mod schedule;
 mod tag;
 mod template;
-mod version;
+pub mod version;
 
 use crate::spec::{
     TopologyKind,
