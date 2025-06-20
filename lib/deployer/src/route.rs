@@ -14,23 +14,30 @@ use log::info;
 use std::collections::HashMap;
 use aws_sdk_apigatewayv2::types::Cors;
 
-fn make_cors(routes: &HashMap<String, Route>) -> Cors {
+fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
 
     let mut methods: Vec<String> = vec![];
     let mut origins: Vec<String> = vec![];
     let mut headers: Vec<String> = vec![];
     for (_, route) in routes {
-        methods.extend(route.cors.methods.clone());
-        origins.extend(route.cors.origins.clone());
-        if let Some(h) = &route.cors.headers {
-            headers.extend(h.clone());
+        if let Some(c) = &route.cors {
+            methods.extend(c.methods.clone());
+            origins.extend(c.origins.clone());
+            if let Some(h) = &c.headers {
+                headers.extend(h.clone());
+            }
         }
     }
 
-    gateway::make_cors(methods.into_iter().unique().collect(),
-                       origins.into_iter().unique().collect(),
-                       Some(headers.into_iter().unique().collect()))
-
+    if origins.is_empty() {
+        None
+    } else {
+        Some(
+            gateway::make_cors(methods.into_iter().unique().collect(),
+                               origins.into_iter().unique().collect(),
+                               Some(headers.into_iter().unique().collect()))
+        )
+    }
 }
 
 async fn make_api(auth: &Auth, role: &str, route: &Route, cors: Option<Cors>) -> Api {
@@ -148,8 +155,8 @@ async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
     println!("Endpoint {}", &endpoint);
 }
 
-async fn create_route(auth: &Auth, route: &Route, role: &str, cors: Cors) {
-    let api = make_api(auth, role, route, Some(cors)).await;
+async fn create_route(auth: &Auth, route: &Route, role: &str, cors: Option<Cors>) {
+    let api = make_api(auth, role, route, cors).await;
     create_api(auth, &api, &route.entity, &route.target_arn).await;
 }
 

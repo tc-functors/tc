@@ -100,15 +100,19 @@ impl Api {
     }
 
     pub async fn update(&self, api_id: &str) -> String {
-        let _ = self
-            .clone()
-            .client
-            .update_api()
-            .api_id(s!(api_id))
-            .set_cors_configuration(self.cors.clone())
-            .send()
-            .await
-            .unwrap();
+        if let Some(cors) = self.cors.clone() {
+            println!("Updating cors: {:?} ", &cors);
+            let _ = self
+                .clone()
+                .client
+                .update_api()
+                .api_id(s!(api_id))
+                .cors_configuration(cors)
+                .send()
+                .await
+                .unwrap();
+        }
+
         s!(api_id)
     }
 
