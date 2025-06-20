@@ -14,8 +14,8 @@ pub struct CorsSpec {
 
 fn default_cors() -> Option<CorsSpec> {
     let c = CorsSpec {
-        methods: vec![String::from("GET"), String::from("POST")],
-        origins: vec![String::from("*")],
+        methods: vec![],
+        origins: vec![],
         headers: None,
     };
     Some(c)

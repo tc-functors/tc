@@ -27,7 +27,7 @@ pub struct Route {
     pub sync: bool,
     pub request_template: String,
     pub response_template: String,
-    pub cors: CorsSpec,
+    pub cors: Option<CorsSpec>,
 }
 
 fn make_response_template() -> String {
@@ -123,7 +123,7 @@ impl Route {
             sync: sync,
             request_template: make_request_template(&method, rspec.request_template.clone()),
             response_template: make_response_template(),
-            cors: rspec.cors.clone().unwrap(),
+            cors: rspec.cors.clone(),
         }
     }
 }
