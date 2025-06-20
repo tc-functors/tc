@@ -72,7 +72,7 @@ async fn create_authorizer(auth: &Auth, api_id: &str, api: &Api, uri: &str) -> O
     } else {
         add_auth_permission(auth, &lambda_arn, &api_id, &api.authorizer).await;
         let authorizer_id = api
-            .create_or_update_authorizer(&api_id, &api.authorizer, uri)
+            .find_or_create_authorizer(&api_id, &api.authorizer, uri)
             .await;
         Some(authorizer_id)
     }

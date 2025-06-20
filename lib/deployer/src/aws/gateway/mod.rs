@@ -321,7 +321,7 @@ impl Api {
         res.unwrap().authorizer_id.unwrap()
     }
 
-    pub async fn update_authorizer(&self, id: &str, api_id: &str, uri: &str) -> String {
+    pub async fn _update_authorizer(&self, id: &str, api_id: &str, uri: &str) -> String {
         let res = self
             .client
             .update_authorizer()
@@ -337,13 +337,21 @@ impl Api {
         res.unwrap().authorizer_id.unwrap()
     }
 
-    pub async fn create_or_update_authorizer(&self, api_id: &str, name: &str, uri: &str) -> String {
+    pub async fn _create_or_update_authorizer(&self, api_id: &str, name: &str, uri: &str) -> String {
         let maybe_authorizer_id = self.find_authorizer(api_id).await;
         match maybe_authorizer_id {
             Some(id) => {
                 println!("Updating authorizer {}", name.green());
-                self.update_authorizer(&id, api_id, uri).await
+                self._update_authorizer(&id, api_id, uri).await
             }
+            None => self.create_authorizer(api_id, name, uri).await,
+        }
+    }
+
+    pub async fn find_or_create_authorizer(&self, api_id: &str, name: &str, uri: &str) -> String {
+        let maybe_authorizer_id = self.find_authorizer(api_id).await;
+        match maybe_authorizer_id {
+            Some(id) => id,
             None => self.create_authorizer(api_id, name, uri).await,
         }
     }
