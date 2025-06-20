@@ -181,6 +181,10 @@ pub fn topology_name(dir: &str) -> String {
     spec.name
 }
 
+pub fn topology_version(namespace: &str) -> String {
+    topology::version::current_semver(&namespace)
+}
+
 pub fn current_function(dir: &str) -> Option<Function> {
     let topology = Topology::new(dir, false, true);
     topology.current_function(dir)
