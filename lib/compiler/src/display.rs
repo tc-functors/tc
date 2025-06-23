@@ -1,6 +1,6 @@
 use crate::{
     Topology,
-    spec::Entity,
+    Entity,
 };
 use kit as u;
 use std::{
@@ -51,6 +51,7 @@ pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
             if let Some(f) = flow {
                 match fmt {
                     Format::JSON => u::pp_json(&f),
+                    Format::YAML => println!("{}", serde_yaml::to_string(&f).unwrap()),
                     _ => u::pp_json(&f),
                 }
             }

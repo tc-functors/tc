@@ -1,0 +1,108 @@
+use std::{
+    str::FromStr,
+};
+
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use kit::*;
+use kit as u;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParseError;
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub enum Entity {
+    #[serde(alias = "function")]
+    Function,
+    #[serde(alias = "queue")]
+    Queue,
+    #[serde(alias = "route")]
+    Route,
+    #[serde(alias = "channel")]
+    Channel,
+    #[serde(alias = "event")]
+    Event,
+    #[serde(alias = "state")]
+    State,
+    #[serde(alias = "mutation")]
+    Mutation,
+    #[serde(alias = "trigger")]
+    Trigger,
+    #[serde(alias = "schedule")]
+    Schedule,
+}
+
+impl FromStr for Entity {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "function" | "functions" => Ok(Entity::Function),
+            "queue" | "queues" => Ok(Entity::Queue),
+            "route" | "routes" => Ok(Entity::Route),
+            "channel" | "channels" => Ok(Entity::Channel),
+            "event" | "events" => Ok(Entity::Event),
+            "state" | "states" | "flow" => Ok(Entity::State),
+            "mutation" | "mutations" => Ok(Entity::Mutation),
+            "trigger" | "triggers" => Ok(Entity::Trigger),
+            "schedule" | "schedules" => Ok(Entity::Schedule),
+            _ => Ok(Entity::Function),
+        }
+    }
+}
+
+impl Entity {
+    pub fn to_str(&self) -> String {
+        match self {
+            Entity::Function => s!("function"),
+            Entity::Queue => s!("queue"),
+            Entity::Route => s!("route"),
+            Entity::Channel => s!("channel"),
+            Entity::Event => s!("event"),
+            Entity::Mutation => s!("mutation"),
+            Entity::State => s!("state"),
+            Entity::Trigger => s!("trigger"),
+            Entity::Schedule => s!("schedule"),
+        }
+    }
+
+    pub fn as_entity_component(s: &str) -> (Entity, Option<String>) {
+        let xs: Vec<&str> = s.split("/").collect();
+        let e = u::nth(xs.clone(), 0);
+        let entity = Entity::from_str(&e).unwrap();
+        if xs.len() > 1 {
+            let c = u::nth(xs, 1);
+            (entity, Some(c))
+        } else {
+            (entity, None)
+        }
+    }
+
+    pub fn print() {
+        let v: Vec<&str> = vec![
+            "events",
+            "functions",
+            "roles",
+            "routes",
+            "flow",
+            "mutations",
+            "schedules",
+            "queues",
+            "channels",
+            "pools",
+        ];
+        for x in v {
+            println!("{x}");
+        }
+    }
+
+    pub fn as_entity(s: Option<String>) -> Option<Entity> {
+        match s {
+            Some(p) => Some(Entity::from_str(&p).unwrap()),
+            None => None
+        }
+    }
+
+}

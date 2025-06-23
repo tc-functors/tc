@@ -1,7 +1,7 @@
 use super::template;
+use crate::Entity;
 use crate::spec::{
     ConfigSpec,
-    Entity,
     EventSpec,
 };
 use kit::*;

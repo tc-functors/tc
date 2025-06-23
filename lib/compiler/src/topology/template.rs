@@ -72,3 +72,10 @@ pub fn api_integration_arn(name: &str) -> String {
         lambda_arn(name)
     )
 }
+
+pub fn log_group_arn(log_group: &str) -> String {
+    format!(
+        "arn:aws:logs:{{{{region}}}}:{{{{account}}}}:log-group:{}:*",
+        log_group
+    )
+}

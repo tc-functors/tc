@@ -1,4 +1,3 @@
-use doku::Document;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -9,7 +8,6 @@ use serde_json::Value;
 use std::{
     collections::HashMap,
     path::PathBuf,
-    str::FromStr,
 };
 
 pub mod channel;
@@ -39,62 +37,6 @@ pub use mutation::MutationSpec;
 use parser::yaml::Transformer;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct ParseError;
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Document)]
-pub enum Entity {
-    #[serde(alias = "function")]
-    Function,
-    #[serde(alias = "queue")]
-    Queue,
-    #[serde(alias = "route")]
-    Route,
-    #[serde(alias = "channel")]
-    Channel,
-    #[serde(alias = "event")]
-    Event,
-    #[serde(alias = "state")]
-    State,
-    #[serde(alias = "mutation")]
-    Mutation,
-    #[serde(alias = "trigger")]
-    Trigger,
-}
-
-impl FromStr for Entity {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "function" | "functions" => Ok(Entity::Function),
-            "queue" | "queues" => Ok(Entity::Queue),
-            "route" | "routes" => Ok(Entity::Route),
-            "channel" | "channels" => Ok(Entity::Channel),
-            "event" | "events" => Ok(Entity::Event),
-            "state" | "states" => Ok(Entity::State),
-            "mutation" | "mutations" => Ok(Entity::Mutation),
-            "trigger" | "triggers" => Ok(Entity::Trigger),
-            _ => Ok(Entity::Function),
-        }
-    }
-}
-
-impl Entity {
-    pub fn to_str(&self) -> String {
-        match self {
-            Entity::Function => s!("function"),
-            Entity::Queue => s!("queue"),
-            Entity::Route => s!("route"),
-            Entity::Channel => s!("channel"),
-            Entity::Event => s!("event"),
-            Entity::Mutation => s!("mutation"),
-            Entity::State => s!("state"),
-            Entity::Trigger => s!("trigger"),
-        }
-    }
-}
 
 // topology
 

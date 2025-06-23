@@ -134,3 +134,9 @@ pub async fn delete(auth: &Auth, events: &HashMap<String, Event>) {
         }
     }
 }
+
+pub async fn update(auth: &Auth, events: &HashMap<String, Event>, c: &str) {
+    if let Some(event) = events.get(c) {
+        create_event(auth, event).await;
+    }
+}

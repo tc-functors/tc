@@ -1,6 +1,6 @@
 use super::template;
+use crate::Entity;
 use crate::spec::{
-    Entity,
     MutationSpec,
     mutation::ResolverSpec,
 };

@@ -5,7 +5,7 @@ use super::{
     pool,
 };
 use authorizer::Auth;
-use compiler::Topology;
+use compiler::{Topology, Entity};
 
 pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topology {
     let ctx = Context {
@@ -29,12 +29,13 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topolog
     partial_t
 }
 
-pub async fn resolve_component(
+pub async fn resolve_entity(
     topology: &Topology,
     auth: &Auth,
     sandbox: &str,
-    component: &str,
+    entity: &Entity,
 ) -> Topology {
+
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -47,20 +48,16 @@ pub async fn resolve_component(
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
-    match component {
-        "events" => {
+    match entity {
+        Entity::Event => {
             partial_t.events = event::resolve(&ctx, &partial_t).await;
-        }
-        "functions" => {
+        },
+        Entity::Function => {
             partial_t.functions = function::resolve(&ctx, &partial_t).await;
         }
-        "layers" => {
-            partial_t.functions = function::resolve(&ctx, &partial_t).await;
-        }
-        "pools" => {
+        Entity::Trigger => {
             partial_t.pools = pool::resolve(&ctx, &partial_t).await;
         }
-
         _ => (),
     }
     partial_t

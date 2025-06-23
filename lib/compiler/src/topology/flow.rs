@@ -17,12 +17,19 @@ mod sfn;
 mod sfn_ext;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LogConfig {
+    pub group: String,
+    pub group_arn: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Flow {
     pub name: String,
     pub arn: String,
     pub definition: Value,
     pub mode: String,
     pub role: Role,
+    pub log_config: LogConfig
 }
 
 fn make_role(infra_dir: &str, fqn: &str) -> Role {
@@ -58,6 +65,12 @@ impl Flow {
             None => s!("Express"),
         };
 
+        let lg  = "/aws/vendedlogs/tc/{{namespace}}-{{sandbox}}/states";
+        let log_config = LogConfig {
+            group: s!(lg),
+            group_arn: template::log_group_arn(&lg)
+        };
+
         match def {
             Some(definition) => Some(Flow {
                 name: s!(fqn),
@@ -65,6 +78,7 @@ impl Flow {
                 definition: definition,
                 mode: mode,
                 role: make_role(infra_dir, fqn),
+                log_config: log_config
             }),
             None => None,
         }
