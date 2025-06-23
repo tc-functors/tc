@@ -7,10 +7,21 @@ use authorizer::Auth;
 use compiler::{
     Function,
     Lang,
+    ConfigSpec,
     function::Runtime,
     spec::function::Provider,
 };
 use std::collections::HashMap;
+
+async fn maybe_build(auth: &Auth, function: &Function) {
+    let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
+    let config = ConfigSpec::new(None);
+    let profile = config.aws.lambda.layers_profile.clone();
+    let centralized = auth
+        .assume(profile.clone(), config.role_to_assume(profile))
+        .await;
+    builder::publish(&centralized, builds).await;
+}
 
 async fn create_container(auth: &Auth, function: &Function) -> String {
     let Runtime {
@@ -127,19 +138,19 @@ pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
     }
 }
 
-pub async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
+async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
     let auth = Auth::new(Some(profile), role_arn).await;
-
+    maybe_build(&auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => create_lambda(&auth, &f).await,
         Provider::Fargate => create_container(&auth, &f).await,
     }
 }
 
-pub async fn create(auth: &Auth, fns: HashMap<String, Function>) {
+pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
     match std::env::var("TC_SYNC_CREATE") {
         Ok(_) => {
-            for (_, function) in fns {
+            for (_, function) in fns.clone() {
                 let p = auth.name.to_string();
                 let role = auth.assume_role.to_owned();
                 create_function(p, role, function).await;
@@ -148,11 +159,11 @@ pub async fn create(auth: &Auth, fns: HashMap<String, Function>) {
 
         Err(_) => {
             let mut tasks = vec![];
-            for (_, function) in fns {
+            for (_, function) in fns.clone() {
                 let p = auth.name.to_string();
                 let role = auth.assume_role.to_owned();
                 let h = tokio::spawn(async move {
-                    create_function(p, role, function).await;
+                    create_function(p, role, function.clone()).await;
                 });
                 tasks.push(h);
             }
@@ -163,9 +174,9 @@ pub async fn create(auth: &Auth, fns: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_code(auth: &Auth, fns: HashMap<String, Function>) {
+pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>) {
     let mut tasks = vec![];
-    for (_, function) in fns {
+    for (_, function) in fns.clone() {
         let p = auth.name.to_string();
         let role = auth.assume_role.to_owned();
         let h = tokio::spawn(async move {
@@ -183,22 +194,23 @@ pub async fn delete_function(auth: &Auth, f: Function) {
     function.clone().delete().await.unwrap();
 }
 
-pub async fn delete(auth: &Auth, fns: HashMap<String, Function>) {
+pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_name, function) in fns {
         match function.runtime.package_type.as_ref() {
             "zip" => {
-                let function = make_lambda(auth, function).await;
+                let function = make_lambda(auth, function.clone()).await;
                 function.clone().delete().await.unwrap();
             }
             _ => {
-                let function = make_lambda(auth, function).await;
+                let function = make_lambda(auth, function.clone()).await;
                 function.clone().delete().await.unwrap();
             }
         }
     }
 }
 
-pub async fn update_layers(auth: &Auth, fns: HashMap<String, Function>) {
+// component updates
+async fn update_layers(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_, f) in fns {
         let function = make_lambda(auth, f.clone()).await;
         let arn = auth.lambda_arn(&f.fqn);
@@ -206,7 +218,7 @@ pub async fn update_layers(auth: &Auth, fns: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_vars(auth: &Auth, funcs: HashMap<String, Function>) {
+async fn update_vars(auth: &Auth, funcs: &HashMap<String, Function>) {
     for (_, f) in funcs {
         let memory_size = f.runtime.memory_size.expect("memory error");
         println!("mem {}", memory_size);
@@ -215,7 +227,7 @@ pub async fn update_vars(auth: &Auth, funcs: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_concurrency(auth: &Auth, funcs: HashMap<String, Function>) {
+async fn update_concurrency(auth: &Auth, funcs: &HashMap<String, Function>) {
     for (_, f) in funcs {
         let function = make_lambda(auth, f.clone()).await;
 
@@ -231,7 +243,7 @@ pub async fn update_concurrency(auth: &Auth, funcs: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_tags(auth: &Auth, funcs: HashMap<String, Function>) {
+async fn update_tags(auth: &Auth, funcs: &HashMap<String, Function>) {
     let client = lambda::make_client(auth).await;
     for (_, f) in funcs {
         let arn = auth.lambda_arn(&f.fqn);
@@ -239,7 +251,7 @@ pub async fn update_tags(auth: &Auth, funcs: HashMap<String, Function>) {
     }
 }
 
-pub async fn update_runtime_version(auth: &Auth, fns: HashMap<String, Function>) {
+async fn update_runtime_version(auth: &Auth, fns: &HashMap<String, Function>) {
     let client = lambda::make_client(auth).await;
     match std::env::var("TC_LAMBDA_RUNTIME_VERSION") {
         Ok(v) => {
@@ -250,5 +262,35 @@ pub async fn update_runtime_version(auth: &Auth, fns: HashMap<String, Function>)
             }
         }
         Err(_) => println!("TC_LAMBDA_RUNTIME_VERSION env var is not set"),
+    }
+}
+
+pub async fn update_dir(auth: &Auth, functions: &HashMap<String, Function>, dir: &str) {
+    if kit::file_exists(dir) {
+        match functions.get(dir) {
+            Some(f) => {
+                let p = auth.name.to_string();
+                let role = auth.assume_role.to_owned();
+                create_function(p, role, f.clone()).await;
+            }
+            None => panic!("No valid function found"),
+        }
+    }
+}
+
+pub async fn update(
+    auth: &Auth,
+    functions: &HashMap<String, Function>,
+    component: &str
+) {
+
+    match component {
+        "layers"      => update_layers(&auth, functions).await,
+        "vars"        => update_vars(&auth, functions).await,
+        "concurrency" => update_concurrency(&auth, functions).await,
+        "runtime"     => update_runtime_version(&auth, functions).await,
+        "tags"        => update_tags(&auth, functions).await,
+        "roles"       => (),
+        _             => update_dir(&auth, functions, component).await
     }
 }

@@ -77,7 +77,7 @@ enum Cmd {
     /// Unfreeze a sandbox and make it mutable
     #[clap(hide = true)]
     Unfreeze(UnFreezeArgs),
-    /// Update components
+    /// Update entity and components
     Update(UpdateArgs),
     /// upgrade tc version
     Upgrade(UpgradeArgs),
@@ -162,7 +162,7 @@ pub struct ResolveArgs {
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
-    component: Option<String>,
+    entity: Option<String>,
     #[arg(long, action, short = 'q')]
     quiet: bool,
     #[arg(long, action, short = 'r')]
@@ -170,7 +170,7 @@ pub struct ResolveArgs {
     #[arg(long, action)]
     diff: bool,
     #[arg(long, action)]
-    no_cache: bool,
+    cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -270,7 +270,7 @@ pub struct CreateArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    no_cache: bool,
+    cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -292,7 +292,7 @@ pub struct UpdateArgs {
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
-    component: Option<String>,
+    entity: Option<String>,
     #[arg(long, short = 'a')]
     asset: Option<String>,
     #[arg(long, action)]
@@ -300,7 +300,7 @@ pub struct UpdateArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    no_cache: bool,
+    cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -314,11 +314,11 @@ pub struct DeleteArgs {
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
-    component: Option<String>,
+    entity: Option<String>,
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    no_cache: bool,
+    cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -500,14 +500,14 @@ async fn create(args: CreateArgs) {
         sandbox,
         notify,
         recursive,
-        no_cache,
+        cache,
         topology,
         trace,
         ..
     } = args;
 
     init_tracing(trace);
-    tc::create(profile, sandbox, notify, recursive, no_cache, topology).await;
+    tc::create(profile, sandbox, notify, recursive, cache, topology).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -515,9 +515,9 @@ async fn update(args: UpdateArgs) {
         profile,
         role,
         sandbox,
-        component,
+        entity,
         recursive,
-        no_cache,
+        cache,
         trace,
         ..
     } = args;
@@ -525,11 +525,7 @@ async fn update(args: UpdateArgs) {
     init_tracing(trace);
     let env = tc::init(profile, role).await;
 
-    if kit::option_exists(component.clone()) {
-        tc::update_component(env, sandbox, component, recursive).await;
-    } else {
-        tc::update(env, sandbox, recursive, no_cache).await;
-    }
+    tc::update(env, sandbox, entity, recursive, cache).await;
 }
 
 async fn delete(args: DeleteArgs) {
@@ -537,21 +533,17 @@ async fn delete(args: DeleteArgs) {
         profile,
         role,
         sandbox,
-        component,
+        entity,
         recursive,
         trace,
+        cache,
         ..
     } = args;
 
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-
-    if kit::option_exists(component.clone()) {
-        tc::delete_component(env, sandbox, component, recursive).await;
-    } else {
-        tc::delete(env, sandbox, recursive).await;
-    }
+    tc::delete(env, sandbox, entity, recursive, cache).await;
 }
 
 async fn compile(args: CompileArgs) {
@@ -580,10 +572,9 @@ async fn resolve(args: ResolveArgs) {
         profile,
         role,
         sandbox,
-        component,
-        quiet,
+        entity,
         recursive,
-        no_cache,
+        cache,
         trace,
         ..
     } = args;
@@ -591,10 +582,7 @@ async fn resolve(args: ResolveArgs) {
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-    let plan = tc::resolve(env, sandbox, component, recursive, no_cache).await;
-    if !quiet {
-        println!("{plan}");
-    }
+    tc::resolve(env, sandbox, entity, recursive, cache).await;
 }
 
 async fn invoke(args: InvokeArgs) {

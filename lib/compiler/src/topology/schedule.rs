@@ -10,6 +10,7 @@ use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Schedule {
+    pub group: String,
     pub name: String,
     pub rule_name: String,
     pub target_arn: String,
@@ -27,7 +28,7 @@ fn make_expression(expression: &str) -> String {
     }
 }
 
-pub fn make_all(infra_dir: &str) -> HashMap<String, Schedule> {
+pub fn make_all(namespace: &str, infra_dir: &str) -> HashMap<String, Schedule> {
     let path = format!("{}/schedules.json", infra_dir);
 
     if u::file_exists(&path) {
@@ -40,6 +41,7 @@ pub fn make_all(infra_dir: &str) -> HashMap<String, Schedule> {
             let role_name = s!("tc-base-event-role");
 
             let s = Schedule {
+                group: namespace.to_string(),
                 name: name.to_string(),
                 rule_name: rule_name,
                 target_arn: spec.target,

@@ -2,7 +2,7 @@ mod aws;
 pub mod base;
 pub mod channel;
 pub mod event;
-pub mod flow;
+pub mod state;
 pub mod function;
 pub mod mutation;
 pub mod pool;
@@ -14,90 +14,15 @@ pub mod schedule;
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::{
+    Entity,
     Topology,
-    spec::TopologyKind,
 };
 
-pub fn maybe_component(c: Option<String>) -> String {
-    match c {
-        Some(comp) => comp,
-        _ => "default".to_string(),
-    }
-}
-
-fn prn_components() {
-    let v: Vec<&str> = vec![
-        "events",
-        "functions",
-        "layers",
-        "roles",
-        "routes",
-        "flow",
-        "vars",
-        "logs",
-        "mutations",
-        "schedules",
-        "queues",
-        "channels",
-        "base-roles",
-        "pools",
-    ];
-    for x in v {
-        println!("{x}");
-    }
-}
-
-fn should_update_layers() -> bool {
-    match std::env::var("LAYERS") {
-        Ok(_) => true,
-        Err(_e) => false,
-    }
-}
-
-async fn create_flow(auth: &Auth, topology: &Topology) {
+pub async fn create(auth: &Auth, topology: &Topology) {
     let Topology {
-        fqn,
-        functions,
-        routes,
-        events,
-        flow,
-        mutations,
-        queues,
-        logs,
-        tags,
-        channels,
-        ..
-    } = topology;
-
-    role::create_or_update(auth, &topology.roles()).await;
-    function::create(auth, functions.clone()).await;
-    if should_update_layers() {
-        function::update_layers(auth, functions.clone()).await;
-    }
-    match flow {
-        Some(f) => {
-            flow::create(auth, tags, f.clone()).await;
-            let sfn_arn = &auth.sfn_arn(&fqn);
-            flow::enable_logs(auth, sfn_arn, logs.clone(), f).await;
-            let role_name = "tc-base-api-role";
-            let role_arn = &auth.role_arn(&role_name);
-            route::create(&auth, role_arn, routes.clone()).await;
-        }
-        None => {
-            let role_name = "tc-base-api-role";
-            let role_arn = &auth.role_arn(&role_name);
-            route::create(&auth, role_arn, routes.clone()).await;
-        }
-    }
-
-    channel::create(&auth, channels).await;
-    mutation::create(&auth, mutations, &tags).await;
-    queue::create(&auth, queues).await;
-    event::create(&auth, events).await;
-}
-
-async fn create_function(auth: &Auth, topology: &Topology) {
-    let Topology {
+        namespace,
+        version,
+        sandbox,
         functions,
         routes,
         events,
@@ -106,28 +31,7 @@ async fn create_function(auth: &Auth, topology: &Topology) {
         tags,
         pools,
         channels,
-        ..
-    } = topology;
-    role::create_or_update(&auth, &topology.roles()).await;
-    function::create(&auth, functions.clone()).await;
-    channel::create(&auth, channels).await;
-    mutation::create(&auth, mutations, tags).await;
-    queue::create(&auth, queues).await;
-    event::create(&auth, events).await;
-    pool::create(&auth, pools.clone()).await;
-    function::update_concurrency(&auth, functions.clone()).await;
-
-    let role_name = "tc-base-api-role";
-    let role_arn = &auth.role_arn(&role_name);
-    route::create(&auth, role_arn, routes.clone()).await;
-}
-
-pub async fn create(auth: &Auth, topology: &Topology) {
-    let Topology {
-        kind,
-        namespace,
-        version,
-        sandbox,
+        flow,
         ..
     } = topology;
 
@@ -139,13 +43,20 @@ pub async fn create(auth: &Auth, topology: &Topology) {
         &version
     );
 
-    match kind {
-        TopologyKind::StepFunction => create_flow(auth, &topology).await,
-        _ => create_function(auth, &topology).await,
+    role::create_or_update(auth, &topology.roles()).await;
+    function::create(auth, functions).await;
+    channel::create(&auth, channels).await;
+    mutation::create(&auth, mutations, &tags).await;
+    queue::create(&auth, queues).await;
+    event::create(&auth, events).await;
+    pool::create(&auth, pools).await;
+    route::create(&auth, routes).await;
+    if let Some(f) = flow {
+        state::create(&auth, &f, tags).await;
     }
 }
 
-pub async fn update(auth: &Auth, topology: &Topology) {
+async fn update(auth: &Auth, topology: &Topology) {
     let Topology {
         namespace,
         version,
@@ -156,6 +67,8 @@ pub async fn update(auth: &Auth, topology: &Topology) {
         events,
         queues,
         tags,
+        pools,
+        routes,
         ..
     } = topology;
 
@@ -167,21 +80,20 @@ pub async fn update(auth: &Auth, topology: &Topology) {
         &version
     );
 
-    function::update_code(&auth, functions.clone()).await;
-    function::update_concurrency(&auth, functions.clone()).await;
-    match flow {
-        Some(f) => flow::create(&auth, tags, f.clone()).await,
-        None => (),
+    function::update_code(&auth, functions).await;
+    mutation::create(&auth, mutations, &tags).await;
+    event::create(&auth, events).await;
+    queue::create(&auth, queues).await;
+    pool::create(&auth, pools).await;
+    route::create(&auth, routes).await;
+    if let Some(f) = flow {
+        state::create(&auth, &f, tags).await;
     }
-    mutation::create(&auth, &mutations, &tags).await;
-    event::create(&auth, &events).await;
-    queue::create(&auth, &queues).await;
 }
 
-pub async fn update_component(auth: &Auth, topology: &Topology, component: Option<String>) {
-    let component = maybe_component(component);
+async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
+
     let Topology {
-        fqn,
         version,
         namespace,
         sandbox,
@@ -194,10 +106,59 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
         queues,
         tags,
         channels,
-        logs,
         pools,
         ..
-    } = topology.clone();
+    } = topology;
+
+    println!(
+        "Updating functor {}@{}.{}/{}/{}",
+        namespace.green(),
+        sandbox.cyan(),
+        &auth.name.blue(),
+        version,
+        &entity.to_str()
+    );
+    match entity {
+
+        Entity::Event    => event::create(&auth, events).await,
+        Entity::Function => function::create(&auth, functions).await,
+        Entity::Mutation => mutation::create(&auth, mutations, tags).await,
+        Entity::Queue    => queue::create(&auth, queues).await,
+        Entity::Channel  => channel::create(&auth, channels).await,
+        Entity::Schedule => schedule::create(&auth, schedules).await,
+        Entity::Trigger  => pool::create(&auth, pools).await,
+        Entity::Route    => route::create(&auth, routes).await,
+        Entity::State    => {
+            if let Some(f) = flow {
+                state::create(&auth, f, tags).await;
+            }
+        }
+    }
+
+}
+
+async fn update_component(
+    auth: &Auth,
+    topology: &Topology,
+    entity: Entity,
+    component: &str
+) {
+    let Topology {
+        version,
+        namespace,
+        sandbox,
+        functions,
+        events,
+        routes,
+        flow,
+        mutations,
+        schedules,
+        queues,
+        tags,
+        channels,
+        pools,
+        ..
+    } = topology;
 
     println!(
         "Updating functor {}@{}.{}/{}/{}",
@@ -205,152 +166,65 @@ pub async fn update_component(auth: &Auth, topology: &Topology, component: Optio
         &sandbox.cyan(),
         &auth.name.blue(),
         &version,
-        &component
+        &entity.to_str()
     );
 
-    match component.as_str() {
-        "events" => {
-            event::create(&auth, &events).await;
-        }
 
-        "functions" => {
-            function::create(&auth, functions).await;
-        }
 
-        "layers" => {
-            function::update_layers(&auth, functions).await;
-        }
+    match entity {
 
-        "routes" => match flow {
-            Some(f) => {
-                //let role_name = "tc-base-api-role";
-                let role_arn = &auth.role_arn(&f.role.name);
-                route::create(&auth, role_arn, routes).await;
-            }
-            None => {
-                let role_name = "tc-base-api-role";
-                let role_arn = &auth.role_arn(&role_name);
-                route::create(&auth, role_arn, routes).await;
-            }
-        },
-
-        "runtime" => {
-            function::update_runtime_version(&auth, functions).await;
-        }
-
-        "vars" => {
-            function::update_vars(&auth, functions).await;
-        }
-
-        "concurrency" => {
-            function::update_concurrency(&auth, functions).await;
-        }
-
-        "tags" => {
-            function::update_tags(&auth, functions).await;
-            match flow {
-                Some(f) => flow::update_tags(&auth, &f.name, tags).await,
-                None => println!("No flow defined, skipping"),
-            }
-        }
-        "flow" => match flow {
-            Some(f) => flow::update_definition(&auth, &tags, f).await,
-            None => println!("No flow defined, skipping"),
-        },
-
-        "mutations" => mutation::create(&auth, &mutations, &tags).await,
-
-        "roles" => role::create_or_update(&auth, &topology.roles()).await,
-
-        "schedules" => schedule::create(&auth, &namespace, schedules).await,
-
-        "queues" => queue::create(&auth, &queues).await,
-
-        "channels" => channel::create(&auth, &channels).await,
-
-        "base-roles" => base::create_roles(&auth).await,
-
-        "logs" => match flow {
-            Some(f) => {
-                let sfn_arn = auth.sfn_arn(&fqn);
-                flow::enable_logs(&auth, &sfn_arn, logs.clone(), &f).await;
-            }
-            None => (),
-        },
-
-        "pools" => pool::create(&auth, pools).await,
-
-        "all" => {
-            role::create_or_update(&auth, &topology.roles()).await;
-            function::create(&auth, functions.clone()).await;
-            match flow {
-                Some(f) => flow::create(&auth, &tags, f).await,
-                None => (),
-            }
-            function::update_vars(&auth, functions.clone()).await;
-            function::update_tags(&auth, functions).await;
-        }
-
-        _ => {
-            if kit::file_exists(&component) {
-                let c = kit::strip(&component, "/").replace("_", "-");
-                match functions.get(&c) {
-                    Some(f) => {
-                        builder::build(&f, None, None, None, None).await;
-                        let p = auth.name.to_string();
-                        let role = auth.assume_role.to_owned();
-                        function::create_function(p, role, f.clone()).await;
-                    }
-                    None => panic!("No valid function found"),
-                }
-            } else {
-                println!("Available components: ");
-                prn_components();
+        Entity::Event    => event::update(&auth, events, component).await,
+        Entity::Function => function::update(&auth, functions, component).await,
+        Entity::Mutation => mutation::update(&auth, mutations, &component).await,
+        Entity::Queue    => queue::update(&auth, queues, component).await,
+        Entity::Channel  => channel::update(&auth, channels, component).await,
+        Entity::Schedule => schedule::update(&auth, schedules).await,
+        Entity::Trigger  => pool::update(&auth, pools, component).await,
+        Entity::Route    => route::update(&auth, routes, component).await,
+        Entity::State    => {
+            if let Some(f) = flow {
+                state::update(&auth, f, tags, component).await;
             }
         }
     }
 }
 
-pub async fn delete(auth: &Auth, topology: &Topology) {
+async fn delete(auth: &Auth, topology: &Topology) {
     let Topology {
-        fqn,
+        sandbox,
         namespace,
         functions,
         flow,
-        sandbox,
         mutations,
         routes,
         version,
         queues,
         ..
-    } = topology.clone();
+    } = topology;
 
     println!(
         "Deleting functor: {}@{}.{}/{}",
-        &namespace.green(),
-        &sandbox.cyan(),
+        namespace.green(),
+        sandbox.cyan(),
         &auth.name.blue(),
         &version
     );
 
-    match flow {
-        Some(f) => {
-            let sfn_arn = auth.sfn_arn(&fqn);
-            flow::disable_logs(&auth, &sfn_arn).await;
-            flow::delete(&auth, f.clone()).await;
-        }
-        None => println!("No flow defined, skipping"),
+    if let Some(f) = flow {
+        state::delete(auth, f).await;
     }
     function::delete(&auth, functions).await;
     role::delete(&auth, &topology.roles()).await;
-    route::delete(&auth, "", routes).await;
-
-    mutation::delete(&auth, &mutations).await;
-    queue::delete(&auth, &queues).await;
+    route::delete(&auth, routes).await;
+    mutation::delete(&auth, mutations).await;
+    queue::delete(&auth, queues).await;
 }
 
-pub async fn delete_component(auth: &Auth, topology: Topology, component: Option<String>) {
-    let component = maybe_component(component);
+async fn delete_entity(
+    auth: &Auth,
+    topology: &Topology,
+    entity: Entity
+) {
     let Topology {
         namespace,
         functions,
@@ -362,29 +236,104 @@ pub async fn delete_component(auth: &Auth, topology: Topology, component: Option
         sandbox,
         version,
         pools,
+        queues,
+        channels,
         ..
     } = topology;
 
     println!(
         "Deleting functor: {}@{}.{}/{}/{}",
-        &namespace.green(),
-        &sandbox.cyan(),
+        &namespace.red(),
+        &sandbox.red(),
         &auth.name.blue(),
         &version,
+        entity.to_str()
+    );
+
+    match entity {
+        Entity::Event    => event::delete(&auth, events).await,
+        Entity::Route    => route::delete(&auth, routes).await,
+        Entity::Function => function::delete(&auth, functions).await,
+        Entity::Mutation => mutation::delete(&auth, mutations).await,
+        Entity::Schedule => schedule::delete(&auth, schedules).await,
+        Entity::Trigger  => pool::delete(&auth, pools).await,
+        Entity::Queue    => queue::delete(&auth, queues).await,
+        Entity::Channel  => channel::delete(&auth, channels).await,
+        Entity::State    => {
+            if let Some(f) = flow {
+                state::delete(&auth, f).await;
+            }
+        }
+    }
+}
+
+
+async fn delete_component(
+    auth: &Auth,
+    topology: &Topology,
+    entity: Entity,
+    component: &str
+) {
+    let Topology {
+        namespace,
+        sandbox,
+        version,
+        ..
+    } = topology;
+
+    println!(
+        "Deleting functor: {}@{}.{}/{}/{}/{}",
+        namespace.green(),
+        sandbox.cyan(),
+        &auth.name.blue(),
+        version,
+        entity.to_str(),
         &component
     );
 
-    match component.as_str() {
-        "events" => event::delete(&auth, &events).await,
-        "schedules" => schedule::delete(&auth, &namespace, schedules).await,
-        "routes" => route::delete(&auth, "", routes).await,
-        "functions" => function::delete(&auth, functions).await,
-        "mutations" => mutation::delete(&auth, &mutations).await,
-        "pools" => pool::delete(&auth, pools).await,
-        "flow" => match flow {
-            Some(f) => flow::delete(&auth, f).await,
-            None => (),
+
+}
+
+
+// pub interfaces
+
+pub async fn try_update(
+    auth: &Auth,
+    topology: &Topology,
+    maybe_entity: &Option<String>,
+) {
+
+    match maybe_entity {
+        Some(e) => {
+            let (entity, component) = Entity::as_entity_component(&e);
+            match component {
+                Some(c) => {
+                    update_component(auth, topology, entity, &c).await
+                },
+                None => update_entity(auth, topology, entity).await
+            }
         },
-        _ => prn_components(),
+        None => update(auth, topology).await
+    }
+}
+
+
+pub async fn try_delete(
+    auth: &Auth,
+    topology: &Topology,
+    maybe_entity: &Option<String>,
+) {
+
+    match maybe_entity {
+        Some(e) => {
+            let (entity, component) = Entity::as_entity_component(&e);
+            match component {
+                Some(c) => {
+                    delete_component(auth, topology, entity, &c).await
+                },
+                None => delete_entity(auth, topology, entity).await
+            }
+        },
+        None => delete(auth, topology).await
     }
 }

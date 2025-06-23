@@ -6,7 +6,7 @@ use authorizer::Auth;
 use compiler::topology::Pool;
 use std::collections::HashMap;
 
-pub async fn delete(_auth: &Auth, _pools: HashMap<String, Pool>) {
+pub async fn delete(_auth: &Auth, _pools: &HashMap<String, Pool>) {
     // let client = cognito::make_client(auth).await;
     // for pool in pools {
     //     //cognito::delete_pool(&client, &pool).await
@@ -34,7 +34,7 @@ async fn update_functions(auth: &Auth, pool_id: &str, triggers: HashMap<String, 
     }
 }
 
-pub async fn create(auth: &Auth, pools: HashMap<String, Pool>) {
+pub async fn create(auth: &Auth, pools: &HashMap<String, Pool>) {
     let client = cognito::make_client(auth).await;
     for (name, pool) in pools {
         let mappings = cognito::make_lambda_mappings(pool.triggers.clone());
@@ -44,4 +44,8 @@ pub async fn create(auth: &Auth, pools: HashMap<String, Pool>) {
             cognito::create_or_update_pool(&client, &name, mappings.clone(), email_config).await;
         update_functions(auth, &pool_id, pool.triggers.clone()).await
     }
+}
+
+pub async fn update(_auth: &Auth, _pools: &HashMap<String, Pool>, _c: &str) {
+
 }

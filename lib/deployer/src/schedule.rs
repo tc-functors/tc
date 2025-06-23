@@ -3,10 +3,11 @@ use authorizer::Auth;
 use compiler::Schedule;
 use std::collections::HashMap;
 
-pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {
+pub async fn create_schedule(auth: &Auth, schedule: &Schedule) {
     let client = aws::scheduler::make_client(&auth).await;
     let Schedule {
         name,
+        group,
         target_arn,
         role_arn,
         expression,
@@ -18,7 +19,7 @@ pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {
         let target = aws::scheduler::make_target(&target_arn, &role_arn, "sfn", &payload);
         let _ = aws::scheduler::create_or_update_schedule(
             &client,
-            namespace,
+            group,
             &name,
             target,
             &expression,
@@ -27,17 +28,21 @@ pub async fn create_schedule(auth: &Auth, namespace: &str, schedule: Schedule) {
     }
 }
 
-pub async fn create(auth: &Auth, namespace: &str, schedules: HashMap<String, Schedule>) {
+pub async fn create(auth: &Auth, schedules: &HashMap<String, Schedule>) {
     let client = aws::scheduler::make_client(&auth).await;
-    aws::scheduler::find_or_create_group(&client, namespace).await;
     for (_, schedule) in schedules {
-        create_schedule(&auth, namespace, schedule).await;
+        aws::scheduler::find_or_create_group(&client, &schedule.group).await;
+        create_schedule(&auth, schedule).await;
     }
 }
 
-pub async fn delete(auth: &Auth, namespace: &str, schedules: HashMap<String, Schedule>) {
+pub async fn delete(auth: &Auth, schedules: &HashMap<String, Schedule>) {
     let client = aws::scheduler::make_client(&auth).await;
     for (_, schedule) in schedules {
-        let _ = aws::scheduler::delete_schedule(&client, namespace, &schedule.name).await;
+        let _ = aws::scheduler::delete_schedule(&client, &schedule.group, &schedule.name).await;
     }
+}
+
+pub async fn update(_auth: &Auth, _schedules: &HashMap<String, Schedule>) {
+
 }

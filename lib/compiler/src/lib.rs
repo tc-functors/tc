@@ -2,13 +2,16 @@ mod display;
 mod parser;
 pub mod spec;
 pub mod topology;
+mod entity;
 
 use display::Format;
 pub use display::topology::TopologyCount;
 use kit as u;
 use kit::*;
+
+pub use entity::Entity;
+
 pub use spec::{
-    Entity,
     TopologyKind,
     TopologySpec,
     config::ConfigSpec,
@@ -39,7 +42,6 @@ pub use topology::{
         layer::Layer,
         runtime::Runtime,
     },
-    log::LogConfig,
     mutation,
     mutation::Mutation,
     queue::Queue,
@@ -172,6 +174,14 @@ pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
         }
     } else {
         display::display(entity, format, &topology);
+    }
+}
+
+pub fn pprint(topology: &Topology, entity: Option<Entity>) {
+    let fmt = Format::JSON;
+    match entity {
+        Some(e) => display::display(e, fmt, topology),
+        None => u::pp_json(topology)
     }
 }
 

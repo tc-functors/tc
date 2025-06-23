@@ -1,6 +1,6 @@
 use super::template;
+use crate::Entity;
 use crate::spec::{
-    Entity,
     RouteSpec,
     TopologySpec,
     config::ConfigSpec,
@@ -20,6 +20,7 @@ pub struct Route {
     pub gateway: String,
     pub authorizer: String,
     pub entity: Entity,
+    pub role_arn: String,
     pub target_name: String,
     pub target_arn: String,
     pub stage: String,
@@ -110,12 +111,15 @@ impl Route {
             None => s!("$default"),
         };
 
+        // FIXME: role_arn is flow.role.name if target is flow
+
         Route {
             method: method.clone(),
             path: path,
             gateway: gateway,
             authorizer: rspec.authorizer.clone(),
             entity: entity,
+            role_arn: template::role_arn("tc-base-api-role"),
             target_name: target_name,
             target_arn: target_arn,
             stage: stage,

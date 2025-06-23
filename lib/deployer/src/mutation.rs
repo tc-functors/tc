@@ -67,3 +67,7 @@ pub async fn delete(auth: &Auth, mutations: &HashMap<String, Mutation>) {
         appsync::delete_api(&client, &api_name).await;
     }
 }
+
+pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Mutation>, _c: &str) {
+    todo!()
+}

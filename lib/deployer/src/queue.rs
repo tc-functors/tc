@@ -64,3 +64,7 @@ pub async fn delete(auth: &Auth, queues: &HashMap<String, Queue>) {
         sqs::delete_queue(&client, &auth.sqs_url(&queue.name)).await;
     }
 }
+
+pub async fn update(_auth: &Auth, _queues: &HashMap<String, Queue>, _c: &str) {
+    todo!()
+}

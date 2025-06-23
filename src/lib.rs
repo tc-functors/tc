@@ -1,7 +1,7 @@
 use authorizer::Auth;
 use compiler::{
-    Function,
     Topology,
+    Entity,
     spec::{
         BuildSpec,
         ConfigSpec,
@@ -139,18 +139,21 @@ pub async fn compile(opts: CompileOpts) {
 pub async fn resolve(
     auth: Auth,
     sandbox: Option<String>,
-    component: Option<String>,
+    maybe_entity: Option<String>,
     recursive: bool,
-    no_cache: bool,
-) -> String {
+    cache: bool,
+) {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let resolved_topology = match component.clone() {
-        Some(c) => resolver::resolve_component(&auth, &sandbox, &topology, &c).await,
-        None => resolver::resolve(&auth, &sandbox, &topology, !no_cache).await,
-    };
-
-    resolver::pprint(&resolved_topology, component)
+    let rt = resolver::try_resolve(
+        &auth,
+        &sandbox,
+        &topology,
+        &maybe_entity,
+        cache
+    ).await;
+    let entity = Entity::as_entity(maybe_entity);
+    compiler::pprint(&rt, entity)
 }
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {
@@ -185,29 +188,12 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     }
 }
 
-async fn maybe_build(auth: &Auth, function: &Function) {
-    let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
-    let config = ConfigSpec::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    let centralized = auth
-        .assume(profile.clone(), config.role_to_assume(profile))
-        .await;
-    builder::publish(&centralized, builds).await;
-}
 
 async fn create_topology(auth: &Auth, topology: &Topology) {
-    let Topology { functions, .. } = topology;
 
-    for (_, function) in functions {
-        maybe_build(auth, &function).await;
-    }
     deployer::create(auth, topology).await;
 
     for (_, node) in &topology.nodes {
-        for (_, function) in &node.functions {
-            maybe_build(auth, &function).await;
-        }
-
         deployer::create(auth, node).await;
     }
 }
@@ -236,7 +222,7 @@ pub async fn create(
     sandbox: Option<String>,
     notify: bool,
     recursive: bool,
-    no_cache: bool,
+    cache: bool,
     topology_path: Option<String>,
 ) {
     let start = Instant::now();
@@ -253,7 +239,7 @@ pub async fn create(
             println!("Compiling topology {} ...", &compiler::topology_name(&dir));
             let ct = compiler::compile(&dir, recursive);
             println!("Resolving topology {} ...", &ct.namespace);
-            let rt = resolver::resolve(&auth, &sandbox, &ct, !no_cache).await;
+            let rt = resolver::resolve(&auth, &sandbox, &ct, cache).await;
             rt
         }
     };
@@ -276,93 +262,64 @@ pub async fn create(
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
-async fn update_topology(auth: &Auth, topology: &Topology) {
-    let Topology { functions, .. } = topology;
+pub async fn update(
+    auth: Auth,
+    sandbox: Option<String>,
+    maybe_entity: Option<String>,
+    recursive: bool,
+    cache: bool
 
-    for (_, function) in functions {
-        maybe_build(auth, &function).await;
-    }
-
-    deployer::update(auth, topology).await;
-}
-
-pub async fn update(auth: Auth, sandbox: Option<String>, recursive: bool, no_cache: bool) {
+) {
     let sandbox = resolver::maybe_sandbox(sandbox);
+
     releaser::guard(&sandbox);
+
     let start = Instant::now();
 
-    println!("Compiling topology");
+    println!("Compiling topology...");
     let topology = compiler::compile(&u::pwd(), recursive);
 
-    compiler::count_of(&topology);
+    let msg = compiler::count_of(&topology);
+    println!("{}", msg);
 
-    let root = resolver::resolve(&auth, &sandbox, &topology, !no_cache).await;
-    update_topology(&auth, &root).await;
+    println!("Resolving topology {}...", &topology.namespace);
+    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
+
+    deployer::try_update(&auth, &root, &maybe_entity.clone()).await;
 
     for (_, node) in root.nodes {
-        update_topology(&auth, &node).await;
+        deployer::try_update(&auth, &node, &maybe_entity).await;
     }
     builder::clean(recursive);
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
-pub async fn update_component(
+pub async fn delete(
     auth: Auth,
     sandbox: Option<String>,
-    component: Option<String>,
+    maybe_entity: Option<String>,
     recursive: bool,
+    cache: bool
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     releaser::guard(&sandbox);
-    println!("Compiling topology");
+
+    let start = Instant::now();
+    println!("Compiling topology...");
     let topology = compiler::compile(&u::pwd(), recursive);
 
     compiler::count_of(&topology);
+    println!("Resolving topology...");
+    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
 
-    let c = deployer::maybe_component(component.clone());
-    let root = resolver::resolve_component(&auth, &sandbox, &topology, &c).await;
-    deployer::update_component(&auth, &root, component.clone()).await;
-
-    for (_, node) in root.nodes {
-        deployer::update_component(&auth, &node, component.clone()).await;
-    }
-}
-
-pub async fn delete(auth: Auth, sandbox: Option<String>, recursive: bool) {
-    let sandbox = resolver::maybe_sandbox(sandbox);
-    releaser::guard(&sandbox);
-    println!("Compiling topology");
-    let topology = compiler::compile(&u::pwd(), recursive);
-
-    compiler::count_of(&topology);
-    let root = resolver::resolve(&auth, &sandbox, &topology, true).await;
-
-    deployer::delete(&auth, &root).await;
-    for (_, node) in root.nodes {
-        deployer::delete(&auth, &node).await
-    }
-}
-
-pub async fn delete_component(
-    auth: Auth,
-    sandbox: Option<String>,
-    component: Option<String>,
-    recursive: bool,
-) {
-    let sandbox = resolver::maybe_sandbox(sandbox);
-    releaser::guard(&sandbox);
-    println!("Compiling topology");
-    let topology = compiler::compile(&u::pwd(), recursive);
-
-    compiler::count_of(&topology);
-    println!("Resolving topology");
-    let root = resolver::resolve(&auth, &sandbox, &topology, true).await;
-    deployer::delete_component(&auth, root.clone(), component.clone()).await;
+    deployer::try_delete(&auth, &root, &maybe_entity).await;
 
     for (_, node) in root.nodes {
-        deployer::delete_component(&auth, node, component.clone()).await
+        deployer::try_delete(&auth, &node, &maybe_entity).await;
     }
+    let duration = start.elapsed();
+    println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
 pub struct InvokeOptions {

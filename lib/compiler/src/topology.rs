@@ -2,7 +2,6 @@ pub mod channel;
 pub mod event;
 pub mod flow;
 pub mod function;
-pub mod log;
 pub mod mutation;
 pub mod pool;
 pub mod queue;
@@ -28,7 +27,6 @@ pub use function::{
 };
 use kit as u;
 use kit::*;
-pub use log::LogConfig;
 pub use mutation::Mutation;
 pub use pool::Pool;
 pub use queue::Queue;
@@ -70,7 +68,6 @@ pub struct Topology {
     pub channels: HashMap<String, Channel>,
     pub pools: HashMap<String, Pool>,
     pub tags: HashMap<String, String>,
-    pub logs: LogConfig,
     pub flow: Option<Flow>,
     pub config: ConfigSpec,
 }
@@ -510,14 +507,13 @@ fn make(
         nodes: nodes,
         functions: functions,
         events: make_events(&namespace, &spec, &fqn, &config),
-        schedules: schedule::make_all(&infra_dir),
+        schedules: schedule::make_all(&namespace, &infra_dir),
         routes: make_routes(&spec, &fqn, &config),
         queues: make_queues(&spec, &config),
         mutations: mutations,
         channels: make_channels(&spec, &config),
         pools: make_pools(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
-        logs: LogConfig::new(),
         flow: flow,
         config: ConfigSpec::new(None),
     }
@@ -562,7 +558,6 @@ fn make_standalone(dir: &str) -> Topology {
         mutations: HashMap::new(),
         queues: HashMap::new(),
         channels: HashMap::new(),
-        logs: LogConfig::new(),
         tags: HashMap::new(),
         schedules: HashMap::new(),
         config: ConfigSpec::new(None),

@@ -40,7 +40,7 @@ fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
     }
 }
 
-async fn make_api(auth: &Auth, role: &str, route: &Route, cors: Option<Cors>) -> Api {
+async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>) -> Api {
     let client = gateway::make_client(auth).await;
 
     Api {
@@ -48,7 +48,7 @@ async fn make_api(auth: &Auth, role: &str, route: &Route, cors: Option<Cors>) ->
         client: client,
         stage: route.stage.to_owned(),
         stage_variables: route.stage_variables.to_owned(),
-        role: role.to_string(),
+        role: route.role_arn.to_string(),
         path: route.to_owned().path,
         authorizer: route.to_owned().authorizer,
         method: route.method.to_owned(),
@@ -155,17 +155,17 @@ async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
     println!("Endpoint {}", &endpoint);
 }
 
-async fn create_route(auth: &Auth, route: &Route, role: &str, cors: Option<Cors>) {
-    let api = make_api(auth, role, route, cors).await;
+async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>) {
+    let api = make_api(auth, route, cors).await;
     create_api(auth, &api, &route.entity, &route.target_arn).await;
 }
 
-pub async fn create(auth: &Auth, role: &str, routes: HashMap<String, Route>) {
+pub async fn create(auth: &Auth, routes: &HashMap<String, Route>) {
     let cors = make_cors(&routes);
     tracing::debug!("Updating cors: {:?}", cors);
     for (_, route) in routes {
         //println!("Creating route {} {}", &route.method, &route.path);
-        create_route(auth, &route, role, cors.clone()).await;
+        create_route(auth, &route, cors.clone()).await;
     }
 }
 
@@ -180,8 +180,8 @@ async fn delete_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
     }
 }
 
-async fn delete_route(auth: &Auth, route: &Route, role: &str) {
-    let api = make_api(auth, role, route, None).await;
+async fn delete_route(auth: &Auth, route: &Route) {
+    let api = make_api(auth, route, None).await;
     let api_id = api.clone().find().await;
     let route_key = format!("{} {}", &route.method, &route.path);
 
@@ -206,9 +206,13 @@ async fn delete_route(auth: &Auth, route: &Route, role: &str) {
     }
 }
 
-pub async fn delete(auth: &Auth, role: &str, routes: HashMap<String, Route>) {
+pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
     for (name, route) in routes {
         info!("Deleting route {}", &name);
-        delete_route(auth, &route, role).await;
+        delete_route(auth, &route).await;
     }
+}
+
+pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str) {
+
 }
