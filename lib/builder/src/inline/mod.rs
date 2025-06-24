@@ -4,6 +4,8 @@ mod python;
 mod ruby;
 mod rust;
 
+use colored::Colorize;
+
 use authorizer::Auth;
 use compiler::{
     Build,
@@ -12,10 +14,10 @@ use compiler::{
 };
 use kit as u;
 use kit::{
-    LogUpdate,
     sh,
 };
-use std::io::stdout;
+
+use crate::types::BuildStatus;
 
 fn gen_dockerfile(dir: &str, langr: &LangRuntime, force: bool) {
     match langr.to_lang() {
@@ -78,7 +80,7 @@ async fn get_token() -> String {
     }
 }
 
-async fn build_with_docker(dir: &str) {
+async fn build_with_docker(dir: &str) -> (bool, String, String) {
     let root = &u::root();
     let token = get_token().await;
     let cmd_str = match std::env::var("DOCKER_SSH") {
@@ -94,19 +96,18 @@ async fn build_with_docker(dir: &str) {
             &token
         ),
     };
-    let status = u::runp(&cmd_str, dir);
+    let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
         sh("rm -f Dockerfile wrapper", dir);
-        panic!("Failed to build");
     }
+    (status, out, err)
 }
 
 fn copy_from_docker(dir: &str, langr: &LangRuntime) {
     let temp_cont = &format!("tmp-{}", u::basedir(dir));
     let clean = &format!("docker rm -f {}", &temp_cont);
 
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
-    sh(&clean, dir);
+    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));    sh(&clean, dir);
     sh(&run, dir);
     let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
@@ -159,34 +160,57 @@ fn should_build_deps() -> bool {
     }
 }
 
-pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> String {
+pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> BuildStatus {
     let Build { command, force, .. } = bs;
 
     if should_build_deps() {
         sh("rm -rf lambda.zip deps.zip build", &dir);
 
-        let mut log = LogUpdate::new(stdout()).unwrap();
+        let bar = u::progress(8);
 
-        let _ = log.render(&format!("Building {name} - Generating Dockerfile"));
+        let prefix = format!("Building {} ({}/inline)",
+                             name.blue(), langr.to_str());
+        bar.set_prefix(prefix);
+
         gen_dockerfile(dir, langr, *force);
+        bar.inc(1);
         gen_dockerignore(dir);
+        bar.inc(2);
 
-        let _ = log.render(&format!("Building {name} - Building with Docker"));
-        build_with_docker(dir).await;
-
-        let _ = log.render(&format!("Building {name} - Copying from container"));
+        let (status, out, err) = build_with_docker(dir).await;
+        bar.inc(3);
 
         copy_from_docker(dir, langr);
+        bar.inc(4);
         sh("rm -f Dockerfile wrapper .dockerignore", dir);
+        bar.inc(5);
 
-        let _ = log.render(&format!("Building {name} - Copying dependencies"));
         zip(dir, langr);
+        bar.inc(6);
 
         sh(command, dir);
+        bar.inc(7);
         sh("rm -rf build build.json", dir);
+        bar.inc(8);
+        bar.finish();
+
+        BuildStatus {
+            path: format!("{}/lambda.zip", dir),
+            status: status,
+            out: out,
+            err: err
+        }
+
     } else {
         println!("Skipping Inline build");
         sh(command, dir);
+        BuildStatus {
+            path: format!("{}/lambda.zip", dir),
+            status: true,
+            out: String::from(""),
+            err: String::from("")
+        }
+
     }
-    format!("{}/lambda.zip", dir)
+
 }

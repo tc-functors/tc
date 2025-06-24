@@ -25,16 +25,6 @@ use tabled::{
     Tabled,
 };
 
-pub fn progress() -> ProgressBar {
-    let bar = ProgressBar::new(100);
-    bar.set_style(
-        ProgressStyle::with_template("{prefix} {name} [{bar:30}] ({elapsed}) {msg}")
-            .unwrap()
-            .progress_chars("=> "),
-    );
-    bar
-}
-
 pub fn trace() -> bool {
     match env::var("TC_TRACE") {
         Ok(_) => true,
@@ -140,4 +130,13 @@ pub fn print_tree(tree: StringItem) {
     };
 
     print_tree_with(&tree, &config).unwrap();
+}
+
+
+pub fn progress(n: u64) -> ProgressBar {
+    let bar = ProgressBar::new(n);
+    bar.set_style(ProgressStyle::with_template("{prefix} {name} [{bar:8}] {pos:>1}/{len:3} ({elapsed}) {msg}")
+    .unwrap()
+    .progress_chars("=> "));
+    bar
 }

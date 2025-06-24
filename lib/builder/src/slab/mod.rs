@@ -2,6 +2,8 @@ use super::LangRuntime;
 use kit as u;
 use kit::sh;
 
+use crate::types::BuildStatus;
+
 fn find_image(runtime: &LangRuntime) -> String {
     match runtime {
         LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
@@ -81,7 +83,8 @@ fn copy_from_docker(dir: &str) {
 pub fn build(
     dir: &str,
     runtime: &LangRuntime,
-) -> String {
+) -> BuildStatus {
+
     if !u::path_exists(dir, "slab.sh") {
         panic!("No slab.sh found")
     }

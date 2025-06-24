@@ -140,14 +140,20 @@ pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
 
 async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
     let auth = Auth::new(Some(profile), role_arn).await;
-    maybe_build(&auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => create_lambda(&auth, &f).await,
         Provider::Fargate => create_container(&auth, &f).await,
     }
 }
 
+async fn build_all(auth: &Auth, fns: &HashMap<String, Function>) {
+    for (_, f) in fns {
+        maybe_build(&auth, &f).await;
+    }
+}
+
 pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
+    build_all(auth, fns).await;
     match std::env::var("TC_SYNC_CREATE") {
         Ok(_) => {
             for (_, function) in fns.clone() {
@@ -271,6 +277,7 @@ pub async fn update_dir(auth: &Auth, functions: &HashMap<String, Function>, dir:
             Some(f) => {
                 let p = auth.name.to_string();
                 let role = auth.assume_role.to_owned();
+                maybe_build(auth, &f).await;
                 create_function(p, role, f.clone()).await;
             }
             None => panic!("No valid function found"),

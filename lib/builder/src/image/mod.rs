@@ -5,12 +5,13 @@ use authorizer::Auth;
 use compiler::{
     LangRuntime,
     spec::{
-        BuildOutput,
         ConfigSpec,
         ImageSpec,
         Lang,
     },
 };
+use colored::Colorize;
+use crate::types::{BuildOutput, BuildStatus};
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
@@ -34,7 +35,7 @@ pub fn gen_code_dockerfile(
     }
 }
 
-fn build_with_docker(dir: &str, name: &str) {
+fn build_with_docker(dir: &str, name: &str) -> (bool, String, String) {
     let root = &u::root();
     let cmd_str = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => format!(
@@ -47,16 +48,11 @@ fn build_with_docker(dir: &str, name: &str) {
         ),
     };
 
-    match std::env::var("TC_TRACE") {
-        Ok(_) => u::runcmd_stream(&cmd_str, dir),
-        Err(_) => {
-            let status = u::runp(&cmd_str, dir);
-            if !status {
-                sh("rm -f Dockerfile wrapper", dir);
-                panic!("Failed to build");
-            }
-        }
+    let (status, out, err) = u::runc(&cmd_str, dir);
+    if !status {
+        sh("rm -f Dockerfile wrapper", dir);
     }
+    (status, out, err)
 }
 
 pub fn render_uri(uri: &str, repo: &str) -> String {
@@ -101,7 +97,8 @@ pub fn build(
     images: &HashMap<String, ImageSpec>,
     image_kind: &str,
     uri: &str,
-) -> String {
+) -> BuildStatus {
+
     let image_spec = match images.get(image_kind) {
         Some(p) => p,
         None => panic!("No image spec specified in build:images"),
@@ -120,32 +117,56 @@ pub fn build(
 
     let uri = render_uri(uri, repo);
 
+    let bar = u::progress(3);
+
+    let prefix = format!("Building {} ({}/image/{})",
+                         name.blue(), langr.to_str(), image_kind);
+    bar.set_prefix(prefix);
+
     match image_kind {
         "code" => {
             let parent_image_name =
                 find_parent_image_name(repo, name, &images, image_spec.parent.clone());
+            bar.inc(1);
             gen_code_dockerfile(
                 image_dir,
                 langr,
                 &parent_image_name,
                 image_spec.commands.clone(),
             );
+            bar.inc(2);
             tracing::debug!("Building {} with parent {}", uri, &parent_image_name);
-            build_with_docker(image_dir, &uri);
+            let (status, out, err) =  build_with_docker(image_dir, &uri);
+            bar.inc(3);
             sh("rm -rf Dockerfile build build.json", image_dir);
-            uri.to_string()
+            bar.finish();
+            BuildStatus {
+                path: uri.to_string(),
+                status: status,
+                out: out,
+                err: err
+            }
         }
         "base" => {
             let base_image_name = find_base_image_name(repo, name, images);
+            bar.inc(1);
             gen_base_dockerfile(image_dir, langr, image_spec.commands.clone());
             tracing::debug!(
                 "Building image dir: {} name: {}",
                 image_dir,
                 &base_image_name
             );
-            build_with_docker(image_dir, &base_image_name);
+            bar.inc(2);
+            let (status, out, err) = build_with_docker(image_dir, &base_image_name);
+            bar.inc(3);
             sh("rm -rf Dockerfile build build.json", image_dir);
-            base_image_name
+            bar.finish();
+            BuildStatus {
+                path: base_image_name,
+                status: status,
+                out: out,
+                err: err
+            }
         }
         _ => panic!("Invalid image kind"),
     }

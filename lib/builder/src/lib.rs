@@ -3,6 +3,7 @@ mod image;
 mod inline;
 mod layer;
 mod library;
+mod types;
 
 use authorizer::Auth;
 use colored::Colorize;
@@ -12,11 +13,12 @@ use compiler::{
     Lang,
     spec::{
         BuildKind,
-        BuildOutput,
         ConfigSpec,
         LangRuntime,
     },
 };
+use crate::types::{BuildStatus, BuildOutput};
+use std::panic;
 use kit as u;
 use kit::sh;
 use std::str::FromStr;
@@ -52,13 +54,18 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     outs
 }
 
-pub async fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) -> String {
+async fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) -> BuildStatus {
     match langr.to_lang() {
         Lang::Rust => inline::build(dir, name, langr, spec).await,
         _ => {
             let c = format!(r"{}", &spec.command);
-            sh(&c, dir);
-            format!("{}/lambda.zip", dir)
+            let (status, out, err) = u::runc(&c, dir);
+            BuildStatus {
+                path: format!("{}/lambda.zip", dir),
+                status: status,
+                out: out,
+                err: err
+            }
         }
     }
 }
@@ -84,33 +91,35 @@ pub async fn build(
         Some(k) => BuildKind::from_str(&k).unwrap(),
         None => build.kind.clone(),
     };
-    let kind_str = &kind.to_str();
 
     let image_kind = u::maybe_string(image, "code");
     let name = u::maybe_string(name, &function.name);
 
-    println!(
-        "Building {} ({}/{})",
-        &name,
-        &langr.to_str(),
-        kind_str.blue()
-    );
 
-    let path = match kind {
+    let build_status = match kind {
         BuildKind::Image => image::build(dir, &name, langr, &images, &image_kind, &runtime.uri),
         BuildKind::Inline => inline::build(dir, &name, langr, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr),
         BuildKind::Library => library::build(dir, langr),
         BuildKind::Slab => library::build(dir, langr),
         BuildKind::Code => build_code(dir, &name, langr, &build).await,
-        BuildKind::Extension => extension::build(dir, &name),
+        BuildKind::Extension => extension::build(dir, &name, langr),
         BuildKind::Runtime => todo!(),
     };
+
+    if !build_status.status {
+        println!("{}", build_status.out.red());
+        println!("{}", build_status.err);
+        panic::set_hook(Box::new(|_| {
+            println!("Build Failed");
+        }));
+        panic!("Build failed")
+    }
 
     let out = BuildOutput {
         name: String::from(name),
         dir: dir.to_string(),
-        artifact: path,
+        artifact: build_status.path,
         kind: kind.clone(),
         runtime: langr.clone(),
     };
