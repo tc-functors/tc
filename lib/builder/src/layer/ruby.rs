@@ -1,4 +1,3 @@
-use colored::Colorize;
 use kit as u;
 
 fn gen_wrapper(dir: &str) {
@@ -31,8 +30,9 @@ fn shared_objects() -> Vec<&'static str> {
     ]
 }
 
-fn gen_dockerfile(dir: &str) {
-    let build_context = &top_level();
+pub fn gen_dockerfile(dir: &str) {
+    gen_wrapper(dir);
+    let build_context = &u::root();
     let extra_str = u::vec_to_str(shared_objects());
     let f = format!(
         r#"
@@ -65,7 +65,7 @@ RUN {extra_str}
     u::write_str(&dockerfile, &f);
 }
 
-fn copy(dir: &str) {
+pub fn copy(dir: &str) {
     if u::path_exists(dir, "src") {
         u::sh("cp -r src/* build/ruby/", dir);
     }
@@ -92,64 +92,4 @@ pub fn zip(dir: &str, zipfile: &str) {
         );
         u::runcmd_quiet(&cmd, dir);
     }
-}
-
-fn size_of(dir: &str, zipfile: &str) -> String {
-    let size = u::path_size(dir, zipfile);
-    u::file_size_human(size)
-}
-
-fn copy_from_docker(dir: &str) {
-    let temp_cont = &format!("tmp-{}", u::basedir(dir));
-    let clean = &format!("docker rm -f {}", &temp_cont);
-
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
-    u::sh(&clean, dir);
-    u::sh(&run, dir);
-    let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
-    tracing::debug!("Container id: {}", &id);
-
-    u::sh(&format!("docker cp {}:/build build", id), dir);
-    u::sh(&clean, dir);
-    u::sh("rm -f Dockerfile wrapper", dir);
-}
-
-fn top_level() -> String {
-    u::sh("git rev-parse --show-toplevel", &u::pwd())
-}
-
-fn build_with_docker(dir: &str) {
-    let root = &top_level();
-    let cmd_str = match std::env::var("DOCKER_SSH") {
-        Ok(e) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-context shared={root} .",
-            &e,
-            u::basedir(dir)
-        ),
-        Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default  -t {} --build-context shared={root} .",
-            u::basedir(dir)
-        ),
-    };
-    let status = u::runp(&cmd_str, dir);
-    if !status {
-        u::sh("rm -f Dockerfile wrapper", dir);
-        panic!("Failed to build");
-    }
-}
-
-pub fn build(dir: &str, name: &str) -> String {
-    u::sh("rm -f deps.zip", dir);
-    gen_wrapper(dir);
-    gen_dockerfile(dir);
-    build_with_docker(dir);
-    copy_from_docker(dir);
-    if !u::path_exists(dir, "function.json") {
-        copy(dir);
-    }
-    zip(dir, "deps.zip");
-    u::runcmd_quiet("rm -rf vendor && rm -rf bundler", dir);
-    let size = format!("({})", size_of(dir, "deps.zip").green());
-    println!("Size: {} {}", name, size);
-    format!("{}/deps.zip", dir)
 }

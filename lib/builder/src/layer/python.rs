@@ -1,7 +1,5 @@
 use super::LangRuntime;
-use colored::Colorize;
 use kit as u;
-use kit::sh;
 
 // FIXME: use ldd
 fn shared_objects() -> Vec<&'static str> {
@@ -25,6 +23,7 @@ fn find_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
         LangRuntime::Python311 => String::from("public.ecr.aws/sam/build-python3.11:latest"),
         LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
+        LangRuntime::Python313 => String::from("public.ecr.aws/sam/build-python3.13:latest"),
         _ => todo!(),
     }
 }
@@ -39,7 +38,7 @@ fn gen_req_cmd(dir: &str) -> String {
     }
 }
 
-fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
+pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let _extra_str = u::vec_to_str(shared_objects());
 
     let _pip_cmd = match std::env::var("TC_FORCE_BUILD") {
@@ -73,72 +72,4 @@ RUN --mount=type=ssh --mount=target=shared,type=bind,source=. pip install -vvv -
     );
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
-}
-
-pub fn build_with_docker(dir: &str) {
-    let root = &u::root();
-    let cmd_str = match std::env::var("DOCKER_SSH") {
-        Ok(e) => format!(
-            "docker build --no-cache  --platform=linux/amd64 --ssh default={} --secret id=aws,src=$HOME/.aws/credentials --build-context shared={root} . -t {}",
-            &e,
-            u::basedir(dir)
-        ),
-        Err(_) => format!(
-            "docker build --no-cache  --platform=linux/amd64 --ssh default --secret id=aws,src=$HOME/.aws/credentials --build-context shared={root} . -t {}",
-            u::basedir(dir)
-        ),
-    };
-    let ret = u::runp(&cmd_str, dir);
-    if !ret {
-        sh("rm -rf Dockerfile build", dir);
-        std::panic::set_hook(Box::new(|_| {
-            println!("Build failed");
-        }));
-        panic!("Build failed")
-    }
-}
-
-fn copy_from_docker(dir: &str) {
-    let temp_cont = &format!("tmp-{}", u::basedir(dir));
-    let clean = &format!("docker rm -f {}", &temp_cont);
-
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
-    u::runcmd_quiet(&clean, dir);
-    sh(&run, dir);
-    let id = u::sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
-    if id.is_empty() {
-        tracing::info!("{}: ", dir);
-        sh("rm -f requirements.txt Dockerfile", dir);
-        std::panic::set_hook(Box::new(|_| {
-            tracing::error!("Build failed");
-        }));
-        panic!("build failed")
-    }
-    sh(&format!("docker cp {}:/build build", id), dir);
-    sh(&clean, dir);
-}
-
-fn size_of(dir: &str, zipfile: &str) -> String {
-    let size = u::path_size(dir, zipfile);
-    u::file_size_human(size)
-}
-
-pub fn build(dir: &str, name: &str, runtime: &LangRuntime) -> String {
-    sh("rm -f deps.zip", dir);
-
-    gen_dockerfile(dir, runtime);
-    build_with_docker(dir);
-    copy_from_docker(dir);
-    sh("rm -f Dockerfile", dir);
-
-    let cmd = "rm -rf build && zip -q -9 -r ../deps.zip .";
-    sh(&cmd, &format!("{}/build", dir));
-
-    let size = format!("({})", size_of(dir, "deps.zip").green());
-    println!("{} ({}", name, size);
-    if u::path_exists(dir, "pyproject.toml") {
-        sh("rm -f requirements.txt", dir);
-    }
-    sh("rm -rf build", dir);
-    format!("{}/deps.zip", dir)
 }

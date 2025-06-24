@@ -25,7 +25,6 @@ pub use config::ConfigSpec;
 pub use event::EventSpec;
 pub use function::{
     BuildKind,
-    BuildOutput,
     BuildSpec,
     FunctionSpec,
     ImageSpec,

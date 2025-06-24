@@ -17,7 +17,6 @@ pub use spec::{
     config::ConfigSpec,
     function::{
         BuildKind,
-        BuildOutput,
         Lang,
         LangRuntime,
     },
