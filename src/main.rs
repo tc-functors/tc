@@ -183,8 +183,12 @@ pub struct SnapshotArgs {
     sandbox: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
-    #[arg(long, short = 'c')]
-    entity: Option<String>,
+    #[arg(long, action, short = 'm')]
+    manifest: bool,
+    #[arg(long, short = 'S')]
+    save: Option<String>,
+    #[arg(long, alias = "target-profile")]
+    target_profile: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -762,17 +766,13 @@ async fn snapshot(args: SnapshotArgs) {
         profile,
         sandbox,
         format,
-        entity,
+        save,
+        manifest,
+        target_profile,
         ..
     } = args;
 
-    match entity {
-        Some(e) => {
-            let env = tc::init(profile.clone(), None).await;
-            tc::snapshot_entity(env, sandbox, &e).await;
-        }
-        None => tc::snapshot(profile, sandbox, format).await,
-    }
+    tc::snapshot(profile, sandbox, format, manifest, save, target_profile).await;
 }
 
 async fn changelog(args: ChangelogArgs) {

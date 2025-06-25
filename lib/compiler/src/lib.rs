@@ -81,12 +81,18 @@ pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
         None => &list_dirs(dir),
     };
     let mut h: HashMap<String, Topology> = HashMap::new();
-    for d in given_root_dirs {
-        tracing::debug!("Given root: {}", &d);
-        let dir = u::absolutize(&u::pwd(), &d);
-        let t = compile(&dir, recursive);
+    if given_root_dirs.is_empty() {
+        let topology = compile(&u::pwd(), false);
+        h.insert(topology.namespace.clone(), topology);
 
-        h.insert(t.namespace.to_string(), t);
+    } else {
+        for d in given_root_dirs {
+            tracing::debug!("Given root: {}", &d);
+            let dir = u::absolutize(&u::pwd(), &d);
+            let t = compile(&dir, recursive);
+
+            h.insert(t.namespace.to_string(), t);
+        }
     }
     tracing::debug!("Compilation completed");
     h

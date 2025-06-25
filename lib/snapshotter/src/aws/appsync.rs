@@ -12,10 +12,7 @@ pub async fn make_client(auth: &Auth) -> Client {
 
 #[derive(Clone, Debug)]
 pub struct Api {
-    pub id: String,
     pub arn: String,
-    pub https: String,
-    pub wss: String,
 }
 
 async fn list_apis(client: &Client) -> HashMap<String, Api> {
@@ -25,14 +22,8 @@ async fn list_apis(client: &Client) -> HashMap<String, Api> {
         Ok(res) => {
             let apis = res.graphql_apis.unwrap();
             for api in apis {
-                let uris = api.uris.unwrap();
-                let https = uris.get("GRAPHQL");
-                let wss = uris.get("REALTIME");
                 let a = Api {
-                    id: api.api_id.unwrap().to_string(),
                     arn: api.arn.unwrap().to_string(),
-                    https: https.unwrap().to_string(),
-                    wss: wss.unwrap().to_string(),
                 };
 
                 h.insert(api.name.unwrap(), a);
