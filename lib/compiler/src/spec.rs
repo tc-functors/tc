@@ -103,6 +103,8 @@ pub struct TopologySpec {
     #[serde(default)]
     pub name: String,
 
+    pub auto: Option<bool>,
+
     pub dir: Option<String>,
 
     pub kind: Option<TopologyKind>,
@@ -164,6 +166,7 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
+                auto: Some(false),
                 kind: Some(TopologyKind::Function),
                 dir: Some(u::pwd()),
                 hyphenated_names: false,

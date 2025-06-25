@@ -50,7 +50,6 @@ async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>) -> Api {
         stage_variables: route.stage_variables.to_owned(),
         role: route.role_arn.to_string(),
         path: route.to_owned().path,
-        authorizer: route.to_owned().authorizer,
         method: route.method.to_owned(),
         sync: route.sync.to_owned(),
         request_template: route.request_template.clone(),
@@ -70,19 +69,6 @@ async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str, auth_n
     let source_arn = auth.authorizer_arn(api_id, auth_name);
     let principal = "apigateway.amazonaws.com";
     let _ = lambda::add_permission(client, lambda_arn, principal, &source_arn, api_id).await;
-}
-
-async fn create_authorizer(auth: &Auth, api_id: &str, api: &Api, uri: &str) -> Option<String> {
-    let lambda_arn = auth.lambda_arn(&api.authorizer);
-    if api.authorizer.is_empty() {
-        None
-    } else {
-        add_auth_permission(auth, &lambda_arn, &api_id, &api.authorizer).await;
-        let authorizer_id = api
-            .find_or_create_authorizer(&api_id, &api.authorizer, uri)
-            .await;
-        Some(authorizer_id)
-    }
 }
 
 fn integration_name(entity: &Entity, api: &Api) -> String {
@@ -137,16 +123,27 @@ async fn create_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
     }
 }
 
-async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
-    let api_id = api.create_or_update().await;
-    let auth_uri = auth.lambda_uri(&api.authorizer);
-    let authorizer_id = create_authorizer(auth, &api_id, api, &auth_uri).await;
+async fn create_authorizer(auth: &Auth, api: &Api, api_id: &str, authorizer: &str) -> Option<String> {
+    let uri = auth.lambda_uri(authorizer);
+    let lambda_arn = auth.lambda_arn(authorizer);
+    if authorizer.is_empty() {
+        None
+    } else {
+        add_auth_permission(auth, &lambda_arn, &api_id, authorizer).await;
+        let authorizer_id = api
+            .create_or_update_authorizer(&api_id, authorizer, &uri)
+            .await;
+        Some(authorizer_id)
+    }
+}
+
+async fn create_api(auth: &Auth, api: &Api, api_id: &str, entity: &Entity, target_arn: &str, auth_id: Option<String>) {
 
     add_permission(auth, target_arn, &api_id).await;
 
     let integration_id = create_integration(entity, api, &api_id, target_arn).await;
 
-    api.find_or_create_route(&api_id, &integration_id, authorizer_id)
+    api.find_or_create_route(&api_id, &integration_id, auth_id)
         .await;
     api.create_stage(&api_id).await;
     api.create_deployment(&api_id, &api.stage).await;
@@ -157,7 +154,16 @@ async fn create_api(auth: &Auth, api: &Api, entity: &Entity, target_arn: &str) {
 
 async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>) {
     let api = make_api(auth, route, cors).await;
-    create_api(auth, &api, &route.entity, &route.target_arn).await;
+    let api_id = api.create_or_update().await;
+    let auth_id = if route.create_authorizer {
+        match &route.authorizer {
+            Some(authorizer) => create_authorizer(auth, &api, &api_id, &authorizer).await,
+            None => None
+        }
+    } else {
+        None
+    };
+    create_api(auth, &api, &api_id, &route.entity, &route.target_arn, auth_id).await;
 }
 
 pub async fn create(auth: &Auth, routes: &HashMap<String, Route>) {
@@ -196,7 +202,12 @@ async fn delete_route(auth: &Auth, route: &Route) {
                 _ => (),
             }
             delete_integration(&route.entity, &api, &id, &route.target_arn).await;
-            api.delete_authorizer(&id, &api.authorizer).await;
+            if route.create_authorizer {
+                if let Some(authorizer) = &route.authorizer {
+                    api.delete_authorizer(&id, &authorizer).await;
+                }
+            }
+
             match std::env::var("TC_DELETE_ROOT") {
                 Ok(_) => api.delete(&id).await,
                 Err(_) => (),

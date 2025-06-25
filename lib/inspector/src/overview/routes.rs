@@ -29,7 +29,10 @@ fn build_routes(namespace: &str, rs: HashMap<String, Route>) -> Vec<Item> {
             method: route.method.clone(),
             path: route.path.clone(),
             gateway: route.gateway.clone(),
-            authorizer: route.authorizer.clone(),
+            authorizer: match route.authorizer {
+                Some(auth) => auth,
+                None => String::from("")
+            },
             target_kind: route.entity.to_str(),
             target_arn: route.target_arn.clone(),
         };
