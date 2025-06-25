@@ -63,6 +63,7 @@ async fn update(auth: &Auth, topology: &Topology) {
         functions,
         flow,
         mutations,
+        channels,
         sandbox,
         events,
         queues,
@@ -82,6 +83,7 @@ async fn update(auth: &Auth, topology: &Topology) {
 
     function::update_code(&auth, functions).await;
     mutation::create(&auth, mutations, &tags).await;
+    channel::create(&auth, channels).await;
     event::create(&auth, events).await;
     queue::create(&auth, queues).await;
     pool::create(&auth, pools).await;

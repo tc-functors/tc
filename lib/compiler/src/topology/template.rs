@@ -79,3 +79,11 @@ pub fn log_group_arn(log_group: &str) -> String {
         log_group
     )
 }
+
+pub fn maybe_namespace(s: &str) -> String {
+    if s.contains("{{sandbox}}") {
+        s.to_string()
+    } else {
+        format!("{{{{namespace}}}}_{}_{{{{sandbox}}}}", s)
+    }
+}

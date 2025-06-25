@@ -3,7 +3,6 @@ use crate::Entity;
 use crate::spec::{
     RouteSpec,
     TopologySpec,
-    config::ConfigSpec,
     route::CorsSpec,
 };
 use kit::*;
@@ -18,7 +17,8 @@ pub struct Route {
     pub method: String,
     pub path: String,
     pub gateway: String,
-    pub authorizer: String,
+    pub create_authorizer: bool,
+    pub authorizer: Option<String>,
     pub entity: Entity,
     pub role_arn: String,
     pub target_name: String,
@@ -65,9 +65,9 @@ impl Route {
         fqn: &str,
         name: &str,
         spec: &TopologySpec,
-        rspec: &RouteSpec,
-        _config: &ConfigSpec,
+        rspec: &RouteSpec
     ) -> Route {
+
         let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
             None => s!(fqn),
@@ -113,11 +113,24 @@ impl Route {
 
         // FIXME: role_arn is flow.role.name if target is flow
 
+        let (create_authorizer, authorizer)  = match &spec.functions {
+            Some(fns) => if let Some(authorizer) = &rspec.authorizer {
+                match fns.get(authorizer) {
+                    Some(_) => (true, Some(template::maybe_namespace(&authorizer))),
+                    None => (false, None)
+                }
+            } else {
+                (false, None)
+            },
+            None => (false, None)
+        };
+
         Route {
             method: method.clone(),
             path: path,
             gateway: gateway,
-            authorizer: rspec.authorizer.clone(),
+            create_authorizer: create_authorizer,
+            authorizer: authorizer,
             entity: entity,
             role_arn: template::role_arn("tc-base-api-role"),
             target_name: target_name,

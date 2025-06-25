@@ -50,8 +50,8 @@ fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
             Some(s) => Some(s.clone()),
             None => match &spec.functions {
                 Some(fns) => Some(sfn::read(fns.clone())),
-                None => None,
-            },
+                None => None
+            }
         },
     }
 }
@@ -71,16 +71,25 @@ impl Flow {
             group_arn: template::log_group_arn(&lg)
         };
 
-        match def {
-            Some(definition) => Some(Flow {
-                name: s!(fqn),
-                arn: template::sfn_arn(fqn),
-                definition: definition,
-                mode: mode,
-                role: make_role(infra_dir, fqn),
-                log_config: log_config
-            }),
-            None => None,
+        let auto = match spec.auto {
+            Some(p) => p,
+            None => false
+        };
+
+        if auto {
+            match def {
+                Some(definition) => Some(Flow {
+                    name: s!(fqn),
+                    arn: template::sfn_arn(fqn),
+                    definition: definition,
+                    mode: mode,
+                    role: make_role(infra_dir, fqn),
+                    log_config: log_config
+                }),
+                None => None,
+            }
+        } else {
+            None
         }
     }
 }

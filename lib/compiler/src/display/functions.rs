@@ -9,8 +9,9 @@ use ptree::{
 pub fn build_tree(topology: &Topology) -> StringItem {
     let mut t = TreeBuilder::new(s!(topology.namespace.blue()));
 
-    for (_, f) in &topology.functions {
-        t.begin_child(s!(f.name.green()));
+    for (name, f) in &topology.functions {
+        t.begin_child(s!(name.green()));
+        t.add_empty_child(s!(&f.fqn));
         t.add_empty_child(f.runtime.lang.to_str());
         t.add_empty_child(f.runtime.role.path.to_string());
         t.add_empty_child(f.dir.to_string());
