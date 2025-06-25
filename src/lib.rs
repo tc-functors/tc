@@ -522,7 +522,14 @@ pub async fn inspect(port: Option<String>) {
     inspector::init(port).await
 }
 
-pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, format: Option<String>) {
+pub async fn snapshot(
+    profile: Option<String>,
+    sandbox: Option<String>,
+    format: Option<String>,
+    manifest: bool,
+    save: Option<String>,
+    target_profile: Option<String>
+) {
     let dir = u::pwd();
     let format = u::maybe_string(format, "json");
     let sandbox = u::maybe_string(sandbox, "stable");
@@ -534,21 +541,16 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, format: 
                 snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
             } else {
                 let auth = init(profile.clone(), None).await;
-                let records = snapshotter::snapshot(&auth, &dir, &sandbox).await;
-                snapshotter::pretty_print(records, &format);
+
+                if manifest {
+                    snapshotter::generate_manifest(&auth, &dir, &sandbox, save, target_profile).await;
+                } else {
+                    let records = snapshotter::snapshot(&auth, &dir, &sandbox).await;
+                    snapshotter::pretty_print(records, &format);
+                }
             }
         }
         None => println!("Please specify profile"),
-    }
-}
-
-pub async fn snapshot_entity(auth: Auth, sandbox: Option<String>, entity: &str) {
-    let sandbox = u::maybe_string(sandbox, "stable");
-    let dir = u::pwd();
-    if entity == "topology" {
-        snapshotter::snapshot_topology(&auth, &dir, &sandbox).await;
-    } else {
-        snapshotter::snapshot_topology(&auth, &dir, &sandbox).await;
     }
 }
 
