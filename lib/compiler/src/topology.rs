@@ -380,13 +380,14 @@ fn make_events(
     spec: &TopologySpec,
     fqn: &str,
     config: &ConfigSpec,
+    fns: &HashMap<String, Function>
 ) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
         for (name, espec) in evs {
             tracing::debug!("event {}", &name);
-            let targets = event::make_targets(namespace, &name, &espec, fqn);
+            let targets = event::make_targets(namespace, &name, &espec, fqn, fns);
             let skip = espec.doc_only;
             let ev = Event::new(&name, &espec, targets, config, skip);
             h.insert(name.to_string(), ev);
@@ -395,14 +396,14 @@ fn make_events(
     h
 }
 
-fn make_routes(spec: &TopologySpec, fqn: &str) -> HashMap<String, Route> {
+fn make_routes(spec: &TopologySpec, fqn: &str, fns: &HashMap<String, Function>) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
                 tracing::debug!("route {}", &name);
-                let route = Route::new(fqn, &name, spec, rspec);
+                let route = Route::new(fqn, &name, spec, rspec, fns);
                 h.insert(name.to_string(), route);
             }
             h
@@ -510,10 +511,10 @@ fn make(
         dir: dir.to_string(),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
+        events: make_events(&namespace, &spec, &fqn, &config, &functions),
+        routes: make_routes(&spec, &fqn, &functions),
         functions: functions,
-        events: make_events(&namespace, &spec, &fqn, &config),
         schedules: schedule::make_all(&namespace, &infra_dir),
-        routes: make_routes(&spec, &fqn),
         queues: make_queues(&spec, &config),
         mutations: mutations,
         channels: make_channels(&spec, &config),
