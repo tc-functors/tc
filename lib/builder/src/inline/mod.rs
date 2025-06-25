@@ -80,9 +80,13 @@ async fn get_token() -> String {
     }
 }
 
-async fn build_with_docker(dir: &str) -> (bool, String, String) {
+async fn build_with_docker(dir: &str, langr: &LangRuntime) -> (bool, String, String) {
     let root = &u::root();
-    let token = get_token().await;
+    let token =  match langr.to_lang() {
+        Lang::Node => get_token().await,
+        _ => String::from("")
+    };
+
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
             "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
@@ -177,7 +181,7 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
         gen_dockerignore(dir);
         bar.inc(2);
 
-        let (status, out, err) = build_with_docker(dir).await;
+        let (status, out, err) = build_with_docker(dir, langr).await;
         bar.inc(3);
 
         copy_from_docker(dir, langr);

@@ -248,24 +248,34 @@ pub fn runcmd_stream(path: &str, dir: &str) {
 }
 
 pub fn runc(path: &str, dir: &str) -> (bool, String, String) {
-    let data = Exec::shell(path)
-        .stdout(Redirection::Pipe)
-        .stderr(Redirection::Merge)
-        .env("TERM", "xterm")
-        .cwd(dir)
-        .capture()
-        .unwrap();
 
-    let CaptureData {
-        stdout,
-        stderr,
-        exit_status,
-    } = data;
-    (
-        exit_status.success(),
-        String::from_utf8_lossy(&stdout).to_string(),
-        String::from_utf8_lossy(&stderr).to_string(),
-    )
+    match std::env::var("TC_TRACE") {
+        Ok(_) => {
+            let out = Exec::shell(path).cwd(dir).join().unwrap();
+            (out.success(), String::from(""), String::from(""))
+        }
+        Err(_) => {
+
+            let data = Exec::shell(path)
+                .stdout(Redirection::Pipe)
+                .stderr(Redirection::Merge)
+                .env("TERM", "xterm")
+                .cwd(dir)
+                .capture()
+                .unwrap();
+
+            let CaptureData {
+                stdout,
+                stderr,
+                exit_status,
+            } = data;
+            (
+                exit_status.success(),
+                String::from_utf8_lossy(&stdout).to_string(),
+                String::from_utf8_lossy(&stderr).to_string(),
+            )
+        }
+    }
 }
 
 pub fn runp(cmd: &str, dir: &str) -> bool {
