@@ -10,6 +10,7 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
+use super::function::Function;
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -60,12 +61,20 @@ fn find_target_arn(target_name: &str, entity: &Entity) -> String {
     }
 }
 
+fn find_function(f: &str, fns: &HashMap<String, Function>) -> String {
+    match fns.get(f) {
+        Some(_) => template::maybe_namespace(f),
+        None => f.to_string(),
+    }
+}
+
 impl Route {
     pub fn new(
         fqn: &str,
         name: &str,
         spec: &TopologySpec,
-        rspec: &RouteSpec
+        rspec: &RouteSpec,
+        fns: &HashMap<String, Function>
     ) -> Route {
 
         let gateway = match &rspec.gateway {
@@ -94,7 +103,7 @@ impl Route {
         let target_name = match &rspec.proxy {
             Some(f) => s!(f),
             None => match &rspec.function {
-                Some(x) => template::maybe_namespace(&x),
+                Some(x) => find_function(&x, fns),
                 None => template::topology_fqn(&spec.name, spec.hyphenated_names),
             },
         };

@@ -4,6 +4,7 @@ use crate::spec::{
     ConfigSpec,
     EventSpec,
 };
+use super::function::Function;
 use kit::*;
 use serde_derive::{
     Deserialize,
@@ -68,11 +69,19 @@ impl Target {
     }
 }
 
+fn find_function(f: &str, fns: &HashMap<String, Function>) -> String {
+    match fns.get(f) {
+        Some(_) => template::maybe_namespace(f),
+        None => f.to_string(),
+    }
+}
+
 pub fn make_targets(
     namespace: &str,
     event_name: &str,
     espec: &EventSpec,
     fallback_fqn: &str,
+    fns: &HashMap<String, Function>
 ) -> Vec<Target> {
     let EventSpec {
         producer_ns,
@@ -92,7 +101,7 @@ pub fn make_targets(
 
     if let Some(f) = function {
         let id = format!("{}_lambda_target", event_name);
-        let name = template::maybe_namespace(&f);
+        let name = find_function(&f, fns);
         let arn = template::lambda_arn(&name);
         let t = Target::new(
             Entity::Function,
@@ -110,7 +119,7 @@ pub fn make_targets(
     if !functions.is_empty() {
         for f in functions {
             let id = format!("{}_{}_target", event_name, &f);
-            let name = template::maybe_namespace(&f);
+            let name = find_function(&f, fns);
             let arn = template::lambda_arn(&name);
             let t = Target::new(
                 Entity::Function,
