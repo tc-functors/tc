@@ -26,6 +26,9 @@ struct Tc {
 enum Cmd {
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
+    /// Bootstrap base roles
+    #[clap(hide = true)]
+    Bootstrap(BootstrapArgs),
     /// Trigger deploy via CI
     #[clap(name = "ci-deploy", hide = true)]
     Deploy(DeployArgs),
@@ -84,6 +87,7 @@ enum Cmd {
     /// display current tc version
     Version(DefaultArgs),
     /// Generate documentation
+    #[clap(hide = true)]
     Doc(DocArgs),
 }
 
@@ -453,6 +457,13 @@ pub struct DocArgs {
     spec: Option<String>,
 }
 
+#[derive(Debug, Args)]
+pub struct BootstrapArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+}
+
+
 async fn version() {
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     println!("{}", version);
@@ -814,10 +825,18 @@ async fn doc(args: DocArgs) {
     }
 }
 
+async fn bootstrap(args: BootstrapArgs) {
+    let BootstrapArgs { profile } = args;
+    let env = tc::init(profile, None).await;
+    tc::bootstrap(&env).await;
+}
+
+
 async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
+        Cmd::Bootstrap(args) => bootstrap(args).await,
         Cmd::Build(args) => build(args).await,
         Cmd::Cache(args) => cache(args).await,
         Cmd::Config(args) => config(args).await,

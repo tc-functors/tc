@@ -573,3 +573,7 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
         None => releaser::changelog(&namespace, between, verbose)
     }
 }
+
+pub async fn bootstrap(auth: &Auth) {
+    deployer::base::create_roles(auth).await
+}
