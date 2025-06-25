@@ -27,7 +27,7 @@ impl Queue {
         if let Some(f) = &qspec.function {
             let t = Target {
                 entity: Entity::Function,
-                name: f.to_string(),
+                name: template::maybe_namespace(&f),
             };
             targets.push(t);
         }

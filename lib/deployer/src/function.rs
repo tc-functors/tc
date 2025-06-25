@@ -182,6 +182,7 @@ pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
 
 pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>) {
     let mut tasks = vec![];
+    build_all(auth, fns).await;
     for (_, function) in fns.clone() {
         let p = auth.name.to_string();
         let role = auth.assume_role.to_owned();
