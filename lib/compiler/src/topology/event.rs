@@ -92,11 +92,12 @@ pub fn make_targets(
 
     if let Some(f) = function {
         let id = format!("{}_lambda_target", event_name);
-        let arn = template::lambda_arn(&f);
+        let name = template::maybe_namespace(&f);
+        let arn = template::lambda_arn(&name);
         let t = Target::new(
             Entity::Function,
             &id,
-            &f,
+            &name,
             &arn,
             &producer_ns,
             &consumer_ns,
@@ -109,11 +110,12 @@ pub fn make_targets(
     if !functions.is_empty() {
         for f in functions {
             let id = format!("{}_{}_target", event_name, &f);
-            let arn = template::lambda_arn(&f);
+            let name = template::maybe_namespace(&f);
+            let arn = template::lambda_arn(&name);
             let t = Target::new(
                 Entity::Function,
                 &id,
-                &f,
+                &name,
                 &arn,
                 &producer_ns,
                 &consumer_ns,

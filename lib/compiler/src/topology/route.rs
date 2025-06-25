@@ -94,7 +94,7 @@ impl Route {
         let target_name = match &rspec.proxy {
             Some(f) => s!(f),
             None => match &rspec.function {
-                Some(x) => s!(x),
+                Some(x) => template::maybe_namespace(&x),
                 None => template::topology_fqn(&spec.name, spec.hyphenated_names),
             },
         };

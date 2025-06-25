@@ -177,7 +177,7 @@ fn abs_shared_dir(root_dir: &str, uri: Option<String>) -> String {
 }
 
 fn intern_functions(
-    _root_dir: &str,
+    root_namespace: &str,
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
@@ -187,16 +187,21 @@ fn intern_functions(
     };
 
     let mut fns: HashMap<String, Function> = HashMap::new();
-    let namespace = &spec.name;
     let root_dir = &spec.dir.clone().unwrap();
 
     for (name, f) in inline_fns {
         if is_shared(f.uri.clone()) {
             let abs_dir = abs_shared_dir(root_dir, f.uri.clone());
+            let namespace = match &f.fqn {
+                Some(_) => &spec.name,
+                None => root_namespace
+            };
+
             let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
             fns.insert(s!(name), function);
         } else {
             let dir = format!("{}/{}", root_dir, name);
+            let namespace = &spec.name;
             let fspec = f.intern(namespace, &dir, infra_dir, &name);
             let function = Function::from_spec(&fspec, namespace, &dir, infra_dir);
             fns.insert(s!(name), function);
@@ -321,7 +326,7 @@ fn should_ignore_node(
     }
 }
 
-fn discover_leaf_nodes(root_dir: &str, dir: &str, s: &TopologySpec) -> HashMap<String, Topology> {
+fn discover_leaf_nodes(root_ns: &str, root_dir: &str, dir: &str, s: &TopologySpec) -> HashMap<String, Topology> {
     let ignore_nodes = &s.nodes.ignore;
 
     let mut nodes: HashMap<String, Topology> = HashMap::new();
@@ -331,7 +336,7 @@ fn discover_leaf_nodes(root_dir: &str, dir: &str, s: &TopologySpec) -> HashMap<S
             let spec = TopologySpec::new(&f);
             let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
             let mut functions = discover_functions(dir, &infra_dir, &spec);
-            let interned = intern_functions(dir, &infra_dir, &spec);
+            let interned = intern_functions(root_ns, &infra_dir, &spec);
             functions.extend(interned);
             let node = make(root_dir, dir, &spec, functions, HashMap::new());
             nodes.insert(spec.name.to_string(), node);
@@ -361,7 +366,7 @@ fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> 
                 let mut functions = discover_functions(&p, &infra_dir, &spec);
                 let interned = intern_functions(&p, &infra_dir, &spec);
                 functions.extend(interned);
-                let leaf_nodes = discover_leaf_nodes(root_dir, &p, &spec);
+                let leaf_nodes = discover_leaf_nodes(&spec.name, root_dir, &p, &spec);
                 let node = make(root_dir, &p, &spec, functions, leaf_nodes);
                 nodes.insert(spec.name.to_string(), node);
             }
@@ -469,7 +474,7 @@ fn find_kind(
 }
 
 fn make(
-    root_dir: &str,
+    _root_dir: &str,
     dir: &str,
     spec: &TopologySpec,
     functions: HashMap<String, Function>,
@@ -486,7 +491,7 @@ fn make(
         &spec.name,
         &infra_dir
     );
-    let interned = intern_functions(root_dir, &infra_dir, &spec);
+    let interned = intern_functions(&namespace, &infra_dir, &spec);
     functions.extend(interned);
 
     let version = version::current_semver(&namespace);

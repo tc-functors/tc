@@ -22,7 +22,7 @@ pub struct Resolver {
 
 fn entity_of(r: ResolverSpec) -> (Entity, String) {
     if let Some(f) = r.function {
-        (Entity::Function, f)
+        (Entity::Function, template::maybe_namespace(&f))
     } else if let Some(e) = r.event {
         (Entity::Event, e)
     } else {
