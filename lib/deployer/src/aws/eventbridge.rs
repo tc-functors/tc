@@ -19,7 +19,9 @@ use aws_sdk_eventbridge::{
             InputTransformerBuilder,
             RetryPolicyBuilder,
             TargetBuilder,
+            TagBuilder,
         },
+        Tag,
     },
 };
 use kit::*;
@@ -28,6 +30,20 @@ use std::collections::HashMap;
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
     Client::new(shared_config)
+}
+
+fn make_tag(key: String, value: String) -> Tag {
+    let tb = TagBuilder::default();
+    tb.key(key).value(value).build().unwrap()
+}
+
+fn make_tags(kvs: HashMap<String, String>) -> Vec<Tag> {
+    let mut tags: Vec<Tag> = vec![];
+    for (k, v) in kvs.into_iter() {
+        let tag = make_tag(k, v);
+        tags.push(tag);
+    }
+    tags
 }
 
 pub fn make_input_transformer(
@@ -103,13 +119,15 @@ pub fn make_target(
     }
 }
 
-pub async fn create_rule(client: &Client, bus: &str, rule_name: &str, pattern: &str) -> String {
+pub async fn create_rule(client: &Client, bus: &str, rule_name: &str, pattern: &str, tags: &HashMap<String, String>) -> String {
+    let tags = make_tags(tags.clone());
     let r = client
         .put_rule()
         .event_bus_name(s!(bus))
         .name(s!(rule_name))
         .event_pattern(s!(pattern))
         .state(RuleState::Enabled)
+        .set_tags(Some(tags))
         .send()
         .await
         .unwrap();

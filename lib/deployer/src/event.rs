@@ -50,7 +50,7 @@ async fn create_target_dependencies(auth: &Auth, name: &str) -> String {
     }
 }
 
-async fn create_event(auth: &Auth, event: &Event) {
+async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>) {
     let Event {
         rule_name,
         bus,
@@ -61,7 +61,7 @@ async fn create_event(auth: &Auth, event: &Event) {
     let client = eventbridge::make_client(&auth).await;
 
     let pattern = serde_json::to_string(&pattern).unwrap();
-    let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern).await;
+    let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern, tags).await;
 
     println!(
         "Creating Event: {} targets: {}",
@@ -109,10 +109,10 @@ async fn create_event(auth: &Auth, event: &Event) {
     update_permissions(auth, &event).await;
 }
 
-pub async fn create(auth: &Auth, events: &HashMap<String, Event>) {
+pub async fn create(auth: &Auth, events: &HashMap<String, Event>, tags: &HashMap<String, String>) {
     for (_, event) in events {
         if !&event.skip {
-            create_event(auth, event).await;
+            create_event(auth, event, tags).await;
         }
     }
 }
@@ -135,8 +135,8 @@ pub async fn delete(auth: &Auth, events: &HashMap<String, Event>) {
     }
 }
 
-pub async fn update(auth: &Auth, events: &HashMap<String, Event>, c: &str) {
+pub async fn update(auth: &Auth, events: &HashMap<String, Event>, tags: &HashMap<String, String>, c: &str) {
     if let Some(event) = events.get(c) {
-        create_event(auth, event).await;
+        create_event(auth, event, tags).await;
     }
 }

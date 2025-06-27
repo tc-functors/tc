@@ -48,7 +48,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
     queue::create(&auth, queues).await;
-    event::create(&auth, events).await;
+    event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes).await;
     if let Some(f) = flow {
@@ -84,7 +84,7 @@ async fn update(auth: &Auth, topology: &Topology) {
     function::update_code(&auth, functions).await;
     mutation::create(&auth, mutations, &tags).await;
     channel::create(&auth, channels).await;
-    event::create(&auth, events).await;
+    event::create(&auth, events, &tags).await;
     queue::create(&auth, queues).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes).await;
@@ -122,7 +122,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     );
     match entity {
 
-        Entity::Event    => event::create(&auth, events).await,
+        Entity::Event    => event::create(&auth, events, tags).await,
         Entity::Function => function::create(&auth, functions).await,
         Entity::Mutation => mutation::create(&auth, mutations, tags).await,
         Entity::Queue    => queue::create(&auth, queues).await,
@@ -175,7 +175,7 @@ async fn update_component(
 
     match entity {
 
-        Entity::Event    => event::update(&auth, events, component).await,
+        Entity::Event    => event::update(&auth, events, tags, component).await,
         Entity::Function => function::update(&auth, functions, component).await,
         Entity::Mutation => mutation::update(&auth, mutations, &component).await,
         Entity::Queue    => queue::update(&auth, queues, component).await,
