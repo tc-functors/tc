@@ -64,6 +64,8 @@ enum Cmd {
     /// Promote assets between sandboxes
     #[clap(hide = true)]
     Promote(PromoteArgs),
+    /// Promote assets between sandboxes
+    Prune(PruneArgs),
     /// Resolve a topology from functions, events, states description
     Resolve(ResolveArgs),
     /// Route events to functors
@@ -375,6 +377,16 @@ pub struct TagArgs {
 
 #[derive(Debug, Args)]
 pub struct ReplArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct PruneArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
     #[arg(long, short = 's')]
@@ -831,6 +843,17 @@ async fn bootstrap(args: BootstrapArgs) {
     tc::bootstrap(&env).await;
 }
 
+async fn prune(args: PruneArgs) {
+    let PruneArgs {
+        profile,
+        sandbox,
+        trace,
+        ..
+    } = args;
+    init_tracing(trace);
+    let env = tc::init(profile, None).await;
+    tc::prune(&env, sandbox).await;
+}
 
 async fn run() {
     let args = Tc::parse();
@@ -849,6 +872,7 @@ async fn run() {
         Cmd::Freeze(args) => freeze(args).await,
         Cmd::Inspect(args) => inspect(args).await,
         Cmd::Invoke(args) => invoke(args).await,
+        Cmd::Prune(args) => prune(args).await,
         Cmd::Promote(args) => promote(args).await,
         Cmd::Route(args) => route(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,
