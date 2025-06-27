@@ -44,12 +44,22 @@ fn make_role(infra_dir: &str, fqn: &str) -> Role {
 }
 
 fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
+
+    let auto = match spec.auto {
+        Some(p) => p,
+        None => false
+    };
+
     match &spec.flow {
         Some(f) => Some(sfn_ext::read(dir, f.clone())),
         None => match &spec.states {
             Some(s) => Some(s.clone()),
             None => match &spec.functions {
-                Some(fns) => Some(sfn::read(fns.clone())),
+                Some(fns) => if auto {
+                    Some(sfn::read(fns.clone()))
+                } else {
+                    None
+                },
                 None => None
             }
         },
@@ -71,25 +81,16 @@ impl Flow {
             group_arn: template::log_group_arn(&lg)
         };
 
-        let auto = match spec.auto {
-            Some(p) => p,
-            None => false
-        };
-
-        if auto {
-            match def {
-                Some(definition) => Some(Flow {
-                    name: s!(fqn),
-                    arn: template::sfn_arn(fqn),
-                    definition: definition,
-                    mode: mode,
-                    role: make_role(infra_dir, fqn),
-                    log_config: log_config
-                }),
-                None => None,
-            }
-        } else {
-            None
+        match def {
+            Some(definition) => Some(Flow {
+                name: s!(fqn),
+                arn: template::sfn_arn(fqn),
+                definition: definition,
+                mode: mode,
+                role: make_role(infra_dir, fqn),
+                log_config: log_config
+            }),
+            None => None,
         }
     }
 }
