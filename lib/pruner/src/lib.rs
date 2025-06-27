@@ -63,11 +63,8 @@ pub async fn prune(auth: &Auth, sandbox: &str) {
     }
 
     let grouped = group_entities(arns);
-
     println!("{}", count_of(&grouped));
-
     let cont = maybe_continue();
-
     if !cont {
         std::process::exit(1);
     }
@@ -104,7 +101,11 @@ pub async fn list(auth: &Auth, sandbox: &str) {
     let client = aws::resourcetag::make_client(auth).await;
     let mut arns = aws::resourcetag::get_resources(&client, "sandbox", sandbox).await;
     arns.sort();
-    for arn in arns {
+    for arn in &arns {
         println!("{}", &arn)
     }
+
+    let grouped = group_entities(arns);
+    println!("");
+    println!("{}", count_of(&grouped));
 }

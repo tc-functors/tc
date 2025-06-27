@@ -578,11 +578,15 @@ pub async fn bootstrap(auth: &Auth) {
     deployer::base::create_roles(auth).await
 }
 
-pub async fn prune(auth: &Auth, sandbox: Option<String>) {
+pub async fn prune(auth: &Auth, sandbox: Option<String>, dry_run: bool) {
     match sandbox {
         Some(sbox) => {
-            releaser::guard(&sbox);
-            pruner::prune(auth, &sbox).await;
+            if dry_run {
+                pruner::list(auth, &sbox).await;
+            } else {
+                releaser::guard(&sbox);
+                pruner::prune(auth, &sbox).await;
+            }
         },
         None => println!("Please specify sandbox")
     }
