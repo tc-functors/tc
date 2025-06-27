@@ -19,7 +19,7 @@ aws-sdk-ecs = { version = "1.75.0", features = ["behavior-version-latest"] }
 aws-sdk-sqs = { version = "1.65.0", features = ["behavior-version-latest"] }
 aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
 aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
-yes-or-no = "0.1"
+question = "0.2.2"
 kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
 compiler = { path = "../compiler" }
