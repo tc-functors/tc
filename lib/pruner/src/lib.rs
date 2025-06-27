@@ -4,7 +4,7 @@ use authorizer::Auth;
 use compiler::Entity;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use yes_or_no::yes_or_no;
+use question::{Answer, Question};
 
 fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
     let mut h: HashMap<Entity, Vec<String>> = HashMap::new();
@@ -25,11 +25,13 @@ fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
 }
 
 fn maybe_continue() -> bool {
-    if yes_or_no("Do you want to delete these resources ?", false) {
-        true
-    } else {
-        false
-    }
+    let answer = Question::new("Do you want to delete these resources in given sandbox ?")
+        .accept("y")
+        .accept("n")
+        .until_acceptable()
+        .show_defaults()
+        .confirm();
+    answer == Answer::YES
 }
 
 fn count_of(grouped: &HashMap<Entity, Vec<String>>) -> String {
@@ -67,7 +69,7 @@ pub async fn prune(auth: &Auth, sandbox: &str) {
     let cont = maybe_continue();
 
     if !cont {
-
+        std::process::exit(1);
     }
 
     for (entity, arns) in grouped {
