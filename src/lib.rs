@@ -577,3 +577,13 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
 pub async fn bootstrap(auth: &Auth) {
     deployer::base::create_roles(auth).await
 }
+
+pub async fn prune(auth: &Auth, sandbox: Option<String>) {
+    match sandbox {
+        Some(sbox) => {
+            releaser::guard(&sbox);
+            pruner::prune(auth, &sbox).await;
+        },
+        None => println!("Please specify sandbox")
+    }
+}

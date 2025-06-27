@@ -12,7 +12,7 @@ use kit as u;
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Entity {
     #[serde(alias = "function")]
     Function,
@@ -102,6 +102,17 @@ impl Entity {
         match s {
             Some(p) => Some(Entity::from_str(&p).unwrap()),
             None => None
+        }
+    }
+
+    pub fn from_arn(arn: &str) -> Option<Entity> {
+        let parts: Vec<&str> = arn.split(":").collect();
+        let s = parts.into_iter().nth(2).unwrap_or_default();
+        match s {
+            "lambda" => Some(Entity::Function),
+            "states" => Some(Entity::State),
+            "appsync" => Some(Entity::Mutation),
+            _ => None
         }
     }
 
