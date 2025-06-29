@@ -168,7 +168,6 @@ pub fn display_topology(dir: &str, format: &str, recursive: bool) {
 }
 
 pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
-    let entity = Entity::from_str(e).unwrap();
     let format = Format::from_str(f).unwrap();
 
     let topology = compile(&dir, recursive);
@@ -178,14 +177,14 @@ pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
             u::pp_json(&f)
         }
     } else {
-        display::display(entity, format, &topology);
+        display::try_display(&topology, e, format);
     }
 }
 
 pub fn pprint(topology: &Topology, entity: Option<Entity>) {
     let fmt = Format::JSON;
     match entity {
-        Some(e) => display::display(e, fmt, topology),
+        Some(e) => display::display_entity(e, fmt, topology),
         None => u::pp_json(topology)
     }
 }

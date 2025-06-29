@@ -8,7 +8,9 @@ use std::{
     str::FromStr,
 };
 
-mod functions;
+mod function;
+mod mutation;
+mod state;
 pub mod topology;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -37,7 +39,7 @@ impl FromStr for Format {
     }
 }
 
-pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
+pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
     let Topology {
         events,
         routes,
@@ -63,7 +65,7 @@ pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
 
         Entity::Function => match fmt {
             Format::Tree => {
-                let tree = functions::build_tree(topology);
+                let tree = function::build_tree(topology);
                 kit::print_tree(tree);
             }
             Format::JSON => u::pp_json(&topology.functions),
@@ -84,8 +86,25 @@ pub fn display(entity: Entity, fmt: Format, topology: &Topology) {
                 );
             }
             _ => u::pp_json(&topology.mutations),
-        },
+         },
         _ => (),
+    }
+}
+
+fn display_component(entity: Entity, component: &str, _fmt: Format, topology: &Topology) {
+    match entity {
+        Entity::Function => function::display_component(topology, component),
+        Entity::State => function::display_component(topology, component),
+        Entity::Event => event::display_component(topology, component),
+        _ => ()
+    }
+}
+
+pub fn try_display(topology: &Topology, maybe_entity: &str, fmt: Format) {
+    let (entity, component) = Entity::as_entity_component(maybe_entity);
+    match component {
+        Some(c) => display_component(entity, &c, fmt, topology),
+        None => display_entity(entity, fmt, topology)
     }
 }
 

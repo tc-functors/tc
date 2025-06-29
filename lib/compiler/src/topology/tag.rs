@@ -36,6 +36,10 @@ fn load_tags(infra_dir: &str) -> HashMap<String, String> {
     }
 }
 
+fn git_author() -> String {
+    sh("git config user.name", &u::pwd())
+}
+
 pub fn make(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     let tc_version = option_env!("PROJECT_VERSION")
         .unwrap_or(env!("CARGO_PKG_VERSION"))
@@ -48,7 +52,7 @@ pub fn make(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h.insert(s!("version"), version);
     h.insert(s!("deployer"), s!("tc"));
     h.insert(s!("updated_at"), u::utc_now());
-    h.insert(s!("updated_at"), u::utc_now());
+    h.insert(s!("updated_by"), git_author());
     h.insert(s!("tc_version"), tc_version);
 
     let given_tags = load_tags(infra_dir);
