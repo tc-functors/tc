@@ -11,6 +11,7 @@ use std::{
 mod function;
 mod mutation;
 mod state;
+mod event;
 pub mod topology;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -94,7 +95,7 @@ pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
 fn display_component(entity: Entity, component: &str, _fmt: Format, topology: &Topology) {
     match entity {
         Entity::Function => function::display_component(topology, component),
-        Entity::State => function::display_component(topology, component),
+        Entity::State => state::display_component(topology, component),
         Entity::Event => event::display_component(topology, component),
         _ => ()
     }
