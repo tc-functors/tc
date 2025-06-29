@@ -7,7 +7,6 @@ use serde_derive::{
     Serialize,
 };
 use kit::*;
-use kit as u;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -69,14 +68,9 @@ impl Entity {
     }
 
     pub fn as_entity_component(s: &str) -> (Entity, Option<String>) {
-        let xs: Vec<&str> = s.split("/").collect();
-        let e = u::nth(xs.clone(), 0);
-        let entity = Entity::from_str(&e).unwrap();
-        if xs.len() > 1 {
-            let c = u::nth(xs, 1);
-            (entity, Some(c))
-        } else {
-            (entity, None)
+        match s.split_once("/") {
+            Some((k, v)) => (Entity::from_str(&k).unwrap(), Some(v.to_string())),
+            _ => (Entity::from_str(&s).unwrap(), None)
         }
     }
 
@@ -92,6 +86,7 @@ impl Entity {
             "queues",
             "channels",
             "pools",
+            "pages"
         ];
         for x in v {
             println!("{x}");
