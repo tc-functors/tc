@@ -31,6 +31,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
         tags,
         pools,
         channels,
+        pages,
         flow,
         ..
     } = topology;
@@ -51,6 +52,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes).await;
+    page::create(&auth, pages).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -70,6 +72,7 @@ async fn update(auth: &Auth, topology: &Topology) {
         tags,
         pools,
         routes,
+        pages,
         ..
     } = topology;
 
@@ -88,6 +91,7 @@ async fn update(auth: &Auth, topology: &Topology) {
     queue::create(&auth, queues).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes).await;
+    page::create(&auth, pages).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -109,6 +113,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         tags,
         channels,
         pools,
+        pages,
         ..
     } = topology;
 
@@ -130,6 +135,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         Entity::Schedule => schedule::create(&auth, schedules).await,
         Entity::Trigger  => pool::create(&auth, pools).await,
         Entity::Route    => route::create(&auth, routes).await,
+        Entity::Page     => page::create(&auth, routes).await,
         Entity::State    => {
             if let Some(f) = flow {
                 state::create(&auth, f, tags).await;

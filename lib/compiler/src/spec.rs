@@ -76,6 +76,14 @@ pub struct TriggerSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PageSpec {
+    #[serde(default)]
+    pub dist: String,
+    #[serde(default)]
+    pub build: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TopologyKind {
     #[serde(alias = "step-function", alias = "state-machine")]
     StepFunction,
@@ -135,6 +143,7 @@ pub struct TopologySpec {
     pub queues: Option<HashMap<String, QueueSpec>>,
     pub channels: Option<HashMap<String, ChannelSpec>>,
     pub triggers: Option<HashMap<String, TriggerSpec>>,
+    pub pages: Option<HashMap<String, PageSpec>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
 }
@@ -185,6 +194,7 @@ impl TopologySpec {
                 mutations: None,
                 channels: None,
                 triggers: None,
+                pages: None
             }
         }
     }

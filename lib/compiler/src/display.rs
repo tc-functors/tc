@@ -88,6 +88,7 @@ pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
             }
             _ => u::pp_json(&topology.mutations),
          },
+        Entity::Page => u::pp_json(&topology.pages),
         _ => (),
     }
 }
