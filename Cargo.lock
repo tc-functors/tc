@@ -349,7 +349,7 @@ dependencies = [
 
 [[package]]
 name = "authorizer"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "aws-config",
  "aws-credential-types",
@@ -1360,7 +1360,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -1765,7 +1765,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2006,7 +2006,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -2069,7 +2069,7 @@ dependencies = [
 
 [[package]]
 name = "differ"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "authorizer",
  "aws-sdk-apigatewayv2",
@@ -2216,7 +2216,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -3049,7 +3049,7 @@ dependencies = [
 
 [[package]]
 name = "inspector"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "askama",
  "authorizer",
@@ -3074,7 +3074,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -3169,7 +3169,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "ansi-escapes",
  "base64",
@@ -3923,7 +3923,7 @@ dependencies = [
 
 [[package]]
 name = "pruner"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "authorizer",
  "aws-config",
@@ -4090,7 +4090,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "releaser"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -4152,7 +4152,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "authorizer",
  "aws-config",
@@ -4659,7 +4659,7 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "authorizer",
  "aws-sdk-apigatewayv2",
@@ -4880,7 +4880,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "authorizer",
  "builder",
@@ -4944,7 +4944,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.8.87"
+version = "0.8.88"
 dependencies = [
  "compiler",
  "kit",

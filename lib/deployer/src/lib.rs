@@ -11,11 +11,13 @@ pub mod role;
 pub mod route;
 pub mod schedule;
 
+use std::collections::HashMap;
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::{
     Entity,
     Topology,
+    Function
 };
 
 pub async fn create(auth: &Auth, topology: &Topology) {
@@ -56,7 +58,21 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     }
 }
 
-async fn update(auth: &Auth, topology: &Topology) {
+async fn update_function(auth: &Auth, namespace: &str, sandbox: &str, f: &Function) {
+
+    println!(
+        "Updating function {}@{}.{}/functions/{}",
+        &namespace.green(),
+        &sandbox.cyan(),
+        &auth.name.blue(),
+        &f.name
+    );
+    let mut fns: HashMap<String, Function> = HashMap::new();
+    fns.insert(f.name.clone(), f.clone());
+    function::update_code(auth, &fns).await
+}
+
+async fn update_topology(auth: &Auth, topology: &Topology) {
     let Topology {
         namespace,
         version,
@@ -315,7 +331,14 @@ pub async fn try_update(
                 None => update_entity(auth, topology, entity).await
             }
         },
-        None => update(auth, topology).await
+        None => {
+            let dir = kit::pwd();
+            let maybe_function = topology.current_function(&dir);
+            match maybe_function {
+                Some(f) => update_function(auth, &topology.namespace, &topology.sandbox, &f).await,
+                None => update_topology(auth, topology).await
+            }
+        }
     }
 }
 
