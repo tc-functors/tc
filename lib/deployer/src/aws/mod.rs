@@ -9,3 +9,4 @@ pub mod lambda;
 pub mod scheduler;
 pub mod sfn;
 pub mod sqs;
+pub mod cloudfront;

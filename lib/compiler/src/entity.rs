@@ -31,6 +31,8 @@ pub enum Entity {
     Trigger,
     #[serde(alias = "schedule")]
     Schedule,
+    #[serde(alias = "page")]
+    Page,
 }
 
 impl FromStr for Entity {
@@ -47,6 +49,7 @@ impl FromStr for Entity {
             "mutation" | "mutations" => Ok(Entity::Mutation),
             "trigger" | "triggers" => Ok(Entity::Trigger),
             "schedule" | "schedules" => Ok(Entity::Schedule),
+            "page" | "pages" => Ok(Entity::Page),
             _ => Ok(Entity::Function),
         }
     }
@@ -64,6 +67,7 @@ impl Entity {
             Entity::State => s!("state"),
             Entity::Trigger => s!("trigger"),
             Entity::Schedule => s!("schedule"),
+            Entity::Page => s!("page"),
         }
     }
 
