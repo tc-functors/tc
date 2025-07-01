@@ -1,68 +1,79 @@
-use aws_sdk_cloudfront::{Client, Error};
+use aws_sdk_cloudfront::{Client};
 use aws_sdk_cloudfront::types::{DistributionConfig, Aliases};
 use aws_sdk_cloudfront::types::builders::DistributionConfigBuilder;
 use aws_sdk_cloudfront::types::builders::AliasesBuilder;
-use aws_sdk_cloudfront::types::FunctionRuntime;
-use aws_sdk_cloudfront::types::{Origin, S3OriginConfig, Origins};
+use aws_sdk_cloudfront::types::{Origin, Origins};
 use aws_sdk_cloudfront::types::builders::{S3OriginConfigBuilder, OriginBuilder};
 use aws_sdk_cloudfront::types::CloudFrontOriginAccessIdentityConfig;
 use aws_sdk_cloudfront::types::builders::CloudFrontOriginAccessIdentityConfigBuilder;
 use aws_sdk_cloudfront::types::builders::OriginsBuilder;
 use std::collections::HashMap;
-use kit::*;
+use authorizer::Auth;
 
 
-pub async fn make_client(env: &Env) -> Client {
-    let shared_config = env.load().await;
+pub async fn make_client(auth: &Auth) -> Client {
+    let shared_config = &auth.aws_config;
     Client::new(&shared_config)
 }
 
-fn make_aliases() -> Aliases {
-    let it = DistributionConfigBuilder::default();
+fn make_aliases(domains: Vec<String>) -> Aliases {
+    let it = AliasesBuilder::default();
+    it
+        .quantity(domains.len().try_into().unwrap())
+        .set_items(Some(domains))
+        .build()
+        .unwrap()
 }
 
-fn make_origin(id: &str, bucket: &str, oai_id: &str) -> Origin {
-    let bucket_path = format!("{}.s3.amazonaws.com");
+fn make_origin(id: &str, origin_domain: &str, oai_id: &str) -> Origin {
     let oai_path = format!("origin-access-identity/cloudfront/{}", oai_id);
-    let s3b = S3OriginConfigBuilder::default;
+    let s3b = S3OriginConfigBuilder::default();
 
     let s3_origin_config = s3b
         .origin_access_identity(oai_path)
-        .build()
+        .build();
 
     let it = OriginBuilder::default();
     it
         .id(id)
-        .domain_name(bucket_path)
+        .domain_name(origin_domain)
         .s3_origin_config(s3_origin_config)
         .build()
+        .unwrap()
 }
 
-fn make_origins(domain: &str, paths: Vec<String>, oai_id: &str) -> Origins {
+fn make_origins(origin_domain: &str, origin_paths: Vec<String>, oai_id: &str) -> Origins {
     let it = OriginsBuilder::default();
-    let items = paths.map(|m| make_origin()
+    let mut items: Vec<Origin> = vec![];
+    for path in origin_paths {
+        let origin = make_origin(&path, origin_domain, oai_id);
+        items.push(origin);
+    }
     it
-        .quantity(paths.len())
-        .items()
+        .quantity(items.len().try_into().unwrap())
+        .set_items(Some(items))
+        .build()
+        .unwrap()
 }
 
 pub fn make_dist_config(
     caller_ref: &str,
     origin_domain: &str,
     origin_paths: Vec<String>,
+    domains: Vec<String>,
     oai_id: &str
 
 ) -> DistributionConfig {
     let it = DistributionConfigBuilder::default();
-    let origins = make_origins()
-    let aliases = make_aliases();
+    let origins = make_origins(origin_domain, origin_paths, oai_id);
+    let aliases = make_aliases(domains);
     it
-        .caller_reference(reference)
+        .caller_reference(caller_ref)
         .aliases(aliases)
         .origins(origins)
         .build()
+        .unwrap()
 }
-
 
 async fn list_distributions(client: &Client) -> HashMap<String, String> {
     let res = client
@@ -70,26 +81,29 @@ async fn list_distributions(client: &Client) -> HashMap<String, String> {
         .send()
         .await
         .unwrap();
-    let items = res.distribution_list.items.unwrap();
+    let items = res.distribution_list.unwrap().items.unwrap();
 
     let mut h: HashMap<String, String> = HashMap::new();
     for item in items {
-        h.insert(item.domain_name, item.id);
+        let origins = item.origins.unwrap().items;
+        for origin in origins {
+            h.insert(origin.domain_name, item.id.clone());
+        }
     }
     h
 }
 
 async fn find_distribution(client: &Client, domain: &str) -> Option<String> {
     let dists = list_distributions(client).await;
-    dists.get(domain)
+    dists.get(domain).cloned()
 }
 
 async fn update_distribution(
-    client: &client,
+    client: &Client,
     id: &str,
     dc: DistributionConfig
 ) {
-    client
+    let _ = client
         .update_distribution()
         .distribution_config(dc)
         .send()
@@ -101,16 +115,17 @@ async fn create_distribution(client: &Client, dc: DistributionConfig) {
         .create_distribution()
         .distribution_config(dc)
         .send()
-        .await;
-    println!("{}", res);
+        .await
+        .unwrap();
+    println!("{:?}", res);
 }
 
-async fn create_or_update_distribution(
+pub async fn create_or_update_distribution(
     client: &Client,
-    domains: Vec<String>,
+    origin_domain: &str,
     dc: DistributionConfig
 ) {
-    let maybe_dist = find_distribution(client, domain).await;
+    let maybe_dist = find_distribution(client, origin_domain).await;
     match maybe_dist {
         Some(d) => update_distribution(client, &d, dc).await,
         None => create_distribution(client, dc).await
@@ -121,7 +136,6 @@ pub async fn create_invalidation(client: &Client) {
 
 }
 
-
 // origin access identity
 
 fn make_oai_config(
@@ -130,7 +144,7 @@ fn make_oai_config(
 ) -> CloudFrontOriginAccessIdentityConfig {
 
     let it = CloudFrontOriginAccessIdentityConfigBuilder::default();
-    it.caller_reference(caller_ref).comment(comment).build()
+    it.caller_reference(caller_ref).comment(comment).build().unwrap()
 }
 
 pub async fn create_oai(client: &Client, caller_ref: &str) -> String {
@@ -142,53 +156,14 @@ pub async fn create_oai(client: &Client, caller_ref: &str) -> String {
         .send()
         .await
         .unwrap();
-    res.cloud_front_origin_access_identity_config.id
+    res.cloud_front_origin_access_identity.unwrap().id
 }
 
 
 // origin access control
-pub async fn create_oac() {
-
-}
 
 
 
-// Edge function
+pub async fn create_oac(client: &Client, name: &str) {
 
-fn make_function_config(name: &str) -> FunctionConfig {
-    let it = FunctionConfigBuilder::default();
-    it
-        .comment(name)
-        .runtime(FunctionRuntime::CloudfrontJs20)
-        .build()
-}
-
-
-async fn find_function(client: &Client, name: &str) {
-
-}
-
-
-async fn update_function() {
-
-}
-
-
-async fn create_function(client: &Client, name: &str) {
-    let fc = make_function_config(name);
-    let res = client
-        .create_function()
-        .function_config(fc)
-}
-
-async fn create_or_update_function() {
-
-}
-
-
-pub async fn test_function(client: &Client) {
-    let res = client
-        .test_function()
-        .name(name)
-        .if_match()
 }

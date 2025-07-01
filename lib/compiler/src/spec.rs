@@ -18,6 +18,7 @@ pub mod infra;
 pub mod mutation;
 pub mod queue;
 pub mod route;
+pub mod page;
 
 use crate::parser;
 pub use channel::ChannelSpec;
@@ -36,6 +37,7 @@ pub use mutation::MutationSpec;
 use parser::yaml::Transformer;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
+pub use page::PageSpec;
 
 // topology
 
@@ -73,14 +75,6 @@ pub struct ScheduleSpec {
 pub struct TriggerSpec {
     #[serde(default)]
     pub function: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PageSpec {
-    #[serde(default)]
-    pub dist: String,
-    #[serde(default)]
-    pub build: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

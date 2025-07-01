@@ -48,6 +48,7 @@ pub use topology::{
     route,
     route::Route,
     schedule::Schedule,
+    page::Page
 };
 use walkdir::WalkDir;
 
@@ -243,6 +244,7 @@ pub fn count_of(topology: &Topology) -> String {
         events,
         queues,
         routes,
+        pages,
         ..
     } = topology;
 
@@ -254,6 +256,7 @@ pub fn count_of(topology: &Topology) -> String {
     let mut e: usize = events.len();
     let mut q: usize = queues.len();
     let mut r: usize = routes.len();
+    let mut p: usize = pages.len();
 
     let nodes = &topology.nodes;
 
@@ -264,6 +267,7 @@ pub fn count_of(topology: &Topology) -> String {
             events,
             queues,
             routes,
+            pages,
             ..
         } = node;
         f = f + functions.len();
@@ -274,16 +278,18 @@ pub fn count_of(topology: &Topology) -> String {
         e = e + events.len();
         q = q + queues.len();
         r = r + routes.len();
+        p = p + pages.len();
     }
 
     let msg = format!(
-        "{} nodes, {} functions, {} mutations, {} events, {} routes, {} queues",
+        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, pages: {}",
         nodes.len() + 1,
         f,
         m,
         e,
         r,
-        q
+        q,
+        p
     );
     msg
 }

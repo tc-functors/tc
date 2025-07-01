@@ -502,6 +502,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-sdk-cloudfront"
+version = "1.80.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8752aa056d525cb24b93248dcc323974d87cc3caa183ab066d1edb6c94d1f5cc"
+dependencies = [
+ "aws-credential-types",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-http 0.62.1",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-smithy-xml",
+ "aws-types",
+ "fastrand",
+ "http 0.2.12",
+ "regex-lite",
+ "tracing",
+]
+
+[[package]]
 name = "aws-sdk-cloudwatchlogs"
 version = "1.77.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1165,9 +1187,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-xml"
-version = "0.60.9"
+version = "0.60.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab0b0166827aa700d3dc519f72f8b3a91c35d0b8d042dc5d643a91e6f80648fc"
+checksum = "3db87b96cb1b16c024980f133968d52882ca0daaee3a086c6decc500f6c99728"
 dependencies = [
  "xmlparser",
 ]
@@ -2013,12 +2035,14 @@ dependencies = [
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
+ "aws-sdk-cloudfront",
  "aws-sdk-cloudwatchlogs",
  "aws-sdk-cognitoidentityprovider",
  "aws-sdk-ecs",
  "aws-sdk-eventbridge",
  "aws-sdk-iam",
  "aws-sdk-lambda",
+ "aws-sdk-s3",
  "aws-sdk-scheduler",
  "aws-sdk-sfn",
  "aws-sdk-sqs",
@@ -2035,6 +2059,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "walkdir",
 ]
 
 [[package]]
