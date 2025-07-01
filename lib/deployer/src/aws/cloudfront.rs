@@ -4,9 +4,20 @@ use aws_sdk_cloudfront::types::builders::DistributionConfigBuilder;
 use aws_sdk_cloudfront::types::builders::AliasesBuilder;
 use aws_sdk_cloudfront::types::{Origin, Origins};
 use aws_sdk_cloudfront::types::builders::{S3OriginConfigBuilder, OriginBuilder};
-use aws_sdk_cloudfront::types::CloudFrontOriginAccessIdentityConfig;
-use aws_sdk_cloudfront::types::builders::CloudFrontOriginAccessIdentityConfigBuilder;
 use aws_sdk_cloudfront::types::builders::OriginsBuilder;
+use aws_sdk_cloudfront::types::OriginAccessControlConfig;
+use aws_sdk_cloudfront::types::builders::OriginAccessControlConfigBuilder;
+use aws_sdk_cloudfront::types::OriginAccessControlSigningProtocols;
+use aws_sdk_cloudfront::types::OriginAccessControlSigningBehaviors;
+use aws_sdk_cloudfront::types::OriginAccessControlOriginTypes;
+use aws_sdk_cloudfront::types::DefaultCacheBehavior;
+use aws_sdk_cloudfront::types::builders::DefaultCacheBehaviorBuilder;
+use aws_sdk_cloudfront::types::AllowedMethods;
+use aws_sdk_cloudfront::types::builders::AllowedMethodsBuilder;
+use aws_sdk_cloudfront::types::CachedMethods;
+use aws_sdk_cloudfront::types::Method;
+use aws_sdk_cloudfront::types::ViewerProtocolPolicy;
+
 use std::collections::HashMap;
 use authorizer::Auth;
 
@@ -25,28 +36,21 @@ fn make_aliases(domains: Vec<String>) -> Aliases {
         .unwrap()
 }
 
-fn make_origin(id: &str, origin_domain: &str, oai_id: &str) -> Origin {
-    let oai_path = format!("origin-access-identity/cloudfront/{}", oai_id);
-    let s3b = S3OriginConfigBuilder::default();
-
-    let s3_origin_config = s3b
-        .origin_access_identity(oai_path)
-        .build();
-
+fn make_origin(id: &str, origin_domain: &str, oac_id: &str) -> Origin {
     let it = OriginBuilder::default();
     it
         .id(id)
         .domain_name(origin_domain)
-        .s3_origin_config(s3_origin_config)
+        .origin_access_control_id(oac_id)
         .build()
         .unwrap()
 }
 
-fn make_origins(origin_domain: &str, origin_paths: Vec<String>, oai_id: &str) -> Origins {
+fn make_origins(origin_domain: &str, origin_paths: Vec<String>, oac_id: &str) -> Origins {
     let it = OriginsBuilder::default();
     let mut items: Vec<Origin> = vec![];
     for path in origin_paths {
-        let origin = make_origin(&path, origin_domain, oai_id);
+        let origin = make_origin(&path, origin_domain, oac_id);
         items.push(origin);
     }
     it
@@ -56,21 +60,49 @@ fn make_origins(origin_domain: &str, origin_paths: Vec<String>, oai_id: &str) ->
         .unwrap()
 }
 
+
+fn make_allowed_methods() -> AllowedMethods {
+    let it = AllowedMethodsBuilder::default();
+    let methods = vec![Method::Get, Method::Head, Method::Options];
+    it
+        .quantity(3)
+        .set_items(Some(methods))
+        .build()
+        .unwrap()
+}
+
+fn make_default_cache_behavior(origin_id: &str) -> DefaultCacheBehavior {
+    let allowed_methods = make_allowed_methods();
+    let it = DefaultCacheBehaviorBuilder::default();
+    it
+        .target_origin_id(origin_id)
+        .viewer_protocol_policy(ViewerProtocolPolicy::RedirectToHttps)
+        .allowed_methods(allowed_methods)
+        .build()
+        .unwrap()
+
+}
+
 pub fn make_dist_config(
     caller_ref: &str,
     origin_domain: &str,
     origin_paths: Vec<String>,
     domains: Vec<String>,
-    oai_id: &str
+    oac_id: &str
 
 ) -> DistributionConfig {
     let it = DistributionConfigBuilder::default();
-    let origins = make_origins(origin_domain, origin_paths, oai_id);
+    let origins = make_origins(origin_domain, origin_paths, oac_id);
     let aliases = make_aliases(domains);
+    //let default_origin_id = origins.items.first().unwrap().id.clone();
+    let default_cache = make_default_cache_behavior(oac_id);
     it
         .caller_reference(caller_ref)
         .aliases(aliases)
         .origins(origins)
+        .default_cache_behavior(default_cache)
+        .comment(caller_ref)
+        .enabled(true)
         .build()
         .unwrap()
 }
@@ -81,14 +113,24 @@ async fn list_distributions(client: &Client) -> HashMap<String, String> {
         .send()
         .await
         .unwrap();
-    let items = res.distribution_list.unwrap().items.unwrap();
 
+
+    let xs = res.distribution_list;
     let mut h: HashMap<String, String> = HashMap::new();
-    for item in items {
-        let origins = item.origins.unwrap().items;
-        for origin in origins {
-            h.insert(origin.domain_name, item.id.clone());
-        }
+
+    if let Some(m) = xs {
+
+       match m.items {
+           Some(xs) =>  {
+               for x in xs {
+                   let origins = x.origins.unwrap().items;
+                   for origin in origins {
+                       h.insert(origin.domain_name, origin.id.clone());
+                   }
+               }
+           },
+           None => ()
+       }
     }
     h
 }
@@ -102,29 +144,31 @@ async fn update_distribution(
     client: &Client,
     id: &str,
     dc: DistributionConfig
-) {
-    let _ = client
+) -> String {
+    let res = client
         .update_distribution()
         .distribution_config(dc)
         .send()
         .await;
+    id.to_string()
 }
 
-async fn create_distribution(client: &Client, dc: DistributionConfig) {
+async fn create_distribution(client: &Client, dc: DistributionConfig) -> String {
     let res = client
         .create_distribution()
         .distribution_config(dc)
         .send()
         .await
         .unwrap();
-    println!("{:?}", res);
+    res.distribution.unwrap().id
 }
 
 pub async fn create_or_update_distribution(
     client: &Client,
     origin_domain: &str,
     dc: DistributionConfig
-) {
+) -> String {
+
     let maybe_dist = find_distribution(client, origin_domain).await;
     match maybe_dist {
         Some(d) => update_distribution(client, &d, dc).await,
@@ -136,34 +180,58 @@ pub async fn create_invalidation(client: &Client) {
 
 }
 
-// origin access identity
-
-fn make_oai_config(
-    caller_ref: &str,
-    comment: &str
-) -> CloudFrontOriginAccessIdentityConfig {
-
-    let it = CloudFrontOriginAccessIdentityConfigBuilder::default();
-    it.caller_reference(caller_ref).comment(comment).build().unwrap()
-}
-
-pub async fn create_oai(client: &Client, caller_ref: &str) -> String {
-    let cfg = make_oai_config(caller_ref, "");
-
-    let res = client
-        .create_cloud_front_origin_access_identity()
-        .cloud_front_origin_access_identity_config(cfg)
-        .send()
-        .await
-        .unwrap();
-    res.cloud_front_origin_access_identity.unwrap().id
-}
-
 
 // origin access control
 
 
+async fn list_oacs(client: &Client) -> HashMap<String, String> {
+    let res = client
+        .list_origin_access_controls()
+        .send()
+        .await
+        .unwrap();
+    let mut h: HashMap<String, String> = HashMap::new();
+    let items = res.origin_access_control_list.unwrap().items;
+    if let Some(item) = items {
+        for x in item {
+            h.insert(x.name, x.id);
+        }
+    }
 
-pub async fn create_oac(client: &Client, name: &str) {
+    h
+}
 
+async fn find_oac(client: &Client, origin_domain: &str) -> Option<String> {
+    let h =  list_oacs(client).await;
+    h.get(origin_domain).cloned()
+}
+
+fn make_oac_config(name: &str) -> OriginAccessControlConfig {
+    let it = OriginAccessControlConfigBuilder::default();
+    it
+        .name(name)
+        .signing_protocol(OriginAccessControlSigningProtocols::Sigv4)
+        .signing_behavior(OriginAccessControlSigningBehaviors::Always)
+        .origin_access_control_origin_type(OriginAccessControlOriginTypes::S3)
+        .build()
+        .unwrap()
+}
+
+async fn create_oac(client: &Client, origin_domain: &str) -> String {
+    let cfg = make_oac_config(origin_domain);
+    let res = client
+        .create_origin_access_control()
+        .origin_access_control_config(cfg)
+        .send()
+        .await
+        .unwrap();
+    res.origin_access_control.unwrap().id
+}
+
+pub async fn find_or_create_oac(client: &Client, origin_domain: &str) -> String {
+    let maybe_oac = find_oac(client, origin_domain).await;
+    match maybe_oac {
+        Some(id) => id,
+        None => create_oac(client, origin_domain).await
+    }
 }

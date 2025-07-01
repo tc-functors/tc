@@ -22,7 +22,7 @@ fn render(s: &str, id: &str) -> String {
 
 async fn create_page(auth: &Auth, name: &str, page: &Page) {
 
-    let Page { bucket, bucket_policy,
+    let Page { bucket, bucket_policy, bucket_prefix,
                origin_paths,
                origin_domain, caller_ref,
                dist, dir, build, domains, .. } = page;
@@ -35,31 +35,34 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
     s3::find_or_create_bucket(&s3_client, bucket).await;
 
     println!("Uploading code from {}", dist);
-    s3::upload_dir(&s3_client, dist, bucket).await;
+    s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 
     let client = cloudfront::make_client(auth).await;
 
-    println!("Updating page {} - OAI", name);
-    let oai_id = cloudfront::create_oai(&client, caller_ref).await;
+    // println!("Updating page {} - OAI ({})", name, caller_ref);
+    // let oai_id = cloudfront::find_or_create_oai(&client, caller_ref).await;
+    // println!("oai - {}", oai_id);
 
-    println!("Updating page {} - OAC", name);
-    let _oac_id = cloudfront::create_oac(&client, caller_ref).await;
+    println!("Updating page {} - OAC ", name);
+    let oac_id = cloudfront::find_or_create_oac(&client, origin_domain).await;
 
     let dist_config = cloudfront::make_dist_config(
         caller_ref,
         origin_domain,
         origin_paths.clone(),
         domains.clone(),
-        &oai_id
+        &oac_id
     );
 
-    println!("Updating page {} - creating distribution {}", name, &origin_domain);
-    cloudfront::create_or_update_distribution(&client, origin_domain, dist_config).await;
+    println!("Updating page {} - creating distribution oac: {}", name, &oac_id);
+    let dist_id = cloudfront::create_or_update_distribution(&client, origin_domain, dist_config).await;
 
-    let policy = render(bucket_policy, &oai_id);
+    println!("Updating page {} - policy with dist {}", name, &dist_id);
 
-    // set bucket permissions
-    s3::update_bucket_policy(&s3_client, bucket, policy).await;
+    let policy = render(bucket_policy, &dist_id);
+
+    // // set bucket permissions
+    // s3::update_bucket_policy(&s3_client, bucket, &policy).await;
 }
 
 pub async fn create(auth: &Auth, pages: &HashMap<String, Page>) {
