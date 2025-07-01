@@ -523,7 +523,7 @@ fn make(
         channels: make_channels(&spec, &config),
         pools: make_pools(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
-        pages: page::make(&spec),
+        pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
         config: ConfigSpec::new(None),
     }

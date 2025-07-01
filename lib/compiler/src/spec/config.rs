@@ -312,6 +312,14 @@ pub struct Cognito {
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
 #[derivative(Debug, Default)]
+pub struct Cloudfront {
+    pub bucket: Option<String>,
+    pub profile: Option<String>,
+    pub domains: Option<Vec<String>>,
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derivative(Debug, Default)]
 pub struct Aws {
     #[serde(default = "Eventbridge::default")]
     pub eventbridge: Eventbridge,
@@ -336,6 +344,9 @@ pub struct Aws {
 
     #[serde(default = "Cognito::default")]
     pub cognito: Cognito,
+
+    #[serde(default = "Cloudfront::default")]
+    pub cloudfront: Cloudfront,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone, Document)]
