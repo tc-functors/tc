@@ -21,7 +21,9 @@ pub struct PolicyStatement {
     #[serde(rename(serialize = "Action"))]
     action: String,
     #[serde(rename(serialize = "Resource"))]
-    resource: String
+    resource: String,
+    #[serde(rename(serialize = "Condition"))]
+    condition: HashMap<String, HashMap<String, String>>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -40,12 +42,19 @@ impl BucketPolicy {
         let mut principal: HashMap<String, String> = HashMap::new();
         principal.insert(s!("Service"), s!("cloudfront.amazonaws.com"));
 
+        let mut condition: HashMap<String, HashMap<String, String>> = HashMap::new();
+        let mut cond_exp: HashMap<String, String> = HashMap::new();
+        cond_exp.insert(s!("AWS:SourceArn"),
+                        format!("arn:aws:cloudfront::{{{{account}}}}:distribution/{{{{lazy_id}}}}"));
+        condition.insert(s!("StringEquals"), cond_exp);
+
        let statement = PolicyStatement {
            sid: s!("AllowCloudFrontServicePrincipalWithOAC"),
            effect: s!("Allow"),
            principal: principal,
            action: s!("s3:GetObject"),
            resource: format!("arn:aws:s3:::{}/*", bucket),
+           condition: condition
        };
 
         BucketPolicy {
@@ -61,12 +70,12 @@ impl BucketPolicy {
 pub struct Page {
     pub dir: String,
     pub dist: String,
-    pub build: String,
+    pub build: Option<String>,
     pub caller_ref: String,
     pub bucket: String,
     pub bucket_policy: String,
     pub bucket_prefix: String,
-    pub origin_paths: Vec<String>,
+    pub origin_paths: HashMap<String, String>,
     pub origin_domain: String,
     pub default_root_object: String,
     pub domains: Vec<String>
@@ -83,7 +92,7 @@ fn find_bucket(given_bucket: &Option<String>, config: &ConfigSpec) -> String {
     }
 }
 
-fn find_domains(given_domains: &Option<Vec<String>>, infra_dir: &str) -> Vec<String> {
+fn find_domains(given_domains: &Option<Vec<String>>, _infra_dir: &str) -> Vec<String> {
     match given_domains {
         Some(d) => d.to_vec(),
         None => {
@@ -93,19 +102,25 @@ fn find_domains(given_domains: &Option<Vec<String>>, infra_dir: &str) -> Vec<Str
     }
 }
 
+
+fn make_paths(name: &str) -> HashMap<String, String> {
+    let mut h: HashMap<String, String> = HashMap::new();
+    let p = format!("/{}", name);
+    let id = format!("{}", name);
+    h.insert(id, p);
+    h
+}
+
 fn make(name: &str, ps: &PageSpec, infra_dir: &str, config: &ConfigSpec) -> Page {
     let bucket = find_bucket(&ps.bucket, config);
-    let origin_domain = format!("{}.{{{{region}}}}.s3.amazonaws.com", &bucket);
+    let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
     let bucket_policy = BucketPolicy::new(&bucket);
     let caller_ref = format!("{}-{}", &bucket, name);
     let dir = u::maybe_string(ps.dir.clone(), &u::pwd());
-    let build = u::maybe_string(ps.build.clone(), "npm build");
+    let build = ps.build.clone();
     let dist = u::maybe_string(ps.dist.clone(), "dist");
 
-    let paths = match &ps.paths {
-        Some(p) => p.clone(),
-        None => vec![format!("/{{{{sandbox}}}}")]
-    };
+    let paths = make_paths(name);
 
     Page {
         dir: dir,
@@ -113,7 +128,7 @@ fn make(name: &str, ps: &PageSpec, infra_dir: &str, config: &ConfigSpec) -> Page
         build: build,
         caller_ref: caller_ref,
         bucket_policy: serde_json::to_string(&bucket_policy).unwrap(),
-        bucket_prefix: format!("{{{{sandbox}}}}"),
+        bucket_prefix: format!("{}", name),
         bucket: bucket,
         origin_domain: origin_domain,
         origin_paths: paths,

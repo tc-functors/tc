@@ -7,9 +7,27 @@ use aws_sdk_s3::types::builders::CreateBucketConfigurationBuilder;
 use authorizer::Auth;
 use walkdir::WalkDir;
 
+use kit::*;
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
     Client::new(&shared_config)
+}
+
+
+fn as_content_type(key: &str) -> String {
+    let ext = kit::split_last(key, ".");
+    match ext.as_ref() {
+        "html"         => s!("text/html"),
+        "js"           => s!("text/javascript"),
+        "css"          => s!("text/css"),
+        "xml"          => s!("text/xml"),
+        "json"         => s!("application/json"),
+        "pdf"          => s!("application/pdf"),
+        "png"          => s!("image/png"),
+        "gif"          => s!("image/gif"),
+        "jpg" | "jpeg" => s!("image/jpeg"),
+        _              => s!("application/octet-stream")
+    }
 }
 
 pub async fn put_object(
@@ -19,11 +37,13 @@ pub async fn put_object(
     key: &str,
 ) {
     let body = ByteStream::from_path(file).await;
+    let ctype = as_content_type(key);
     let _ = client
         .put_object()
         .bucket(bucket)
         .key(key)
         .body(body.unwrap())
+        .content_type(ctype)
         .send()
         .await
         .unwrap();
@@ -47,14 +67,13 @@ pub async fn update_bucket_policy(
     policy: &str,
 
 ) {
-    let res = client
+    let _ = client
         .put_bucket_policy()
         .bucket(bucket)
         .policy(policy)
         .send()
         .await
         .unwrap();
-    println!("{:?}", res);
 }
 
 
@@ -80,7 +99,7 @@ fn make_bucket_cfg() ->  CreateBucketConfiguration {
 async fn create_bucket(client: &Client, bucket: &str) {
     let cfg = make_bucket_cfg();
     println!("Creating bucket {}", bucket);
-    let res = client
+    let _ = client
         .create_bucket()
         .bucket(bucket)
         .create_bucket_configuration(cfg)
