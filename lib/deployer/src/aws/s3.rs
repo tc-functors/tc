@@ -1,4 +1,4 @@
-use aws_sdk_s3::{Client, Error};
+use aws_sdk_s3::{Client};
 use std::path::Path;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::types::BucketLocationConstraint;
@@ -29,11 +29,12 @@ pub async fn put_object(
         .unwrap();
 }
 
-pub async fn upload_dir(client: &Client, dir: &str, bucket: &str) {
+pub async fn upload_dir(client: &Client, dir: &str, bucket: &str, prefix: &str) {
     for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
         let f = entry.path();
         if !f.is_dir() {
-            let key = f.strip_prefix(dir).unwrap().to_str().unwrap();
+            let part_key = f.strip_prefix(dir).unwrap().to_str().unwrap();
+            let key = format!("{}/{}", prefix, &part_key);
             //println!("{} {}", f.display(), &key);
             put_object(client, bucket, &f, &key).await;
         }

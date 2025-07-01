@@ -31,27 +31,27 @@ pub struct BucketPolicy {
     #[serde(rename(serialize = "Id"))]
     id: String,
     #[serde(rename(serialize = "Statement"))]
-    statement: PolicyStatement,
+    statement: Vec<PolicyStatement>,
 }
 
 impl BucketPolicy {
     fn new(bucket: &str) -> BucketPolicy {
 
         let mut principal: HashMap<String, String> = HashMap::new();
-        principal.insert(s!("AWS"),
-                         format!("arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity {{{{oai_id}}}}"));
-        let statement = PolicyStatement {
-            sid: s!("AllowCloudFrontServicePrincipalWithOAI"),
-            effect: s!("Allow"),
-            principal: principal,
-            action: s!("s3:GetObject"),
-            resource: format!("arn:aws:s3:::{}/*", bucket)
-        };
+        principal.insert(s!("Service"), s!("cloudfront.amazonaws.com"));
+
+       let statement = PolicyStatement {
+           sid: s!("AllowCloudFrontServicePrincipalWithOAC"),
+           effect: s!("Allow"),
+           principal: principal,
+           action: s!("s3:GetObject"),
+           resource: format!("arn:aws:s3:::{}/*", bucket),
+       };
 
         BucketPolicy {
             version: s!("2008-10-17"),
             id: s!("OSSPolicyForCloudFrontPrivateContent"),
-            statement: statement
+            statement: vec![statement]
         }
 
     }
@@ -104,7 +104,7 @@ fn make(name: &str, ps: &PageSpec, infra_dir: &str, config: &ConfigSpec) -> Page
 
     let paths = match &ps.paths {
         Some(p) => p.clone(),
-        None => vec![]
+        None => vec![format!("/{{{{sandbox}}}}")]
     };
 
     Page {
@@ -113,7 +113,7 @@ fn make(name: &str, ps: &PageSpec, infra_dir: &str, config: &ConfigSpec) -> Page
         build: build,
         caller_ref: caller_ref,
         bucket_policy: serde_json::to_string(&bucket_policy).unwrap(),
-        bucket_prefix: format!("{}/{{{{sandbox}}}}", &bucket),
+        bucket_prefix: format!("{{{{sandbox}}}}"),
         bucket: bucket,
         origin_domain: origin_domain,
         origin_paths: paths,
