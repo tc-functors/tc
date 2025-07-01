@@ -14,9 +14,19 @@ use aws_sdk_cloudfront::types::DefaultCacheBehavior;
 use aws_sdk_cloudfront::types::builders::DefaultCacheBehaviorBuilder;
 use aws_sdk_cloudfront::types::AllowedMethods;
 use aws_sdk_cloudfront::types::builders::AllowedMethodsBuilder;
-use aws_sdk_cloudfront::types::CachedMethods;
 use aws_sdk_cloudfront::types::Method;
 use aws_sdk_cloudfront::types::ViewerProtocolPolicy;
+use aws_sdk_cloudfront::types::CachePolicyConfig;
+use aws_sdk_cloudfront::types::builders::CachePolicyConfigBuilder;
+use aws_sdk_cloudfront::types::CachePolicyType;
+use aws_sdk_cloudfront::types::PriceClass;
+use aws_sdk_cloudfront::types::LoggingConfig;
+use aws_sdk_cloudfront::types::builders::LoggingConfigBuilder;
+use aws_sdk_cloudfront::types::HttpVersion;
+use aws_sdk_cloudfront::types::InvalidationBatch;
+use aws_sdk_cloudfront::types::Paths;
+use aws_sdk_cloudfront::types::builders::InvalidationBatchBuilder;
+use aws_sdk_cloudfront::types::builders::PathsBuilder;
 
 use std::collections::HashMap;
 use authorizer::Auth;
@@ -36,21 +46,27 @@ fn make_aliases(domains: Vec<String>) -> Aliases {
         .unwrap()
 }
 
-fn make_origin(id: &str, origin_domain: &str, oac_id: &str) -> Origin {
+fn make_origin(id: &str, path: &str, origin_domain: &str, oac_id: &str) -> Origin {
+    let s3b = S3OriginConfigBuilder::default();
+    let s3config = s3b.origin_access_identity("").build();
+
     let it = OriginBuilder::default();
     it
         .id(id)
         .domain_name(origin_domain)
         .origin_access_control_id(oac_id)
+        .origin_path(path)
+        .s3_origin_config(s3config)
         .build()
         .unwrap()
 }
 
-fn make_origins(origin_domain: &str, origin_paths: Vec<String>, oac_id: &str) -> Origins {
+fn make_origins(origin_domain: &str, origin_paths: HashMap<String, String>, oac_id: &str) -> Origins {
     let it = OriginsBuilder::default();
     let mut items: Vec<Origin> = vec![];
-    for path in origin_paths {
-        let origin = make_origin(&path, origin_domain, oac_id);
+
+    for (id, path) in origin_paths {
+        let origin = make_origin(&id, &path, origin_domain, oac_id);
         items.push(origin);
     }
     it
@@ -71,61 +87,77 @@ fn make_allowed_methods() -> AllowedMethods {
         .unwrap()
 }
 
-fn make_default_cache_behavior(origin_id: &str) -> DefaultCacheBehavior {
+fn make_default_cache_behavior(origin_id: &str, cache_policy_id: &str) -> DefaultCacheBehavior {
     let allowed_methods = make_allowed_methods();
     let it = DefaultCacheBehaviorBuilder::default();
     it
         .target_origin_id(origin_id)
         .viewer_protocol_policy(ViewerProtocolPolicy::RedirectToHttps)
         .allowed_methods(allowed_methods)
+        .cache_policy_id(cache_policy_id)
         .build()
         .unwrap()
 
 }
 
+fn make_logging_config() -> LoggingConfig {
+    let it = LoggingConfigBuilder::default();
+    it.enabled(false).build()
+}
+
 pub fn make_dist_config(
+    default_root_object: &str,
     caller_ref: &str,
     origin_domain: &str,
-    origin_paths: Vec<String>,
+    origin_paths: HashMap<String, String>,
     domains: Vec<String>,
-    oac_id: &str
+    oac_id: &str,
+    cache_policy_id: &str
 
 ) -> DistributionConfig {
     let it = DistributionConfigBuilder::default();
     let origins = make_origins(origin_domain, origin_paths, oac_id);
     let aliases = make_aliases(domains);
-    //let default_origin_id = origins.items.first().unwrap().id.clone();
-    let default_cache = make_default_cache_behavior(oac_id);
+    let default_origin_id = origins.items.first().unwrap().id.clone();
+    let default_cache = make_default_cache_behavior(&default_origin_id, cache_policy_id);
+    let logging = make_logging_config();
+
     it
         .caller_reference(caller_ref)
         .aliases(aliases)
         .origins(origins)
         .default_cache_behavior(default_cache)
+        .price_class(PriceClass::PriceClass100)
+        .logging(logging)
+        .default_root_object(default_root_object)
+        .web_acl_id("")
+        .http_version(HttpVersion::Http2)
         .comment(caller_ref)
         .enabled(true)
         .build()
         .unwrap()
 }
 
-async fn list_distributions(client: &Client) -> HashMap<String, String> {
+async fn list_distributions(client: &Client) -> HashMap<String, (String, String)> {
     let res = client
         .list_distributions()
         .send()
         .await
         .unwrap();
 
-
     let xs = res.distribution_list;
-    let mut h: HashMap<String, String> = HashMap::new();
+    let mut h: HashMap<String, (String, String)> = HashMap::new();
 
     if let Some(m) = xs {
 
        match m.items {
            Some(xs) =>  {
                for x in xs {
+                   let e_tag = x.e_tag.unwrap();
+                   let id = x.id;
                    let origins = x.origins.unwrap().items;
                    for origin in origins {
-                       h.insert(origin.domain_name, origin.id.clone());
+                       h.insert(origin.domain_name, (id.clone(), e_tag.clone()));
                    }
                }
            },
@@ -135,22 +167,27 @@ async fn list_distributions(client: &Client) -> HashMap<String, String> {
     h
 }
 
-async fn find_distribution(client: &Client, domain: &str) -> Option<String> {
+async fn find_distribution(client: &Client, domain: &str) -> Option<(String, String)> {
     let dists = list_distributions(client).await;
     dists.get(domain).cloned()
 }
 
-async fn update_distribution(
+async fn _update_distribution(
     client: &Client,
     id: &str,
+    e_tag: &str,
     dc: DistributionConfig
 ) -> String {
     let res = client
         .update_distribution()
+        .id(id)
         .distribution_config(dc)
+        .if_match(e_tag)
         .send()
-        .await;
-    id.to_string()
+        .await
+        .unwrap();
+
+    res.e_tag.unwrap()
 }
 
 async fn create_distribution(client: &Client, dc: DistributionConfig) -> String {
@@ -169,15 +206,66 @@ pub async fn create_or_update_distribution(
     dc: DistributionConfig
 ) -> String {
 
+    //update_distribution(client, &id, &e_tag, dc).await,
     let maybe_dist = find_distribution(client, origin_domain).await;
     match maybe_dist {
-        Some(d) => update_distribution(client, &d, dc).await,
+        Some((id, _e_tag)) => id,
         None => create_distribution(client, dc).await
     }
 }
 
-pub async fn create_invalidation(client: &Client) {
+// cache policy
 
+async fn list_cache_policies(client: &Client) -> HashMap<String, String> {
+    let res = client
+        .list_cache_policies()
+        .set_type(Some(CachePolicyType::Custom))
+        .send()
+        .await
+        .unwrap();
+    let mut h: HashMap<String, String> = HashMap::new();
+    let items = res.cache_policy_list.unwrap().items;
+    if let Some(item) = items {
+        for x in item {
+            let cp = x.cache_policy.unwrap();
+            let name = cp.cache_policy_config.unwrap().name;
+            h.insert(name, cp.id);
+        }
+    }
+    h
+}
+
+async fn find_cache_policy(client: &Client, name: &str) -> Option<String> {
+    let h = list_cache_policies(client).await;
+    h.get(name).cloned()
+}
+
+fn make_cache_policy_config(name: &str) -> CachePolicyConfig {
+    let it = CachePolicyConfigBuilder::default();
+    it
+        .name(name)
+        .min_ttl(60)
+        .build()
+        .unwrap()
+}
+
+async fn create_cache_policy(client: &Client, name: &str) -> String {
+    let cfg = make_cache_policy_config(name);
+    let res = client
+        .create_cache_policy()
+        .cache_policy_config(cfg)
+        .send()
+        .await
+        .unwrap();
+    res.cache_policy.unwrap().id
+}
+
+pub async fn find_or_create_cache_policy(client: &Client, name: &str) -> String {
+    let maybe_id = find_cache_policy(client, name).await;
+    match maybe_id {
+        Some(id) => id,
+        None => create_cache_policy(client, name).await
+    }
 }
 
 
@@ -197,7 +285,6 @@ async fn list_oacs(client: &Client) -> HashMap<String, String> {
             h.insert(x.name, x.id);
         }
     }
-
     h
 }
 
@@ -234,4 +321,50 @@ pub async fn find_or_create_oac(client: &Client, origin_domain: &str) -> String 
         Some(id) => id,
         None => create_oac(client, origin_domain).await
     }
+}
+
+
+// get domain
+pub async fn get_url(client: &Client, dist_id: &str) -> String {
+    let res = client
+        .get_distribution()
+        .id(dist_id)
+        .send()
+        .await
+        .unwrap();
+    res.distribution.unwrap().domain_name
+}
+
+// invalidations
+
+fn make_paths() -> Paths {
+    let it = PathsBuilder::default();
+    let items = vec![String::from("/*")];
+    it
+        .quantity(1)
+        .set_items(Some(items))
+        .build()
+        .unwrap()
+}
+
+fn make_invalidation_batch(caller_ref: &str) -> InvalidationBatch {
+    let it = InvalidationBatchBuilder::default();
+    let paths = make_paths();
+    it
+        .paths(paths)
+        .caller_reference(caller_ref)
+        .build()
+        .unwrap()
+}
+
+pub async fn create_invalidation(client: &Client, dist_id: &str) {
+    let caller_ref = kit::utc_now();
+    let invalidation_batch = make_invalidation_batch(&caller_ref);
+    let _ = client
+        .create_invalidation()
+        .distribution_id(dist_id)
+        .invalidation_batch(invalidation_batch)
+        .send()
+        .await
+        .unwrap();
 }

@@ -4,4 +4,3 @@ pages:
   my-app:
     dist: "."
     bucket: 'informed-web-assets-{{env}}'
-    build: ""
