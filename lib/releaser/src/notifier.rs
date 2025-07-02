@@ -88,8 +88,8 @@ pub async fn slack(scope: &str, payload: String) {
     let url = config.notifier.webhooks.get(scope);
     match url {
         Some(u) => {
-            let res = u::http_post(&u, headers(), payload.to_string()).await;
-            println!("{:?}", res);
+            let _ = u::http_post(&u, headers(), payload.to_string()).await;
+            //println!("{:?}", res);
         }
         None => {
             println!("No notification webhook url found");

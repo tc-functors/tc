@@ -78,7 +78,7 @@ pub async fn get_release_id(repo: &str, version: Option<String>) -> Option<Strin
 }
 
 pub async fn notify(scope: &str, msg: &str) {
-    notifier::notify(scope, &notifier::wrap_msg(msg)).await;
+    notifier::notify(scope, msg).await;
 }
 
 pub fn changelog(
