@@ -23,8 +23,11 @@ aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-ecs = { version = "1.75.0", features = ["behavior-version-latest"] }
 aws-sdk-sqs = { version = "1.65.0", features = ["behavior-version-latest"] }
 aws-sdk-cognitoidentityprovider = { version = "1.79.0", features = ["behavior-version-latest"] }
+aws-sdk-cloudfront = { version = "1.79.0", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1.70.0", features = ["behavior-version-latest"] }
 base64 = "0.21.0"
 tracing = "0.1"
+walkdir = "2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 kit = { path = "../kit" }
 aws-sdk-scheduler = { version = "1.65.0", features = ["behavior-version-latest"] }

@@ -10,6 +10,7 @@ pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
+pub mod page;
 
 use std::collections::HashMap;
 use authorizer::Auth;
@@ -33,6 +34,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
         tags,
         pools,
         channels,
+        pages,
         flow,
         ..
     } = topology;
@@ -53,6 +55,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes).await;
+    page::create(&auth, pages).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -86,6 +89,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
         tags,
         pools,
         routes,
+        pages,
         ..
     } = topology;
 
@@ -104,6 +108,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     queue::create(&auth, queues).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes).await;
+    page::create(&auth, pages).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -125,6 +130,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         tags,
         channels,
         pools,
+        pages,
         ..
     } = topology;
 
@@ -146,6 +152,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         Entity::Schedule => schedule::create(&auth, schedules).await,
         Entity::Trigger  => pool::create(&auth, pools).await,
         Entity::Route    => route::create(&auth, routes).await,
+        Entity::Page     => page::create(&auth, pages).await,
         Entity::State    => {
             if let Some(f) = flow {
                 state::create(&auth, f, tags).await;
@@ -175,6 +182,7 @@ async fn update_component(
         tags,
         channels,
         pools,
+        pages,
         ..
     } = topology;
 
@@ -199,6 +207,7 @@ async fn update_component(
         Entity::Schedule => schedule::update(&auth, schedules).await,
         Entity::Trigger  => pool::update(&auth, pools, component).await,
         Entity::Route    => route::update(&auth, routes, component).await,
+        Entity::Page     => page::update(&auth, pages, component).await,
         Entity::State    => {
             if let Some(f) = flow {
                 state::update(&auth, f, tags, component).await;
@@ -256,6 +265,7 @@ async fn delete_entity(
         pools,
         queues,
         channels,
+        pages,
         ..
     } = topology;
 
@@ -277,6 +287,7 @@ async fn delete_entity(
         Entity::Trigger  => pool::delete(&auth, pools).await,
         Entity::Queue    => queue::delete(&auth, queues).await,
         Entity::Channel  => channel::delete(&auth, channels).await,
+        Entity::Page     => page::delete(&auth, pages).await,
         Entity::State    => {
             if let Some(f) = flow {
                 state::delete(&auth, f).await;
