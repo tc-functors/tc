@@ -114,8 +114,18 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>) {
 }
 
 
-pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, _component: &str) {
-    update_code(auth, pages).await;
+pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str) {
+    match component {
+        "code" => update_code(auth, pages).await,
+        "build" => {
+            for (name, page) in pages {
+                build_page(&page.dir, name, &page.build);
+            }
+        },
+        _ => update_code(auth, pages).await
+    }
+
+
 }
 
 pub async fn delete(_auth: &Auth, _pages: &HashMap<String, Page>) {
