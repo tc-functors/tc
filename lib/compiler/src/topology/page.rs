@@ -71,7 +71,6 @@ impl BucketPolicy {
         let mut xs: Vec<PolicyStatement> = ex.statement.clone();
         let current_id = &self.statement.first().unwrap().sid;
         for s in ex.statement {
-            println!("{} - {}", &s.sid, *current_id);
             if s.sid != *current_id {
                 xs.extend(self.statement.clone());
             }
@@ -82,6 +81,28 @@ impl BucketPolicy {
 
     pub fn to_json(&self) -> String {
         serde_json::to_string(self).unwrap()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Infra {
+    pub bucket: Option<String>,
+    pub domains: Option<Vec<String>>
+}
+
+
+impl Infra {
+
+    pub fn new(infra_dir: &str, _namespace: &str, name: &str) -> Option<Infra> {
+        let f = format!("{}/pages/{}.json", infra_dir, name);
+        if u::file_exists(&f) {
+            let data: String = u::slurp(&f);
+            let inf: Infra = serde_json::from_str(&data).unwrap();
+            Some(inf)
+        } else {
+            None
+        }
+
     }
 }
 
@@ -101,25 +122,49 @@ pub struct Page {
     pub domains: Vec<String>
 }
 
-fn find_bucket(given_bucket: &Option<String>, config: &ConfigSpec) -> String {
+fn find_bucket(given_bucket: &Option<String>, config: &ConfigSpec, infra: &Option<Infra>) -> String {
     match given_bucket {
         Some(b) => b.to_string(),
-        None => match &config.aws.cloudfront.bucket {
-            Some(c) => c.to_string(),
-            None => match std::env::var("TC_PAGES_BUCKET") {
-                Ok(e) => e,
-                Err(_) => panic!("No bucket configured")
+        None => match infra {
+            Some(inf) => {
+                if let Some(bucket) = &inf.bucket {
+                    bucket.to_string()
+                } else {
+                    match &config.aws.cloudfront.bucket {
+                        Some(c) => c.to_string(),
+                        None => match std::env::var("TC_PAGES_BUCKET") {
+                            Ok(e) => e,
+                            Err(_) => panic!("No bucket configured")
+                        }
+                    }
+                }
+            },
+            None =>  {
+                match &config.aws.cloudfront.bucket {
+                    Some(c) => c.to_string(),
+                    None => match std::env::var("TC_PAGES_BUCKET") {
+                        Ok(e) => e,
+                        Err(_) => panic!("No bucket configured")
+                    }
+                }
             }
         }
     }
 }
 
-fn find_domains(given_domains: &Option<Vec<String>>, _infra_dir: &str) -> Vec<String> {
+fn find_domains(given_domains: &Option<Vec<String>>, infra: &Option<Infra>) -> Vec<String> {
     match given_domains {
         Some(d) => d.to_vec(),
         None => {
-            // FIXME: get it from infra/pages/<page-name>.json
-            vec![]
+            if let Some(inf) = infra {
+                if let Some(domains) = &inf.domains {
+                    domains.to_vec()
+                } else {
+                    vec![]
+                }
+            } else {
+                vec![]
+            }
         }
     }
 }
@@ -133,11 +178,11 @@ fn make_paths(namespace: &str, name: &str) -> HashMap<String, String> {
     h
 }
 
-fn make(name: &str, namespace: &str, ps: &PageSpec, infra_dir: &str, config: &ConfigSpec) -> Page {
-    let bucket = find_bucket(&ps.bucket, config);
+fn make(name: &str, namespace: &str, ps: &PageSpec, infra: &Option<Infra>, config: &ConfigSpec) -> Page {
+    let bucket = find_bucket(&ps.bucket, config, infra);
     let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
     let bucket_policy = BucketPolicy::new(namespace, name, &bucket);
-    let caller_ref = format!("{}-{}", &bucket, name);
+    let caller_ref = format!("{}-{}", namespace, name);
     let dir = u::maybe_string(ps.dir.clone(), &u::pwd());
     let build = match &ps.build {
         Some(bs) => Some(bs.join(" && ")),
@@ -159,7 +204,7 @@ fn make(name: &str, namespace: &str, ps: &PageSpec, infra_dir: &str, config: &Co
         origin_domain: origin_domain,
         origin_paths: paths,
         default_root_object: s!("index.html"),
-        domains: find_domains(&ps.domains, infra_dir)
+        domains: find_domains(&ps.domains, infra)
     }
 }
 
@@ -167,8 +212,8 @@ pub fn make_all(spec: &TopologySpec, infra_dir: &str, config: &ConfigSpec) -> Ha
     let mut h: HashMap<String, Page> = HashMap::new();
     if let Some(pspec) = &spec.pages {
         for (name, ps) in pspec {
-
-            let page = make(&name, &spec.name, ps, infra_dir, config);
+            let maybe_infra = Infra::new(infra_dir, &spec.name, &name);
+            let page = make(&name, &spec.name, ps, &maybe_infra, config);
             h.insert(name.to_string(), page);
         }
     }
