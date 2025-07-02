@@ -1,0 +1,38 @@
+name: job-tracker
+
+events:
+  CompleteTask:
+    producer: adHoc
+    mutation: completeJob
+
+mutations:
+  authorizer: '{{namespace}}_authorizer_{{sandbox}}'
+  types:
+    JobInput:
+      id: String!
+    Job:
+      id: String!
+      status: String
+      message: String
+
+  resolvers:
+
+    startJob:
+      function: starter
+      input: JobInput
+      output: Job
+      subscribe: true
+
+    completeJob:
+      function: completer
+      input: Event
+      output: Job
+      subscribe: true
+
+pages:
+  app:
+    dist: app/dist
+    dir: app
+    build:
+       - npm install --quiet --no-audit
+       - npm run build
