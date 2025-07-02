@@ -46,6 +46,16 @@ fn make_aliases(domains: Vec<String>) -> Aliases {
         .unwrap()
 }
 
+async fn get_distribution(client: &Client, dist_id: &str) -> DistributionConfig {
+    let res = client
+        .get_distribution()
+        .id(dist_id)
+        .send()
+        .await
+        .unwrap();
+    res.distribution.unwrap().distribution_config.unwrap()
+}
+
 fn make_origin(id: &str, path: &str, origin_domain: &str, oac_id: &str) -> Origin {
     let s3b = S3OriginConfigBuilder::default();
     let s3config = s3b.origin_access_identity("").build();
@@ -106,6 +116,7 @@ fn make_logging_config() -> LoggingConfig {
 }
 
 pub fn make_dist_config(
+    name: &str,
     default_root_object: &str,
     caller_ref: &str,
     origin_domain: &str,
@@ -132,7 +143,7 @@ pub fn make_dist_config(
         .default_root_object(default_root_object)
         .web_acl_id("")
         .http_version(HttpVersion::Http2)
-        .comment(caller_ref)
+        .comment(name)
         .enabled(true)
         .build()
         .unwrap()
@@ -155,10 +166,8 @@ async fn list_distributions(client: &Client) -> HashMap<String, (String, String)
                for x in xs {
                    let e_tag = x.e_tag.unwrap();
                    let id = x.id;
-                   let origins = x.origins.unwrap().items;
-                   for origin in origins {
-                       h.insert(origin.domain_name, (id.clone(), e_tag.clone()));
-                   }
+                   h.insert(x.comment.clone(), (id.clone(), e_tag.clone()));
+
                }
            },
            None => ()
@@ -167,17 +176,19 @@ async fn list_distributions(client: &Client) -> HashMap<String, (String, String)
     h
 }
 
-async fn find_distribution(client: &Client, domain: &str) -> Option<(String, String)> {
+pub async fn find_distribution(client: &Client, name: &str) -> Option<(String, String)> {
     let dists = list_distributions(client).await;
-    dists.get(domain).cloned()
+    dists.get(name).cloned()
 }
 
-async fn _update_distribution(
+async fn update_distribution(
     client: &Client,
     id: &str,
     e_tag: &str,
     dc: DistributionConfig
 ) -> String {
+
+    let existing_dc = get_distribution(client, id).await;
     let res = client
         .update_distribution()
         .id(id)
@@ -202,12 +213,12 @@ async fn create_distribution(client: &Client, dc: DistributionConfig) -> String 
 
 pub async fn create_or_update_distribution(
     client: &Client,
-    origin_domain: &str,
+    name: &str,
     dc: DistributionConfig
 ) -> String {
 
     //update_distribution(client, &id, &e_tag, dc).await,
-    let maybe_dist = find_distribution(client, origin_domain).await;
+    let maybe_dist = find_distribution(client, name).await;
     match maybe_dist {
         Some((id, _e_tag)) => id,
         None => create_distribution(client, dc).await
