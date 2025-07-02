@@ -46,7 +46,7 @@ fn make_aliases(domains: Vec<String>) -> Aliases {
         .unwrap()
 }
 
-async fn get_distribution(client: &Client, dist_id: &str) -> DistributionConfig {
+async fn _get_distribution(client: &Client, dist_id: &str) -> DistributionConfig {
     let res = client
         .get_distribution()
         .id(dist_id)
@@ -181,14 +181,13 @@ pub async fn find_distribution(client: &Client, name: &str) -> Option<(String, S
     dists.get(name).cloned()
 }
 
-async fn update_distribution(
+async fn _update_distribution(
     client: &Client,
     id: &str,
     e_tag: &str,
     dc: DistributionConfig
 ) -> String {
 
-    let existing_dc = get_distribution(client, id).await;
     let res = client
         .update_distribution()
         .id(id)
