@@ -8,6 +8,7 @@ pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
+pub mod page;
 mod tag;
 mod template;
 pub mod version;
@@ -36,6 +37,7 @@ pub use role::{
 };
 pub use route::Route;
 pub use schedule::Schedule;
+pub use page::Page;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -67,6 +69,7 @@ pub struct Topology {
     pub queues: HashMap<String, Queue>,
     pub channels: HashMap<String, Channel>,
     pub pools: HashMap<String, Pool>,
+    pub pages: HashMap<String, Page>,
     pub tags: HashMap<String, String>,
     pub flow: Option<Flow>,
     pub config: ConfigSpec,
@@ -520,6 +523,7 @@ fn make(
         channels: make_channels(&spec, &config),
         pools: make_pools(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
+        pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
         config: ConfigSpec::new(None),
     }
@@ -566,6 +570,7 @@ fn make_standalone(dir: &str) -> Topology {
         channels: HashMap::new(),
         tags: HashMap::new(),
         schedules: HashMap::new(),
+        pages: HashMap::new(),
         config: ConfigSpec::new(None),
     }
 }

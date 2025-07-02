@@ -10,7 +10,6 @@ use compiler::{
     Route,
 };
 use kit::*;
-use log::info;
 use std::collections::HashMap;
 use aws_sdk_apigatewayv2::types::Cors;
 
@@ -219,7 +218,7 @@ async fn delete_route(auth: &Auth, route: &Route) {
 
 pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
     for (name, route) in routes {
-        info!("Deleting route {}", &name);
+        println!("Deleting route {}", &name);
         delete_route(auth, &route).await;
     }
 }

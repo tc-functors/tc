@@ -18,6 +18,7 @@ pub mod infra;
 pub mod mutation;
 pub mod queue;
 pub mod route;
+pub mod page;
 
 use crate::parser;
 pub use channel::ChannelSpec;
@@ -36,6 +37,7 @@ pub use mutation::MutationSpec;
 use parser::yaml::Transformer;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
+pub use page::PageSpec;
 
 // topology
 
@@ -135,6 +137,7 @@ pub struct TopologySpec {
     pub queues: Option<HashMap<String, QueueSpec>>,
     pub channels: Option<HashMap<String, ChannelSpec>>,
     pub triggers: Option<HashMap<String, TriggerSpec>>,
+    pub pages: Option<HashMap<String, PageSpec>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
 }
@@ -185,6 +188,7 @@ impl TopologySpec {
                 mutations: None,
                 channels: None,
                 triggers: None,
+                pages: None
             }
         }
     }

@@ -31,6 +31,8 @@ impl Context {
             Err(_) => &self.config.aws.ecr.repo,
         };
 
+        let lazy_id = format!("{{{{lazy_id}}}}");
+
         table.insert("account", account);
         table.insert("acc", account);
         table.insert("region", region);
@@ -40,6 +42,7 @@ impl Context {
         table.insert("env", &self.auth.name);
         table.insert("profile", &self.auth.name);
         table.insert("repo", repo);
+        table.insert("lazy_id", &lazy_id);
         u::stencil(s, table)
     }
 }

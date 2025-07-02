@@ -4,6 +4,7 @@ mod inline;
 mod layer;
 mod library;
 mod types;
+pub mod page;
 
 use authorizer::Auth;
 use colored::Colorize;
