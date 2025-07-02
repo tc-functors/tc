@@ -6,7 +6,6 @@ events:
     mutation: completeJob
 
 mutations:
-  authorizer: '{{namespace}}_authorizer_{{sandbox}}'
   types:
     JobInput:
       id: String!

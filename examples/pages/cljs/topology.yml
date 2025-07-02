@@ -1,0 +1,9 @@
+name: cljs
+
+pages:
+  app:
+    dist: './dist'
+    build:
+      - 'clojure -M --main cljs.main --optimizations advanced --compile play.core'
+      - cp index.html out/
+      -  mv out dist

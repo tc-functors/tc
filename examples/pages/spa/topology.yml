@@ -1,0 +1,8 @@
+name: spa
+
+pages:
+  app:
+    dist: './dist'
+    build:
+      - npm install --quiet --no-audit
+      - npm run build
