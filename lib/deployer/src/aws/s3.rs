@@ -77,6 +77,19 @@ pub async fn update_bucket_policy(
 }
 
 
+pub async fn get_bucket_policy(client: &Client, bucket: &str) -> Option<String> {
+    let res = client
+        .get_bucket_policy()
+        .bucket(bucket)
+        .send()
+        .await;
+    match res {
+        Ok(_) => res.unwrap().policy,
+        Err(_) => None
+    }
+}
+
+
 async fn bucket_exists(client: &Client, bucket: &str) -> bool {
     let res = client
         .head_bucket()

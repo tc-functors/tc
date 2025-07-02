@@ -60,7 +60,8 @@ fn copy_from_docker(dir: &str) {
     let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
 
-    sh(&format!("docker cp {}:/build dist", id), dir);
+    sh("rm -rf dist", dir);
+    sh(&format!("docker cp {}:/build/dist dist", id), dir);
 
     sh(&clean, dir);
     sh("rm -f Dockerfile wrapper", dir);
@@ -81,6 +82,7 @@ pub fn build(dir: &str, name: &str, command: &str) {
     if !status {
         println!("{}", &out);
         println!("{}", &err);
+        std::process::exit(1);
     }
 
     bar.inc(3);

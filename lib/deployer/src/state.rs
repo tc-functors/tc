@@ -121,13 +121,14 @@ pub async fn update_logs(auth: &Auth, sfn_arn: &str, flow: &Flow) {
     cloudwatch::create_log_group(cw_client.clone(), &log_config.group)
         .await
         .unwrap();
-    tracing::debug!(
+    println!(
         "Updating log-config {} ({}) include_exec_data: {}",
         name,
         mode,
         include_exec_data
     );
-    let _ = sfn::enable_logging(sfn_client, sfn_arn, &log_config.group_arn, include_exec_data).await;
+    let res = sfn::enable_logging(sfn_client, sfn_arn, &log_config.group_arn, include_exec_data).await;
+    println!("{:?}", &res);
 }
 
 pub async fn disable_logs(auth: &Auth, sfn_arn: &str) {
