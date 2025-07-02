@@ -1,6 +1,0 @@
-name: chat
-
-channels:
-  chat-room:
-    on_publish:
-      handler: default
