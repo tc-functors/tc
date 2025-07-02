@@ -1,6 +1,0 @@
-name: recommendation
-events:
-  consumes:
-    InitiateRecommendation:
-      producer: api
-      function: query

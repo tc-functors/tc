@@ -1,6 +1,0 @@
-name: payment
-events:
-  consumes:
-    InitiatePayment:
-      producer: order/cart
-      function: stripe
