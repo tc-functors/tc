@@ -13,6 +13,7 @@ log = "0.4"
 tracing = "0.1"
 anyhow = "1.0.71"
 base64 = "0.21.0"
+aws-sdk-ecr = { version = "1.82.0", features = ["behavior-version-latest"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-codeartifact = { version = "1.74.0", features = ["behavior-version-latest"] }
