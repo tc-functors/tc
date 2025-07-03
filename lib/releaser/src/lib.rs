@@ -1,15 +1,14 @@
 mod aws;
+mod changelog;
 mod git;
 mod github;
 mod notifier;
 mod router;
 mod tagger;
-mod changelog;
 
 pub mod ci;
 
 use kit as u;
-
 pub use router::{
     freeze,
     route,
@@ -81,11 +80,7 @@ pub async fn notify(scope: &str, msg: &str) {
     notifier::notify(scope, msg).await;
 }
 
-pub fn changelog(
-    namespace: &str,
-    between: Option<String>,
-    verbose: bool
-) {
+pub fn changelog(namespace: &str, between: Option<String>, verbose: bool) {
     if u::option_exists(between.clone()) {
         changelog::between(namespace, between)
     } else {

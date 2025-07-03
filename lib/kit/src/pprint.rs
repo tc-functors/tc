@@ -132,11 +132,14 @@ pub fn print_tree(tree: StringItem) {
     print_tree_with(&tree, &config).unwrap();
 }
 
-
 pub fn progress(n: u64) -> ProgressBar {
     let bar = ProgressBar::new(n);
-    bar.set_style(ProgressStyle::with_template("{prefix} {name} [{bar:8}] {pos:>1}/{len:3} ({elapsed}) {msg}")
-    .unwrap()
-    .progress_chars("=> "));
+    bar.set_style(
+        ProgressStyle::with_template(
+            "{prefix} {name} [{bar:8}] {pos:>1}/{len:3} ({elapsed}) {msg}",
+        )
+        .unwrap()
+        .progress_chars("=> "),
+    );
     bar
 }

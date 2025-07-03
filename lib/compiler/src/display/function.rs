@@ -1,7 +1,7 @@
 use crate::Topology;
 use colored::Colorize;
-use kit::*;
 use kit as u;
+use kit::*;
 use ptree::{
     builder::TreeBuilder,
     item::StringItem,
@@ -35,9 +35,7 @@ pub fn build_tree(topology: &Topology) -> StringItem {
     t.build()
 }
 
-
 pub fn display_component(topology: &Topology, component: &str) {
-
     let xs: Vec<&str> = component.split("/").collect();
     let functions = &topology.functions;
 
@@ -46,16 +44,14 @@ pub fn display_component(topology: &Topology, component: &str) {
         let part = u::nth(xs, 1);
         let function = functions.get(&fn_str);
         match function {
-            Some(f) => {
-                match part.as_ref() {
-                    "build" => u::pp_json(&f.build),
-                    "vars" => u::pp_json(&f.runtime.environment),
-                    "tags" => u::pp_json(&f.runtime.tags),
-                    "role" => u::pp_json(&f.runtime.role),
-                    _ => ()
-                }
+            Some(f) => match part.as_ref() {
+                "build" => u::pp_json(&f.build),
+                "vars" => u::pp_json(&f.runtime.environment),
+                "tags" => u::pp_json(&f.runtime.tags),
+                "role" => u::pp_json(&f.runtime.role),
+                _ => (),
             },
-            None => println!("Function not found")
+            None => println!("Function not found"),
         }
     } else if xs.len() == 1 {
         let fn_str = u::nth(xs, 0);

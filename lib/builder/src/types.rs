@@ -1,5 +1,7 @@
-use compiler::spec::LangRuntime;
-use compiler::spec::function::BuildKind;
+use compiler::spec::{
+    LangRuntime,
+    function::BuildKind,
+};
 
 #[derive(Debug, Clone)]
 pub struct BuildOutput {
@@ -15,5 +17,5 @@ pub struct BuildStatus {
     pub path: String,
     pub status: bool,
     pub out: String,
-    pub err: String
+    pub err: String,
 }

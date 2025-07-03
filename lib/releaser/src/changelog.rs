@@ -1,6 +1,6 @@
-use kit as u;
-use colored::Colorize;
 use crate::git;
+use colored::Colorize;
+use kit as u;
 
 pub fn find_version(prefix: &str, s: &str) -> Option<String> {
     git::fetch_tags();
@@ -9,7 +9,7 @@ pub fn find_version(prefix: &str, s: &str) -> Option<String> {
         if part.contains(s) {
             let tag = git::extract_tag(prefix, &part);
             let version = git::extract_version(&tag);
-            return Some(version)
+            return Some(version);
         }
     }
     None

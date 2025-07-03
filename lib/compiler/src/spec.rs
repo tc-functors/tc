@@ -16,9 +16,9 @@ pub mod event;
 pub mod function;
 pub mod infra;
 pub mod mutation;
+pub mod page;
 pub mod queue;
 pub mod route;
-pub mod page;
 
 use crate::parser;
 pub use channel::ChannelSpec;
@@ -34,10 +34,10 @@ pub use function::{
     LangRuntime,
 };
 pub use mutation::MutationSpec;
+pub use page::PageSpec;
 use parser::yaml::Transformer;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
-pub use page::PageSpec;
 
 // topology
 
@@ -188,7 +188,7 @@ impl TopologySpec {
                 mutations: None,
                 channels: None,
                 triggers: None,
-                pages: None
+                pages: None,
             }
         }
     }

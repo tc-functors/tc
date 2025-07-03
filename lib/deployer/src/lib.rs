@@ -2,24 +2,24 @@ mod aws;
 pub mod base;
 pub mod channel;
 pub mod event;
-pub mod state;
 pub mod function;
 pub mod mutation;
+pub mod page;
 pub mod pool;
 pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
-pub mod page;
+pub mod state;
 
-use std::collections::HashMap;
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::{
     Entity,
+    Function,
     Topology,
-    Function
 };
+use std::collections::HashMap;
 
 pub async fn create(auth: &Auth, topology: &Topology) {
     let Topology {
@@ -62,7 +62,6 @@ pub async fn create(auth: &Auth, topology: &Topology) {
 }
 
 async fn update_function(auth: &Auth, namespace: &str, sandbox: &str, f: &Function) {
-
     println!(
         "Updating function {}@{}.{}/functions/{}",
         &namespace.green(),
@@ -115,7 +114,6 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
 }
 
 async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
-
     let Topology {
         version,
         namespace,
@@ -143,31 +141,24 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         &entity.to_str()
     );
     match entity {
-
-        Entity::Event    => event::create(&auth, events, tags).await,
+        Entity::Event => event::create(&auth, events, tags).await,
         Entity::Function => function::create(&auth, functions).await,
         Entity::Mutation => mutation::create(&auth, mutations, tags).await,
-        Entity::Queue    => queue::create(&auth, queues).await,
-        Entity::Channel  => channel::create(&auth, channels).await,
+        Entity::Queue => queue::create(&auth, queues).await,
+        Entity::Channel => channel::create(&auth, channels).await,
         Entity::Schedule => schedule::create(&auth, schedules).await,
-        Entity::Trigger  => pool::create(&auth, pools).await,
-        Entity::Route    => route::create(&auth, routes).await,
-        Entity::Page     => page::create(&auth, pages).await,
-        Entity::State    => {
+        Entity::Trigger => pool::create(&auth, pools).await,
+        Entity::Route => route::create(&auth, routes).await,
+        Entity::Page => page::create(&auth, pages).await,
+        Entity::State => {
             if let Some(f) = flow {
                 state::create(&auth, f, tags).await;
             }
         }
     }
-
 }
 
-async fn update_component(
-    auth: &Auth,
-    topology: &Topology,
-    entity: Entity,
-    component: &str
-) {
+async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, component: &str) {
     let Topology {
         version,
         namespace,
@@ -195,20 +186,17 @@ async fn update_component(
         &entity.to_str()
     );
 
-
-
     match entity {
-
-        Entity::Event    => event::update(&auth, events, tags, component).await,
+        Entity::Event => event::update(&auth, events, tags, component).await,
         Entity::Function => function::update(&auth, functions, component).await,
         Entity::Mutation => mutation::update(&auth, mutations, &component).await,
-        Entity::Queue    => queue::update(&auth, queues, component).await,
-        Entity::Channel  => channel::update(&auth, channels, component).await,
+        Entity::Queue => queue::update(&auth, queues, component).await,
+        Entity::Channel => channel::update(&auth, channels, component).await,
         Entity::Schedule => schedule::update(&auth, schedules).await,
-        Entity::Trigger  => pool::update(&auth, pools, component).await,
-        Entity::Route    => route::update(&auth, routes, component).await,
-        Entity::Page     => page::update(&auth, pages, component).await,
-        Entity::State    => {
+        Entity::Trigger => pool::update(&auth, pools, component).await,
+        Entity::Route => route::update(&auth, routes, component).await,
+        Entity::Page => page::update(&auth, pages, component).await,
+        Entity::State => {
             if let Some(f) = flow {
                 state::update(&auth, f, tags, component).await;
             }
@@ -247,11 +235,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
     queue::delete(&auth, queues).await;
 }
 
-async fn delete_entity(
-    auth: &Auth,
-    topology: &Topology,
-    entity: Entity
-) {
+async fn delete_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     let Topology {
         namespace,
         functions,
@@ -279,16 +263,16 @@ async fn delete_entity(
     );
 
     match entity {
-        Entity::Event    => event::delete(&auth, events).await,
-        Entity::Route    => route::delete(&auth, routes).await,
+        Entity::Event => event::delete(&auth, events).await,
+        Entity::Route => route::delete(&auth, routes).await,
         Entity::Function => function::delete(&auth, functions).await,
         Entity::Mutation => mutation::delete(&auth, mutations).await,
         Entity::Schedule => schedule::delete(&auth, schedules).await,
-        Entity::Trigger  => pool::delete(&auth, pools).await,
-        Entity::Queue    => queue::delete(&auth, queues).await,
-        Entity::Channel  => channel::delete(&auth, channels).await,
-        Entity::Page     => page::delete(&auth, pages).await,
-        Entity::State    => {
+        Entity::Trigger => pool::delete(&auth, pools).await,
+        Entity::Queue => queue::delete(&auth, queues).await,
+        Entity::Channel => channel::delete(&auth, channels).await,
+        Entity::Page => page::delete(&auth, pages).await,
+        Entity::State => {
             if let Some(f) = flow {
                 state::delete(&auth, f).await;
             }
@@ -296,13 +280,7 @@ async fn delete_entity(
     }
 }
 
-
-async fn delete_component(
-    auth: &Auth,
-    topology: &Topology,
-    entity: Entity,
-    component: &str
-) {
+async fn delete_component(auth: &Auth, topology: &Topology, entity: Entity, component: &str) {
     let Topology {
         namespace,
         sandbox,
@@ -319,57 +297,39 @@ async fn delete_component(
         entity.to_str(),
         &component
     );
-
-
 }
-
 
 // pub interfaces
 
-pub async fn try_update(
-    auth: &Auth,
-    topology: &Topology,
-    maybe_entity: &Option<String>,
-) {
-
+pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
     match maybe_entity {
         Some(e) => {
             let (entity, component) = Entity::as_entity_component(&e);
             match component {
-                Some(c) => {
-                    update_component(auth, topology, entity, &c).await
-                },
-                None => update_entity(auth, topology, entity).await
+                Some(c) => update_component(auth, topology, entity, &c).await,
+                None => update_entity(auth, topology, entity).await,
             }
-        },
+        }
         None => {
             let dir = kit::pwd();
             let maybe_function = topology.current_function(&dir);
             match maybe_function {
                 Some(f) => update_function(auth, &topology.namespace, &topology.sandbox, &f).await,
-                None => update_topology(auth, topology).await
+                None => update_topology(auth, topology).await,
             }
         }
     }
 }
 
-
-pub async fn try_delete(
-    auth: &Auth,
-    topology: &Topology,
-    maybe_entity: &Option<String>,
-) {
-
+pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
     match maybe_entity {
         Some(e) => {
             let (entity, component) = Entity::as_entity_component(&e);
             match component {
-                Some(c) => {
-                    delete_component(auth, topology, entity, &c).await
-                },
-                None => delete_entity(auth, topology, entity).await
+                Some(c) => delete_component(auth, topology, entity, &c).await,
+                None => delete_entity(auth, topology, entity).await,
             }
-        },
-        None => delete(auth, topology).await
+        }
+        None => delete(auth, topology).await,
     }
 }

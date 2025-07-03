@@ -1,7 +1,12 @@
 mod aws_ecr;
 mod python;
 
+use crate::types::{
+    BuildOutput,
+    BuildStatus,
+};
 use authorizer::Auth;
+use colored::Colorize;
 use compiler::{
     LangRuntime,
     spec::{
@@ -10,8 +15,6 @@ use compiler::{
         Lang,
     },
 };
-use colored::Colorize;
-use crate::types::{BuildOutput, BuildStatus};
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
@@ -98,7 +101,6 @@ pub fn build(
     image_kind: &str,
     uri: &str,
 ) -> BuildStatus {
-
     let image_spec = match images.get(image_kind) {
         Some(p) => p,
         None => panic!("No image spec specified in build:images"),
@@ -119,8 +121,12 @@ pub fn build(
 
     let bar = u::progress(3);
 
-    let prefix = format!("Building {} ({}/image/{})",
-                         name.blue(), langr.to_str(), image_kind);
+    let prefix = format!(
+        "Building {} ({}/image/{})",
+        name.blue(),
+        langr.to_str(),
+        image_kind
+    );
     bar.set_prefix(prefix);
 
     match image_kind {
@@ -136,7 +142,7 @@ pub fn build(
             );
             bar.inc(2);
             tracing::debug!("Building {} with parent {}", uri, &parent_image_name);
-            let (status, out, err) =  build_with_docker(image_dir, &uri);
+            let (status, out, err) = build_with_docker(image_dir, &uri);
             bar.inc(3);
             sh("rm -rf Dockerfile build build.json", image_dir);
             bar.finish();
@@ -144,7 +150,7 @@ pub fn build(
                 path: uri.to_string(),
                 status: status,
                 out: out,
-                err: err
+                err: err,
             }
         }
         "base" => {
@@ -165,7 +171,7 @@ pub fn build(
                 path: base_image_name,
                 status: status,
                 out: out,
-                err: err
+                err: err,
             }
         }
         _ => panic!("Invalid image kind"),

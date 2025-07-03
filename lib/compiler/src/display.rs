@@ -1,6 +1,6 @@
 use crate::{
-    Topology,
     Entity,
+    Topology,
 };
 use kit as u;
 use std::{
@@ -8,10 +8,10 @@ use std::{
     str::FromStr,
 };
 
+mod event;
 mod function;
 mod mutation;
 mod state;
-mod event;
 pub mod topology;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -87,7 +87,7 @@ pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
                 );
             }
             _ => u::pp_json(&topology.mutations),
-         },
+        },
         Entity::Page => u::pp_json(&topology.pages),
         _ => (),
     }
@@ -98,7 +98,7 @@ fn display_component(entity: Entity, component: &str, _fmt: Format, topology: &T
         Entity::Function => function::display_component(topology, component),
         Entity::State => state::display_component(topology, component),
         Entity::Event => event::display_component(topology, component),
-        _ => ()
+        _ => (),
     }
 }
 
@@ -106,7 +106,7 @@ pub fn try_display(topology: &Topology, maybe_entity: &str, fmt: Format) {
     let (entity, component) = Entity::as_entity_component(maybe_entity);
     match component {
         Some(c) => display_component(entity, &c, fmt, topology),
-        None => display_entity(entity, fmt, topology)
+        None => display_entity(entity, fmt, topology),
     }
 }
 

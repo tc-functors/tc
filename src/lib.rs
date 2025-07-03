@@ -1,7 +1,7 @@
 use authorizer::Auth;
 use compiler::{
-    Topology,
     Entity,
+    Topology,
     spec::{
         BuildSpec,
         ConfigSpec,
@@ -145,13 +145,7 @@ pub async fn resolve(
 ) {
     let topology = compiler::compile(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let rt = resolver::try_resolve(
-        &auth,
-        &sandbox,
-        &topology,
-        &maybe_entity,
-        cache
-    ).await;
+    let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
     let entity = Entity::as_entity(maybe_entity);
     compiler::pprint(&rt, entity)
 }
@@ -188,9 +182,7 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     }
 }
 
-
 async fn create_topology(auth: &Auth, topology: &Topology) {
-
     deployer::create(auth, topology).await;
 
     for (_, node) in &topology.nodes {
@@ -267,8 +259,7 @@ pub async fn update(
     sandbox: Option<String>,
     maybe_entity: Option<String>,
     recursive: bool,
-    cache: bool
-
+    cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
 
@@ -300,7 +291,7 @@ pub async fn delete(
     sandbox: Option<String>,
     maybe_entity: Option<String>,
     recursive: bool,
-    cache: bool
+    cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     releaser::guard(&sandbox);
@@ -434,7 +425,7 @@ pub async fn ci_deploy(
 ) {
     let dir = u::pwd();
     let namespace = compiler::topology_name(&dir);
-    let current_version =  compiler::topology_version(&namespace);
+    let current_version = compiler::topology_version(&namespace);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let version = u::maybe_string(version, &current_version);
@@ -528,7 +519,7 @@ pub async fn snapshot(
     format: Option<String>,
     manifest: bool,
     save: Option<String>,
-    target_profile: Option<String>
+    target_profile: Option<String>,
 ) {
     let dir = u::pwd();
     let format = u::maybe_string(format, "json");
@@ -543,7 +534,8 @@ pub async fn snapshot(
                 let auth = init(profile.clone(), None).await;
 
                 if manifest {
-                    snapshotter::generate_manifest(&auth, &dir, &sandbox, save, target_profile).await;
+                    snapshotter::generate_manifest(&auth, &dir, &sandbox, save, target_profile)
+                        .await;
                 } else {
                     let records = snapshotter::snapshot(&auth, &dir, &sandbox).await;
                     snapshotter::pretty_print(records, &format);
@@ -570,7 +562,7 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
                 }
             }
         }
-        None => releaser::changelog(&namespace, between, verbose)
+        None => releaser::changelog(&namespace, between, verbose),
     }
 }
 
@@ -587,7 +579,7 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, dry_run: bool) {
                 releaser::guard(&sbox);
                 pruner::prune(auth, &sbox).await;
             }
-        },
-        None => println!("Please specify sandbox")
+        }
+        None => println!("Please specify sandbox"),
     }
 }

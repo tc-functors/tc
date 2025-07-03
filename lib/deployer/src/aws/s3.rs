@@ -1,41 +1,38 @@
-use aws_sdk_s3::{Client};
-use std::path::Path;
-use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::types::BucketLocationConstraint;
-use aws_sdk_s3::types::CreateBucketConfiguration;
-use aws_sdk_s3::types::builders::CreateBucketConfigurationBuilder;
 use authorizer::Auth;
-use walkdir::WalkDir;
-
+use aws_sdk_s3::{
+    Client,
+    primitives::ByteStream,
+    types::{
+        BucketLocationConstraint,
+        CreateBucketConfiguration,
+        builders::CreateBucketConfigurationBuilder,
+    },
+};
 use kit::*;
+use std::path::Path;
+use walkdir::WalkDir;
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
     Client::new(&shared_config)
 }
 
-
 fn as_content_type(key: &str) -> String {
     let ext = kit::split_last(key, ".");
     match ext.as_ref() {
-        "html"         => s!("text/html"),
-        "js"           => s!("text/javascript"),
-        "css"          => s!("text/css"),
-        "xml"          => s!("text/xml"),
-        "json"         => s!("application/json"),
-        "pdf"          => s!("application/pdf"),
-        "png"          => s!("image/png"),
-        "gif"          => s!("image/gif"),
+        "html" => s!("text/html"),
+        "js" => s!("text/javascript"),
+        "css" => s!("text/css"),
+        "xml" => s!("text/xml"),
+        "json" => s!("application/json"),
+        "pdf" => s!("application/pdf"),
+        "png" => s!("image/png"),
+        "gif" => s!("image/gif"),
         "jpg" | "jpeg" => s!("image/jpeg"),
-        _              => s!("application/octet-stream")
+        _ => s!("application/octet-stream"),
     }
 }
 
-pub async fn put_object(
-    client: &Client,
-    bucket: &str,
-    file: &Path,
-    key: &str,
-) {
+pub async fn put_object(client: &Client, bucket: &str, file: &Path, key: &str) {
     let body = ByteStream::from_path(file).await;
     let ctype = as_content_type(key);
     let _ = client
@@ -61,12 +58,7 @@ pub async fn upload_dir(client: &Client, dir: &str, bucket: &str, prefix: &str) 
     }
 }
 
-pub async fn update_bucket_policy(
-    client: &Client,
-    bucket: &str,
-    policy: &str,
-
-) {
+pub async fn update_bucket_policy(client: &Client, bucket: &str, policy: &str) {
     let _ = client
         .put_bucket_policy()
         .bucket(bucket)
@@ -76,36 +68,25 @@ pub async fn update_bucket_policy(
         .unwrap();
 }
 
-
 pub async fn get_bucket_policy(client: &Client, bucket: &str) -> Option<String> {
-    let res = client
-        .get_bucket_policy()
-        .bucket(bucket)
-        .send()
-        .await;
+    let res = client.get_bucket_policy().bucket(bucket).send().await;
     match res {
         Ok(_) => res.unwrap().policy,
-        Err(_) => None
+        Err(_) => None,
     }
 }
-
 
 async fn bucket_exists(client: &Client, bucket: &str) -> bool {
-    let res = client
-        .head_bucket()
-        .bucket(bucket)
-        .send()
-        .await;
+    let res = client.head_bucket().bucket(bucket).send().await;
     match res {
         Ok(_) => true,
-        Err(_) => false
+        Err(_) => false,
     }
 }
 
-fn make_bucket_cfg() ->  CreateBucketConfiguration {
+fn make_bucket_cfg() -> CreateBucketConfiguration {
     let it = CreateBucketConfigurationBuilder::default();
-    it
-        .location_constraint(BucketLocationConstraint::UsWest2)
+    it.location_constraint(BucketLocationConstraint::UsWest2)
         .build()
 }
 

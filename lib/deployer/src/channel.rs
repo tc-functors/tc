@@ -15,7 +15,4 @@ pub async fn create(auth: &Auth, channels: &HashMap<String, Channel>) {
 
 pub async fn delete(_auth: &Auth, _channels: &HashMap<String, Channel>) {}
 
-
-pub async fn update(_auth: &Auth, _channels: &HashMap<String, Channel>, _c: &str) {
-
-}
+pub async fn update(_auth: &Auth, _channels: &HashMap<String, Channel>, _c: &str) {}

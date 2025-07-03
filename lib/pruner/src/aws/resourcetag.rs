@@ -1,8 +1,10 @@
 use authorizer::Auth;
 use aws_sdk_resourcegroupstagging::{
     Client,
-    types::TagFilter,
-    types::builders::TagFilterBuilder
+    types::{
+        TagFilter,
+        builders::TagFilterBuilder,
+    },
 };
 
 pub async fn make_client(auth: &Auth) -> Client {
@@ -15,7 +17,11 @@ fn make_filters(key: &str, val: &str) -> TagFilter {
     b.key(key.to_string()).values(val.to_string()).build()
 }
 
-async fn get_resources_by_token(client: &Client, token: &str, filters: TagFilter) -> (Vec<String>, Option<String>) {
+async fn get_resources_by_token(
+    client: &Client,
+    token: &str,
+    filters: TagFilter,
+) -> (Vec<String>, Option<String>) {
     let res = client
         .get_resources()
         .pagination_token(token.to_string())
@@ -55,7 +61,8 @@ pub async fn get_resources(client: &Client, key: &str, val: &str) -> Vec<String>
         Some(tk) => {
             token = Some(tk);
             while token.is_some() {
-                let (xs, t) = get_resources_by_token(client, &token.unwrap(), filters.clone()).await;
+                let (xs, t) =
+                    get_resources_by_token(client, &token.unwrap(), filters.clone()).await;
                 arns.extend(xs.clone());
                 token = t.clone();
                 if let Some(x) = t {
@@ -64,8 +71,8 @@ pub async fn get_resources(client: &Client, key: &str, val: &str) -> Vec<String>
                     }
                 }
             }
-        },
-        None => ()
+        }
+        None => (),
     }
     arns
 }

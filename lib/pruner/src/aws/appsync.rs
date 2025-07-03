@@ -1,8 +1,5 @@
 use authorizer::Auth;
-
-use aws_sdk_appsync::{
-    Client,
-};
+use aws_sdk_appsync::Client;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

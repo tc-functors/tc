@@ -1,4 +1,5 @@
 pub mod appsync;
+pub mod cloudfront;
 pub mod cloudwatch;
 pub mod cognito;
 pub mod ecs;
@@ -6,8 +7,7 @@ pub mod eventbridge;
 pub mod gateway;
 pub mod iam;
 pub mod lambda;
+pub mod s3;
 pub mod scheduler;
 pub mod sfn;
 pub mod sqs;
-pub mod cloudfront;
-pub mod s3;

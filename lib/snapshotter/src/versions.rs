@@ -4,7 +4,10 @@ use crate::aws::{
     sfn,
 };
 use authorizer::Auth;
-use compiler::{Topology, TopologyKind};
+use compiler::{
+    Topology,
+    TopologyKind,
+};
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -68,7 +71,11 @@ fn render(s: &str, sandbox: &str) -> String {
     u::stencil(s, table)
 }
 
-pub async fn find(auth: &Auth, sandbox: &str, topologies: HashMap<String, Topology>) -> Vec<Record> {
+pub async fn find(
+    auth: &Auth,
+    sandbox: &str,
+    topologies: HashMap<String, Topology>,
+) -> Vec<Record> {
     let mut rows: Vec<Record> = vec![];
     for (_, node) in topologies {
         let name = render(&node.fqn, sandbox);
@@ -92,8 +99,11 @@ pub async fn find(auth: &Auth, sandbox: &str, topologies: HashMap<String, Topolo
     rows
 }
 
-pub async fn find_by_profiles(sandbox: &str, profiles: Vec<String>, topologies: HashMap<String, Topology>) {
-
+pub async fn find_by_profiles(
+    sandbox: &str,
+    profiles: Vec<String>,
+    topologies: HashMap<String, Topology>,
+) {
     let mut builder = Builder::default();
 
     let mut cols: Vec<String> = vec![];

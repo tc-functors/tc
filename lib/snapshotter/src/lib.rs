@@ -3,14 +3,14 @@ use kit as u;
 mod aws;
 mod versions;
 
+use compiler::Topology;
+use serde_derive::Serialize;
+use std::collections::HashMap;
 use tabled::{
     Table,
     settings::Style,
 };
 use versions::Record;
-use serde_derive::Serialize;
-use compiler::Topology;
-use std::collections::HashMap;
 
 pub fn pretty_print(records: Vec<Record>, format: &str) {
     match format {
@@ -46,7 +46,7 @@ struct Manifest {
     tc_version: String,
     updated_at: String,
     changelog: Vec<String>,
-    topology: Option<Topology>
+    topology: Option<Topology>,
 }
 
 fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
@@ -63,13 +63,13 @@ fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
 async fn save_manifest(auth: &Auth, uri: &str, payload: &str, target_profile: Option<String>) {
     let auth = match target_profile {
         Some(p) => &init_auth(&p).await,
-        None => auth
+        None => auth,
     };
 
     let (bucket, key) = aws::s3::parts_of(uri);
     let client = aws::s3::make_client(auth).await;
     println!("Saving manifest to {}", uri);
-    let _ = aws::s3::put_str(&client, &bucket,  &key, payload).await;
+    let _ = aws::s3::put_str(&client, &bucket, &key, payload).await;
 }
 
 async fn init_auth(target_profile: &str) -> Auth {
@@ -78,14 +78,18 @@ async fn init_auth(target_profile: &str) -> Auth {
         Ok(_) => {
             let role = config.ci.roles.get(target_profile).cloned();
             Auth::new(Some(target_profile.to_string()), role).await
-        },
+        }
         Err(_) => Auth::new(Some(target_profile.to_string()), None).await,
     }
 }
 
-
-pub async fn generate_manifest(auth: &Auth, dir: &str, sandbox: &str, save: Option<String>, target_profile: Option<String>) {
-
+pub async fn generate_manifest(
+    auth: &Auth,
+    dir: &str,
+    sandbox: &str,
+    save: Option<String>,
+    target_profile: Option<String>,
+) {
     let topologies = compiler::compile_root(dir, false);
     let versions = versions::find(auth, sandbox, topologies.clone()).await;
     let mut xs: HashMap<String, Manifest> = HashMap::new();
@@ -100,7 +104,7 @@ pub async fn generate_manifest(auth: &Auth, dir: &str, sandbox: &str, save: Opti
             tc_version: v.tc_version,
             updated_at: v.updated_at,
             changelog: find_changelog(&v.namespace, &v.version),
-            topology: topologies.get(&v.namespace).cloned()
+            topology: topologies.get(&v.namespace).cloned(),
         };
         xs.insert(v.namespace.clone(), m);
     }

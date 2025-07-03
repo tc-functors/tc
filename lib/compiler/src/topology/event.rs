@@ -1,10 +1,14 @@
-use super::template;
-use crate::Entity;
-use crate::spec::{
-    ConfigSpec,
-    EventSpec,
+use super::{
+    function::Function,
+    template,
 };
-use super::function::Function;
+use crate::{
+    Entity,
+    spec::{
+        ConfigSpec,
+        EventSpec,
+    },
+};
 use kit::*;
 use serde_derive::{
     Deserialize,
@@ -81,7 +85,7 @@ pub fn make_targets(
     event_name: &str,
     espec: &EventSpec,
     fallback_fqn: &str,
-    fns: &HashMap<String, Function>
+    fns: &HashMap<String, Function>,
 ) -> Vec<Target> {
     let EventSpec {
         producer_ns,
