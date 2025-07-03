@@ -1,8 +1,10 @@
 use super::template;
-use crate::Entity;
-use crate::spec::{
-    MutationSpec,
-    mutation::ResolverSpec,
+use crate::{
+    Entity,
+    spec::{
+        MutationSpec,
+        mutation::ResolverSpec,
+    },
 };
 use kit::*;
 use serde_derive::{

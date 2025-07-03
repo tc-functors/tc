@@ -425,7 +425,6 @@ impl FunctionSpec {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InlineFunctionSpec {
     pub uri: Option<String>,

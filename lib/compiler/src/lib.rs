@@ -1,16 +1,14 @@
 mod display;
+mod entity;
 mod parser;
 pub mod spec;
 pub mod topology;
-mod entity;
 
 use display::Format;
 pub use display::topology::TopologyCount;
+pub use entity::Entity;
 use kit as u;
 use kit::*;
-
-pub use entity::Entity;
-
 pub use spec::{
     TopologyKind,
     TopologySpec,
@@ -43,12 +41,12 @@ pub use topology::{
     },
     mutation,
     mutation::Mutation,
+    page::Page,
     queue::Queue,
     role::Role,
     route,
     route::Route,
     schedule::Schedule,
-    page::Page
 };
 use walkdir::WalkDir;
 
@@ -85,7 +83,6 @@ pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     if given_root_dirs.is_empty() {
         let topology = compile(&u::pwd(), false);
         h.insert(topology.namespace.clone(), topology);
-
     } else {
         for d in given_root_dirs {
             tracing::debug!("Given root: {}", &d);
@@ -113,7 +110,6 @@ pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     }
     h
 }
-
 
 pub fn find_layers() -> Vec<Layer> {
     let dir = u::pwd();
@@ -186,7 +182,7 @@ pub fn pprint(topology: &Topology, entity: Option<Entity>) {
     let fmt = Format::JSON;
     match entity {
         Some(e) => display::display_entity(e, fmt, topology),
-        None => u::pp_json(topology)
+        None => u::pp_json(topology),
     }
 }
 

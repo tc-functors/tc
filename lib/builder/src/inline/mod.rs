@@ -4,20 +4,16 @@ mod python;
 mod ruby;
 mod rust;
 
-use colored::Colorize;
-
+use crate::types::BuildStatus;
 use authorizer::Auth;
+use colored::Colorize;
 use compiler::{
     Build,
     Lang,
     LangRuntime,
 };
 use kit as u;
-use kit::{
-    sh,
-};
-
-use crate::types::BuildStatus;
+use kit::sh;
 
 fn gen_dockerfile(dir: &str, langr: &LangRuntime, force: bool) {
     match langr.to_lang() {
@@ -82,9 +78,9 @@ async fn get_token() -> String {
 
 async fn build_with_docker(dir: &str, langr: &LangRuntime) -> (bool, String, String) {
     let root = &u::root();
-    let token =  match langr.to_lang() {
+    let token = match langr.to_lang() {
         Lang::Node => get_token().await,
-        _ => String::from("")
+        _ => String::from(""),
     };
 
     let cmd_str = match std::env::var("DOCKER_SSH") {
@@ -111,7 +107,8 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
     let temp_cont = &format!("tmp-{}", u::basedir(dir));
     let clean = &format!("docker rm -f {}", &temp_cont);
 
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));    sh(&clean, dir);
+    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
+    sh(&clean, dir);
     sh(&run, dir);
     let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
@@ -172,8 +169,7 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
 
         let bar = u::progress(8);
 
-        let prefix = format!("Building {} ({}/inline)",
-                             name.blue(), langr.to_str());
+        let prefix = format!("Building {} ({}/inline)", name.blue(), langr.to_str());
         bar.set_prefix(prefix);
 
         gen_dockerfile(dir, langr, *force);
@@ -202,9 +198,8 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
             path: format!("{}/lambda.zip", dir),
             status: status,
             out: out,
-            err: err
+            err: err,
         }
-
     } else {
         println!("Skipping Inline build");
         sh(command, dir);
@@ -212,9 +207,7 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
             path: format!("{}/lambda.zip", dir),
             status: true,
             out: String::from(""),
-            err: String::from("")
+            err: String::from(""),
         }
-
     }
-
 }

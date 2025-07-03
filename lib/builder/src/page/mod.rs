@@ -1,9 +1,7 @@
 mod node;
 
 use kit as u;
-use kit::{
-    sh,
-};
+use kit::sh;
 
 fn gen_dockerignore(dir: &str) {
     let f = format!(
@@ -55,7 +53,8 @@ fn copy_from_docker(dir: &str) {
     let temp_cont = &format!("tmp-{}", u::basedir(dir));
     let clean = &format!("docker rm -f {}", &temp_cont);
 
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));    sh(&clean, dir);
+    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
+    sh(&clean, dir);
     sh(&run, dir);
     let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
@@ -91,5 +90,4 @@ pub fn build(dir: &str, name: &str, command: &str) {
     bar.inc(4);
     sh("rm -f Dockerfile wrapper .dockerignore", dir);
     bar.inc(5);
-
 }

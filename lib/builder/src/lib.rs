@@ -3,9 +3,13 @@ mod image;
 mod inline;
 mod layer;
 mod library;
-mod types;
 pub mod page;
+mod types;
 
+use crate::types::{
+    BuildOutput,
+    BuildStatus,
+};
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::{
@@ -18,11 +22,12 @@ use compiler::{
         LangRuntime,
     },
 };
-use crate::types::{BuildStatus, BuildOutput};
-use std::panic;
 use kit as u;
 use kit::sh;
-use std::str::FromStr;
+use std::{
+    panic,
+    str::FromStr,
+};
 
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = compiler::find_buildables(&u::pwd(), recursive);
@@ -65,7 +70,7 @@ async fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) ->
                 path: format!("{}/lambda.zip", dir),
                 status: status,
                 out: out,
-                err: err
+                err: err,
             }
         }
     }
@@ -95,7 +100,6 @@ pub async fn build(
 
     let image_kind = u::maybe_string(image, "code");
     let name = u::maybe_string(name, &function.name);
-
 
     let build_status = match kind {
         BuildKind::Image => image::build(dir, &name, langr, &images, &image_kind, &runtime.uri),

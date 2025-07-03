@@ -1,18 +1,19 @@
-use std::collections::HashMap;
-
-use crate::spec::{ConfigSpec, TopologySpec, PageSpec};
-
+use crate::spec::{
+    ConfigSpec,
+    PageSpec,
+    TopologySpec,
+};
+use kit as u;
+use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-
-use kit::*;
-use kit as u;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyStatement {
-    #[serde(rename(serialize = "Sid"), alias="Sid")]
+    #[serde(rename(serialize = "Sid"), alias = "Sid")]
     pub sid: String,
     #[serde(rename(serialize = "Effect"), alias = "Effect")]
     pub effect: String,
@@ -23,12 +24,12 @@ pub struct PolicyStatement {
     #[serde(rename(serialize = "Resource"), alias = "Resource")]
     pub resource: String,
     #[serde(rename(serialize = "Condition"), alias = "Condition")]
-    pub condition: HashMap<String, HashMap<String, String>>
+    pub condition: HashMap<String, HashMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BucketPolicy {
-    #[serde(rename(serialize = "Version"), alias="Version")]
+    #[serde(rename(serialize = "Version"), alias = "Version")]
     pub version: String,
     #[serde(rename(serialize = "Id"), alias = "Id")]
     pub id: String,
@@ -37,34 +38,33 @@ pub struct BucketPolicy {
 }
 
 impl BucketPolicy {
-
     fn new(namespace: &str, name: &str, bucket: &str) -> BucketPolicy {
-
         let mut principal: HashMap<String, String> = HashMap::new();
         principal.insert(s!("Service"), s!("cloudfront.amazonaws.com"));
 
         let mut condition: HashMap<String, HashMap<String, String>> = HashMap::new();
         let mut cond_exp: HashMap<String, String> = HashMap::new();
-        cond_exp.insert(s!("AWS:SourceArn"),
-                        format!("arn:aws:cloudfront::{{{{account}}}}:distribution/{{{{lazy_id}}}}"));
+        cond_exp.insert(
+            s!("AWS:SourceArn"),
+            format!("arn:aws:cloudfront::{{{{account}}}}:distribution/{{{{lazy_id}}}}"),
+        );
         condition.insert(s!("StringEquals"), cond_exp);
 
-       let statement = PolicyStatement {
-           sid: format!("AllowCloudFront{}{}", namespace, name),
-           effect: s!("Allow"),
-           principal: principal,
-           action: s!("s3:GetObject"),
-           resource: format!("arn:aws:s3:::{}/{}/{}/*", bucket, namespace, name),
-           condition: condition
-       };
+        let statement = PolicyStatement {
+            sid: format!("AllowCloudFront{}{}", namespace, name),
+            effect: s!("Allow"),
+            principal: principal,
+            action: s!("s3:GetObject"),
+            resource: format!("arn:aws:s3:::{}/{}/{}/*", bucket, namespace, name),
+            condition: condition,
+        };
 
         BucketPolicy {
             version: s!("2008-10-17"),
             id: s!("OSSPolicyForCloudFrontPrivateContent"),
-            statement: vec![statement]
+            statement: vec![statement],
         }
     }
-
 
     pub fn add_statement(&self, existing_policy: &str) -> BucketPolicy {
         let mut ex: BucketPolicy = serde_json::from_str(&existing_policy).unwrap();
@@ -87,12 +87,10 @@ impl BucketPolicy {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Infra {
     pub bucket: Option<String>,
-    pub domains: Option<Vec<String>>
+    pub domains: Option<Vec<String>>,
 }
 
-
 impl Infra {
-
     pub fn new(infra_dir: &str, _namespace: &str, name: &str) -> Option<Infra> {
         let f = format!("{}/pages/{}.json", infra_dir, name);
         if u::file_exists(&f) {
@@ -102,7 +100,6 @@ impl Infra {
         } else {
             None
         }
-
     }
 }
 
@@ -119,10 +116,14 @@ pub struct Page {
     pub origin_paths: HashMap<String, String>,
     pub origin_domain: String,
     pub default_root_object: String,
-    pub domains: Vec<String>
+    pub domains: Vec<String>,
 }
 
-fn find_bucket(given_bucket: &Option<String>, config: &ConfigSpec, infra: &Option<Infra>) -> String {
+fn find_bucket(
+    given_bucket: &Option<String>,
+    config: &ConfigSpec,
+    infra: &Option<Infra>,
+) -> String {
     match given_bucket {
         Some(b) => b.to_string(),
         None => match infra {
@@ -134,21 +135,19 @@ fn find_bucket(given_bucket: &Option<String>, config: &ConfigSpec, infra: &Optio
                         Some(c) => c.to_string(),
                         None => match std::env::var("TC_PAGES_BUCKET") {
                             Ok(e) => e,
-                            Err(_) => panic!("No bucket configured")
-                        }
-                    }
-                }
-            },
-            None =>  {
-                match &config.aws.cloudfront.bucket {
-                    Some(c) => c.to_string(),
-                    None => match std::env::var("TC_PAGES_BUCKET") {
-                        Ok(e) => e,
-                        Err(_) => panic!("No bucket configured")
+                            Err(_) => panic!("No bucket configured"),
+                        },
                     }
                 }
             }
-        }
+            None => match &config.aws.cloudfront.bucket {
+                Some(c) => c.to_string(),
+                None => match std::env::var("TC_PAGES_BUCKET") {
+                    Ok(e) => e,
+                    Err(_) => panic!("No bucket configured"),
+                },
+            },
+        },
     }
 }
 
@@ -169,7 +168,6 @@ fn find_domains(given_domains: &Option<Vec<String>>, infra: &Option<Infra>) -> V
     }
 }
 
-
 fn make_paths(namespace: &str, name: &str) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
     let p = format!("/{}/{}", namespace, name);
@@ -178,7 +176,13 @@ fn make_paths(namespace: &str, name: &str) -> HashMap<String, String> {
     h
 }
 
-fn make(name: &str, namespace: &str, ps: &PageSpec, infra: &Option<Infra>, config: &ConfigSpec) -> Page {
+fn make(
+    name: &str,
+    namespace: &str,
+    ps: &PageSpec,
+    infra: &Option<Infra>,
+    config: &ConfigSpec,
+) -> Page {
     let bucket = find_bucket(&ps.bucket, config, infra);
     let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
     let bucket_policy = BucketPolicy::new(namespace, name, &bucket);
@@ -186,11 +190,11 @@ fn make(name: &str, namespace: &str, ps: &PageSpec, infra: &Option<Infra>, confi
     let dir = u::maybe_string(ps.dir.clone(), &u::pwd());
     let build = match &ps.build {
         Some(bs) => Some(bs.join(" && ")),
-        None => None
+        None => None,
     };
     let dist = u::maybe_string(ps.dist.clone(), "dist");
 
-    let paths = make_paths(namespace,  name);
+    let paths = make_paths(namespace, name);
 
     Page {
         namespace: namespace.to_string(),
@@ -204,11 +208,15 @@ fn make(name: &str, namespace: &str, ps: &PageSpec, infra: &Option<Infra>, confi
         origin_domain: origin_domain,
         origin_paths: paths,
         default_root_object: s!("index.html"),
-        domains: find_domains(&ps.domains, infra)
+        domains: find_domains(&ps.domains, infra),
     }
 }
 
-pub fn make_all(spec: &TopologySpec, infra_dir: &str, config: &ConfigSpec) -> HashMap<String, Page> {
+pub fn make_all(
+    spec: &TopologySpec,
+    infra_dir: &str,
+    config: &ConfigSpec,
+) -> HashMap<String, Page> {
     let mut h: HashMap<String, Page> = HashMap::new();
     if let Some(pspec) = &spec.pages {
         for (name, ps) in pspec {

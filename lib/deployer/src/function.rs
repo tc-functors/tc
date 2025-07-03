@@ -5,9 +5,9 @@ use crate::aws::{
 };
 use authorizer::Auth;
 use compiler::{
+    ConfigSpec,
     Function,
     Lang,
-    ConfigSpec,
     function::Runtime,
     spec::function::Provider,
 };
@@ -286,19 +286,14 @@ pub async fn update_dir(auth: &Auth, functions: &HashMap<String, Function>, dir:
     }
 }
 
-pub async fn update(
-    auth: &Auth,
-    functions: &HashMap<String, Function>,
-    component: &str
-) {
-
+pub async fn update(auth: &Auth, functions: &HashMap<String, Function>, component: &str) {
     match component {
-        "layers"      => update_layers(&auth, functions).await,
-        "vars"        => update_vars(&auth, functions).await,
+        "layers" => update_layers(&auth, functions).await,
+        "vars" => update_vars(&auth, functions).await,
         "concurrency" => update_concurrency(&auth, functions).await,
-        "runtime"     => update_runtime_version(&auth, functions).await,
-        "tags"        => update_tags(&auth, functions).await,
-        "roles"       => (),
-        _             => update_dir(&auth, functions, component).await
+        "runtime" => update_runtime_version(&auth, functions).await,
+        "tags" => update_tags(&auth, functions).await,
+        "roles" => (),
+        _ => update_dir(&auth, functions, component).await,
     }
 }

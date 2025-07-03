@@ -248,14 +248,12 @@ pub fn runcmd_stream(path: &str, dir: &str) {
 }
 
 pub fn runc(path: &str, dir: &str) -> (bool, String, String) {
-
     match std::env::var("TC_TRACE") {
         Ok(_) => {
             let out = Exec::shell(path).cwd(dir).join().unwrap();
             (out.success(), String::from(""), String::from(""))
         }
         Err(_) => {
-
             let data = Exec::shell(path)
                 .stdout(Redirection::Pipe)
                 .stderr(Redirection::Merge)

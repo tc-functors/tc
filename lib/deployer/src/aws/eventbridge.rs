@@ -12,16 +12,16 @@ use aws_sdk_eventbridge::{
         CreateConnectionAuthRequestParameters,
         InputTransformer,
         RetryPolicy,
+        Tag,
         builders::{
             AppSyncParametersBuilder,
             CreateConnectionApiKeyAuthRequestParametersBuilder,
             CreateConnectionAuthRequestParametersBuilder,
             InputTransformerBuilder,
             RetryPolicyBuilder,
-            TargetBuilder,
             TagBuilder,
+            TargetBuilder,
         },
-        Tag,
     },
 };
 use kit::*;
@@ -119,7 +119,13 @@ pub fn make_target(
     }
 }
 
-pub async fn create_rule(client: &Client, bus: &str, rule_name: &str, pattern: &str, tags: &HashMap<String, String>) -> String {
+pub async fn create_rule(
+    client: &Client,
+    bus: &str,
+    rule_name: &str,
+    pattern: &str,
+    tags: &HashMap<String, String>,
+) -> String {
     let tags = make_tags(tags.clone());
     let r = client
         .put_rule()

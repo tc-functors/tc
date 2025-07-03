@@ -46,6 +46,4 @@ pub async fn create(auth: &Auth, pools: &HashMap<String, Pool>) {
     }
 }
 
-pub async fn update(_auth: &Auth, _pools: &HashMap<String, Pool>, _c: &str) {
-
-}
+pub async fn update(_auth: &Auth, _pools: &HashMap<String, Pool>, _c: &str) {}

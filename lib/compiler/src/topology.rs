@@ -3,12 +3,12 @@ pub mod event;
 pub mod flow;
 pub mod function;
 pub mod mutation;
+pub mod page;
 pub mod pool;
 pub mod queue;
 pub mod role;
 pub mod route;
 pub mod schedule;
-pub mod page;
 mod tag;
 mod template;
 pub mod version;
@@ -29,6 +29,7 @@ pub use function::{
 use kit as u;
 use kit::*;
 pub use mutation::Mutation;
+pub use page::Page;
 pub use pool::Pool;
 pub use queue::Queue;
 pub use role::{
@@ -37,7 +38,6 @@ pub use role::{
 };
 pub use route::Route;
 pub use schedule::Schedule;
-pub use page::Page;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -197,7 +197,7 @@ fn intern_functions(
             let abs_dir = abs_shared_dir(root_dir, f.uri.clone());
             let namespace = match &f.fqn {
                 Some(_) => &spec.name,
-                None => root_namespace
+                None => root_namespace,
             };
 
             let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
@@ -329,7 +329,12 @@ fn should_ignore_node(
     }
 }
 
-fn discover_leaf_nodes(root_ns: &str, root_dir: &str, dir: &str, s: &TopologySpec) -> HashMap<String, Topology> {
+fn discover_leaf_nodes(
+    root_ns: &str,
+    root_dir: &str,
+    dir: &str,
+    s: &TopologySpec,
+) -> HashMap<String, Topology> {
     let ignore_nodes = &s.nodes.ignore;
 
     let mut nodes: HashMap<String, Topology> = HashMap::new();
@@ -383,7 +388,7 @@ fn make_events(
     spec: &TopologySpec,
     fqn: &str,
     config: &ConfigSpec,
-    fns: &HashMap<String, Function>
+    fns: &HashMap<String, Function>,
 ) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
@@ -399,7 +404,11 @@ fn make_events(
     h
 }
 
-fn make_routes(spec: &TopologySpec, fqn: &str, fns: &HashMap<String, Function>) -> HashMap<String, Route> {
+fn make_routes(
+    spec: &TopologySpec,
+    fqn: &str,
+    fns: &HashMap<String, Function>,
+) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
         Some(xs) => {

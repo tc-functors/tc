@@ -1,12 +1,9 @@
-use std::{
-    str::FromStr,
-};
-
+use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use kit::*;
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -74,7 +71,7 @@ impl Entity {
     pub fn as_entity_component(s: &str) -> (Entity, Option<String>) {
         match s.split_once("/") {
             Some((k, v)) => (Entity::from_str(&k).unwrap(), Some(v.to_string())),
-            _ => (Entity::from_str(&s).unwrap(), None)
+            _ => (Entity::from_str(&s).unwrap(), None),
         }
     }
 
@@ -90,7 +87,7 @@ impl Entity {
             "queues",
             "channels",
             "pools",
-            "pages"
+            "pages",
         ];
         for x in v {
             println!("{x}");
@@ -100,7 +97,7 @@ impl Entity {
     pub fn as_entity(s: Option<String>) -> Option<Entity> {
         match s {
             Some(p) => Some(Entity::from_str(&p).unwrap()),
-            None => None
+            None => None,
         }
     }
 
@@ -111,8 +108,7 @@ impl Entity {
             "lambda" => Some(Entity::Function),
             "states" => Some(Entity::State),
             "appsync" => Some(Entity::Mutation),
-            _ => None
+            _ => None,
         }
     }
-
 }

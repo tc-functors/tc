@@ -7,7 +7,10 @@ mod pool;
 mod topology;
 
 use authorizer::Auth;
-use compiler::{Topology, Entity};
+use compiler::{
+    Entity,
+    Topology,
+};
 pub use context::Context;
 use std::collections::HashMap;
 
@@ -97,14 +100,13 @@ pub async fn try_resolve(
     sandbox: &str,
     topology: &Topology,
     maybe_entity: &Option<String>,
-    cache: bool
+    cache: bool,
 ) -> Topology {
-
     match maybe_entity {
         Some(e) => {
             let (entity, _) = Entity::as_entity_component(&e);
             resolve_entity(auth, sandbox, topology, &entity).await
-        },
-        None => resolve(auth, sandbox, topology, cache).await
+        }
+        None => resolve(auth, sandbox, topology, cache).await,
     }
 }

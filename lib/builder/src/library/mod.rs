@@ -1,11 +1,11 @@
 mod python;
 mod ruby;
 
+use crate::types::BuildStatus;
 use compiler::{
     Lang,
     LangRuntime,
 };
-use crate::types::BuildStatus;
 
 pub fn build(dir: &str, langr: &LangRuntime) -> BuildStatus {
     let path = match langr.to_lang() {
@@ -17,6 +17,6 @@ pub fn build(dir: &str, langr: &LangRuntime) -> BuildStatus {
         path: path,
         status: true,
         out: String::from(""),
-        err: String::from("")
+        err: String::from(""),
     }
 }

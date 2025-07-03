@@ -3,18 +3,17 @@ use crate::aws::{
     gateway::Api,
     lambda,
 };
-use itertools::Itertools;
 use authorizer::Auth;
+use aws_sdk_apigatewayv2::types::Cors;
 use compiler::{
     Entity,
     Route,
 };
+use itertools::Itertools;
 use kit::*;
 use std::collections::HashMap;
-use aws_sdk_apigatewayv2::types::Cors;
 
 fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
-
     let mut methods: Vec<String> = vec![];
     let mut origins: Vec<String> = vec![];
     let mut headers: Vec<String> = vec![];
@@ -31,11 +30,11 @@ fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
     if origins.is_empty() {
         None
     } else {
-        Some(
-            gateway::make_cors(methods.into_iter().unique().collect(),
-                               origins.into_iter().unique().collect(),
-                               Some(headers.into_iter().unique().collect()))
-        )
+        Some(gateway::make_cors(
+            methods.into_iter().unique().collect(),
+            origins.into_iter().unique().collect(),
+            Some(headers.into_iter().unique().collect()),
+        ))
     }
 }
 
@@ -122,7 +121,12 @@ async fn create_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
     }
 }
 
-async fn create_authorizer(auth: &Auth, api: &Api, api_id: &str, authorizer: &str) -> Option<String> {
+async fn create_authorizer(
+    auth: &Auth,
+    api: &Api,
+    api_id: &str,
+    authorizer: &str,
+) -> Option<String> {
     let uri = auth.lambda_uri(authorizer);
     let lambda_arn = auth.lambda_arn(authorizer);
     if authorizer.is_empty() {
@@ -136,8 +140,14 @@ async fn create_authorizer(auth: &Auth, api: &Api, api_id: &str, authorizer: &st
     }
 }
 
-async fn create_api(auth: &Auth, api: &Api, api_id: &str, entity: &Entity, target_arn: &str, auth_id: Option<String>) {
-
+async fn create_api(
+    auth: &Auth,
+    api: &Api,
+    api_id: &str,
+    entity: &Entity,
+    target_arn: &str,
+    auth_id: Option<String>,
+) {
     add_permission(auth, target_arn, &api_id).await;
 
     let integration_id = create_integration(entity, api, &api_id, target_arn).await;
@@ -157,12 +167,20 @@ async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>) {
     let auth_id = if route.create_authorizer {
         match &route.authorizer {
             Some(authorizer) => create_authorizer(auth, &api, &api_id, &authorizer).await,
-            None => None
+            None => None,
         }
     } else {
         None
     };
-    create_api(auth, &api, &api_id, &route.entity, &route.target_arn, auth_id).await;
+    create_api(
+        auth,
+        &api,
+        &api_id,
+        &route.entity,
+        &route.target_arn,
+        auth_id,
+    )
+    .await;
 }
 
 pub async fn create(auth: &Auth, routes: &HashMap<String, Route>) {
@@ -223,6 +241,4 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
     }
 }
 
-pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str) {
-
-}
+pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str) {}

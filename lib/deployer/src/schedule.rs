@@ -17,14 +17,9 @@ pub async fn create_schedule(auth: &Auth, schedule: &Schedule) {
 
     if !target_arn.is_empty() {
         let target = aws::scheduler::make_target(&target_arn, &role_arn, "sfn", &payload);
-        let _ = aws::scheduler::create_or_update_schedule(
-            &client,
-            group,
-            &name,
-            target,
-            &expression,
-        )
-        .await;
+        let _ =
+            aws::scheduler::create_or_update_schedule(&client, group, &name, target, &expression)
+                .await;
     }
 }
 
@@ -43,6 +38,4 @@ pub async fn delete(auth: &Auth, schedules: &HashMap<String, Schedule>) {
     }
 }
 
-pub async fn update(_auth: &Auth, _schedules: &HashMap<String, Schedule>) {
-
-}
+pub async fn update(_auth: &Auth, _schedules: &HashMap<String, Schedule>) {}

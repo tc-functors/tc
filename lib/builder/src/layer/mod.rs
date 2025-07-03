@@ -1,6 +1,10 @@
 mod aws_lambda;
 mod python;
 mod ruby;
+use crate::types::{
+    BuildOutput,
+    BuildStatus,
+};
 use authorizer::Auth;
 use colored::Colorize;
 use compiler::{
@@ -9,7 +13,6 @@ use compiler::{
 };
 use kit as u;
 use kit::sh;
-use crate::types::{BuildStatus, BuildOutput};
 use std::collections::HashMap;
 
 fn should_split(dir: &str) -> bool {
@@ -121,12 +124,11 @@ pub async fn promote(auth: &Auth, layer_name: &str, lang: &str, version: Option<
     }
 }
 
-
 fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile(dir, langr),
         Lang::Ruby => ruby::gen_dockerfile(dir),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 
@@ -179,17 +181,16 @@ fn zip(dir: &str, langr: &LangRuntime) {
         Lang::Python => {
             let cmd = "rm -rf build && zip -q -9 -r ../deps.zip .";
             sh(&cmd, &format!("{}/build", dir));
-        },
+        }
         Lang::Ruby => ruby::zip(dir, "deps.zip"),
-        _ => ()
-
+        _ => (),
     }
 }
 
 fn copy(dir: &str, langr: &LangRuntime) {
     match langr.to_lang() {
         Lang::Ruby => ruby::copy(dir),
-        _ => ()
+        _ => (),
     }
 }
 
@@ -197,8 +198,6 @@ fn size_of(dir: &str, zipfile: &str) -> String {
     let size = u::path_size(dir, zipfile);
     u::file_size_human(size)
 }
-
-
 
 fn clean(dir: &str) {
     if u::path_exists(dir, "pyproject.toml") {
@@ -225,6 +224,6 @@ pub fn build(dir: &str, name: &str, langr: &LangRuntime) -> BuildStatus {
         path: format!("{}/deps.zip", dir),
         status: status,
         out: out,
-        err: err
+        err: err,
     }
 }

@@ -5,7 +5,10 @@ use super::{
     pool,
 };
 use authorizer::Auth;
-use compiler::{Topology, Entity};
+use compiler::{
+    Entity,
+    Topology,
+};
 
 pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topology {
     let ctx = Context {
@@ -35,7 +38,6 @@ pub async fn resolve_entity(
     sandbox: &str,
     entity: &Entity,
 ) -> Topology {
-
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -51,7 +53,7 @@ pub async fn resolve_entity(
     match entity {
         Entity::Event => {
             partial_t.events = event::resolve(&ctx, &partial_t).await;
-        },
+        }
         Entity::Function => {
             partial_t.functions = function::resolve(&ctx, &partial_t).await;
         }

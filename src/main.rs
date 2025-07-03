@@ -477,7 +477,6 @@ pub struct BootstrapArgs {
     profile: Option<String>,
 }
 
-
 async fn version() {
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     println!("{}", version);

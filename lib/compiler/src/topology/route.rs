@@ -1,16 +1,20 @@
-use super::template;
-use crate::Entity;
-use crate::spec::{
-    RouteSpec,
-    TopologySpec,
-    route::CorsSpec,
+use super::{
+    function::Function,
+    template,
+};
+use crate::{
+    Entity,
+    spec::{
+        RouteSpec,
+        TopologySpec,
+        route::CorsSpec,
+    },
 };
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use super::function::Function;
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -74,9 +78,8 @@ impl Route {
         name: &str,
         spec: &TopologySpec,
         rspec: &RouteSpec,
-        fns: &HashMap<String, Function>
+        fns: &HashMap<String, Function>,
     ) -> Route {
-
         let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
             None => s!(fqn),
@@ -122,16 +125,18 @@ impl Route {
 
         // FIXME: role_arn is flow.role.name if target is flow
 
-        let (create_authorizer, authorizer)  = match &spec.functions {
-            Some(fns) => if let Some(authorizer) = &rspec.authorizer {
-                match fns.get(authorizer) {
-                    Some(_) => (true, Some(template::maybe_namespace(&authorizer))),
-                    None => (false, None)
+        let (create_authorizer, authorizer) = match &spec.functions {
+            Some(fns) => {
+                if let Some(authorizer) = &rspec.authorizer {
+                    match fns.get(authorizer) {
+                        Some(_) => (true, Some(template::maybe_namespace(&authorizer))),
+                        None => (false, None),
+                    }
+                } else {
+                    (false, None)
                 }
-            } else {
-                (false, None)
-            },
-            None => (false, None)
+            }
+            None => (false, None),
         };
 
         Route {

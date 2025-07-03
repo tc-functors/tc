@@ -29,7 +29,7 @@ pub struct Flow {
     pub definition: Value,
     pub mode: String,
     pub role: Role,
-    pub log_config: LogConfig
+    pub log_config: LogConfig,
 }
 
 fn make_role(infra_dir: &str, fqn: &str) -> Role {
@@ -44,10 +44,9 @@ fn make_role(infra_dir: &str, fqn: &str) -> Role {
 }
 
 fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
-
     let auto = match spec.auto {
         Some(p) => p,
-        None => false
+        None => false,
     };
 
     match &spec.flow {
@@ -55,13 +54,15 @@ fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
         None => match &spec.states {
             Some(s) => Some(s.clone()),
             None => match &spec.functions {
-                Some(fns) => if auto {
-                    Some(sfn::read(fns.clone()))
-                } else {
-                    None
-                },
-                None => None
-            }
+                Some(fns) => {
+                    if auto {
+                        Some(sfn::read(fns.clone()))
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            },
         },
     }
 }
@@ -75,10 +76,10 @@ impl Flow {
             None => s!("Express"),
         };
 
-        let lg  = "/aws/vendedlogs/tc/{{namespace}}-{{sandbox}}/states";
+        let lg = "/aws/vendedlogs/tc/{{namespace}}-{{sandbox}}/states";
         let log_config = LogConfig {
             group: s!(lg),
-            group_arn: template::log_group_arn(&lg)
+            group_arn: template::log_group_arn(&lg),
         };
 
         match def {
@@ -88,7 +89,7 @@ impl Flow {
                 definition: definition,
                 mode: mode,
                 role: make_role(infra_dir, fqn),
-                log_config: log_config
+                log_config: log_config,
             }),
             None => None,
         }
