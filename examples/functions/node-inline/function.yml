@@ -1,0 +1,11 @@
+name: node-inline
+description: example function
+runtime:
+  lang: node22
+  package_type: zip
+  handler: handler.handler
+  layers: []
+build:
+  kind: Inline
+  command: zip -9 -q lambda.zip *.js
+
