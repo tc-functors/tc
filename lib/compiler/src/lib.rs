@@ -61,15 +61,7 @@ pub fn config(dir: &str) -> ConfigSpec {
 }
 
 pub fn compile(dir: &str, recursive: bool) -> Topology {
-    if u::path_exists(dir, "topology.lisp") {
-        let f = format!("{}/topology.lisp", dir);
-        let data = u::slurp(&f);
-        let program = format!("{{ {data} }}");
-        parser::lisp::load(program);
-        Topology::new(dir, recursive, false)
-    } else {
-        Topology::new(dir, recursive, false)
-    }
+    Topology::new(dir, recursive, false)
 }
 
 pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
