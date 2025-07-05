@@ -1,0 +1,11 @@
+name: python-example-snap
+description: example function
+runtime:
+  lang: python3.12
+  package_type: zip
+  snapstart: true
+  handler: handler.handler
+test:
+  fixture: python run-fixture.py
+  command: poetry test
+

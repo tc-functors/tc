@@ -393,33 +393,61 @@ fn render(s: &str, version: &str) -> String {
     u::stencil(s, table)
 }
 
+
+fn load_fspec_file(version: &str, dir: &str) -> Option<FunctionSpec> {
+    let f1 = format!("{}/function.json", dir);
+    let f2 = format!("{}/function.yml", dir);
+    let f3 = format!("{}/function.yaml", dir);
+    if u::file_exists(&f1) {
+        let data = render(&u::slurp(&f1), &version);
+        let fspec: Result<FunctionSpec, _> = serde_json::from_str(&data);
+        match fspec {
+            Ok(f) => Some(f),
+            Err(e) =>  panic!("{:?}", e)
+        }
+    } else if u::file_exists(&f2) {
+        let data = render(&u::slurp(&f2), &version);
+        let fspec: Result<FunctionSpec, _> = serde_yaml::from_str(&data);
+        match fspec {
+            Ok(f) => Some(f),
+            Err(e) =>  panic!("{:?}", e)
+        }
+    } else if u::file_exists(&f3) {
+        let data = render(&u::slurp(&f3), &version);
+        let fspec: Result<FunctionSpec, _> = serde_yaml::from_str(&data);
+        match fspec {
+            Ok(f) => Some(f),
+            Err(e) =>  panic!("{:?}", e)
+        }
+    } else {
+        None
+    }
+}
+
 impl FunctionSpec {
     pub fn new(dir: &str) -> FunctionSpec {
-        let f = format!("{}/function.json", dir);
         let version = find_revision(dir);
-        if u::file_exists(&f) {
-            let data = render(&u::slurp(&f), &version);
-            let fspec = serde_json::from_str(&data);
-            match fspec {
-                Ok(f) => f,
-                Err(e) => panic!("{}", e),
-            }
-        } else {
-            FunctionSpec {
-                name: u::basedir(dir).to_string(),
-                dir: Some(dir.to_string()),
-                description: None,
-                namespace: None,
-                fqn: None,
-                layer_name: None,
-                version: None,
-                revision: None,
-                runtime: None,
-                build: None,
-                infra: None,
-                infra_dir: None,
-                assets: None,
-                tasks: HashMap::new(),
+        let maybe_spec = load_fspec_file(&version, dir);
+
+        match maybe_spec {
+            Some(f) => f,
+            None =>  {
+                FunctionSpec {
+                    name: u::basedir(dir).to_string(),
+                    dir: Some(dir.to_string()),
+                    description: None,
+                    namespace: None,
+                    fqn: None,
+                    layer_name: None,
+                    version: None,
+                    revision: None,
+                    runtime: None,
+                    build: None,
+                    infra: None,
+                    infra_dir: None,
+                    assets: None,
+                    tasks: HashMap::new(),
+                }
             }
         }
     }
