@@ -7,7 +7,7 @@ use crate::types::{
 };
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::{
+use composer::{
     Lang,
     LangRuntime,
 };

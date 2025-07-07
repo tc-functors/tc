@@ -14,7 +14,7 @@ pub mod state;
 
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::{
+use composer::{
     Entity,
     Function,
     Topology,

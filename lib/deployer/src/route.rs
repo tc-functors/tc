@@ -5,7 +5,7 @@ use crate::aws::{
 };
 use authorizer::Auth;
 use aws_sdk_apigatewayv2::types::Cors;
-use compiler::{
+use composer::{
     Entity,
     Route,
 };

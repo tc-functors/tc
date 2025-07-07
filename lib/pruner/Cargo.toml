@@ -22,4 +22,4 @@ aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 question = "0.2.2"
 kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
-compiler = { path = "../compiler" }
+composer = { path = "../composer" }

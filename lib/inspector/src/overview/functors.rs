@@ -4,7 +4,7 @@ use axum::response::{
     Html,
     IntoResponse,
 };
-use compiler::{
+use composer::{
     Topology,
     TopologyCount,
 };

@@ -7,7 +7,7 @@ use axum::{
         IntoResponse,
     },
 };
-use compiler::TopologySpec;
+use composer::TopologySpec;
 
 #[derive(Template)]
 #[template(path = "functor/states.html")]

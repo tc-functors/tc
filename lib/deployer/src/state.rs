@@ -6,7 +6,7 @@ use crate::aws::{
     sfn::StateMachine,
 };
 use authorizer::Auth;
-use compiler::Flow;
+use composer::Flow;
 use std::collections::HashMap;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: &Flow) {

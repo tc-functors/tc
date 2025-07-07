@@ -1,4 +1,4 @@
-use compiler::ConfigSpec;
+use composer::ConfigSpec;
 use kit as u;
 use kit::*;
 use serde_derive::{

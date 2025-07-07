@@ -2,7 +2,7 @@ use super::{
     Context,
     Topology,
 };
-use compiler::topology::Pool;
+use composer::topology::Pool;
 use std::collections::HashMap;
 
 pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Pool> {

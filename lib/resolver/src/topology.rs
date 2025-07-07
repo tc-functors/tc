@@ -5,7 +5,7 @@ use super::{
     pool,
 };
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Entity,
     Topology,
 };

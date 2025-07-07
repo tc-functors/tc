@@ -1,4 +1,4 @@
-use compiler::spec::{
+use composer::spec::{
     LangRuntime,
     function::BuildKind,
 };

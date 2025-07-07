@@ -1,4 +1,4 @@
-use compiler::{
+use composer::{
     Channel,
     Event,
     Function,
@@ -193,6 +193,6 @@ pub async fn find_root_namespaces() -> Vec<String> {
 }
 
 pub async fn init() {
-    let topologies = compiler::compile_root(&kit::pwd(), true);
+    let topologies = composer::compose_root(&kit::pwd(), true);
     write("root", &serde_json::to_string(&topologies).unwrap()).await;
 }

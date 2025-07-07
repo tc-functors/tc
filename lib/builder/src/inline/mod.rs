@@ -7,7 +7,7 @@ mod rust;
 use crate::types::BuildStatus;
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::{
+use composer::{
     Build,
     Lang,
     LangRuntime,
@@ -51,7 +51,7 @@ npm-debug.log
 }
 
 async fn init() -> Auth {
-    let config = compiler::config(&kit::pwd());
+    let config = composer::config(&kit::pwd());
     let profile = config.aws.lambda.layers_profile.clone();
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => match profile.clone() {

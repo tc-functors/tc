@@ -1,4 +1,4 @@
-use compiler::Topology;
+use composer::Topology;
 use kit as u;
 use tabled::Tabled;
 

@@ -4,7 +4,7 @@ use crate::aws::{
     lambda,
 };
 use authorizer::Auth;
-use compiler::{
+use composer::{
     ConfigSpec,
     Function,
     Lang,

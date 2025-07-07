@@ -19,12 +19,12 @@ struct ListTemplate {
 }
 
 pub async fn _load() -> impl IntoResponse {
-    let topologies = compiler::compile_root(&kit::pwd(), true);
+    let topologies = composer::compose_root(&kit::pwd(), true);
     cache::write("root", &serde_json::to_string(&topologies).unwrap()).await;
     let mut functors = Vec::from_iter(topologies.keys().cloned());
     functors.sort();
     let t = ListTemplate {
-        root: compiler::topology_name(&kit::pwd()),
+        root: composer::topology_name(&kit::pwd()),
         namespace: String::from(""),
         items: functors,
     };
@@ -36,7 +36,7 @@ pub async fn functors(Path((_root, namespace)): Path<(String, String)>) -> impl 
     let mut functors = Vec::from_iter(topologies.keys().cloned());
     functors.sort();
     let t = ListTemplate {
-        root: compiler::topology_name(&kit::pwd()),
+        root: composer::topology_name(&kit::pwd()),
         namespace: namespace,
         items: functors,
     };

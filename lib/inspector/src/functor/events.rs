@@ -7,7 +7,7 @@ use axum::{
         IntoResponse,
     },
 };
-use compiler::Event;
+use composer::Event;
 use std::collections::HashMap;
 
 struct Item {

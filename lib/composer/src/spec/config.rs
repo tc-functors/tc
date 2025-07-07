@@ -353,7 +353,7 @@ pub struct Aws {
 #[derivative(Debug, Default)]
 pub struct ConfigSpec {
     #[serde(default = "Compiler::default")]
-    pub compiler: Compiler,
+    pub composer: Compiler,
 
     #[serde(default = "Builder::default")]
     pub builder: Builder,

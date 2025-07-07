@@ -16,4 +16,4 @@ base64 = "0.21.0"
 anyhow = "1.0.71"
 kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
-compiler = { path = "../compiler" }
+composer = { path = "../composer" }

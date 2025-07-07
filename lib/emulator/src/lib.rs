@@ -16,7 +16,7 @@ fn as_dev_layers(layers: Vec<String>) -> Vec<String> {
 
 pub async fn shell(auth: &Auth, dev: bool) {
     let dir = u::pwd();
-    let function = compiler::current_function(&dir);
+    let function = composer::current_function(&dir);
     match function {
         Some(f) => {
             let layers = if dev {
@@ -40,7 +40,7 @@ pub async fn shell(auth: &Auth, dev: bool) {
 
 pub async fn lambda(auth: &Auth, dev: bool) {
     let dir = u::pwd();
-    let function = compiler::current_function(&dir);
+    let function = composer::current_function(&dir);
     match function {
         Some(f) => {
             let layers = if dev {

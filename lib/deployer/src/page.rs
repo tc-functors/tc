@@ -3,7 +3,7 @@ use crate::aws::{
     s3,
 };
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Page,
     topology::page::BucketPolicy,
 };

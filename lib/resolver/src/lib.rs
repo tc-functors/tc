@@ -7,7 +7,7 @@ mod pool;
 mod topology;
 
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Entity,
     Topology,
 };

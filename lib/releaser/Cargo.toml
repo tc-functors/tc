@@ -19,4 +19,4 @@ aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest
 aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
-compiler = { path = "../compiler" }
+composer = { path = "../composer" }

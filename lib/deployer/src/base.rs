@@ -4,7 +4,7 @@ use crate::aws::{
 };
 use authorizer::Auth;
 
-// TODO defaults. Move to compiler
+// TODO defaults. Move to composer
 
 fn base_trust_policy() -> String {
     format!(

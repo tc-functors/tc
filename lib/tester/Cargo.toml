@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 kit = { path = "../kit" }
-compiler = { path = "../compiler" }
+composer = { path = "../composer" }

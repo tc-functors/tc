@@ -4,7 +4,7 @@ use crate::aws::{
     sfn,
 };
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Topology,
     TopologyKind,
 };

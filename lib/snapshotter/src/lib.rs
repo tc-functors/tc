@@ -3,7 +3,7 @@ use kit as u;
 mod aws;
 mod versions;
 
-use compiler::Topology;
+use composer::Topology;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use tabled::{
@@ -27,12 +27,12 @@ pub fn pretty_print(records: Vec<Record>, format: &str) {
 }
 
 pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
-    let topologies = compiler::compile_root(dir, false);
+    let topologies = composer::compose_root(dir, false);
     versions::find_by_profiles(sandbox, profiles, topologies).await;
 }
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
-    let topologies = compiler::compile_root(dir, false);
+    let topologies = composer::compose_root(dir, false);
     versions::find(auth, sandbox, topologies).await
 }
 
@@ -73,7 +73,7 @@ async fn save_manifest(auth: &Auth, uri: &str, payload: &str, target_profile: Op
 }
 
 async fn init_auth(target_profile: &str) -> Auth {
-    let config = compiler::config(&u::pwd());
+    let config = composer::config(&u::pwd());
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = config.ci.roles.get(target_profile).cloned();
@@ -90,7 +90,7 @@ pub async fn generate_manifest(
     save: Option<String>,
     target_profile: Option<String>,
 ) {
-    let topologies = compiler::compile_root(dir, false);
+    let topologies = composer::compose_root(dir, false);
     let versions = versions::find(auth, sandbox, topologies.clone()).await;
     let mut xs: HashMap<String, Manifest> = HashMap::new();
 

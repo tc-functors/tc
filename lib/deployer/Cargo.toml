@@ -32,5 +32,5 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 kit = { path = "../kit" }
 aws-sdk-scheduler = { version = "1.65.0", features = ["behavior-version-latest"] }
 authorizer = { path = "../authorizer" }
-compiler = { path = "../compiler" }
+composer = { path = "../composer" }
 builder = { path = "../builder" }
