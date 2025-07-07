@@ -1,5 +1,5 @@
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Entity,
     Topology,
     spec::{
@@ -68,7 +68,7 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
         } else if shell {
             builder::shell(dir);
         } else {
-            let maybe_fn = compiler::current_function(dir);
+            let maybe_fn = composer::current_function(dir);
             match maybe_fn {
                 Some(f) => {
                     let builds = builder::build(&f, name, image, layer, kind).await;
@@ -90,21 +90,21 @@ pub async fn promote(auth: Auth, name: Option<String>, version: Option<String>) 
 
 pub async fn test() {
     let dir = u::pwd();
-    let spec = compiler::compile(&dir, false);
+    let spec = composer::compose(&dir, false);
     for (path, function) in spec.functions {
         tester::test(&path, function).await;
     }
 }
 
-pub struct CompileOpts {
+pub struct ComposeOpts {
     pub versions: bool,
     pub recursive: bool,
     pub entity: Option<String>,
     pub format: Option<String>,
 }
 
-pub async fn compile(opts: CompileOpts) {
-    let CompileOpts {
+pub async fn compose(opts: ComposeOpts) {
+    let ComposeOpts {
         recursive,
         entity,
         format,
@@ -115,14 +115,14 @@ pub async fn compile(opts: CompileOpts) {
     let fmt = u::maybe_string(format.clone(), "json");
 
     match entity {
-        Some(e) => compiler::display_entity(&dir, &e, &fmt, recursive),
+        Some(e) => composer::display_entity(&dir, &e, &fmt, recursive),
         None => match format {
-            Some(fmt) => compiler::display_topology(&dir, &fmt, recursive),
+            Some(fmt) => composer::display_topology(&dir, &fmt, recursive),
             None => {
-                if compiler::is_root_dir(&dir) {
-                    compiler::display_root();
+                if composer::is_root_dir(&dir) {
+                    composer::display_root();
                 } else {
-                    let topology = compiler::compile(&dir, recursive);
+                    let topology = composer::compose(&dir, recursive);
                     match std::env::var("TC_DUMP_TOPOLOGY") {
                         Ok(_) => {
                             kit::write_str("topology.json", &topology.to_str());
@@ -143,11 +143,11 @@ pub async fn resolve(
     recursive: bool,
     cache: bool,
 ) {
-    let topology = compiler::compile(&u::pwd(), recursive);
+    let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
     let entity = Entity::as_entity(maybe_entity);
-    compiler::pprint(&rt, entity)
+    composer::pprint(&rt, entity)
 }
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {
@@ -228,8 +228,8 @@ pub async fn create(
             let sandbox = resolver::maybe_sandbox(sandbox);
             releaser::guard(&sandbox);
             let dir = u::pwd();
-            println!("Compiling topology {} ...", &compiler::topology_name(&dir));
-            let ct = compiler::compile(&dir, recursive);
+            println!("Compiling topology {} ...", &composer::topology_name(&dir));
+            let ct = composer::compose(&dir, recursive);
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache).await;
             rt
@@ -237,7 +237,7 @@ pub async fn create(
     };
 
     let auth = init(Some(topology.env.to_string()), None).await;
-    let msg = compiler::count_of(&topology);
+    let msg = composer::count_of(&topology);
     println!("{}", msg);
     create_topology(&auth, &topology).await;
 
@@ -268,9 +268,9 @@ pub async fn update(
     let start = Instant::now();
 
     println!("Compiling topology...");
-    let topology = compiler::compile(&u::pwd(), recursive);
+    let topology = composer::compose(&u::pwd(), recursive);
 
-    let msg = compiler::count_of(&topology);
+    let msg = composer::count_of(&topology);
     println!("{}", msg);
 
     println!("Resolving topology {}...", &topology.namespace);
@@ -298,9 +298,9 @@ pub async fn delete(
 
     let start = Instant::now();
     println!("Compiling topology...");
-    let topology = compiler::compile(&u::pwd(), recursive);
+    let topology = composer::compose(&u::pwd(), recursive);
 
-    compiler::count_of(&topology);
+    composer::count_of(&topology);
     println!("Resolving topology...");
     let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
 
@@ -335,7 +335,7 @@ pub async fn invoke(auth: Auth, opts: InvokeOptions) {
         invoker::run_local(payload).await;
     } else {
         // FIXME: get dir
-        let topology = compiler::compile(&u::pwd(), false);
+        let topology = composer::compose(&u::pwd(), false);
 
         let sandbox = resolver::maybe_sandbox(sandbox);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
@@ -349,7 +349,7 @@ pub async fn invoke(auth: Auth, opts: InvokeOptions) {
 }
 
 pub async fn emulate(auth: Auth, dev: bool, shell: bool) {
-    let kind = compiler::kind_of();
+    let kind = composer::kind_of();
     match kind.as_ref() {
         "step-function" => emulator::sfn().await,
         "function" => {
@@ -395,7 +395,7 @@ pub async fn route(
 }
 
 pub async fn freeze(auth: Auth, service: Option<String>, sandbox: String) {
-    let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
+    let service = u::maybe_string(service, &composer::topology_name(&u::pwd()));
     let name = format!("{}_{}", &service, &sandbox);
     releaser::freeze(&auth, &name).await;
     let msg = format!("*{}*::{} is frozen", &auth.name, sandbox);
@@ -403,7 +403,7 @@ pub async fn freeze(auth: Auth, service: Option<String>, sandbox: String) {
 }
 
 pub async fn unfreeze(auth: Auth, service: Option<String>, sandbox: String) {
-    let service = u::maybe_string(service, &compiler::topology_name(&u::pwd()));
+    let service = u::maybe_string(service, &composer::topology_name(&u::pwd()));
     let name = format!("{}_{}", &service, &sandbox);
     releaser::unfreeze(&auth, &name).await;
     let msg = format!("{} is now unfrozen", &name);
@@ -424,8 +424,8 @@ pub async fn ci_deploy(
     version: Option<String>,
 ) {
     let dir = u::pwd();
-    let namespace = compiler::topology_name(&dir);
-    let current_version = compiler::topology_version(&namespace);
+    let namespace = composer::topology_name(&dir);
+    let current_version = composer::topology_version(&namespace);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let version = u::maybe_string(version, &current_version);
@@ -435,7 +435,7 @@ pub async fn ci_deploy(
 pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind: bool) {
     let dir = u::pwd();
     let suffix = u::maybe_string(suffix, "default");
-    let namespace = compiler::topology_name(&dir);
+    let namespace = composer::topology_name(&dir);
     let service = u::maybe_string(service, &namespace);
     if unwind {
         releaser::unwind(&service);
@@ -466,7 +466,7 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
             let role = match assume_role {
                 Some(r) => Some(r),
                 None => {
-                    let config = compiler::config(&kit::pwd());
+                    let config = composer::config(&kit::pwd());
                     let p = u::maybe_string(profile.clone(), "default");
                     config.ci.roles.get(&p).cloned()
                 }
@@ -548,12 +548,12 @@ pub async fn snapshot(
 
 pub async fn changelog(between: Option<String>, search: Option<String>, verbose: bool) {
     let dir = u::pwd();
-    let namespace = compiler::topology_name(&dir);
+    let namespace = composer::topology_name(&dir);
     match search {
         Some(s) => {
-            let is_root = compiler::is_root_dir(&dir);
+            let is_root = composer::is_root_dir(&dir);
             if is_root {
-                let namespaces = compiler::root_namespaces(&dir);
+                let namespaces = composer::root_namespaces(&dir);
                 for (_, namespace) in namespaces {
                     let version = releaser::find_version_history(&namespace, &s).await;
                     if let Some(v) = version {

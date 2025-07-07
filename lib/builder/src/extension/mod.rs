@@ -1,7 +1,7 @@
 mod python;
 mod rust;
 use crate::types::BuildStatus;
-use compiler::{
+use composer::{
     Lang,
     LangRuntime,
 };

@@ -3,9 +3,9 @@ use crate::aws::{
     iam::Role,
 };
 use authorizer::Auth;
-use compiler;
+use composer;
 
-pub async fn delete(auth: &Auth, roles: &Vec<compiler::Role>) {
+pub async fn delete(auth: &Auth, roles: &Vec<composer::Role>) {
     let client = iam::make_client(auth).await;
     for role in roles {
         let r = Role {
@@ -20,7 +20,7 @@ pub async fn delete(auth: &Auth, roles: &Vec<compiler::Role>) {
     }
 }
 
-pub async fn create_or_update(auth: &Auth, roles: &Vec<compiler::Role>) {
+pub async fn create_or_update(auth: &Auth, roles: &Vec<composer::Role>) {
     let client = iam::make_client(auth).await;
     for role in roles {
         let r = Role {

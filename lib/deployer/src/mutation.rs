@@ -3,7 +3,7 @@ use crate::aws::{
     lambda,
 };
 use authorizer::Auth;
-use compiler::Mutation;
+use composer::Mutation;
 use std::collections::HashMap;
 
 async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {

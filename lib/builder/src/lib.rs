@@ -12,7 +12,7 @@ use crate::types::{
 };
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::{
+use composer::{
     Build,
     Function,
     Lang,
@@ -30,7 +30,7 @@ use std::{
 };
 
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
-    let buildables = compiler::find_buildables(&u::pwd(), recursive);
+    let buildables = composer::find_buildables(&u::pwd(), recursive);
     let config = ConfigSpec::new(None);
     let mut outs: Vec<BuildOutput> = vec![];
     let repo = match std::env::var("TC_ECR_REPO") {
@@ -40,7 +40,7 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
 
     for ref b in buildables {
         if b.kind == BuildKind::Image {
-            let function = compiler::current_function(&b.dir);
+            let function = composer::current_function(&b.dir);
             if let Some(ref f) = function {
                 for (image, _) in &b.images {
                     if image == "base" {
@@ -141,7 +141,7 @@ pub async fn build_recursive(
 
     //TODO  parallelize
 
-    let topology = compiler::compile(dir, true);
+    let topology = composer::compose(dir, true);
 
     for (_, function) in topology.functions {
         let mut out = build(&function, None, image.clone(), layer.clone(), None).await;
@@ -155,7 +155,7 @@ pub fn clean_lang(dir: &str) {
 }
 
 pub fn clean(recursive: bool) {
-    let buildables = compiler::find_buildables(&u::pwd(), recursive);
+    let buildables = composer::find_buildables(&u::pwd(), recursive);
     for b in buildables {
         if b.kind == BuildKind::Inline {
             kit::sh("rm -rf build && rm -f bootstrap", &b.dir);
@@ -197,13 +197,13 @@ pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
 }
 
 pub async fn promote(auth: &Auth, name: Option<String>, dir: &str, version: Option<String>) {
-    let lang = &compiler::guess_runtime(dir);
+    let lang = &composer::guess_runtime(dir);
     let layer_name = u::maybe_string(name.clone(), u::basedir(dir));
     layer::promote(auth, &layer_name, &lang.to_str(), version).await;
 }
 
 pub fn shell(dir: &str) {
-    let function = compiler::current_function(dir);
+    let function = composer::current_function(dir);
 
     if let Some(f) = function {
         let spec = f.build;

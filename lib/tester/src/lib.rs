@@ -1,4 +1,4 @@
-use compiler::Function;
+use composer::Function;
 use kit as u;
 
 pub async fn test(dir: &str, _function: Function) {

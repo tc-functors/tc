@@ -151,7 +151,7 @@ pub struct Topology {
 
 impl Topology {
     pub async fn new(auth: &Auth, dir: &str, sandbox: &str, topology: ) -> Topology {
-        let t = compiler::compile(dir, true);
+        let t = composer::compile(dir, true);
         let mut fns: Vec<String> = vec![];
         for (_, f) in t.functions {
             let name = render(&f.fqn, &t.namespace, sandbox);

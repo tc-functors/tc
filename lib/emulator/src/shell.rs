@@ -1,6 +1,6 @@
 use crate::aws;
 use authorizer::Auth;
-use compiler::ConfigSpec;
+use composer::ConfigSpec;
 use kit as u;
 use kit::*;
 use std::{

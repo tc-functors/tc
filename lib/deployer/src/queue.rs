@@ -3,7 +3,7 @@ use crate::aws::{
     sqs,
 };
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Entity,
     Queue,
 };

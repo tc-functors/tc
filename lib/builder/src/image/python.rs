@@ -1,4 +1,4 @@
-use compiler::LangRuntime;
+use composer::LangRuntime;
 use kit as u;
 
 fn find_build_image(runtime: &LangRuntime) -> String {

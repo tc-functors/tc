@@ -4,7 +4,7 @@ use super::{
 };
 use crate::aws;
 use authorizer::Auth;
-use compiler::{
+use composer::{
     Entity,
     Event,
     Mutation,

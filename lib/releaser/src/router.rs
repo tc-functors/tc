@@ -4,7 +4,7 @@ use crate::aws::{
 };
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::ConfigSpec;
+use composer::ConfigSpec;
 use kit as u;
 use kit::*;
 use std::io::stdout;

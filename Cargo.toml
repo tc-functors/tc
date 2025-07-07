@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.8.90"
+version = "0.8.91"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.8.90"
+version = "0.8.91"
 
 [dependencies]
 serde = "1.0"
@@ -24,7 +24,7 @@ clap-markdown = "0.1.4"
 doku = "0.21.1"
 kit =  { path = "lib/kit" }
 authorizer =  { path = "lib/authorizer" }
-compiler =  { path = "lib/compiler" }
+composer =  { path = "lib/composer" }
 resolver =  { path = "lib/resolver" }
 builder =  { path = "lib/builder" }
 deployer =  { path = "lib/deployer" }
@@ -48,7 +48,7 @@ mockall = "0.12.1"
 [workspace]
 members = [
    "lib/kit",
-   "lib/compiler",
+   "lib/composer",
    "lib/resolver",
    "lib/builder",
    "lib/deployer",

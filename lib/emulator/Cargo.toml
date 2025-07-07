@@ -14,4 +14,4 @@ aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
 kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
-compiler = { path = "../compiler" }
+composer = { path = "../composer" }

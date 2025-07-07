@@ -349,7 +349,7 @@ dependencies = [
 
 [[package]]
 name = "authorizer"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "aws-config",
  "aws-credential-types",
@@ -1404,7 +1404,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -1414,7 +1414,7 @@ dependencies = [
  "aws-sdk-lambda",
  "base64",
  "colored",
- "compiler",
+ "composer",
  "glob",
  "kit",
  "log",
@@ -1809,8 +1809,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "compiler"
-version = "0.8.90"
+name = "composer"
+version = "0.8.91"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2051,7 +2051,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -2072,7 +2072,7 @@ dependencies = [
  "base64",
  "builder",
  "colored",
- "compiler",
+ "composer",
  "itertools",
  "kit",
  "log",
@@ -2117,7 +2117,7 @@ dependencies = [
 
 [[package]]
 name = "differ"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "authorizer",
  "aws-sdk-apigatewayv2",
@@ -2126,7 +2126,7 @@ dependencies = [
  "aws-sdk-lambda",
  "aws-sdk-sfn",
  "colored",
- "compiler",
+ "composer",
  "kit",
  "log",
  "resolver",
@@ -2264,14 +2264,14 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "anyhow",
  "authorizer",
  "aws-config",
  "aws-sdk-lambda",
  "colored",
- "compiler",
+ "composer",
  "kit",
  "serde 1.0.217",
  "serde_derive",
@@ -3097,14 +3097,14 @@ dependencies = [
 
 [[package]]
 name = "inspector"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "askama",
  "authorizer",
  "axum",
  "cacache",
  "chrono",
- "compiler",
+ "composer",
  "differ",
  "doku",
  "kit",
@@ -3122,7 +3122,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -3131,7 +3131,7 @@ dependencies = [
  "aws-sdk-lambda",
  "aws-sdk-sfn",
  "base64",
- "compiler",
+ "composer",
  "kit",
  "open",
  "serde 1.0.217",
@@ -3217,7 +3217,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "ansi-escapes",
  "base64",
@@ -3971,7 +3971,7 @@ dependencies = [
 
 [[package]]
 name = "pruner"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "authorizer",
  "aws-config",
@@ -3985,7 +3985,7 @@ dependencies = [
  "aws-sdk-resourcegroupstagging",
  "aws-sdk-sfn",
  "aws-sdk-sqs",
- "compiler",
+ "composer",
  "kit",
  "open",
  "question",
@@ -4138,7 +4138,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "releaser"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -4147,7 +4147,7 @@ dependencies = [
  "aws-sdk-eventbridge",
  "aws-sdk-sfn",
  "colored",
- "compiler",
+ "composer",
  "kit",
  "open",
  "regex",
@@ -4200,7 +4200,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "authorizer",
  "aws-config",
@@ -4210,7 +4210,7 @@ dependencies = [
  "aws-sdk-lambda",
  "aws-sdk-ssm",
  "cacache",
- "compiler",
+ "composer",
  "kit",
  "regex",
  "serde 1.0.217",
@@ -4707,7 +4707,7 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "authorizer",
  "aws-sdk-apigatewayv2",
@@ -4717,7 +4717,7 @@ dependencies = [
  "aws-sdk-s3",
  "aws-sdk-sfn",
  "colored",
- "compiler",
+ "composer",
  "kit",
  "log",
  "releaser",
@@ -4928,14 +4928,14 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
  "authorizer",
  "builder",
  "clap",
  "clap-markdown",
  "colored",
- "compiler",
+ "composer",
  "deployer",
  "differ",
  "doku",
@@ -4992,9 +4992,9 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.8.90"
+version = "0.8.91"
 dependencies = [
- "compiler",
+ "composer",
  "kit",
 ]
 

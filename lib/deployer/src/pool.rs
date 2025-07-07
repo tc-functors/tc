@@ -3,7 +3,7 @@ use crate::aws::{
     lambda,
 };
 use authorizer::Auth;
-use compiler::topology::Pool;
+use composer::topology::Pool;
 use std::collections::HashMap;
 
 pub async fn delete(_auth: &Auth, _pools: &HashMap<String, Pool>) {

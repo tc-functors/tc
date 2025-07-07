@@ -1,7 +1,7 @@
 mod aws;
 
 use authorizer::Auth;
-use compiler::Entity;
+use composer::Entity;
 use question::{
     Answer,
     Question,

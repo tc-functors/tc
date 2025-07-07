@@ -112,7 +112,7 @@ tc compile | sed -i 's/{{API_GATEWAY}}/my-gateway/g' |tc create
 
 The resolver can also be written in any language that is easy to use and query the provider, efficiently.
 
-The output of the compiler, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
+The output of the composer, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
 
 ## Install
 
@@ -179,7 +179,7 @@ The codebase is organized as a Rust workspace with multiple libraries:
 - **Libraries (`lib/`)**:
   - `authorizer`: Authentication and authorization
   - `builder`: Building and packaging functions
-  - `compiler`: Compiling topologies
+  - `composer`: Compiling topologies
   - `deployer`: Deploying to cloud providers
   - `differ`: Comparing topologies
   - `emulator`: Local emulation

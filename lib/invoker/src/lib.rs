@@ -3,7 +3,7 @@ mod event;
 mod function;
 mod state;
 use authorizer::Auth;
-use compiler::TopologyKind;
+use composer::TopologyKind;
 use kit as u;
 
 fn read_payload(dir: &str, s: Option<String>) -> String {

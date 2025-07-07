@@ -44,8 +44,8 @@ enum Cmd {
     /// changelog search
     #[clap(hide = true)]
     Changelog(ChangelogArgs),
-    /// Compile a Topology
-    Compile(CompileArgs),
+    /// Compose a Topology
+    Compose(ComposeArgs),
     /// Show config
     Config(DefaultArgs),
     /// Create a sandboxed topology
@@ -240,7 +240,7 @@ pub struct PromoteArgs {
 }
 
 #[derive(Debug, Args)]
-pub struct CompileArgs {
+pub struct ComposeArgs {
     #[arg(long, action)]
     versions: bool,
     #[arg(long, action, short = 'r')]
@@ -574,8 +574,8 @@ async fn delete(args: DeleteArgs) {
     tc::delete(env, sandbox, entity, recursive, cache).await;
 }
 
-async fn compile(args: CompileArgs) {
-    let CompileArgs {
+async fn compose(args: ComposeArgs) {
+    let ComposeArgs {
         versions,
         recursive,
         entity,
@@ -586,13 +586,13 @@ async fn compile(args: CompileArgs) {
 
     init_tracing(trace);
 
-    let opts = tc::CompileOpts {
+    let opts = tc::ComposeOpts {
         versions: versions,
         recursive: recursive,
         entity: entity,
         format,
     };
-    tc::compile(opts).await;
+    tc::compose(opts).await;
 }
 
 async fn resolve(args: ResolveArgs) {
@@ -866,7 +866,7 @@ async fn run() {
         Cmd::Cache(args) => cache(args).await,
         Cmd::Config(args) => config(args).await,
         Cmd::Doc(args) => doc(args).await,
-        Cmd::Compile(args) => compile(args).await,
+        Cmd::Compose(args) => compose(args).await,
         Cmd::Resolve(args) => resolve(args).await,
         Cmd::Create(args) => create(args).await,
         Cmd::Delete(args) => delete(args).await,

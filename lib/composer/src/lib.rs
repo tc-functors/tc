@@ -60,11 +60,11 @@ pub fn config(dir: &str) -> ConfigSpec {
     t.config
 }
 
-pub fn compile(dir: &str, recursive: bool) -> Topology {
+pub fn compose(dir: &str, recursive: bool) -> Topology {
     Topology::new(dir, recursive, false)
 }
 
-pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
+pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
     let given_root_dirs = match &spec.nodes.dirs {
@@ -73,13 +73,13 @@ pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     };
     let mut h: HashMap<String, Topology> = HashMap::new();
     if given_root_dirs.is_empty() {
-        let topology = compile(&u::pwd(), false);
+        let topology = compose(&u::pwd(), false);
         h.insert(topology.namespace.clone(), topology);
     } else {
         for d in given_root_dirs {
             tracing::debug!("Given root: {}", &d);
             let dir = u::absolutize(&u::pwd(), &d);
-            let t = compile(&dir, recursive);
+            let t = compose(&dir, recursive);
 
             h.insert(t.namespace.to_string(), t);
         }
@@ -106,7 +106,7 @@ pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
 pub fn find_layers() -> Vec<Layer> {
     let dir = u::pwd();
     if topology::is_compilable(&dir) {
-        let topology = compile(&dir, true);
+        let topology = compose(&dir, true);
         topology.layers()
     } else {
         function::layer::discover()
@@ -146,7 +146,7 @@ pub fn display_root() {
 }
 
 pub fn display_topology(dir: &str, format: &str, recursive: bool) {
-    let topology = compile(&dir, recursive);
+    let topology = compose(&dir, recursive);
     match format {
         "tree" => {
             let tree = display::topology::build_tree(&topology);
@@ -159,7 +159,7 @@ pub fn display_topology(dir: &str, format: &str, recursive: bool) {
 pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
     let format = Format::from_str(f).unwrap();
 
-    let topology = compile(&dir, recursive);
+    let topology = compose(&dir, recursive);
 
     if e == "." {
         if let Some(f) = topology.current_function(dir) {

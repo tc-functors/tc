@@ -5,7 +5,7 @@ use crate::aws::{
 };
 use authorizer::Auth;
 use colored::Colorize;
-use compiler::{
+use composer::{
     Entity,
     Event,
 };

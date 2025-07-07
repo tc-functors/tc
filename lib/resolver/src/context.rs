@@ -1,5 +1,5 @@
 use authorizer::Auth;
-use compiler::ConfigSpec;
+use composer::ConfigSpec;
 use kit as u;
 use std::collections::HashMap;
 

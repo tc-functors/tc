@@ -1,6 +1,6 @@
 use crate::aws::appsync;
 use authorizer::Auth;
-use compiler::Channel;
+use composer::Channel;
 use std::collections::HashMap;
 
 pub async fn create(auth: &Auth, channels: &HashMap<String, Channel>) {
