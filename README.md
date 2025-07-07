@@ -47,11 +47,11 @@ channels:
 
 `/api/etl` HTTP route calls function `enhancer` which then triggers a pipeline of functions which are either local (subdirectories) or remote (git repos). In this example, loader finally generates an event `Notify` whose target is a websocket Channel called `Subscription`. We just defined an entire ETL flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
 
-`tc compile` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
+`tc compose` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
 
 ### 2. Namespacing
 
-Now, if we run `tc compile` in the directory containing the above topology (topology.yml), we see that all the entities are namespaced. This implies there is room for several `foo`,`bar` or `MyEvent` entities in another topology. This also encourages developers to name the entities succinctly similar to function names in a module. With namespacing comes the benefit of having a single version of the namespace and thereby avoiding the need to manage the versions of sub-components.
+Now, if we run `tc compose` in the directory containing the above topology (topology.yml), we see that all the entities are namespaced. This implies there is room for several `foo`,`bar` or `MyEvent` entities in another topology. This also encourages developers to name the entities succinctly similar to function names in a module. With namespacing comes the benefit of having a single version of the namespace and thereby avoiding the need to manage the versions of sub-components.
 
 ### 3. Sandboxing
 
@@ -69,7 +69,7 @@ tc update -s sandbox -e env -c events|routes|mutations|functions|flow
 
 ### 4. Inferred Infrastructure
 
-`tc compile` generates a lot of the infrastructure (permissions, default configurations etc) boilerplate needed for the configured provider. Think of infrastructure as _Types_ in a dynamic programming language.
+`tc compose` generates a lot of the infrastructure (permissions, default configurations etc) boilerplate needed for the configured provider. Think of infrastructure as _Types_ in a dynamic programming language.
 
 ### 5. Recursive Topology
 
@@ -98,16 +98,16 @@ This feature helps evolve the system and test individual nodes in isolation.
 
 ### 6. Isomorphic Topology
 
-The output of `tc compile` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider. We can write custom resolvers to resolve these template variables by querying the configured provider (AWS, GCP etc).
+The output of `tc compose` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider. We can write custom resolvers to resolve these template variables by querying the configured provider (AWS, GCP etc).
 
 ```
-tc compile | tc resolve -s sandbox -e env | tc create
+tc compose | tc resolve -s sandbox -e env | tc create
 ```
 
 We can replace the resolver with `sed` or a template renderer with values from ENV variables, SSM parameter store, Vault etc. For example:
 
 ```
-tc compile | sed -i 's/{{API_GATEWAY}}/my-gateway/g' |tc create
+tc compose | sed -i 's/{{API_GATEWAY}}/my-gateway/g' |tc create
 ```
 
 The resolver can also be written in any language that is easy to use and query the provider, efficiently.
@@ -134,7 +134,7 @@ Usage: tc <COMMAND>
 
 Commands:
   build    Build layers, extensions and pack function code
-  compile  Compile a Topology
+  compose  Compose a Topology
   create   Create a sandboxed topology
   delete   Delete a sandboxed topology
   emulate  Emulate Runtime environments
