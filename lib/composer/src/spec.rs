@@ -105,6 +105,7 @@ pub struct TopologySpec {
     #[serde(default)]
     pub name: String,
 
+    pub recursive: Option<bool>,
     pub auto: Option<bool>,
 
     pub dir: Option<String>,
@@ -169,6 +170,7 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
+                recursive: Some(false),
                 auto: Some(false),
                 kind: Some(TopologyKind::Function),
                 dir: Some(u::pwd()),
