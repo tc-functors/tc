@@ -566,8 +566,11 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
     }
 }
 
-pub async fn bootstrap(auth: &Auth) {
-    deployer::base::create_roles(auth).await
+pub async fn bootstrap(auth: &Auth, maybe_role: Option<String>) {
+    match maybe_role {
+        Some(role) => deployer::base::create_role(auth, &role).await,
+        None => deployer::base::create_roles(auth).await
+    }
 }
 
 pub async fn prune(auth: &Auth, sandbox: Option<String>, dry_run: bool) {

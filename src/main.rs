@@ -475,6 +475,8 @@ pub struct DocArgs {
 pub struct BootstrapArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long, short = 'r')]
+    role: Option<String>,
 }
 
 async fn version() {
@@ -839,9 +841,9 @@ async fn doc(args: DocArgs) {
 }
 
 async fn bootstrap(args: BootstrapArgs) {
-    let BootstrapArgs { profile } = args;
+    let BootstrapArgs { profile, role } = args;
     let env = tc::init(profile, None).await;
-    tc::bootstrap(&env).await;
+    tc::bootstrap(&env, role).await;
 }
 
 async fn prune(args: PruneArgs) {
