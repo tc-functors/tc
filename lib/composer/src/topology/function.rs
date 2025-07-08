@@ -112,6 +112,7 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
 
 impl Function {
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
+
         let config = ConfigSpec::new(None);
 
         let fspec = FunctionSpec::new(dir);

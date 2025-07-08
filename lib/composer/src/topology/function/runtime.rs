@@ -426,6 +426,18 @@ fn lookup_infraspec(
     InfraSpec::new(infra_spec_file.clone())
 }
 
+
+fn lookup_infraspec_default(infra_dir: &str, function_name: &str) -> HashMap<String, InfraSpec> {
+    let f = format!("{}/vars/{}.json", infra_dir, function_name);
+    let actual_f = follow_path(&f);
+    let infra_spec_file = if u::file_exists(&actual_f) {
+        Some(actual_f)
+    } else {
+        None
+    };
+    InfraSpec::new(infra_spec_file.clone())
+}
+
 fn make_default(
     dir: &str,
     infra_dir: &str,
@@ -435,7 +447,7 @@ fn make_default(
 ) -> Runtime {
     let lang = infer_lang(dir);
     let role = role::default(Some(Provider::Lambda));
-    let infra_spec = InfraSpec::new(None);
+    let infra_spec = lookup_infraspec_default(infra_dir, &fspec.name);
     let default_infra_spec = infra_spec.get("default").unwrap();
 
     let InfraSpec {
@@ -616,6 +628,7 @@ impl Runtime {
             Some(p) => p.to_string(),
             None => as_infra_dir(dir, t_infra_dir),
         };
+
 
         match rspec {
             Some(r) => {
