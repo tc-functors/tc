@@ -60,9 +60,20 @@ pub fn config(dir: &str) -> ConfigSpec {
     t.config
 }
 
-pub fn compose(dir: &str, recursive: bool) -> Topology {
-    Topology::new(dir, recursive, false)
+fn should_recurse(given: bool, maybe_bool: Option<bool>) -> bool {
+    match maybe_bool {
+        Some(b) => b,
+        None => given
+    }
 }
+
+pub fn compose(dir: &str, recursive: bool) -> Topology {
+    let f = format!("{}/topology.yml", dir);
+    let spec = TopologySpec::new(&f);
+    let recurse = should_recurse(recursive, spec.recursive);
+    Topology::new(dir, recurse, false)
+}
+
 
 pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
@@ -80,13 +91,13 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
             tracing::debug!("Given root: {}", &d);
             let dir = u::absolutize(&u::pwd(), &d);
             let t = compose(&dir, recursive);
-
             h.insert(t.namespace.to_string(), t);
         }
     }
     tracing::debug!("Compilation completed");
     h
 }
+
 
 pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     let f = format!("{}/topology.yml", dir);
