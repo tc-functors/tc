@@ -52,7 +52,7 @@ use walkdir::WalkDir;
 
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
-    topology::is_root_topology(&f);
+    topology::is_root_topology(&f)
 }
 
 pub fn config(dir: &str) -> ConfigSpec {

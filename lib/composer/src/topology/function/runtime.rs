@@ -70,10 +70,14 @@ pub struct Runtime {
     pub cluster: String,
 }
 
-fn find_code_version(dir: &str) -> String {
+fn find_content_sha(dir: &str) -> String {
     let readdir = read_dir(dir).unwrap();
     let digest = sha1::chksum(readdir).unwrap();
     digest.to_hex_lowercase()
+}
+
+fn find_git_sha(dir: &str) -> String {
+    sh("git rev-parse --short HEAD", dir)
 }
 
 fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
@@ -81,8 +85,9 @@ fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> Str
         "Image" | "image" | "oci" => match uri {
             Some(u) => u,
             None => {
-                let version = find_code_version(dir);
-                format!("{{{{repo}}}}/code:{}-{}", name, version)
+                let _content_sha = find_content_sha(dir);
+                let git_sha = find_git_sha(dir);
+                format!("{{{{repo}}}}/code:{}-{}", name, git_sha)
             }
         },
         _ => format!("{}/lambda.zip", dir),
@@ -178,7 +183,7 @@ fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
     let basename = u::basedir(dir).to_string();
     let parent = u::split_first(dir, &format!("/{basename}"));
     parent
-        .replace("/services/", "/infrastructure/tc/")
+        .replace("/topologies/", "/infrastructure/tc/")
         .replace("_", "-")
 }
 
