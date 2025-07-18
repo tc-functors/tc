@@ -202,13 +202,13 @@ pub async fn promote(auth: &Auth, name: Option<String>, dir: &str, version: Opti
     layer::promote(auth, &layer_name, &lang.to_str(), version).await;
 }
 
-pub fn shell(dir: &str) {
+pub async fn shell(auth: &Auth, dir: &str) {
     let function = composer::current_function(dir);
 
     if let Some(f) = function {
         let spec = f.build;
         match spec.kind {
-            BuildKind::Image => image::shell(dir, &f.runtime.uri),
+            BuildKind::Image => image::shell(auth, dir, &f.runtime.uri).await,
             _ => todo!(),
         }
     } else {

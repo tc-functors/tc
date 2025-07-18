@@ -52,7 +52,7 @@ use walkdir::WalkDir;
 
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
-    topology::is_root_topology(&f)
+    topology::is_root_topology(&f);
 }
 
 pub fn config(dir: &str) -> ConfigSpec {
@@ -97,7 +97,6 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     tracing::debug!("Compilation completed");
     h
 }
-
 
 pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     let f = format!("{}/topology.yml", dir);
@@ -151,10 +150,21 @@ pub fn is_topology_dir(dir: &str) -> bool {
     topology::is_topology_dir(dir)
 }
 
+pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
+    match format {
+        "table" => display::topology::print_topologies(topologies),
+        "tree" => {
+            println!("")
+        },
+        _ => ()
+    }
+}
+
 pub fn display_root() {
     let topologies = list_topologies();
     display::topology::print_topologies(topologies)
-}
+ }
+
 
 pub fn display_topology(dir: &str, format: &str, recursive: bool) {
     let topology = compose(&dir, recursive);

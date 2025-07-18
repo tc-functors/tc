@@ -66,7 +66,8 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
             let builds = builder::just_images(false);
             builder::sync(&auth, builds).await;
         } else if shell {
-            builder::shell(dir);
+            let auth = init(profile, None).await;
+            builder::shell(&auth, dir).await;
         } else {
             let maybe_fn = composer::current_function(dir);
             match maybe_fn {
@@ -102,6 +103,15 @@ pub struct ComposeOpts {
     pub entity: Option<String>,
     pub format: Option<String>,
 }
+
+
+pub async fn compose_root(format: Option<String>) {
+    let root_dir = u::root();
+    let fmt = u::maybe_string(format, "table");
+    let tps = composer::compose_root(&root_dir, true);
+    composer::print_topologies(&fmt, tps);
+}
+
 
 pub async fn compose(opts: ComposeOpts) {
     let ComposeOpts {
