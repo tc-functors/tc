@@ -192,12 +192,13 @@ pub async fn sync(auth: &Auth, build: &BuildOutput) {
     u::run(&cmd, &dir);
 }
 
-pub fn shell(dir: &str, uri: &str) {
+pub async fn shell(auth: &Auth, dir: &str, uri: &str) {
     let config = ConfigSpec::new(None);
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
+    aws_ecr::login(auth, &dir).await;
     let uri = render_uri(uri, repo);
     let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
     println!("{}", cmd);
