@@ -76,8 +76,8 @@ pub struct Topology {
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
-    let root = u::split_first(&dir, "/services/");
-    let next = u::second(&dir, "/services/");
+    let root = u::split_first(&dir, "/topologies/");
+    let next = u::second(&dir, "/topologies/");
     (root, next)
 }
 

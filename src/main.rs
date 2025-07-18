@@ -245,6 +245,8 @@ pub struct ComposeArgs {
     versions: bool,
     #[arg(long, action, short = 'r')]
     recursive: bool,
+    #[arg(long, action)]
+    root: bool,
     #[arg(long, short = 'c')]
     entity: Option<String>,
     #[arg(long, short = 'f')]
@@ -583,6 +585,7 @@ async fn compose(args: ComposeArgs) {
         entity,
         format,
         trace,
+        root,
         ..
     } = args;
 
@@ -592,9 +595,14 @@ async fn compose(args: ComposeArgs) {
         versions: versions,
         recursive: recursive,
         entity: entity,
-        format,
+        format: format.clone(),
     };
-    tc::compose(opts).await;
+    if root {
+        tc::compose_root(format).await;
+    } else {
+        tc::compose(opts).await;
+    }
+
 }
 
 async fn resolve(args: ResolveArgs) {
