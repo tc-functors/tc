@@ -16,7 +16,7 @@ pub struct EventSpec {
     #[serde(default)]
     pub producer: String,
 
-    #[serde(default)]
+    #[serde(default, alias = "doc-only")]
     pub doc_only: bool,
 
     pub producer_ns: Option<String>,
