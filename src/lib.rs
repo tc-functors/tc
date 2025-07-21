@@ -583,14 +583,14 @@ pub async fn bootstrap(auth: &Auth, maybe_role: Option<String>) {
     }
 }
 
-pub async fn prune(auth: &Auth, sandbox: Option<String>, dry_run: bool) {
+pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>, dry_run: bool) {
     match sandbox {
         Some(sbox) => {
             if dry_run {
-                pruner::list(auth, &sbox).await;
+                pruner::list(auth, &sbox, filter).await;
             } else {
                 releaser::guard(&sbox);
-                pruner::prune(auth, &sbox).await;
+                pruner::prune(auth, &sbox, filter).await;
             }
         }
         None => println!("Please specify sandbox"),

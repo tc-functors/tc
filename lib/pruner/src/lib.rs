@@ -63,9 +63,25 @@ fn count_of(grouped: &HashMap<Entity, Vec<String>>) -> String {
     )
 }
 
-pub async fn prune(auth: &Auth, sandbox: &str) {
+fn filter_arns(arns: Vec<String>, filter: Option<String>) -> Vec<String> {
+    match filter {
+        Some(f) => {
+            let mut xs: Vec<String> = vec![];
+            for arn in arns {
+                if arn.contains(&f) {
+                    xs.push(arn);
+                }
+            }
+            xs
+        },
+        None => arns
+    }
+}
+
+pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
     let client = aws::resourcetag::make_client(auth).await;
     let arns = aws::resourcetag::get_resources(&client, "sandbox", sandbox).await;
+    let arns = filter_arns(arns, filter);
 
     if arns.len() == 0 {
         println!("No resources found for given sandbox");
@@ -106,9 +122,11 @@ pub async fn prune(auth: &Auth, sandbox: &str) {
     }
 }
 
-pub async fn list(auth: &Auth, sandbox: &str) {
+// dry-run
+pub async fn list(auth: &Auth, sandbox: &str, filter: Option<String>) {
     let client = aws::resourcetag::make_client(auth).await;
-    let mut arns = aws::resourcetag::get_resources(&client, "sandbox", sandbox).await;
+    let arns = aws::resourcetag::get_resources(&client, "sandbox", sandbox).await;
+    let mut arns = filter_arns(arns, filter);
     arns.sort();
     for arn in &arns {
         println!("{}", &arn)
