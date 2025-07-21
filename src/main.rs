@@ -393,6 +393,8 @@ pub struct PruneArgs {
     profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
+    #[arg(long, short = 'f')]
+    filter: Option<String>,
     #[arg(long, action, alias = "dry-run")]
     dry_run: bool,
     #[arg(long, action, short = 't')]
@@ -858,13 +860,14 @@ async fn prune(args: PruneArgs) {
     let PruneArgs {
         profile,
         sandbox,
+        filter,
         trace,
         dry_run,
         ..
     } = args;
     init_tracing(trace);
     let env = tc::init(profile, None).await;
-    tc::prune(&env, sandbox, dry_run).await;
+    tc::prune(&env, sandbox, filter, dry_run).await;
 }
 
 async fn run() {
