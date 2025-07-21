@@ -188,7 +188,9 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>) {
     tracing::debug!("Updating cors: {:?}", cors);
     for (_, route) in routes {
         //println!("Creating route {} {}", &route.method, &route.path);
-        create_route(auth, &route, cors.clone()).await;
+        if !&route.skip {
+            create_route(auth, &route, cors.clone()).await;
+        }
     }
 }
 
@@ -237,7 +239,9 @@ async fn delete_route(auth: &Auth, route: &Route) {
 pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
     for (name, route) in routes {
         println!("Deleting route {}", &name);
-        delete_route(auth, &route).await;
+        if !&route.skip {
+            delete_route(auth, &route).await;
+        }
     }
 }
 

@@ -19,6 +19,7 @@ use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Route {
+    pub skip: bool,
     pub method: String,
     pub path: String,
     pub gateway: String,
@@ -79,6 +80,7 @@ impl Route {
         spec: &TopologySpec,
         rspec: &RouteSpec,
         fns: &HashMap<String, Function>,
+        skip: bool
     ) -> Route {
         let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
@@ -155,6 +157,7 @@ impl Route {
             request_template: make_request_template(&method, rspec.request_template.clone()),
             response_template: make_response_template(),
             cors: rspec.cors.clone(),
+            skip: skip
         }
     }
 }

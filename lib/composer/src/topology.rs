@@ -415,7 +415,8 @@ fn make_routes(
             let mut h: HashMap<String, Route> = HashMap::new();
             for (name, rspec) in xs {
                 tracing::debug!("route {}", &name);
-                let route = Route::new(fqn, &name, spec, rspec, fns);
+                let skip = rspec.doc_only;
+                let route = Route::new(fqn, &name, spec, rspec, fns, skip);
                 h.insert(name.to_string(), route);
             }
             h

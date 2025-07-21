@@ -41,4 +41,6 @@ pub struct RouteSpec {
     pub stage_variables: Option<HashMap<String, String>>,
     #[serde(default = "default_cors")]
     pub cors: Option<CorsSpec>,
+    #[serde(default, alias = "doc-only")]
+    pub doc_only: bool,
 }
