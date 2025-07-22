@@ -32,7 +32,17 @@ pub struct BuildOpts {
     pub layer: Option<String>,
 }
 
-pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
+async fn init_centralized_auth() -> Auth {
+    let config = ConfigSpec::new(None);
+    let profile = config.aws.lambda.layers_profile.clone();
+    let auth = init(profile.clone(), None).await;
+    let centralized = auth
+        .assume(profile.clone(), config.role_to_assume(profile))
+        .await;
+    centralized
+}
+
+pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
     let BuildOpts {
         clean,
         recursive,
@@ -46,15 +56,16 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
         ..
     } = opts;
 
+
     if recursive {
         if sync {
-            let auth = init(profile, None).await;
+            let auth = init_centralized_auth().await;
             let builds = builder::just_images(recursive);
             builder::sync(&auth, builds).await;
         } else {
             let builds = builder::build_recursive(dir, parallel, image, layer).await;
             if publish {
-                let auth = init(profile.clone(), None).await;
+                let auth = init_centralized_auth().await;
                 builder::publish(&auth, builds.clone()).await;
             }
         }
@@ -62,11 +73,11 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
         builder::clean_lang(dir);
     } else {
         if sync {
-            let auth = init(profile, None).await;
             let builds = builder::just_images(false);
+            let auth = init_centralized_auth().await;
             builder::sync(&auth, builds).await;
         } else if shell {
-            let auth = init(profile, None).await;
+            let auth = init_centralized_auth().await;
             builder::shell(&auth, dir).await;
         } else {
             let maybe_fn = composer::current_function(dir);
@@ -74,7 +85,7 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
                 Some(f) => {
                     let builds = builder::build(&f, name, image, layer, kind).await;
                     if publish {
-                        let auth = init(profile.clone(), None).await;
+                        let auth = init_centralized_auth().await;
                         builder::publish(&auth, builds.clone()).await;
                     }
                 }
