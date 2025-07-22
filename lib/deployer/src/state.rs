@@ -135,14 +135,13 @@ pub async fn update_logs(auth: &Auth, sfn_arn: &str, flow: &Flow) {
         "Updating log-config {} ({}) include_exec_data: {}",
         name, mode, include_exec_data
     );
-    let res = sfn::enable_logging(
+    let _ = sfn::enable_logging(
         sfn_client,
         sfn_arn,
         &log_config.group_arn,
         include_exec_data,
     )
     .await;
-    println!("{:?}", &res);
 }
 
 pub async fn disable_logs(auth: &Auth, sfn_arn: &str) {

@@ -10,7 +10,7 @@ use composer::{
     Topology,
 };
 
-pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topology {
+pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str, dirty: bool) -> Topology {
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -28,7 +28,7 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str) -> Topolog
     tracing::debug!("Resolving pools");
     partial_t.pools = pool::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving functions");
-    partial_t.functions = function::resolve(&ctx, &partial_t).await;
+    partial_t.functions = function::resolve(&ctx, &partial_t, dirty).await;
     partial_t
 }
 
@@ -37,6 +37,7 @@ pub async fn resolve_entity(
     auth: &Auth,
     sandbox: &str,
     entity: &Entity,
+    dirty: bool
 ) -> Topology {
     let ctx = Context {
         auth: auth.clone(),
@@ -55,7 +56,7 @@ pub async fn resolve_entity(
             partial_t.events = event::resolve(&ctx, &partial_t).await;
         }
         Entity::Function => {
-            partial_t.functions = function::resolve(&ctx, &partial_t).await;
+            partial_t.functions = function::resolve(&ctx, &partial_t, dirty).await;
         }
         Entity::Trigger => {
             partial_t.pools = pool::resolve(&ctx, &partial_t).await;

@@ -155,7 +155,7 @@ pub async fn resolve(
 ) {
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
+    let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
     let entity = Entity::as_entity(maybe_entity);
     composer::pprint(&rt, entity)
 }
@@ -226,6 +226,7 @@ pub async fn create(
     recursive: bool,
     cache: bool,
     topology_path: Option<String>,
+    dirty: bool,
 ) {
     let start = Instant::now();
 
@@ -241,7 +242,7 @@ pub async fn create(
             println!("Compiling topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
             println!("Resolving topology {} ...", &ct.namespace);
-            let rt = resolver::resolve(&auth, &sandbox, &ct, cache).await;
+            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, dirty).await;
             rt
         }
     };
@@ -272,6 +273,7 @@ pub async fn update(
     cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
+    let dirty = true;
 
     releaser::guard(&sandbox);
 
@@ -280,11 +282,11 @@ pub async fn update(
     println!("Compiling topology...");
     let topology = composer::compose(&u::pwd(), recursive);
 
-    let msg = composer::count_of(&topology);
-    println!("{}", msg);
-
     println!("Resolving topology {}...", &topology.namespace);
-    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
+    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, dirty).await;
+
+    let msg = composer::count_of(&root);
+    println!("{}", msg);
 
     deployer::try_update(&auth, &root, &maybe_entity.clone()).await;
 
@@ -312,7 +314,7 @@ pub async fn delete(
 
     composer::count_of(&topology);
     println!("Resolving topology...");
-    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache).await;
+    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, false).await;
 
     deployer::try_delete(&auth, &root, &maybe_entity).await;
 

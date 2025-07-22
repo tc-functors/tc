@@ -285,6 +285,8 @@ pub struct CreateArgs {
     cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'd')]
+    dirty: bool,
 }
 
 #[derive(Debug, Args)]
@@ -537,11 +539,12 @@ async fn create(args: CreateArgs) {
         cache,
         topology,
         trace,
+        dirty,
         ..
     } = args;
 
     init_tracing(trace);
-    tc::create(profile, sandbox, notify, recursive, cache, topology).await;
+    tc::create(profile, sandbox, notify, recursive, cache, topology, dirty).await;
 }
 
 async fn update(args: UpdateArgs) {
