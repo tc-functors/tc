@@ -102,7 +102,7 @@ pub async fn build(
     let name = u::maybe_string(name, &function.name);
 
     let build_status = match kind {
-        BuildKind::Image => image::build(dir, &name, langr, &images, &image_kind, &runtime.uri),
+        BuildKind::Image => image::build(dir, &name, langr, &images, &image_kind, &runtime.uri).await,
         BuildKind::Inline => inline::build(dir, &name, langr, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr),
         BuildKind::Library => library::build(dir, langr),

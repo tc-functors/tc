@@ -14,12 +14,12 @@ use composer::{
 use std::collections::HashMap;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
-    let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
     let config = ConfigSpec::new(None);
     let profile = config.aws.lambda.layers_profile.clone();
     let centralized = auth
         .assume(profile.clone(), config.role_to_assume(profile))
         .await;
+    let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
     builder::publish(&centralized, builds).await;
 }
 
