@@ -57,8 +57,6 @@ enum Cmd {
     Freeze(FreezeArgs),
     /// Emulate Runtime environments
     Emulate(EmulateArgs),
-    /// Inspect via browser
-    Inspect(InspectArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
     /// Promote assets between sandboxes
@@ -98,14 +96,6 @@ pub struct DefaultArgs {}
 
 #[derive(Debug, Args)]
 pub struct ScaffoldArgs {}
-
-#[derive(Debug, Args)]
-pub struct InspectArgs {
-    #[arg(long, action, short = 't')]
-    trace: bool,
-    #[arg(long, short = 'p')]
-    port: Option<String>,
-}
 
 #[derive(Debug, Args)]
 pub struct CacheArgs {
@@ -794,12 +784,6 @@ async fn config(_args: DefaultArgs) {
     tc::show_config().await;
 }
 
-async fn inspect(args: InspectArgs) {
-    let InspectArgs { trace, port } = args;
-    init_tracing(trace);
-    tc::inspect(port).await;
-}
-
 async fn snapshot(args: SnapshotArgs) {
     let SnapshotArgs {
         profile,
@@ -888,7 +872,6 @@ async fn run() {
         Cmd::Delete(args) => delete(args).await,
         Cmd::Emulate(args) => emulate(args).await,
         Cmd::Freeze(args) => freeze(args).await,
-        Cmd::Inspect(args) => inspect(args).await,
         Cmd::Invoke(args) => invoke(args).await,
         Cmd::Prune(args) => prune(args).await,
         Cmd::Promote(args) => promote(args).await,
