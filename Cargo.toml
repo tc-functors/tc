@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.8.95"
+version = "0.8.96"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.8.95"
+version = "0.8.96"
 
 [dependencies]
 serde = "1.0"
@@ -32,7 +32,6 @@ invoker =  { path = "lib/invoker" }
 emulator =  { path = "lib/emulator" }
 tester = { path = "lib/tester" }
 differ = { path = "lib/differ" }
-inspector = { path = "lib/inspector" }
 releaser = { path = "lib/releaser" }
 snapshotter = { path = "lib/snapshotter" }
 pruner = { path = "lib/pruner" }
@@ -55,7 +54,6 @@ members = [
    "lib/emulator",
    "lib/tester",
    "lib/differ",
-   "lib/inspector",
    "lib/releaser",
    "lib/snapshotter",
    "lib/pruner"
