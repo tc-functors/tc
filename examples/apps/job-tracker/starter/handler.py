@@ -23,7 +23,7 @@ def handler(input, context):
     Entries=[
       {
         'Source': 'adHoc',
-        'EventBusName': 'techno-core-dev-af',
+        'EventBusName': 'default',
         'Detail': json.dumps(payload),
         'DetailType': 'CompleteTask'
       }
