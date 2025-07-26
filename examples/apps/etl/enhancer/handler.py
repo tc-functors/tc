@@ -25,7 +25,7 @@ def handler(input, context):
 
   print(payload)
 
-  env = os.environ.get('Environment', 'dev-af')
+  env = os.environ.get('Environment', 'dev')
 
   client = boto3.client('events')
   res = client.put_events(

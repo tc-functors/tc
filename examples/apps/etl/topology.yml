@@ -1,0 +1,86 @@
+name: etl
+
+routes:
+  /api/messages:
+    method: GET
+    authorizer: authorizer
+    queue: MessagesQueue
+
+queues:
+  MessagesQueue:
+    function: initializer
+
+events:
+  InitializationComplete:
+    producer: adHoc
+    mutation: enhance
+
+  EnhancerComplete:
+    producer: adHoc
+    mutation: transform
+
+  TransformerComplete:
+    producer: adHoc
+    mutation: load
+
+  LoaderComplete:
+    producer: adHoc
+    mutation: complete
+
+mutations:
+  authorizer: authorizer
+  types:
+    Input:
+      id: String!
+    Status:
+      id: String!
+      status: String
+      message: String
+      percentage: Int
+
+  resolvers:
+    initialize:
+      function: initializer
+      input: Input
+      output: Status
+      subscribe: true
+
+    enhance:
+      function: enhancer
+      input: Event
+      output: Status
+      subscribe: true
+
+    transform:
+      function: transformer
+      input: Event
+      output: Status
+      subscribe: true
+
+    load:
+      function: loader
+      input: Event
+      output: Status
+      subscribe: true
+
+    complete:
+      function: completer
+      input: Event
+      output: Status
+      subscribe: true
+
+
+functions:
+  enhancer:
+    root: true
+    function: transformer
+  transformer:
+    uri: github.com/tc-functors/functions/generic-transformer
+    function: loader
+  loader:
+    end: true
+
+pages:
+  my-app:
+    kind: SPA
+    dir: webapp
