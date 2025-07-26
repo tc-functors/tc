@@ -1,4 +1,4 @@
-name: event-filters
+name: example-events
 
 events:
   MyRawEvent:
