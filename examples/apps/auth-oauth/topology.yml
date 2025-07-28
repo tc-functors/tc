@@ -1,0 +1,11 @@
+name: auth-oauth
+
+routes:
+  /callback:
+    edge: true
+    function: authorizer
+
+pages:
+  webapp:
+    dist: .
+    dir: webapp

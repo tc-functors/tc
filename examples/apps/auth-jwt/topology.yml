@@ -1,0 +1,19 @@
+name: example-auth-jwt
+
+
+routes:
+  /auth/register:
+    method: POST
+    function: registrar
+  /auth/login:
+    method: POST
+    function: authenticator
+  /api/ping:
+    method: GET
+    authorizer: authorizer
+    function: ponger
+
+pages:
+  webapp:
+    dist: .
+    dir: webapp

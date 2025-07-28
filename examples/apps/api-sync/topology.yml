@@ -1,4 +1,4 @@
-name: pinger
+name: example-api-sync
 
 routes:
   /api/ping:
