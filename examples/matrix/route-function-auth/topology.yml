@@ -1,8 +1,0 @@
-name: route-auth
-
-routes:
-  /foo:
-    gateway: tc-test
-    method: GET
-    authorizer: '{{namespace}}_authorizer_{{sandbox}}'
-    function: '{{namespace}}_foo_{{sandbox}}'

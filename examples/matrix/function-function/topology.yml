@@ -1,9 +1,0 @@
-name: function-function
-
-functions:
-  foo:
-    uri: ./foo
-    function: bar
-  bar:
-    build:
-      kind: Inline

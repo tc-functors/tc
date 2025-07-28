@@ -1,9 +1,0 @@
-name: route-function
-
-routes:
-  /api/foo:
-    method: GET
-    function: foo
-    cors:
-      methods: ["GET", "POST"]
-      origins: ["*"]

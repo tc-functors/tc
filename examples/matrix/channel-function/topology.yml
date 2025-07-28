@@ -1,5 +1,0 @@
-name: channel-function
-
-channels:
-  my-channel:
-    function: foo
