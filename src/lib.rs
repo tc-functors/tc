@@ -116,8 +116,12 @@ pub struct ComposeOpts {
 }
 
 
-pub async fn compose_root(format: Option<String>) {
-    let root_dir = u::root();
+pub async fn compose_root(dir: Option<String>, format: Option<String>) {
+
+    let root_dir = match dir {
+        Some(d) => d,
+        None => u::pwd()
+    };
     let fmt = u::maybe_string(format, "table");
     let tps = composer::compose_root(&root_dir, true);
     composer::print_topologies(&fmt, tps);

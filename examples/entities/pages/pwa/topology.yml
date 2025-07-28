@@ -1,6 +1,0 @@
-name: pwa
-
-pages:
-  app:
-    kind: PWA
-    dist: '.'

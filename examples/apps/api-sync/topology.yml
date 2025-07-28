@@ -1,4 +1,4 @@
-name: example-api-sync
+name: api-sync
 
 routes:
   /api/ping:

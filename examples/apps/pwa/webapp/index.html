@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Example</title>
+    <meta name="theme-color" content="white"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Hello World">
+    <meta name="msapplication-TileImage" content="images/hello-icon-144.png">
+    <meta name="msapplication-TileColor" content="#FFFFFF">
+    <link rel="apple-touch-icon" href="images/hello-icon-152.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+      body {
+	font-family: sans-serif;
+      }
+
+      /* Make content area fill the entire browser window */
+      html,
+      .fullscreen {
+	display: flex;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+      }
+
+      /* Center the content in the browser window */
+      .container {
+	margin: auto;
+	text-align: center;
+      }
+
+      .title {
+	font-size: 3rem;
+      }
+
+    </style>
+  </head>
+  <body class="fullscreen">
+    <div class="container">
+      <h1 class="title">Example</h1>
+    </div>
+
+    <script>
+      window.onload = () => {
+	'use strict';
+
+	if ('serviceWorker' in navigator) {
+	  navigator.serviceWorker
+            .register('./sw.js');
+	}
+      }
+
+    </script>
+
+
+  </body>
+</html>

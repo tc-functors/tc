@@ -1,4 +1,4 @@
-name: example-file-uploader
+name: file-uploader
 
 routes:
   /api/file:

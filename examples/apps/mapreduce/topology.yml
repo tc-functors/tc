@@ -1,4 +1,4 @@
-name: example-mapreduce
+name: mapreduce
 
 routes:
   /api/start:
