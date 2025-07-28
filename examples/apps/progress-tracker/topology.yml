@@ -1,4 +1,4 @@
-name: job-tracker
+name: example-progress-tracker
 
 events:
   CompleteTask:

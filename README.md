@@ -96,10 +96,6 @@ tc create -s <sandbox> -e <env> --recursive
 
 This feature helps evolve the system and test individual nodes in isolation.
 
-### 6. Isomorphic Topology
-
-The output of `tc compose` is a self-contained, templated topology (or manifest) that can be rendered in any sandbox. The template variables are specific to the provider, sandbox and configuration. When we create (`tc create`) the sandbox with this templated topology, it implicitly resolves it by querying the provider. We can write custom resolvers to resolve these template variables by querying the configured provider (AWS, GCP etc).
-
 ```
 tc compose | tc resolve -s sandbox -e env | tc create
 ```
@@ -179,7 +175,7 @@ The codebase is organized as a Rust workspace with multiple libraries:
 - **Libraries (`lib/`)**:
   - `authorizer`: Authentication and authorization
   - `builder`: Building and packaging functions
-  - `composer`: Compiling topologies
+  - `composer`: Composing topologies
   - `deployer`: Deploying to cloud providers
   - `differ`: Comparing topologies
   - `emulator`: Local emulation

@@ -1,0 +1,42 @@
+name: example-mapreduce
+
+routes:
+  /api/start:
+    method: POST
+
+states:
+  Comment: Example Mapper
+  StartAt: map
+  TimeoutSeconds: 1200
+  States:
+    map-tasks:
+      Type: Map
+      ToleratedFailurePercentage: 100
+      Next: reduce
+      ItemsPath: $
+      Parameters:
+        Index.$: $$.Map.Item.Index
+        Value.$: $$.Map.Item.Value
+      Iterator:
+        StartAt: process
+        States:
+          process:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            OutputPath: $.Payload
+            Parameters:
+              FunctionName: '{{namespace}}_processor_{{sandbox}}'
+              Payload:
+                data.$: $.Value
+            TimeoutSeconds: 900
+            End: true
+
+    reduce:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_reducer_{{sandbox}}'
+        Payload:
+          items.$: $
+      End: true

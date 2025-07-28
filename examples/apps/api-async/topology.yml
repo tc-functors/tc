@@ -1,0 +1,22 @@
+name: example-async-api
+
+routes:
+  /api/ping:
+    method: GET
+    function: ponger
+  /api/messages:
+    method: POST
+    function: processor
+
+events:
+  ProcessedMessage:
+    channel: my-room
+
+channels:
+  my-room:
+    handler: default
+
+pages:
+  webapp:
+    dist: .
+    dir: webapp
