@@ -1,3 +1,3 @@
 
 def handler(event, context):
-  return {}
+    return {'status': 200}

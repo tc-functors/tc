@@ -1,8 +1,15 @@
 name: spa
 
 pages:
-  app:
+  app1:
+    kind: SPA
     dist: './dist'
+    dir: svelte
     build:
       - npm install --quiet --no-audit
       - npm run build
+
+  app2:
+    kind: SPA
+    dist: .
+    dir: mithril
