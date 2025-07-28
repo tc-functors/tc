@@ -1,4 +1,4 @@
-name: example-todo
+name: todo
 
 mutations:
   authorizer: "{{namespace}}_authorizer_{{sandbox}}"

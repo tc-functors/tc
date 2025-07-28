@@ -1,4 +1,4 @@
-name: example-async-api
+name: api-async
 
 routes:
   /api/ping:

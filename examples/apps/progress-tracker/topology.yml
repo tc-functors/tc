@@ -1,4 +1,4 @@
-name: example-progress-tracker
+name: progress-tracker
 
 events:
   CompleteTask:

@@ -77,25 +77,39 @@ pub fn compose(dir: &str, recursive: bool) -> Topology {
 
 pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
-    let spec = TopologySpec::new(&f);
-    let given_root_dirs = match &spec.nodes.dirs {
-        Some(dirs) => dirs,
-        None => &list_dirs(dir),
-    };
-    let mut h: HashMap<String, Topology> = HashMap::new();
-    if given_root_dirs.is_empty() {
-        let topology = compose(&u::pwd(), false);
-        h.insert(topology.namespace.clone(), topology);
-    } else {
-        for d in given_root_dirs {
-            tracing::debug!("Given root: {}", &d);
-            let dir = u::absolutize(&u::pwd(), &d);
-            let t = compose(&dir, recursive);
-            h.insert(t.namespace.to_string(), t);
+    if u::file_exists(&f) {
+        let spec = TopologySpec::new(&f);
+        let given_root_dirs = match &spec.nodes.dirs {
+            Some(dirs) => dirs,
+            None => &list_dirs(dir),
+        };
+        let mut h: HashMap<String, Topology> = HashMap::new();
+        if given_root_dirs.is_empty() {
+            let topology = compose(&u::pwd(), false);
+            h.insert(topology.namespace.clone(), topology);
+        } else {
+            for d in given_root_dirs {
+                tracing::debug!("Given root: {}", &d);
+                let dir = u::absolutize(&u::pwd(), &d);
+                let t = compose(&dir, recursive);
+                h.insert(t.namespace.to_string(), t);
+            }
         }
+        tracing::debug!("Compilation completed");
+        h
+    } else {
+        let dirs = u::list_dirs(dir);
+        let mut h: HashMap<String, Topology> = HashMap::new();
+        for d in dirs {
+            let f = format!("{}/topology.yml", d);
+            println!("- {}", &f);
+            if u::file_exists(&f) {
+                let topology = compose(&d, recursive);
+                h.insert(topology.namespace.clone(), topology);
+            }
+        }
+        h
     }
-    tracing::debug!("Compilation completed");
-    h
 }
 
 pub fn root_namespaces(dir: &str) -> HashMap<String, String> {

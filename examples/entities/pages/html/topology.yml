@@ -1,5 +1,0 @@
-name: html
-
-pages:
-  my-app:
-    dist: "."

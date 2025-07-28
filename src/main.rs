@@ -239,6 +239,8 @@ pub struct ComposeArgs {
     root: bool,
     #[arg(long, short = 'c')]
     entity: Option<String>,
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
     #[arg(long, action, short = 't')]
@@ -581,6 +583,7 @@ async fn compose(args: ComposeArgs) {
         format,
         trace,
         root,
+        dir,
         ..
     } = args;
 
@@ -593,7 +596,7 @@ async fn compose(args: ComposeArgs) {
         format: format.clone(),
     };
     if root {
-        tc::compose_root(format).await;
+        tc::compose_root(dir, format).await;
     } else {
         tc::compose(opts).await;
     }

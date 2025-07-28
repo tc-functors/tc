@@ -1,4 +1,4 @@
-name: example-chat
+name: chat
 
 channels:
   my-room:
