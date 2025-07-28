@@ -1,9 +1,0 @@
-name: route-event
-
-routes:
-  /api/foo:
-    event: MyEvent
-
-events:
-  MyEvent:
-    function: foo
