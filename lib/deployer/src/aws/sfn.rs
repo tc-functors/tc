@@ -168,8 +168,16 @@ impl StateMachine {
         self.client
             .update_state_machine()
             .state_machine_arn(arn.to_string())
-            .definition(self.definition)
             .role_arn(self.role_arn)
+            .send()
+            .await
+            .unwrap();
+
+
+        self.client
+            .update_state_machine()
+            .state_machine_arn(arn.to_string())
+            .definition(self.definition)
             .tracing_configuration(tracing)
             .send()
             .await
