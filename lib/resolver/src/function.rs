@@ -291,22 +291,14 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     r
 }
 
-pub async fn resolve(ctx: &Context, topology: &Topology, dirty: bool) -> HashMap<String, Function> {
+pub async fn resolve(ctx: &Context, topology: &Topology, _dirty: bool) -> HashMap<String, Function> {
     let fns = &topology.functions;
     let mut functions: HashMap<String, Function> = HashMap::new();
 
     for (dir, f) in fns {
-        if dirty {
-            if !f.skip {
-                let mut fu: Function = f.clone();
-                fu.runtime = resolve_runtime(ctx, &f.runtime).await;
-                functions.insert(dir.to_string(), fu.clone());
-            }
-        } else {
-            let mut fu: Function = f.clone();
-            fu.runtime = resolve_runtime(ctx, &f.runtime).await;
-            functions.insert(dir.to_string(), fu.clone());
-        }
+        let mut fu: Function = f.clone();
+        fu.runtime = resolve_runtime(ctx, &f.runtime).await;
+        functions.insert(dir.to_string(), fu.clone());
     }
     functions
 }
