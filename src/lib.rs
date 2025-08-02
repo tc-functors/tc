@@ -375,21 +375,6 @@ pub async fn invoke(auth: Auth, opts: InvokeOptions) {
     }
 }
 
-pub async fn emulate(auth: Auth, dev: bool, shell: bool) {
-    let kind = composer::kind_of();
-    match kind.as_ref() {
-        "step-function" => emulator::sfn().await,
-        "function" => {
-            if shell {
-                emulator::shell(&auth, dev).await;
-            } else {
-                emulator::lambda(&auth, dev).await;
-            }
-        }
-        _ => emulator::lambda(&auth, dev).await,
-    }
-}
-
 pub async fn tag(
     prefix: Option<String>,
     next: Option<String>,

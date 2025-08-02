@@ -55,8 +55,6 @@ enum Cmd {
     /// Freeze a sandbox and make it immutable
     #[clap(hide = true)]
     Freeze(FreezeArgs),
-    /// Emulate Runtime environments
-    Emulate(EmulateArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
     /// Promote assets between sandboxes
@@ -406,18 +404,6 @@ pub struct ChangelogArgs {
 }
 
 #[derive(Debug, Args)]
-pub struct EmulateArgs {
-    #[arg(long, short = 'e')]
-    profile: Option<String>,
-    #[arg(long, action, short = 's')]
-    shell: bool,
-    #[arg(long, action, short = 'd')]
-    dev: bool,
-    #[arg(long, action, short = 't')]
-    trace: bool,
-}
-
-#[derive(Debug, Args)]
 pub struct RouteArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
@@ -710,19 +696,6 @@ async fn unfreeze(args: UnFreezeArgs) {
     tc::unfreeze(env, service, sandbox).await;
 }
 
-async fn emulate(args: EmulateArgs) {
-    let EmulateArgs {
-        profile,
-        dev,
-        shell,
-        trace,
-        ..
-    } = args;
-    init_tracing(trace);
-    let env = tc::init(profile, None).await;
-    tc::emulate(env, dev, shell).await;
-}
-
 async fn tag(args: TagArgs) {
     let TagArgs {
         service,
@@ -873,7 +846,6 @@ async fn run() {
         Cmd::Resolve(args) => resolve(args).await,
         Cmd::Create(args) => create(args).await,
         Cmd::Delete(args) => delete(args).await,
-        Cmd::Emulate(args) => emulate(args).await,
         Cmd::Freeze(args) => freeze(args).await,
         Cmd::Invoke(args) => invoke(args).await,
         Cmd::Prune(args) => prune(args).await,

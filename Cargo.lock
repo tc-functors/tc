@@ -2009,28 +2009,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "differ"
-version = "0.8.99"
-dependencies = [
- "authorizer",
- "aws-sdk-apigatewayv2",
- "aws-sdk-appsync",
- "aws-sdk-eventbridge",
- "aws-sdk-lambda",
- "aws-sdk-sfn",
- "colored",
- "composer",
- "kit",
- "log",
- "resolver",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
- "tabled 0.10.0",
- "tokio",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2153,22 +2131,6 @@ dependencies = [
  "sec1",
  "subtle",
  "zeroize",
-]
-
-[[package]]
-name = "emulator"
-version = "0.8.99"
-dependencies = [
- "anyhow",
- "authorizer",
- "aws-config",
- "aws-sdk-lambda",
- "colored",
- "composer",
- "kit",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
 ]
 
 [[package]]
@@ -4697,9 +4659,7 @@ dependencies = [
  "colored",
  "composer",
  "deployer",
- "differ",
  "doku",
- "emulator",
  "invoker",
  "kit",
  "log",
