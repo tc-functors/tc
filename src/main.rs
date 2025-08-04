@@ -44,6 +44,7 @@ enum Cmd {
     /// Compose a Topology
     Compose(ComposeArgs),
     /// Show config
+    #[clap(hide = true)]
     Config(DefaultArgs),
     /// Create a sandboxed topology
     Create(CreateArgs),
@@ -53,19 +54,16 @@ enum Cmd {
     Freeze(FreezeArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
-    /// Promote assets between sandboxes
-     #[clap(hide = true)]
-    Promote(PromoteArgs),
-    /// Promote assets between sandboxes
+    /// Prune all resources in given sandbox
     Prune(PruneArgs),
-    /// Resolve a topology from functions, events, states description
+    /// Resolve a topology
     Resolve(ResolveArgs),
-    /// Route events to functors
+    /// Route traffic to the given sandbox
     #[clap(hide = true)]
     Route(RouteArgs),
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
-    /// Run unit tests for functions in the topology dir
+    /// Run tests in topology
     Test(TestArgs),
     /// Create semver tags scoped by a topology
     Tag(TagArgs),
@@ -190,6 +188,8 @@ pub struct BuildArgs {
     image: Option<String>,
     #[arg(long, short = 'l')]
     layer: Option<String>,
+    #[arg(long, short = 'v')]
+    version: Option<String>,
     #[arg(long, action)]
     clean: bool,
     #[arg(long, action, short = 'r')]
@@ -198,6 +198,8 @@ pub struct BuildArgs {
     trace: bool,
     #[arg(long, action, short = 'p')]
     publish: bool,
+    #[arg(long, action)]
+    promote: bool,
     #[arg(long, action)]
     shell: bool,
     #[arg(long, action, short = 's', alias = "sync-to-local")]
@@ -463,6 +465,8 @@ async fn build(args: BuildArgs) {
         image,
         layer,
         publish,
+        promote,
+        version,
         profile,
         parallel,
         sync,
@@ -483,6 +487,8 @@ async fn build(args: BuildArgs) {
         sync: sync,
         publish: publish,
         parallel: parallel,
+        promote: promote,
+        version: version,
         remote: remote,
         shell: shell,
     };
@@ -623,21 +629,6 @@ async fn invoke(args: InvokeArgs) {
 async fn upgrade(args: UpgradeArgs) {
     let UpgradeArgs { version, .. } = args;
     tc::upgrade(version).await
-}
-
-async fn promote(args: PromoteArgs) {
-    let PromoteArgs {
-        profile,
-        name,
-        version,
-        trace,
-        ..
-    } = args;
-
-    init_tracing(trace);
-
-    let env = tc::init(profile, None).await;
-    tc::promote(env, name, version).await;
 }
 
 async fn route(args: RouteArgs) {
@@ -826,7 +817,6 @@ async fn run() {
         Cmd::Freeze(args) => freeze(args).await,
         Cmd::Invoke(args) => invoke(args).await,
         Cmd::Prune(args) => prune(args).await,
-        Cmd::Promote(args) => promote(args).await,
         Cmd::Route(args) => route(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,
         Cmd::Tag(args) => tag(args).await,
