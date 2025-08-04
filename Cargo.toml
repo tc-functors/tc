@@ -33,6 +33,9 @@ tester = { path = "lib/tester" }
 releaser = { path = "lib/releaser" }
 snapshotter = { path = "lib/snapshotter" }
 pruner = { path = "lib/pruner" }
+tagger = { path = "lib/tagger" }
+notifier = { path = "lib/notifier" }
+router = { path = "lib/router" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -52,7 +55,10 @@ members = [
    "lib/tester",
    "lib/releaser",
    "lib/snapshotter",
-   "lib/pruner"
+   "lib/pruner",
+   "lib/tagger",
+   "lib/notifier",
+   "lib/router"
 ]
 
 [profile.release]

@@ -70,3 +70,9 @@ pub fn between(prefix: &str, versions: Option<String>) {
         _ => println!(""),
     }
 }
+
+pub fn generate(from_tag: &str, to_tag: &str) -> String {
+    let from_sha = git::tag_revision(from_tag);
+    let to_sha = git::tag_revision(to_tag);
+    git::changelog(&from_sha, &to_sha)
+}

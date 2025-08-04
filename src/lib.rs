@@ -189,7 +189,7 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
         "Deployed `{}` to *{}*::{}_{}",
         tag, &auth.name, namespace, &sandbox
     );
-    releaser::notify(&namespace, &msg).await;
+    notifier::notify(&namespace, &msg).await;
     if config.ci.update_metadata {
         let profile = config.aws.lambda.layers_profile.clone();
         let centralized = auth
@@ -388,7 +388,7 @@ pub async fn tag(
     };
     let next = u::maybe_string(next, "patch");
     let suffix = u::maybe_string(suffix, "default");
-    releaser::create_tag(&next, &prefix, &suffix, push, dry_run).await
+    tagger::create_tag(&next, &prefix, &suffix, push, dry_run).await
 }
 
 pub async fn route(
@@ -401,25 +401,27 @@ pub async fn route(
     let event = u::maybe_string(event, "default");
     let sandbox = resolver::maybe_sandbox(sandbox);
     match rule {
-        Some(r) => releaser::route(&auth, &event, &service, &sandbox, &r).await,
+        Some(r) => router::route(&auth, &event, &service, &sandbox, &r).await,
         None => println!("Rule not specified"),
     }
 }
 
-pub async fn freeze(auth: Auth, service: Option<String>, sandbox: String) {
-    let service = u::maybe_string(service, &composer::topology_name(&u::pwd()));
-    let name = format!("{}_{}", &service, &sandbox);
-    releaser::freeze(&auth, &name).await;
+pub async fn freeze(auth: Auth, sandbox: Option<String>) {
+    let topology = composer::compose(&u::pwd(), true);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    let topology = resolver::render(&auth, &sandbox, &topology).await;
+    deployer::freeze(&auth, &topology).await;
     let msg = format!("*{}*::{} is frozen", &auth.name, sandbox);
-    releaser::notify(&service, &msg).await
+    notifier::notify(&topology.namespace, &msg).await;
 }
 
-pub async fn unfreeze(auth: Auth, service: Option<String>, sandbox: String) {
-    let service = u::maybe_string(service, &composer::topology_name(&u::pwd()));
-    let name = format!("{}_{}", &service, &sandbox);
-    releaser::unfreeze(&auth, &name).await;
-    let msg = format!("{} is now unfrozen", &name);
-    releaser::notify(&service, &msg).await;
+pub async fn unfreeze(auth: Auth, sandbox: Option<String>) {
+    let topology = composer::compose(&u::pwd(), true);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    let topology = resolver::render(&auth, &sandbox, &topology).await;
+    deployer::unfreeze(&auth, &topology).await;
+    let msg = format!("*{}*::{} is unfrozen", &auth.name, sandbox);
+    notifier::notify(&topology.namespace, &msg).await
 }
 
 pub async fn upgrade(version: Option<String>) {
@@ -450,20 +452,9 @@ pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind:
     let namespace = composer::topology_name(&dir);
     let service = u::maybe_string(service, &namespace);
     if unwind {
-        releaser::unwind(&service);
+        tagger::unwind(&service);
     } else {
         releaser::ci::release(&service, &suffix).await
-    }
-}
-
-pub async fn ci_upgrade(version: Option<String>) {
-    let repo = "tc";
-    let maybe_release_id = releaser::get_release_id(&repo, version).await;
-    match maybe_release_id {
-        Some(id) => {
-            releaser::ci::update_var("TC_RELEASE_ID_TEST", &id).await;
-        }
-        None => println!("No release id found"),
     }
 }
 
@@ -563,14 +554,14 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
             if is_root {
                 let namespaces = composer::root_namespaces(&dir);
                 for (_, namespace) in namespaces {
-                    let version = releaser::find_version_history(&namespace, &s).await;
+                    let version = tagger::find_version_history(&namespace, &s).await;
                     if let Some(v) = version {
                         println!("{},{},{}", &s, &namespace, &v);
                     }
                 }
             }
         }
-        None => releaser::changelog(&namespace, between, verbose),
+        None => tagger::changelog(&namespace, between, verbose),
     }
 }
 
