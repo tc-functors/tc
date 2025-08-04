@@ -92,13 +92,6 @@ pub fn push_tag(tag: &str) {
     println!("{}", out);
 }
 
-pub fn current_repo() -> String {
-    sh(
-        "basename -s .git `git config --get remote.origin.url`",
-        &pwd(),
-    )
-}
-
 pub fn list_tags(prefix: &str) -> Vec<String> {
     let cmd = format!(
         "git log --pretty=format:'%d %s' --abbrev-commit --tags={}-*  --no-walk",

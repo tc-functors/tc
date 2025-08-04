@@ -301,6 +301,17 @@ async fn delete_component(auth: &Auth, topology: &Topology, entity: Entity, comp
 
 // pub interfaces
 
+pub async fn freeze(auth: &Auth, topology: &Topology) {
+    let Topology { fqn, .. }  = topology;
+    state::freeze(auth, fqn).await;
+
+}
+
+pub async fn unfreeze(auth: &Auth, topology: &Topology) {
+    let Topology { fqn, .. }  = topology;
+    state::unfreeze(auth, fqn).await;
+}
+
 pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
     match maybe_entity {
         Some(e) => {

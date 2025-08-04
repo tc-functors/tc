@@ -35,9 +35,6 @@ enum Cmd {
     /// Trigger release via CI
     #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
-    /// Upgrade CI
-    #[clap(name = "ci-upgrade", hide = true)]
-    UpgradeCI(UpgradeArgs),
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
@@ -53,12 +50,11 @@ enum Cmd {
     /// Delete a sandboxed topology
     Delete(DeleteArgs),
     /// Freeze a sandbox and make it immutable
-    #[clap(hide = true)]
     Freeze(FreezeArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
     /// Promote assets between sandboxes
-    #[clap(hide = true)]
+     #[clap(hide = true)]
     Promote(PromoteArgs),
     /// Promote assets between sandboxes
     Prune(PruneArgs),
@@ -70,13 +66,10 @@ enum Cmd {
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
     /// Run unit tests for functions in the topology dir
-    #[clap(hide = true)]
     Test(TestArgs),
     /// Create semver tags scoped by a topology
-    #[clap(hide = true)]
     Tag(TagArgs),
     /// Unfreeze a sandbox and make it mutable
-    #[clap(hide = true)]
     Unfreeze(UnFreezeArgs),
     /// Update entity and components
     Update(UpdateArgs),
@@ -423,28 +416,20 @@ pub struct RouteArgs {
 
 #[derive(Debug, Args)]
 pub struct FreezeArgs {
-    #[arg(long, short = 'd')]
-    service: Option<String>,
     #[arg(long, short = 'e')]
     profile: Option<String>,
     #[arg(long, short = 's')]
-    sandbox: String,
-    #[arg(long, action)]
-    all: bool,
+    sandbox: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct UnFreezeArgs {
-    #[arg(long, short = 'd')]
-    service: Option<String>,
     #[arg(long, short = 'e')]
     profile: Option<String>,
     #[arg(long, short = 's')]
-    sandbox: String,
-    #[arg(long, action)]
-    all: bool,
+    sandbox: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -673,27 +658,25 @@ async fn route(args: RouteArgs) {
 async fn freeze(args: FreezeArgs) {
     let FreezeArgs {
         profile,
-        service,
         sandbox,
         trace,
         ..
     } = args;
     init_tracing(trace);
     let env = tc::init(profile, None).await;
-    tc::freeze(env, service, sandbox).await;
+    tc::freeze(env, sandbox).await;
 }
 
 async fn unfreeze(args: UnFreezeArgs) {
     let UnFreezeArgs {
         profile,
-        service,
         sandbox,
         trace,
         ..
     } = args;
     init_tracing(trace);
     let env = tc::init(profile, None).await;
-    tc::unfreeze(env, service, sandbox).await;
+    tc::unfreeze(env, sandbox).await;
 }
 
 async fn tag(args: TagArgs) {
@@ -732,12 +715,6 @@ async fn ci_release(args: ReleaseArgs) {
     } = args;
 
     tc::ci_release(topology, suffix, unwind).await;
-}
-
-async fn ci_upgrade(args: UpgradeArgs) {
-    let UpgradeArgs { version, .. } = args;
-
-    tc::ci_upgrade(version).await;
 }
 
 async fn cache(args: CacheArgs) {
@@ -860,7 +837,6 @@ async fn run() {
         Cmd::Changelog(args) => changelog(args).await,
         Cmd::Version(..) => version().await,
         Cmd::Release(args) => ci_release(args).await,
-        Cmd::UpgradeCI(args) => ci_upgrade(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,
     }
 }

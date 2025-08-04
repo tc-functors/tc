@@ -51,7 +51,7 @@ struct Manifest {
 
 fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
     if !version.is_empty() {
-        u::split_lines(&releaser::changelogs_since_last(&namespace, &version))
+        u::split_lines(&tagger::changelogs_since_last(&namespace, &version))
             .iter()
             .map(|s| s.to_string())
             .collect()

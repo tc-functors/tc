@@ -297,3 +297,36 @@ pub async fn update_tags(client: &Client, arn: &str, tags: HashMap<String, Strin
         .await?;
     Ok(())
 }
+
+pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, String>, Error> {
+    let res = client
+        .list_tags_for_resource()
+        .resource_arn(arn.to_string())
+        .send()
+        .await;
+
+    match res {
+        Ok(r) => match r.tags {
+            Some(xs) => {
+                let mut h: HashMap<String, String> = HashMap::new();
+                for tag in xs {
+                    let k = tag.key().unwrap().to_string();
+                    let v = tag.value().unwrap().to_string();
+                    h.insert(k, v);
+                }
+                Ok(h)
+            }
+            _ => Ok(HashMap::new()),
+        },
+
+        Err(_) => Ok(HashMap::new()),
+    }
+}
+
+pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
+    let tags = list_tags(&client, arn).await.unwrap();
+    match tags.get(&tag) {
+        Some(v) => v.to_string(),
+        None => "".to_string(),
+    }
+}

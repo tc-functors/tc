@@ -1,8 +1,6 @@
-use crate::{
-    git,
-    notifier,
-    notifier::RichText,
-};
+mod git;
+mod changelog;
+use notifier::RichText;
 use kit as u;
 use kit::*;
 
@@ -37,7 +35,7 @@ fn add_suffix(v: &str, suffix: &str) -> String {
     format!("{}.{}.{}-{}", next.major, next.minor, next.patch, suffix)
 }
 
-pub fn dec_minor(v: &str) -> String {
+fn dec_minor(v: &str) -> String {
     let version = git::maybe_semver(v);
     let next = version.clone();
     if next.minor > 0 {
@@ -52,7 +50,7 @@ pub fn dec_minor(v: &str) -> String {
     }
 }
 
-pub fn current_stable_minor(v: &str) -> String {
+fn current_stable_minor(v: &str) -> String {
     let version = git::maybe_semver(v);
     let next = version.clone();
     if next.minor > 0 {
@@ -62,13 +60,7 @@ pub fn current_stable_minor(v: &str) -> String {
     }
 }
 
-fn changelog(from_tag: &str, to_tag: &str) -> String {
-    let from_sha = git::tag_revision(from_tag);
-    let to_sha = git::tag_revision(to_tag);
-    git::changelog(&from_sha, &to_sha)
-}
-
-pub fn changelog_since_last(prefix: &str, version: &str, has_suffix: bool) -> String {
+fn changelog_since_last(prefix: &str, version: &str, has_suffix: bool) -> String {
     let prev_ver;
     if has_suffix {
         prev_ver = current_stable_minor(version);
@@ -79,17 +71,8 @@ pub fn changelog_since_last(prefix: &str, version: &str, has_suffix: bool) -> St
     println!("{}", prev_ver);
     let curr_tag = format!("{}-{}", prefix, version);
     let prev_tag = format!("{}-{}", prefix, prev_ver);
-    changelog(&prev_tag, &curr_tag)
+    changelog::generate(&prev_tag, &curr_tag)
 }
-
-// pub fn changelogs_since_last(prefix: &str, version: &str) -> String {
-//     let prev_ver = dec_minor(version);
-//     let curr_tag = format!("{}-{}", prefix, version);
-//     let prev_tag = format!("{}-{}", prefix, prev_ver);
-//     let from_sha = git::tag_revision(&prev_tag);
-//     let to_sha = git::tag_revision(&curr_tag);
-//     git::changelogs(&from_sha, &to_sha)
-// }
 
 // git
 
@@ -170,7 +153,7 @@ fn fmt_msg(prefix: &str, version: &str, parent: &str, changes: &str) -> String {
     serde_json::to_string(&rt).unwrap()
 }
 
-pub async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
+async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
     let Tag {
         parent,
         prefix,
@@ -194,7 +177,7 @@ pub async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
     }
 }
 
-pub async fn create(next: &str, tag: Tag, push: bool, has_suffix: bool) {
+async fn create(next: &str, tag: Tag, push: bool, has_suffix: bool) {
     let Tag {
         parent,
         prefix,
@@ -250,9 +233,51 @@ pub async fn create(next: &str, tag: Tag, push: bool, has_suffix: bool) {
     }
 }
 
-pub fn delete_current_minor(prefix: &str, version: &str) {
+fn delete_current_minor(prefix: &str, version: &str) {
     let stable_version = current_stable_minor(version);
     let tag = format!("{}-{}", &prefix, &stable_version);
     let cmd = format!("git tag -d {} && git push --tag origin :{}", &tag, &tag);
     u::runcmd_stream(&cmd, &u::pwd());
+}
+
+
+// pub
+
+pub async fn create_tag(next: &str, prefix: &str, suffix: &str, push: bool, is_dry_run: bool) {
+    let tag = next_tag(&prefix, &next, &suffix);
+    let has_suffix = suffix != "default";
+    if is_dry_run {
+        println!("dry: {:?}", tag);
+        dry_run(&next, tag, has_suffix).await;
+    } else {
+        create(&next, tag, push, has_suffix).await;
+    }
+}
+
+pub fn unwind(prefix: &str) {
+    git::fetch_tags();
+    let version = git::latest_version(prefix);
+    delete_current_minor(prefix, &version);
+}
+
+pub fn changelog(namespace: &str, between: Option<String>, verbose: bool) {
+    if u::option_exists(between.clone()) {
+        changelog::between(namespace, between)
+    } else {
+        changelog::list(namespace, verbose);
+    }
+}
+
+pub fn changelogs_since_last(prefix: &str, version: &str) -> String {
+    let prev_ver = dec_minor(version);
+    let curr_tag = format!("{}-{}", prefix, version);
+    let prev_tag = format!("{}-{}", prefix, prev_ver);
+    let from_sha = git::tag_revision(&prev_tag);
+    let to_sha = git::tag_revision(&curr_tag);
+    git::changelogs(&from_sha, &to_sha)
+}
+
+pub async fn find_version_history(namespace: &str, term: &str) -> Option<String> {
+    let version = changelog::find_version(namespace, term);
+    version
 }

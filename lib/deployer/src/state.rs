@@ -5,6 +5,8 @@ use crate::aws::{
     sfn,
     sfn::StateMachine,
 };
+use kit::*;
+use kit as u;
 use authorizer::Auth;
 use composer::Flow;
 use std::collections::HashMap;
@@ -155,5 +157,28 @@ pub async fn update(auth: &Auth, flow: &Flow, tags: &HashMap<String, String>, co
         "tags" => update_tags(auth, &flow.name, tags).await,
         "logs" => update_logs(&auth, &flow.arn, flow).await,
         _ => (),
+    }
+}
+
+pub async fn freeze(auth: &Auth, fqn: &str) {
+    let client = sfn::make_client(auth).await;
+    let arn = auth.sfn_arn(fqn);
+    let version = sfn::get_tag(&client, &arn, s!("version")).await;
+    if &version != "0.0.1" && !&version.is_empty() {
+        println!("Unfreezing {} ({})", fqn, version);
+        let kv = u::kv("freeze", "true");
+        let _ = sfn::update_tags(&client, &arn, kv).await;
+    }
+}
+
+
+pub async fn unfreeze(auth: &Auth, fqn: &str) {
+    let client = sfn::make_client(auth).await;
+    let arn = auth.sfn_arn(fqn);
+    let version = sfn::get_tag(&client, &arn, s!("version")).await;
+    if &version != "0.0.1" && !&version.is_empty() {
+        println!("Unfreezing {} ({})", fqn, version);
+        let kv = u::kv("freeze", "true");
+        let _ = sfn::update_tags(&client, &arn, kv).await;
     }
 }
