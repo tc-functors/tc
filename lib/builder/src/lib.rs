@@ -196,10 +196,9 @@ pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
     }
 }
 
-pub async fn promote(auth: &Auth, name: Option<String>, dir: &str, version: Option<String>) {
+pub async fn promote(auth: &Auth, name: &str, dir: &str, version: Option<String>) {
     let lang = &composer::guess_runtime(dir);
-    let layer_name = u::maybe_string(name.clone(), u::basedir(dir));
-    layer::promote(auth, &layer_name, &lang.to_str(), version).await;
+    layer::promote(auth, name, &lang.to_str(), version).await;
 }
 
 pub async fn shell(auth: &Auth, dir: &str) {

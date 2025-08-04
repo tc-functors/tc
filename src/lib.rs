@@ -25,11 +25,13 @@ pub struct BuildOpts {
     pub clean: bool,
     pub publish: bool,
     pub remote: bool,
+    pub promote: bool,
     pub sync: bool,
     pub shell: bool,
     pub kind: Option<String>,
     pub image: Option<String>,
     pub layer: Option<String>,
+    pub version: Option<String>
 }
 
 async fn init_centralized_auth() -> Auth {
@@ -53,6 +55,8 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
         publish,
         shell,
         parallel,
+        promote,
+        version,
         ..
     } = opts;
 
@@ -79,6 +83,13 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
         } else if shell {
             let auth = init_centralized_auth().await;
             builder::shell(&auth, dir).await;
+        } else if promote {
+            let auth = init_centralized_auth().await;
+            if let Some(name) = layer {
+                builder::promote(&auth, &name, dir, version).await;
+            } else {
+                println!("Please specify layer name to promote: tc build --layer NAME [--version VERSION]");
+            }
         } else {
             let maybe_fn = composer::current_function(dir);
             match maybe_fn {
@@ -93,11 +104,6 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
             }
         }
     }
-}
-
-pub async fn promote(auth: Auth, name: Option<String>, version: Option<String>) {
-    let dir = &u::pwd();
-    builder::promote(&auth, name, dir, version).await;
 }
 
 pub async fn test() {
