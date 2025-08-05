@@ -39,7 +39,6 @@ enum Cmd {
     #[clap(hide = true)]
     Cache(CacheArgs),
     /// changelog search
-    #[clap(hide = true)]
     Changelog(ChangelogArgs),
     /// Compose a Topology
     Compose(ComposeArgs),
@@ -59,7 +58,6 @@ enum Cmd {
     /// Resolve a topology
     Resolve(ResolveArgs),
     /// Route traffic to the given sandbox
-    #[clap(hide = true)]
     Route(RouteArgs),
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
