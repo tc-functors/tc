@@ -58,6 +58,11 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
     println!("Building page {}", name);
     build_page(dir, name, build);
 
+    if !u::path_exists(&u::pwd(), dist) {
+        println!("Dist directory not found, aborting");
+        return;
+    }
+
     let s3_client = s3::make_client(auth).await;
 
     s3::find_or_create_bucket(&s3_client, bucket).await;
@@ -121,6 +126,11 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>) {
 
         println!("Building page {}", name);
         build_page(dir, name, build);
+
+        if !u::path_exists(&u::pwd(), dist) {
+            println!("Dist directory not found, aborting");
+                return;
+        }
 
         let s3_client = s3::make_client(auth).await;
 
