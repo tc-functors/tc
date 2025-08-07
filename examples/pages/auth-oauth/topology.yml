@@ -7,5 +7,5 @@ routes:
 
 pages:
   webapp:
-    dist: .
+    dist: webapp
     dir: webapp

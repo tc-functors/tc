@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <title>Feed me!</title>
+  </head>
+  <body>
+    <h1>Welcome to Feed me!</h1>
+
+    <!-- These scripts don't render anything immediately -->
+    <!-- Instead they attach entry-point functions to `window` -->
+    <script src="https://browse.example.com/bundle.js"></script>
+    <script src="https://order.example.com/bundle.js"></script>
+    <script src="https://profile.example.com/bundle.js"></script>
+
+    <div id="micro-frontend-root"></div>
+
+    <script type="text/javascript">
+      // These global functions are attached to window by the above scripts
+      const microFrontendsByRoute = {
+        '/': window.renderBrowseRestaurants,
+        '/order-food': window.renderOrderFood,
+        '/user-profile': window.renderUserProfile,
+      };
+      const renderFunction = microFrontendsByRoute[window.location.pathname];
+
+      // Having determined the entry-point function, we now call it,
+      // giving it the ID of the element where it should render itself
+      renderFunction('micro-frontend-root');
+    </script>
+  </body>
+</html>
