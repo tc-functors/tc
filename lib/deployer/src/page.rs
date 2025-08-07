@@ -149,7 +149,13 @@ pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str)
                 build_page(&page.dir, name, &page.build);
             }
         }
-        _ => update_code(auth, pages).await,
+        _ => {
+            if let Some(page) = pages.get(component) {
+                create_page(auth, component, page).await;
+            } else {
+                update_code(auth, pages).await;
+            }
+        }
     }
 }
 

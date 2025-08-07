@@ -1,6 +1,0 @@
-name: pwa
-
-pages:
-  webapp:
-    dist: .
-    dir: webapp

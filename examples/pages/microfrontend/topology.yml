@@ -1,0 +1,14 @@
+name: microfrontend
+
+pages:
+  dist: .
+  nodes:
+    foo:
+      route: /foo
+      dir: foo
+    bar:
+      route: /bar
+      dir: bar
+    baz:
+      route: /baz
+      dir: baz
