@@ -5,6 +5,7 @@ mod json;
 mod pprint;
 mod text;
 mod time;
+mod github;
 
 pub use self::{
     core::*,
@@ -14,6 +15,7 @@ pub use self::{
     pprint::*,
     text::*,
     time::*,
+    github::*
 };
 
 #[macro_export]

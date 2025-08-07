@@ -201,7 +201,7 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
         let centralized = auth
             .assume(profile.clone(), config.role_to_assume(profile))
             .await;
-        releaser::ci::update_metadata(
+        releaser::update_metadata(
             &centralized,
             &sandbox,
             &namespace,
@@ -258,7 +258,7 @@ pub async fn create(
         None => {
             let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
-            releaser::guard(&sandbox);
+            deployer::guard(&sandbox);
             let dir = u::pwd();
             println!("Compiling topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
@@ -296,7 +296,7 @@ pub async fn update(
     let sandbox = resolver::maybe_sandbox(sandbox);
     let dirty = true;
 
-    releaser::guard(&sandbox);
+    deployer::guard(&sandbox);
 
     let start = Instant::now();
 
@@ -327,7 +327,7 @@ pub async fn delete(
     cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    releaser::guard(&sandbox);
+    deployer::guard(&sandbox);
 
     let start = Instant::now();
     println!("Compiling topology...");
@@ -431,7 +431,7 @@ pub async fn unfreeze(auth: Auth, sandbox: Option<String>) {
 }
 
 pub async fn upgrade(version: Option<String>) {
-    releaser::self_upgrade("tc", version).await
+    u::self_upgrade("tc", version).await
 }
 
 // ci
@@ -449,7 +449,7 @@ pub async fn ci_deploy(
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let version = u::maybe_string(version, &current_version);
-    releaser::ci::deploy(&env, &name, &sandbox, &version).await;
+    releaser::deploy(&env, &name, &sandbox, &version).await;
 }
 
 pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind: bool) {
@@ -460,7 +460,7 @@ pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind:
     if unwind {
         tagger::unwind(&service);
     } else {
-        releaser::ci::release(&service, &suffix).await
+        releaser::release(&service, &suffix).await
     }
 }
 
@@ -584,7 +584,7 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
             if dry_run {
                 pruner::list(auth, &sbox, filter).await;
             } else {
-                releaser::guard(&sbox);
+                deployer::guard(&sbox);
                 pruner::prune(auth, &sbox, filter).await;
             }
         }
