@@ -90,7 +90,6 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
     println!("Configuring page {} - creating distribution", name);
     let dist_id = cloudfront::create_or_update_distribution(&client, namespace, dist_config).await;
 
-    println!("Configuring page {} - updating bucket policy", name);
     let existing_policy = s3::get_bucket_policy(&s3_client, bucket).await;
     let policy = augment_policy(existing_policy, bucket_policy.clone(), &dist_id);
     s3::update_bucket_policy(&s3_client, bucket, &policy).await;

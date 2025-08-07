@@ -12,6 +12,8 @@ use composer::{
     spec::function::Provider,
 };
 use std::collections::HashMap;
+use tabled::Tabled;
+use kit as u;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
     let config = ConfigSpec::new(None);
@@ -296,4 +298,53 @@ pub async fn update(auth: &Auth, functions: &HashMap<String, Function>, componen
         "roles" => (),
         _ => update_dir(&auth, functions, component).await,
     }
+}
+
+
+// list
+
+#[derive(Tabled, Clone, Debug, PartialEq)]
+pub struct Record {
+    pub name: String,
+    pub code_size: String,
+    pub timeout: i32,
+    pub mem: i32,
+    pub role: String,
+    pub package_type: String,
+    pub updated: String,
+    pub version: String,
+    pub uri: String
+}
+
+pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
+    let client = lambda::make_client(auth).await;
+    let mut rows: Vec<Record> = vec![];
+    for (_, f) in fns {
+        let arn = auth.lambda_arn(&f.fqn);
+        let tags = lambda::list_tags(&client, &arn)
+            .await
+            .unwrap();
+
+        let config = lambda::find_config(&client, &arn).await;
+        let maybe_uri = lambda::find_uri(&client, &arn).await;
+        let uri = u::maybe_string(maybe_uri, "");
+        match config {
+            Some(cfg) => {
+                let row = Record {
+                    name: f.name.clone(),
+                    code_size: u::file_size_human(cfg.code_size as f64),
+                    timeout: cfg.timeout,
+                    mem: cfg.mem_size,
+                    package_type: cfg.package_type,
+                    role: u::split_last(&cfg.role, "/"),
+                    updated: u::safe_unwrap(tags.get("updated_at")),
+                    version: u::safe_unwrap(tags.get("version")),
+                    uri: u::split_last(&uri, "/"),
+                };
+                rows.push(row);
+            }
+            None => (),
+        }
+    }
+    rows
 }
