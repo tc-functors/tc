@@ -69,11 +69,11 @@ impl BucketPolicy {
     pub fn add_statement(&self, existing_policy: &str) -> BucketPolicy {
         let mut ex: BucketPolicy = serde_json::from_str(&existing_policy).unwrap();
         let mut xs: Vec<PolicyStatement> = ex.statement.clone();
-        let statement_ids: &Vec<String> = &self.statement.iter().map(|p| p.sid.clone()).collect();
+        let statement_ids: &Vec<String> = &ex.statement.iter().map(|p| p.sid.clone()).collect();
         let current_id = &self.statement.first().unwrap().sid;
 
         if !statement_ids.contains(current_id) {
-            println!("updating bucket policy statement: {}", &current_id);
+            println!("Updating bucket policy statement: {}", &current_id);
             xs.extend(self.statement.clone());
         }
 
