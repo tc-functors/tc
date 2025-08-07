@@ -1,0 +1,6 @@
+name: pages-static
+
+pages:
+  static:
+    kind: SPA
+    dist: .

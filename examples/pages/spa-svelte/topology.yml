@@ -1,0 +1,9 @@
+name: example-spa-svelte
+
+pages:
+  spa-svelte:
+    kind: SPA
+    dist: dist
+    build:
+      - npm install --quiet --no-audit
+      - npm run build
