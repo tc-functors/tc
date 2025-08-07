@@ -591,3 +591,10 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
         None => println!("Please specify sandbox"),
     }
 }
+
+pub async fn list(auth: &Auth, sandbox: Option<String>, entity: Option<String>) {
+    let topology = composer::compose(&u::pwd(), true);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    let topology = resolver::render(&auth, &sandbox, &topology).await;
+    deployer::try_list(auth, &topology, &entity).await;
+}

@@ -774,4 +774,63 @@ pub async fn update_runtime_management_config(client: &Client, name: &str, versi
     }
 }
 
+pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, String>, Error> {
+    let res = client.list_tags().resource(arn).send().await;
+
+    match res {
+        Ok(r) => {
+            let maybe_tags = r.tags();
+            match maybe_tags {
+                Some(tags) => Ok(tags.clone()),
+                None => Ok(HashMap::new()),
+            }
+        }
+        Err(_) => Ok(HashMap::new()),
+    }
+}
+
+pub struct Config {
+    pub code_size: i64,
+    pub timeout: i32,
+    pub mem_size: i32,
+    pub role: String,
+    pub package_type: String,
+}
+
+pub async fn find_config(client: &Client, name: &str) -> Option<Config> {
+    let r = client
+        .get_function_configuration()
+        .function_name(s!(name))
+        .send()
+        .await;
+    match r {
+        Ok(res) => {
+            let cfg = Config {
+                code_size: res.code_size,
+                timeout: res.timeout.unwrap(),
+                mem_size: res.memory_size.unwrap(),
+                role: res.role.unwrap(),
+                package_type: res.package_type.unwrap().to_string(),
+            };
+            Some(cfg)
+        }
+        Err(_e) => None,
+    }
+}
+
+
+pub async fn find_uri(client: &Client, name: &str) -> Option<String> {
+    let r = client
+        .get_function()
+        .function_name(s!(name))
+        .send()
+        .await;
+    match r {
+        Ok(res) => {
+            res.code.unwrap().image_uri
+        }
+        Err(_) => None
+    }
+}
+
 //pub type LambdaClient = Client;

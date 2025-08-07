@@ -1972,6 +1972,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tabled 0.10.0",
  "tokio",
  "tracing",
  "tracing-subscriber",

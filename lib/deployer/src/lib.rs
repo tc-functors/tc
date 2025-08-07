@@ -20,6 +20,8 @@ use composer::{
     Topology,
 };
 use std::collections::HashMap;
+use tabled::{Style, Table};
+use std::str::FromStr;
 
 pub async fn create(auth: &Auth, topology: &Topology) {
     let Topology {
@@ -343,4 +345,32 @@ pub async fn freeze(auth: &Auth, topology: &Topology) {
 pub async fn unfreeze(auth: &Auth, topology: &Topology) {
     let Topology { fqn, .. }  = topology;
     state::unfreeze(auth, fqn).await;
+}
+
+pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
+    let Topology { functions, fqn, .. }  = topology;
+    match maybe_entity {
+        Some(e) => {
+            let entity = Entity::from_str(&e).unwrap();
+            match entity {
+                Entity::Function => {
+                    let rs = function::list(auth, &functions).await;
+                    let table = Table::new(rs).with(Style::psql()).to_string();
+                    println!("{}", table);
+                },
+                Entity::Mutation => {
+                    mutation::list(auth, &fqn).await;
+                },
+                Entity::State => {
+
+                }
+                _ => todo!()
+            }
+        },
+        None => {
+            let rs = function::list(auth, &functions).await;
+            let table = Table::new(rs).with(Style::psql()).to_string();
+            println!("{}", table);
+        }
+    }
 }

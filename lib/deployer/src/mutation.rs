@@ -71,3 +71,16 @@ pub async fn delete(auth: &Auth, mutations: &HashMap<String, Mutation>) {
 pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Mutation>, _c: &str) {
     todo!()
 }
+
+pub async fn list(auth: &Auth, name: &str) {
+    let client = appsync::make_client(auth).await;
+    let api = appsync::find_graphql_api(&client, name).await;
+    match api {
+        Some(a) => {
+            println!("id: {}", &a.id);
+            println!("https: {}", &a.https);
+            println!("wss: {}", &a.wss);
+        }
+        _ => (),
+    }
+}

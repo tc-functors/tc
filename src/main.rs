@@ -53,6 +53,8 @@ enum Cmd {
     Freeze(FreezeArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
+    /// List resources in a topology
+    List(ListArgs),
     /// Prune all resources in given sandbox
     Prune(PruneArgs),
     /// Resolve a topology
@@ -340,6 +342,22 @@ pub struct InvokeArgs {
     local: bool,
     #[arg(long, action)]
     dumb: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ListArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
+    #[arg(long, short = 'f')]
+    format: Option<String>,
+    #[arg(long, action, short = 'v')]
+    versions: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -799,6 +817,21 @@ async fn prune(args: PruneArgs) {
     tc::prune(&env, sandbox, filter, dry_run).await;
 }
 
+
+async fn list(args: ListArgs) {
+    let ListArgs {
+        profile,
+        sandbox,
+        trace,
+        entity,
+        ..
+    } = args;
+    init_tracing(trace);
+    let env = tc::init(profile, None).await;
+    tc::list(&env, sandbox, entity).await;
+}
+
+
 async fn run() {
     let args = Tc::parse();
 
@@ -814,6 +847,7 @@ async fn run() {
         Cmd::Delete(args) => delete(args).await,
         Cmd::Freeze(args) => freeze(args).await,
         Cmd::Invoke(args) => invoke(args).await,
+        Cmd::List(args) => list(args).await,
         Cmd::Prune(args) => prune(args).await,
         Cmd::Route(args) => route(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,

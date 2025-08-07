@@ -54,6 +54,44 @@ pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     apis.get(name).cloned()
 }
 
+
+#[derive(Clone, Debug)]
+pub struct Api {
+    pub id: String,
+    pub https: String,
+    pub wss: String,
+}
+
+
+async fn list_graphql_apis(client: &Client) -> HashMap<String, Api> {
+    let mut h: HashMap<String, Api> = HashMap::new();
+    let r = client.list_graphql_apis().send().await;
+    match r {
+        Ok(res) => {
+            let apis = res.graphql_apis.unwrap();
+            for api in apis {
+                let uris = api.uris.unwrap();
+                let https = uris.get("GRAPHQL");
+                let wss = uris.get("REALTIME");
+                let a = Api {
+                    id: api.api_id.unwrap().to_string(),
+                    https: https.unwrap().to_string(),
+                    wss: wss.unwrap().to_string(),
+                };
+
+                h.insert(api.name.unwrap(), a);
+            }
+        }
+        Err(e) => panic!("{}", e),
+    }
+    h
+}
+
+pub async fn find_graphql_api(client: &Client, name: &str) -> Option<Api> {
+    let apis = list_graphql_apis(client).await;
+    apis.get(name).cloned()
+}
+
 fn make_lambda_authorizer(authorizer_arn: &str) -> LambdaAuthorizerConfig {
     let v = LambdaAuthorizerConfigBuilder::default();
     v.authorizer_uri(authorizer_arn).build().unwrap()
