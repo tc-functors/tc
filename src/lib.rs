@@ -260,7 +260,7 @@ pub async fn create(
             let sandbox = resolver::maybe_sandbox(sandbox);
             deployer::guard(&sandbox);
             let dir = u::pwd();
-            println!("Compiling topology {} ...", &composer::topology_name(&dir));
+            println!("Composing topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache, dirty).await;
@@ -300,7 +300,7 @@ pub async fn update(
 
     let start = Instant::now();
 
-    println!("Compiling topology...");
+    println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
 
     println!("Resolving topology {}...", &topology.namespace);
@@ -330,7 +330,7 @@ pub async fn delete(
     deployer::guard(&sandbox);
 
     let start = Instant::now();
-    println!("Compiling topology...");
+    println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
 
     composer::count_of(&topology);
