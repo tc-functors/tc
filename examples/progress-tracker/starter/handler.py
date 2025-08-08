@@ -10,11 +10,15 @@ def handler(input, context):
 
   time.sleep(1)
 
-  payload = {
+  data = {
     "id": id,
     "status": "startJob",
     "message": "Hello from starter lambda"
   }
+  payload = {
+    "data": data
+  }
+
 
   print(payload)
 
@@ -30,4 +34,4 @@ def handler(input, context):
     ]
   )
   print(res)
-  return payload
+  return data

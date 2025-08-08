@@ -24,13 +24,12 @@ mutations:
 
     completeJob:
       function: completer
-      input: Event
+      input: EventData
       output: Job
       subscribe: true
 
 pages:
   app:
-    dist: app/dist
     dir: app
     build:
        - npm install --quiet --no-audit
