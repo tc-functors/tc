@@ -28,7 +28,7 @@ pub use function::{
 };
 use kit as u;
 use kit::*;
-pub use mutation::Mutation;
+pub use mutation::{Mutation, Resolver};
 pub use page::Page;
 pub use pool::Pool;
 pub use queue::Queue;
@@ -389,13 +389,14 @@ fn make_events(
     fqn: &str,
     config: &ConfigSpec,
     fns: &HashMap<String, Function>,
+    resolvers: &HashMap<String, Resolver>
 ) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
     if let Some(evs) = events {
         for (name, espec) in evs {
             tracing::debug!("event {}", &name);
-            let targets = event::make_targets(namespace, &name, &espec, fqn, fns);
+            let targets = event::make_targets(namespace, &name, &espec, fqn, fns, resolvers);
             let skip = espec.doc_only;
             let ev = Event::new(&name, &espec, targets, config, skip);
             h.insert(name.to_string(), ev);
@@ -513,6 +514,11 @@ fn make(
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
     let mutations = make_mutations(&spec, &config);
 
+    let resolvers = match &mutations.get("default") {
+        Some(m) => m.resolvers.clone(),
+        None => HashMap::new()
+    };
+
     Topology {
         namespace: namespace.clone(),
         fqn: fqn.clone(),
@@ -524,7 +530,7 @@ fn make(
         dir: dir.to_string(),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
-        events: make_events(&namespace, &spec, &fqn, &config, &functions),
+        events: make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers),
         routes: make_routes(&spec, &fqn, &functions),
         functions: functions,
         schedules: schedule::make_all(&namespace, &infra_dir),

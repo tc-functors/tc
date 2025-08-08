@@ -194,8 +194,7 @@ async fn has_type(client: &Client, api_id: &str, name: &str) -> bool {
     types.contains(&s!(name))
 }
 
-async fn create_type(client: &Client, api_id: &str, type_name: &str, definition: &str) {
-    println!("Creating type {}", type_name.green());
+async fn create_type(client: &Client, api_id: &str, _type_name: &str, definition: &str) {
     let _ = client
         .create_type()
         .api_id(s!(api_id))
@@ -207,7 +206,6 @@ async fn create_type(client: &Client, api_id: &str, type_name: &str, definition:
 }
 
 async fn update_type(client: &Client, api_id: &str, type_name: &str, definition: &str) {
-    println!("Updating type {}", type_name.blue());
     let _ = client
         .update_type()
         .type_name(s!(type_name))
@@ -421,13 +419,13 @@ pub async fn delete_api(client: &Client, api_name: &str) {
 
 pub async fn create_types(auth: &Auth, api_id: &str, types: HashMap<String, String>) {
     let client = make_client(auth).await;
+    println!("Creating mutation types ({})", &types.len());
     for (t, def) in types {
         create_or_update_type(&client, &api_id, &t, &def).await;
     }
 }
 
 pub async fn update_tags(client: &Client, graphql_arn: &str, tags: HashMap<String, String>) {
-    println!("Updating tags");
     let _ = client
         .tag_resource()
         .resource_arn(graphql_arn)

@@ -54,6 +54,7 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
     let Event {
         rule_name,
         bus,
+        name,
         pattern,
         ..
     } = event;
@@ -64,8 +65,8 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern, tags).await;
 
     println!(
-        "Creating Event: {} targets: {}",
-        &rule_name.green(),
+        "Creating event: {} ({})",
+        &name.green(),
         &event.targets.len()
     );
 
@@ -94,6 +95,11 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
         } else {
             String::from(&target.arn)
         };
+
+        if target_arn.is_empty() || target_arn == "none" {
+            println!("WARN: Event Target {}'s arn is invalid: {}. perhaps retry ?", &target.id, &target_arn);
+            panic!("Invalid arn. Retry")
+        }
 
         let t = eventbridge::make_target(
             &target.id,
