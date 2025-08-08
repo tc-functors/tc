@@ -178,6 +178,19 @@ fn make_paths(namespace: &str, name: &str) -> HashMap<String, String> {
     h
 }
 
+fn find_dist(dir: &str, given_dist: Option<String>) -> String {
+    match given_dist {
+        Some(d) => d,
+        None => {
+            if u::path_exists(dir, "package.json") {
+                format!("{}/dist", dir)
+            } else {
+                dir.to_string()
+            }
+        }
+    }
+}
+
 fn make(
     name: &str,
     namespace: &str,
@@ -194,7 +207,7 @@ fn make(
         Some(bs) => Some(bs.join(" && ")),
         None => None,
     };
-    let dist = u::maybe_string(ps.dist.clone(), "dist");
+    let dist = find_dist(&dir, ps.dist.clone());
 
     let paths = make_paths(namespace, name);
 
