@@ -1,5 +1,6 @@
 use super::{
     function::Function,
+    mutation::Resolver,
     template,
 };
 use crate::{
@@ -86,6 +87,7 @@ pub fn make_targets(
     espec: &EventSpec,
     fallback_fqn: &str,
     fns: &HashMap<String, Function>,
+    resolvers: &HashMap<String, Resolver>
 ) -> Vec<Target> {
     let EventSpec {
         producer_ns,
@@ -141,7 +143,16 @@ pub fn make_targets(
     if let Some(m) = mutation {
         let id = format!("{}_appsync_target", event_name);
         let mut h: HashMap<String, String> = HashMap::new();
-        h.insert(s!("detail"), s!("$.detail"));
+        let input = match resolvers.get(m) {
+            Some(m) => match m.input.as_ref() {
+                "Event" => s!("$.detail"),
+                "EventData" => s!("$.detail.data"),
+                "EventMetadata" => s!("$.detail.metadata"),
+                _ => m.input.clone(),
+            },
+            None => s!("$.detail")
+        };
+        h.insert(s!("detail"), input);
 
         let input_paths_map = Some(h);
         let input_template = Some(format!(r##"{{"detail": <detail>}}"##));

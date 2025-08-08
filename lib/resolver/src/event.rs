@@ -43,7 +43,8 @@ async fn get_graphql_arn_id(auth: &Auth, name: &str) -> Option<String> {
     }
 }
 
-async fn find_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
+
+fn make_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
     // FIXME: mutations hashmap key is api-name. Using default
     let mutation = mutations.get("default").unwrap();
     let Mutation {
@@ -83,7 +84,7 @@ async fn resolve_target(context: &Context, topology: &Topology, mut target: Targ
 
     let target_name = match target.entity {
         Entity::Function => fqn_of(context, topology, &target.name),
-        Entity::Mutation => find_mutation(&target.name, &topology.mutations).await,
+        Entity::Mutation => make_mutation(&target.name, &topology.mutations),
         Entity::State => name.clone(),
         Entity::Channel => name.clone(),
         _ => name.clone(),

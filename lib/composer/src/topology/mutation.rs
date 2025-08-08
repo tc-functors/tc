@@ -183,7 +183,8 @@ fn augment_types(mut given: Types) -> Types {
     let mut event: HashMap<String, String> = HashMap::new();
     event.insert(s!("detail"), s!("String"));
     let mut types: HashMap<String, HashMap<String, String>> = HashMap::new();
-    types.insert(s!("Event"), event);
+    types.insert(s!("Event"), event.clone());
+    types.insert(s!("EventData"), event);
     given.extend(types);
     given
 }
