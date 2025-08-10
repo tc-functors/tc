@@ -53,6 +53,7 @@ pub async fn create(auth: &Auth, flow: &Flow, tags: &HashMap<String, String>) {
             policy_arn: role.policy_arn,
             policy_name: role.policy_name,
             policy_doc: role.policy.to_string(),
+            tags: Some(iam::make_tags(tags.clone()))
         };
         let _ = r.create_or_update().await;
 

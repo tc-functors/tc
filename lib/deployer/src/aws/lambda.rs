@@ -631,7 +631,7 @@ pub async fn add_permission(
     source_arn: &str,
     statement_id: &str,
 ) -> Result<()> {
-    client
+    let _res = client
         .add_permission()
         .function_name(name.to_string())
         .statement_id(s!(statement_id))
@@ -639,7 +639,8 @@ pub async fn add_permission(
         .principal(principal.to_string())
         .source_arn(source_arn.to_string())
         .send()
-        .await?;
+        .await
+        .unwrap();
     Ok(())
 }
 

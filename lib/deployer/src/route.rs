@@ -187,7 +187,7 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>) {
     let cors = make_cors(&routes);
     tracing::debug!("Updating cors: {:?}", cors);
     for (_, route) in routes {
-        //println!("Creating route {} {}", &route.method, &route.path);
+        tracing::debug!("Creating route {} {}", &route.method, &route.path);
         if !&route.skip {
             create_route(auth, &route, cors.clone()).await;
         }

@@ -1,4 +1,5 @@
 use super::{
+    Role,
     function::Function,
     mutation::Resolver,
     template,
@@ -67,7 +68,7 @@ impl Target {
             producer_ns: s!(producer_ns),
             consumer_ns: s!(consumer_ns),
             arn: s!(arn),
-            role_arn: template::role_arn("tc-base-event-role"),
+            role_arn: Role::entity_role_arn(Entity::Event),
             input_paths_map: input_paths_map,
             input_template: input_template,
         }

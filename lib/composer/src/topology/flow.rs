@@ -1,17 +1,15 @@
 use super::{
     Role,
-    RoleKind,
-    role,
     template,
 };
 use crate::spec::TopologySpec;
-use kit as u;
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use serde_json::Value;
+use crate::Entity;
 
 mod sfn;
 mod sfn_ext;
@@ -34,13 +32,7 @@ pub struct Flow {
 
 fn make_role(infra_dir: &str, fqn: &str) -> Role {
     let role_file = format!("{}/roles/sfn.json", infra_dir);
-    let role_name = format!("tc-{}-sfn-role", fqn);
-    let policy_name = format!("tc-{}-sfn-policy", fqn);
-    if u::file_exists(&role_file) {
-        Role::new(RoleKind::StepFunction, &role_file, &role_name, &policy_name)
-    } else {
-        role::default(RoleKind::StepFunction)
-    }
+    Role::new(Entity::State, &role_file, fqn)
 }
 
 fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {

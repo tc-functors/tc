@@ -1,5 +1,6 @@
-use super::template;
+use super::{template, Role};
 use crate::spec::ScheduleSpec;
+use crate::Entity;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -38,7 +39,7 @@ pub fn make_all(namespace: &str, infra_dir: &str) -> HashMap<String, Schedule> {
         for (name, spec) in scheds {
             let rule_name = format!("tc-schedule-{}", &name);
             let payload = &spec.payload.to_string();
-            let role_name = s!("tc-base-event-role");
+            let role_name = Role::entity_role_arn(Entity::Event);
 
             let s = Schedule {
                 group: namespace.to_string(),

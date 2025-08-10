@@ -1,5 +1,4 @@
 mod aws;
-pub mod base;
 pub mod channel;
 pub mod event;
 pub mod function;
@@ -38,6 +37,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
         channels,
         pages,
         flow,
+        roles,
         ..
     } = topology;
 
@@ -49,7 +49,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
         &version
     );
 
-    role::create_or_update(auth, &topology.roles()).await;
+    role::create_or_update(auth, roles, tags).await;
     function::create(auth, functions).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
@@ -215,6 +215,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
         mutations,
         routes,
         version,
+        roles,
         queues,
         ..
     } = topology;
@@ -231,7 +232,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
         state::delete(auth, f).await;
     }
     function::delete(&auth, functions).await;
-    role::delete(&auth, &topology.roles()).await;
+    role::delete(&auth, roles).await;
     route::delete(&auth, routes).await;
     mutation::delete(&auth, mutations).await;
     queue::delete(&auth, queues).await;

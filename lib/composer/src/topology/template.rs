@@ -50,14 +50,6 @@ pub fn sfn_arn(name: &str) -> String {
     )
 }
 
-pub fn _base_role(name: &str) -> String {
-    format!("tc-base-{}-role", name)
-}
-
-pub fn _base_policy(name: &str) -> String {
-    format!("tc-base-{}-policy", name)
-}
-
 pub fn topology_fqn(namespace: &str, hyphenated_names: bool) -> String {
     if hyphenated_names {
         format!("{}-{{{{sandbox}}}}", namespace)
@@ -66,7 +58,7 @@ pub fn topology_fqn(namespace: &str, hyphenated_names: bool) -> String {
     }
 }
 
-pub fn api_integration_arn(name: &str) -> String {
+pub fn _api_integration_arn(name: &str) -> String {
     format!(
         "arn:aws:apigateway:{{{{region}}}}:lambda:path/2015-03-31/functions/{}/invocations",
         lambda_arn(name)

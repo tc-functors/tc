@@ -26,9 +26,6 @@ struct Tc {
 enum Cmd {
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
-    /// Bootstrap base roles
-    #[clap(hide = true)]
-    Bootstrap(BootstrapArgs),
     /// Trigger deploy via CI
     #[clap(name = "ci-deploy", hide = true)]
     Deploy(DeployArgs),
@@ -38,7 +35,7 @@ enum Cmd {
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
-    /// changelog search
+    /// Generate changelog for topology
     Changelog(ChangelogArgs),
     /// Compose a Topology
     Compose(ComposeArgs),
@@ -797,12 +794,6 @@ async fn doc(args: DocArgs) {
     }
 }
 
-async fn bootstrap(args: BootstrapArgs) {
-    let BootstrapArgs { profile, role } = args;
-    let env = tc::init(profile, None).await;
-    tc::bootstrap(&env, role).await;
-}
-
 async fn prune(args: PruneArgs) {
     let PruneArgs {
         profile,
@@ -836,7 +827,6 @@ async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
-        Cmd::Bootstrap(args) => bootstrap(args).await,
         Cmd::Build(args) => build(args).await,
         Cmd::Cache(args) => cache(args).await,
         Cmd::Config(args) => config(args).await,
