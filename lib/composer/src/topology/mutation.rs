@@ -1,4 +1,4 @@
-use super::template;
+use super::{template, Role};
 use crate::{
     Entity,
     spec::{
@@ -198,7 +198,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
                 authorizer: ms.authorizer.to_owned(),
                 types: make_types(types.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),
-                role_arn: template::role_arn("tc-base-appsync-role"),
+                role_arn: Role::entity_role_arn(Entity::Mutation),
                 types_map: types,
             };
             Some(m)

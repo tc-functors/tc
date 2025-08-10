@@ -1,6 +1,5 @@
 pub mod build;
 pub mod layer;
-mod role;
 pub mod runtime;
 
 use super::template;

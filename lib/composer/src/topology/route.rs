@@ -1,6 +1,7 @@
 use super::{
     function::Function,
     template,
+    Role
 };
 use crate::{
     Entity,
@@ -60,7 +61,7 @@ fn make_request_template(method: &str, request_template: Option<String>) -> Stri
 
 fn find_target_arn(target_name: &str, entity: &Entity) -> String {
     match entity {
-        Entity::Function => template::api_integration_arn(&target_name),
+        Entity::Function => template::lambda_arn(&target_name),
         Entity::State => template::sfn_arn(&target_name),
         _ => template::lambda_arn(&target_name),
     }
@@ -148,7 +149,7 @@ impl Route {
             create_authorizer: create_authorizer,
             authorizer: authorizer,
             entity: entity,
-            role_arn: template::role_arn("tc-base-api-role"),
+            role_arn: Role::entity_role_arn(Entity::Route),
             target_name: target_name,
             target_arn: target_arn,
             stage: stage,

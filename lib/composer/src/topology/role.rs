@@ -1,120 +1,124 @@
 use super::template;
-use kit as u;
+use crate::Entity;
 use kit::*;
+use kit as u;
+mod trust;
+mod policy;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 
+
+use trust::Trust;
+use policy::Policy;
+
+fn read_policy(path: &str) -> Policy {
+    let data = u::slurp(path);
+    let policy: Policy = serde_json::from_str(&data).unwrap();
+    policy
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum RoleKind {
-    StepFunction,
-    Function,
+pub enum Kind {
+    Base,
+    Override,
+    Provided
+}
+
+impl Kind {
+
+    pub fn to_str(&self) -> String {
+        match self {
+            Kind::Base => s!("base"),
+            Kind::Override => s!("override"),
+            Kind::Provided => s!("provided")
+        }
+    }
+
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Role {
     pub name: String,
-    pub path: String,
-    pub trust: String,
+    pub kind: Kind,
+    pub trust: Trust,
     pub arn: String,
     pub policy_name: String,
-    pub policy: String,
+    pub policy: Policy,
     pub policy_arn: String,
 }
 
-fn read_policy(path: &str) -> String {
-    u::slurp(path)
-}
-
-fn function_trust_policy() -> String {
-    format!(
-        r#"{{"Version": "2012-10-17",
-    "Statement": [
-        {{
-            "Effect": "Allow",
-            "Principal": {{
-                "Service": [
-                    "lambda.amazonaws.com",
-                    "events.amazonaws.com",
-                    "logs.amazonaws.com",
-                    "scheduler.amazonaws.com",
-                    "appsync.amazonaws.com",
-                    "apigateway.amazonaws.com"
-                ]
-            }},
-            "Action": "sts:AssumeRole"
-        }}
-    ]
-     }}"#
-    )
-}
-
-fn sfn_trust_policy() -> String {
-    format!(
-        r#"{{"Version": "2012-10-17",
-    "Statement": [
-        {{
-            "Effect": "Allow",
-            "Principal": {{
-                "Service": [
-                    "lambda.amazonaws.com",
-                    "events.amazonaws.com",
-                    "states.amazonaws.com",
-                    "logs.amazonaws.com",
-                    "apigateway.amazonaws.com",
-                    "appsync.amazonaws.com",
-                    "scheduler.amazonaws.com"
-                ]
-            }},
-            "Action": "sts:AssumeRole"
-        }}
-    ]
-     }}"#
-    )
-}
-
-fn find_default_trust_policy(kind: RoleKind) -> String {
-    match kind {
-        RoleKind::Function => function_trust_policy(),
-        RoleKind::StepFunction => sfn_trust_policy(),
-    }
-}
-
-fn find_default_role(kind: RoleKind) -> String {
-    match kind {
-        RoleKind::Function => s!("tc-base-lambda-role"),
-        RoleKind::StepFunction => s!("tc-base-sfn-role"),
-    }
-}
-
-pub fn default(kind: RoleKind) -> Role {
-    let role_name = find_default_role(kind);
-    Role {
-        name: role_name.clone(),
-        path: s!("provided"),
-        trust: s!("provided"),
-        arn: template::role_arn(&role_name),
-        policy: s!("provided"),
-        policy_name: s!("tc-base-lambda-policy"),
-        policy_arn: template::policy_arn("tc-base-lambda-policy"),
-    }
-}
-
 impl Role {
-    pub fn new(kind: RoleKind, role_file: &str, role_name: &str, policy_name: &str) -> Role {
+    pub fn new(entity: Entity, role_file: &str, fqn: &str) -> Role {
         if u::file_exists(&role_file) {
+
+            let abbr = if fqn.chars().count() > 15 {
+                u::abbreviate(fqn, "-")
+            } else {
+                fqn.to_string()
+            };
+            let name = format!("tc-{}", abbr);
             Role {
-                name: s!(role_name),
-                path: s!(role_file),
-                trust: find_default_trust_policy(kind),
-                arn: template::role_arn(&role_name),
+                name: s!(&name),
+                kind: Kind::Override,
+                trust: Trust::new(),
+                arn: template::role_arn(&name),
                 policy: read_policy(&role_file),
-                policy_name: policy_name.to_string(),
-                policy_arn: template::policy_arn(&policy_name),
+                policy_name: s!(&name),
+                policy_arn: template::policy_arn(&name),
             }
         } else {
-            panic!("Cannot find role_file");
+            let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+            Role {
+                name: s!(&name),
+                kind: Kind::Base,
+                trust: Trust::new(),
+                arn: template::role_arn(&name),
+                policy: Policy::new(entity),
+                policy_name: s!(name),
+                policy_arn: template::policy_arn(&name),
+            }
         }
     }
+
+    pub fn default(entity: Entity) -> Role {
+        let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+        let infra_dir = format!("{}/infrastructure/tc/base", &u::root());
+        let maybe_base_path = format!("{}/{}.json", infra_dir, &entity.to_str());
+        let policy = if u::file_exists(&maybe_base_path) {
+            read_policy(&maybe_base_path)
+        } else {
+            Policy::new(entity)
+        };
+
+        Role {
+            name: s!(&name),
+            kind: Kind::Base,
+            trust: Trust::new(),
+            arn: template::role_arn(&name),
+            policy: policy,
+            policy_name: s!(&name),
+            policy_arn: template::policy_arn(&name),
+        }
+    }
+
+    pub fn provided(name: &str) -> Role {
+        Role {
+            name: s!(name),
+            kind: Kind::Provided,
+            trust: Trust::new(),
+            arn: template::role_arn(&name),
+            policy: Policy::new(Entity::Function),
+            policy_name: s!(&name),
+            policy_arn: template::policy_arn(&name),
+        }
+    }
+
+    pub fn entity_role_arn(entity: Entity) -> String {
+        let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+        template::role_arn(&name)
+    }
+
+
 }

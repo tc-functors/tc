@@ -15,7 +15,7 @@ pub fn build_tree(topology: &Topology) -> StringItem {
         t.add_empty_child(s!(&f.fqn));
         t.add_empty_child(format!("skip: {}", f.skip.to_string()));
         t.add_empty_child(format!("lang: {}", f.runtime.lang.to_str()));
-        t.add_empty_child(format!("role: {}", f.runtime.role.path.to_string()));
+        t.add_empty_child(format!("role: {}", f.runtime.role.name.to_string()));
         t.add_empty_child(format!("uri: {}", f.runtime.uri.to_string()));
         t.add_empty_child(format!("build: {}", f.build.kind.to_str()));
         t.end_child();
@@ -27,7 +27,7 @@ pub fn build_tree(topology: &Topology) -> StringItem {
             t.begin_child(s!(&f.fqn));
             t.add_empty_child(format!("skip: {}", f.skip.to_string()));
             t.add_empty_child(format!("lang: {}", f.runtime.lang.to_str()));
-            t.add_empty_child(format!("role: {}", f.runtime.role.path.to_string()));
+            t.add_empty_child(format!("role: {}", f.runtime.role.name.to_string()));
             t.add_empty_child(format!("uri: {}", f.runtime.uri.to_string()));
             t.add_empty_child(format!("build: {}", f.build.kind.to_str()));
             t.end_child();

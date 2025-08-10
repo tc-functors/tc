@@ -13,6 +13,7 @@ mod tag;
 mod template;
 pub mod version;
 
+use crate::Entity;
 use crate::spec::{
     TopologyKind,
     TopologySpec,
@@ -32,10 +33,7 @@ pub use mutation::{Mutation, Resolver};
 pub use page::Page;
 pub use pool::Pool;
 pub use queue::Queue;
-pub use role::{
-    Role,
-    RoleKind,
-};
+pub use role::Role;
 pub use route::Route;
 pub use schedule::Schedule;
 use serde_derive::{
@@ -73,6 +71,7 @@ pub struct Topology {
     pub tags: HashMap<String, String>,
     pub flow: Option<Flow>,
     pub config: ConfigSpec,
+    pub roles: Vec<Role>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -465,6 +464,26 @@ fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool>
     }
 }
 
+fn make_roles(functions: &HashMap<String, Function>) -> Vec<Role> {
+    let mut xs: Vec<Role> = vec![];
+    for (_, f) in functions {
+        if &f.runtime.role.kind.to_str() != "provided" {
+            xs.push(f.runtime.role.clone())
+        }
+    }
+    for b in vec![
+        Entity::Function,
+        Entity::State,
+        Entity::Route,
+        Entity::Event,
+        Entity::Mutation
+    ] {
+        let r = Role::default(b);
+        xs.push(r)
+    }
+    xs
+}
+
 fn find_kind(
     given_kind: &Option<TopologyKind>,
     flow: &Option<Flow>,
@@ -532,6 +551,7 @@ fn make(
         nodes: nodes,
         events: make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers),
         routes: make_routes(&spec, &fqn, &functions),
+        roles: make_roles(&functions),
         functions: functions,
         schedules: schedule::make_all(&namespace, &infra_dir),
         queues: make_queues(&spec, &config),
@@ -579,6 +599,7 @@ fn make_standalone(dir: &str) -> Topology {
         routes: HashMap::new(),
         flow: None,
         pools: HashMap::new(),
+        roles: make_roles(&functions),
         functions: functions,
         nodes: HashMap::new(),
         mutations: HashMap::new(),
@@ -663,16 +684,6 @@ impl Topology {
 
     pub fn to_str(&self) -> String {
         serde_json::to_string(&self).unwrap()
-    }
-
-    pub fn roles(&self) -> Vec<Role> {
-        let mut xs: Vec<Role> = vec![];
-        for (_, f) in &self.functions {
-            if &f.runtime.role.path != "provided" {
-                xs.push(f.runtime.role.clone())
-            }
-        }
-        xs
     }
 
     pub fn from_json(v: Value) -> Topology {

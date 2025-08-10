@@ -55,19 +55,21 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
         ..
     } = page;
 
-    println!("Building page {}", name);
+    println!("Building page {} ({})", name, dir);
     build_page(dir, name, build);
 
     if !u::path_exists(&u::pwd(), dist) {
-        println!("Dist directory not found, aborting");
+        tracing::debug!("Dist directory not found, aborting");
         return;
     }
+
+    println!("Creating page {}", name);
 
     let s3_client = s3::make_client(auth).await;
 
     s3::find_or_create_bucket(&s3_client, bucket).await;
 
-    println!(
+    tracing::debug!(
         "Uploading code from {} to s3://{}/{}",
         dist, bucket, bucket_prefix
     );
@@ -75,10 +77,10 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
 
     let client = cloudfront::make_client(auth).await;
 
-    println!("Configuring page {} - setting OAC ", name);
+    tracing::debug!("Configuring page {} - setting OAC ", name);
     let oac_id = cloudfront::find_or_create_oac(&client, origin_domain).await;
 
-    println!("Configuring page {} - setting cache policy ", name);
+    tracing::debug!("Configuring page {} - setting cache policy ", name);
     let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
 
     let dist_config = cloudfront::make_dist_config(
@@ -92,14 +94,14 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
         &cache_policy_id,
     );
 
-    println!("Configuring page {} - creating distribution", name);
+    tracing::debug!("Configuring page {} - creating distribution", name);
     let dist_id = cloudfront::create_or_update_distribution(&client, namespace, dist_config).await;
 
     let existing_policy = s3::get_bucket_policy(&s3_client, bucket).await;
     let policy = augment_policy(existing_policy, bucket_policy.clone(), &dist_id);
     s3::update_bucket_policy(&s3_client, bucket, &policy).await;
 
-    println!("Configuring page {} - invalidating cache", name);
+    tracing::debug!("Configuring page {} - invalidating cache", name);
     cloudfront::create_invalidation(&client, &dist_id).await;
 
     let url = cloudfront::get_url(&client, &dist_id).await;

@@ -38,3 +38,8 @@ macro_rules! ln {
         println!()
     };
 }
+
+#[macro_export]
+macro_rules! v {
+    ($($x:expr),*) => (vec![$($x.to_string()),*]);
+}

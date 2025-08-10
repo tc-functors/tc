@@ -5,7 +5,10 @@ use aws_sdk_iam::{
     config as iam_config,
     config::retry::RetryConfig,
 };
-use kit::*;
+use std::collections::HashMap;
+use aws_sdk_iam::types::Tag;
+use aws_sdk_iam::types::builders::TagBuilder;
+
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -16,6 +19,20 @@ pub async fn make_client(auth: &Auth) -> Client {
     )
 }
 
+fn make_tag(key: String, value: String) -> Tag {
+    let tb = TagBuilder::default();
+    tb.key(key).value(value).build().unwrap()
+}
+
+pub fn make_tags(kvs: HashMap<String, String>) -> Vec<Tag> {
+    let mut tags: Vec<Tag> = vec![];
+    for (k, v) in kvs.into_iter() {
+        let tag = make_tag(k, v);
+        tags.push(tag);
+    }
+    tags
+}
+
 #[derive(Debug)]
 pub struct Role {
     pub client: Client,
@@ -24,6 +41,7 @@ pub struct Role {
     pub policy_arn: String,
     pub trust_policy: String,
     pub policy_doc: String,
+    pub tags: Option<Vec<Tag>>
 }
 
 impl Role {
@@ -32,7 +50,6 @@ impl Role {
         self.find_or_create_policy().await;
         self.find_or_create_role().await;
         self.attach_policy().await;
-        sleep(4000);
     }
 
     pub async fn delete(&self) -> Result<(), Error> {
@@ -47,7 +64,6 @@ impl Role {
         println!("Updating role {}", self.name);
         self.detach_policy().await?;
         self.delete_policy().await?;
-        sleep(3000);
         self.find_or_create_policy().await;
         self.attach_policy().await;
         self.find_or_create_role().await;
@@ -69,10 +85,10 @@ impl Role {
             .create_policy()
             .policy_name(&self.policy_name)
             .policy_document(&self.policy_doc)
+            .set_tags(self.tags.clone())
             .send()
             .await
             .unwrap();
-        sleep(2000);
         match res.policy {
             Some(p) => p.arn.unwrap(),
             None => panic!("Error creating policy"),
@@ -114,10 +130,10 @@ impl Role {
             .create_role()
             .role_name(&self.name)
             .assume_role_policy_document(&self.trust_policy)
+            .set_tags(self.tags.clone())
             .send()
             .await
             .unwrap();
-        sleep(2000);
         match res.role {
             Some(r) => r.arn,
             None => panic!("Error creating policy"),

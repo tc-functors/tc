@@ -195,12 +195,12 @@ pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
 
     let topology = compose(&dir, recursive);
 
-    if e == "." {
-        if let Some(f) = topology.current_function(dir) {
+    match e {
+        "." => if let Some(f) = topology.current_function(dir) {
             u::pp_json(&f)
-        }
-    } else {
-        display::try_display(&topology, e, format);
+        },
+        "roles" => u::pp_json(&topology.roles),
+        _ =>  display::try_display(&topology, e, format)
     }
 }
 

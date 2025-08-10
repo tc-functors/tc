@@ -68,7 +68,7 @@ fn make_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
     }
     let label = u::pascal_case(&name);
     format!(
-        r#"mutation {label}($detail: String) {{
+        r#"mutation {label}($detail: AWSJSON) {{
   {name}(detail: $detail) {{
     {s}
     createdAt
