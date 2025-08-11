@@ -21,11 +21,11 @@ pub struct Action {
     #[serde(rename(serialize = "Resource", deserialize = "Resource"))]
     resource: Vec<String>,
     #[serde(rename(serialize = "Sid", deserialize = "Sid"))]
-    sid: String
+    sid: Option<String>
 }
 
-fn make_sid(ec: &str) -> String {
-    format!("TcBase{}{{{{sandbox}}}}", ec)
+fn make_sid(ec: &str) -> Option<String> {
+    Some(format!("TcBase{}{{{{sandbox}}}}", ec))
 }
 
 fn make_lambda_actions() -> Vec<Action> {
