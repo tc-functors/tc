@@ -182,9 +182,12 @@ fn make_types(types: Types, resolvers: HashMap<String, ResolverSpec>) -> HashMap
 fn augment_types(mut given: Types) -> Types {
     let mut event: HashMap<String, String> = HashMap::new();
     event.insert(s!("detail"), s!("String"));
+    let mut json: HashMap<String, String> = HashMap::new();
+    json.insert(s!("detail"), s!("AWSJSON"));
     let mut types: HashMap<String, HashMap<String, String>> = HashMap::new();
     types.insert(s!("Event"), event.clone());
     types.insert(s!("EventData"), event);
+    types.insert(s!("EventDataJSON"), json);
     given.extend(types);
     given
 }
