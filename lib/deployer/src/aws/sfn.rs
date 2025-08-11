@@ -162,7 +162,7 @@ impl StateMachine {
 
     async fn update(self, arn: &str) {
         let s = self.clone();
-        println!("Updating sfn {}", &self.name);
+        println!("Updating states {}", &self.name);
         let tracing = make_tracing_config();
 
         self.client
@@ -222,7 +222,7 @@ impl StateMachine {
     pub async fn delete(self, arn: &str) -> Result<(), Error> {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let name = &self.name;
-        println!("Deleting sfn {}", name);
+        println!("Deleting states {}", name);
 
         let mut state: StateMachineStatus = StateMachineStatus::Deleting;
         let res = self
@@ -235,14 +235,14 @@ impl StateMachine {
         while state == StateMachineStatus::Deleting {
             state = self.clone().get_state(name).await;
             let _ = log_update.render(&format!(
-                "Checking state {} ({})",
+                "Checking states {} ({})",
                 name,
                 state.as_str().blue()
             ));
             sleep(500)
         }
         let _ = log_update.render(&format!(
-            "Checking state: {} ({})",
+            "Checking states: {} ({})",
             name,
             state.as_str().green()
         ));

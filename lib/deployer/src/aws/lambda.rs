@@ -307,14 +307,14 @@ impl Function {
         while state != State::Active {
             state = self.clone().get_state(&f.name).await;
             let _ = log_update.render(&format!(
-                "Checking state {} ({})",
+                "Checking function {} ({})",
                 name,
                 pp_state(&state).blue()
             ));
             sleep(800)
         }
         let _ = log_update.render(&format!(
-            "Checking state {} ({})",
+            "Checking function {} ({})",
             name,
             pp_state(&state).green()
         ));
@@ -405,14 +405,14 @@ impl Function {
         while state != LastUpdateStatus::Successful {
             state = self.clone().get_update_status(&f.name).await;
             let _ = log_update.render(&format!(
-                "Checking state {} ({})",
+                "Checking function {} ({})",
                 name,
                 pp_status(&state).blue()
             ));
             sleep(500)
         }
         let _ = log_update.render(&format!(
-            "Checking state {} ({})",
+            "Checking function {} ({})",
             name,
             pp_status(&state).green()
         ));
@@ -513,7 +513,7 @@ impl Function {
 
                     if state != State::Failed {
                         let _ = log_update.render(&format!(
-                            "Checking state {} ({})",
+                            "Checking function {} ({})",
                             name,
                             pp_state(&state).blue()
                         ));
@@ -522,13 +522,13 @@ impl Function {
                 }
                 if state == State::Failed {
                     let _ =
-                        log_update.render(&format!("Checking state {} ({})", name, "ok".green()));
+                        log_update.render(&format!("Checking function {} ({})", name, "ok".green()));
                 }
                 Ok(())
             }
             None => {
                 let _ = log_update.render(&format!(
-                    "Checking state {} ({})",
+                    "Checking function {} ({})",
                     name,
                     "does not exist".red()
                 ));

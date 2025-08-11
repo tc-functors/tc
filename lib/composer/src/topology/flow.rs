@@ -30,9 +30,9 @@ pub struct Flow {
     pub log_config: LogConfig,
 }
 
-fn make_role(infra_dir: &str, fqn: &str) -> Role {
+fn make_role(infra_dir: &str, namespace: &str, fqn: &str) -> Role {
     let role_file = format!("{}/roles/sfn.json", infra_dir);
-    Role::new(Entity::State, &role_file, fqn)
+    Role::new(Entity::State, &role_file, namespace, fqn)
 }
 
 fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
@@ -80,7 +80,7 @@ impl Flow {
                 arn: template::sfn_arn(fqn),
                 definition: definition,
                 mode: mode,
-                role: make_role(infra_dir, fqn),
+                role: make_role(infra_dir, &spec.name, fqn),
                 log_config: log_config,
             }),
             None => None,

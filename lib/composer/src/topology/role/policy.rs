@@ -5,13 +5,19 @@ use serde_derive::{
     Serialize,
 };
 
+use serde_with::serde_as;
+use serde_with::formats::PreferOne;
+use serde_with::OneOrMany;
 
+#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Action {
+    #[serde_as(as = "OneOrMany<_, PreferOne>")]
     #[serde(rename(serialize = "Action", deserialize = "Action"))]
     action: Vec<String>,
     #[serde(rename(serialize = "Effect", deserialize = "Effect"))]
     effect: String,
+    #[serde_as(as = "OneOrMany<_, PreferOne>")]
     #[serde(rename(serialize = "Resource", deserialize = "Resource"))]
     resource: Vec<String>,
     #[serde(rename(serialize = "Sid", deserialize = "Sid"))]

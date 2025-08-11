@@ -13,9 +13,9 @@ fn should_delete() -> bool {
     }
 }
 
-pub async fn delete(auth: &Auth, roles: &Vec<composer::Role>) {
+pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
     let client = iam::make_client(auth).await;
-    for role in roles {
+    for (_, role) in roles {
         if &role.kind.to_str() == "override" || should_delete() {
             let r = Role {
                 client: client.clone(),
@@ -46,11 +46,12 @@ async fn create_aux(profile: String, role_arn: Option<String>, role: composer::R
     let _ = r.create_or_update().await;
 }
 
-pub async fn create_or_update(auth: &Auth, roles: &Vec<composer::Role>, tags: &HashMap<String, String>) {
+pub async fn create_or_update(auth: &Auth, roles: &HashMap<String, composer::Role>, tags: &HashMap<String, String>) {
 
     let mut tasks = vec![];
+
     //println!("Creating roles ({})", roles.len());
-    for role in roles.clone() {
+    for (_, role) in roles.clone() {
         let tags = tags.clone();
         let p = auth.name.to_string();
         let role_arn = auth.assume_role.to_owned();

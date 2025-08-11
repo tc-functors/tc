@@ -200,7 +200,7 @@ fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str)
     }
 }
 
-fn lookup_role(infra_dir: &str, r: &RuntimeSpec, fqn: &str, function_name: &str) -> Role {
+fn lookup_role(infra_dir: &str, r: &RuntimeSpec, namespace: &str, _fqn: &str, function_name: &str) -> Role {
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
@@ -213,7 +213,7 @@ fn lookup_role(infra_dir: &str, r: &RuntimeSpec, fqn: &str, function_name: &str)
             };
 
             if let Some(p) = path {
-                Role::new(Entity::Function, &p, fqn)
+                Role::new(Entity::Function, &p, namespace, function_name)
             } else {
                 Role::default(Entity::Function)
             }
@@ -501,7 +501,7 @@ fn make_lambda(
     let package_type = &r.package_type;
     let uri = as_uri(dir, &fspec.name, package_type, r.uri.clone());
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
-    let role = lookup_role(&infra_dir, &r, fqn, &fspec.name);
+    let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
     let build_kind = find_build_kind(&fspec);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
@@ -560,7 +560,7 @@ fn make_fargate(
     let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
     let package_type = s!("Image");
     let uri = as_uri(dir, &fspec.name, &package_type, rspec.uri.clone());
-    let role = lookup_role(&infra_dir, &rspec, fqn, &fspec.name);
+    let role = lookup_role(&infra_dir, &rspec, namespace, fqn, &fspec.name);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
     let default_infra_spec = infra_spec.get("default").unwrap();
 

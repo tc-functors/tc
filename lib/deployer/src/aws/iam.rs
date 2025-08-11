@@ -84,8 +84,12 @@ impl Role {
         let _ = log_update.render(&format!("Updating role {} ({})", self.name, "detaching policy".blue()));
         self.detach_policy().await?;
 
+        self.wait_until_detached().await;
+
         let _ = log_update.render(&format!("Updating role {} (deleting policy)", self.name));
         self.delete_policy().await?;
+
+        u::sleep(2000);
 
         let _ = log_update.render(&format!("Updating role {} (creating policy)", self.name));
         self.find_or_create_policy().await;
@@ -133,7 +137,9 @@ impl Role {
             .await;
         match res {
             Ok(r) => Ok(r.policy.unwrap().arn),
-            Err(_) => Ok(None),
+            Err(_) => {
+                Ok(None)
+            }
         }
     }
 
@@ -240,8 +246,15 @@ impl Role {
             .policy_arn(&self.policy_arn)
             .send()
             .await;
-        let c = res.unwrap().policy.unwrap().attachment_count.unwrap();
-        c > 0
+
+        match res {
+            Ok(r) =>  {
+                let c = r.policy.unwrap().attachment_count.unwrap();
+                c > 0
+            },
+            Err(_) => false
+        }
+
     }
 
     pub async fn wait_until_attachable(&self) {
