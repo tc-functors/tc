@@ -71,7 +71,7 @@ pub struct Topology {
     pub tags: HashMap<String, String>,
     pub flow: Option<Flow>,
     pub config: ConfigSpec,
-    pub roles: Vec<Role>
+    pub roles: HashMap<String, Role>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -464,11 +464,12 @@ fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool>
     }
 }
 
-fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: &usize, events: &usize, states: &Option<Flow>) -> Vec<Role> {
-    let mut xs: Vec<Role> = vec![];
+fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: &usize, events: &usize, states: &Option<Flow>) -> HashMap<String, Role> {
+    let mut h: HashMap<String, Role> = HashMap::new();
     for (_, f) in functions {
         if &f.runtime.role.kind.to_str() != "provided" {
-            xs.push(f.runtime.role.clone())
+            let role = f.runtime.role.clone();
+            h.insert(role.name.clone(), role);
         }
     }
 
@@ -492,10 +493,9 @@ fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: 
 
     for b in entities {
         let r = Role::default(b);
-        xs.push(r)
+        h.insert(r.name.clone(), r);
     }
-    xs.dedup();
-    xs
+    h
 }
 
 fn find_kind(

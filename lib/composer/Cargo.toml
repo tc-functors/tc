@@ -26,3 +26,4 @@ kit = { path = "../kit" }
 daggy = { version = "0.8.1", features = ["serde-1"] }
 doku = "0.21.1"
 anyhow = "1.0.71"
+serde_with = "3.14.0"

@@ -14,6 +14,7 @@ use trust::Trust;
 use policy::Policy;
 
 fn read_policy(path: &str) -> Policy {
+    tracing::debug!("Reading {}", path);
     let data = u::slurp(path);
     let policy: Policy = serde_json::from_str(&data).unwrap();
     policy
@@ -35,7 +36,17 @@ impl Kind {
             Kind::Provided => s!("provided")
         }
     }
+}
 
+fn find_legacy_role_name(entity: Entity) -> String {
+    match entity {
+        Entity::Function => s!("tc-base-lambda-role"),
+        Entity::Event => s!("tc-base-event-role"),
+        Entity::Route => s!("tc-base-api-role"),
+        Entity::Mutation => s!("tc-base-appsync-role"),
+        Entity::State => s!("tc-base-sfn-role"),
+        _ => s!("tc-base-lambda-role")
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -49,16 +60,18 @@ pub struct Role {
     pub policy_arn: String,
 }
 
+
 impl Role {
-    pub fn new(entity: Entity, role_file: &str, fqn: &str) -> Role {
+    pub fn new(entity: Entity, role_file: &str, namespace: &str, entity_name: &str) -> Role {
         if u::file_exists(&role_file) {
 
-            let abbr = if fqn.chars().count() > 15 {
-                u::abbreviate(fqn, "-")
+
+            let abbr = if entity_name.chars().count() > 10 {
+                u::abbreviate(entity_name, "-")
             } else {
-                fqn.to_string()
+                entity_name.to_string()
             };
-            let name = format!("tc-{}", abbr);
+            let name = format!("tc-{}-{}-{{{{sandbox}}}}", namespace, abbr);
             Role {
                 name: s!(&name),
                 kind: Kind::Override,
@@ -83,23 +96,41 @@ impl Role {
     }
 
     pub fn default(entity: Entity) -> Role {
-        let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
-        let infra_dir = format!("{}/infrastructure/tc/base", &u::root());
-        let maybe_base_path = format!("{}/{}.json", infra_dir, &entity.to_str());
-        let policy = if u::file_exists(&maybe_base_path) {
-            read_policy(&maybe_base_path)
-        } else {
-            Policy::new(entity)
-        };
 
-        Role {
-            name: s!(&name),
-            kind: Kind::Base,
-            trust: Trust::new(),
-            arn: template::role_arn(&name),
-            policy: policy,
-            policy_name: s!(&name),
-            policy_arn: template::policy_arn(&name),
+        match std::env::var("TC_LEGACY_ROLES") {
+            Ok(_) => {
+                let name = find_legacy_role_name(entity.clone());
+                Role {
+                    name: s!(&name),
+                    kind: Kind::Provided,
+                    trust: Trust::new(),
+                    arn: template::role_arn(&name),
+                    policy: Policy::new(entity),
+                    policy_name: s!(&name),
+                    policy_arn: template::policy_arn(&name),
+                }
+
+            },
+
+            Err(_) => {
+                let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+                let infra_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
+                let maybe_base_path = format!("{}/{}.json", infra_dir, &entity.to_str());
+                let policy = if u::file_exists(&maybe_base_path) {
+                    read_policy(&maybe_base_path)
+                } else {
+                    Policy::new(entity)
+                };
+                Role {
+                    name: s!(&name),
+                    kind: Kind::Base,
+                    trust: Trust::new(),
+                    arn: template::role_arn(&name),
+                    policy: policy,
+                    policy_name: s!(&name),
+                    policy_arn: template::policy_arn(&name),
+                }
+            }
         }
     }
 

@@ -305,7 +305,7 @@ dependencies = [
 
 [[package]]
 name = "authorizer"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "aws-config",
  "aws-credential-types",
@@ -1214,6 +1214,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
 
 [[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
+
+[[package]]
 name = "base64-simd"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1297,7 +1303,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -1305,7 +1311,7 @@ dependencies = [
  "aws-sdk-codeartifact",
  "aws-sdk-ecr",
  "aws-sdk-lambda",
- "base64",
+ "base64 0.21.7",
  "colored",
  "composer",
  "glob",
@@ -1600,6 +1606,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits 0.2.19",
+ "serde 1.0.217",
  "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
@@ -1703,7 +1710,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1722,6 +1729,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "serde_with",
  "serde_yaml",
  "tabled 0.10.0",
  "toml 0.8.19",
@@ -1913,8 +1921,18 @@ version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a01d95850c592940db9b8194bc39f4bc0e89dee5c4265e4b1807c34a9aba453c"
 dependencies = [
- "darling_core",
- "darling_macro",
+ "darling_core 0.13.4",
+ "darling_macro 0.13.4",
+]
+
+[[package]]
+name = "darling"
+version = "0.20.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc7f46116c46ff9ab3eb1597a45688b6715c6e628b5c133e288e709a29bcb4ee"
+dependencies = [
+ "darling_core 0.20.11",
+ "darling_macro 0.20.11",
 ]
 
 [[package]]
@@ -1932,19 +1950,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "darling_core"
+version = "0.20.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d00b9596d185e565c2207a0b01f8bd1a135483d02d9b7b0a54b11da8d53412e"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim 0.11.1",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "darling_macro"
 version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c972679f83bdf9c42bd905396b6c3588a843a17f0f16dfcfa3e2c5d57441835"
 dependencies = [
- "darling_core",
+ "darling_core 0.13.4",
  "quote",
  "syn 1.0.109",
 ]
 
 [[package]]
+name = "darling_macro"
+version = "0.20.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
+dependencies = [
+ "darling_core 0.20.11",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "deployer"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -1962,7 +2005,7 @@ dependencies = [
  "aws-sdk-scheduler",
  "aws-sdk-sfn",
  "aws-sdk-sqs",
- "base64",
+ "base64 0.21.7",
  "builder",
  "colored",
  "composer",
@@ -1996,6 +2039,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b42b6fa04a440b495c8b04d0e71b707c585f83cb9cb28cf8cd0d976c315e31b4"
 dependencies = [
  "powerfmt",
+ "serde 1.0.217",
 ]
 
 [[package]]
@@ -2078,7 +2122,7 @@ version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74073dd10495ce912909655131925b0459d49363751b93676148d843097fe825"
 dependencies = [
- "darling",
+ "darling 0.13.4",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -2095,6 +2139,12 @@ name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "ecdsa"
@@ -2457,7 +2507,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http 0.2.12",
- "indexmap",
+ "indexmap 2.7.0",
  "slab",
  "tokio",
  "tokio-util",
@@ -2476,12 +2526,18 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "http 1.2.0",
- "indexmap",
+ "indexmap 2.7.0",
  "slab",
  "tokio",
  "tokio-util",
  "tracing",
 ]
+
+[[package]]
+name = "hashbrown"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 
 [[package]]
 name = "hashbrown"
@@ -2914,12 +2970,24 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
+version = "1.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
+dependencies = [
+ "autocfg",
+ "hashbrown 0.12.3",
+ "serde 1.0.217",
+]
+
+[[package]]
+name = "indexmap"
 version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62f822373a4fe84d4bb149bf54e584a7f4abec90e072ed49cda0edea5b95471f"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
+ "serde 1.0.217",
 ]
 
 [[package]]
@@ -2937,7 +3005,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -2945,7 +3013,7 @@ dependencies = [
  "aws-sdk-eventbridge",
  "aws-sdk-lambda",
  "aws-sdk-sfn",
- "base64",
+ "base64 0.21.7",
  "composer",
  "kit",
  "open",
@@ -3032,10 +3100,10 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "ansi-escapes",
- "base64",
+ "base64 0.21.7",
  "chrono",
  "colored",
  "colored_json",
@@ -3326,7 +3394,7 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "colored",
  "composer",
@@ -3564,7 +3632,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
 dependencies = [
  "fixedbitset 0.4.2",
- "indexmap",
+ "indexmap 2.7.0",
 ]
 
 [[package]]
@@ -3574,7 +3642,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
 dependencies = [
  "fixedbitset 0.5.7",
- "indexmap",
+ "indexmap 2.7.0",
  "serde 1.0.217",
  "serde_derive",
 ]
@@ -3747,7 +3815,7 @@ dependencies = [
 
 [[package]]
 name = "pruner"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "authorizer",
  "aws-config",
@@ -3843,6 +3911,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "ref-cast"
+version = "1.0.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a0ae411dbe946a674d89546582cea4ba2bb8defac896622d6496f14c23ba5cf"
+dependencies = [
+ "ref-cast-impl",
+]
+
+[[package]]
+name = "ref-cast-impl"
+version = "1.0.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1165225c21bff1f3bbce98f5a1f889949bc902d3575308cc7b0de30b4f6d27c7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "reflink-copy"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3905,7 +3993,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "releaser"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -3929,7 +4017,7 @@ version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd67538700a17451e7cba03ac727fb961abb7607553461627b97de0b89cf4a62"
 dependencies = [
- "base64",
+ "base64 0.21.7",
  "bytes",
  "encoding_rs",
  "futures-core",
@@ -3965,7 +4053,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "authorizer",
  "aws-config",
@@ -4013,7 +4101,7 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "anyhow",
  "authorizer",
@@ -4124,7 +4212,7 @@ version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c74cae0a4cf6ccbbf5f359f08efdf8ee7e1dc532573bf0db71968cb56b1448c"
 dependencies = [
- "base64",
+ "base64 0.21.7",
 ]
 
 [[package]]
@@ -4186,6 +4274,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f29ebaa345f945cec9fbbc532eb307f0fdad8161f281b6369539c8d84876b3d"
 dependencies = [
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "schemars"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cd191f9397d57d581cddd31014772520aa448f65ef991055d7f61582c65165f"
+dependencies = [
+ "dyn-clone",
+ "ref-cast",
+ "serde 1.0.217",
+ "serde_json",
+]
+
+[[package]]
+name = "schemars"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82d20c4491bc164fa2f6c5d44565947a52ad80b9505d8e36f8d54c27c739fcd0"
+dependencies = [
+ "dyn-clone",
+ "ref-cast",
+ "serde 1.0.217",
+ "serde_json",
 ]
 
 [[package]]
@@ -4362,12 +4474,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_with"
+version = "3.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2c45cd61fefa9db6f254525d46e392b852e0e61d9a1fd36e5bd183450a556d5"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "hex",
+ "indexmap 1.9.3",
+ "indexmap 2.7.0",
+ "schemars 0.9.0",
+ "schemars 1.0.4",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "serde_with_macros",
+ "time",
+]
+
+[[package]]
+name = "serde_with_macros"
+version = "3.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de90945e6565ce0d9a25098082ed4ee4002e047cb59892c318d66821e14bb30f"
+dependencies = [
+ "darling 0.20.11",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "serde_yaml"
 version = "0.9.34+deprecated"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
 dependencies = [
- "indexmap",
+ "indexmap 2.7.0",
  "itoa",
  "ryu",
  "serde 1.0.217",
@@ -4467,7 +4611,7 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "authorizer",
  "aws-sdk-apigatewayv2",
@@ -4522,7 +4666,7 @@ version = "9.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7a2b3c2bc9693bcb40870c4e9b5bf0d79f9cb46273321bf855ec513e919082"
 dependencies = [
- "base64",
+ "base64 0.21.7",
  "digest",
  "hex",
  "miette",
@@ -4683,7 +4827,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "colored",
  "kit",
@@ -4697,7 +4841,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "authorizer",
  "builder",
@@ -4761,7 +4905,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.8.102"
+version = "0.8.103"
 dependencies = [
  "composer",
  "kit",
@@ -4822,6 +4966,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35e7868883861bd0e56d9ac6efcaaca0d6d5d82a2a7ec8209ff492c07cf37b21"
 dependencies = [
  "deranged",
+ "itoa",
  "num-conv",
  "powerfmt",
  "serde 1.0.217",
@@ -4971,7 +5116,7 @@ version = "0.22.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ae48d6208a266e853d946088ed816055e556cc6028c5e8e2b84d9fa5dd7c7f5"
 dependencies = [
- "indexmap",
+ "indexmap 2.7.0",
  "serde 1.0.217",
  "serde_spanned",
  "toml_datetime",
