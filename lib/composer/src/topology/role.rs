@@ -19,7 +19,7 @@ fn read_policy(path: &str) -> Policy {
     policy
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum Kind {
     Base,
     Override,
@@ -38,7 +38,7 @@ impl Kind {
 
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Role {
     pub name: String,
     pub kind: Kind,

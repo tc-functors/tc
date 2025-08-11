@@ -6,7 +6,7 @@ use serde_derive::{
 };
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Action {
     #[serde(rename(serialize = "Action", deserialize = "Action"))]
     action: Vec<String>,
@@ -266,7 +266,7 @@ fn make_appsync_actions() -> Vec<Action> {
 }
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Policy {
     #[serde(rename(serialize = "Version", deserialize = "Version"))]
     version: String,

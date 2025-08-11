@@ -4,7 +4,7 @@ use serde_derive::{
     Serialize,
 };
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Principal {
     #[serde(rename(serialize = "Service", deserialize = "Service"))]
     service: Vec<String>
@@ -27,7 +27,7 @@ impl Principal {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Statement {
     #[serde(rename(serialize = "Effect", deserialize = "Effect"))]
     effect: String,
@@ -49,7 +49,7 @@ impl Statement {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Trust {
     #[serde(rename(serialize = "Version", deserialize = "Version"))]
     pub version: String,

@@ -64,7 +64,7 @@ impl Role {
         self.attach_policy().await;
         self.wait_until_attached().await;
         // FIXME: iam is eventually consistent. There is no way to know if the role is really useable
-        u::sleep(2000);
+        u::sleep(4000);
 
         let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attached".green()));
     }

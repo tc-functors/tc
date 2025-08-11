@@ -464,7 +464,7 @@ fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool>
     }
 }
 
-fn make_roles(functions: &HashMap<String, Function>) -> Vec<Role> {
+fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: &usize, events: &usize, states: &Option<Flow>) -> Vec<Role> {
     let mut xs: Vec<Role> = vec![];
     for (_, f) in functions {
         if &f.runtime.role.kind.to_str() != "provided" {
@@ -472,15 +472,29 @@ fn make_roles(functions: &HashMap<String, Function>) -> Vec<Role> {
         }
     }
 
-    for b in vec![
-        Entity::State,
-        Entity::Route,
-        Entity::Event,
-        Entity::Mutation
-    ] {
+    let mut entities: Vec<Entity> = vec![];
+
+    if *mutations > 0 {
+        entities.push(Entity::Mutation);
+    }
+
+    if *routes > 0 {
+        entities.push(Entity::Mutation);
+    }
+
+    if *events > 0 {
+        entities.push(Entity::Event);
+    }
+
+    if let Some(_f) = states {
+        entities.push(Entity::State);
+    }
+
+    for b in entities {
         let r = Role::default(b);
         xs.push(r)
     }
+    xs.dedup();
     xs
 }
 
@@ -532,11 +546,14 @@ fn make(
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
     let mutations = make_mutations(&spec, &config);
+    let routes = make_routes(&spec, &fqn, &functions);
 
     let resolvers = match &mutations.get("default") {
         Some(m) => m.resolvers.clone(),
         None => HashMap::new()
     };
+
+    let events = make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers);
 
     Topology {
         namespace: namespace.clone(),
@@ -549,9 +566,9 @@ fn make(
         dir: dir.to_string(),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
-        events: make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers),
-        routes: make_routes(&spec, &fqn, &functions),
-        roles: make_roles(&functions),
+        roles: make_roles(&functions, &resolvers.len(), &routes.len(), &events.len(), &flow),
+        events: events,
+        routes: routes,
         functions: functions,
         schedules: schedule::make_all(&namespace, &infra_dir),
         queues: make_queues(&spec, &config),
@@ -599,7 +616,7 @@ fn make_standalone(dir: &str) -> Topology {
         routes: HashMap::new(),
         flow: None,
         pools: HashMap::new(),
-        roles: make_roles(&functions),
+        roles: make_roles(&functions, &0, &0, &0, &None),
         functions: functions,
         nodes: HashMap::new(),
         mutations: HashMap::new(),
