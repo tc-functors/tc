@@ -639,8 +639,7 @@ pub async fn add_permission(
         .principal(principal.to_string())
         .source_arn(source_arn.to_string())
         .send()
-        .await
-        .unwrap();
+        .await?;
     Ok(())
 }
 

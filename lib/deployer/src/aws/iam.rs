@@ -8,7 +8,10 @@ use aws_sdk_iam::{
 use std::collections::HashMap;
 use aws_sdk_iam::types::Tag;
 use aws_sdk_iam::types::builders::TagBuilder;
-
+use kit as u;
+use kit::LogUpdate;
+use std::io::stdout;
+use colored::Colorize;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -46,27 +49,53 @@ pub struct Role {
 
 impl Role {
     async fn create(&self) {
-        println!("Creating role {}", self.name);
+        let mut log_update = LogUpdate::new(stdout()).unwrap();
+
+        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "creating policy".cyan()));
         self.find_or_create_policy().await;
+
+        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attachable".cyan()));
+        self.wait_until_attachable().await;
+
+        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "role".cyan()));
         self.find_or_create_role().await;
+
+        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attaching".cyan()));
         self.attach_policy().await;
+        self.wait_until_attached().await;
+        // FIXME: iam is eventually consistent. There is no way to know if the role is really useable
+        u::sleep(2000);
+
+        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attached".green()));
     }
 
     pub async fn delete(&self) -> Result<(), Error> {
         println!("Deleting role {}", self.name);
         self.detach_policy().await?;
+        self.wait_until_detached().await;
         self.delete_policy().await?;
         self.delete_role().await?;
         Ok(())
     }
 
     async fn update(&self) -> Result<(), Error> {
-        println!("Updating role {}", self.name);
+        let mut log_update = LogUpdate::new(stdout()).unwrap();
+
+        let _ = log_update.render(&format!("Updating role {} ({})", self.name, "detaching policy".blue()));
         self.detach_policy().await?;
+
+        let _ = log_update.render(&format!("Updating role {} (deleting policy)", self.name));
         self.delete_policy().await?;
+
+        let _ = log_update.render(&format!("Updating role {} (creating policy)", self.name));
         self.find_or_create_policy().await;
+        self.wait_until_attachable().await;
+
+        let _ = log_update.render(&format!("Updating role {} (attaching policy)", self.name));
         self.attach_policy().await;
         self.find_or_create_role().await;
+        self.wait_until_attached().await;
+        let _ = log_update.render(&format!("Updating role {} (attached)", self.name));
         Ok(())
     }
 
@@ -190,6 +219,52 @@ impl Role {
         match res {
             Ok(_) => Ok(()),
             Err(_) => Ok(()),
+        }
+    }
+
+    pub async fn is_policy_attachable(&self) -> bool {
+        let res = self
+            .client
+            .get_policy()
+            .policy_arn(&self.policy_arn)
+            .send()
+            .await;
+        res.unwrap().policy.unwrap().is_attachable
+
+    }
+
+    pub async fn is_policy_attached(&self) -> bool {
+        let res = self
+            .client
+            .get_policy()
+            .policy_arn(&self.policy_arn)
+            .send()
+            .await;
+        let c = res.unwrap().policy.unwrap().attachment_count.unwrap();
+        c > 0
+    }
+
+    pub async fn wait_until_attachable(&self) {
+        let mut ready = false;
+        while !ready {
+            ready = self.is_policy_attachable().await;
+            u::sleep(1000)
+        }
+    }
+
+    pub async fn wait_until_attached(&self) {
+        let mut ready = false;
+        while !ready {
+            ready = self.is_policy_attached().await;
+            u::sleep(2000)
+        }
+    }
+
+    pub async fn wait_until_detached(&self) {
+        let mut ready = false;
+        while !ready {
+            ready = !self.is_policy_attached().await;
+            u::sleep(2000)
         }
     }
 }

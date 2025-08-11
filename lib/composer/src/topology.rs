@@ -471,8 +471,8 @@ fn make_roles(functions: &HashMap<String, Function>) -> Vec<Role> {
             xs.push(f.runtime.role.clone())
         }
     }
+
     for b in vec![
-        Entity::Function,
         Entity::State,
         Entity::Route,
         Entity::Event,
