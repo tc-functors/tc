@@ -148,6 +148,7 @@ pub fn make_targets(
             Some(m) => match m.input.as_ref() {
                 "Event" => s!("$.detail"),
                 "EventData" => s!("$.detail.data"),
+                "EventDataJSON" => s!("$.detail.data"),
                 "EventMetadata" => s!("$.detail.metadata"),
                 _ => m.input.clone(),
             },

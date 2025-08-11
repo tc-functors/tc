@@ -58,6 +58,11 @@ fn make_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
         None => panic!("resolver output type not defined"),
     };
 
+    let input = match resolver {
+        Some(r) => &r.input,
+        None => panic!("resolver input type not defined"),
+    };
+
     let fields = types_map.get(output).expect("Not found").keys();
     let mut s: String = s!("");
     for f in fields {
@@ -66,9 +71,12 @@ fn make_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
 "
         ))
     }
+
+    let input_fields = types_map.get(input).expect("Not found");
+    let detail_type = input_fields.get("detail").expect("Not found");
     let label = u::pascal_case(&name);
     format!(
-        r#"mutation {label}($detail: AWSJSON) {{
+        r#"mutation {label}($detail: {detail_type}) {{
   {name}(detail: $detail) {{
     {s}
     createdAt
