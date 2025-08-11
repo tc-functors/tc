@@ -372,7 +372,7 @@ impl Api {
     pub async fn create_stage(&self, api_id: &str) {
         let stage = self.clone().stage;
         let stage_variables = self.stage_variables.to_owned();
-        println!("Creating stage {}", &stage.green());
+        tracing::debug!("Creating stage {}", &stage.green());
         let _ = self
             .client
             .create_stage()
