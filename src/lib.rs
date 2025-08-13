@@ -348,9 +348,9 @@ pub async fn delete(
 
 pub struct InvokeOptions {
     pub sandbox: Option<String>,
+    pub dir: Option<String>,
     pub payload: Option<String>,
-    pub name: Option<String>,
-    pub kind: Option<String>,
+    pub entity: Option<String>,
     pub local: bool,
     pub dumb: bool,
 }
@@ -361,23 +361,20 @@ pub async fn invoke(auth: Auth, opts: InvokeOptions) {
         payload,
         local,
         dumb,
+        entity,
+        dir,
         ..
     } = opts;
 
     if local {
         invoker::run_local(payload).await;
     } else {
-        // FIXME: get dir
-        let topology = composer::compose(&u::pwd(), false);
-
+        let dir = u::maybe_string(dir, &u::pwd());
+        let topology = composer::compose(&dir, false);
         let sandbox = resolver::maybe_sandbox(sandbox);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
 
-        let mode = match topology.flow {
-            Some(f) => f.mode,
-            None => "Standard".to_string(),
-        };
-        invoker::invoke(&auth, topology.kind, &resolved.fqn, payload, &mode, dumb).await;
+        invoker::invoke(&auth, entity, &resolved, payload, dumb).await;
     }
 }
 
