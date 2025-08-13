@@ -338,7 +338,7 @@ pub fn scaffold() {
 
     if infra {
 
-        let default_infra_dir = &format!("{}/infrastructure/tc/{}", &u::root(), namespace);
+        let default_infra_dir = &format!("{}/infrastructure/tc/{}", &u::roots(), namespace);
 
         let dirs: Vec<&str> = vec![
             default_infra_dir,
