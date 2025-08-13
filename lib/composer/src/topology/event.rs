@@ -18,25 +18,11 @@ use serde_derive::{
 };
 use std::collections::HashMap;
 
-fn as_ns(given: &Option<String>, s: &str) -> String {
-    match given {
-        Some(p) => s!(p),
-        None => {
-            if s.contains("/") {
-                kit::split_first(s, "/")
-            } else {
-                s!(s)
-            }
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {
     pub entity: Entity,
     pub id: String,
     pub name: String,
-    pub producer_ns: String,
     pub consumer_ns: String,
     pub arn: String,
     pub role_arn: String,
@@ -50,7 +36,6 @@ impl Target {
         id: &str,
         name: &str,
         arn: &str,
-        producer_ns: &str,
         consumer_ns: &str,
         input_paths_map: Option<HashMap<String, String>>,
         input_template: Option<String>,
@@ -65,7 +50,6 @@ impl Target {
             entity: entity,
             id: abbr_id,
             name: s!(name),
-            producer_ns: s!(producer_ns),
             consumer_ns: s!(consumer_ns),
             arn: s!(arn),
             role_arn: Role::entity_role_arn(Entity::Event),
@@ -91,19 +75,16 @@ pub fn make_targets(
     resolvers: &HashMap<String, Resolver>
 ) -> Vec<Target> {
     let EventSpec {
-        producer_ns,
-        producer,
         function,
         mutation,
         functions,
-        stepfunction,
+        state,
         channel,
         ..
     } = espec;
 
     let mut xs: Vec<Target> = vec![];
 
-    let producer_ns = as_ns(producer_ns, producer);
     let consumer_ns = namespace;
 
     if let Some(f) = function {
@@ -115,7 +96,6 @@ pub fn make_targets(
             &id,
             &name,
             &arn,
-            &producer_ns,
             &consumer_ns,
             None,
             None,
@@ -133,7 +113,6 @@ pub fn make_targets(
                 &id,
                 &name,
                 &arn,
-                &producer_ns,
                 &consumer_ns,
                 None,
                 None,
@@ -165,14 +144,13 @@ pub fn make_targets(
             &id,
             m,
             &arn,
-            &producer_ns,
             &consumer_ns,
             input_paths_map,
             input_template,
         );
         xs.push(t);
     }
-    if let Some(s) = stepfunction {
+    if let Some(s) = state {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(s);
         let t = Target::new(
@@ -180,7 +158,6 @@ pub fn make_targets(
             &id,
             s,
             &arn,
-            &producer_ns,
             &consumer_ns,
             None,
             None,
@@ -199,7 +176,6 @@ pub fn make_targets(
             &id,
             namespace,
             &arn,
-            &producer_ns,
             &consumer_ns,
             input_paths_map,
             None,
@@ -208,7 +184,7 @@ pub fn make_targets(
     }
 
     //fallback
-    if mutation.is_none() && function.is_none() && stepfunction.is_none() && channel.is_none() {
+    if mutation.is_none() && function.is_none() && state.is_none() && channel.is_none() {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(fallback_fqn);
         let t = Target::new(
@@ -216,7 +192,6 @@ pub fn make_targets(
             &id,
             fallback_fqn,
             &arn,
-            &producer_ns,
             &consumer_ns,
             None,
             None,
@@ -257,18 +232,13 @@ pub struct EventPattern {
 }
 
 impl EventPattern {
-    fn new(event_name: &str, source: &str, filter: Option<String>) -> EventPattern {
+    fn new(event_name: &str, source: Vec<String>, filter: Option<String>) -> EventPattern {
         let detail = Detail::new(filter);
 
-        let source = if source.contains("/") {
-            kit::split_last(source, "/")
-        } else {
-            s!(source)
-        };
 
         EventPattern {
             detail_type: vec![event_name.to_string()],
-            source: vec![source],
+            source: source,
             detail: detail,
         }
     }
@@ -308,7 +278,7 @@ impl Event {
                 let pp: EventPattern = serde_json::from_str(&p).unwrap();
                 pp
             }
-            None => EventPattern::new(event_name, producer, filter.clone()),
+            None => EventPattern::new(event_name, producer.to_vec(), filter.clone()),
         };
 
         let bus = &config.aws.eventbridge.bus;

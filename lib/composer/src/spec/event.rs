@@ -3,6 +3,11 @@ use serde_derive::{
     Serialize,
 };
 
+use serde_with::serde_as;
+use serde_with::formats::PreferOne;
+use serde_with::OneOrMany;
+
+
 fn default_function() -> Option<String> {
     None
 }
@@ -11,10 +16,13 @@ fn default_targets() -> Vec<String> {
     vec![]
 }
 
+#[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventSpec {
-    #[serde(default)]
-    pub producer: String,
+
+    #[serde_as(as = "OneOrMany<_, PreferOne>")]
+    #[serde(default, alias = "producers")]
+    pub producer: Vec<String>,
 
     #[serde(default, alias = "doc-only")]
     pub doc_only: bool,
@@ -42,7 +50,7 @@ pub struct EventSpec {
     pub channel: Option<String>,
 
     #[serde(default)]
-    pub stepfunction: Option<String>,
+    pub state: Option<String>,
 
     #[serde(default)]
     pub pattern: Option<String>,
