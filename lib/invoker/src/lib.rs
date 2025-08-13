@@ -2,17 +2,41 @@ mod aws;
 mod event;
 mod function;
 mod state;
+mod repl;
 use authorizer::Auth;
-use composer::TopologyKind;
+use composer::{Entity, Topology};
 use kit as u;
 
-fn read_payload(dir: &str, s: Option<String>) -> String {
+
+async fn read_uri(auth: &Auth, uri: &str) -> String {
+    let client = aws::s3::make_client(auth).await;
+    let (bucket, key) = aws::s3::parts_of(uri);
+    aws::s3::get_str(&client, &bucket, &key).await
+}
+
+fn read_payload_local(payload: Option<String>) -> String {
+    if let Some(p) = payload {
+        if p.ends_with(".json") && u::file_exists(&p) {
+            u::slurp(&p)
+        } else {
+            p
+        }
+    } else {
+        panic!("No payload data found")
+    }
+}
+
+async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
     match s {
         Some(p) => {
-            if p.ends_with(".json") && u::file_exists(&p) {
-                u::slurp(&p)
+            if p.starts_with("s3://") {
+                read_uri(auth, &p).await
             } else {
-                p
+                if p.ends_with(".json") && u::file_exists(&p) {
+                    u::slurp(&p)
+                } else {
+                    p
+                }
             }
         }
         None => {
@@ -26,27 +50,73 @@ fn read_payload(dir: &str, s: Option<String>) -> String {
     }
 }
 
+async fn invoke_component(auth: &Auth, topology: &Topology, entity: Entity, component: &str, payload: &str) {
+    match entity {
+        Entity::Function => {
+            let functions = &topology.functions;
+            if let Some(f) = functions.get(component) {
+                function::invoke(auth, &f.fqn, payload).await;
+            } else {
+                println!("Function not found")
+            }
+        }
+        Entity::Event => {
+            let events = &topology.events;
+            if let Some(e) = events.get(component) {
+                let detail_type = &e.pattern.detail_type.first().unwrap();
+                let source = &e.pattern.source.first().unwrap();
+                event::trigger(auth, &e.bus, detail_type, source, &payload).await;
+            } else {
+                println!("Event not found")
+            }
+        }
+        Entity::Route => {
+            todo!()
+        }
+
+        Entity::Mutation => {
+            todo!()
+        }
+
+        Entity::State => {
+            todo!()
+        },
+        _ => todo!()
+    }
+}
+
 pub async fn invoke(
     auth: &Auth,
-    kind: TopologyKind,
-    fqn: &str,
+    maybe_entity: Option<String>,
+    topology: &Topology,
     payload: Option<String>,
-    mode: &str,
     dumb: bool,
 ) {
     let dir = u::pwd();
-    let payload = read_payload(&dir, payload);
+    let payload = read_payload(auth, &dir, payload).await;
 
-    match kind {
-        TopologyKind::Function => function::invoke(auth, fqn, &payload).await,
-        TopologyKind::StepFunction => state::invoke(auth, fqn, &payload, mode, dumb).await,
-        TopologyKind::Evented => event::trigger(auth, &payload).await,
-        TopologyKind::Graphql => (),
+    let Topology { flow, fqn, namespace, sandbox, .. } = topology;
+
+    match maybe_entity {
+        Some(e) => {
+            let (entity, component) = Entity::as_entity_component(&e);
+            match component {
+                Some(c) => invoke_component(auth, topology, entity, &c, &payload).await,
+                None => repl::start(&auth.name, &namespace, &sandbox).await.expect("REASON")
+            }
+        },
+        None => {
+            let mode = match flow {
+                Some(f) => &f.mode,
+                None => "Standard",
+            };
+
+            state::invoke(auth, fqn, &payload, &mode, dumb).await
+        }
     }
 }
 
 pub async fn run_local(payload: Option<String>) {
-    let dir = u::pwd();
-    let payload = read_payload(&dir, payload);
+    let payload = read_payload_local(payload);
     function::invoke_local(&payload).await;
 }

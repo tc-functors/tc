@@ -328,12 +328,10 @@ pub struct InvokeArgs {
     role: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
-    #[arg(long, short = 'n')]
-    name: Option<String>,
-    #[arg(long, short = 'S')]
-    step: Option<String>,
-    #[arg(long, short = 'k')]
-    kind: Option<String>,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
     #[arg(long, action)]
     local: bool,
     #[arg(long, action)]
@@ -616,11 +614,11 @@ async fn invoke(args: InvokeArgs) {
         role,
         payload,
         sandbox,
-        name,
         local,
-        kind,
+        entity,
         dumb,
         trace,
+        dir,
         ..
     } = args;
 
@@ -628,9 +626,9 @@ async fn invoke(args: InvokeArgs) {
     let opts = tc::InvokeOptions {
         sandbox: sandbox,
         payload: payload,
-        name: name,
+        dir: dir,
         local: local,
-        kind: kind,
+        entity: entity,
         dumb: dumb,
     };
 
