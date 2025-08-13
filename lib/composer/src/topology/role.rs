@@ -70,7 +70,7 @@ impl Role {
                 u::abbreviate(entity_name, "-")
             } else {
                 entity_name.to_string()
-            };
+             };
             let name = format!("tc-{}-{}-{{{{sandbox}}}}", namespace, abbr);
             Role {
                 name: s!(&name),

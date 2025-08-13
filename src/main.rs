@@ -58,6 +58,8 @@ enum Cmd {
     Resolve(ResolveArgs),
     /// Route traffic to the given sandbox
     Route(RouteArgs),
+    /// Scaffold functions
+    Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
     /// Run tests in topology
@@ -79,9 +81,6 @@ enum Cmd {
 
 #[derive(Debug, Args)]
 pub struct DefaultArgs {}
-
-#[derive(Debug, Args)]
-pub struct ScaffoldArgs {}
 
 #[derive(Debug, Args)]
 pub struct CacheArgs {
@@ -456,11 +455,11 @@ pub struct DocArgs {
 }
 
 #[derive(Debug, Args)]
-pub struct BootstrapArgs {
-    #[arg(long, short = 'e')]
-    profile: Option<String>,
-    #[arg(long, short = 'r')]
-    role: Option<String>,
+pub struct ScaffoldArgs {
+    #[arg(long, short = 'k')]
+    kind: Option<String>,
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
 }
 
 async fn version() {
@@ -808,6 +807,9 @@ async fn prune(args: PruneArgs) {
     tc::prune(&env, sandbox, filter, dry_run).await;
 }
 
+async fn scaffold(args: ScaffoldArgs) {
+    tc::scaffold(args.kind);
+}
 
 async fn list(args: ListArgs) {
     let ListArgs {
@@ -827,29 +829,30 @@ async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
-        Cmd::Build(args) => build(args).await,
-        Cmd::Cache(args) => cache(args).await,
-        Cmd::Config(args) => config(args).await,
-        Cmd::Doc(args) => doc(args).await,
-        Cmd::Compose(args) => compose(args).await,
-        Cmd::Resolve(args) => resolve(args).await,
-        Cmd::Create(args) => create(args).await,
-        Cmd::Delete(args) => delete(args).await,
-        Cmd::Freeze(args) => freeze(args).await,
-        Cmd::Invoke(args) => invoke(args).await,
-        Cmd::List(args) => list(args).await,
-        Cmd::Prune(args) => prune(args).await,
-        Cmd::Route(args) => route(args).await,
-        Cmd::Snapshot(args) => snapshot(args).await,
-        Cmd::Tag(args) => tag(args).await,
-        Cmd::Test(args) => test(args).await,
-        Cmd::Unfreeze(args) => unfreeze(args).await,
-        Cmd::Update(args) => update(args).await,
-        Cmd::Upgrade(args) => upgrade(args).await,
+        Cmd::Build(args)     => build(args).await,
+        Cmd::Cache(args)     => cache(args).await,
+        Cmd::Config(args)    => config(args).await,
+        Cmd::Doc(args)       => doc(args).await,
+        Cmd::Compose(args)   => compose(args).await,
+        Cmd::Resolve(args)   => resolve(args).await,
+        Cmd::Create(args)    => create(args).await,
+        Cmd::Delete(args)    => delete(args).await,
+        Cmd::Freeze(args)    => freeze(args).await,
+        Cmd::Invoke(args)    => invoke(args).await,
+        Cmd::List(args)      => list(args).await,
+        Cmd::Prune(args)     => prune(args).await,
+        Cmd::Route(args)     => route(args).await,
+        Cmd::Snapshot(args)  => snapshot(args).await,
+        Cmd::Tag(args)       => tag(args).await,
+        Cmd::Test(args)      => test(args).await,
+        Cmd::Unfreeze(args)  => unfreeze(args).await,
+        Cmd::Update(args)    => update(args).await,
+        Cmd::Upgrade(args)   => upgrade(args).await,
         Cmd::Changelog(args) => changelog(args).await,
-        Cmd::Version(..) => version().await,
-        Cmd::Release(args) => ci_release(args).await,
-        Cmd::Deploy(args) => ci_deploy(args).await,
+        Cmd::Version(..)     => version().await,
+        Cmd::Scaffold(args)  => scaffold(args).await,
+        Cmd::Release(args)   => ci_release(args).await,
+        Cmd::Deploy(args)    => ci_deploy(args).await,
     }
 }
 

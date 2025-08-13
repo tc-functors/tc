@@ -591,3 +591,8 @@ pub async fn list(auth: &Auth, sandbox: Option<String>, entity: Option<String>) 
     let topology = resolver::render(&auth, &sandbox, &topology).await;
     deployer::try_list(auth, &topology, &entity).await;
 }
+
+pub fn scaffold(kind: Option<String>) {
+    let kind = u::maybe_string(kind, "function");
+    scaffolder::scaffold(&kind)
+}
