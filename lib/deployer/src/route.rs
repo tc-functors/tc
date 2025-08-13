@@ -38,7 +38,7 @@ fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
     }
 }
 
-async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>) -> Api {
+async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>, tags: &HashMap<String, String>) -> Api {
     let client = gateway::make_client(auth).await;
 
     Api {
@@ -52,6 +52,7 @@ async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>) -> Api {
         sync: route.sync.to_owned(),
         request_template: route.request_template.clone(),
         cors: cors,
+        tags: tags.clone()
     }
 }
 
@@ -161,8 +162,8 @@ async fn create_api(
     println!("Endpoint {}", &endpoint);
 }
 
-async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>) {
-    let api = make_api(auth, route, cors).await;
+async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>, tags: &HashMap<String, String>) {
+    let api = make_api(auth, route, cors, tags).await;
     let api_id = api.create_or_update().await;
     let auth_id = if route.create_authorizer {
         match &route.authorizer {
@@ -183,13 +184,13 @@ async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>) {
     .await;
 }
 
-pub async fn create(auth: &Auth, routes: &HashMap<String, Route>) {
+pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>) {
     let cors = make_cors(&routes);
     tracing::debug!("Updating cors: {:?}", cors);
     for (_, route) in routes {
         tracing::debug!("Creating route {} {}", &route.method, &route.path);
         if !&route.skip {
-            create_route(auth, &route, cors.clone()).await;
+            create_route(auth, &route, cors.clone(), tags).await;
         }
     }
 }
@@ -206,7 +207,7 @@ async fn delete_integration(entity: &Entity, api: &Api, api_id: &str, target_arn
 }
 
 async fn delete_route(auth: &Auth, route: &Route) {
-    let api = make_api(auth, route, None).await;
+    let api = make_api(auth, route, None, &HashMap::new()).await;
     let api_id = api.clone().find().await;
     let route_key = format!("{} {}", &route.method, &route.path);
 

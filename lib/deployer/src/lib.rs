@@ -56,7 +56,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     queue::create(&auth, queues).await;
     event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
-    route::create(&auth, routes).await;
+    route::create(&auth, routes, &tags).await;
     page::create(&auth, pages).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
@@ -108,7 +108,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     event::create(&auth, events, &tags).await;
     queue::create(&auth, queues).await;
     pool::create(&auth, pools).await;
-    route::create(&auth, routes).await;
+    route::create(&auth, routes, &tags).await;
     page::create(&auth, pages).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
@@ -150,7 +150,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         Entity::Channel => channel::create(&auth, channels).await,
         Entity::Schedule => schedule::create(&auth, schedules).await,
         Entity::Trigger => pool::create(&auth, pools).await,
-        Entity::Route => route::create(&auth, routes).await,
+        Entity::Route => route::create(&auth, routes, tags).await,
         Entity::Page => page::create(&auth, pages).await,
         Entity::State => {
             if let Some(f) = flow {
