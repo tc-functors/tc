@@ -9,6 +9,10 @@ use serde_with::serde_as;
 use serde_with::formats::PreferOne;
 use serde_with::OneOrMany;
 
+fn default_sid() -> Option<String> {
+    Some(format!("TcBaseDefault{}", randstr()))
+}
+
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Action {
@@ -20,7 +24,7 @@ pub struct Action {
     #[serde_as(as = "OneOrMany<_, PreferOne>")]
     #[serde(rename(serialize = "Resource", deserialize = "Resource"))]
     resource: Vec<String>,
-    #[serde(rename(serialize = "Sid", deserialize = "Sid"))]
+    #[serde(rename(serialize = "Sid", deserialize = "Sid"), default = "default_sid")]
     sid: Option<String>
 }
 
