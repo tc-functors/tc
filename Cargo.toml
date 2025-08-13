@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.8.105"
+version = "0.8.106"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.8.105"
+version = "0.8.106"
 
 [dependencies]
 serde = "1.0"
@@ -36,6 +36,7 @@ pruner = { path = "lib/pruner" }
 tagger = { path = "lib/tagger" }
 notifier = { path = "lib/notifier" }
 router = { path = "lib/router" }
+scaffolder = { path = "lib/scaffolder" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -58,7 +59,8 @@ members = [
    "lib/pruner",
    "lib/tagger",
    "lib/notifier",
-   "lib/router"
+   "lib/router",
+   "lib/scaffolder"
 ]
 
 [profile.release]

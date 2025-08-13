@@ -132,7 +132,12 @@ pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Even
 
         event.targets = targets;
 
-        if config.deployer.guard_stable_updates {
+        let guard = match std::env::var("TC_FORCE_DEPLOY") {
+            Ok(_) => false,
+            Err(_) => config.deployer.guard_stable_updates
+        };
+
+        if guard {
             if sandbox == "stable" || event.sandboxes.contains(&sandbox) {
                 events.insert(name.to_string(), event.clone());
             }

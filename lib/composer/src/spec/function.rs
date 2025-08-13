@@ -30,7 +30,7 @@ impl FromStr for Lang {
         match s {
             "python3.10" | "python3.11" | "python3.9" | "python3.12 | python" => Ok(Lang::Python),
             "ruby3.2" | "ruby" | "ruby32 | ruby" => Ok(Lang::Ruby),
-            "node22" | "node20" | "node18 | node" => Ok(Lang::Node),
+            "node22" | "node20" | "node18 | node" | "Node" => Ok(Lang::Node),
             "rust" => Ok(Lang::Rust),
             _ => Ok(Lang::Python),
         }
@@ -86,7 +86,7 @@ impl FromStr for LangRuntime {
             "ruby3.2" | "ruby" | "ruby32" => Ok(LangRuntime::Ruby32),
             "clojure" | "java21" => Ok(LangRuntime::Java21),
             "rust" => Ok(LangRuntime::Rust),
-            "node22" => Ok(LangRuntime::Node22),
+            "node22" | "Node" => Ok(LangRuntime::Node22),
             "node20" => Ok(LangRuntime::Node20),
             _ => Ok(LangRuntime::Python311),
         }
@@ -150,14 +150,14 @@ impl FromStr for BuildKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "code" => Ok(BuildKind::Code),
-            "inline" => Ok(BuildKind::Inline),
+            "Code" | "code" => Ok(BuildKind::Code),
+            "Inline" | "inline" => Ok(BuildKind::Inline),
             "layer" => Ok(BuildKind::Layer),
             "library" => Ok(BuildKind::Library),
             "extension" => Ok(BuildKind::Extension),
             "runtime" => Ok(BuildKind::Runtime),
             "slab" => Ok(BuildKind::Slab),
-            "image" => Ok(BuildKind::Image),
+            "Image" | "image" => Ok(BuildKind::Image),
             _ => Ok(BuildKind::Layer),
         }
     }

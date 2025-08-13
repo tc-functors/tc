@@ -428,5 +428,10 @@ pub fn runv(dir: &str, cmd: Vec<&str>) {
 }
 
 pub fn root() -> String {
-    sh("git rev-parse --show-toplevel", &pwd())
+    let (status, x, _) = runc("git rev-parse --show-toplevel", &pwd());
+    if status {
+        x
+    } else {
+        String::from(".")
+    }
 }
