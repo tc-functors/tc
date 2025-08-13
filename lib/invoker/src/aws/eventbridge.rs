@@ -23,8 +23,8 @@ fn make_event(bus: &str, detail_type: &str, source: &str, detail: &str) -> PutEv
     event
 }
 
-pub async fn put_event(client: Client, bus: &str, detail_type: &str, source: &str, detail: &str) {
+pub async fn put_event(client: Client, bus: &str, detail_type: &str, source: &str, detail: &str) -> String {
     let event = make_event(bus, detail_type, source, detail);
     let resp = client.put_events().entries(event).send().await;
-    println!("{:?}", resp);
+    resp.unwrap().entries.expect("Failed").first().unwrap().event_id.clone().unwrap()
 }
