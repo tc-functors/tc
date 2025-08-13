@@ -272,6 +272,13 @@ fn make_env_vars(
             }
         },
         Lang::Python => {
+
+            hmap.insert(
+                s!("PYTHONPATH"),
+                format!(
+                    "/opt/python:/var/runtime",
+                ),
+            );
             // legacy
             if let Some(assets) = maybe_assets {
                 let base_deps_path = as_str(assets.base_deps_path, "/var/python");
