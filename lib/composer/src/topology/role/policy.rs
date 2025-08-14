@@ -127,12 +127,20 @@ fn make_sfn_actions() -> Vec<Action> {
         },
         Action {
             action: v![
-                "states:StartExecution",
-                "states:StartExecutionSync"
+                "states:DescribeExecution",
+	        "states:StopExecution"
             ],
             effect: s!("Allow"),
-            resource: v!["*"],
+            resource: v!["arn:aws:states:{{region}}:{{account}}:stateMachine:*"],
             sid: make_sid("StateState")
+        },
+        Action {
+            action: v![
+                "states:StartExecution"
+            ],
+            effect: s!("Allow"),
+            resource: v!["arn:aws:states:{{region}}:{{account}}:stateMachine:*"],
+            sid: make_sid("StateStateChild")
         },
         Action {
             action: v![
@@ -142,7 +150,7 @@ fn make_sfn_actions() -> Vec<Action> {
                 "events:PutEvents"
             ],
             effect: s!("Allow"),
-            resource: v!["*"],
+            resource: v!["arn:aws:events:{{region}}:{{account}}:rule/StepFunctions*"],
             sid: make_sid("StateEvent")
         },
         Action {

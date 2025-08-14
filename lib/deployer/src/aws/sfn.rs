@@ -120,21 +120,22 @@ impl StateMachine {
     async fn create(&self) {
         let name = &self.name;
         let mut log_update = LogUpdate::new(stdout()).unwrap();
-        let _ = log_update.render(&format!("Creating sgn {}", name));
+        let _ = log_update.render(&format!("Creating state {}", name));
         let mut state: StateMachineStatus = StateMachineStatus::Deleting;
         let tracing = make_tracing_config();
 
         let tags = make_tags(self.tags.clone());
+        println!("Creating state {}", &self.name);
         let res = self
             .clone()
             .client
             .create_state_machine()
             .name(self.name.to_owned())
-            .definition(self.definition.to_owned())
             .role_arn(self.role_arn.to_owned())
             .r#type(self.mode.to_owned())
             .set_tags(Some(tags))
-            .tracing_configuration(tracing)
+            .definition(&self.definition.clone())
+            .tracing_configuration(tracing.clone())
             .send()
             .await;
 
@@ -155,24 +156,32 @@ impl StateMachine {
                     &name,
                     state.as_str().green()
                 ));
+
             }
             Err(e) => panic!("{:?}", e),
         }
+
+
+
     }
 
     async fn update(self, arn: &str) {
         let s = self.clone();
-        println!("Updating states {}", &self.name);
+        println!("Updating state {} (permissions)", &self.name);
         let tracing = make_tracing_config();
 
-        self.client
+        let _ = &self.client
             .update_state_machine()
             .state_machine_arn(arn.to_string())
-            .role_arn(self.role_arn)
+            .role_arn(&self.role_arn)
             .send()
             .await
             .unwrap();
 
+
+        // BAFFLING: sfn update is eventually consistent. Active state needs a second or more to reflect
+        sleep(1000);
+        println!("Updating state {} (definition)", &self.name);
 
         self.client
             .update_state_machine()
