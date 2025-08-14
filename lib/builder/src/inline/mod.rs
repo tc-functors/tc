@@ -190,7 +190,13 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
 
         sh(command, dir);
         bar.inc(7);
-        sh("rm -rf build build.json", dir);
+        match std::env::var("TC_INSPECT_BUILD") {
+            Ok(_) => (),
+            Err(_) => {
+                sh("rm -rf build build.json", dir);
+            }
+        }
+
         bar.inc(8);
         bar.finish();
 
