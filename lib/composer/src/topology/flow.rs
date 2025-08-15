@@ -10,6 +10,7 @@ use serde_derive::{
 };
 use serde_json::Value;
 use crate::Entity;
+use kit as u;
 
 mod sfn;
 mod sfn_ext;
@@ -32,7 +33,11 @@ pub struct Flow {
 
 fn make_role(infra_dir: &str, namespace: &str, fqn: &str) -> Role {
     let role_file = format!("{}/roles/sfn.json", infra_dir);
-    Role::new(Entity::State, &role_file, namespace, fqn)
+    if u::file_exists(&role_file) {
+        Role::new(Entity::State, &role_file, namespace, fqn)
+    } else {
+        Role::provided("tc-base-sfn-role")
+    }
 }
 
 fn find_definition(dir: &str, spec: &TopologySpec) -> Option<Value> {
