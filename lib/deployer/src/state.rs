@@ -135,7 +135,7 @@ pub async fn update_logs(auth: &Auth, sfn_arn: &str, flow: &Flow) {
         .await
         .unwrap();
     println!(
-        "Updating log-config {} ({}) include_exec_data: {}",
+        "Updating state {} (logging) mode: {} tracing: {}",
         name, mode, include_exec_data
     );
     let _ = sfn::enable_logging(

@@ -140,7 +140,6 @@ pub fn print_versions(versions: HashMap<String, String>, format: &str) {
 
 }
 
-
 pub fn count_str(topology: &Topology) -> String {
     let Topology {
         functions,
@@ -149,6 +148,7 @@ pub fn count_str(topology: &Topology) -> String {
         queues,
         routes,
         pages,
+        flow,
         ..
     } = topology;
 
@@ -161,6 +161,11 @@ pub fn count_str(topology: &Topology) -> String {
     let mut q: usize = queues.len();
     let mut r: usize = routes.len();
     let mut p: usize = pages.len();
+    let mut s: usize = if let Some(_f) = flow {
+        1
+    } else {
+        0
+    };
 
     let nodes = &topology.nodes;
 
@@ -172,6 +177,7 @@ pub fn count_str(topology: &Topology) -> String {
             queues,
             routes,
             pages,
+            flow,
             ..
         } = node;
         f = f + functions.len();
@@ -183,16 +189,23 @@ pub fn count_str(topology: &Topology) -> String {
         q = q + queues.len();
         r = r + routes.len();
         p = p + pages.len();
+        let snode = if let Some(_) = flow {
+            1
+        } else {
+            0
+        };
+        s = s + snode;
     }
 
     let msg = format!(
-        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, pages: {}",
+        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, states: {}, pages: {}",
         nodes.len() + 1,
         f,
         m,
         e,
         r,
         q,
+        s,
         p
     );
     msg
