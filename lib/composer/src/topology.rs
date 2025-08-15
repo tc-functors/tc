@@ -492,7 +492,10 @@ fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: 
     }
 
     for b in entities {
-        let r = Role::default(b);
+        let r = match std::env::var("TC_LEGACY_ROLES") {
+            Ok(_) => Role::provided_by_entity(b),
+            Err(_) =>  Role::default(b)
+        };
         h.insert(r.name.clone(), r);
     }
     h

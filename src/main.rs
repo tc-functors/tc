@@ -76,7 +76,7 @@ enum Cmd {
     Version(DefaultArgs),
     /// Generate documentation
     #[clap(hide = true)]
-    Doc(DocArgs),
+    Doc(DefaultArgs),
 }
 
 #[derive(Debug, Args)]
@@ -447,12 +447,6 @@ pub struct UnFreezeArgs {
 }
 
 #[derive(Debug, Args)]
-pub struct DocArgs {
-    #[arg(long, short = 's')]
-    spec: Option<String>,
-}
-
-#[derive(Debug, Args)]
 pub struct ScaffoldArgs {
     #[arg(long, short = 'k')]
     kind: Option<String>,
@@ -782,13 +776,8 @@ fn init_tracing(trace: bool) {
     }
 }
 
-async fn doc(args: DocArgs) {
-    let DocArgs { spec } = args;
-
-    match spec {
-        Some(s) => tc::generate_doc(&s),
-        None => clap_markdown::print_help_markdown::<Tc>(),
-    }
+async fn doc(_args: DefaultArgs) {
+    clap_markdown::print_help_markdown::<Tc>()
 }
 
 async fn prune(args: PruneArgs) {

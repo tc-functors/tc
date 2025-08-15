@@ -61,6 +61,16 @@ pub struct Role {
 }
 
 
+fn legacy_name_of(entity: Entity) -> String {
+    match entity {
+        Entity::Route => s!("tc-base-api-role"),
+        Entity::Event => s!("tc-base-event-role"),
+        Entity::Mutation => s!("tc-base-appsync-role"),
+        Entity::State => s!("tc-base-sfn-role"),
+        _ => s!("tc-base-lambda-role"),
+    }
+}
+
 impl Role {
     pub fn new(entity: Entity, role_file: &str, namespace: &str, entity_name: &str) -> Role {
         if u::file_exists(&role_file) {
@@ -134,6 +144,8 @@ impl Role {
         }
     }
 
+
+
     pub fn provided(name: &str) -> Role {
         Role {
             name: s!(name),
@@ -146,9 +158,31 @@ impl Role {
         }
     }
 
+    pub fn provided_by_entity(entity: Entity) -> Role {
+        let name = legacy_name_of(entity);
+        Role {
+            name: s!(name),
+            kind: Kind::Provided,
+            trust: Trust::new(),
+            arn: template::role_arn(&name),
+            policy: Policy::new(Entity::Function),
+            policy_name: s!(&name),
+            policy_arn: template::policy_arn(&name),
+        }
+    }
+
     pub fn entity_role_arn(entity: Entity) -> String {
-        let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
-        template::role_arn(&name)
+        match std::env::var("TC_LEGACY_ROLES") {
+            Ok(_) => {
+                let name = legacy_name_of(entity);
+                template::role_arn(&name)
+            }
+            Err(_) => {
+                let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+                template::role_arn(&name)
+            }
+        }
+
     }
 
 

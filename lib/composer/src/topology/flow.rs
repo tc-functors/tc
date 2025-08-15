@@ -36,7 +36,7 @@ fn make_role(infra_dir: &str, namespace: &str, fqn: &str) -> Role {
     if u::file_exists(&role_file) {
         Role::new(Entity::State, &role_file, namespace, fqn)
     } else {
-        Role::provided("tc-base-sfn-role")
+        Role::provided_by_entity(Entity::State)
     }
 }
 

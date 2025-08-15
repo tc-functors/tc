@@ -3,10 +3,7 @@ use composer::{
     Entity,
     Topology,
     spec::{
-        BuildSpec,
         ConfigSpec,
-        FunctionSpec,
-        function::InfraSpec,
     },
 };
 use kit as u;
@@ -502,17 +499,6 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
             println!("{}", table);
         }
     }
-}
-
-pub fn generate_doc(spec: &str) {
-    let schema = match spec {
-        "build" => doku::to_json::<BuildSpec>(),
-        "infra" => doku::to_json::<InfraSpec>(),
-        "function" => doku::to_json::<FunctionSpec>(),
-        _ => doku::to_json::<FunctionSpec>(),
-    };
-    println!("{}", &schema);
-    //println!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }
 
 pub async fn snapshot(
