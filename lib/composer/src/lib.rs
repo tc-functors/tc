@@ -75,6 +75,23 @@ pub fn compose(dir: &str, recursive: bool) -> Topology {
 }
 
 
+pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
+    let f = format!("{}/topology.yml", dir);
+    let spec = TopologySpec::new(&f);
+    let given_root_dirs = match &spec.nodes.dirs {
+        Some(dirs) => dirs,
+        None => &list_dirs(dir),
+    };
+    let mut h: HashMap<String, String> = HashMap::new();
+    for d in given_root_dirs {
+        let f = format!("{}/topology.yml", &d);
+        let spec = TopologySpec::new(&f);
+        let version = topology::version::current_semver(&spec.name);
+        h.insert(spec.name, version);
+    }
+    h
+}
+
 pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
     if u::file_exists(&f) {
@@ -126,6 +143,8 @@ pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     h
 }
 
+
+// deprecated
 pub fn find_layers() -> Vec<Layer> {
     let dir = u::pwd();
     if topology::is_compilable(&dir) {
@@ -163,9 +182,12 @@ pub fn is_topology_dir(dir: &str) -> bool {
     topology::is_topology_dir(dir)
 }
 
+// display
+
+
 pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
     match format {
-        "table" => display::topology::print_topologies(topologies),
+        "table" => display::topology::print_stats(topologies),
         "tree" => {
             println!("")
         },
@@ -175,7 +197,7 @@ pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
 
 pub fn display_root() {
     let topologies = list_topologies();
-    display::topology::print_topologies(topologies)
+    display::topology::print_stats(topologies)
  }
 
 
@@ -193,14 +215,31 @@ pub fn display_topology(dir: &str, format: &str, recursive: bool) {
 pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
     let format = Format::from_str(f).unwrap();
 
-    let topology = compose(&dir, recursive);
-
     match e {
-        "." => if let Some(f) = topology.current_function(dir) {
-            u::pp_json(&f)
+        "." => {
+            let topology = compose(&dir, recursive);
+            if let Some(f) = topology.current_function(dir) {
+                u::pp_json(&f)
+            }
         },
-        "roles" => u::pp_json(&topology.roles),
-        _ =>  display::try_display(&topology, e, format)
+        "versions" => {
+            let versions = lookup_versions(dir);
+            display::topology::print_versions(versions, f);
+        },
+
+        "stats" => {
+            let topologies = compose_root(dir, true);
+            display::topology::print_stats(topologies)
+        },
+
+        "roles" => {
+            let topology = compose(&dir, recursive);
+            u::pp_json(&topology.roles);
+        }
+        _ =>  {
+            let topology = compose(&dir, recursive);
+            display::try_display(&topology, e, format)
+        }
     }
 }
 
@@ -227,17 +266,6 @@ pub fn current_function(dir: &str) -> Option<Function> {
     topology.current_function(dir)
 }
 
-pub fn kind_of() -> String {
-    let dir = &u::pwd();
-    if topology::is_topology_dir(dir) {
-        s!("step-function")
-    } else if u::file_exists("function.json") {
-        s!("function")
-    } else {
-        s!("event")
-    }
-}
-
 pub fn list_topologies() -> HashMap<String, Topology> {
     let mut names: Vec<String> = vec![];
     let mut topologies: HashMap<String, Topology> = HashMap::new();
@@ -260,58 +288,5 @@ pub fn list_topologies() -> HashMap<String, Topology> {
 }
 
 pub fn count_of(topology: &Topology) -> String {
-    let Topology {
-        functions,
-        mutations,
-        events,
-        queues,
-        routes,
-        pages,
-        ..
-    } = topology;
-
-    let mut f: usize = functions.len();
-    let mut m: usize = match mutations.get("default") {
-        Some(mx) => mx.resolvers.len(),
-        _ => 0,
-    };
-    let mut e: usize = events.len();
-    let mut q: usize = queues.len();
-    let mut r: usize = routes.len();
-    let mut p: usize = pages.len();
-
-    let nodes = &topology.nodes;
-
-    for (_, node) in nodes {
-        let Topology {
-            functions,
-            mutations,
-            events,
-            queues,
-            routes,
-            pages,
-            ..
-        } = node;
-        f = f + functions.len();
-        m = m + match mutations.get("default") {
-            Some(mx) => mx.resolvers.len(),
-            _ => 0,
-        };
-        e = e + events.len();
-        q = q + queues.len();
-        r = r + routes.len();
-        p = p + pages.len();
-    }
-
-    let msg = format!(
-        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, pages: {}",
-        nodes.len() + 1,
-        f,
-        m,
-        e,
-        r,
-        q,
-        p
-    );
-    msg
+    display::topology::count_str(topology)
 }
