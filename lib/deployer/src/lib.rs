@@ -91,6 +91,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
         pools,
         routes,
         pages,
+        roles,
         ..
     } = topology;
 
@@ -102,6 +103,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
         &version
     );
 
+    role::create_or_update(&auth, roles, tags).await;
     function::update_code(&auth, functions).await;
     mutation::create(&auth, mutations, &tags).await;
     channel::create(&auth, channels).await;
