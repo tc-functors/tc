@@ -22,7 +22,7 @@ rand = { version = "^0.8.4"}
 derivative = "2.2.0"
 lazy_static = "1.4"
 chksum = "0.4.0"
-kit = { path = "../kit" }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 daggy = { version = "0.8.1", features = ["serde-1"] }
 doku = "0.21.1"
 anyhow = "1.0.71"

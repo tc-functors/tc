@@ -15,6 +15,6 @@ open = "5.0.0"
 anyhow = "1.0.71"
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = { version = "1.72.0", features = ["behavior-version-latest"] }
-kit = { path = "../kit" }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 authorizer = { path = "../authorizer" }
 tagger = { path = "../tagger" }

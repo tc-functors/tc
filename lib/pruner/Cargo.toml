@@ -20,6 +20,6 @@ aws-sdk-sqs = { version = "1.65.0", features = ["behavior-version-latest"] }
 aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
 aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 question = "0.2.2"
-kit = { path = "../kit" }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 authorizer = { path = "../authorizer" }
 composer = { path = "../composer" }

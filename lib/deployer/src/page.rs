@@ -171,6 +171,15 @@ pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str)
     }
 }
 
+
+
+// pub async fn update_config(auth: &Auth, topology: &HashMap<String, Topology>) {
+//     let rest_url = "";
+//     let appsync_url = "";
+//     let channel_url = "";
+
+// }
+
 pub async fn delete(_auth: &Auth, _pages: &HashMap<String, Page>) {
     for (name, _page) in _pages {
         println!("Deleting page {}", &name);

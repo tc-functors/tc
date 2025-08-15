@@ -3208,7 +3208,8 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.8.112"
+version = "0.1.0"
+source = "git+https://github.com/tc-functors/kit.git?rev=c56968d#c56968df177e1d99636597a7052c6f2b14c60a4d"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
