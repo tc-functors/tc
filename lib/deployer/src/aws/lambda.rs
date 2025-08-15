@@ -640,6 +640,8 @@ pub async fn add_permission(
         .source_arn(source_arn.to_string())
         .send()
         .await?;
+    //println!("{:?}", res);
+
     Ok(())
 }
 
