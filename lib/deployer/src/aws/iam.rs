@@ -118,7 +118,6 @@ impl Role {
             .create_policy()
             .policy_name(&self.policy_name)
             .policy_document(&self.policy_doc)
-            .set_tags(self.tags.clone())
             .send()
             .await
             .unwrap();
@@ -165,7 +164,6 @@ impl Role {
             .create_role()
             .role_name(&self.name)
             .assume_role_policy_document(&self.trust_policy)
-            .set_tags(self.tags.clone())
             .send()
             .await
             .unwrap();
