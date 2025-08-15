@@ -17,6 +17,6 @@ aws-sdk-ecr = { version = "1.82.0", features = ["behavior-version-latest"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-codeartifact = { version = "1.74.0", features = ["behavior-version-latest"] }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 composer = { path = "../composer" }
 authorizer = { path = "../authorizer" }
-kit = { path = "../kit" }

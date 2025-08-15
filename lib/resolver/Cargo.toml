@@ -11,7 +11,7 @@ regex = "1.9.1"
 tracing = "0.1"
 cacache = "13.0.0"
 tabled = "0.10.0"
-kit = { path = "../kit" }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 authorizer = { path = "../authorizer" }
 composer = { path = "../composer" }
 aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }

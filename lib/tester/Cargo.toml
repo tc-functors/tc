@@ -4,5 +4,5 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
-kit = { path = "../kit" }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 composer = { path = "../composer" }

@@ -18,7 +18,7 @@ aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1.70.0", features = ["behavior-version-latest"] }
 aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
-kit = { path = "../kit" }
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 authorizer = { path = "../authorizer" }
 composer = { path = "../composer" }
 releaser = { path = "../releaser" }
