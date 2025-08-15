@@ -1,4 +1,3 @@
-use doku::Document;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -7,13 +6,13 @@ use serde_derive::{
 };
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NetworkSpec {
     pub subnets: Vec<String>,
     pub security_groups: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FilesystemSpec {
     pub arn: String,
     pub mount_point: String,
@@ -27,7 +26,7 @@ fn default_timeout() -> Option<i32> {
     Some(300)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InfraSpec {
     #[serde(default = "default_memory_size")]
     pub memory_size: Option<i32>,

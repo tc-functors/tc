@@ -102,7 +102,7 @@ impl Api {
 
     pub async fn update(&self, api_id: &str) -> String {
         if let Some(cors) = self.cors.clone() {
-            println!("Updating cors: {:?} ", &cors);
+            println!("Updating route {} (cors)", &self.name);
             let _ = self
                 .clone()
                 .client
@@ -125,7 +125,7 @@ impl Api {
                 self.clone().update(&id).await
             }
             _ => {
-                println!("Creating API {}", &self.name.blue());
+                println!("Creating route {} (gateway)", &self.name.blue());
                 self.clone().create().await
             }
         }

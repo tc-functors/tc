@@ -1,4 +1,3 @@
-use doku::Document;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -13,7 +12,7 @@ use std::{
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Document)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Lang {
     Python,
     Ruby,
@@ -49,7 +48,7 @@ impl Lang {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub enum LangRuntime {
     #[serde(alias = "python3.9")]
     Python39,
@@ -125,7 +124,7 @@ impl LangRuntime {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum BuildKind {
     #[serde(alias = "code")]
     Code,
@@ -202,7 +201,7 @@ fn default_package_type() -> String {
     s!("zip")
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ImageSpec {
     #[serde(default)]
     pub dir: Option<String>,
@@ -211,21 +210,19 @@ pub struct ImageSpec {
     pub commands: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LayerSpec {
     #[serde(default)]
     pub commands: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BuildSpec {
     // deprecated
-    #[doku(example = "Inline")]
     pub kind: BuildKind,
 
     // deprecated
     #[serde(default)]
-    #[doku(example = "dnf install git -yy")]
     pub pre: Vec<String>,
 
     #[serde(default)]
@@ -239,7 +236,6 @@ pub struct BuildSpec {
 
     /// Command to use when build kind is Code
     #[serde(default = "default_command")]
-    #[doku(example = "zip -9 lambda.zip .")]
     pub command: String,
 
     #[serde(default)]
@@ -258,7 +254,7 @@ impl BuildSpec {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Provider {
     Lambda,
     Fargate,
@@ -289,7 +285,7 @@ fn default_provider() -> Option<Provider> {
     Some(Provider::Lambda)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
     #[serde(default = "default_lang")]
     pub lang: LangRuntime,
@@ -320,13 +316,13 @@ pub struct RuntimeSpec {
     pub extensions: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Role {
     pub name: String,
     pub path: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InfraSpec {
     #[serde(default = "default_infra_dir")]
     pub dir: String,
@@ -337,7 +333,7 @@ pub struct InfraSpec {
     pub role: Role,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AssetsSpec {
     #[serde(alias = "DEPS_PATH", alias = "deps_path")]
     pub deps_path: Option<String>,
@@ -349,7 +345,7 @@ pub struct AssetsSpec {
     pub artifacts_source: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Document)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FunctionSpec {
     pub name: String,
     pub dir: Option<String>,

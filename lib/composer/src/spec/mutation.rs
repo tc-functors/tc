@@ -7,6 +7,7 @@ use std::collections::HashMap;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationConsumer {
     pub name: String,
+
     pub mapping: HashMap<String, String>,
 }
 

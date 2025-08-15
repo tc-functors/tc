@@ -1,5 +1,4 @@
 use derivative::Derivative;
-use doku::Document;
 use kit as u;
 use kit::*;
 use serde::{
@@ -84,7 +83,7 @@ fn default_network() -> HashMap<String, Network> {
     HashMap::new()
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Compiler {
     #[derivative(Default(value = "default_bool()"))]
@@ -100,13 +99,13 @@ pub struct Compiler {
     pub default_infra_path: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Builder {
     pub cluster: Option<String>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Resolver {
     #[derivative(Default(value = "default_bool()"))]
@@ -126,7 +125,7 @@ pub struct Resolver {
     pub stable_sandbox: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Deployer {
     #[derivative(Default(value = "default_bool()"))]
@@ -142,7 +141,7 @@ pub struct Deployer {
     pub fallback: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Notifier {
     #[derivative(Default(value = "default_hashmap()"))]
@@ -150,7 +149,7 @@ pub struct Notifier {
     pub webhooks: HashMap<String, String>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Ci {
     #[derivative(Default(value = "default_ci_provider()"))]
@@ -170,7 +169,7 @@ pub struct Ci {
     pub roles: HashMap<String, String>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Eventbridge {
     #[derivative(Default(value = "default_bus()"))]
@@ -190,7 +189,7 @@ pub struct Eventbridge {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Network {
     #[derivative(Default(value = "default_vec()"))]
@@ -202,7 +201,7 @@ pub struct Network {
     pub security_groups: Vec<String>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Efs {
     #[derivative(Default(value = "default_network()"))]
@@ -226,7 +225,7 @@ pub struct Efs {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Ecs {
     #[derivative(Default(value = "default_vec()"))]
@@ -238,7 +237,7 @@ pub struct Ecs {
     pub cluster: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Ecr {
     #[derivative(Default(value = "default()"))]
@@ -248,7 +247,7 @@ pub struct Ecr {
     pub profile: Option<String>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Stepfunction {
     #[derivative(Default(value = "default_sfn_role()"))]
@@ -260,7 +259,7 @@ pub struct Stepfunction {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Lambda {
     #[derivative(Default(value = "default_timeout()"))]
@@ -288,7 +287,7 @@ pub struct Lambda {
     pub default_image_repo: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct ApiGateway {
     #[derivative(Default(value = "default_api_name()"))]
@@ -300,7 +299,7 @@ pub struct ApiGateway {
     pub default_region: String,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Cognito {
     #[derivative(Default(value = "default_email()"))]
@@ -310,7 +309,7 @@ pub struct Cognito {
     pub from_email_address_map: Option<HashMap<String, String>>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Cloudfront {
     pub bucket: Option<String>,
@@ -318,7 +317,7 @@ pub struct Cloudfront {
     pub domains: Option<Vec<String>>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Aws {
     #[serde(default = "Eventbridge::default")]
@@ -349,7 +348,7 @@ pub struct Aws {
     pub cloudfront: Cloudfront,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Clone, Document)]
+#[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct ConfigSpec {
     #[serde(default = "Compiler::default")]
