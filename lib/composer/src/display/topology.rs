@@ -1,9 +1,13 @@
 use super::Topology;
 use colored::Colorize;
 use kit::*;
+use kit as u;
 use ptree::{
     builder::TreeBuilder,
     item::StringItem,
+};
+use serde_derive::{
+    Serialize,
 };
 use std::collections::HashMap;
 use tabled::{
@@ -81,7 +85,7 @@ impl TopologyCount {
     }
 }
 
-pub fn print_topologies(topologies: HashMap<String, Topology>) {
+pub fn print_stats(topologies: HashMap<String, Topology>) {
     let mut xs: Vec<TopologyCount> = vec![];
     for (_, t) in topologies {
         let c = TopologyCount::new(&t);
@@ -106,4 +110,90 @@ pub fn build_tree(topology: &Topology) -> StringItem {
     }
     t.end_child();
     t.build()
+}
+
+#[derive(Tabled, Clone, Debug, Serialize)]
+struct Version {
+    namespace: String,
+    version: String,
+}
+
+pub fn print_versions(versions: HashMap<String, String>, format: &str) {
+    let mut xs: Vec<Version> = vec![];
+    for (namespace, version) in versions {
+        let v = Version {
+            namespace: s!(namespace),
+            version: s!(version)
+        };
+        xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
+        xs.reverse();
+        xs.push(v)
+    }
+    match format {
+        "table" => {
+            let table = Table::new(xs).with(Style::psql()).to_string();
+            println!("{}", table);
+        },
+        "json" => u::pp_json(&xs),
+        &_ => todo!()
+    }
+
+}
+
+
+pub fn count_str(topology: &Topology) -> String {
+    let Topology {
+        functions,
+        mutations,
+        events,
+        queues,
+        routes,
+        pages,
+        ..
+    } = topology;
+
+    let mut f: usize = functions.len();
+    let mut m: usize = match mutations.get("default") {
+        Some(mx) => mx.resolvers.len(),
+        _ => 0,
+    };
+    let mut e: usize = events.len();
+    let mut q: usize = queues.len();
+    let mut r: usize = routes.len();
+    let mut p: usize = pages.len();
+
+    let nodes = &topology.nodes;
+
+    for (_, node) in nodes {
+        let Topology {
+            functions,
+            mutations,
+            events,
+            queues,
+            routes,
+            pages,
+            ..
+        } = node;
+        f = f + functions.len();
+        m = m + match mutations.get("default") {
+            Some(mx) => mx.resolvers.len(),
+            _ => 0,
+        };
+        e = e + events.len();
+        q = q + queues.len();
+        r = r + routes.len();
+        p = p + pages.len();
+    }
+
+    let msg = format!(
+        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, pages: {}",
+        nodes.len() + 1,
+        f,
+        m,
+        e,
+        r,
+        q,
+        p
+    );
+    msg
 }

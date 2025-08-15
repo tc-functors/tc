@@ -11,4 +11,5 @@ pub struct PageSpec {
     pub domains: Option<Vec<String>>,
     pub paths: Option<Vec<String>>,
     pub bucket: Option<String>,
+    pub config: Option<String>
 }
