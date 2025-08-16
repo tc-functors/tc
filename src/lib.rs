@@ -183,31 +183,14 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
         namespace,
         sandbox,
         version,
-        config,
         ..
     } = root;
-    let dir = u::pwd();
     let tag = format!("{}-{}", namespace, version);
     let msg = format!(
         "Deployed `{}` to *{}*::{}_{}",
         tag, &auth.name, namespace, &sandbox
     );
     notifier::notify(&namespace, &msg).await;
-    if config.ci.update_metadata {
-        let profile = config.aws.lambda.layers_profile.clone();
-        let centralized = auth
-            .assume(profile.clone(), config.role_to_assume(profile))
-            .await;
-        releaser::update_metadata(
-            &centralized,
-            &sandbox,
-            &namespace,
-            &version,
-            &auth.name,
-            &dir,
-        )
-        .await;
-    }
 }
 
 async fn create_topology(auth: &Auth, topology: &Topology) {
@@ -454,7 +437,8 @@ pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind:
     if unwind {
         tagger::unwind(&service);
     } else {
-        releaser::release(&service, &suffix).await
+        let tag = tagger::next_tag(&service, "minor", &suffix);
+        releaser::release(&service, &suffix, &tag.version).await
     }
 }
 
