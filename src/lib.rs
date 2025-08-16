@@ -238,7 +238,7 @@ pub async fn create(
         None => {
             let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
-            deployer::guard(&sandbox);
+            deployer::guard::prevent_stable_updates(&sandbox);
             let dir = u::pwd();
             println!("Composing topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
@@ -276,7 +276,7 @@ pub async fn update(
     let sandbox = resolver::maybe_sandbox(sandbox);
     let dirty = true;
 
-    deployer::guard(&sandbox);
+    deployer::guard::prevent_stable_updates(&sandbox);
 
     let start = Instant::now();
 
@@ -307,7 +307,7 @@ pub async fn delete(
     cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    deployer::guard(&sandbox);
+    deployer::guard::prevent_stable_updates(&sandbox);
 
     let start = Instant::now();
     println!("Composing topology...");
@@ -542,10 +542,10 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
     match sandbox {
         Some(sbox) => {
             if dry_run {
-                pruner::list(auth, &sbox, filter).await;
+                deployer::list_all(auth, &sbox).await;
             } else {
-                deployer::guard(&sbox);
-                pruner::prune(auth, &sbox, filter).await;
+                deployer::guard::prevent_stable_updates(&sbox);
+                deployer::prune(auth, &sbox, filter).await;
             }
         }
         None => println!("Please specify sandbox"),
@@ -558,6 +558,12 @@ pub async fn list(auth: &Auth, sandbox: Option<String>, entity: Option<String>) 
     let topology = resolver::render(&auth, &sandbox, &topology).await;
     deployer::try_list(auth, &topology, &entity).await;
 }
+
+pub async fn list_all(auth: &Auth, sandbox: Option<String>) {
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    deployer::list_all(auth, &sandbox).await;
+}
+
 
 pub fn scaffold(kind: Option<String>) {
     let kind = u::maybe_string(kind, "function");

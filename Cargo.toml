@@ -30,7 +30,6 @@ deployer =  { path = "lib/deployer" }
 invoker =  { path = "lib/invoker" }
 tester = { path = "lib/tester" }
 snapshotter = { path = "lib/snapshotter" }
-pruner = { path = "lib/pruner" }
 tagger = { path = "lib/tagger" }
 notifier = { path = "lib/notifier" }
 router = { path = "lib/router" }
@@ -54,7 +53,6 @@ members = [
    "lib/deployer",
    "lib/tester",
    "lib/snapshotter",
-   "lib/pruner",
    "lib/tagger",
    "lib/notifier",
    "lib/router",

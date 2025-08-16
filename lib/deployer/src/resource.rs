@@ -1,17 +1,19 @@
-mod aws;
-
-use authorizer::Auth;
-use composer::Entity;
-use question::{
-    Answer,
-    Question,
-};
 use std::collections::{
     HashMap,
     hash_map::Entry,
 };
+use authorizer::Auth;
+use composer::Entity;
+use crate::aws::resourcetag;
+use crate::aws;
 
-fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
+pub async fn list(auth: &Auth, sandbox: &str) -> Vec<String> {
+    let client = resourcetag::make_client(auth).await;
+    resourcetag::get_resources(&client, "sandbox", sandbox).await
+
+}
+
+pub fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
     let mut h: HashMap<Entity, Vec<String>> = HashMap::new();
     for arn in arns {
         let maybe_entity = Entity::from_arn(&arn);
@@ -31,17 +33,7 @@ fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
     h
 }
 
-fn maybe_continue() -> bool {
-    let answer = Question::new("Do you want to delete these resources in given sandbox ?")
-        .accept("y")
-        .accept("n")
-        .until_acceptable()
-        .show_defaults()
-        .confirm();
-    answer == Answer::YES
-}
-
-fn count_of(grouped: &HashMap<Entity, Vec<String>>) -> String {
+pub fn count_of(grouped: &HashMap<Entity, Vec<String>>) -> String {
     let mut f: usize = 0;
     let mut s: usize = 0;
     let mut m: usize = 0;
@@ -63,7 +55,7 @@ fn count_of(grouped: &HashMap<Entity, Vec<String>>) -> String {
     )
 }
 
-fn filter_arns(arns: Vec<String>, filter: Option<String>) -> Vec<String> {
+pub fn filter_arns(arns: Vec<String>, filter: Option<String>) -> Vec<String> {
     match filter {
         Some(f) => {
             let mut xs: Vec<String> = vec![];
@@ -78,35 +70,20 @@ fn filter_arns(arns: Vec<String>, filter: Option<String>) -> Vec<String> {
     }
 }
 
-pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
-    let client = aws::resourcetag::make_client(auth).await;
-    let arns = aws::resourcetag::get_resources(&client, "sandbox", sandbox).await;
-    let arns = filter_arns(arns, filter);
 
-    if arns.len() == 0 {
-        println!("No resources found for given sandbox");
-        std::process::exit(1);
-    }
-
-    let grouped = group_entities(arns);
-    println!("{}", count_of(&grouped));
-    let cont = maybe_continue();
-    if !cont {
-        std::process::exit(1);
-    }
-
+pub async fn delete_arns(auth: &Auth, grouped: HashMap<Entity, Vec<String>>) {
     for (entity, arns) in grouped {
         match entity {
             Entity::Function => {
                 let client = aws::lambda::make_client(auth).await;
                 for arn in arns {
-                    aws::lambda::delete(&client, &arn).await;
+                    aws::lambda::delete_by_arn(&client, &arn).await;
                 }
             }
             Entity::State => {
                 let client = aws::sfn::make_client(auth).await;
                 for arn in arns {
-                    aws::sfn::delete(&client, &arn).await;
+                    aws::sfn::delete_by_arn(&client, &arn).await;
                 }
             }
 
@@ -114,25 +91,10 @@ pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
                 let client = aws::appsync::make_client(auth).await;
                 for arn in arns {
                     let api_id = kit::split_last(&arn, "/");
-                    aws::appsync::delete(&client, &api_id).await;
+                    aws::appsync::delete_by_id(&client, &api_id).await;
                 }
             }
             _ => println!("Skipping entity {}", &entity.to_str()),
         }
     }
-}
-
-// dry-run
-pub async fn list(auth: &Auth, sandbox: &str, filter: Option<String>) {
-    let client = aws::resourcetag::make_client(auth).await;
-    let arns = aws::resourcetag::get_resources(&client, "sandbox", sandbox).await;
-    let mut arns = filter_arns(arns, filter);
-    arns.sort();
-    for arn in &arns {
-        println!("{}", &arn)
-    }
-
-    let grouped = group_entities(arns);
-    println!("");
-    println!("{}", count_of(&grouped));
 }

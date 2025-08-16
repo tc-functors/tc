@@ -2088,6 +2088,7 @@ dependencies = [
  "aws-sdk-eventbridge",
  "aws-sdk-iam",
  "aws-sdk-lambda",
+ "aws-sdk-resourcegroupstagging",
  "aws-sdk-s3",
  "aws-sdk-scheduler",
  "aws-sdk-sfn",
@@ -2099,6 +2100,7 @@ dependencies = [
  "itertools",
  "kit",
  "log",
+ "question",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -4061,31 +4063,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pruner"
-version = "0.8.114"
-dependencies = [
- "authorizer 0.8.114",
- "aws-config",
- "aws-sdk-apigatewayv2",
- "aws-sdk-appsync",
- "aws-sdk-cloudwatchlogs",
- "aws-sdk-ecs",
- "aws-sdk-eventbridge",
- "aws-sdk-iam",
- "aws-sdk-lambda",
- "aws-sdk-resourcegroupstagging",
- "aws-sdk-sfn",
- "aws-sdk-sqs",
- "composer 0.8.114",
- "kit",
- "open",
- "question",
- "serde 1.0.217",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "ptree"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5215,7 +5192,6 @@ dependencies = [
  "notifier 0.8.114",
  "openssl",
  "openssl-sys",
- "pruner",
  "releaser",
  "resolver",
  "router",

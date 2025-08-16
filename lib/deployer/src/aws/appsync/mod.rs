@@ -441,3 +441,14 @@ pub async fn create_events_api(client: &Client, api_name: &str) -> String {
 pub async fn create_events_channel(client: &Client, api_id: &str, name: &str, handler: &str) {
     events::create_channel(client, api_id, name, handler).await
 }
+
+pub async fn delete_by_id(client: &Client, api_id: &str) {
+    println!("Deleting appsync api {}", api_id);
+    let res = client
+        .delete_graphql_api()
+        .api_id(api_id)
+        .send()
+        .await
+        .unwrap();
+    println!("{:?}", &res);
+}
