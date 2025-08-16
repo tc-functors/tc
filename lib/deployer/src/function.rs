@@ -119,7 +119,7 @@ pub async fn make_lambda(auth: &Auth, f: Function) -> lambda::Function {
         layers: layers,
         vpc_config: vpc_config,
         filesystem_config: filesystem_config,
-        logging_config: None,
+        _logging_config: None,
     }
 }
 
@@ -142,20 +142,14 @@ pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
 
 async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
     let auth = Auth::new(Some(profile), role_arn).await;
+    maybe_build(&auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => create_lambda(&auth, &f).await,
         Provider::Fargate => create_container(&auth, &f).await,
     }
 }
 
-async fn build_all(auth: &Auth, fns: &HashMap<String, Function>) {
-    for (_, f) in fns {
-        maybe_build(&auth, &f).await;
-    }
-}
-
 pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
-    build_all(auth, fns).await;
     match std::env::var("TC_SYNC_CREATE") {
         Ok(_) => {
             for (_, function) in fns.clone() {
@@ -184,7 +178,6 @@ pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
 
 pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>) {
     let mut tasks = vec![];
-    build_all(auth, fns).await;
     for (_, function) in fns.clone() {
         let p = auth.name.to_string();
         let role = auth.assume_role.to_owned();
@@ -197,11 +190,6 @@ pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>) {
         let _ = task.await;
     }
 }
-
-// pub async fn delete_function(auth: &Auth, f: Function) {
-//     let function = make_lambda(auth, f).await;
-//     function.clone().delete().await.unwrap();
-// }
 
 pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_name, function) in fns {
@@ -232,7 +220,11 @@ async fn update_vars(auth: &Auth, funcs: &HashMap<String, Function>) {
         let memory_size = f.runtime.memory_size.expect("memory error");
         println!("mem {}", memory_size);
         let function = make_lambda(auth, f.clone()).await;
-        let _ = function.update_vars().await;
+        if f.runtime.package_type == "zip" || f.runtime.package_type == "Zip" {
+            let _ = function.update_vars().await;
+        } else {
+            let _ = function.update_image_vars().await;
+        }
     }
 }
 

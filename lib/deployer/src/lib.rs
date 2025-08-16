@@ -392,7 +392,7 @@ pub async fn list_all(auth: &Auth, sandbox: &str) {
 }
 
 pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
-    let mut arns = resource::list(auth, sandbox).await;
+    let arns = resource::list(auth, sandbox).await;
     let arns = resource::filter_arns(arns, filter);
     let grouped = resource::group_entities(arns);
     println!("{}", resource::count_of(&grouped));

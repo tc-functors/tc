@@ -20,7 +20,19 @@ fn gen_req_cmd(dir: &str) -> String {
     }
 }
 
-pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, force: bool) {
+fn deps_str(deps: Vec<String>) -> String {
+    if deps.len() >= 2 {
+        deps.join(" && ")
+    } else if deps.len() == 1 {
+        deps.first().unwrap().to_string()
+    } else {
+        String::from("echo 0")
+    }
+}
+
+pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, force: bool) {
+    let pre = deps_str(pre.to_vec());
+    let post = deps_str(post.to_vec());
     let pip_cmd = if force {
         "pip install -r requirements.txt --target=/build/python"
     } else {
@@ -50,7 +62,11 @@ RUN {req_cmd}
 
 RUN rm -rf /build/python && mkdir -p /build
 
+RUN {pre}
+
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
+
+RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {post}
 
 "#
     );

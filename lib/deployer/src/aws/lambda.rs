@@ -209,7 +209,7 @@ pub struct Function {
     pub layers: Option<Vec<String>>,
     pub vpc_config: Option<VpcConfig>,
     pub filesystem_config: Option<Vec<FileSystemConfig>>,
-    pub logging_config: Option<LoggingConfig>,
+    pub _logging_config: Option<LoggingConfig>,
 }
 
 impl Function {
