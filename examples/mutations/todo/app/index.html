@@ -1,0 +1,25 @@
+<script src="https://unpkg.com/apollo-client-browser@1.9.0"></script>
+
+<script>
+
+const apolloClient = new Apollo.lib.ApolloClient({
+  networkInterface: Apollo.lib.createNetworkInterface({
+    // Edit on https://launchpad.graphql.com/nnnwvmq07
+    uri: 'https://nnnwvmq07.lp.gql.zone/graphql',
+    transportBatching: true,
+  }),
+  connectToDevTools: true,
+})
+
+const POSTS_QUERY = Apollo.gql`
+{
+  posts {
+    id
+    title
+    author {
+      id
+      name
+    }
+  }
+}
+</script>
