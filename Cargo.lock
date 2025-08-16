@@ -316,6 +316,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "authorizer"
+version = "0.8.114"
+source = "git+https://github.com/tc-functors/tc.git?rev=9241bc0#9241bc017ea184931b05266ca7f4ce22c5edc802"
+dependencies = [
+ "aws-config",
+ "aws-credential-types",
+ "aws-sdk-sts",
+ "kit",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1306,14 +1319,14 @@ name = "builder"
 version = "0.8.114"
 dependencies = [
  "anyhow",
- "authorizer",
+ "authorizer 0.8.114",
  "aws-config",
  "aws-sdk-codeartifact",
  "aws-sdk-ecr",
  "aws-sdk-lambda",
  "base64 0.21.7",
  "colored",
- "composer",
+ "composer 0.8.114",
  "glob",
  "kit",
  "log",
@@ -1758,6 +1771,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "composer"
+version = "0.8.114"
+source = "git+https://github.com/tc-functors/tc.git?rev=9241bc0#9241bc017ea184931b05266ca7f4ce22c5edc802"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "chksum",
+ "colored",
+ "daggy",
+ "derivative",
+ "kit",
+ "lazy_static 1.5.0",
+ "nom 7.1.3",
+ "ptree",
+ "rand",
+ "regex",
+ "semver 0.7.0",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "serde_with",
+ "serde_yaml",
+ "tabled 0.10.0",
+ "toml 0.8.19",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2035,7 +2077,7 @@ name = "deployer"
 version = "0.8.114"
 dependencies = [
  "anyhow",
- "authorizer",
+ "authorizer 0.8.114",
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
@@ -2053,7 +2095,7 @@ dependencies = [
  "base64 0.21.7",
  "builder",
  "colored",
- "composer",
+ "composer 0.8.114",
  "itertools",
  "kit",
  "log",
@@ -2571,18 +2613,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gql_client"
-version = "1.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8353b9411850e8b5b5c27742751dbc6c50f4e3a4221019a15e64d57ce2ee859"
-dependencies = [
- "log",
- "reqwest 0.12.12",
- "serde 1.0.217",
- "serde_json",
-]
-
-[[package]]
 name = "group"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2880,22 +2910,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyper-tls"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70206fc6890eaca9fde8a0bf71caa2ddfc9fe045ac9e5c70df101a7dbde866e0"
-dependencies = [
- "bytes",
- "http-body-util",
- "hyper 1.6.0",
- "hyper-util",
- "native-tls",
- "tokio",
- "tokio-native-tls",
- "tower-service",
-]
-
-[[package]]
 name = "hyper-util"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3139,7 +3153,7 @@ name = "invoker"
 version = "0.8.114"
 dependencies = [
  "anyhow",
- "authorizer",
+ "authorizer 0.8.114",
  "aws-config",
  "aws-sdk-eventbridge",
  "aws-sdk-lambda",
@@ -3147,8 +3161,7 @@ dependencies = [
  "aws-sdk-sfn",
  "base64 0.21.7",
  "colored",
- "composer",
- "gql_client",
+ "composer 0.8.114",
  "kit",
  "open",
  "rustyline",
@@ -3254,7 +3267,7 @@ dependencies = [
  "path-absolutize",
  "ptree",
  "rand",
- "reqwest 0.11.27",
+ "reqwest",
  "self-replace",
  "serde 1.0.217",
  "serde_derive",
@@ -3593,7 +3606,22 @@ name = "notifier"
 version = "0.8.114"
 dependencies = [
  "colored",
- "composer",
+ "composer 0.8.114",
+ "kit",
+ "regex",
+ "semver 0.7.0",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "notifier"
+version = "0.8.114"
+source = "git+https://github.com/tc-functors/tc.git?rev=9241bc0#9241bc017ea184931b05266ca7f4ce22c5edc802"
+dependencies = [
+ "colored",
+ "composer 0.8.114 (git+https://github.com/tc-functors/tc.git?rev=9241bc0)",
  "kit",
  "regex",
  "semver 0.7.0",
@@ -4036,7 +4064,7 @@ dependencies = [
 name = "pruner"
 version = "0.8.114"
 dependencies = [
- "authorizer",
+ "authorizer 0.8.114",
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
@@ -4048,7 +4076,7 @@ dependencies = [
  "aws-sdk-resourcegroupstagging",
  "aws-sdk-sfn",
  "aws-sdk-sqs",
- "composer",
+ "composer 0.8.114",
  "kit",
  "open",
  "question",
@@ -4231,10 +4259,11 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "releaser"
-version = "0.8.114"
+version = "0.1.0"
+source = "git+https://github.com/tc-functors/releaser.git?rev=779e9a7#779e9a7668fc28bf42a719b19873619657d472d6"
 dependencies = [
  "anyhow",
- "authorizer",
+ "authorizer 0.8.114 (git+https://github.com/tc-functors/tc.git?rev=9241bc0)",
  "aws-config",
  "aws-sdk-dynamodb",
  "colored",
@@ -4246,7 +4275,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
- "tagger",
+ "tagger 0.8.114 (git+https://github.com/tc-functors/tc.git?rev=9241bc0)",
 ]
 
 [[package]]
@@ -4264,7 +4293,7 @@ dependencies = [
  "http 0.2.12",
  "http-body 0.4.6",
  "hyper 0.14.32",
- "hyper-tls 0.5.0",
+ "hyper-tls",
  "ipnet",
  "js-sys",
  "log",
@@ -4273,11 +4302,11 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
- "rustls-pemfile 1.0.4",
+ "rustls-pemfile",
  "serde 1.0.217",
  "serde_json",
  "serde_urlencoded",
- "sync_wrapper 0.1.2",
+ "sync_wrapper",
  "system-configuration",
  "tokio",
  "tokio-native-tls",
@@ -4290,50 +4319,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "reqwest"
-version = "0.12.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43e734407157c3c2034e0258f5e4473ddb361b1e85f95a66690d67264d7cd1da"
-dependencies = [
- "base64 0.22.1",
- "bytes",
- "futures-core",
- "futures-util",
- "http 1.2.0",
- "http-body 1.0.1",
- "http-body-util",
- "hyper 1.6.0",
- "hyper-tls 0.6.0",
- "hyper-util",
- "ipnet",
- "js-sys",
- "log",
- "mime",
- "native-tls",
- "once_cell",
- "percent-encoding",
- "pin-project-lite",
- "rustls-pemfile 2.2.0",
- "serde 1.0.217",
- "serde_json",
- "serde_urlencoded",
- "sync_wrapper 1.0.2",
- "tokio",
- "tokio-native-tls",
- "tower",
- "tower-service",
- "url",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "windows-registry",
-]
-
-[[package]]
 name = "resolver"
 version = "0.8.114"
 dependencies = [
- "authorizer",
+ "authorizer 0.8.114",
  "aws-config",
  "aws-sdk-appsync",
  "aws-sdk-efs",
@@ -4341,7 +4330,7 @@ dependencies = [
  "aws-sdk-lambda",
  "aws-sdk-ssm",
  "cacache",
- "composer",
+ "composer 0.8.114",
  "kit",
  "regex",
  "serde 1.0.217",
@@ -4382,12 +4371,12 @@ name = "router"
 version = "0.8.114"
 dependencies = [
  "anyhow",
- "authorizer",
+ "authorizer 0.8.114",
  "aws-config",
  "aws-sdk-eventbridge",
  "aws-sdk-sfn",
  "colored",
- "composer",
+ "composer 0.8.114",
  "kit",
  "serde 1.0.217",
  "serde_derive",
@@ -4480,7 +4469,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a9aace74cb666635c918e9c12bc0d348266037aa8eb599b5cba565709a8dff00"
 dependencies = [
  "openssl-probe",
- "rustls-pemfile 1.0.4",
+ "rustls-pemfile",
  "schannel",
  "security-framework 2.11.1",
 ]
@@ -4504,15 +4493,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c74cae0a4cf6ccbbf5f359f08efdf8ee7e1dc532573bf0db71968cb56b1448c"
 dependencies = [
  "base64 0.21.7",
-]
-
-[[package]]
-name = "rustls-pemfile"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dce314e5fee3f39953d46bb63bb8a46d40c2f8fb7cc5a3b6cab2bde9721d6e50"
-dependencies = [
- "rustls-pki-types",
 ]
 
 [[package]]
@@ -4593,7 +4573,7 @@ dependencies = [
 name = "scaffolder"
 version = "0.8.114"
 dependencies = [
- "composer",
+ "composer 0.8.114",
  "inquire",
  "kit",
  "question",
@@ -4976,7 +4956,7 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 name = "snapshotter"
 version = "0.8.114"
 dependencies = [
- "authorizer",
+ "authorizer 0.8.114",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
  "aws-sdk-eventbridge",
@@ -4984,16 +4964,15 @@ dependencies = [
  "aws-sdk-s3",
  "aws-sdk-sfn",
  "colored",
- "composer",
+ "composer 0.8.114",
  "kit",
  "log",
- "releaser",
  "s3uri",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
  "tabled 0.20.0",
- "tagger",
+ "tagger 0.8.114",
  "tokio",
 ]
 
@@ -5109,15 +5088,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2047c6ded9c721764247e62cd3b03c09ffc529b2ba5b10ec482ae507a4a70160"
 
 [[package]]
-name = "sync_wrapper"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263"
-dependencies = [
- "futures-core",
-]
-
-[[package]]
 name = "synstructure"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5203,7 +5173,22 @@ version = "0.8.114"
 dependencies = [
  "colored",
  "kit",
- "notifier",
+ "notifier 0.8.114",
+ "regex",
+ "semver 0.7.0",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "tagger"
+version = "0.8.114"
+source = "git+https://github.com/tc-functors/tc.git?rev=9241bc0#9241bc017ea184931b05266ca7f4ce22c5edc802"
+dependencies = [
+ "colored",
+ "kit",
+ "notifier 0.8.114 (git+https://github.com/tc-functors/tc.git?rev=9241bc0)",
  "regex",
  "semver 0.7.0",
  "serde 1.0.217",
@@ -5215,19 +5200,19 @@ dependencies = [
 name = "tc"
 version = "0.8.114"
 dependencies = [
- "authorizer",
+ "authorizer 0.8.114",
  "builder",
  "clap",
  "clap-markdown",
  "colored",
- "composer",
+ "composer 0.8.114",
  "deployer",
  "doku",
  "invoker",
  "kit",
  "log",
  "mockall",
- "notifier",
+ "notifier 0.8.114",
  "openssl",
  "openssl-sys",
  "pruner",
@@ -5240,7 +5225,7 @@ dependencies = [
  "serde_json",
  "snapshotter",
  "tabled 0.10.0",
- "tagger",
+ "tagger 0.8.114",
  "tester",
  "tokio",
  "tracing",
@@ -5280,7 +5265,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 name = "tester"
 version = "0.8.114"
 dependencies = [
- "composer",
+ "composer 0.8.114",
  "kit",
 ]
 
@@ -5502,11 +5487,6 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d039ad9159c98b70ecfd540b2573b97f7f52c3e8d9f8ad57a24b916a536975f9"
 dependencies = [
- "futures-core",
- "futures-util",
- "pin-project-lite",
- "sync_wrapper 1.0.2",
- "tokio",
  "tower-layer",
  "tower-service",
 ]
@@ -5888,8 +5868,8 @@ checksum = "810ce18ed2112484b0d4e15d022e5f598113e220c53e373fb31e67e21670c1ce"
 dependencies = [
  "windows-implement",
  "windows-interface",
- "windows-result 0.3.0",
- "windows-strings 0.3.0",
+ "windows-result",
+ "windows-strings",
  "windows-targets 0.53.3",
 ]
 
@@ -5922,42 +5902,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e6ad25900d524eaabdbbb96d20b4311e1e7ae1699af4fb28c17ae66c80d798a"
 
 [[package]]
-name = "windows-registry"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e400001bb720a623c1c69032f8e3e4cf09984deec740f007dd2b03ec864804b0"
-dependencies = [
- "windows-result 0.2.0",
- "windows-strings 0.1.0",
- "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-result"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d1043d8214f791817bab27572aaa8af63732e11bf84aa21a45a78d6c317ae0e"
-dependencies = [
- "windows-targets 0.52.6",
-]
-
-[[package]]
 name = "windows-result"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d08106ce80268c4067c0571ca55a9b4e9516518eaa1a1fe9b37ca403ae1d1a34"
 dependencies = [
  "windows-targets 0.53.3",
-]
-
-[[package]]
-name = "windows-strings"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd9b125c486025df0eabcb585e62173c6c9eddcec5d117d3b6e8c30e2ee4d10"
-dependencies = [
- "windows-result 0.2.0",
- "windows-targets 0.52.6",
 ]
 
 [[package]]
