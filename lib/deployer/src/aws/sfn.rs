@@ -339,3 +339,13 @@ pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
         None => "".to_string(),
     }
 }
+
+pub async fn delete_by_arn(client: &Client, arn: &str) {
+    println!("Deleting {}", arn);
+    let _ = client
+        .delete_state_machine()
+        .state_machine_arn(arn.to_string())
+        .send()
+        .await
+        .unwrap();
+}

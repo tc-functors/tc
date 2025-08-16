@@ -1,15 +1,17 @@
 mod aws;
-pub mod channel;
-pub mod event;
-pub mod function;
-pub mod mutation;
-pub mod page;
-pub mod pool;
-pub mod queue;
-pub mod role;
-pub mod route;
-pub mod schedule;
-pub mod state;
+mod channel;
+mod event;
+mod function;
+mod mutation;
+mod page;
+mod pool;
+mod queue;
+mod role;
+mod route;
+mod schedule;
+mod state;
+mod resource;
+pub mod guard;
 
 use authorizer::Auth;
 use colored::Colorize;
@@ -378,23 +380,25 @@ pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<St
     }
 }
 
-// guards
-pub fn should_abort(sandbox: &str) -> bool {
-    let yes = match std::env::var("CIRCLECI") {
-        Ok(_) => false,
-        Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
-            Ok(_) => false,
-            Err(_) => true,
-        },
-    };
-    yes && (sandbox == "stable")
+pub async fn list_all(auth: &Auth, sandbox: &str) {
+    let mut arns = resource::list(auth, sandbox).await;
+    arns.sort();
+    for arn in &arns {
+        println!("{}", &arn)
+    }
+    let grouped = resource::group_entities(arns);
+    println!("");
+    println!("{}", resource::count_of(&grouped));
 }
 
-pub fn guard(sandbox: &str) {
-    if should_abort(sandbox) {
-        std::panic::set_hook(Box::new(|_| {
-            println!("Cannot create stable sandbox outside CI");
-        }));
-        panic!("Cannot create stable sandbox outside CI")
+pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
+    let mut arns = resource::list(auth, sandbox).await;
+    let arns = resource::filter_arns(arns, filter);
+    let grouped = resource::group_entities(arns);
+    println!("{}", resource::count_of(&grouped));
+    let cont = guard::prompt("Do you want to delete these resources in given sandbox ?");
+    if !cont {
+        std::process::exit(1);
     }
+    resource::delete_arns(auth, grouped).await;
 }

@@ -198,10 +198,10 @@ pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>) {
     }
 }
 
-pub async fn delete_function(auth: &Auth, f: Function) {
-    let function = make_lambda(auth, f).await;
-    function.clone().delete().await.unwrap();
-}
+// pub async fn delete_function(auth: &Auth, f: Function) {
+//     let function = make_lambda(auth, f).await;
+//     function.clone().delete().await.unwrap();
+// }
 
 pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_name, function) in fns {

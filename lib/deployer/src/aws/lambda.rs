@@ -835,4 +835,16 @@ pub async fn find_uri(client: &Client, name: &str) -> Option<String> {
     }
 }
 
+
+pub async fn delete_by_arn(client: &Client, arn: &str) {
+    println!("Deleting {}", arn);
+    let _ = client
+        .delete_function()
+        .function_name(arn)
+        .send()
+        .await
+        .unwrap();
+}
+
+
 //pub type LambdaClient = Client;

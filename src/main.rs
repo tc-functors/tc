@@ -354,6 +354,8 @@ pub struct ListArgs {
     versions: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'a')]
+    all: bool,
 }
 
 #[derive(Debug, Args)]
@@ -804,11 +806,16 @@ async fn list(args: ListArgs) {
         sandbox,
         trace,
         entity,
+        all,
         ..
     } = args;
     init_tracing(trace);
     let env = tc::init(profile, None).await;
-    tc::list(&env, sandbox, entity).await;
+    if all {
+        tc::list_all(&env, sandbox).await;
+    } else {
+        tc::list(&env, sandbox, entity).await;
+    }
 }
 
 
