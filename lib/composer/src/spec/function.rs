@@ -221,7 +221,6 @@ pub struct BuildSpec {
     // deprecated
     pub kind: BuildKind,
 
-    // deprecated
     #[serde(default)]
     pub pre: Vec<String>,
 
