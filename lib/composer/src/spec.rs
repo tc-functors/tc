@@ -32,6 +32,7 @@ pub use function::{
     InlineFunctionSpec,
     Lang,
     LangRuntime,
+    TestSpec
 };
 pub use mutation::MutationSpec;
 pub use page::PageSpec;
@@ -40,6 +41,7 @@ pub use queue::QueueSpec;
 pub use route::RouteSpec;
 
 // topology
+
 
 fn default_nodes() -> Nodes {
     Nodes {

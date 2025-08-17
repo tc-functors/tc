@@ -136,6 +136,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
 
 [[package]]
+name = "assert-json-diff"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47e4f2b81832e72834d7518d8487a0396a28cc408186a2e8854c0f98011faf12"
+dependencies = [
+ "serde 1.0.217",
+ "serde_json",
+]
+
+[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1392,7 +1402,7 @@ dependencies = [
  "sha2",
  "ssri",
  "tempfile",
- "thiserror",
+ "thiserror 1.0.69",
  "walkdir",
 ]
 
@@ -1454,7 +1464,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0475dc9fa905fe8feca5c4a48a97f65503ebd257a7566df1367d080083e160c6"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1482,7 +1492,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8445e9efb2556cedf4ef2bf704cb335cdd037ed20fe954f281baf93fe5e7c0d"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1492,7 +1502,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1cced59c79554a9305c3b5c6eec2704706e8e598edb80b0716fb3f6c923fabcd"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1514,7 +1524,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63c0104600dc48e852971a0367e92ffd38b2165a2ff5e35ee947d85d1dc5dbb0"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1524,7 +1534,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8231bf5c173db494835789e73fce310773f8f623c65989bb346d52b809e5e2f8"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1534,7 +1544,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d56e3e64bbeb2faca7df586614e01d552582d770887101b2b4975da21b0e6fc"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1544,7 +1554,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d10088e91d8fca497528476a51d8926035876d83ab709ddb7d0dca8b4e4415c"
 dependencies = [
  "chksum-hash-core",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3192,6 +3202,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonpath-rust"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "633a7320c4bb672863a3782e89b9094ad70285e097ff6832cddd0ec615beadfa"
+dependencies = [
+ "pest",
+ "pest_derive",
+ "regex",
+ "serde_json",
+ "thiserror 2.0.15",
+]
+
+[[package]]
 name = "kit"
 version = "0.1.0"
 source = "git+https://github.com/tc-functors/kit.git?rev=c56968d#c56968df177e1d99636597a7052c6f2b14c60a4d"
@@ -3385,7 +3408,7 @@ checksum = "59bb584eaeeab6bd0226ccf3509a69d7936d148cf3d036ad350abe35e8c6856e"
 dependencies = [
  "miette-derive",
  "once_cell",
- "thiserror",
+ "thiserror 1.0.69",
  "unicode-width 0.1.14",
 ]
 
@@ -3817,6 +3840,50 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
+name = "pest"
+version = "2.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1db05f56d34358a8b1066f67cbb203ee3e7ed2ba674a6263a1d5ec6db2204323"
+dependencies = [
+ "memchr",
+ "thiserror 2.0.15",
+ "ucd-trie",
+]
+
+[[package]]
+name = "pest_derive"
+version = "2.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb056d9e8ea77922845ec74a1c4e8fb17e7c218cc4fc11a15c5d25e189aa40bc"
+dependencies = [
+ "pest",
+ "pest_generator",
+]
+
+[[package]]
+name = "pest_generator"
+version = "2.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87e404e638f781eb3202dc82db6760c8ae8a1eeef7fb3fa8264b2ef280504966"
+dependencies = [
+ "pest",
+ "pest_meta",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
+name = "pest_meta"
+version = "2.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edd1101f170f5903fde0914f899bb503d9ff5271d7ba76bbb70bea63690cc0d5"
+dependencies = [
+ "pest",
+ "sha2",
+]
+
+[[package]]
 name = "petgraph"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4092,7 +4159,7 @@ checksum = "ba009ff324d1fc1b900bd1fdb31564febe58a8ccc8a6fdbb93b543d33b13ca43"
 dependencies = [
  "getrandom",
  "libredox",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4934,7 +5001,7 @@ dependencies = [
  "serde 1.0.217",
  "sha-1",
  "sha2",
- "thiserror",
+ "thiserror 1.0.69",
  "xxhash-rust",
 ]
 
@@ -5176,8 +5243,14 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 name = "tester"
 version = "0.8.114"
 dependencies = [
+ "assert-json-diff",
+ "authorizer 0.8.114",
  "composer 0.8.114",
+ "invoker",
+ "jsonpath-rust",
  "kit",
+ "serde 1.0.217",
+ "serde_json",
 ]
 
 [[package]]
@@ -5204,7 +5277,16 @@ version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80d76d3f064b981389ecb4b6b7f45a0bf9fdac1d5b9204c7bd6714fecc302850"
+dependencies = [
+ "thiserror-impl 2.0.15",
 ]
 
 [[package]]
@@ -5212,6 +5294,17 @@ name = "thiserror-impl"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44d29feb33e986b6ea906bd9c3559a856983f92371b3eaa5e83782a351623de0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5486,6 +5579,12 @@ name = "typenum"
 version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42ff0bf0c66b8238c6f3b578df37d0b7848e55df8577b3f74f92a69acceeb825"
+
+[[package]]
+name = "ucd-trie"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2896d95c02a80c6d6a5d6e953d479f5ddf2dfdb6a244441010e373ac0fb88971"
 
 [[package]]
 name = "unicode-ident"

@@ -157,7 +157,7 @@ impl FromStr for BuildKind {
             "runtime" => Ok(BuildKind::Runtime),
             "slab" => Ok(BuildKind::Slab),
             "Image" | "image" => Ok(BuildKind::Image),
-            _ => Ok(BuildKind::Layer),
+            _ => Ok(BuildKind::Code),
         }
     }
 }
@@ -333,6 +333,21 @@ pub struct InfraSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TestSpec {
+    #[serde(default)]
+    pub payload: Option<String>,
+
+    #[serde(default)]
+    pub expect: Option<String>,
+
+    #[serde(default)]
+    pub condition: Option<String>,
+
+    #[serde(default)]
+    pub auth: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AssetsSpec {
     #[serde(alias = "DEPS_PATH", alias = "deps_path")]
     pub deps_path: Option<String>,
@@ -357,6 +372,7 @@ pub struct FunctionSpec {
     pub runtime: Option<RuntimeSpec>,
     pub build: Option<BuildSpec>,
     pub infra: Option<InfraSpec>,
+    pub test: Option<HashMap<String, TestSpec>>,
     //deprecated
     pub infra_dir: Option<String>,
     //deprecated
@@ -441,6 +457,7 @@ impl FunctionSpec {
                     infra: None,
                     infra_dir: None,
                     assets: None,
+                    test: None,
                     tasks: HashMap::new(),
                 }
             }
@@ -459,6 +476,7 @@ pub struct InlineFunctionSpec {
     pub fqn: Option<String>,
     pub runtime: Option<RuntimeSpec>,
     pub build: Option<BuildSpec>,
+    pub test: Option<TestSpec>,
 }
 
 impl InlineFunctionSpec {
@@ -477,6 +495,7 @@ impl InlineFunctionSpec {
             infra: None,
             assets: None,
             infra_dir: Some(s!(infra_dir)),
+            test: None,
             tasks: HashMap::new(),
         }
     }

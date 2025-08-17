@@ -1,4 +1,4 @@
-mod aws;
+pub mod aws;
 mod event;
 mod function;
 mod state;
@@ -26,7 +26,7 @@ fn read_payload_local(payload: Option<String>) -> String {
     }
 }
 
-async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
+pub async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
     match s {
         Some(p) => {
             if p.starts_with("s3://") {
