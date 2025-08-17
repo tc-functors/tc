@@ -345,6 +345,9 @@ pub struct TestSpec {
 
     #[serde(default)]
     pub auth: Option<String>,
+
+    #[serde(default)]
+    pub entity: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -372,6 +375,7 @@ pub struct FunctionSpec {
     pub runtime: Option<RuntimeSpec>,
     pub build: Option<BuildSpec>,
     pub infra: Option<InfraSpec>,
+    #[serde(alias = "tests")]
     pub test: Option<HashMap<String, TestSpec>>,
     //deprecated
     pub infra_dir: Option<String>,

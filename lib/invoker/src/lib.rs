@@ -14,7 +14,7 @@ async fn read_uri(auth: &Auth, uri: &str) -> String {
     aws::s3::get_str(&client, &bucket, &key).await
 }
 
-fn read_payload_local(payload: Option<String>) -> String {
+pub fn read_payload_local(payload: Option<String>) -> String {
     if let Some(p) = payload {
         if p.ends_with(".json") && u::file_exists(&p) {
             u::slurp(&p)

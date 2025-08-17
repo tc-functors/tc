@@ -1,0 +1,14 @@
+name: example-tests
+
+events:
+  MyEvent:
+    function: foo
+
+tests:
+  basic1:
+    entity: functions/foo
+    payload: '{"foo": "bar"}'
+    condition: matches
+    expect: '{"foo": "bar"}'
+
+states:

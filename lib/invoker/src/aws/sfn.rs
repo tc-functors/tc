@@ -3,7 +3,6 @@ use aws_sdk_sfn::{
     Client,
     config as sfn_config,
     config::retry::RetryConfig,
-    operation::start_sync_execution::StartSyncExecutionOutput,
 };
 use std::panic;
 
@@ -36,21 +35,19 @@ pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
     }
 }
 
-pub async fn _start_sync_execution(
+pub async fn start_sync_execution(
     client: Client,
     arn: &str,
     input: &str,
     name: Option<String>,
-) -> StartSyncExecutionOutput {
+) -> String {
     let res = client
         .start_sync_execution()
         .state_machine_arn(arn.to_string())
         .input(input)
         .set_name(name)
         .send()
-        .await;
-    match res {
-        Ok(r) => r,
-        Err(e) => panic!("error: {:?}", e),
-    }
+        .await
+        .unwrap();
+    res.output.unwrap()
 }

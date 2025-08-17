@@ -141,6 +141,7 @@ pub struct TopologySpec {
     pub channels: Option<HashMap<String, ChannelSpec>>,
     pub triggers: Option<HashMap<String, TriggerSpec>>,
     pub pages: Option<HashMap<String, PageSpec>>,
+    pub tests: Option<HashMap<String, TestSpec>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
 }
@@ -193,6 +194,7 @@ impl TopologySpec {
                 channels: None,
                 triggers: None,
                 pages: None,
+                tests: None
             }
         }
     }
