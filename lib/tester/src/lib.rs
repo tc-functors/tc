@@ -66,11 +66,20 @@ async fn invoke(auth: &Auth, topology: &Topology, entity: &str, payload: &str) -
         Entity::State => {
             let client = sfn::make_client(auth).await;
             let arn = auth.sfn_arn(&topology.fqn);
-            let mode = "Express";
-            if mode == "Express" {
+
+            let mode = match &topology.flow {
+                Some(f) => &f.mode,
+                None => "Standard",
+            };
+            let maybe_response = if mode == "Express" {
                 sfn::start_sync_execution(client, &arn, &payload, None).await
             } else {
-                sfn::start_execution(client, &arn, &payload).await
+                let id = sfn::start_execution(client, &arn, &payload).await;
+                Some(id)
+            };
+            match maybe_response {
+                Some(r) => r,
+                None => panic!("Failed to execute test")
             }
         },
         Entity::Event => {
