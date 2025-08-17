@@ -240,12 +240,20 @@ pub struct ComposeArgs {
 pub struct TestArgs {
     #[arg(long, short = 'd')]
     dir: Option<String>,
-    #[arg(long, short = 'l')]
-    lang: Option<String>,
-    #[arg(long, action)]
-    with_deps: bool,
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 'R')]
+    role: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'u')]
+    unit: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'i')]
+    interactive: bool,
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
 }
 
 #[derive(Debug, Args)]
@@ -501,8 +509,24 @@ async fn build(args: BuildArgs) {
     tc::build(profile, name, &dir, opts).await;
 }
 
-async fn test(_args: TestArgs) {
-    tc::test().await;
+async fn test(args: TestArgs) {
+    let TestArgs {
+        profile,
+        sandbox,
+        unit,
+        interactive,
+        recursive,
+        trace,
+        role,
+        ..
+    } = args;
+    init_tracing(trace);
+    let env = tc::init(profile, role).await;
+    if interactive {
+        tc::test_interactive().await;
+    } else {
+        tc::test(env, sandbox, unit, recursive).await;
+    }
 }
 
 async fn create(args: CreateArgs) {

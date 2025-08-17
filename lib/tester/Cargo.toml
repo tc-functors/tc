@@ -4,5 +4,11 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
+serde = "1.0"
+serde_json = "1.0"
+assert-json-diff  = "2.0.2"
+jsonpath-rust = "1.0.4"
+authorizer = { path = "../authorizer" }
 kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
 composer = { path = "../composer" }
+invoker = { path = "../invoker" }

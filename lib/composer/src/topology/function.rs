@@ -8,6 +8,7 @@ use crate::{
     spec::{
         ConfigSpec,
         FunctionSpec,
+        TestSpec,
     },
 };
 pub use build::Build;
@@ -19,12 +20,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Test {
-    pub name: String,
-    pub commands: Vec<String>,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {
@@ -46,7 +41,7 @@ pub struct Function {
     pub version: String,
     pub runtime: Runtime,
     pub build: Build,
-    pub test: Test,
+    pub test: HashMap<String, TestSpec>,
     pub targets: Vec<Target>,
 }
 
@@ -74,13 +69,6 @@ fn find_fqn(given_fqn: &str, namespace: &str, name: &str, format: &str) -> Strin
                 }
             }
         }
-    }
-}
-
-fn make_test() -> Test {
-    Test {
-        name: u::empty(),
-        commands: vec![],
     }
 }
 
@@ -143,6 +131,13 @@ fn is_dirty(dir: &str) -> bool {
     return false
 }
 
+fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec>{
+    match t {
+        Some(spec) => spec,
+        None => HashMap::new()
+    }
+}
+
 impl Function {
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
 
@@ -174,9 +169,9 @@ impl Function {
             dir: dir.to_string(),
             namespace: namespace.to_string(),
             build: Build::new(dir, &runtime, fspec.build, fspec.tasks),
-            runtime: runtime,
             layer_name: fspec.layer_name,
-            test: make_test(),
+            test: make_test(fspec.test),
+            runtime: runtime,
             targets: vec![],
         }
     }
@@ -212,9 +207,9 @@ impl Function {
             dir: dir.to_string(),
             namespace: namespace.to_string(),
             build: Build::new(dir, &runtime, fspec.build.clone(), fspec.tasks.clone()),
-            runtime: runtime,
             layer_name: fspec.layer_name.clone(),
-            test: make_test(),
+            test: make_test(fspec.test.clone()),
+            runtime: runtime,
             targets: vec![],
         }
     }

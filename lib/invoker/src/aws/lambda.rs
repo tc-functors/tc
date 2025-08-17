@@ -60,11 +60,11 @@ fn print_logs(log_result: Option<String>, payload: Option<Blob>) {
     };
 }
 
-pub async fn invoke(client: Client, service: &str, payload: &str) -> Result<()> {
+pub async fn invoke(client: Client, name: &str, payload: &str) -> Result<()> {
     let blob = make_blob_from_str(payload);
     let r = client
         .invoke()
-        .function_name(service)
+        .function_name(name)
         .payload(blob)
         .invocation_type(InvocationType::RequestResponse)
         .log_type(LogType::Tail)
@@ -73,4 +73,25 @@ pub async fn invoke(client: Client, service: &str, payload: &str) -> Result<()> 
 
     print_logs(r.log_result, r.payload);
     Ok(())
+}
+
+pub async fn invoke_sync(client: &Client, name: &str, payload: &str) -> Result<String> {
+    let blob = make_blob_from_str(payload);
+    let r = client
+        .invoke()
+        .function_name(name)
+        .payload(blob)
+        .invocation_type(InvocationType::RequestResponse)
+        .log_type(LogType::Tail)
+        .send()
+        .await?;
+
+    match r.payload {
+        Some(p) => {
+            Ok(String::from_utf8_lossy(&p.into_inner()).to_string())
+        }
+        _ => {
+            Ok(String::from(""))
+        }
+    }
 }

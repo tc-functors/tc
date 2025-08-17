@@ -103,11 +103,30 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
     }
 }
 
-pub async fn test() {
+pub async fn test_interactive() {
+
+}
+
+pub async fn test(
+    auth: Auth,
+    sandbox: Option<String>,
+    unit: Option<String>,
+    recursive: bool
+
+) {
+
     let dir = u::pwd();
-    let spec = composer::compose(&dir, false);
-    for (path, function) in spec.functions {
-        tester::test(&path, function).await;
+    let sandbox = resolver::maybe_sandbox(sandbox);
+
+    if composer::is_topology_dir(&dir) {
+        let topology = composer::compose(&dir, recursive);
+        let resolved = resolver::render(&auth, &sandbox, &topology).await;
+        tester::test_functions(&auth, &resolved.functions, unit).await;
+
+    } else {
+        if let Some(f) = composer::current_function(&dir) {
+            tester::test(&auth, &sandbox, &f, unit).await;
+        }
     }
 }
 
