@@ -5245,6 +5245,7 @@ version = "0.8.114"
 dependencies = [
  "assert-json-diff",
  "authorizer 0.8.114",
+ "colored",
  "composer 0.8.114",
  "invoker",
  "jsonpath-rust",

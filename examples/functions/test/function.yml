@@ -20,4 +20,8 @@ test:
   test3:
     payload: '{"foo": "bar"}'
     condition: $.message
+    expect: '{"a": 1}'
+  test4:
+    payload: '{"foo": "bar"}'
+    condition: $.message.a
     expect: 1
