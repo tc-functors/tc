@@ -40,7 +40,7 @@ pub async fn start_sync_execution(
     arn: &str,
     input: &str,
     name: Option<String>,
-) -> String {
+) -> Option<String> {
     let res = client
         .start_sync_execution()
         .state_machine_arn(arn.to_string())
@@ -49,5 +49,5 @@ pub async fn start_sync_execution(
         .send()
         .await
         .unwrap();
-    res.output.unwrap()
+    res.output
 }

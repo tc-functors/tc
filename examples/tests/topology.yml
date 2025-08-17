@@ -1,14 +1,32 @@
 name: example-tests
+mode: Express
 
 events:
   MyEvent:
     function: foo
 
+flow:
+  StartAt: processor
+  TimeoutSeconds: 300
+  States:
+    processor:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_processor_{{sandbox}}'
+        Payload:
+          data.$: $.start
+      End: true
+
 tests:
-  basic1:
+  function-test:
     entity: functions/foo
     payload: '{"foo": "bar"}'
     condition: matches
     expect: '{"foo": "bar"}'
-
-states:
+  state-test:
+    entity: state
+    payload: '{"start": "process"}'
+    condition: matches
+    expect: '{"status": "ok"}'
