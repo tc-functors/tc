@@ -1,0 +1,23 @@
+name: test
+runtime:
+  lang: Python312
+  handler: handler.handler
+  package_type: zip
+  layers: []
+build:
+  kind: Code
+  images: {}
+  command: zip -9 -q -r lambda.zip .
+test:
+  test1:
+    payload: '{"foo": "bar"}'
+    condition: includes
+    expect: '{"status": "ok"}'
+  test2:
+    payload: '{"foo": "bar"}'
+    condition: matches
+    expect: '{"status": "ok", "message": {"a": 1}}'
+  test3:
+    payload: '{"foo": "bar"}'
+    condition: $.message
+    expect: 1
