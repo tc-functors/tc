@@ -18,6 +18,7 @@ use crate::spec::{
     TopologyKind,
     TopologySpec,
     config::ConfigSpec,
+    TestSpec
 };
 pub use channel::Channel;
 pub use event::Event;
@@ -71,7 +72,8 @@ pub struct Topology {
     pub tags: HashMap<String, String>,
     pub flow: Option<Flow>,
     pub config: ConfigSpec,
-    pub roles: HashMap<String, Role>
+    pub roles: HashMap<String, Role>,
+    pub tests: HashMap<String, TestSpec>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -501,6 +503,13 @@ fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: 
     h
 }
 
+fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec>{
+    match t {
+        Some(spec) => spec,
+        None => HashMap::new()
+    }
+}
+
 fn find_kind(
     given_kind: &Option<TopologyKind>,
     flow: &Option<Flow>,
@@ -581,6 +590,7 @@ fn make(
         tags: tag::make(&spec.name, &infra_dir),
         pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
+        tests: make_test(spec.tests.clone()),
         config: ConfigSpec::new(None),
     }
 }
@@ -628,6 +638,7 @@ fn make_standalone(dir: &str) -> Topology {
         tags: HashMap::new(),
         schedules: HashMap::new(),
         pages: HashMap::new(),
+        tests: HashMap::new(),
         config: ConfigSpec::new(None),
     }
 }

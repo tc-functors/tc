@@ -1,0 +1,15 @@
+name: foo
+runtime:
+  lang: Python312
+  handler: handler.handler
+  package_type: zip
+  layers: []
+build:
+  kind: Code
+  images: {}
+  command: zip -9 -q -r lambda.zip .
+test:
+  test4:
+    payload: payloads/test1.json
+    condition: '$.foo'
+    expect: '{"bar": 2}'

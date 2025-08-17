@@ -114,18 +114,17 @@ pub async fn test(
     recursive: bool
 
 ) {
-
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
 
     if composer::is_topology_dir(&dir) {
         let topology = composer::compose(&dir, recursive);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
-        tester::test_functions(&auth, &resolved.functions, unit).await;
+        tester::test_topology(&auth, &resolved, unit).await;
 
     } else {
         if let Some(f) = composer::current_function(&dir) {
-            tester::test(&auth, &sandbox, &f, unit).await;
+            tester::test_function(&auth, &sandbox, &f, unit).await;
         }
     }
 }
