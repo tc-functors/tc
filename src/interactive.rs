@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use inquire::{Text, Select, InquireError};
+use inquire::{Text, Select, InquireError, Confirm};
 use composer::ConfigSpec;
+
 
 pub fn prompt_versions(
     topologies: &HashMap<String, String>
@@ -13,7 +14,7 @@ pub fn prompt_versions(
 
     let topology: Result<String, InquireError> =
         Select::new("Topology name:", names)
-        .with_page_size(20)
+        .with_page_size(25)
         .without_help_message()
         .prompt();
 
@@ -35,12 +36,30 @@ pub fn prompt_versions(
         .without_help_message()
         .prompt();
 
-    let sandbox = Text::new("Sandbox").with_default("dev").prompt();
+    let sandbox = Text::new("Sandbox").with_default("stable").prompt();
 
-    (t.to_string(),
-     selected_version.unwrap(),
-     profile.unwrap(),
-     sandbox.unwrap())
+    let version = selected_version.unwrap();
+    let sandbox = sandbox.unwrap();
+    let profile = profile.unwrap();
+    let msg = format!("Do you want to deploy {}@{}.{}/{} ?", &t, &profile, &sandbox, &version);
+
+    let ans = Confirm::new(&msg)
+        .with_default(false)
+        .prompt();
+
+    match ans {
+        Ok(true) => {
+            (t.to_string(),
+             version,
+             profile,
+             sandbox)
+
+        }
+        Ok(false) | Err(_) => {
+            println!("Not deploying via CI. Exiting");
+            std::process::exit(1);
+        }
+    }
 }
 
 pub fn prompt_names(
