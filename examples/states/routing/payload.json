@@ -1,0 +1,10 @@
+{
+  "detail-type": "RouterExampleStart",
+  "source": "someProducer",
+  "detail":  {
+    "data": {
+      "type": "alpha"
+    },
+    "metadata": {}
+  }
+}

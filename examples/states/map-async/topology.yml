@@ -1,0 +1,47 @@
+name: example-map-async
+kind: step-function
+flow:
+  Comment: Mapping Example
+  StartAt: generate
+  States:
+    generate:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: generator
+      Next: process-messages
+
+    process-messages:
+      Type: Map
+      Next: aggregate
+      ItemsPath: $
+      Parameters:
+        Index.$: $$.Map.Item.Index
+        Detail.$: $$.Map.Item.Value
+      Iterator:
+        StartAt: process
+        States:
+          process:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke.waitForTaskToken
+            Parameters:
+            FunctionName: processor
+            Payload:
+              index.$: $.Index
+              token.$: $$.Task.Token
+              detail.$: $.Detail
+            End: true
+
+    aggregate:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      ResultPath: null
+      Parameters:
+        FunctionName: aggregator
+        Payload:
+          Events.$: $
+      Next: finish
+
+    finish:
+      Type: Succeed

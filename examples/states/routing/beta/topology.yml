@@ -1,0 +1,25 @@
+name: router-beta
+kind: step-function
+flow:
+  Comment: default
+  startAt: b0
+  TimeoutSeconds: 600
+  States:
+    b0:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_d0_{{sandbox}}'
+        Payload:
+          data.$: $
+      Next: b1
+    b1:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_d1_{{sandbox}}'
+        Payload:
+          data.$: $
+      End: true
