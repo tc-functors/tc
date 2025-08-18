@@ -73,6 +73,7 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
         artifact,
         ..
     } = build;
+
     let lang = runtime.to_str();
     if should_split(&dir) {
         println!("Split layer ... {}", &name);

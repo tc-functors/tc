@@ -50,6 +50,10 @@ COPY --from=shared . {build_context}/
 
 RUN mkdir -p /build/ruby/lib /build/lib
 
+RUN yum update -yy
+
+RUN yum -y install libffi.x86_64 libpsl-devel
+
 RUN {pre}
 
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install

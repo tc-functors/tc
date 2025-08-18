@@ -29,6 +29,36 @@ use std::{
     str::FromStr,
 };
 
+// move this to authorizer
+
+async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            let role = match assume_role {
+                Some(r) => Some(r),
+                None => {
+                    let config = composer::config(&kit::pwd());
+                    let p = u::maybe_string(profile.clone(), "default");
+                    config.ci.roles.get(&p).cloned()
+                }
+            };
+            Auth::new(profile.clone(), role).await
+        }
+        Err(_) => Auth::new(profile.clone(), assume_role).await,
+    }
+}
+
+pub async fn init_centralized_auth() -> Auth {
+    let config = ConfigSpec::new(None);
+    let profile = config.aws.lambda.layers_profile.clone();
+    let auth = init(profile.clone(), None).await;
+    let centralized = auth
+        .assume(profile.clone(), config.role_to_assume(profile))
+        .await;
+    centralized
+}
+//
+
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
     let config = ConfigSpec::new(None);
@@ -168,12 +198,16 @@ pub fn clean(recursive: bool) {
     }
 }
 
-pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
+pub async fn publish(auth: Option<Auth>, builds: Vec<BuildOutput>) {
+    let auth = match auth {
+        Some(a) => a,
+        None => init_centralized_auth().await
+    };
     for build in builds {
         tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
-            BuildKind::Layer | BuildKind::Library => layer::publish(auth, &build).await,
-            BuildKind::Image => image::publish(auth, &build).await,
+            BuildKind::Layer | BuildKind::Library => layer::publish(&auth, &build).await,
+            BuildKind::Image => image::publish(&auth, &build).await,
             _ => (),
         }
     }
