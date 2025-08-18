@@ -1,0 +1,25 @@
+name: router-default
+kind: step-function
+flow:
+  Comment: default
+  startAt: d0
+  TimeoutSeconds: 600
+  States:
+    d0:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_d0_{{sandbox}}'
+        Payload:
+          data.$: $
+      Next: d1
+    d1:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_d1_{{sandbox}}'
+        Payload:
+          data.$: $
+      End: true

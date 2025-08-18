@@ -1,0 +1,40 @@
+name: example-parallel
+kind: step-function
+flow:
+  Comment: Parallel Example
+  StartAt: foobar
+  States:
+    foobar:
+      Type: Parallel
+      Next: baz
+      Branches:
+        - StartAt: foo
+          States:
+            foo:
+              Type: Task
+              Resource: arn:aws:states:::lambda:invoke
+              OutputPath: $.Payload
+              Parameters:
+                FunctionName: '{{namespace}}_foo_{{sandbox}}'
+                Payload:
+                  data.$: $.data
+              End: true
+        - StartAt: bar
+          States:
+            bar:
+              Type: Task
+              OutputPath: $.Payload
+              Resource: arn:aws:states:::lambda:invoke
+              Parameters:
+                FunctionName: '{{namespace}}_bar_{{sandbox}}'
+                Payload:
+                  data.$: $.data
+              End: true
+    baz:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      Parameters:
+        FunctionName: '{{namespace}}_baz_{{sandbox}}'
+        Payload:
+          data.$: $
+      End: true

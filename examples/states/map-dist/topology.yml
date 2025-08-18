@@ -1,0 +1,44 @@
+name: example-map-dist
+kind: step-function
+events:
+  consumes: {}
+  produces: {}
+routes: {}
+flow:
+  Comment: dist-map
+  StartAt: process-csv-row
+  TimeoutSeconds: 500
+  States:
+    process-csv-row:
+      Type: Map
+      ItemReader:
+        ReaderConfig:
+          InputType: CSV
+          CSVHeaderLocation: FIRST_ROW
+        Resource: arn:aws:states:::s3:getObject
+        Parameters:
+          Bucket.$: $.bucket
+          Key.$: $.key
+      Next: respond
+      ToleratedFailurePercentage: 30
+      MaxConcurrency: 30
+      ItemProcessor:
+        ProcessorConfig:
+          Mode: DISTRIBUTED
+          ExecutionType: STANDARD
+        StartAt: process
+        States:
+          process:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            OutputPath: $.Payload
+            TimeoutSeconds: 10000
+            Parameters:
+              FunctionName: '{{namespace}}_processor_{{sandbox}}'
+              Payload:
+                data.$: $
+            End: true
+    respond:
+      Type: Pass
+      ResultPath: $
+      End: true

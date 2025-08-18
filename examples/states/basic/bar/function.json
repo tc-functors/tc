@@ -1,0 +1,16 @@
+{
+  "name": "bar",
+  "fqn": "spicy-bar",
+  "description": "bar bar bar",
+  "runtime": {
+    "lang": "python3.10",
+    "package_type": "zip",
+    "handler": "handler.handler",
+    "layers": []
+
+  },
+  "tasks": {
+    "build": "zip -9 -q lambda.zip -r *.py",
+    "clean": "rm *.zip"
+  }
+}

@@ -1,0 +1,52 @@
+name: example-router-events
+kind: step-function
+events:
+  consumes:
+    RouterExampleStart:
+      producer: someProducer
+flow:
+  Comment: default topology
+  StartAt: route
+  TimeoutSeconds: 600
+  States:
+    route:
+      Type: Choice
+      Choices:
+        - Variable: $.detail.data.type
+          StringEquals: "alpha"
+          Next: alpha
+        - Variable: $.detail.data.type
+          StringEquals: "beta"
+          Next: beta
+      Default: default
+
+    alpha:
+      Type: Task
+      Resource: arn:aws:states:::states:startExecution.sync:2
+      OutputPath: $.Output
+      Parameters:
+        StateMachineArn: 'arn:aws:states:{{region}}:{{account}}:stateMachine:alpha'
+        Input:
+            data.$: $.detail.data
+            metadata.$: $.detail.metadata
+      End: True
+
+    beta:
+      Type: Task
+      Resource: arn:aws:states:::states:startExecution.sync:2
+      OutputPath: $.Output
+      Parameters:
+        StateMachineArn: 'arn:aws:states:{{region}}:{{account}}:stateMachine:beta'
+        Input:
+            data.$: $.data
+      End: True
+
+    default:
+      Type: Task
+      Resource: arn:aws:states:::states:startExecution.sync:2
+      OutputPath: $.Output
+      Parameters:
+        StateMachineArn: 'arn:aws:states:{{region}}:{{account}}:stateMachine:default'
+        Input:
+            data.$: $.data
+      End: True
