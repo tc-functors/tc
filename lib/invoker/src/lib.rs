@@ -6,12 +6,22 @@ mod repl;
 use authorizer::Auth;
 use composer::{Entity, Topology};
 use kit as u;
-
+use std::collections::HashMap;
 
 async fn read_uri(auth: &Auth, uri: &str) -> String {
     let client = aws::s3::make_client(auth).await;
     let (bucket, key) = aws::s3::parts_of(uri);
     aws::s3::get_str(&client, &bucket, &key).await
+}
+
+fn render(s: &str) -> String {
+    let mut table: HashMap<&str, &str> = HashMap::new();
+    let bucket = match std::env::var("TC_TEST_BUCKET") {
+        Ok(p) => p,
+        Err(_) => String::from("None")
+    };
+    table.insert("TC_TEST_BUCKET", &bucket);
+    u::stencil(s, table)
 }
 
 pub fn read_payload_local(payload: Option<String>) -> String {
@@ -30,7 +40,8 @@ pub async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
     match s {
         Some(p) => {
             if p.starts_with("s3://") {
-                read_uri(auth, &p).await
+                let rp = render(&p);
+                read_uri(auth, &rp).await
             } else {
                 if p.ends_with(".json") && u::file_exists(&p) {
                     u::slurp(&p)
