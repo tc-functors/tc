@@ -18,6 +18,7 @@ use composer::{
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
+use super::init_centralized_auth;
 
 pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
     match runtime.to_lang() {
@@ -93,33 +94,6 @@ fn find_parent_image_name(
     }
 }
 
-async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
-    match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => {
-            let role = match assume_role {
-                Some(r) => Some(r),
-                None => {
-                    let config = composer::config(&kit::pwd());
-                    let p = u::maybe_string(profile.clone(), "default");
-                    config.ci.roles.get(&p).cloned()
-                }
-            };
-            Auth::new(profile.clone(), role).await
-        }
-        Err(_) => Auth::new(profile.clone(), assume_role).await,
-    }
-}
-
-async fn init_centralized_auth() -> Auth {
-    let config = ConfigSpec::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    let auth = init(profile.clone(), None).await;
-    let centralized = auth
-        .assume(profile.clone(), config.role_to_assume(profile))
-        .await;
-    centralized
-}
-
 pub async fn build(
     dir: &str,
     name: &str,
@@ -130,7 +104,7 @@ pub async fn build(
 ) -> BuildStatus {
 
     let auth = init_centralized_auth().await;
-     aws_ecr::login(&auth, dir).await;
+    aws_ecr::login(&auth, dir).await;
 
     let image_spec = match images.get(image_kind) {
         Some(p) => p,
@@ -212,7 +186,8 @@ pub async fn build(
 
 pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, artifact, .. } = build;
-    aws_ecr::login(auth, &dir).await;
+
+    aws_ecr::login(&auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
     u::run(&cmd, &dir);
 }

@@ -5,7 +5,6 @@ use crate::aws::{
 };
 use authorizer::Auth;
 use composer::{
-    ConfigSpec,
     Function,
     Lang,
     function::Runtime,
@@ -15,14 +14,9 @@ use std::collections::HashMap;
 use tabled::Tabled;
 use kit as u;
 
-async fn maybe_build(auth: &Auth, function: &Function) {
-    let config = ConfigSpec::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    let centralized = auth
-        .assume(profile.clone(), config.role_to_assume(profile))
-        .await;
+async fn maybe_build(_auth: &Auth, function: &Function) {
     let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
-    builder::publish(&centralized, builds).await;
+    builder::publish(None, builds).await;
 }
 
 async fn create_container(auth: &Auth, function: &Function) -> String {

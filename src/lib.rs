@@ -68,7 +68,7 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
             let builds = builder::build_recursive(dir, parallel, image, layer).await;
             if publish {
                 let auth = init_centralized_auth().await;
-                builder::publish(&auth, builds.clone()).await;
+                builder::publish(Some(auth), builds.clone()).await;
             }
         }
     } else if clean {
@@ -95,7 +95,7 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
                     let builds = builder::build(&f, name, image, layer, kind).await;
                     if publish {
                         let auth = init_centralized_auth().await;
-                        builder::publish(&auth, builds.clone()).await;
+                        builder::publish(Some(auth), builds.clone()).await;
                     }
                 }
                 None => println!("No function found. Try --recursive or build from a function dir"),
