@@ -103,7 +103,7 @@ pub struct DeployArgs {
     #[arg(long, short = 't', alias = "service")]
     topology: Option<String>,
     #[arg(long, short = 'e')]
-    env: String,
+    env: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long)]
@@ -112,6 +112,8 @@ pub struct DeployArgs {
     version: Option<String>,
     #[arg(long, short = 'b')]
     branch: Option<String>,
+    #[arg(long, action, short = 'i')]
+    interactive: bool,
 }
 
 #[derive(Debug, Args)]
@@ -126,12 +128,8 @@ pub struct ReleaseArgs {
     suffix: Option<String>,
     #[arg(long, action, short = 'u')]
     unwind: bool,
-    #[arg(long, action, short = 'g')]
-    github: bool,
-    #[arg(long)]
-    tag: Option<String>,
-    #[arg(long)]
-    asset: Option<String>,
+    #[arg(long, action, short = 'i')]
+    interactive: bool,
 }
 
 #[derive(Debug, Args)]
@@ -721,10 +719,15 @@ async fn ci_deploy(args: DeployArgs) {
         sandbox,
         topology,
         version,
+        interactive,
         ..
     } = args;
 
-    tc::ci_deploy(topology, env, sandbox, version).await;
+    if interactive {
+        tc::ci_deploy_interactive().await;
+    } else {
+        tc::ci_deploy(topology, env, sandbox, version).await;
+    }
 }
 
 async fn ci_release(args: ReleaseArgs) {
@@ -732,10 +735,15 @@ async fn ci_release(args: ReleaseArgs) {
         topology,
         suffix,
         unwind,
+        interactive,
         ..
     } = args;
 
-    tc::ci_release(topology, suffix, unwind).await;
+    if interactive {
+        tc::ci_release_interactive().await;
+    } else {
+        tc::ci_release(topology, suffix, unwind).await;
+    }
 }
 
 async fn cache(args: CacheArgs) {
