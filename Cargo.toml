@@ -21,6 +21,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tabled = "0.10.0"
 openssl-sys = "0.9.107"
 clap-markdown = "0.1.4"
+inquire = "0.7.5"
 authorizer =  { path = "lib/authorizer" }
 composer =  { path = "lib/composer" }
 resolver =  { path = "lib/resolver" }

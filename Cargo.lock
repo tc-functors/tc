@@ -5187,6 +5187,7 @@ dependencies = [
  "colored",
  "composer 0.8.114",
  "deployer",
+ "inquire",
  "invoker",
  "kit",
  "log",

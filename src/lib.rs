@@ -15,6 +15,7 @@ use tabled::{
     Style,
     Table,
 };
+mod interactive;
 
 pub struct BuildOpts {
     pub recursive: bool,
@@ -434,17 +435,30 @@ pub async fn upgrade(version: Option<String>) {
 
 pub async fn ci_deploy(
     topology: Option<String>,
-    env: String,
+    env: Option<String>,
     sandbox: Option<String>,
     version: Option<String>,
 ) {
     let dir = u::pwd();
+    let env = match env {
+        Some(e) => e,
+        None => panic!("No env or profile specified")
+    };
     let namespace = composer::topology_name(&dir);
     let current_version = composer::topology_version(&namespace);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let version = u::maybe_string(version, &current_version);
     releaser::deploy(&env, &name, &sandbox, &version).await;
+}
+
+pub async fn ci_deploy_interactive() {
+    let dir = u::root();
+    u::sh("git fetch --tags", &dir);
+    let versions = composer::lookup_versions(&dir);
+    let (namespace, version, env, sandbox) =
+        interactive::prompt_versions(&versions);
+    releaser::deploy(&env, &namespace, &sandbox, &version).await;
 }
 
 pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind: bool) {
@@ -459,6 +473,16 @@ pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind:
         releaser::release(&service, &suffix, &tag.version).await
     }
 }
+
+pub async fn ci_release_interactive() {
+    let dir = u::root();
+    u::sh("git fetch --tags", &dir);
+    let versions = composer::lookup_versions(&dir);
+    let namespace = interactive::prompt_names(&versions);
+    let tag = tagger::next_tag(&namespace, "minor", "default");
+    releaser::release(&namespace, "default", &tag.version).await
+}
+
 
 pub async fn show_config() {
     let config = ConfigSpec::new(None);
