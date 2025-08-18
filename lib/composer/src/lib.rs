@@ -84,10 +84,12 @@ pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
     };
     let mut h: HashMap<String, String> = HashMap::new();
     for d in given_root_dirs {
-        let f = format!("{}/topology.yml", &d);
+        let f = format!("{}/{}/topology.yml", dir, &d);
         let spec = TopologySpec::new(&f);
-        let version = topology::version::current_semver(&spec.name);
-        h.insert(spec.name, version);
+        if &spec.name != "tc" {
+            let version = topology::version::current_semver(&spec.name);
+            h.insert(spec.name, version);
+        }
     }
     h
 }

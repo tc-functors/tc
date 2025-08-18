@@ -14,7 +14,7 @@ pub fn prompt_versions(
 
     let topology: Result<String, InquireError> =
         Select::new("Topology name:", names)
-        .with_page_size(25)
+        .with_page_size(20)
         .without_help_message()
         .prompt();
 
@@ -41,7 +41,7 @@ pub fn prompt_versions(
     let version = selected_version.unwrap();
     let sandbox = sandbox.unwrap();
     let profile = profile.unwrap();
-    let msg = format!("Do you want to deploy {}@{}.{}/{} ?", &t, &profile, &sandbox, &version);
+    let msg = format!("Do you want to deploy {}@{}.{}/{} ?", &t, &sandbox, &profile, &version);
 
     let ans = Confirm::new(&msg)
         .with_default(false)
