@@ -5,6 +5,12 @@ events:
   MyEvent:
     function: foo
 
+routes:
+  ping:
+    path: /api/ping
+    method: GET
+    function: pinger
+
 flow:
   StartAt: processor
   TimeoutSeconds: 300
@@ -29,4 +35,9 @@ tests:
     entity: state
     payload: '{"start": "process"}'
     condition: matches
+    expect: '{"status": "ok"}'
+  route-test:
+    entity: routes/ping
+    payload: '{"start": "process"}'
+    condition: includes
     expect: '{"status": "ok"}'
