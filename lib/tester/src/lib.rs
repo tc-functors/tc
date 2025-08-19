@@ -88,7 +88,9 @@ async fn invoke(auth: &Auth, topology: &Topology, entity: &str, payload: &str) -
                     let client = eventbridge::make_client(auth).await;
                     let detail_type = &e.pattern.detail_type.first().unwrap();
                     let source = &e.pattern.source.first().unwrap();
-                    eventbridge::put_event(client, &e.bus, detail_type, source, payload).await
+                    eventbridge::put_event(
+                        client, &e.bus, detail_type, source, payload
+                    ).await
                 } else {
                     panic!("Event not found")
                 }
@@ -96,6 +98,22 @@ async fn invoke(auth: &Auth, topology: &Topology, entity: &str, payload: &str) -
                 panic!("No component defined")
             }
         },
+        Entity::Route => {
+            if let Some(c) = component {
+                if let Some(r) = &topology.routes.get(&c) {
+                    let res = invoker::route::request(
+                        auth, &r.gateway, &r.path, &r.method
+                    ).await;
+                    res.to_string()
+                } else {
+                    panic!("Route not found")
+                }
+            } else {
+                panic!("No component defined")
+            }
+
+        },
+
         _ => todo!()
 
     }

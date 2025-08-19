@@ -94,10 +94,10 @@ impl Auth {
         )
     }
 
-    pub fn api_endpoint(&self, api_id: &str, stage: &str) -> String {
+    pub fn api_endpoint(&self, api_id: &str, _stage: &str) -> String {
         format!(
-            "https://{}.execute-api.{}.amazonaws.com/{}",
-            api_id, self.region, stage
+            "https://{}.execute-api.{}.amazonaws.com",
+            api_id, self.region
         )
     }
 

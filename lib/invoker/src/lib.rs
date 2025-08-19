@@ -2,6 +2,7 @@ pub mod aws;
 mod event;
 mod function;
 mod state;
+pub mod route;
 mod repl;
 use authorizer::Auth;
 use composer::{Entity, Topology};
@@ -82,7 +83,11 @@ async fn invoke_component(auth: &Auth, topology: &Topology, entity: Entity, comp
             }
         }
         Entity::Route => {
-            todo!()
+            let routes = &topology.routes;
+            if let Some(r) = routes.get(component) {
+                let res = route::request(auth, &r.gateway, &r.path, &r.method).await;
+                println!("{:?}", res);
+            }
         }
 
         Entity::Mutation => {
