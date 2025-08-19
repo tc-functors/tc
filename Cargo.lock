@@ -5190,6 +5190,7 @@ dependencies = [
  "deployer",
  "inquire",
  "invoker",
+ "itertools",
  "kit",
  "log",
  "mockall",

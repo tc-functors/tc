@@ -10,7 +10,7 @@ use tabled::{
     Table,
     settings::Style,
 };
-use versions::Record;
+pub use versions::Record;
 
 pub fn pretty_print(records: Vec<Record>, format: &str) {
     match format {

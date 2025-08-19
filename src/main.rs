@@ -62,6 +62,8 @@ enum Cmd {
     Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
+    /// Sync all topologies between sandboxes
+    Sync(SyncArgs),
     /// Run tests in topology
     Test(TestArgs),
     /// Create semver tags scoped by a topology
@@ -462,6 +464,16 @@ pub struct ScaffoldArgs {
     dir: Option<String>,
 }
 
+#[derive(Debug, Args)]
+pub struct SyncArgs {
+    #[arg(long, short = 's')]
+    sandbox: String,
+    #[arg(long, short = 'e')]
+    env: String,
+    #[arg(long, action, short = 'd')]
+    dry_run: bool,
+}
+
 async fn version() {
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     println!("{}", version);
@@ -850,6 +862,15 @@ async fn list(args: ListArgs) {
     }
 }
 
+async fn sync(args: SyncArgs) {
+    let SyncArgs {
+        env,
+        sandbox,
+        ..
+    } = args;
+    tc::sync(&env, &sandbox).await;
+}
+
 
 async fn run() {
     let args = Tc::parse();
@@ -877,6 +898,7 @@ async fn run() {
         Cmd::Changelog(args) => changelog(args).await,
         Cmd::Version(..)     => version().await,
         Cmd::Scaffold(args)  => scaffold(args).await,
+        Cmd::Sync(args)  => sync(args).await,
         Cmd::Release(args)   => ci_release(args).await,
         Cmd::Deploy(args)    => ci_deploy(args).await,
     }
