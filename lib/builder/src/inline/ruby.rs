@@ -8,7 +8,6 @@ fn shared_objects() -> Vec<&'static str> {
     vec![
         "cp /usr/lib64/libnghttp2.so.14.20.0 /build/ruby/lib/libnghttp2.so.14",
         "&& cp /usr/lib64/libcurl.so.4.8.0 /build/ruby/lib/libcurl.so.4",
-        "&& cp /usr/lib64/libpsl* /build/ruby/lib/",
         "&& cp /usr/lib64/libidn2.so.0.3.7 /build/ruby/lib/libidn2.so.0",
         "&& cp /usr/lib64/liblber-2.4.so.2.10.7 /build/ruby/lib/liblber-2.4.so.2",
         "&& cp /usr/lib64/libldap-2.4.so.2.10.7 /build/ruby/lib/libldap-2.4.so.2",
@@ -18,8 +17,7 @@ fn shared_objects() -> Vec<&'static str> {
         "&& cp /usr/lib64/libssl3.so /build/ruby/lib/libssl3.so",
         "&& cp /usr/lib64/libunistring.so.0.1.2 /build/ruby/lib/libunistring.so.0",
         "&& cp /usr/lib64/libsasl2.so.3.0.0 /build/ruby/lib/libsasl2.so.3",
-        "&& cp /usr/lib64/libssh2.so.1.0.1 /build/ruby/lib/libssh2.so.1",
-        "&& cp /usr/lib64/libffi.so.6 /build/ruby/lib/libffi.so.6",
+        "&& cp /usr/lib64/libssh2.so.1.0.1 /build/ruby/lib/libssh2.so.1"
     ]
 }
 
@@ -50,13 +48,9 @@ COPY --from=shared . {build_context}/
 
 RUN mkdir -p /build/ruby/lib /build/lib
 
-RUN yum update -yy
-
-RUN yum -y install libffi.x86_64 libpsl-devel
-
 RUN {pre}
 
-RUN --mount=type=ssh --mount=target=shared,type=bind,source=. bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
+RUN --mount=type=ssh --mount=type=cache,target=/.root/cache bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
 
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
@@ -65,7 +59,7 @@ RUN mkdir -p /build/ruby/vendor
 RUN cp -r vendor/cache /build/ruby/vendor/cache
 RUN rm -rf vendor ruby /build/ruby/lib/cache/
 RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {post}
-RUN {extra_str}
+RUN --mount=type=cache,target=/.root/cache {extra_str}
 "#
     );
     let dockerfile = format!("{}/Dockerfile", dir);
