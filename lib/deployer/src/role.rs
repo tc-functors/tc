@@ -34,7 +34,8 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
 async fn create_aux(profile: String, role_arn: Option<String>, role: composer::Role, tags: HashMap<String, String>) {
     let auth = Auth::new(Some(profile), role_arn).await;
     let client = iam::make_client(&auth).await;
-    if &role.kind.to_str() != "provided" {
+
+    if &role.kind.to_str() != "provided"  {
         let r = Role {
             client: client.clone(),
             name: role.name.clone(),
@@ -52,7 +53,6 @@ pub async fn create_or_update(auth: &Auth, roles: &HashMap<String, composer::Rol
 
     let mut tasks = vec![];
 
-    //println!("Creating roles ({})", roles.len());
     for (_, role) in roles.clone() {
         let tags = tags.clone();
         let p = auth.name.to_string();
