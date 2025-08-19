@@ -11,7 +11,7 @@ routes:
     method: GET
     function: pinger
 
-flow:
+states:
   StartAt: processor
   TimeoutSeconds: 300
   States:
@@ -40,4 +40,4 @@ tests:
     entity: routes/ping
     payload: '{"start": "process"}'
     condition: includes
-    expect: '{"status": "ok"}'
+    expect: '{"status": "not-ok"}'

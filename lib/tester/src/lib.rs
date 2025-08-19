@@ -156,31 +156,39 @@ async fn test_functions(auth: &Auth, fns: &HashMap<String, Function>) {
     }
 }
 
+async fn test_topology_unit(auth: &Auth, name: &str, topology: &Topology, spec: &TestSpec) {
+    let dir = u::pwd();
+    let TestSpec { payload, expect, condition, entity, .. } = spec;
+
+    let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
+
+    let start = Instant::now();
+    let entity = u::maybe_string(entity.clone(), "state");
+
+    let response = invoke(auth, topology, &entity, &payload).await;
+    assert_case(expect.clone(), &response, condition.clone());
+
+    let duration = start.elapsed();
+    let _ = println!("Test unit {} ({}) ({}) {:#}",
+                     name, &entity, "pass".green(), u::time_format(duration));
+}
+
 pub async fn test_topology(
     auth: &Auth,
     topology: &Topology,
-    _unit: Option<String>
+    unit: Option<String>
 ) {
 
-    let dir = u::pwd();
     let tspecs = &topology.tests;
 
-    for (name, spec) in tspecs {
-        let TestSpec { payload, expect, condition, entity, .. } = spec;
-
-        let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
-
-        let start = Instant::now();
-        let entity = u::maybe_string(entity.clone(), "state");
-
-        let response = invoke(auth, topology, &entity, &payload).await;
-        assert_case(expect.clone(), &response, condition.clone());
-
-        let duration = start.elapsed();
-        let _ = println!("Test unit {} ({}) ({}) {:#}",
-                     name, &entity, "pass".green(), u::time_format(duration));
+    if let Some(u) = unit {
+        if let Some(spec) = tspecs.get(&u) {
+            test_topology_unit(auth, &u, topology, spec).await;
+        }
+    } else {
+        for (name, spec) in tspecs {
+            test_topology_unit(auth, &name, topology, spec).await;
+        }
+        test_functions(auth, &topology.functions).await;
     }
-
-    test_functions(auth, &topology.functions).await;
-
 }
