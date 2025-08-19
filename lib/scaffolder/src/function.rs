@@ -209,24 +209,13 @@ fn write_file(path: &str, data: &str) {
     }
 }
 
-fn write(dir: &str, spec: Spec, format: &str) {
-    match format {
-        "JSON" | "json" => {
-            let json = serde_json::to_string(&spec).unwrap();
-            let path = format!("{}/function.json", dir);
-            write_file(&path, &json);
-        },
-
-        "YAML" | "yaml" => {
-            let yaml = serde_yaml::to_string(&spec).unwrap();
-            let path = format!("{}/function.yml", dir);
-            write_file(&path, &yaml);
-        },
-        _ => todo!()
-    }
+fn write(dir: &str, spec: Spec) {
+    let yaml = serde_yaml::to_string(&spec).unwrap();
+    let path = format!("{}/function.yml", dir);
+    write_file(&path, &yaml);
 }
 
-fn create(kind: &str, dir: &str, name: &str, runtime: &str, build_kind: &str, format: &str) {
+fn create(kind: &str, dir: &str, name: &str, runtime: &str, build_kind: &str) {
 
     let fdir = if kind != "Standalone" {
         format!("{}/{}", dir, name)
@@ -235,7 +224,7 @@ fn create(kind: &str, dir: &str, name: &str, runtime: &str, build_kind: &str, fo
     };
     u::mkdir(&fdir);
     let spec = function_spec(&fdir, name, runtime,  build_kind);
-    write(&fdir, spec, format);
+    write(&fdir, spec);
     let langr = LangRuntime::from_str(runtime).unwrap();
     write_handler(&fdir, &langr);
 }
@@ -302,16 +291,6 @@ pub fn scaffold() {
         .prompt();
 
 
-    let formats: Vec<&str> = vec![
-        "YAML",
-        "JSON",
-        "EDN"
-    ];
-
-    let fmt: Result<&str, InquireError> = Select::new("Select format: ", formats)
-        .without_help_message()
-        .prompt();
-
 
     let name = &name.unwrap();
     println!("Creating {} function dir {}", &kind, name);
@@ -321,8 +300,7 @@ pub fn scaffold() {
         &dir,
         name,
         &runtime.unwrap(),
-        &build_kind.unwrap(),
-        &fmt.unwrap()
+        &build_kind.unwrap()
     );
 
     let proceed_infra = Confirm::new("Override default runtime parameters (roles, vars) ?")
