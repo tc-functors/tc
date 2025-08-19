@@ -142,7 +142,7 @@ pub async fn compose_root(dir: Option<String>, format: Option<String>) {
 
     let root_dir = match dir {
         Some(d) => d,
-        None => u::pwd()
+        None => u::root()
     };
     let fmt = u::maybe_string(format, "table");
     let tps = composer::compose_root(&root_dir, true);
@@ -535,7 +535,7 @@ pub async fn snapshot(
     save: Option<String>,
     target_profile: Option<String>,
 ) {
-    let dir = u::pwd();
+    let dir = u::root();
     let format = u::maybe_string(format, "json");
     let sandbox = u::maybe_string(sandbox, "stable");
 
@@ -610,4 +610,17 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>) {
 pub fn scaffold(kind: Option<String>) {
     let kind = u::maybe_string(kind, "function");
     scaffolder::scaffold(&kind)
+}
+
+pub async fn sync(env: &str, sandbox: &str) {
+    let auth = init(Some(String::from(env)), None).await;
+    let dir = u::root();
+    let records = snapshotter::snapshot(&auth, &dir, sandbox).await;
+    let selected = interactive::prompt_multi_names(records);
+    let (_to_env, _to_sandbox) = interactive::prompt_env_sandbox();
+    for (ns, ver) in selected {
+        println!("Syncing {} {} ", &ns, &ver);
+        // todo
+    }
+
 }
