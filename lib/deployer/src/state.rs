@@ -46,17 +46,6 @@ pub async fn create(auth: &Auth, flow: &Flow, tags: &HashMap<String, String>) {
         let role = flow.role.clone();
         let role_arn = role.arn;
 
-        let r = Role {
-            client: iam_client,
-            name: role.name,
-            trust_policy: role.trust.to_string(),
-            policy_arn: role.policy_arn,
-            policy_name: role.policy_name,
-            policy_doc: role.policy.to_string(),
-            tags: Some(iam::make_tags(tags.clone()))
-        };
-        let _ = r.create_or_update().await;
-
         let sf = StateMachine {
             name: name.clone(),
             client: client,
