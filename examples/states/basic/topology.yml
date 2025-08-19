@@ -1,7 +1,7 @@
 name: example-basic
 mode: Express
-hyphenated_names: true
-flow:
+
+states:
   Comment: Basic example
   StartAt: foo
   TimeoutSeconds: 1200
