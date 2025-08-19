@@ -1,4 +1,4 @@
-name: foo
+name: baz
 runtime:
   lang: Python312
   handler: handler.handler
@@ -7,5 +7,5 @@ runtime:
 build:
   kind: Inline
   images: {}
-  command: zip -9 -q -r lambda.zip .
+  command: zip -9 -q -r lambda.zip *.py
 

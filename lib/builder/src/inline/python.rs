@@ -44,7 +44,6 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post:
         }
     };
 
-    let build_context = &u::root();
     let image = find_image(&runtime);
     let req_cmd = gen_req_cmd(dir);
 
@@ -56,15 +55,13 @@ WORKDIR {dir}
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY pyproject.toml ./
 
-COPY --from=shared . {build_context}/
-
 RUN {req_cmd}
 
 RUN rm -rf /build/python && mkdir -p /build
 
 RUN {pre}
 
-RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
+RUN --mount=type=ssh --mount=type=cache,target=/.root/cache {pip_cmd}
 
 RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {post}
 

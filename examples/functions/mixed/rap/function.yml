@@ -1,6 +1,6 @@
-name: baz
+name: rap
 runtime:
-  lang: Python312
+  lang: Ruby32
   handler: handler.handler
   package_type: zip
   layers: []
