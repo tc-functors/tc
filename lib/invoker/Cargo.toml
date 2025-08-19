@@ -14,6 +14,7 @@ s3uri = "1.0.0-beta.9"
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
+aws-sdk-apigatewayv2 = { version = "1.66.0", features = ["behavior-version-latest"] }
 aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1.70.0", features = ["behavior-version-latest"] }
 base64 = "0.21.0"

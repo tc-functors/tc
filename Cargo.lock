@@ -3109,6 +3109,7 @@ dependencies = [
  "anyhow",
  "authorizer 0.8.115",
  "aws-config",
+ "aws-sdk-apigatewayv2",
  "aws-sdk-eventbridge",
  "aws-sdk-lambda",
  "aws-sdk-s3",
