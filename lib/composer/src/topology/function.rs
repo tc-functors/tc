@@ -46,10 +46,12 @@ pub struct Function {
 }
 
 fn is_singular_function_dir() -> bool {
-    let function_file = "function.json";
+    let function_file = "function.yml";
+    let function_file_json = "function.json";
     let topology_file = "topology.yml";
-    u::file_exists(function_file) && u::file_exists(topology_file)
+    (u::file_exists(function_file) || u::file_exists(function_file_json)) && u::file_exists(topology_file)
 }
+
 
 fn find_fqn(given_fqn: &str, namespace: &str, name: &str, format: &str) -> String {
     if !given_fqn.is_empty() {

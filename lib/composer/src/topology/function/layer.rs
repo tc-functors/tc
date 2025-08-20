@@ -15,7 +15,7 @@ pub fn guess_runtime(dir: &str) -> LangRuntime {
 }
 
 pub fn layerable(dir: &str) -> bool {
-    if u::path_exists(dir, "function.json") {
+    if u::path_exists(dir, "function.yml") || u::path_exists(dir, "function.json")  {
         u::path_exists(dir, "Gemfile")
             || u::path_exists(dir, "pyproject.toml")
             || u::path_exists(dir, "requirements.txt")
@@ -143,7 +143,7 @@ pub fn discover() -> Vec<Layer> {
     {
         let p = entry.path().to_string_lossy();
         if discoverable(&p) {
-            if u::path_exists(&p, "function.json") {
+            if u::path_exists(&p, "function.yml") || u::path_exists(&p, "function.json") {
                 let layer = function_layer(&p);
                 layers.push(layer);
                 let mut external = external_layers(&p);
