@@ -41,17 +41,28 @@ pub fn gen_code_dockerfile(
 
 fn build_with_docker(dir: &str, name: &str) -> (bool, String, String) {
     let root = &u::root();
-    let cmd_str = match std::env::var("TC_FORCE_BUILD") {
-        Ok(_) => format!(
-            "docker buildx build --platform=linux/amd64 --provenance=false -t {} --build-context shared={root} .",
-            name
-        ),
+
+    let cmd_str = match std::env::var("CI") {
+        Ok(_) => {
+            let key = match std::env::var("AWS_ACCESS_KEY_ID") {
+                Ok(e) => e,
+                Err(_) => panic!("AWS_ACCESS_KEY_ID not set")
+            };
+            let secret = match std::env::var("AWS_SECRET_ACCESS_KEY") {
+                Ok(e) => e,
+                Err(_) => panic!("AWS_SECRET_ACCESS_KEY not set")
+            };
+            format!(
+            "docker buildx build --platform=linux/amd64 --provenance=false -t {} --build-arg AWS_ACCESS_KEY_ID={} --build-arg AWS_SECRET_ACCESS_KEY={} --build-context shared={root} . ",
+            name, &key, &secret
+        )
+        },
         Err(_) => format!(
             "docker buildx build --ssh=default --platform=linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
             name
         ),
     };
-
+    tracing::debug!("Building with docker {}", &cmd_str);
     let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
         sh("rm -f Dockerfile wrapper", dir);

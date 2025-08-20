@@ -83,9 +83,25 @@ COPY --from=build-image /model /model
 
 pub fn gen_code_dockerfile(dir: &str, base_image: &str, commands: Vec<String>) {
     let commands = deps_str(commands);
+    let secure_str = match std::env::var("CI") {
+        Ok(_) => format!(r#"
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
+
+ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+"#),
+        Err(_) => String::from("")
+    };
+
+
     let f = format!(
         r#"
+# syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv
 FROM {base_image}
+
+{secure_str}
 
 RUN {commands}
 
