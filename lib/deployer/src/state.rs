@@ -1,7 +1,5 @@
 use crate::aws::{
     cloudwatch,
-    iam,
-    iam::Role,
     sfn,
     sfn::StateMachine,
 };
@@ -42,7 +40,6 @@ pub async fn create(auth: &Auth, flow: &Flow, tags: &HashMap<String, String>) {
 
     if !definition.is_empty() {
         let client = sfn::make_client(auth).await;
-        let iam_client = iam::make_client(auth).await;
         let role = flow.role.clone();
         let role_arn = role.arn;
 

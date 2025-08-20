@@ -3,9 +3,10 @@ use inquire::{Text, Select, InquireError, Confirm};
 use inquire::{
     formatter::MultiOptionFormatter, MultiSelect,
 };
-use composer::ConfigSpec;
+use composer::{ConfigSpec, Entity, Topology};
 use snapshotter::Record;
 use itertools::Itertools;
+use kit::*;
 
 pub fn prompt_versions(
     topologies: &HashMap<String, String>
@@ -14,7 +15,6 @@ pub fn prompt_versions(
     let mut names: Vec<String> =  topologies.keys().cloned().collect();
 
     names.sort();
-
 
     let topology: Result<String, InquireError> =
         Select::new("Topology name:", names)
@@ -135,4 +135,65 @@ pub fn prompt_env_sandbox() -> (String, String) {
     let sandbox = sandbox.unwrap();
     let profile = profile.unwrap();
     (profile, sandbox)
+}
+
+
+pub fn prompt_entity_components(topology: &Topology, entities: Vec<Entity>) -> Option<String> {
+
+    let entities_str: Vec<String> = entities.into_iter()
+        .map(|s| format!("{}s", s.to_str())).collect();
+
+    let entity: Result<String, InquireError> =
+        Select::new("Select Entity:", entities_str)
+        .with_page_size(10)
+        .without_help_message()
+        .prompt();
+
+    let entity = &entity.unwrap();
+
+    let components = match entity.as_ref() {
+        "functions" => v!["Specific <function>",
+                          "vars", "roles", "layers", "concurrency",
+                          "runtime", "tags"],
+        "events" => v!["Specific <event>",
+                       "roles",
+                       "filters",
+                       "triggers"],
+        "mutations" => v!["types", "roles"],
+        "routes" => v!["Specific <route>",
+                       "gateway", "cors"],
+        "states" => v!["definition", "tags", "logs"],
+        "pages" => v!["code", "domains", "roles", "Edge functions"],
+        _ => v!["nothing to do"]
+    };
+
+    let maybe_component: Result<String, InquireError> =
+        Select::new("Select Component:", components)
+        .with_page_size(10)
+        .without_help_message()
+        .prompt();
+
+    let comp = &maybe_component.unwrap();
+
+    let component = if comp.starts_with("Specific") {
+        let names: Vec<String> = match entity.as_ref() {
+            "functions" => topology.functions.keys().cloned().collect(),
+            "events" => topology.events.keys().cloned().collect(),
+            "routes" => topology.routes.keys().cloned().collect(),
+            _ => vec!["nope".to_string()]
+        };
+
+        let name: Result<String, InquireError> =
+            Select::new("Select Name:", names)
+            .with_page_size(10)
+            .without_help_message()
+            .prompt();
+
+        &name.unwrap()
+    } else {
+        comp
+    };
+
+    Some(format!("{}/{}", &entity, &component))
+
 }

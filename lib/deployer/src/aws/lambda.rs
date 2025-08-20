@@ -379,7 +379,7 @@ impl Function {
         };
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
-        let _ = log_update.render(&format!("Updating code {} ({})", name, &f.code_size.cyan()));
+        let _ = log_update.render(&format!("Updating function {} ({})", name, &f.code_size.cyan()));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
 
         let res = match f.package_type {

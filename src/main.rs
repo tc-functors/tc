@@ -306,6 +306,8 @@ pub struct UpdateArgs {
     cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'i')]
+    interactive: bool,
 }
 
 #[derive(Debug, Args)]
@@ -564,6 +566,7 @@ async fn update(args: UpdateArgs) {
         entity,
         recursive,
         cache,
+        interactive,
         trace,
         ..
     } = args;
@@ -571,7 +574,7 @@ async fn update(args: UpdateArgs) {
     init_tracing(trace);
     let env = tc::init(profile, role).await;
 
-    tc::update(env, sandbox, entity, recursive, cache).await;
+    tc::update(env, sandbox, entity, recursive, cache, interactive).await;
 }
 
 async fn delete(args: DeleteArgs) {
