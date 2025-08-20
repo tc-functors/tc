@@ -147,16 +147,7 @@ pub async fn test_function(auth: &Auth, sandbox: &str, function: &Function, unit
     }
 }
 
-async fn test_functions(auth: &Auth, fns: &HashMap<String, Function>) {
-    for (_, function) in fns {
-        let tspecs = &function.test;
-        for (name, tspec) in tspecs {
-            test_function_unit(auth, &name, &function.name, &function.fqn, &tspec).await;
-        }
-    }
-}
-
-async fn test_topology_unit(auth: &Auth, name: &str, topology: &Topology, spec: &TestSpec) {
+pub async fn test_topology_unit(auth: &Auth, name: &str, topology: &Topology, spec: &TestSpec) {
     let dir = u::pwd();
     let TestSpec { payload, expect, condition, entity, .. } = spec;
 
@@ -189,6 +180,5 @@ pub async fn test_topology(
         for (name, spec) in tspecs {
             test_topology_unit(auth, &name, topology, spec).await;
         }
-        test_functions(auth, &topology.functions).await;
     }
 }
