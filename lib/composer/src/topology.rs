@@ -137,7 +137,8 @@ pub fn is_relative_topology_dir(dir: &str) -> bool {
 
 // functions
 fn is_standalone_function_dir(dir: &str) -> bool {
-    let function_file = "function.json";
+    let function_file = "function.yml";
+    let function_file_json = "function.json";
     let topology_file = "topology.yml";
     let parent_file = match parent_topology_file(dir) {
         Some(file) => file,
@@ -146,7 +147,7 @@ fn is_standalone_function_dir(dir: &str) -> bool {
     if is_root_topology(&parent_file) {
         return true;
     } else {
-        u::file_exists(function_file)
+        (u::file_exists(function_file) || u::file_exists(function_file_json))
             && !u::file_exists(topology_file)
             && !u::file_exists(&parent_file)
             || u::file_exists("handler.rb")

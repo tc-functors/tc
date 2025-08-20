@@ -129,9 +129,10 @@ pub fn infer_lang(dir: &str) -> LangRuntime {
 }
 
 fn is_singular_function_dir() -> bool {
-    let function_file = "function.json";
+    let function_file = "function.yml";
+    let function_file_json = "function.json";
     let topology_file = "topology.yml";
-    u::file_exists(function_file) && u::file_exists(topology_file)
+    (u::file_exists(function_file) || u::file_exists(function_file_json)) && u::file_exists(topology_file)
 }
 
 fn find_build_kind(fspec: &FunctionSpec) -> BuildKind {
