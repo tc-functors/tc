@@ -211,7 +211,7 @@ pub fn build(dir: &str, name: &str, langr: &LangRuntime) -> BuildStatus {
     gen_dockerfile(dir, langr);
     let (status, out, err) = build_with_docker(dir);
     copy_from_docker(dir);
-    if !u::path_exists(dir, "function.yml") || !u::path_exists(dir, "function.json") {
+    if !u::path_exists(dir, "function.yml") && !u::path_exists(dir, "function.json") {
         copy(dir, langr);
     }
     zip(dir, langr);
