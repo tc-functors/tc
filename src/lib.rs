@@ -296,10 +296,12 @@ async fn update_aux(
     let cache = false;
 
     let start = Instant::now();
-    println!("Resolving topology {}...", &topology.namespace);
+    match maybe_entity {
+        Some(ref e) => println!("Resolving {} ...", &e),
+        None => println!("Resolving topology {}...", &topology.namespace)
+    }
+
     let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, dirty).await;
-    let msg = composer::count_of(&root);
-    println!("{}", msg);
 
     deployer::try_update(&auth, &root, &maybe_entity.clone()).await;
 
@@ -326,6 +328,9 @@ pub async fn update(
 
     println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
+    let msg = composer::count_of(&topology);
+    println!("{}", msg);
+
     let entities = composer::entities_of(&topology);
 
     let maybe_entity = if interactive {
