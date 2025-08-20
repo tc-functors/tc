@@ -535,7 +535,7 @@ async fn test(args: TestArgs) {
     init_tracing(trace);
     let env = tc::init(profile, role).await;
     if interactive {
-        tc::test_interactive().await;
+        tc::test_interactive(env, sandbox).await;
     } else {
         tc::test(env, sandbox, unit, recursive).await;
     }

@@ -4,6 +4,7 @@ use inquire::{
     formatter::MultiOptionFormatter, MultiSelect,
 };
 use composer::{ConfigSpec, Entity, Topology};
+use composer::spec::TestSpec;
 use snapshotter::Record;
 use itertools::Itertools;
 use kit::*;
@@ -196,4 +197,24 @@ pub fn prompt_entity_components(topology: &Topology, entities: Vec<Entity>) -> O
 
     Some(format!("{}/{}", &entity, &component))
 
+}
+
+pub fn prompt_test_units(specs: HashMap<String, TestSpec>) -> (String, Option<TestSpec>) {
+
+    let mut unit_names: Vec<String> = vec![];
+    for (name, spec) in &specs {
+        let m = format!("{} - {}", name, spec.entity.clone().unwrap());
+        unit_names.push(m);
+    }
+    unit_names.sort();
+
+    let name: Result<String, InquireError> =
+        Select::new("Select Test Unit:", unit_names)
+        .with_page_size(30)
+        .without_help_message()
+        .prompt();
+    let name = name.unwrap();
+    let (sname, _entity) = name.split(" - ").collect_tuple().unwrap();
+    let p = specs.get(sname).cloned();
+    (sname.to_string(), p)
 }

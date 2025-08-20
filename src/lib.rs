@@ -104,16 +104,30 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
     }
 }
 
-pub async fn test_interactive() {
+pub async fn test_interactive(auth: Auth, sandbox: Option<String>) {
+    let dir = u::pwd();
+    let sandbox = resolver::maybe_sandbox(sandbox);
 
+    if composer::is_topology_dir(&dir) {
+        let topology = composer::compose(&dir, false);
+        let units = &topology.tests;
+
+        let (name, maybe_unit) = interactive::prompt_test_units(units.clone());
+        if let Some(spec) = maybe_unit {
+            let resolved = resolver::render(&auth, &sandbox, &topology).await;
+            tester::test_topology_unit(&auth, &name, &resolved, &spec).await;
+        }
+    }
+    else {
+        println!("Interactive mode supported only in topology directory");
+    }
 }
 
 pub async fn test(
     auth: Auth,
     sandbox: Option<String>,
     unit: Option<String>,
-    recursive: bool
-
+    recursive: bool,
 ) {
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);

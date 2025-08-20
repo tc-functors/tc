@@ -503,11 +503,21 @@ fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: 
     h
 }
 
-fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec>{
-    match t {
+fn make_test(
+    t: Option<HashMap<String, TestSpec>>,
+    fns: &HashMap<String, Function>,
+) -> HashMap<String, TestSpec>{
+    let mut tspecs = match t {
         Some(spec) => spec,
         None => HashMap::new()
+    };
+    for (fname, f) in fns {
+        for (name, mut tspec) in f.test.clone() {
+            tspec.entity = Some(format!("function/{}", &fname));
+            tspecs.insert(name.to_string(), tspec.clone());
+        }
     }
+    tspecs
 }
 
 fn find_kind(
@@ -581,6 +591,7 @@ fn make(
         roles: make_roles(&functions, &resolvers.len(), &routes.len(), &events.len(), &flow),
         events: events,
         routes: routes,
+        tests: make_test(spec.tests.clone(), &functions),
         functions: functions,
         schedules: schedule::make_all(&namespace, &infra_dir),
         queues: make_queues(&spec, &config),
@@ -590,7 +601,6 @@ fn make(
         tags: tag::make(&spec.name, &infra_dir),
         pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
-        tests: make_test(spec.tests.clone()),
         config: ConfigSpec::new(None),
     }
 }
