@@ -235,7 +235,7 @@ fn function_dirs(dir: &str) -> Vec<String> {
         xs.append(&mut xm)
     }
     for d in dirs {
-        if path_exists(&d, "function.json") || is_inferred_dir(&d) {
+        if path_exists(&d, "function.yml") || path_exists(&d, "function.json") || is_inferred_dir(&d) {
             xs.push(d.to_string())
         }
     }
