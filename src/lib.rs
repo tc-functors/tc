@@ -285,26 +285,19 @@ pub async fn create(
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
-pub async fn update(
-    auth: Auth,
-    sandbox: Option<String>,
-    maybe_entity: Option<String>,
-    recursive: bool,
-    cache: bool,
+async fn update_aux(
+    auth: &Auth,
+    sandbox: &str,
+    topology: &Topology,
+    maybe_entity: Option<String>
 ) {
-    let sandbox = resolver::maybe_sandbox(sandbox);
-    let dirty = true;
 
-    deployer::guard::prevent_stable_updates(&sandbox);
+    let dirty = true;
+    let cache = false;
 
     let start = Instant::now();
-
-    println!("Composing topology...");
-    let topology = composer::compose(&u::pwd(), recursive);
-
     println!("Resolving topology {}...", &topology.namespace);
     let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, dirty).await;
-
     let msg = composer::count_of(&root);
     println!("{}", msg);
 
@@ -313,9 +306,34 @@ pub async fn update(
     for (_, node) in root.nodes {
         deployer::try_update(&auth, &node, &maybe_entity).await;
     }
-    builder::clean(recursive);
+    builder::clean(true);
+
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
+}
+
+pub async fn update(
+    auth: Auth,
+    sandbox: Option<String>,
+    maybe_entity: Option<String>,
+    recursive: bool,
+    _cache: bool,
+    interactive: bool
+) {
+    let sandbox = resolver::maybe_sandbox(sandbox);
+
+    deployer::guard::prevent_stable_updates(&sandbox);
+
+    println!("Composing topology...");
+    let topology = composer::compose(&u::pwd(), recursive);
+    let entities = composer::entities_of(&topology);
+
+    let maybe_entity = if interactive {
+        interactive::prompt_entity_components(&topology, entities)
+    } else {
+        maybe_entity
+    };
+    update_aux(&auth, &sandbox, &topology, maybe_entity).await
 }
 
 pub async fn delete(
