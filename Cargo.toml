@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.8.221"
+version = "0.8.222"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.8.221"
+version = "0.8.222"
 
 [dependencies]
 serde = "1.0"
@@ -23,6 +23,7 @@ openssl-sys = "0.9.107"
 clap-markdown = "0.1.4"
 inquire = "0.7.5"
 itertools = "0.10.5"
+open = "5.0.0"
 authorizer =  { path = "lib/authorizer" }
 composer =  { path = "lib/composer" }
 resolver =  { path = "lib/resolver" }
@@ -36,7 +37,7 @@ notifier = { path = "lib/notifier" }
 router = { path = "lib/router" }
 scaffolder = { path = "lib/scaffolder" }
 kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
-releaser = { git = "https://github.com/tc-functors/releaser.git", rev = "779e9a7"}
+releaser = { git = "https://github.com/tc-functors/releaser.git", rev = "5df352b"}
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when

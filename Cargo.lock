@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "authorizer"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "aws-config",
  "aws-credential-types",
@@ -1326,17 +1326,17 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "anyhow",
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "aws-config",
  "aws-sdk-codeartifact",
  "aws-sdk-ecr",
  "aws-sdk-lambda",
  "base64 0.21.7",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "glob",
  "kit",
  "log",
@@ -1783,7 +1783,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2049,10 +2049,10 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "anyhow",
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
@@ -2071,7 +2071,7 @@ dependencies = [
  "base64 0.21.7",
  "builder",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "itertools",
  "kit",
  "log",
@@ -3132,10 +3132,10 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "anyhow",
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-eventbridge",
@@ -3144,7 +3144,7 @@ dependencies = [
  "aws-sdk-sfn",
  "base64 0.21.7",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "gql_client",
  "kit",
  "open",
@@ -3615,10 +3615,10 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "kit",
  "regex",
  "semver 0.7.0",
@@ -4276,7 +4276,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 [[package]]
 name = "releaser"
 version = "0.1.0"
-source = "git+https://github.com/tc-functors/releaser.git?rev=779e9a7#779e9a7668fc28bf42a719b19873619657d472d6"
+source = "git+https://github.com/tc-functors/releaser.git?rev=5df352b#5df352b5f08847f5e0693ceefc62fd748f55c572"
 dependencies = [
  "anyhow",
  "authorizer 0.8.114",
@@ -4376,9 +4376,9 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "aws-config",
  "aws-sdk-appsync",
  "aws-sdk-efs",
@@ -4386,7 +4386,7 @@ dependencies = [
  "aws-sdk-lambda",
  "aws-sdk-ssm",
  "cacache",
- "composer 0.8.221",
+ "composer 0.8.222",
  "kit",
  "regex",
  "serde 1.0.217",
@@ -4424,15 +4424,15 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "anyhow",
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "aws-config",
  "aws-sdk-eventbridge",
  "aws-sdk-sfn",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "kit",
  "serde 1.0.217",
  "serde_derive",
@@ -4636,9 +4636,9 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
- "composer 0.8.221",
+ "composer 0.8.222",
  "inquire",
  "kit",
  "question",
@@ -5019,9 +5019,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
  "aws-sdk-eventbridge",
@@ -5029,7 +5029,7 @@ dependencies = [
  "aws-sdk-s3",
  "aws-sdk-sfn",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "kit",
  "log",
  "s3uri",
@@ -5037,7 +5037,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tabled 0.20.0",
- "tagger 0.8.221",
+ "tagger 0.8.222",
  "tokio",
 ]
 
@@ -5252,11 +5252,11 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "colored",
  "kit",
- "notifier 0.8.221",
+ "notifier 0.8.222",
  "regex",
  "semver 0.7.0",
  "serde 1.0.217",
@@ -5266,14 +5266,14 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "builder",
  "clap",
  "clap-markdown",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "deployer",
  "inquire",
  "invoker",
@@ -5281,7 +5281,8 @@ dependencies = [
  "kit",
  "log",
  "mockall",
- "notifier 0.8.221",
+ "notifier 0.8.222",
+ "open",
  "openssl",
  "openssl-sys",
  "releaser",
@@ -5293,7 +5294,7 @@ dependencies = [
  "serde_json",
  "snapshotter",
  "tabled 0.10.0",
- "tagger 0.8.221",
+ "tagger 0.8.222",
  "tester",
  "tokio",
  "tracing",
@@ -5331,12 +5332,12 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.8.221"
+version = "0.8.222"
 dependencies = [
  "assert-json-diff",
- "authorizer 0.8.221",
+ "authorizer 0.8.222",
  "colored",
- "composer 0.8.221",
+ "composer 0.8.222",
  "invoker",
  "jsonpath-rust",
  "kit",
