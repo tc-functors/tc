@@ -40,4 +40,4 @@ tests:
     entity: routes/ping
     payload: '{"start": "process"}'
     condition: includes
-    expect: '{"status": "not-ok"}'
+    expect: '{"status": "ok"}'

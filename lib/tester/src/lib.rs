@@ -101,9 +101,7 @@ async fn invoke(auth: &Auth, topology: &Topology, entity: &str, payload: &str) -
         Entity::Route => {
             if let Some(c) = component {
                 if let Some(r) = &topology.routes.get(&c) {
-                    let res = invoker::route::request(
-                        auth, &r.gateway, &r.path, &r.method
-                    ).await;
+                    let res = invoker::route::request(auth, &r).await;
                     res.to_string()
                 } else {
                     panic!("Route not found")
