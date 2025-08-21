@@ -75,9 +75,7 @@ async fn invoke_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         Entity::Event => {
             let events = &topology.events;
             if let Some(e) = events.get(component) {
-                let detail_type = &e.pattern.detail_type.first().unwrap();
-                let source = &e.pattern.source.first().unwrap();
-                event::trigger(auth, &e.bus, detail_type, source, &payload).await;
+                event::trigger(auth, &e, &payload).await;
             } else {
                 println!("Event not found")
             }
@@ -85,7 +83,7 @@ async fn invoke_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         Entity::Route => {
             let routes = &topology.routes;
             if let Some(r) = routes.get(component) {
-                let res = route::request(auth, &r.gateway, &r.path, &r.method).await;
+                let res = route::request(auth, &r).await;
                 println!("{:?}", res);
             }
         }

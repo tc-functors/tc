@@ -4,17 +4,14 @@ use kit as u;
 use kit::*;
 use std::collections::HashMap;
 use serde_json::Value;
+use composer::Route;
 
-pub async fn request(
-    auth: &Auth,
-    api_name: &str,
-    path: &str,
-    method: &str
-) -> Value {
+pub async fn request(auth: &Auth, route: &Route) -> Value {
 
+    let Route { gateway, path, method, .. } = route;
 
     let client = gateway::make_client(auth).await;
-    let maybe_api_id = gateway::find_api_id(&client, api_name).await;
+    let maybe_api_id = gateway::find_api_id(&client, gateway).await;
     if let Some(api_id) = maybe_api_id {
         let endpoint = auth.api_endpoint(&api_id, "$default");
         let url = format!("{}{}", &endpoint, path);
@@ -28,7 +25,7 @@ pub async fn request(
             s!("libcurl/7.64.1 r-curl/4.3.2 httr/1.4.2"),
         );
 
-        match method {
+        match method.as_ref() {
             "GET" => u::http_get(&url, h).await,
             "POST" => todo!(),
             &_ => todo!()
