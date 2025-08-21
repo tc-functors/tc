@@ -475,6 +475,7 @@ pub async fn ci_deploy(
     env: Option<String>,
     sandbox: Option<String>,
     version: Option<String>,
+    branch: Option<String>
 ) {
     let dir = u::pwd();
     let env = match env {
@@ -482,11 +483,17 @@ pub async fn ci_deploy(
         None => panic!("No env or profile specified")
     };
     let namespace = composer::topology_name(&dir);
-    let current_version = composer::topology_version(&namespace);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
-    let version = u::maybe_string(version, &current_version);
-    releaser::deploy(&env, &name, &sandbox, &version).await;
+    let url = match branch {
+        Some(b) => releaser::deploy_branch(&env, &name, &sandbox, &b).await,
+        None => {
+            let current_version = composer::topology_version(&namespace);
+            let version = u::maybe_string(version, &current_version);
+            releaser::deploy(&env, &name, &sandbox, &version).await
+        }
+    };
+    open::that(&url).unwrap();
 }
 
 pub async fn ci_deploy_interactive() {
@@ -495,7 +502,8 @@ pub async fn ci_deploy_interactive() {
     let versions = composer::lookup_versions(&dir);
     let (namespace, version, env, sandbox) =
         interactive::prompt_versions(&versions);
-    releaser::deploy(&env, &namespace, &sandbox, &version).await;
+    let url = releaser::deploy(&env, &namespace, &sandbox, &version).await;
+    open::that(&url).unwrap();
 }
 
 pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind: bool) {
@@ -507,7 +515,8 @@ pub async fn ci_release(service: Option<String>, suffix: Option<String>, unwind:
         tagger::unwind(&service);
     } else {
         let tag = tagger::next_tag(&service, "minor", &suffix);
-        releaser::release(&service, &suffix, &tag.version).await
+        let url = releaser::release(&service, &suffix, &tag.version).await;
+        open::that(&url).unwrap();
     }
 }
 
@@ -517,7 +526,8 @@ pub async fn ci_release_interactive() {
     let versions = composer::lookup_versions(&dir);
     let namespace = interactive::prompt_names(&versions);
     let tag = tagger::next_tag(&namespace, "minor", "default");
-    releaser::release(&namespace, "default", &tag.version).await
+    let url = releaser::release(&namespace, "default", &tag.version).await;
+    open::that(url).unwrap();
 }
 
 

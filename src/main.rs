@@ -734,6 +734,7 @@ async fn ci_deploy(args: DeployArgs) {
         sandbox,
         topology,
         version,
+        branch,
         interactive,
         ..
     } = args;
@@ -741,7 +742,7 @@ async fn ci_deploy(args: DeployArgs) {
     if interactive {
         tc::ci_deploy_interactive().await;
     } else {
-        tc::ci_deploy(topology, env, sandbox, version).await;
+        tc::ci_deploy(topology, env, sandbox, version, branch).await;
     }
 }
 
