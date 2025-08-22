@@ -32,13 +32,14 @@ fn gen_req_cmd(dir: &str) -> String {
 }
 
 fn deps_str(deps: Vec<String>) -> String {
-    if deps.len() >= 2 {
+    let s = if deps.len() >= 2 {
         deps.join(" && ")
     } else if deps.len() == 1 {
         deps.first().unwrap().to_string()
     } else {
         String::from("echo 0")
-    }
+    };
+    s.replace("AWS_PROFILE=cicd", "")
 }
 
 pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
@@ -51,6 +52,8 @@ pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<Strin
     let pip_cmd = "pip install -vv -r requirements.txt --target /build/python";
 
     let build_context = &u::root();
+
+
 
     let f = format!(
         r#"
@@ -68,7 +71,7 @@ RUN mkdir -p /model
 
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
-RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {commands}
+RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {commands}
 
 FROM {runtime_image}
 
@@ -83,27 +86,12 @@ COPY --from=build-image /model /model
 
 pub fn gen_code_dockerfile(dir: &str, base_image: &str, commands: Vec<String>) {
     let commands = deps_str(commands);
-    let secure_str = match std::env::var("CI") {
-        Ok(_) => format!(r#"
-ARG AWS_ACCESS_KEY_ID
-ARG AWS_SECRET_ACCESS_KEY
-
-ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-"#),
-        Err(_) => String::from("")
-    };
-
 
     let f = format!(
         r#"
-# syntax=docker/dockerfile:1
-# check=skip=SecretsUsedInArgOrEnv
 FROM {base_image}
 
-{secure_str}
-
-RUN {commands}
+RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {commands}
 
 ENV PATH=$PATH:/model/bin
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/model/lib

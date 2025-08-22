@@ -20,14 +20,14 @@ use kit::sh;
 use std::collections::HashMap;
 use super::init_centralized_auth;
 
-pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
+fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
     match runtime.to_lang() {
         Lang::Python => python::gen_base_dockerfile(dir, runtime, commands),
         _ => todo!(),
     }
 }
 
-pub fn gen_code_dockerfile(
+fn gen_code_dockerfile(
     dir: &str,
     runtime: &LangRuntime,
     base_image: &str,
@@ -39,34 +39,31 @@ pub fn gen_code_dockerfile(
     }
 }
 
-fn build_with_docker(dir: &str, name: &str) -> (bool, String, String) {
+async fn build_with_docker(auth: &Auth, cont_name: &str, dir: &str, name: &str) -> (bool, String, String) {
     let root = &u::root();
 
-    let cmd_str = match std::env::var("CI") {
-        Ok(_) => {
-            let key = match std::env::var("AWS_ACCESS_KEY_ID") {
-                Ok(e) => e,
-                Err(_) => panic!("AWS_ACCESS_KEY_ID not set")
-            };
-            let secret = match std::env::var("AWS_SECRET_ACCESS_KEY") {
-                Ok(e) => e,
-                Err(_) => panic!("AWS_SECRET_ACCESS_KEY not set")
-            };
-            format!(
-            "docker buildx build --platform=linux/amd64 --provenance=false -t {} --build-arg AWS_ACCESS_KEY_ID={} --build-arg AWS_SECRET_ACCESS_KEY={} --build-context shared={root} . ",
-            name, &key, &secret
-        )
-        },
-        Err(_) => format!(
-            "docker buildx build --ssh=default --platform=linux/amd64 --provenance=false --secret id=aws,src=$HOME/.aws/credentials -t {} --build-context shared={root} .",
-            name
-        ),
-    };
-    tracing::debug!("Building with docker {}", &cmd_str);
+    let (key, secret, token) = auth.get_keys().await;
+    let key_file = format!("/tmp/{}-key.txt", cont_name);
+    let secret_file = format!("/tmp/{}-secret.txt", cont_name);
+    let session_file = format!("/tmp/{}-session.txt", cont_name);
+
+    u::write_str(&key_file, &key);
+    u::write_str(&secret_file, &secret);
+    u::write_str(&session_file, &token);
+
+    let cmd_str = format!(
+            "docker buildx build --platform=linux/amd64 --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-context shared={root} . ",
+            name, &key_file, &secret_file, &session_file);
+
+    println!("Building with docker {}", &cmd_str);
     let (status, out, err) = u::runc(&cmd_str, dir);
+
     if !status {
         sh("rm -f Dockerfile wrapper", dir);
     }
+    sh(&format!("rm -f {}", &key_file), dir);
+    sh(&format!("rm -f {}", &secret_file), dir);
+    sh(&format!("rm -f {}", &session_file), dir);
     (status, out, err)
 }
 
@@ -159,7 +156,7 @@ pub async fn build(
             );
             bar.inc(2);
             tracing::debug!("Building {} with parent {}", uri, &parent_image_name);
-            let (status, out, err) = build_with_docker(image_dir, &uri);
+            let (status, out, err) = build_with_docker(&auth, name, image_dir, &uri).await;
             bar.inc(3);
             sh("rm -rf Dockerfile build build.json", image_dir);
             bar.finish();
@@ -180,7 +177,7 @@ pub async fn build(
                 &base_image_name
             );
             bar.inc(2);
-            let (status, out, err) = build_with_docker(image_dir, &base_image_name);
+            let (status, out, err) = build_with_docker(&auth, name, image_dir, &base_image_name).await;
             bar.inc(3);
             sh("rm -rf Dockerfile build build.json", image_dir);
             bar.finish();
