@@ -10,5 +10,5 @@ serde_derive = "1.0"
 regex = "1.9.1"
 semver = "0.7.0"
 colored = "2.0.0"
-kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
+kit = { git = "https://github.com/tc-functors/kit.git", rev = "60f6b7b"}
 composer = { path = "../composer" }

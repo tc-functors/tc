@@ -2,6 +2,7 @@ mod aws;
 mod gcp;
 
 use aws_config::SdkConfig;
+use aws_sdk_sts::config::ProvideCredentials;
 
 #[derive(Clone, Debug)]
 pub struct Auth {
@@ -42,6 +43,17 @@ impl Auth {
             },
             None => self.clone(),
         }
+    }
+
+    pub async fn get_keys(&self) -> (String, String, String) {
+        let config = &self.aws_config;
+        let provider = config.credentials_provider().unwrap();
+        let credentials = provider.provide_credentials().await.unwrap();
+        let key = credentials.access_key_id();
+        let secret = credentials.secret_access_key();
+        let session_token = credentials.session_token().unwrap_or_default();
+
+        (key.to_string(), secret.to_string(), session_token.to_string())
     }
 
     pub fn sfn_uri(&self) -> String {
