@@ -10,6 +10,7 @@ pub struct BuildOutput {
     pub runtime: LangRuntime,
     pub kind: BuildKind,
     pub artifact: String,
+    pub version: Option<String>
 }
 
 #[derive(Debug, Clone)]

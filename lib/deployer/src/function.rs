@@ -15,7 +15,7 @@ use tabled::Tabled;
 use kit as u;
 
 async fn maybe_build(_auth: &Auth, function: &Function) {
-    let builds = builder::build(function, None, Some(String::from("code")), None, None).await;
+    let builds = builder::build(function, None, None, true).await;
     builder::publish(None, builds).await;
 }
 

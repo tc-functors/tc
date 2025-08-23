@@ -202,21 +202,6 @@ fn default_package_type() -> String {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ImageSpec {
-    #[serde(default)]
-    pub dir: Option<String>,
-    pub parent: Option<String>,
-    pub version: Option<String>,
-    pub commands: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct LayerSpec {
-    #[serde(default)]
-    pub commands: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BuildSpec {
     // deprecated
     pub kind: BuildKind,
@@ -230,18 +215,11 @@ pub struct BuildSpec {
     #[serde(default)]
     pub package_manager: Option<String>,
 
-    #[serde(default)]
-    pub force: Option<bool>,
-
     /// Command to use when build kind is Code
     #[serde(default = "default_command")]
     pub command: String,
 
-    #[serde(default)]
-    pub images: HashMap<String, ImageSpec>,
-
-    #[serde(default)]
-    pub layers: HashMap<String, LayerSpec>,
+    pub version: Option<String>,
 }
 
 impl BuildSpec {

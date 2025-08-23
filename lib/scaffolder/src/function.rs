@@ -1,11 +1,10 @@
 use composer::spec::{BuildKind, Lang};
-use composer::spec::function::{ImageSpec, LangRuntime};
+use composer::spec::function::{LangRuntime};
 use composer::topology::Role;
 use composer::Entity;
 use inquire::{Text, Select, InquireError, Confirm};
 use kit::*;
 use kit as u;
-use std::collections::HashMap;
 use std::str::FromStr;
 use serde_derive::{
     Deserialize,
@@ -128,26 +127,6 @@ fn make_package_type(build_kind: &str) -> String {
     }
 }
 
-fn make_image_spec(dir: &str) -> HashMap<String, ImageSpec> {
-    let mut h: HashMap<String, ImageSpec> = HashMap::new();
-    let base = ImageSpec {
-        parent: None,
-        dir: Some(s!(dir)),
-        version: Some(s!("0.0.1")),
-        commands: vec![],
-    };
-    let code = ImageSpec {
-        dir: Some(s!(dir)),
-        parent: Some(s!("base")),
-        version: None,
-        commands: vec![]
-    };
-    h.insert(s!("base"), base);
-    h.insert(s!("code"), code);
-    h
-}
-
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Runtime {
     lang: LangRuntime,
@@ -159,7 +138,8 @@ struct Runtime {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Build {
     kind: BuildKind,
-    images: HashMap<String, ImageSpec>,
+    pre: Vec<String>,
+    post: Vec<String>,
     command: String
 }
 
@@ -170,19 +150,30 @@ struct Spec {
     build: Build
 }
 
-fn function_spec(dir: &str, name: &str, lang: &str, build_kind: &str) -> Spec {
+fn make_command(kind: &BuildKind, lang: &Lang) -> String {
+    match kind {
+        BuildKind::Image => String::from(""),
+        BuildKind::Layer => String::from(""),
+        BuildKind::Inline | BuildKind::Code => {
+            match lang {
+                Lang::Python => s!("zip -9 -q lambda.zip *.py"),
+                Lang::Ruby => s!("zip -9 -q lambda.zip *.rb"),
+                _ => s!("")
+            }
+        },
+        _ => s!("")
+    }
+}
+
+fn function_spec(_dir: &str, name: &str, lang: &str, build_kind: &str) -> Spec {
     let langr = LangRuntime::from_str(lang).unwrap();
 
     let kind = BuildKind::from_str(build_kind).unwrap();
-    let images = match kind {
-        BuildKind::Image => make_image_spec(dir),
-        _ => HashMap::new()
-    };
-
     let bspec = Build {
-        kind: kind,
-        images: images,
-        command: s!("zip -9 -q -r lambda.zip .")
+        kind: kind.clone(),
+        pre: vec![],
+        post: vec![],
+        command: make_command(&kind, &langr.to_lang())
     };
 
     let rspec = Runtime  {

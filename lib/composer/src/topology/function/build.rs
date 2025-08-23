@@ -2,10 +2,6 @@ use super::Runtime;
 use crate::spec::{
     BuildKind,
     BuildSpec,
-    function::{
-        ImageSpec,
-        LayerSpec,
-    },
 };
 use kit::*;
 use serde_derive::{
@@ -20,11 +16,9 @@ pub struct Build {
     pub kind: BuildKind,
     pub pre: Vec<String>,
     pub post: Vec<String>,
+    pub version: Option<String>,
     pub command: String,
-    pub force: bool,
     pub environment: HashMap<String, String>,
-    pub images: HashMap<String, ImageSpec>,
-    pub layers: HashMap<String, LayerSpec>,
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -39,12 +33,6 @@ fn infer_kind(package_type: &str) -> BuildKind {
     }
 }
 
-fn should_force(s: Option<bool>) -> bool {
-    match s {
-        Some(b) => b,
-        None => false,
-    }
-}
 
 impl Build {
     pub fn new(
@@ -60,10 +48,8 @@ impl Build {
                 pre: b.pre,
                 post: b.post,
                 command: b.command,
-                force: should_force(b.force),
-                images: b.images,
+                version: b.version,
                 environment: HashMap::new(),
-                layers: b.layers,
             },
             None => {
                 let command = match tasks.get("build") {
@@ -76,10 +62,8 @@ impl Build {
                     kind: infer_kind(&runtime.package_type),
                     pre: vec![],
                     post: vec![],
+                    version: None,
                     command: command,
-                    force: false,
-                    images: HashMap::new(),
-                    layers: HashMap::new(),
                     environment: HashMap::new(),
                 }
             }

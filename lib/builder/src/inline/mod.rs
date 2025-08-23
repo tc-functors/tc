@@ -15,9 +15,9 @@ use composer::{
 use kit as u;
 use kit::sh;
 
-fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, force: bool) {
+fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     match langr.to_lang() {
-        Lang::Python => python::gen_dockerfile(dir, langr, pre, post, force),
+        Lang::Python => python::gen_dockerfile(dir, langr, pre, post),
         Lang::Ruby => ruby::gen_dockerfile(dir, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
@@ -162,7 +162,7 @@ fn should_build_deps() -> bool {
 }
 
 pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> BuildStatus {
-    let Build { command, pre, post, force, .. } = bs;
+    let Build { command, pre, post, .. } = bs;
 
     if should_build_deps() {
         sh("rm -rf lambda.zip deps.zip build", &dir);
@@ -172,7 +172,7 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
         let prefix = format!("Building {} ({}/inline)", name.blue(), langr.to_str());
         bar.set_prefix(prefix);
 
-        gen_dockerfile(dir, langr, pre, post, *force);
+        gen_dockerfile(dir, langr, pre, post);
         bar.inc(1);
         gen_dockerignore(dir);
         bar.inc(2);

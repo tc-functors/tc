@@ -27,8 +27,6 @@ pub struct BuildOpts {
     pub sync: bool,
     pub shell: bool,
     pub kind: Option<String>,
-    pub image: Option<String>,
-    pub layer: Option<String>,
     pub version: Option<String>
 }
 
@@ -46,8 +44,6 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
     let BuildOpts {
         clean,
         recursive,
-        image,
-        layer,
         kind,
         sync,
         publish,
@@ -65,7 +61,7 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
             let builds = builder::just_images(recursive);
             builder::sync(&auth, builds).await;
         } else {
-            let builds = builder::build_recursive(dir, parallel, image, layer).await;
+            let builds = builder::build_recursive(dir, parallel).await;
             if publish {
                 let auth = init_centralized_auth().await;
                 builder::publish(Some(auth), builds.clone()).await;
@@ -83,16 +79,14 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
             builder::shell(&auth, dir).await;
         } else if promote {
             let auth = init_centralized_auth().await;
-            if let Some(name) = layer {
-                builder::promote(&auth, &name, dir, version).await;
-            } else {
-                println!("Please specify layer name to promote: tc build --layer NAME [--version VERSION]");
+            if let Some(n) = name {
+                builder::promote(&auth, &n, dir, version).await;
             }
         } else {
             let maybe_fn = composer::current_function(dir);
             match maybe_fn {
                 Some(f) => {
-                    let builds = builder::build(&f, name, image, layer, kind).await;
+                    let builds = builder::build(&f, name, kind, false).await;
                     if publish {
                         let auth = init_centralized_auth().await;
                         builder::publish(Some(auth), builds.clone()).await;

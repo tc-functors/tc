@@ -30,19 +30,16 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, force: bool) {
+pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
-    let pip_cmd = if force {
-        "pip install -r requirements.txt --target=/build/python"
-    } else {
-        match std::env::var("TC_FORCE_BUILD") {
-            Ok(_) => "pip install -r requirements.txt --target=/build/python",
-            Err(_) => {
-                "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all:"
-            }
+    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
+        Ok(_) => "pip install -r requirements.txt --target=/build/python",
+        Err(_) => {
+            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all:"
         }
     };
+
     let build_context = &u::root();
     let image = find_image(&runtime);
     let req_cmd = gen_req_cmd(dir);

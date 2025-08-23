@@ -3,23 +3,20 @@ mod image;
 mod inline;
 mod layer;
 mod library;
+mod code;
 pub mod page;
 mod types;
 
 use crate::types::{
     BuildOutput,
-    BuildStatus,
 };
 use authorizer::Auth;
 use colored::Colorize;
 use composer::{
-    Build,
     Function,
-    Lang,
     spec::{
         BuildKind,
         ConfigSpec,
-        LangRuntime,
     },
 };
 use kit as u;
@@ -72,46 +69,27 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
         if b.kind == BuildKind::Image {
             let function = composer::current_function(&b.dir);
             if let Some(ref f) = function {
-                for (image, _) in &b.images {
-                    if image == "base" {
-                        let out = BuildOutput {
-                            name: f.name.clone(),
-                            dir: b.dir.clone(),
-                            artifact: image::render_uri(&f.runtime.uri, repo),
-                            kind: b.kind.clone(),
-                            runtime: f.runtime.lang.clone(),
-                        };
-                        outs.push(out);
-                    }
-                }
+                let out = BuildOutput {
+                    name: f.name.clone(),
+                    dir: b.dir.clone(),
+                    artifact: image::render_uri(&f.runtime.uri, repo),
+                    kind: b.kind.clone(),
+                    runtime: f.runtime.lang.clone(),
+                    version: b.version.clone()
+                };
+                outs.push(out);
             }
         }
     }
     outs
 }
 
-async fn build_code(dir: &str, name: &str, langr: &LangRuntime, spec: &Build) -> BuildStatus {
-    match langr.to_lang() {
-        Lang::Rust => inline::build(dir, name, langr, spec).await,
-        _ => {
-            let c = format!(r"{}", &spec.command);
-            let (status, out, err) = u::runc(&c, dir);
-            BuildStatus {
-                path: format!("{}/lambda.zip", dir),
-                status: status,
-                out: out,
-                err: err,
-            }
-        }
-    }
-}
-
 pub async fn build(
     function: &Function,
     name: Option<String>,
-    image: Option<String>,
-    _layer: Option<String>,
     kind: Option<String>,
+    code_only: bool,
+
 ) -> Vec<BuildOutput> {
     let Function {
         dir,
@@ -119,7 +97,6 @@ pub async fn build(
         runtime,
         ..
     } = function;
-    let Build { images, .. } = build;
 
     let langr = &runtime.lang;
 
@@ -128,16 +105,15 @@ pub async fn build(
         None => build.kind.clone(),
     };
 
-    let image_kind = u::maybe_string(image, "code");
     let name = u::maybe_string(name, &function.name);
 
     let build_status = match kind {
-        BuildKind::Image => image::build(dir, &name, langr, &images, &image_kind, &runtime.uri).await,
+        BuildKind::Image => image::build(dir, &name, langr, &runtime.uri, &build, code_only).await,
         BuildKind::Inline => inline::build(dir, &name, langr, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr),
         BuildKind::Library => library::build(dir, langr),
         BuildKind::Slab => library::build(dir, langr),
-        BuildKind::Code => build_code(dir, &name, langr, &build).await,
+        BuildKind::Code => code::build(dir, &name, langr, &build).await,
         BuildKind::Extension => extension::build(dir, &name, langr),
         BuildKind::Runtime => todo!(),
     };
@@ -157,6 +133,7 @@ pub async fn build(
         artifact: build_status.path,
         kind: kind.clone(),
         runtime: langr.clone(),
+        version: build.version.clone()
     };
     vec![out]
 }
@@ -164,8 +141,6 @@ pub async fn build(
 pub async fn build_recursive(
     dir: &str,
     _parallel: bool,
-    image: Option<String>,
-    layer: Option<String>,
 ) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
 
@@ -174,7 +149,7 @@ pub async fn build_recursive(
     let topology = composer::compose(dir, true);
 
     for (_, function) in topology.functions {
-        let mut out = build(&function, None, image.clone(), layer.clone(), None).await;
+        let mut out = build(&function, None, None, false).await;
         outs.append(&mut out);
     }
     outs
@@ -241,7 +216,7 @@ pub async fn shell(auth: &Auth, dir: &str) {
     if let Some(f) = function {
         let spec = f.build;
         match spec.kind {
-            BuildKind::Image => image::shell(auth, dir, &f.runtime.uri).await,
+            BuildKind::Image => image::shell(auth, dir, &f.runtime.uri, spec.version).await,
             _ => todo!(),
         }
     } else {

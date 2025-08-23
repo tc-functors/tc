@@ -80,14 +80,14 @@ fn find_git_sha(dir: &str) -> String {
     sh("git rev-parse --short HEAD", dir)
 }
 
-fn as_uri(dir: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
+fn as_uri(dir: &str, namespace: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
     match package_type {
         "Image" | "image" | "oci" => match uri {
             Some(u) => u,
             None => {
                 let _content_sha = find_content_sha(dir);
                 let git_sha = find_git_sha(dir);
-                format!("{{{{repo}}}}/code:{}-{}", name, git_sha)
+                format!("{{{{repo}}}}:{}_{}_{}", namespace, name, git_sha)
             }
         },
         _ => format!("{}/lambda.zip", dir),
@@ -477,7 +477,7 @@ fn make_default(
         provider: Provider::Lambda,
         handler: s!("handler.handler"),
         package_type: s!("zip"),
-        uri: as_uri(dir, &fspec.name, "zip", None),
+        uri: as_uri(dir, namespace, &fspec.name, "zip", None),
         layers: vec![],
         environment: vars,
         tags: make_tags(namespace, &infra_dir),
@@ -507,7 +507,7 @@ fn make_lambda(
     let layer_name = find_implicit_layer_name(dir, namespace, fspec);
     let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
     let package_type = &r.package_type;
-    let uri = as_uri(dir, &fspec.name, package_type, r.uri.clone());
+    let uri = as_uri(dir, namespace, &fspec.name, package_type, r.uri.clone());
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
@@ -567,7 +567,7 @@ fn make_fargate(
 ) -> Runtime {
     let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
     let package_type = s!("Image");
-    let uri = as_uri(dir, &fspec.name, &package_type, rspec.uri.clone());
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, rspec.uri.clone());
     let role = lookup_role(&infra_dir, &rspec, namespace, fqn, &fspec.name);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
     let default_infra_spec = infra_spec.get("default").unwrap();
