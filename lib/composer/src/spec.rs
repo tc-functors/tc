@@ -28,7 +28,6 @@ pub use function::{
     BuildKind,
     BuildSpec,
     FunctionSpec,
-    ImageSpec,
     InlineFunctionSpec,
     Lang,
     LangRuntime,

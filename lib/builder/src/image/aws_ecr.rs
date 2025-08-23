@@ -45,7 +45,7 @@ pub async fn login(auth: &Auth, dir: &str) {
     match maybe_token {
         Some(token) => {
             let cmd = format!(
-                "echo {} | docker login --username AWS --password-stdin {}",
+                "echo {} | docker login --username AWS --password-stdin {}  2>/dev/null",
                 &token,
                 get_host(auth)
             );

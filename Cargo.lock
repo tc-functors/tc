@@ -1338,6 +1338,7 @@ dependencies = [
  "colored",
  "composer 0.8.222",
  "glob",
+ "itertools",
  "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
  "log",
  "serde 1.0.217",

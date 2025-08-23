@@ -1,17 +1,19 @@
 mod aws_ecr;
 mod python;
 
+use itertools::Itertools;
 use crate::types::{
     BuildOutput,
     BuildStatus,
 };
+
 use authorizer::Auth;
 use colored::Colorize;
 use composer::{
     LangRuntime,
+    Build,
     spec::{
         ConfigSpec,
-        ImageSpec,
         Lang,
     },
 };
@@ -20,9 +22,14 @@ use kit::sh;
 use std::collections::HashMap;
 use super::init_centralized_auth;
 
-fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
+fn gen_base_dockerfile(
+    dir: &str,
+    runtime: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>
+) {
     match runtime.to_lang() {
-        Lang::Python => python::gen_base_dockerfile(dir, runtime, commands),
+        Lang::Python => python::gen_base_dockerfile(dir, runtime, pre, post),
         _ => todo!(),
     }
 }
@@ -30,32 +37,43 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) 
 fn gen_code_dockerfile(
     dir: &str,
     runtime: &LangRuntime,
-    base_image: &str,
-    commands: Vec<String>,
+    base_image_uri: &str,
 ) {
     match runtime.to_lang() {
-        Lang::Python => python::gen_code_dockerfile(dir, base_image, commands),
+        Lang::Python => python::gen_code_dockerfile(dir, base_image_uri),
         _ => todo!(),
     }
 }
 
-async fn build_with_docker(auth: &Auth, cont_name: &str, dir: &str, name: &str) -> (bool, String, String) {
-    let root = &u::root();
+async fn build_with_docker(
+    auth: &Auth,
+    cont_name: &str,
+    dir: &str,
+    name: &str,
+    code_only: bool,
+) -> (bool, String, String) {
 
-    let (key, secret, token) = auth.get_keys().await;
     let key_file = format!("/tmp/{}-key.txt", cont_name);
     let secret_file = format!("/tmp/{}-secret.txt", cont_name);
     let session_file = format!("/tmp/{}-session.txt", cont_name);
 
-    u::write_str(&key_file, &key);
-    u::write_str(&secret_file, &secret);
-    u::write_str(&session_file, &token);
+    let cmd_str = if code_only {
+        format!("docker build --platform=linux/amd64 -t {} .", name)
+    } else {
+        let root = &u::root();
+        let (key, secret, token) = auth.get_keys().await;
 
-    let cmd_str = format!(
-            "docker buildx build --platform=linux/amd64 --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-context shared={root} . ",
-            name, &key_file, &secret_file, &session_file);
 
-    println!("Building with docker {}", &cmd_str);
+        u::write_str(&key_file, &key);
+        u::write_str(&secret_file, &secret);
+        u::write_str(&session_file, &token);
+
+        format!("docker buildx build --platform=linux/amd64 --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={}  --build-context shared={root} .",
+        name, &key_file, &secret_file, &session_file)
+    };
+
+    tracing::debug!("Building with docker {}", &cmd_str);
+
     let (status, out, err) = u::runc(&cmd_str, dir);
 
     if !status {
@@ -73,122 +91,74 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
     u::stencil(uri, table)
 }
 
-fn find_base_image_name(
-    repo: &str,
-    func_name: &str,
-    images: &HashMap<String, ImageSpec>,
-) -> String {
-    let version = match images.get("base") {
-        Some(b) => match &b.version {
-            Some(v) => v,
-            None => "latest",
-        },
-        None => "latest",
-    };
-
-    format!("{}/base:{}-{}", repo, func_name, version)
-}
-
-fn find_parent_image_name(
-    repo: &str,
-    func_name: &str,
-    images: &HashMap<String, ImageSpec>,
-    parent: Option<String>,
-) -> String {
-    let parent = u::maybe_string(parent, "base");
-    match parent.as_ref() {
-        "base" => find_base_image_name(repo, func_name, images),
-        _ => render_uri(&parent, repo),
-    }
+fn find_base_image_uri(uri: &str, version: Option<String>) -> String {
+    let (prefix, fname, _version) = uri.split("_").collect_tuple().unwrap();
+    let version = u::maybe_string(version, "latest");
+    format!("{}_{}_base_{}", prefix, fname, version)
 }
 
 pub async fn build(
     dir: &str,
     name: &str,
     langr: &LangRuntime,
-    images: &HashMap<String, ImageSpec>,
-    image_kind: &str,
     uri: &str,
+    bspec: &Build,
+    code_only: bool
+
 ) -> BuildStatus {
+
+    let Build { pre, post, version, .. } = bspec;
 
     let auth = init_centralized_auth().await;
     aws_ecr::login(&auth, dir).await;
 
-    let image_spec = match images.get(image_kind) {
-        Some(p) => p,
-        None => panic!("No image spec specified in build:images"),
-    };
-
     let config = ConfigSpec::new(None);
+
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
 
-    let image_dir = match &image_spec.dir {
-        Some(d) => &d,
-        None => dir,
-    };
-
-
-    let uri = render_uri(uri, repo);
-
     let bar = u::progress(3);
 
     let prefix = format!(
-        "Building {} ({}/image/{})",
+        "Building {} ({}/image)",
         name.blue(),
         langr.to_str(),
-        image_kind
     );
+
     bar.set_prefix(prefix);
 
-    match image_kind {
-        "code" => {
-            let parent_image_name =
-                find_parent_image_name(repo, name, &images, image_spec.parent.clone());
-            bar.inc(1);
-            gen_code_dockerfile(
-                image_dir,
-                langr,
-                &parent_image_name,
-                image_spec.commands.clone(),
-            );
-            bar.inc(2);
-            tracing::debug!("Building {} with parent {}", uri, &parent_image_name);
-            let (status, out, err) = build_with_docker(&auth, name, image_dir, &uri).await;
-            bar.inc(3);
-            sh("rm -rf Dockerfile build build.json", image_dir);
-            bar.finish();
-            BuildStatus {
-                path: uri.to_string(),
-                status: status,
-                out: out,
-                err: err,
-            }
-        }
-        "base" => {
-            let base_image_name = find_base_image_name(repo, name, images);
-            bar.inc(1);
-            gen_base_dockerfile(image_dir, langr, image_spec.commands.clone());
-            tracing::debug!(
-                "Building image dir: {} name: {}",
-                image_dir,
-                &base_image_name
-            );
-            bar.inc(2);
-            let (status, out, err) = build_with_docker(&auth, name, image_dir, &base_image_name).await;
-            bar.inc(3);
-            sh("rm -rf Dockerfile build build.json", image_dir);
-            bar.finish();
-            BuildStatus {
-                path: base_image_name,
-                status: status,
-                out: out,
-                err: err,
-            }
-        }
-        _ => panic!("Invalid image kind"),
+    bar.inc(1);
+
+
+    let code_image_uri = render_uri(uri, repo);
+    let base_image_uri = find_base_image_uri(&code_image_uri, version.clone());
+
+    if code_only {
+        gen_code_dockerfile(dir, langr, &base_image_uri);
+    } else {
+        gen_base_dockerfile(dir, langr, pre, post);
+    }
+
+    let uri = if code_only {
+        code_image_uri
+    } else {
+        base_image_uri
+    };
+
+    let (status, out, err) = build_with_docker(&auth, name, dir, &uri, code_only).await;
+
+    tracing::debug!("Building {}", uri);
+
+    bar.inc(3);
+    sh("rm -rf Dockerfile build build.json", dir);
+    bar.finish();
+    BuildStatus {
+        path: uri.to_string(),
+        status: status,
+        out: out,
+        err: err,
     }
 }
 
@@ -201,13 +171,17 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
 }
 
 pub async fn sync(auth: &Auth, build: &BuildOutput) {
-    let BuildOutput { dir, artifact, .. } = build;
+    let BuildOutput { dir, artifact, version, .. } = build;
     aws_ecr::login(auth, &dir).await;
-    let cmd = format!("AWS_PROFILE={} docker pull {}", &auth.name, artifact);
+    let base_image_uri = find_base_image_uri(&artifact, version.clone());
+    println!("Pulling {}", &base_image_uri);
+    let cmd = format!("AWS_PROFILE={} docker pull {}", &auth.name, &base_image_uri);
     u::run(&cmd, &dir);
+    //let cmd = format!("AWS_PROFILE={} docker pull {}", &auth.name, artifact);
+    //u::run(&cmd, &dir);
 }
 
-pub async fn shell(auth: &Auth, dir: &str, uri: &str) {
+pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>) {
     let config = ConfigSpec::new(None);
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
@@ -215,7 +189,8 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str) {
     };
     aws_ecr::login(auth, &dir).await;
     let uri = render_uri(uri, repo);
-    let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
+    let base_image_uri = find_base_image_uri(&uri, version.clone());
+    let cmd = format!("docker run --rm -it --entrypoint bash {}", base_image_uri);
     println!("{}", cmd);
     u::runcmd_stream(&cmd, dir);
 }

@@ -180,10 +180,6 @@ pub struct BuildArgs {
     name: Option<String>,
     #[arg(long, short = 'k')]
     kind: Option<String>,
-    #[arg(long, short = 'i')]
-    image: Option<String>,
-    #[arg(long, short = 'l')]
-    layer: Option<String>,
     #[arg(long, short = 'v')]
     version: Option<String>,
     #[arg(long, action)]
@@ -488,8 +484,6 @@ async fn build(args: BuildArgs) {
         clean,
         trace,
         kind,
-        image,
-        layer,
         publish,
         promote,
         version,
@@ -508,8 +502,6 @@ async fn build(args: BuildArgs) {
         clean: clean,
         recursive: recursive,
         kind: kind,
-        image: image,
-        layer: layer,
         sync: sync,
         publish: publish,
         parallel: parallel,

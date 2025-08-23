@@ -31,7 +31,7 @@ fn gen_req_cmd(dir: &str) -> String {
     }
 }
 
-fn deps_str(deps: Vec<String>) -> String {
+fn deps_str(deps: &Vec<String>) -> String {
     let s = if deps.len() >= 2 {
         deps.join(" && ")
     } else if deps.len() == 1 {
@@ -42,8 +42,14 @@ fn deps_str(deps: Vec<String>) -> String {
     s.replace("AWS_PROFILE=cicd", "")
 }
 
-pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<String>) {
-    let commands = deps_str(commands);
+pub fn gen_base_dockerfile(
+    dir: &str,
+    runtime: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>
+) {
+    let pre_commands = deps_str(pre);
+    let post_commands = deps_str(post);
 
     let build_image = find_build_image(runtime);
     let runtime_image = find_runtime_image(runtime);
@@ -52,8 +58,6 @@ pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, commands: Vec<Strin
     let pip_cmd = "pip install -vv -r requirements.txt --target /build/python";
 
     let build_context = &u::root();
-
-
 
     let f = format!(
         r#"
@@ -65,15 +69,17 @@ COPY . ./
 
 COPY --from=shared . {build_context}/
 
+RUN {pre_commands}
+
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {req_cmd}
 
 RUN mkdir -p /model
 
 RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
 
-RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {commands}
+RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {post_commands}
 
-FROM {runtime_image}
+FROM {runtime_image} AS runtime
 
 COPY --from=build-image /build/python /opt/python
 COPY --from=build-image /model /model
@@ -84,14 +90,10 @@ COPY --from=build-image /model /model
     u::write_str(&dockerfile, &f);
 }
 
-pub fn gen_code_dockerfile(dir: &str, base_image: &str, commands: Vec<String>) {
-    let commands = deps_str(commands);
-
+pub fn gen_code_dockerfile(dir: &str, base_image: &str) {
     let f = format!(
         r#"
 FROM {base_image}
-
-RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {commands}
 
 ENV PATH=$PATH:/model/bin
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/model/lib
