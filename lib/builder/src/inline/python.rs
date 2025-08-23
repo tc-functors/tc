@@ -54,7 +54,7 @@ COPY pyproject.toml ./
 
 COPY --from=shared . {build_context}/
 
-RUN {req_cmd}
+RUN --mount=type=ssh {req_cmd}
 
 RUN rm -rf /build/python && mkdir -p /build
 
