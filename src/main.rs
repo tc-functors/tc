@@ -495,8 +495,6 @@ async fn build(args: BuildArgs) {
         ..
     } = args;
 
-    init_tracing(trace);
-
     let dir = kit::pwd();
     let opts = tc::BuildOpts {
         clean: clean,
@@ -510,6 +508,7 @@ async fn build(args: BuildArgs) {
         remote: remote,
         shell: shell,
     };
+    init_tracing(trace);
     tc::build(profile, name, &dir, opts).await;
 }
 
@@ -800,21 +799,36 @@ async fn changelog(args: ChangelogArgs) {
 }
 
 fn init_tracing(trace: bool) {
-    let should_trace = trace
-        || match env::var("TC_TRACE") {
-            Ok(t) => &t == "1",
-            Err(_) => trace,
-        };
-    if should_trace {
+    if trace {
+        unsafe {  std::env::set_var("TC_TRACE", "2") };
         let filter = Targets::new()
             .with_target("tc", tracing::Level::DEBUG)
             .with_default(tracing::Level::DEBUG)
+            .with_target("h2", LevelFilter::OFF)
+            .with_target("hyper", LevelFilter::OFF)
+            .with_target("hyper_util", LevelFilter::OFF)
+            .with_target("aws", LevelFilter::OFF)
             .with_target("sqlx", LevelFilter::OFF);
-
         tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer())
             .with(filter)
             .init();
+
+    } else {
+        match env::var("TC_TRACE") {
+            Ok(_) => {
+                let filter = Targets::new()
+                    .with_target("tc", tracing::Level::DEBUG)
+                    .with_default(tracing::Level::DEBUG)
+                    .with_target("sqlx", LevelFilter::OFF);
+                tracing_subscriber::registry()
+                    .with(tracing_subscriber::fmt::layer())
+                    .with(filter)
+                    .init();
+            },
+            Err(_) => ()
+        }
+
     }
 }
 
