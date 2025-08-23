@@ -110,7 +110,7 @@ pub async fn build(
     let build_status = match kind {
         BuildKind::Image => image::build(dir, &name, langr, &runtime.uri, &build, code_only).await,
         BuildKind::Inline => inline::build(dir, &name, langr, &build).await,
-        BuildKind::Layer => layer::build(dir, &name, langr),
+        BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr),
         BuildKind::Slab => library::build(dir, langr),
         BuildKind::Code => code::build(dir, &name, langr, &build).await,
