@@ -9,6 +9,7 @@ use authorizer::Auth;
 use colored::Colorize;
 use composer::{
     Lang,
+    Build,
     LangRuntime,
 };
 use kit as u;
@@ -206,7 +207,7 @@ fn clean(dir: &str) {
     }
 }
 
-pub fn build(dir: &str, name: &str, langr: &LangRuntime) -> BuildStatus {
+pub fn build(dir: &str, name: &str, langr: &LangRuntime, bspec: &Build) -> BuildStatus {
     sh("rm -f deps.zip", dir);
     gen_dockerfile(dir, langr);
     let (status, out, err) = build_with_docker(dir);
