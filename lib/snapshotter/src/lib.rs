@@ -3,7 +3,7 @@ use kit as u;
 mod aws;
 mod versions;
 
-use composer::Topology;
+use composer::{Topology, TopologyKind};
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use tabled::{
@@ -34,6 +34,10 @@ pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
     let topologies = composer::compose_root(dir, false);
     versions::find(auth, sandbox, topologies).await
+}
+
+pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option<String> {
+    versions::find_version(auth, fqn, kind).await
 }
 
 #[derive(Debug, Clone, Serialize)]

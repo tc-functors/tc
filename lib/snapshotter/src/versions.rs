@@ -71,6 +71,21 @@ fn render(s: &str, sandbox: &str) -> String {
     u::stencil(s, table)
 }
 
+pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option<String>{
+    let tags = lookup_tags(auth, kind, fqn).await;
+    let namespace = u::safe_unwrap(tags.get("namespace"));
+    if !&namespace.is_empty() {
+        let version = u::safe_unwrap(tags.get("version"));
+            if version != "0.0.1" {
+                Some(version)
+            } else {
+                None
+            }
+    } else {
+        None
+    }
+}
+
 pub async fn find(
     auth: &Auth,
     sandbox: &str,

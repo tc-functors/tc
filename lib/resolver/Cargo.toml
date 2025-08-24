@@ -14,6 +14,7 @@ tabled = "0.10.0"
 kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
 composer = { path = "../composer" }
+snapshotter = { path = "../snapshotter" }
 aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
 aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-ssm = { version = "1.72.0", features = ["behavior-version-latest"] }
