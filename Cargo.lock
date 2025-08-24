@@ -321,7 +321,7 @@ dependencies = [
  "aws-config",
  "aws-credential-types",
  "aws-sdk-sts",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=c56968d)",
+ "kit 0.1.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -333,7 +333,7 @@ dependencies = [
  "aws-config",
  "aws-credential-types",
  "aws-sdk-sts",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1339,7 +1339,7 @@ dependencies = [
  "composer 0.8.222",
  "glob",
  "itertools",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "log",
  "serde 1.0.217",
  "serde_derive",
@@ -1764,7 +1764,7 @@ dependencies = [
  "colored",
  "daggy",
  "derivative",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=c56968d)",
+ "kit 0.1.0",
  "lazy_static 1.5.0",
  "nom 7.1.3",
  "ptree",
@@ -1792,7 +1792,7 @@ dependencies = [
  "colored",
  "daggy",
  "derivative",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "lazy_static 1.5.0",
  "nom 7.1.3",
  "ptree",
@@ -2074,7 +2074,7 @@ dependencies = [
  "colored",
  "composer 0.8.222",
  "itertools",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "log",
  "question",
  "serde 1.0.217",
@@ -3147,7 +3147,7 @@ dependencies = [
  "colored",
  "composer 0.8.222",
  "gql_client",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "open",
  "rustyline",
  "s3uri",
@@ -3248,7 +3248,7 @@ dependencies = [
 [[package]]
 name = "kit"
 version = "0.1.0"
-source = "git+https://github.com/tc-functors/kit.git?rev=60f6b7b#60f6b7baa5ad5e8dab62788c8ede0ccb4cebdad9"
+source = "git+https://github.com/tc-functors/kit.git?rev=c56968d#c56968df177e1d99636597a7052c6f2b14c60a4d"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -3281,8 +3281,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.1.0"
-source = "git+https://github.com/tc-functors/kit.git?rev=c56968d#c56968df177e1d99636597a7052c6f2b14c60a4d"
+version = "0.8.222"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -3640,7 +3639,7 @@ source = "git+https://github.com/tc-functors/tc.git?rev=9241bc0#9241bc017ea18493
 dependencies = [
  "colored",
  "composer 0.8.114",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=c56968d)",
+ "kit 0.1.0",
  "regex",
  "semver 0.7.0",
  "serde 1.0.217",
@@ -3654,7 +3653,7 @@ version = "0.8.222"
 dependencies = [
  "colored",
  "composer 0.8.222",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "regex",
  "semver 0.7.0",
  "serde 1.0.217",
@@ -4318,7 +4317,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "colored",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=c56968d)",
+ "kit 0.1.0",
  "open",
  "regex",
  "self-replace",
@@ -4422,7 +4421,7 @@ dependencies = [
  "aws-sdk-ssm",
  "cacache",
  "composer 0.8.222",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "regex",
  "serde 1.0.217",
  "serde_derive",
@@ -4468,7 +4467,7 @@ dependencies = [
  "aws-sdk-sfn",
  "colored",
  "composer 0.8.222",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -4675,7 +4674,7 @@ version = "0.8.222"
 dependencies = [
  "composer 0.8.222",
  "inquire",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "question",
  "serde 1.0.217",
  "serde_derive",
@@ -5065,7 +5064,7 @@ dependencies = [
  "aws-sdk-sfn",
  "colored",
  "composer 0.8.222",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "log",
  "s3uri",
  "serde 1.0.217",
@@ -5276,7 +5275,7 @@ version = "0.8.114"
 source = "git+https://github.com/tc-functors/tc.git?rev=9241bc0#9241bc017ea184931b05266ca7f4ce22c5edc802"
 dependencies = [
  "colored",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=c56968d)",
+ "kit 0.1.0",
  "notifier 0.8.114",
  "regex",
  "semver 0.7.0",
@@ -5290,7 +5289,7 @@ name = "tagger"
 version = "0.8.222"
 dependencies = [
  "colored",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "notifier 0.8.222",
  "regex",
  "semver 0.7.0",
@@ -5313,7 +5312,7 @@ dependencies = [
  "inquire",
  "invoker",
  "itertools",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=c56968d)",
+ "kit 0.8.222",
  "log",
  "mockall",
  "notifier 0.8.222",
@@ -5375,7 +5374,7 @@ dependencies = [
  "composer 0.8.222",
  "invoker",
  "jsonpath-rust",
- "kit 0.1.0 (git+https://github.com/tc-functors/kit.git?rev=60f6b7b)",
+ "kit 0.8.222",
  "serde 1.0.217",
  "serde_json",
 ]
