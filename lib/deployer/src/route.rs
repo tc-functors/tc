@@ -186,7 +186,6 @@ async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>, tags: &Has
 
 pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>) {
     let cors = make_cors(&routes);
-    tracing::debug!("Updating cors: {:?}", cors);
     for (_, route) in routes {
         tracing::debug!("Creating route {} {}", &route.method, &route.path);
         if !&route.skip {

@@ -180,6 +180,12 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
         let (status, out, err) = build_with_docker(dir, langr).await;
         bar.inc(3);
 
+        if !status {
+            println!("Inline build failed {}", name);
+            println!("Err {}, {}", out, err);
+            std::process::exit(1);
+        }
+
         copy_from_docker(dir, langr);
         bar.inc(4);
         sh("rm -f Dockerfile wrapper .dockerignore", dir);
