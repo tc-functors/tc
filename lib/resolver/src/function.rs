@@ -291,6 +291,17 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     r
 }
 
+async fn find_modified(auth: &Auth, topology: &Topology) -> Vec<String> {
+    let maybe_version = snapshotter::find_version(auth, &topology.fqn, &topology.kind).await;
+    let current_version = &topology.version;
+    if let Some(target_version) = maybe_version {
+        let cmd = format!("git log --pretty=\"- %s\" {}...{} .",
+                          current_version, target_version);
+        let out = sh(&cmd, &pwd());
+    }
+    vec![]
+}
+
 pub async fn resolve(ctx: &Context, topology: &Topology, _dirty: bool) -> HashMap<String, Function> {
     let fns = &topology.functions;
     let mut functions: HashMap<String, Function> = HashMap::new();
