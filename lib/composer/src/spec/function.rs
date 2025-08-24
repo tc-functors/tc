@@ -197,10 +197,6 @@ fn default_infra_dir() -> String {
     u::empty()
 }
 
-fn default_package_type() -> String {
-    s!("zip")
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct BuildSpec {
     // deprecated
@@ -270,8 +266,7 @@ pub struct RuntimeSpec {
     #[serde(default = "default_handler")]
     pub handler: String,
 
-    #[serde(default = "default_package_type")]
-    pub package_type: String,
+    pub package_type: Option<String>,
 
     #[serde(default = "default_provider")]
     pub provider: Option<Provider>,

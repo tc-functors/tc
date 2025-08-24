@@ -68,7 +68,7 @@ async fn build_with_docker(
         u::write_str(&secret_file, &secret);
         u::write_str(&session_file, &token);
 
-        format!("docker buildx build --platform=linux/amd64 --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={}  --build-context shared={root} .",
+        format!("docker buildx build --platform=linux/amd64 --ssh default --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={}  --build-context shared={root} .",
         name, &key_file, &secret_file, &session_file)
     };
 
@@ -92,6 +92,7 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
 }
 
 fn find_base_image_uri(uri: &str, version: Option<String>) -> String {
+    tracing::debug!("Resolving base uri from {}", &uri);
     let (prefix, fname, _version) = uri.split("_").collect_tuple().unwrap();
     let version = u::maybe_string(version, "latest");
     format!("{}_{}_base_{}", prefix, fname, version)
