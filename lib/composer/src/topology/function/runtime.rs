@@ -70,7 +70,7 @@ pub struct Runtime {
     pub cluster: String,
 }
 
-fn find_content_sha(dir: &str) -> String {
+fn _find_content_sha(dir: &str) -> String {
     let readdir = read_dir(dir).unwrap();
     let digest = sha1::chksum(readdir).unwrap();
     digest.to_hex_lowercase()
@@ -85,7 +85,7 @@ fn as_uri(dir: &str, namespace: &str, name: &str, package_type: &str, uri: Optio
         "Image" | "image" | "oci" => match uri {
             Some(u) => u,
             None => {
-                let _content_sha = find_content_sha(dir);
+                //let _content_sha = find_content_sha(dir);
                 let git_sha = find_git_sha(dir);
                 format!("{{{{repo}}}}:{}_{}_{}", namespace, name, git_sha)
             }
@@ -506,12 +506,19 @@ fn make_lambda(
 ) -> Runtime {
     let layer_name = find_implicit_layer_name(dir, namespace, fspec);
     let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
-    let package_type = &r.package_type;
-    let uri = as_uri(dir, namespace, &fspec.name, package_type, r.uri.clone());
+    let build_kind = find_build_kind(&fspec);
+    let package_type = match &r.package_type {
+        Some(x) => x.to_string(),
+        None => match build_kind {
+            BuildKind::Image =>  s!("image"),
+            _ => s!("zip")
+        }
+    };
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
-    let build_kind = find_build_kind(&fspec);
+
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
 

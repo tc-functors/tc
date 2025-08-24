@@ -46,6 +46,8 @@ FROM {build_image}
 
 COPY --from=shared . {build_context}/
 
+RUN mkdir -p /build
+
 RUN --mount=type=ssh --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN --mount=target=shared,type=bind,source=. {pre_commands}
 
 "#
@@ -79,12 +81,17 @@ async fn build_with_docker(
 
     let (status, out, err) = u::runc(&cmd_str, dir);
 
-    if !status {
-        sh("rm -f Dockerfile wrapper", dir);
-    }
     sh(&format!("rm -f {}", &key_file), dir);
     sh(&format!("rm -f {}", &secret_file), dir);
     sh(&format!("rm -f {}", &session_file), dir);
+
+    if !status {
+        sh("rm -f Dockerfile wrapper", dir);
+        tracing::debug!("Build Fail {} {} {}", status, out, err);
+        println!("Failed to build {}", name);
+        std::process::exit(1);
+    }
+
     (status, out, err)
 }
 
@@ -92,11 +99,14 @@ fn copy_from_docker(dir: &str, name: &str) {
     let temp_cont = &format!("tmp-{}", name);
     let clean = &format!("docker rm -f {}", &temp_cont);
 
-    let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
+    let run = format!("docker run -d --name {} {}", &temp_cont, name);
     sh(&clean, dir);
     sh(&run, dir);
     let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
     tracing::debug!("Container id: {}", &id);
+    if id.is_empty() {
+        panic!("Cannot find source or build container");
+    }
     sh(&format!("docker cp {}:/build build", id), dir);
     sh(&clean, dir);
     sh("rm -f Dockerfile wrapper", dir);
@@ -129,6 +139,10 @@ pub async fn build(
                 }
             }
 
+            let cmd = "zip -q -9 -r ../lambda.zip .";
+            let build_dir = format!("{}/build", dir);
+            sh(&cmd, &build_dir);
+            sh("rm -rf build build.json", dir);
             let c = format!(r"{}", command);
             let (status, out, err) = u::runc(&c, dir);
             BuildStatus {
