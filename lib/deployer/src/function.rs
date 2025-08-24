@@ -117,11 +117,27 @@ pub async fn make_lambda(auth: &Auth, f: Function) -> lambda::Function {
     }
 }
 
+
 pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
     match f.runtime.package_type.as_ref() {
         "zip" => {
             let lambda = make_lambda(&auth, f.clone()).await;
-            let id = lambda.clone().create_or_update().await;
+            let maybe_current = lambda::find_config(&lambda.client, &f.fqn).await;
+            let id = if let Some(current) = maybe_current {
+                let package_type = f.runtime.package_type.to_lowercase();
+                let current_package_type = current.package_type.to_lowercase();
+                if current_package_type != package_type {
+                tracing::debug!("Recreating function: {} -> {}",
+                                current_package_type, package_type);
+                    lambda.clone().delete().await.unwrap();
+                    lambda.clone().create_or_update().await
+                } else {
+                    lambda.clone().create_or_update().await
+                }
+            } else {
+                lambda.clone().create_or_update().await
+            };
+
             if f.runtime.snapstart {
                 lambda.publish_version().await;
             }
