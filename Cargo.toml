@@ -36,7 +36,7 @@ tagger = { path = "lib/tagger" }
 notifier = { path = "lib/notifier" }
 router = { path = "lib/router" }
 scaffolder = { path = "lib/scaffolder" }
-kit = { git = "https://github.com/tc-functors/kit.git", rev = "c56968d"}
+kit = { path = "lib/kit" }
 releaser = { git = "https://github.com/tc-functors/releaser.git", rev = "5df352b"}
 
 [features]
@@ -49,6 +49,7 @@ mockall = "0.12.1"
 
 [workspace]
 members = [
+   "lib/kit",
    "lib/composer",
    "lib/resolver",
    "lib/builder",

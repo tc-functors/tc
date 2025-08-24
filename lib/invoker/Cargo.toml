@@ -20,6 +20,6 @@ aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1.70.0", features = ["behavior-version-latest"] }
 base64 = "0.21.0"
 anyhow = "1.0.71"
-kit = { git = "https://github.com/tc-functors/kit.git", rev = "60f6b7b"}
+kit = { path = "../kit" }
 authorizer = { path = "../authorizer" }
 composer = { path = "../composer" }

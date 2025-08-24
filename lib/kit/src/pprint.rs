@@ -1,0 +1,145 @@
+use indicatif::{
+    ProgressBar,
+    ProgressStyle,
+};
+use ptree::{
+    Color,
+    PrintConfig,
+    item::StringItem,
+    output::print_tree_with,
+    print_config::{
+        StyleWhen,
+        UTF_CHARS_DASHED,
+    },
+};
+use std::{
+    env,
+    io::{
+        Error,
+        Write,
+    },
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
+
+pub fn trace() -> bool {
+    match env::var("TC_TRACE") {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+/// Main struct that holds the state for one Write stream
+pub struct LogUpdate<W: Write> {
+    pub stream: W,
+    pub previous_line_count: u16,
+    pub cursor_is_hidden: bool,
+}
+
+impl<W: Write> LogUpdate<W> {
+    /// Create a new LogUpdate instance.
+    pub fn new(mut stream: W) -> Result<Self, Error> {
+        let _ = write!(stream, "{}", ansi_escapes::CursorHide);
+        let _ = stream.flush();
+
+        Ok(LogUpdate {
+            stream: stream,
+            previous_line_count: 0,
+            cursor_is_hidden: true,
+        })
+    }
+
+    /// Update the log to the provided text.
+    pub fn render(&mut self, text: &str) -> Result<(), Error> {
+        let _ = write!(
+            self.stream,
+            "{}{}\n",
+            ansi_escapes::EraseLines(self.previous_line_count),
+            text
+        );
+        let _ = self.stream.flush();
+
+        self.previous_line_count = text.chars().filter(|x| *x == '\n').count() as u16 + 2;
+
+        Ok(())
+    }
+
+    /// Clear the logged output.
+    pub fn clear(&mut self) -> Result<(), Error> {
+        let _ = write!(
+            self.stream,
+            "{}",
+            ansi_escapes::EraseLines(self.previous_line_count)
+        );
+        let _ = self.stream.flush();
+
+        self.previous_line_count = 0;
+
+        Ok(())
+    }
+
+    /// Persist the logged output.
+    /// Useful if you want to start a new log session below the current one.
+    pub fn done(&mut self) -> Result<(), Error> {
+        if self.cursor_is_hidden {
+            let _ = write!(self.stream, "{}", ansi_escapes::CursorShow);
+            let _ = self.stream.flush();
+        }
+
+        self.previous_line_count = 0;
+        self.cursor_is_hidden = false;
+
+        Ok(())
+    }
+}
+
+impl<W: Write> Drop for LogUpdate<W> {
+    fn drop(&mut self) {
+        if self.cursor_is_hidden {
+            write!(self.stream, "{}", ansi_escapes::CursorShow).unwrap();
+            self.stream.flush().unwrap();
+        }
+    }
+}
+
+pub fn print_table<T: Tabled>(x: Vec<T>) {
+    let table = Table::new(x).with(Style::psql()).to_string();
+    println!("{}", table);
+}
+
+pub fn print_tree(tree: StringItem) {
+    let config = {
+        let mut config = PrintConfig::from_env();
+        config.branch = ptree::Style {
+            foreground: Some(Color::White),
+            bold: false,
+            dimmed: true,
+            ..ptree::Style::default()
+        };
+        config.leaf = ptree::Style {
+            bold: false,
+            ..ptree::Style::default()
+        };
+        config.characters = UTF_CHARS_DASHED.into();
+        config.styled = StyleWhen::Never;
+        config.indent = 4;
+        config
+    };
+
+    print_tree_with(&tree, &config).unwrap();
+}
+
+pub fn progress(n: u64) -> ProgressBar {
+    let bar = ProgressBar::new(n);
+    bar.set_style(
+        ProgressStyle::with_template(
+            "{prefix} {name} [{bar:8}] {pos:>1}/{len:3} ({elapsed}) {msg}",
+        )
+        .unwrap()
+        .progress_chars("=> "),
+    );
+    bar
+}
