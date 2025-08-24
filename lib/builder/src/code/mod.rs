@@ -133,16 +133,16 @@ pub async fn build(
                 sh("rm -f Dockerfile wrapper", dir);
                 if status {
                     copy_from_docker(dir, name);
+                    let cmd = "zip -q -9 -r ../lambda.zip .";
+                    let build_dir = format!("{}/build", dir);
+                    sh(&cmd, &build_dir);
+                    sh("rm -rf build build.json", dir);
                 } else {
                     println!("Failed to run pre commands: {} {}", out, err);
                     std::process::exit(1)
                 }
             }
 
-            let cmd = "zip -q -9 -r ../lambda.zip .";
-            let build_dir = format!("{}/build", dir);
-            sh(&cmd, &build_dir);
-            sh("rm -rf build build.json", dir);
             let c = format!(r"{}", command);
             let (status, out, err) = u::runc(&c, dir);
             BuildStatus {
