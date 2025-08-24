@@ -295,10 +295,11 @@ pub async fn resolve(ctx: &Context, topology: &Topology, _dirty: bool) -> HashMa
     let fns = &topology.functions;
     let mut functions: HashMap<String, Function> = HashMap::new();
 
-    for (dir, f) in fns {
+    for (name, f) in fns {
         let mut fu: Function = f.clone();
+        tracing::debug!("Resolving function {}", &name);
         fu.runtime = resolve_runtime(ctx, &f.runtime).await;
-        functions.insert(dir.to_string(), fu.clone());
+        functions.insert(name.to_string(), fu.clone());
     }
     functions
 }

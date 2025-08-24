@@ -23,11 +23,11 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str, dirty: boo
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
-    tracing::debug!("Resolving events");
+    tracing::debug!("Resolving events {}", topology.namespace);
     partial_t.events = event::resolve(&ctx, &partial_t).await;
-    tracing::debug!("Resolving pools");
+    tracing::debug!("Resolving pools {}", topology.namespace);
     partial_t.pools = pool::resolve(&ctx, &partial_t).await;
-    tracing::debug!("Resolving functions");
+    tracing::debug!("Resolving functions {}", topology.namespace);
     partial_t.functions = function::resolve(&ctx, &partial_t, dirty).await;
     partial_t
 }
