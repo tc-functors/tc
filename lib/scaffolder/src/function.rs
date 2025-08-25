@@ -118,21 +118,11 @@ fn write_vars(vars_dir: &str, name: &str, timeout: &str, memory: &str) {
     }
 }
 
-/// function
-fn make_package_type(build_kind: &str) -> String {
-    if build_kind == "Image" {
-        s!("image")
-    } else {
-        s!("zip")
-    }
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Runtime {
     lang: LangRuntime,
     handler: String,
-    package_type: String,
-    layers: Vec<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -178,9 +168,7 @@ fn function_spec(_dir: &str, name: &str, lang: &str, build_kind: &str) -> Spec {
 
     let rspec = Runtime  {
         lang: langr,
-        handler: s!("handler.handler"),
-        package_type: make_package_type(build_kind),
-        layers: vec![],
+        handler: s!("handler.handler")
     };
 
     Spec {
