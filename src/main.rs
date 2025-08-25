@@ -541,12 +541,11 @@ async fn create(args: CreateArgs) {
         cache,
         topology,
         trace,
-        dirty,
         ..
     } = args;
 
     init_tracing(trace);
-    tc::create(profile, sandbox, notify, recursive, cache, topology, dirty).await;
+    tc::create(profile, sandbox, notify, recursive, cache, topology).await;
 }
 
 async fn update(args: UpdateArgs) {
@@ -629,7 +628,7 @@ async fn resolve(args: ResolveArgs) {
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-    tc::resolve(env, sandbox, entity, recursive, cache).await;
+    tc::resolve(env, sandbox, entity, recursive, cache, trace).await;
 }
 
 async fn invoke(args: InvokeArgs) {

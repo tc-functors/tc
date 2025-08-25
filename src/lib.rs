@@ -197,12 +197,15 @@ pub async fn resolve(
     maybe_entity: Option<String>,
     recursive: bool,
     cache: bool,
+    trace: bool
 ) {
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
-    let entity = Entity::as_entity(maybe_entity);
-    composer::pprint(&rt, entity)
+    if !trace {
+        let entity = Entity::as_entity(maybe_entity);
+        composer::pprint(&rt, entity)
+    }
 }
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {
@@ -254,7 +257,6 @@ pub async fn create(
     recursive: bool,
     cache: bool,
     topology_path: Option<String>,
-    dirty: bool,
 ) {
     let start = Instant::now();
 
@@ -270,7 +272,7 @@ pub async fn create(
             println!("Composing topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
             println!("Resolving topology {} ...", &ct.namespace);
-            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, dirty).await;
+            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, true).await;
             rt
         }
     };
@@ -300,7 +302,7 @@ async fn update_aux(
     maybe_entity: Option<String>
 ) {
 
-    let dirty = true;
+    let diff = false;
     let cache = false;
 
     let start = Instant::now();
@@ -309,7 +311,7 @@ async fn update_aux(
         None => println!("Resolving topology {}...", &topology.namespace)
     }
 
-    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, dirty).await;
+    let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, diff).await;
 
     deployer::try_update(&auth, &root, &maybe_entity.clone()).await;
 

@@ -6,6 +6,7 @@ use composer::{
     InfraSpec,
     Runtime,
     Topology,
+    TopologyKind,
     function::runtime::{
         FileSystem,
         Network,
@@ -291,19 +292,59 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
     r
 }
 
-async fn find_modified(auth: &Auth, topology: &Topology) -> Vec<String> {
-    let maybe_version = snapshotter::find_version(auth, &topology.fqn, &topology.kind).await;
-    let current_version = &topology.version;
-    if let Some(target_version) = maybe_version {
-        let cmd = format!("git log --pretty=\"- %s\" {}...{} .",
-                          current_version, target_version);
-        let out = sh(&cmd, &pwd());
-    }
-    vec![]
+pub struct Root {
+    pub namespace: String,
+    pub fqn: String,
+    pub kind: TopologyKind,
+    pub version: String,
 }
 
-pub async fn resolve(ctx: &Context, topology: &Topology, _dirty: bool) -> HashMap<String, Function> {
-    let fns = &topology.functions;
+async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap<String, Function> {
+
+    let Root { namespace, fqn, kind, version }  = root;
+    let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
+
+    tracing::debug!("Finding version {} {:?} sandbox: {:?}, git: {}",
+                    &root.fqn, &root.kind, maybe_version, version);
+
+    let mut changed_fns: HashMap<String, Function> = HashMap::new();
+    if let Some(target_version) = maybe_version {
+        let cmd = format!(r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
+                          namespace, target_version,
+                          namespace, version);
+        tracing::debug!("Find modified: {}", &cmd);
+        let out = sh(&cmd, &pwd());
+        let lines = kit::split_lines(&out);
+
+        for (name, f) in &topology.functions {
+            for line in &lines {
+                let rdir = &f.dir
+                    .strip_prefix(&format!("{}/", kit::root()))
+                    .unwrap();
+                if line.starts_with(rdir) {
+                    changed_fns.insert(name.to_string(), f.clone());
+                }
+            }
+        }
+    }
+    changed_fns
+}
+
+pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, diff: bool) -> HashMap<String, Function> {
+
+    let fns = match std::env::var("TC_SKIP_DIFF") {
+        Ok(_) =>  &topology.functions,
+        Err(_) => {
+            if diff {
+                &find_modified(&ctx.auth, root, topology).await
+            } else {
+                &topology.functions
+            }
+        }
+    };
+
+    tracing::debug!("Modified fns: {}", &fns.len());
+
     let mut functions: HashMap<String, Function> = HashMap::new();
 
     for (name, f) in fns {

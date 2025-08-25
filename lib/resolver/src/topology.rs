@@ -4,13 +4,22 @@ use super::{
     function,
     pool,
 };
+use function::Root;
+
 use authorizer::Auth;
 use composer::{
     Entity,
     Topology,
 };
 
-pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str, dirty: bool) -> Topology {
+pub async fn resolve(
+    root: &Topology,
+    topology: &Topology,
+    auth: &Auth,
+    sandbox: &str,
+    diff: bool
+) -> Topology {
+
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -23,12 +32,23 @@ pub async fn resolve(topology: &Topology, auth: &Auth, sandbox: &str, dirty: boo
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
+    let Topology { namespace, fqn, version, kind, .. } = root;
+
+    let rt = Root {
+        namespace: namespace.to_string(),
+        fqn: ctx.render(&fqn),
+        version: version.to_string(),
+        kind: kind.clone()
+    };
+
     tracing::debug!("Resolving events {}", topology.namespace);
     partial_t.events = event::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving pools {}", topology.namespace);
     partial_t.pools = pool::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving functions {}", topology.namespace);
-    partial_t.functions = function::resolve(&ctx, &partial_t, dirty).await;
+
+
+    partial_t.functions = function::resolve(&ctx, &rt, &partial_t, diff).await;
     partial_t
 }
 
@@ -37,8 +57,9 @@ pub async fn resolve_entity(
     auth: &Auth,
     sandbox: &str,
     entity: &Entity,
-    dirty: bool
+    diff: bool
 ) -> Topology {
+
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -51,12 +72,21 @@ pub async fn resolve_entity(
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
+    let Topology { namespace, fqn, version, kind, .. } = topology;
+
+    let rt = Root {
+        namespace: namespace.to_string(),
+        fqn: ctx.render(&fqn),
+        version: version.to_string(),
+        kind: kind.clone()
+    };
+
     match entity {
         Entity::Event => {
             partial_t.events = event::resolve(&ctx, &partial_t).await;
         }
         Entity::Function => {
-            partial_t.functions = function::resolve(&ctx, &partial_t, dirty).await;
+            partial_t.functions = function::resolve(&ctx, &rt, &partial_t, diff).await;
         }
         Entity::Trigger => {
             partial_t.pools = pool::resolve(&ctx, &partial_t).await;
