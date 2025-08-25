@@ -47,7 +47,13 @@ pub async fn read_cached_topology(
     cache::read_topology(&key).await
 }
 
-pub async fn resolve(auth: &Auth, sandbox: &str, topology: &Topology, cache: bool, dirty: bool) -> Topology {
+pub async fn resolve(
+    auth: &Auth,
+    sandbox: &str,
+    topology: &Topology,
+    cache: bool,
+    diff: bool
+) -> Topology {
     let maybe_topology = if cache {
         read_cached_topology(&auth.name, &topology.namespace, sandbox).await
     } else {
@@ -57,12 +63,14 @@ pub async fn resolve(auth: &Auth, sandbox: &str, topology: &Topology, cache: boo
     match maybe_topology {
         Some(t) => t,
         None => {
-            let mut root = topology::resolve(topology, auth, sandbox, dirty).await;
+            let mut root = topology::resolve(
+                topology, topology, auth, sandbox, diff
+            ).await;
             let nodes = &topology.nodes;
             let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
             // FIXME: recurse
             for (name, node) in nodes {
-                let node_t = topology::resolve(&node, auth, sandbox, dirty).await;
+                let node_t = topology::resolve(&root, &node, auth, sandbox, diff).await;
                 resolved_nodes.insert(name.to_string(), node_t);
             }
             root.nodes = resolved_nodes;
@@ -79,14 +87,14 @@ async fn resolve_entity(
     sandbox: &str,
     topology: &Topology,
     entity: &Entity,
-    dirty: bool
+    diff: bool
 ) -> Topology {
-    let mut root = topology::resolve_entity(topology, auth, sandbox, entity, dirty).await;
+    let mut root = topology::resolve_entity(topology, auth, sandbox, entity, diff).await;
     let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
     let nodes = &topology.nodes;
 
     for (name, node) in nodes {
-        let node_t = topology::resolve_entity(&node, auth, sandbox, entity, dirty).await;
+        let node_t = topology::resolve_entity(&node, auth, sandbox, entity, diff).await;
         resolved_nodes.insert(name.to_string(), node_t);
     }
     root.nodes = resolved_nodes;
@@ -99,13 +107,13 @@ pub async fn try_resolve(
     topology: &Topology,
     maybe_entity: &Option<String>,
     cache: bool,
-    dirty: bool
+    diff: bool
 ) -> Topology {
     match maybe_entity {
         Some(e) => {
             let (entity, _) = Entity::as_entity_component(&e);
-            resolve_entity(auth, sandbox, topology, &entity, dirty).await
+            resolve_entity(auth, sandbox, topology, &entity, diff).await
         }
-        None => resolve(auth, sandbox, topology, cache, dirty).await,
+        None => resolve(auth, sandbox, topology, cache, diff).await,
     }
 }
