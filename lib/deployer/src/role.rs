@@ -48,9 +48,15 @@ async fn create_aux(profile: String, role_arn: Option<String>, role: composer::R
     let _ = match role.kind.to_str().as_ref() {
         "provided" => (),
         "base" => match std::env::var("TC_UPDATE_BASE_ROLES") {
-            Ok(_) => r.create_or_update().await,
-            Err(_) => r.find_or_create().await,
-        }
+            Ok(_) => {
+                let _ = r.create_or_update().await;
+                ()
+            }
+            Err(_) => {
+                r.find_or_create().await;
+                ()
+            }
+        },
         _ => {
             let _ = r.create_or_update().await;
             ()
