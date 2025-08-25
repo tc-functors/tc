@@ -622,13 +622,18 @@ async fn resolve(args: ResolveArgs) {
         recursive,
         cache,
         trace,
+        diff,
         ..
     } = args;
 
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-    tc::resolve(env, sandbox, entity, recursive, cache, trace).await;
+    if diff {
+        tc::resolve_diff(env, sandbox, recursive, trace).await;
+    } else {
+        tc::resolve(env, sandbox, entity, recursive, cache, trace).await;
+    }
 }
 
 async fn invoke(args: InvokeArgs) {

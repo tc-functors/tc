@@ -101,6 +101,26 @@ async fn resolve_entity(
     root
 }
 
+async fn resolve_entity_component(
+    auth: &Auth,
+    sandbox: &str,
+    topology: &Topology,
+    entity: &Entity,
+    component: &str
+) -> Topology {
+    let mut root = topology::resolve_entity_component(topology, auth, sandbox, entity, component).await;
+    let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
+    let nodes = &topology.nodes;
+
+    for (name, node) in nodes {
+        let node_t = topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
+        resolved_nodes.insert(name.to_string(), node_t);
+    }
+    root.nodes = resolved_nodes;
+    root
+}
+
+
 pub async fn try_resolve(
     auth: &Auth,
     sandbox: &str,
@@ -111,8 +131,12 @@ pub async fn try_resolve(
 ) -> Topology {
     match maybe_entity {
         Some(e) => {
-            let (entity, _) = Entity::as_entity_component(&e);
-            resolve_entity(auth, sandbox, topology, &entity, diff).await
+            let (entity, component) = Entity::as_entity_component(&e);
+            if let Some(c) = component {
+                resolve_entity_component(auth, sandbox, topology, &entity, &c).await
+            } else {
+                resolve_entity(auth, sandbox, topology, &entity, diff).await
+            }
         }
         None => resolve(auth, sandbox, topology, cache, diff).await,
     }

@@ -208,6 +208,26 @@ pub async fn resolve(
     }
 }
 
+pub async fn resolve_diff(
+    auth: Auth,
+    sandbox: Option<String>,
+    recursive: bool,
+    trace: bool
+) {
+    let topology = composer::compose(&u::pwd(), recursive);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    let rt = resolver::try_resolve(&auth, &sandbox, &topology, &None, false, true).await;
+    println!("Modified functions:");
+    for (name, _) in &rt.functions {
+        println!(" {}", name);
+    }
+    for (_, node) in &rt.nodes {
+        for (name, _) in &node.functions {
+            println!("  {}/{}", node.namespace, name);
+        }
+    }
+}
+
 async fn run_create_hook(auth: &Auth, root: &Topology) {
     let Topology {
         namespace,

@@ -95,3 +95,40 @@ pub async fn resolve_entity(
     }
     partial_t
 }
+
+pub async fn resolve_entity_component(
+    topology: &Topology,
+    auth: &Auth,
+    sandbox: &str,
+    entity: &Entity,
+    component: &str
+) -> Topology {
+
+    tracing::debug!("Resolving {}", component);
+
+    let ctx = Context {
+        auth: auth.clone(),
+        namespace: topology.namespace.to_owned(),
+        sandbox: sandbox.to_string(),
+        trace: true,
+        config: topology.config.to_owned(),
+    };
+
+    let templated = topology.to_str();
+    let rendered = ctx.render(&templated);
+    let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
+
+    match entity {
+        Entity::Event => {
+            partial_t.events = event::resolve(&ctx, &partial_t).await;
+        }
+        Entity::Function => {
+            partial_t.functions = function::resolve_given(&ctx, &partial_t, component).await;
+        }
+        Entity::Trigger => {
+            partial_t.pools = pool::resolve(&ctx, &partial_t).await;
+        }
+        _ => (),
+    }
+    partial_t
+}

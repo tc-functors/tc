@@ -355,3 +355,19 @@ pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, diff: bool
     }
     functions
 }
+
+pub async fn resolve_given(
+    ctx: &Context,
+    topology: &Topology,
+    component: &str
+) -> HashMap<String, Function> {
+
+    let mut functions: HashMap<String, Function> = HashMap::new();
+    let fns = &topology.functions;
+    if let Some(f) = fns.get(component) {
+        let mut fu: Function = f.clone();
+        fu.runtime = resolve_runtime(ctx, &f.runtime).await;
+        functions.insert(component.to_string(), fu.clone());
+    }
+    functions
+}
