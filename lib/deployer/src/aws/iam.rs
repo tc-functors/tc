@@ -112,6 +112,14 @@ impl Role {
         Ok(())
     }
 
+    pub async fn find_or_create(&self) {
+        let res = self.client.get_role().role_name(&self.name).send().await;
+        match res {
+            Ok(_) => (),
+            Err(_) => self.create().await,
+        };
+    }
+
     pub async fn create_policy(&self) -> String {
         let res = self
             .client
