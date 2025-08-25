@@ -212,7 +212,7 @@ pub async fn resolve_diff(
     auth: Auth,
     sandbox: Option<String>,
     recursive: bool,
-    trace: bool
+    _trace: bool
 ) {
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);

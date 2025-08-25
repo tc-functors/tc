@@ -309,11 +309,17 @@ async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap
 
     let mut changed_fns: HashMap<String, Function> = HashMap::new();
     if let Some(target_version) = maybe_version {
+        if &target_version != version {
+            return changed_fns
+        }
+
         let cmd = format!(r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
                           namespace, target_version,
                           namespace, version);
         tracing::debug!("Find modified: {}", &cmd);
-        let out = sh(&cmd, &pwd());
+
+        let (status, out, err) = runc(&cmd, &pwd());
+        tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
         let lines = kit::split_lines(&out);
 
         for (name, f) in &topology.functions {
@@ -332,7 +338,7 @@ async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap
 
 pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, diff: bool) -> HashMap<String, Function> {
 
-    let fns = match std::env::var("TC_SKIP_DIFF") {
+    let fns = match std::env::var("TC_FORCE_DEPLOY") {
         Ok(_) =>  &topology.functions,
         Err(_) => {
             if diff {
