@@ -338,8 +338,8 @@ async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap
 
 pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, diff: bool) -> HashMap<String, Function> {
 
-    let fns = match std::env::var("TC_FORCE_DEPLOY") {
-        Ok(_) =>  &topology.functions,
+    let fns = match std::env::var("TC_RESOLVER_DIFF") {
+        Ok(_) => &find_modified(&ctx.auth, root, topology).await,
         Err(_) => {
             if diff {
                 &find_modified(&ctx.auth, root, topology).await
