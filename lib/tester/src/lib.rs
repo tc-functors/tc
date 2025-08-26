@@ -203,6 +203,17 @@ fn get_tspecs(topology: &Topology) -> HashMap<String, TestSpec> {
     tests
 }
 
+async fn test_topology_aux(
+    auth: &Auth,
+    name: String,
+    spec: TestSpec,
+    topology: &Topology
+) {
+    let cname = u::maybe_string(spec.name.clone(), &name);
+    let namespace = u::maybe_string(spec.namespace.clone(), &topology.namespace);
+    test_topology_unit(auth, &namespace, &cname, topology, &spec).await;
+}
+
 pub async fn test_topology(
     auth: &Auth,
     topology: &Topology,
@@ -215,10 +226,17 @@ pub async fn test_topology(
             test_topology_unit(auth, &topology.namespace, &u, topology, spec).await;
         }
     } else {
+        let mut tasks = vec![];
         for (name, spec) in tspecs {
-            let cname = u::maybe_string(spec.name.clone(), &name);
-            let namespace = u::maybe_string(spec.namespace.clone(), &topology.namespace);
-            test_topology_unit(auth, &namespace, &cname, topology, &spec).await;
+            let a = auth.clone();
+            let t = topology.clone();
+            let h = tokio::spawn(async move {
+                test_topology_aux(&a, name, spec, &t).await;
+            });
+            tasks.push(h);
+        }
+        for task in tasks {
+            let _ = task.await;
         }
     }
 }
