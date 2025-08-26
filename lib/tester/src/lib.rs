@@ -49,15 +49,35 @@ async fn invoke_function(auth: &Auth, fqn: &str, payload: &str) -> String {
     }
 }
 
-async fn invoke(auth: &Auth, topology: &Topology, entity: &str, payload: &str) -> String {
+fn get_fqn(namespace: &str, topology: &Topology, name: &str) -> Option<String> {
+    if topology.namespace == namespace {
+        if let Some(f) = &topology.functions.get(name) {
+            Some(f.fqn.clone())
+        } else {
+            None
+        }
+    } else {
+        if let Some(node) = topology.nodes.get(namespace) {
+            if let Some(f) = node.functions.get(name) {
+                Some(f.fqn.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+}
+
+async fn invoke(auth: &Auth, namespace: &str, topology: &Topology, entity: &str, payload: &str) -> String {
     let (entity, component) = Entity::as_entity_component(entity);
     match entity {
         Entity::Function => {
             if let Some(c) = component {
-                if let Some(function) = &topology.functions.get(&c) {
-                    invoke_function(auth, &function.fqn, payload).await
-                } else {
-                    panic!("No function defined")
+                let maybe_fqn = get_fqn(namespace, topology, &c);
+                match maybe_fqn {
+                    Some(fqn) => invoke_function(auth, &fqn, payload).await,
+                    None => panic!("No function defined")
                 }
             } else {
                 panic!("Component not specified")
@@ -117,8 +137,8 @@ async fn invoke(auth: &Auth, topology: &Topology, entity: &str, payload: &str) -
     }
 }
 
-async fn test_function_unit(auth: &Auth, name: &str, fname: &str, fqn: &str, t: &TestSpec) {
-    let TestSpec { payload, expect, condition, .. } = t;
+async fn test_function_unit(auth: &Auth, fname: &str, fqn: &str, t: &TestSpec) {
+    let TestSpec { name, payload, expect, condition, .. } = t;
     let start = Instant::now();
     let dir = u::pwd();
     let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
@@ -126,7 +146,8 @@ async fn test_function_unit(auth: &Auth, name: &str, fname: &str, fqn: &str, t: 
     assert_case(expect.clone(), &response, condition.clone());
     let duration = start.elapsed();
     let _ = println!("Test unit {} (function/{}) ({}) {:#}",
-                     name, fname, "pass".green(), u::time_format(duration));
+                     &name.clone().unwrap(),
+                     fname, "pass".green(), u::time_format(duration));
 }
 
 pub async fn test_function(auth: &Auth, sandbox: &str, function: &Function, unit: Option<String>) {
@@ -134,18 +155,18 @@ pub async fn test_function(auth: &Auth, sandbox: &str, function: &Function, unit
     if let Some(u) = unit {
         if let Some(t) =  tspecs.get(&u) {
             let fqn = render(&function.fqn, sandbox);
-            test_function_unit(auth, &u, &function.name, &fqn, &t).await;
+            test_function_unit(auth, &function.name, &fqn, &t).await;
         }
     } else {
         println!("Running all {} test units", &tspecs.len());
-        for (name, tspec) in tspecs {
+        for (_, tspec) in tspecs {
             let fqn = render(&function.fqn, sandbox);
-            test_function_unit(auth, &name, &function.name, &fqn, &tspec).await;
+            test_function_unit(auth, &function.name, &fqn, &tspec).await;
         }
     }
 }
 
-pub async fn test_topology_unit(auth: &Auth, name: &str, topology: &Topology, spec: &TestSpec) {
+pub async fn test_topology_unit(auth: &Auth, namespace: &str, name: &str, topology: &Topology, spec: &TestSpec) {
     let dir = u::pwd();
     let TestSpec { payload, expect, condition, entity, .. } = spec;
 
@@ -154,12 +175,32 @@ pub async fn test_topology_unit(auth: &Auth, name: &str, topology: &Topology, sp
     let start = Instant::now();
     let entity = u::maybe_string(entity.clone(), "state");
 
-    let response = invoke(auth, topology, &entity, &payload).await;
+    let response = invoke(auth, namespace, topology, &entity, &payload).await;
     assert_case(expect.clone(), &response, condition.clone());
 
     let duration = start.elapsed();
-    let _ = println!("Test unit {} ({}) ({}) {:#}",
-                     name, &entity, "pass".green(), u::time_format(duration));
+    let _ = println!("[{}] {}/{}/{} ({:#})",
+                     "pass".green(), namespace.cyan(), &entity, name,
+                     u::time_format(duration));
+}
+
+
+fn get_tspecs(topology: &Topology) -> HashMap<String, TestSpec> {
+    let mut tests: HashMap<String, TestSpec> = HashMap::new();
+    for (name, mut spec) in topology.tests.clone() {
+        spec.name = Some(name);
+        spec.namespace = Some(topology.namespace.clone());
+        tests.insert(u::uuid_str(), spec);
+    }
+
+    for (_, node) in &topology.nodes {
+        for (name, mut spec) in node.tests.clone() {
+            spec.name = Some(name);
+            spec.namespace = Some(node.namespace.clone());
+            tests.insert(u::uuid_str(), spec);
+        }
+    }
+    tests
 }
 
 pub async fn test_topology(
@@ -167,16 +208,17 @@ pub async fn test_topology(
     topology: &Topology,
     unit: Option<String>
 ) {
-
-    let tspecs = &topology.tests;
+    let tspecs = get_tspecs(topology);
 
     if let Some(u) = unit {
-        if let Some(spec) = tspecs.get(&u) {
-            test_topology_unit(auth, &u, topology, spec).await;
+        if let Some(spec) = topology.tests.get(&u) {
+            test_topology_unit(auth, &topology.namespace, &u, topology, spec).await;
         }
     } else {
         for (name, spec) in tspecs {
-            test_topology_unit(auth, &name, topology, spec).await;
+            let cname = u::maybe_string(spec.name.clone(), &name);
+            let namespace = u::maybe_string(spec.namespace.clone(), &topology.namespace);
+            test_topology_unit(auth, &namespace, &cname, topology, &spec).await;
         }
     }
 }

@@ -5,24 +5,13 @@ mod state;
 pub mod route;
 mod repl;
 use authorizer::Auth;
-use composer::{Entity, Topology};
+use composer::{Entity, Topology, ConfigSpec};
 use kit as u;
-use std::collections::HashMap;
 
 async fn read_uri(auth: &Auth, uri: &str) -> String {
     let client = aws::s3::make_client(auth).await;
     let (bucket, key) = aws::s3::parts_of(uri);
     aws::s3::get_str(&client, &bucket, &key).await
-}
-
-fn render(s: &str) -> String {
-    let mut table: HashMap<&str, &str> = HashMap::new();
-    let bucket = match std::env::var("TC_TEST_BUCKET") {
-        Ok(p) => p,
-        Err(_) => String::from("None")
-    };
-    table.insert("TC_TEST_BUCKET", &bucket);
-    u::stencil(s, table)
 }
 
 pub fn read_payload_local(payload: Option<String>) -> String {
@@ -37,11 +26,28 @@ pub fn read_payload_local(payload: Option<String>) -> String {
     }
 }
 
+
+fn find_bucket() -> String {
+    let cfg = ConfigSpec::new(None);
+    let maybe_bucket = cfg.tester.bucket;
+    match maybe_bucket {
+        Some(b) => b,
+        None => match std::env::var("TC_TEST_BUCKET") {
+            Ok(p) => p,
+            Err(_) => panic!("No test bucket specified")
+        }
+    }
+}
 pub async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
     match s {
         Some(p) => {
-            if p.starts_with("s3://") {
-                let rp = render(&p);
+            if p.starts_with("s3://")  {
+                read_uri(auth, &p).await
+            } else if p.starts_with("//") {
+                let bucket = find_bucket();
+                let key = u::second(&p, "//");
+                let rp = format!("s3://{}/{}", &bucket, &key);
+                //println!("reading bucket {}",  rp);
                 read_uri(auth, &rp).await
             } else {
                 if p.ends_with(".json") && u::file_exists(&p) {

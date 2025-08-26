@@ -311,6 +311,12 @@ pub struct TestSpec {
     pub payload: Option<String>,
 
     #[serde(default)]
+    pub name: Option<String>,
+
+    #[serde(default)]
+    pub namespace: Option<String>,
+
+    #[serde(default)]
     pub expect: Option<String>,
 
     #[serde(default)]

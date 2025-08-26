@@ -109,7 +109,7 @@ pub async fn test_interactive(auth: Auth, sandbox: Option<String>) {
         let (name, maybe_unit) = interactive::prompt_test_units(units.clone());
         if let Some(spec) = maybe_unit {
             let resolved = resolver::render(&auth, &sandbox, &topology).await;
-            tester::test_topology_unit(&auth, &name, &resolved, &spec).await;
+            tester::test_topology_unit(&auth, &topology.namespace, &name, &resolved, &spec).await;
         }
     }
     else {
