@@ -107,6 +107,12 @@ pub struct Builder {
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
+pub struct Tester {
+    pub bucket: Option<String>,
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
 pub struct Resolver {
     #[derivative(Default(value = "default_bool()"))]
     #[serde(default = "default_bool")]
@@ -356,6 +362,9 @@ pub struct ConfigSpec {
 
     #[serde(default = "Builder::default")]
     pub builder: Builder,
+
+    #[serde(default = "Tester::default")]
+    pub tester: Tester,
 
     #[serde(default = "Resolver::default")]
     pub resolver: Resolver,

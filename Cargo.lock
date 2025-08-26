@@ -328,12 +328,12 @@ dependencies = [
 
 [[package]]
 name = "authorizer"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "aws-config",
  "aws-credential-types",
  "aws-sdk-sts",
- "kit 0.8.124",
+ "kit 0.9.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1326,20 +1326,20 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "anyhow",
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "aws-config",
  "aws-sdk-codeartifact",
  "aws-sdk-ecr",
  "aws-sdk-lambda",
  "base64 0.21.7",
  "colored",
- "composer 0.8.124",
+ "composer 0.9.0",
  "glob",
  "itertools",
- "kit 0.8.124",
+ "kit 0.9.0",
  "log",
  "serde 1.0.217",
  "serde_derive",
@@ -1784,7 +1784,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1792,7 +1792,7 @@ dependencies = [
  "colored",
  "daggy",
  "derivative",
- "kit 0.8.124",
+ "kit 0.9.0",
  "lazy_static 1.5.0",
  "nom 7.1.3",
  "ptree",
@@ -2050,10 +2050,10 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "anyhow",
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
@@ -2072,9 +2072,9 @@ dependencies = [
  "base64 0.21.7",
  "builder",
  "colored",
- "composer 0.8.124",
+ "composer 0.9.0",
  "itertools",
- "kit 0.8.124",
+ "kit 0.9.0",
  "log",
  "question",
  "serde 1.0.217",
@@ -3133,10 +3133,10 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "anyhow",
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "aws-config",
  "aws-sdk-apigatewayv2",
  "aws-sdk-eventbridge",
@@ -3145,9 +3145,9 @@ dependencies = [
  "aws-sdk-sfn",
  "base64 0.21.7",
  "colored",
- "composer 0.8.124",
+ "composer 0.9.0",
  "gql_client",
- "kit 0.8.124",
+ "kit 0.9.0",
  "open",
  "rustyline",
  "s3uri",
@@ -3281,7 +3281,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -3649,11 +3649,11 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "colored",
- "composer 0.8.124",
- "kit 0.8.124",
+ "composer 0.9.0",
+ "kit 0.9.0",
  "regex",
  "semver 0.7.0",
  "serde 1.0.217",
@@ -4410,9 +4410,9 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "aws-config",
  "aws-sdk-appsync",
  "aws-sdk-efs",
@@ -4420,8 +4420,8 @@ dependencies = [
  "aws-sdk-lambda",
  "aws-sdk-ssm",
  "cacache",
- "composer 0.8.124",
- "kit 0.8.124",
+ "composer 0.9.0",
+ "kit 0.9.0",
  "regex",
  "serde 1.0.217",
  "serde_derive",
@@ -4459,16 +4459,16 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "anyhow",
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "aws-config",
  "aws-sdk-eventbridge",
  "aws-sdk-sfn",
  "colored",
- "composer 0.8.124",
- "kit 0.8.124",
+ "composer 0.9.0",
+ "kit 0.9.0",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -4671,11 +4671,11 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
- "composer 0.8.124",
+ "composer 0.9.0",
  "inquire",
- "kit 0.8.124",
+ "kit 0.9.0",
  "question",
  "serde 1.0.217",
  "serde_derive",
@@ -5054,9 +5054,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "aws-sdk-apigatewayv2",
  "aws-sdk-appsync",
  "aws-sdk-eventbridge",
@@ -5064,15 +5064,15 @@ dependencies = [
  "aws-sdk-s3",
  "aws-sdk-sfn",
  "colored",
- "composer 0.8.124",
- "kit 0.8.124",
+ "composer 0.9.0",
+ "kit 0.9.0",
  "log",
  "s3uri",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
  "tabled 0.20.0",
- "tagger 0.8.124",
+ "tagger 0.9.0",
  "tokio",
 ]
 
@@ -5287,11 +5287,11 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "colored",
- "kit 0.8.124",
- "notifier 0.8.124",
+ "kit 0.9.0",
+ "notifier 0.9.0",
  "regex",
  "semver 0.7.0",
  "serde 1.0.217",
@@ -5301,22 +5301,22 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "builder",
  "clap",
  "clap-markdown",
  "colored",
- "composer 0.8.124",
+ "composer 0.9.0",
  "deployer",
  "inquire",
  "invoker",
  "itertools",
- "kit 0.8.124",
+ "kit 0.9.0",
  "log",
  "mockall",
- "notifier 0.8.124",
+ "notifier 0.9.0",
  "open",
  "openssl",
  "openssl-sys",
@@ -5329,7 +5329,7 @@ dependencies = [
  "serde_json",
  "snapshotter",
  "tabled 0.10.0",
- "tagger 0.8.124",
+ "tagger 0.9.0",
  "tester",
  "tokio",
  "tracing",
@@ -5367,15 +5367,15 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.8.124"
+version = "0.9.0"
 dependencies = [
  "assert-json-diff",
- "authorizer 0.8.124",
+ "authorizer 0.9.0",
  "colored",
- "composer 0.8.124",
+ "composer 0.9.0",
  "invoker",
  "jsonpath-rust",
- "kit 0.8.124",
+ "kit 0.9.0",
  "serde 1.0.217",
  "serde_json",
 ]
