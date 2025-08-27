@@ -210,15 +210,20 @@ pub async fn promote(auth: &Auth, name: &str, dir: &str, version: Option<String>
     layer::promote(auth, name, &lang.to_str(), version).await;
 }
 
-pub async fn shell(auth: &Auth, dir: &str) {
+pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
     let function = composer::current_function(dir);
+
 
     if let Some(f) = function {
         let spec = f.build;
-        match spec.kind {
-            BuildKind::Image => image::shell(auth, dir, &f.runtime.uri, spec.version).await,
-            _ => todo!(),
-        }
+
+        let kind = match kind {
+            Some(k) => BuildKind::from_str(&k).unwrap(),
+            None => spec.kind.clone(),
+        };
+
+        image::shell(auth, dir, &f.runtime.uri, spec.version, kind).await
+
     } else {
         println!("No function found");
     }

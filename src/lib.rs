@@ -76,7 +76,7 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
             builder::sync(&auth, builds).await;
         } else if shell {
             let auth = init_centralized_auth().await;
-            builder::shell(&auth, dir).await;
+            builder::shell(&auth, dir, kind).await;
         } else if promote {
             let auth = init_centralized_auth().await;
             if let Some(n) = name {

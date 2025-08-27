@@ -15,6 +15,7 @@ use composer::{
     spec::{
         ConfigSpec,
         Lang,
+        BuildKind
     },
 };
 use kit as u;
@@ -182,7 +183,7 @@ pub async fn sync(auth: &Auth, build: &BuildOutput) {
     //u::run(&cmd, &dir);
 }
 
-pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>) {
+pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, kind: BuildKind) {
     let config = ConfigSpec::new(None);
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
@@ -190,8 +191,14 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>) {
     };
     aws_ecr::login(auth, &dir).await;
     let uri = render_uri(uri, repo);
-    let base_image_uri = find_base_image_uri(&uri, version.clone());
-    let cmd = format!("docker run --rm -it --entrypoint bash {}", base_image_uri);
+
+    let uri = match kind {
+        BuildKind::Image => find_base_image_uri(&uri, version.clone()),
+        BuildKind::Code => uri,
+        _ => uri
+    };
+    let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
     println!("{}", cmd);
+
     u::runcmd_stream(&cmd, dir);
 }
