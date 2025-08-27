@@ -21,6 +21,7 @@ async fn resolve_vars(
     auth: &Auth,
     environment: HashMap<String, String>,
 ) -> HashMap<String, String> {
+    tracing::debug!("Resolving env vars");
     let client = aws::ssm::make_client(auth).await;
 
     let mut h: HashMap<String, String> = HashMap::new();
@@ -44,12 +45,14 @@ async fn make_layer_auth(ctx: &Context) -> Auth {
 }
 
 async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
+    tracing::debug!("Resolving layer {}", layer_name);
     let auth = make_layer_auth(ctx).await;
     let client = aws::layer::make_client(&auth).await;
     aws::layer::find_version(client, layer_name).await.unwrap()
 }
 
 async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
+    tracing::debug!("Resolving EFS AP {}", name);
     let auth = make_layer_auth(ctx).await;
     aws::efs::get_ap_arn(&auth, name).await.unwrap()
 }
@@ -64,6 +67,7 @@ fn as_layer_arn(auth: &Auth, name: &str) -> String {
 
 //
 fn augment_vars(ctx: &Context, lang: &str) -> HashMap<String, String> {
+    tracing::debug!("Augmenting vars {}", lang);
     let mut hmap: HashMap<String, String> = HashMap::new();
     let profile = &ctx.auth.name;
     let sandbox = &ctx.sandbox;
@@ -336,17 +340,11 @@ async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap
     changed_fns
 }
 
-pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, diff: bool) -> HashMap<String, Function> {
+pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, _diff: bool) -> HashMap<String, Function> {
 
     let fns = match std::env::var("TC_RESOLVER_DIFF") {
         Ok(_) => &find_modified(&ctx.auth, root, topology).await,
-        Err(_) => {
-            if diff {
-                &find_modified(&ctx.auth, root, topology).await
-            } else {
-                &topology.functions
-            }
-        }
+        Err(_) => &topology.functions
     };
 
     tracing::debug!("Modified fns: {}", &fns.len());

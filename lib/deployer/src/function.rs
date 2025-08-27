@@ -119,40 +119,33 @@ pub async fn make_lambda(auth: &Auth, f: Function) -> lambda::Function {
 
 
 pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
-    match f.runtime.package_type.as_ref() {
-        "zip" => {
-            let lambda = make_lambda(&auth, f.clone()).await;
-            let maybe_current = lambda::find_config(&lambda.client, &f.fqn).await;
-            let id = if let Some(current) = maybe_current {
-                let package_type = f.runtime.package_type.to_lowercase();
-                let current_package_type = current.package_type.to_lowercase();
-                if current_package_type != package_type {
-                tracing::debug!("Recreating function: {} -> {}",
-                                current_package_type, package_type);
-                    lambda.clone().delete().await.unwrap();
-                    lambda.clone().create_or_update().await
-                } else {
-                    lambda.clone().create_or_update().await
-                }
-            } else {
-                lambda.clone().create_or_update().await
-            };
-
-            if f.runtime.snapstart {
-                lambda.publish_version().await;
-            }
-            id
-        }
-        _ => {
-            let lambda = make_lambda(&auth, f.clone()).await;
+    let lambda = make_lambda(&auth, f.clone()).await;
+    let maybe_current = lambda::find_config(&lambda.client, &f.fqn).await;
+    let id = if let Some(current) = maybe_current {
+        let package_type = f.runtime.package_type.to_lowercase();
+        let current_package_type = current.package_type.to_lowercase();
+        tracing::debug!("Recreating {} {}", current_package_type, package_type);
+        if current_package_type != package_type {
+            tracing::debug!("Recreating function: {} -> {}",
+                            current_package_type, package_type);
+            lambda.clone().delete().await.unwrap();
+            lambda.clone().create_or_update().await
+        } else {
             lambda.clone().create_or_update().await
         }
+    } else {
+        lambda.clone().create_or_update().await
+    };
+
+    if f.runtime.snapstart {
+        lambda.publish_version().await;
     }
+    id
 }
 
-async fn create_function(profile: String, role_arn: Option<String>, f: Function) -> String {
-    let auth = Auth::new(Some(profile), role_arn).await;
-    maybe_build(&auth, &f).await;
+
+async fn create_function(auth: &Auth, f: Function) -> String {
+    maybe_build(auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => create_lambda(&auth, &f).await,
         Provider::Fargate => create_container(&auth, &f).await,
@@ -163,19 +156,19 @@ pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
     match std::env::var("TC_SYNC_CREATE") {
         Ok(_) => {
             for (_, function) in fns.clone() {
-                let p = auth.name.to_string();
-                let role = auth.assume_role.to_owned();
-                create_function(p, role, function).await;
+                let a = auth.clone();
+                let f = function.clone();
+                create_function(&a, f).await;
             }
         }
 
         Err(_) => {
             let mut tasks = vec![];
             for (_, function) in fns.clone() {
-                let p = auth.name.to_string();
-                let role = auth.assume_role.to_owned();
+                let a = auth.clone();
+                let f = function.clone();
                 let h = tokio::spawn(async move {
-                    create_function(p, role, function.clone()).await;
+                    create_function(&a, f).await;
                 });
                 tasks.push(h);
             }
@@ -189,10 +182,10 @@ pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
 pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>) {
     let mut tasks = vec![];
     for (_, function) in fns.clone() {
-        let p = auth.name.to_string();
-        let role = auth.assume_role.to_owned();
+        let a = auth.clone();
+        let f = function.clone();
         let h = tokio::spawn(async move {
-            create_function(p, role, function).await;
+            create_function(&a, f).await;
         });
         tasks.push(h);
     }
@@ -280,10 +273,9 @@ pub async fn update_dir(auth: &Auth, functions: &HashMap<String, Function>, dir:
     if kit::file_exists(dir) {
         match functions.get(dir) {
             Some(f) => {
-                let p = auth.name.to_string();
-                let role = auth.assume_role.to_owned();
-                maybe_build(auth, &f).await;
-                create_function(p, role, f.clone()).await;
+                let a = auth.clone();
+                maybe_build(&a, &f).await;
+                create_function(&a, f.clone()).await;
             }
             None => panic!("No valid function found"),
         }
