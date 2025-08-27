@@ -216,7 +216,10 @@ fn lookup_role(infra_dir: &str, r: &RuntimeSpec, namespace: &str, _fqn: &str, fu
             if let Some(p) = path {
                 Role::new(Entity::Function, &p, namespace, function_name)
             } else {
-                Role::default(Entity::Function)
+                match std::env::var("TC_LEGACY_ROLES") {
+                    Ok(_) => Role::provided_by_entity(Entity::Function),
+                    Err(_) => Role::default(Entity::Function)
+                }
             }
         }
     }
