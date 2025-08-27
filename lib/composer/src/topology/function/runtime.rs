@@ -283,6 +283,13 @@ fn make_env_vars(
                     "/opt/python:/var/runtime",
                 ),
             );
+            hmap.insert(
+                s!("MODEL_PATH"),
+                format!(
+                    "/model",
+                ),
+            );
+
             // legacy
             if let Some(assets) = maybe_assets {
                 let base_deps_path = as_str(assets.base_deps_path, "/var/python");
