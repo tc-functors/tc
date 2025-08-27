@@ -132,7 +132,7 @@ pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Even
 
         event.targets = targets;
 
-        let guard = match std::env::var("TC_FORCE_DEPLOY") {
+        let guard = match std::env::var("TC_CREATE_EVENTS") {
             Ok(_) => false,
             Err(_) => config.deployer.guard_stable_updates
         };
