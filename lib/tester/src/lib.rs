@@ -144,9 +144,13 @@ async fn test_function_unit(auth: &Auth, fname: &str, fqn: &str, t: &TestSpec) {
     let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
     let response = invoke_function(auth, fqn, &payload).await;
     assert_case(expect.clone(), &response, condition.clone());
+    let name = match name {
+        Some(n) => n,
+        None => fname
+    };
     let duration = start.elapsed();
     let _ = println!("Test unit {} (function/{}) ({}) {:#}",
-                     &name.clone().unwrap(),
+                     name,
                      fname, "pass".green(), u::time_format(duration));
 }
 
