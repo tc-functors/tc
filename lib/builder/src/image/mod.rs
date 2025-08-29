@@ -106,7 +106,6 @@ pub async fn build(
     uri: &str,
     bspec: &Build,
     code_only: bool
-
 ) -> BuildStatus {
 
     let Build { pre, post, version, .. } = bspec;
@@ -133,11 +132,15 @@ pub async fn build(
 
     bar.inc(1);
 
-
     let code_image_uri = render_uri(uri, repo);
     let base_image_uri = find_base_image_uri(&code_image_uri, version.clone());
 
     if code_only {
+        // let repo_ns = u::second(repo, "/");
+        // let base_exists = aws_ecr::image_exists(&auth, &repo_ns, &base_image_uri).await;
+        // if !base_exists {
+        //    println!("Base image {} does not exist", &base_image_uri);
+        // }
         gen_code_dockerfile(dir, langr, &base_image_uri);
     } else {
         gen_base_dockerfile(dir, langr, pre, post);
