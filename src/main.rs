@@ -32,6 +32,9 @@ enum Cmd {
     /// Trigger release via CI
     #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
+    /// Trigger build via CI
+    #[clap(name = "ci-build", hide = true)]
+    CBuild(CBuildArgs),
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
@@ -132,6 +135,16 @@ pub struct ReleaseArgs {
     unwind: bool,
     #[arg(long, action, short = 'i')]
     interactive: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct CBuildArgs {
+    #[arg(long, short = 't', alias = "service")]
+    topology: Option<String>,
+    #[arg(long, short = 'b')]
+    branch: Option<String>,
+    #[arg(long, short = 'f')]
+    function: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -757,6 +770,19 @@ async fn ci_release(args: ReleaseArgs) {
     }
 }
 
+async fn ci_build(args: CBuildArgs) {
+    let CBuildArgs {
+        topology,
+        function,
+        branch,
+        ..
+    } = args;
+
+
+    tc::ci_build(topology, function, branch).await;
+}
+
+
 async fn cache(args: CacheArgs) {
     let CacheArgs {
         clear,
@@ -914,6 +940,7 @@ async fn run() {
         Cmd::Scaffold(args)  => scaffold(args).await,
         Cmd::Sync(args)  => sync(args).await,
         Cmd::Release(args)   => ci_release(args).await,
+        Cmd::CBuild(args)   => ci_build(args).await,
         Cmd::Deploy(args)    => ci_deploy(args).await,
     }
 }

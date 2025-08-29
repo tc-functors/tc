@@ -113,3 +113,8 @@ pub fn extract_tag(prefix: &str, s: &str) -> String {
         _ => "".to_string(),
     }
 }
+
+pub fn branch_name(dir: &str) -> String {
+    let cmd = "git rev-parse --abbrev-ref HEAD";
+    sh(&cmd, dir)
+}

@@ -1,4 +1,4 @@
-mod git;
+pub mod git;
 mod changelog;
 use notifier::RichText;
 use kit as u;

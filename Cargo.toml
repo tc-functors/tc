@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.0-alpha"
+version = "0.9.0-rc1"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.9.0-alpha"
+version = "0.9.0-rc1"
 
 [dependencies]
 serde = "1.0"
@@ -37,7 +37,7 @@ notifier = { path = "lib/notifier" }
 router = { path = "lib/router" }
 scaffolder = { path = "lib/scaffolder" }
 kit = { path = "lib/kit" }
-releaser = { git = "https://github.com/tc-functors/releaser.git", rev = "5df352b"}
+releaser = { path = "lib/releaser" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
