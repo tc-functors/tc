@@ -174,6 +174,8 @@ pub async fn test_topology_unit(auth: &Auth, namespace: &str, name: &str, topolo
     let dir = u::pwd();
     let TestSpec { payload, expect, condition, entity, .. } = spec;
 
+    tracing::debug!("Testing {}/{}", namespace, name);
+
     let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
 
     let start = Instant::now();
