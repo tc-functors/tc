@@ -3089,6 +3089,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -5236,6 +5237,7 @@ dependencies = [
  "serde 1.0.217",
  "serde_json",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

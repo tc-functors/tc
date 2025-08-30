@@ -9,7 +9,7 @@ pub async fn make_client(auth: &Auth) -> Client {
 }
 
 pub async fn get_str(client: &Client, bucket: &str, key: &str) -> String {
-
+    tracing::debug!("s3:getObjct s3://{}/{}", bucket, key);
     let result = client
         .get_object()
         .bucket(bucket)
