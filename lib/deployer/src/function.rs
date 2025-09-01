@@ -14,9 +14,9 @@ use std::collections::HashMap;
 use tabled::Tabled;
 use kit as u;
 
-async fn maybe_build(_auth: &Auth, function: &Function) {
-    let builds = builder::build(function, None, None, true).await;
-    builder::publish(None, builds).await;
+async fn maybe_build(auth: &Auth, function: &Function) {
+    let builds = builder::build(auth, function, None, None, true).await;
+    builder::publish(auth, builds).await;
 }
 
 async fn create_container(auth: &Auth, function: &Function) -> String {

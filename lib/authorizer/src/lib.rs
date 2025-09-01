@@ -77,6 +77,13 @@ impl Auth {
         )
     }
 
+    pub fn sfn_exec_arn(&self, name: &str, id: &str) -> String {
+        format!(
+            "arn:aws:states:{}:{}:execution:{}:{}",
+            &self.region, self.account, name, id
+        )
+    }
+
     pub fn lambda_arn(&self, name: &str) -> String {
         format!(
             "arn:aws:lambda:{}:{}:function:{}",

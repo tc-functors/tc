@@ -21,7 +21,6 @@ use composer::{
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
-use super::init_centralized_auth;
 
 fn gen_base_dockerfile(
     dir: &str,
@@ -100,6 +99,7 @@ fn find_base_image_uri(uri: &str, version: Option<String>) -> String {
 }
 
 pub async fn build(
+    auth: &Auth,
     dir: &str,
     name: &str,
     langr: &LangRuntime,
@@ -110,7 +110,6 @@ pub async fn build(
 
     let Build { pre, post, version, .. } = bspec;
 
-    let auth = init_centralized_auth().await;
     aws_ecr::login(&auth, dir).await;
 
     let config = ConfigSpec::new(None);
@@ -201,7 +200,7 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, k
         _ => uri
     };
     let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
-    println!("{}", cmd);
+    tracing::debug!("{}", cmd);
 
     u::runcmd_stream(&cmd, dir);
 }

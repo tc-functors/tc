@@ -45,17 +45,6 @@ async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
     }
 }
 
-pub async fn init_centralized_auth() -> Auth {
-    let config = ConfigSpec::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    let auth = init(profile.clone(), None).await;
-    let centralized = auth
-        .assume(profile.clone(), config.role_to_assume(profile))
-        .await;
-    centralized
-}
-//
-
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
     let config = ConfigSpec::new(None);
@@ -85,6 +74,7 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
 }
 
 pub async fn build(
+    auth: &Auth,
     function: &Function,
     name: Option<String>,
     kind: Option<String>,
@@ -108,12 +98,12 @@ pub async fn build(
     let name = u::maybe_string(name, &function.name);
 
     let build_status = match kind {
-        BuildKind::Image => image::build(dir, &name, langr, &runtime.uri, &build, code_only).await,
-        BuildKind::Inline => inline::build(dir, &name, langr, &build).await,
+        BuildKind::Image => image::build(auth, dir, &name, langr, &runtime.uri, &build, code_only).await,
+        BuildKind::Inline => inline::build(auth, dir, &name, langr, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr),
         BuildKind::Slab => library::build(dir, langr),
-        BuildKind::Code => code::build(dir, &name, langr, &build).await,
+        BuildKind::Code => code::build(auth, dir, &name, langr, &build).await,
         BuildKind::Extension => extension::build(dir, &name, langr),
         BuildKind::Runtime => todo!(),
     };
@@ -139,6 +129,7 @@ pub async fn build(
 }
 
 pub async fn build_recursive(
+    auth: &Auth,
     dir: &str,
     _parallel: bool,
 ) -> Vec<BuildOutput> {
@@ -149,7 +140,7 @@ pub async fn build_recursive(
     let topology = composer::compose(dir, true);
 
     for (_, function) in topology.functions {
-        let mut out = build(&function, None, None, false).await;
+        let mut out = build(auth, &function, None, None, false).await;
         outs.append(&mut out);
     }
     outs
@@ -173,16 +164,12 @@ pub fn clean(recursive: bool) {
     }
 }
 
-pub async fn publish(auth: Option<Auth>, builds: Vec<BuildOutput>) {
-    let auth = match auth {
-        Some(a) => a,
-        None => init_centralized_auth().await
-    };
+pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
     for build in builds {
         tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
             BuildKind::Layer | BuildKind::Library => layer::publish(&auth, &build).await,
-            BuildKind::Image => image::publish(&auth, &build).await,
+            BuildKind::Image => image::publish(auth, &build).await,
             _ => (),
         }
     }
