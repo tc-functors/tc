@@ -26,24 +26,6 @@ use std::{
     str::FromStr,
 };
 
-// move this to authorizer
-
-async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
-    match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => {
-            let role = match assume_role {
-                Some(r) => Some(r),
-                None => {
-                    let config = composer::config(&kit::pwd());
-                    let p = u::maybe_string(profile.clone(), "default");
-                    config.ci.roles.get(&p).cloned()
-                }
-            };
-            Auth::new(profile.clone(), role).await
-        }
-        Err(_) => Auth::new(profile.clone(), assume_role).await,
-    }
-}
 
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
