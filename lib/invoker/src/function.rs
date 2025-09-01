@@ -10,11 +10,12 @@ pub async fn invoke(auth: &Auth, name: &str, payload: &str) {
     let _ = lambda::invoke(client, name, payload).await;
 }
 
-pub async fn invoke_local(payload: &str) {
+pub async fn invoke_emulator(payload: &str) {
     let mut headers = HashMap::new();
     headers.insert(s!("content-type"), s!("application/json"));
     let url = "http://localhost:9000/2015-03-31/functions/function/invocations";
     let res = u::http_post(url, headers, payload.to_string()).await;
+    println!("{:?}", res);
     let out = match res {
         Ok(r) => kit::pretty_json(&r),
         Err(_) => s!("Error invoking local lambda"),

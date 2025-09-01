@@ -30,17 +30,25 @@ pub struct BuildOpts {
     pub version: Option<String>
 }
 
-async fn init_centralized_auth() -> Auth {
+async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
     let config = ConfigSpec::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    let auth = init(profile.clone(), None).await;
+    let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
+    let profile = match maybe_cfg_profile {
+        Some(p) => p,
+        None => match maybe_profile {
+            Some(x) => x,
+            None => panic!("Please specify profile")
+        }
+    };
+    let prof = Some(profile);
+    let auth = init(prof.clone(), None).await;
     let centralized = auth
-        .assume(profile.clone(), config.role_to_assume(profile))
+        .assume(prof.clone(), config.role_to_assume(prof))
         .await;
     centralized
 }
 
-pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
+pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opts: BuildOpts) {
     let BuildOpts {
         clean,
         recursive,
@@ -56,15 +64,14 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
 
 
     if recursive {
+        let auth = init_centralized_auth(profile).await;
         if sync {
-            let auth = init_centralized_auth().await;
             let builds = builder::just_images(recursive);
             builder::sync(&auth, builds).await;
         } else {
-            let builds = builder::build_recursive(dir, parallel).await;
+            let builds = builder::build_recursive(&auth, dir, parallel).await;
             if publish {
-                let auth = init_centralized_auth().await;
-                builder::publish(Some(auth), builds.clone()).await;
+                builder::publish(&auth, builds.clone()).await;
             }
         }
     } else if clean {
@@ -72,13 +79,13 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
     } else {
         if sync {
             let builds = builder::just_images(false);
-            let auth = init_centralized_auth().await;
+            let auth = init_centralized_auth(profile).await;
             builder::sync(&auth, builds).await;
         } else if shell {
-            let auth = init_centralized_auth().await;
+            let auth = init_centralized_auth(profile).await;
             builder::shell(&auth, dir, kind).await;
         } else if promote {
-            let auth = init_centralized_auth().await;
+            let auth = init_centralized_auth(profile).await;
             if let Some(n) = name {
                 builder::promote(&auth, &n, dir, version).await;
             }
@@ -86,10 +93,10 @@ pub async fn build(_profile: Option<String>, name: Option<String>, dir: &str, op
             let maybe_fn = composer::current_function(dir);
             match maybe_fn {
                 Some(f) => {
-                    let builds = builder::build(&f, name, kind, false).await;
+                    let auth = init_centralized_auth(profile).await;
+                    let builds = builder::build(&auth, &f, name, kind, false).await;
                     if publish {
-                        let auth = init_centralized_auth().await;
-                        builder::publish(Some(auth), builds.clone()).await;
+                        builder::publish(&auth, builds.clone()).await;
                     }
                 }
                 None => println!("No function found. Try --recursive or build from a function dir"),
@@ -403,29 +410,34 @@ pub struct InvokeOptions {
     pub dir: Option<String>,
     pub payload: Option<String>,
     pub entity: Option<String>,
-    pub local: bool,
+    pub emulator: bool,
     pub dumb: bool,
 }
 
-pub async fn invoke(auth: Auth, opts: InvokeOptions) {
+pub async fn invoke(profile: Option<String>, opts: InvokeOptions) {
     let InvokeOptions {
         sandbox,
         payload,
-        local,
+        emulator,
         dumb,
         entity,
         dir,
         ..
     } = opts;
 
-    if local {
-        invoker::run_local(payload).await;
-    } else {
-        let dir = u::maybe_string(dir, &u::pwd());
-        let topology = composer::compose(&dir, false);
-        let sandbox = resolver::maybe_sandbox(sandbox);
-        let resolved = resolver::render(&auth, &sandbox, &topology).await;
+    let dir = u::maybe_string(dir, &u::pwd());
 
+    let topology = composer::compose(&dir, false);
+    let sandbox = resolver::maybe_sandbox(sandbox);
+
+    if emulator {
+        let profile = u::maybe_string(profile, "dev");
+        let auth = init(Some(profile), None).await;
+        let resolved = resolver::render(&auth, &sandbox, &topology).await;
+        invoker::invoke_emulator(&auth, entity, &resolved, payload).await;
+    } else {
+        let auth = init(profile, None).await;
+        let resolved = resolver::render(&auth, &sandbox, &topology).await;
         invoker::invoke(&auth, entity, &resolved, payload, dumb).await;
     }
 }
@@ -698,4 +710,16 @@ pub async fn sync(env: &str, sandbox: &str) {
         // todo
     }
 
+}
+
+pub async fn emulate(
+    auth: &Auth,
+    sandbox: Option<String>,
+    maybe_entity: Option<String>
+) {
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let topology = composer::compose(&u::pwd(), false);
+    let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, false, true).await;
+    let entity_component = u::maybe_string(maybe_entity, "function");
+    emulator::emulate(auth, &rt, &entity_component).await;
 }
