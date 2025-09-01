@@ -49,6 +49,8 @@ enum Cmd {
     Create(CreateArgs),
     /// Delete a sandboxed topology
     Delete(DeleteArgs),
+    /// Emulate a topology or entity
+    Emulate(EmulateArgs),
     /// Freeze a sandbox and make it immutable
     Freeze(FreezeArgs),
     /// Invoke a topology synchronously or asynchronously
@@ -352,7 +354,7 @@ pub struct InvokeArgs {
     #[arg(long, short = 'd')]
     dir: Option<String>,
     #[arg(long, action)]
-    local: bool,
+    emulator: bool,
     #[arg(long, action)]
     dumb: bool,
     #[arg(long, action, short = 't')]
@@ -418,6 +420,21 @@ pub struct PruneArgs {
     #[arg(long, action, short = 't')]
     trace: bool,
 }
+
+#[derive(Debug, Args)]
+pub struct EmulateArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
+    #[arg(long, short = 'k')]
+    kind: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
+}
+
 
 #[derive(Debug, Args)]
 pub struct ChangelogArgs {
@@ -652,10 +669,9 @@ async fn resolve(args: ResolveArgs) {
 async fn invoke(args: InvokeArgs) {
     let InvokeArgs {
         profile,
-        role,
         payload,
         sandbox,
-        local,
+        emulator,
         entity,
         dumb,
         trace,
@@ -668,13 +684,12 @@ async fn invoke(args: InvokeArgs) {
         sandbox: sandbox,
         payload: payload,
         dir: dir,
-        local: local,
+        emulator: emulator,
         entity: entity,
         dumb: dumb,
     };
 
-    let env = tc::init(profile, role).await;
-    tc::invoke(env, opts).await;
+    tc::invoke(profile, opts).await;
 }
 
 async fn upgrade(args: UpgradeArgs) {
@@ -880,6 +895,20 @@ async fn prune(args: PruneArgs) {
     tc::prune(&env, sandbox, filter, dry_run).await;
 }
 
+async fn emulate(args: EmulateArgs) {
+    let EmulateArgs {
+        profile,
+        sandbox,
+        entity,
+        trace,
+        ..
+    } = args;
+    init_tracing(trace);
+    let env = tc::init(profile, None).await;
+    tc::emulate(&env, sandbox, entity).await;
+}
+
+
 async fn scaffold(args: ScaffoldArgs) {
     tc::scaffold(args.kind);
 }
@@ -924,6 +953,7 @@ async fn run() {
         Cmd::Resolve(args)   => resolve(args).await,
         Cmd::Create(args)    => create(args).await,
         Cmd::Delete(args)    => delete(args).await,
+        Cmd::Emulate(args)   => emulate(args).await,
         Cmd::Freeze(args)    => freeze(args).await,
         Cmd::Invoke(args)    => invoke(args).await,
         Cmd::List(args)      => list(args).await,

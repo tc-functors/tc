@@ -69,3 +69,34 @@ pub async fn invoke(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bo
     let payload = augment_payload(payload, vars);
     execute_state_machine(auth, name, &payload, mode, dumb).await;
 }
+
+pub async fn invoke_emulator(
+    auth: &Auth,
+    dir: &str,
+    definition: &str,
+    fqn: &str,
+    payload: &str
+) {
+
+    let Auth { region, account, .. } = auth;
+    let role = "arn:aws:iam::012345678901:role/DummyRole";
+    let arn = auth.sfn_arn(fqn);
+    let cmd_pre = format!("AWS_REGION={} AWS_PROFILE={} aws stepfunctions --endpoint http://localhost:8083", region, &auth.name);
+
+    let def_cmd = format!(r#"{cmd_pre} create-state-machine --definition '{}' --name {} --role-arn {} "#, definition, fqn, role);
+    println!("{}", &def_cmd);
+    u::runcmd_stream(&def_cmd, &dir);
+
+
+    let payload = serde_json::to_string(payload).unwrap();
+    let exec_name = u::uuid_str();
+    let start_cmd = format!(r#"{cmd_pre} start-execution --state-machine-arn {} --name {} --input '{}'"#, &arn, &exec_name, &payload);
+    u::sh(&start_cmd, &dir);
+
+
+    let exec_arn = auth.sfn_exec_arn(fqn, &exec_name);
+
+    let desc_cmd = format!("{cmd_pre} describe-execution --execution-arn {}", &exec_arn);
+    let desc = u::sh(&desc_cmd, &dir);
+    println!("{}", desc);
+}

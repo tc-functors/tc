@@ -136,7 +136,29 @@ pub async fn invoke(
     }
 }
 
-pub async fn run_local(payload: Option<String>) {
+pub async fn invoke_emulator(
+    auth: &Auth,
+    maybe_entity: Option<String>,
+    topology: &Topology,
+    payload: Option<String>,
+) {
     let payload = read_payload_local(payload);
-    function::invoke_local(&payload).await;
+    match maybe_entity {
+        Some(e) => {
+            let (entity, component) = Entity::as_entity_component(&e);
+            match entity {
+                Entity::Function => function::invoke_emulator(&payload).await,
+                Entity::State => {
+                    if let Some(flow) = &topology.flow {
+                        let dir = u::pwd();
+                        let def = serde_json::to_string(&flow.definition).unwrap();
+                        state::invoke_emulator(auth, &dir, &def, &topology.fqn, &payload).await;
+
+                    }
+                }
+                _ => ()
+            }
+        },
+        None => function::invoke_emulator(&payload).await
+    }
 }
