@@ -30,6 +30,10 @@ EOF
     )
 }
 
+// fn as_env_str(kvs: HashMap<String, String>) {
+
+// }
+
 fn docker_run_cmd(name: &str) -> String {
     format!(
     "docker run -p 9000:8080 -v $(pwd)/build:/opt -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -v $HOME/.aws:/root/aws:ro -e AWS_REGION=us-west-2 -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"
