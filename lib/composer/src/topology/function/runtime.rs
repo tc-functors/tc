@@ -80,14 +80,21 @@ fn find_git_sha(dir: &str) -> String {
     sh("git rev-parse --short HEAD", dir)
 }
 
+fn find_image_tag(dir: &str, namespace: &str) -> String {
+    match std::env::var("TC_VERSION_IMAGES") {
+        Ok(_) => version::current_semver(namespace),
+        Err(_) => find_git_sha(dir)
+    }
+}
+
 fn as_uri(dir: &str, namespace: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
     match package_type {
         "Image" | "image" | "oci" => match uri {
             Some(u) => u,
             None => {
-                //let _content_sha = find_content_sha(dir);
-                let git_sha = find_git_sha(dir);
-                format!("{{{{repo}}}}:{}_{}_{}", namespace, name, git_sha)
+                let tag = find_image_tag(dir, namespace);
+                format!("{{{{repo}}}}:{}_{}_{}",
+                        namespace, name, &tag)
             }
         },
         _ => format!("{}/lambda.zip", dir),
@@ -524,10 +531,11 @@ fn make_lambda(
             _ => s!("zip")
         }
     };
-    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
+    let uri = as_uri(
+        dir, namespace, &fspec.name, &package_type, r.uri.clone(),
+    );
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
-
 
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
