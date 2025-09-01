@@ -22,7 +22,7 @@ use crate::{
         version,
     },
 };
-use chksum::sha1;
+
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -31,7 +31,6 @@ use serde_derive::{
 };
 use std::{
     collections::HashMap,
-    fs::read_dir,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -68,12 +67,6 @@ pub struct Runtime {
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
     pub cluster: String,
-}
-
-fn _find_content_sha(dir: &str) -> String {
-    let readdir = read_dir(dir).unwrap();
-    let digest = sha1::chksum(readdir).unwrap();
-    digest.to_hex_lowercase()
 }
 
 fn find_git_sha(dir: &str) -> String {

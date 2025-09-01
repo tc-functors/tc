@@ -8,8 +8,6 @@ use convert_case::{
 };
 use std::collections::HashMap;
 use text_placeholder::Template;
-use uuid::Uuid;
-use rand::{distributions::Alphanumeric, Rng};
 
 pub fn kebab_case(s: &str) -> String {
     s.to_case(Case::Kebab)
@@ -28,10 +26,6 @@ pub fn stencil(s: &str, table: HashMap<&str, &str>) -> String {
     temp.fill_with_hashmap(&table)
 }
 
-pub fn uuid_str() -> String {
-    Uuid::new_v4().to_string()
-}
-
 pub fn red(s: &str) -> ColoredString {
     s.red()
 }
@@ -46,13 +40,4 @@ pub fn green(s: &str) -> ColoredString {
 
 pub fn mangenta(s: &str) -> ColoredString {
     s.magenta()
-}
-
-pub fn randstr() -> String {
-    let s: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(7)
-        .map(char::from)
-        .collect();
-    s
 }
