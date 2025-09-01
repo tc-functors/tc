@@ -203,9 +203,10 @@ pub async fn build(
     }
 }
 
-pub async fn publish(auth: &Auth, build: &BuildOutput) {
+pub async fn publish(_auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, artifact, .. } = build;
 
+    let auth = init_centralized_auth().await;
     aws_ecr::login(&auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
     u::run(&cmd, &dir);
