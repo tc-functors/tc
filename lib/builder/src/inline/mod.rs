@@ -66,10 +66,10 @@ async fn build_with_docker(auth: &Auth, dir: &str, langr: &LangRuntime, name: &s
         Lang::Node => get_token(auth).await,
         _ => String::from(""),
     };
-    let container_sha = format!("{}_{}", name, u::checksum_str(dir));
+    // let container_sha = format!("{}_{}", name, u::checksum_str(dir));
 
-    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
-    u::sh(&create_cont_str, dir);
+    // let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
+    // u::sh(&create_cont_str, dir);
 
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
@@ -79,7 +79,7 @@ async fn build_with_docker(auth: &Auth, dir: &str, langr: &LangRuntime, name: &s
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default --load  -t {} --build-arg AUTH_TOKEN={} --builder {container_sha} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             u::basedir(dir),
             &token
         ),
