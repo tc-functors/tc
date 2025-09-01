@@ -12,7 +12,6 @@ use crate::types::{
 
 use kit as u;
 use kit::sh;
-use super::init_centralized_auth;
 
 fn find_build_image(runtime: &LangRuntime) -> String {
     let tag = match runtime {
@@ -114,22 +113,22 @@ fn copy_from_docker(dir: &str, name: &str) {
 
 
 pub async fn build(
+    auth: &Auth,
     dir: &str,
     name: &str,
     langr: &LangRuntime,
     spec: &Build
 ) -> BuildStatus {
 
-    let auth = init_centralized_auth().await;
     match langr.to_lang() {
-        Lang::Rust => super::inline::build(dir, name, langr, spec).await,
+        Lang::Rust => super::inline::build(auth, dir, name, langr, spec).await,
         _ => {
 
             let Build { command, pre, .. } = spec;
 
             if !pre.is_empty() {
                 gen_dockerfile(dir, langr, pre);
-                let (status, out, err) = build_with_docker(&auth, name, dir).await;
+                let (status, out, err) = build_with_docker(auth, name, dir).await;
                 sh("rm -f Dockerfile wrapper", dir);
                 if status {
                     copy_from_docker(dir, name);

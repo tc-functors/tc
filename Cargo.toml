@@ -38,6 +38,7 @@ router = { path = "lib/router" }
 scaffolder = { path = "lib/scaffolder" }
 kit = { path = "lib/kit" }
 releaser = { path = "lib/releaser" }
+emulator = { path = "lib/emulator" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -59,7 +60,8 @@ members = [
    "lib/tagger",
    "lib/notifier",
    "lib/router",
-   "lib/scaffolder"
+   "lib/scaffolder",
+   "lib/emulator"
 ]
 
 [profile.release]

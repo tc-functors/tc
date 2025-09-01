@@ -50,36 +50,20 @@ npm-debug.log
     u::write_str(&file, &f);
 }
 
-async fn init() -> Auth {
-    let config = composer::config(&kit::pwd());
-    let profile = config.aws.lambda.layers_profile.clone();
-    match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => match profile.clone() {
-            Some(p) => {
-                let role = config.ci.roles.get(&p).cloned();
-                Auth::new(profile.clone(), role).await
-            }
-            None => Auth::new(None, None).await,
-        },
-        Err(_) => Auth::new(profile.clone(), None).await,
-    }
-}
-
-async fn get_token() -> String {
+async fn get_token(auth: &Auth) -> String {
     match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
         Ok(t) => t,
         Err(_) => {
-            let auth = init().await;
-            let client = aws::codeartifact::make_client(&auth).await;
+            let client = aws::codeartifact::make_client(auth).await;
             aws::codeartifact::get_auth_token(&client, &auth.name, &auth.account).await
         }
     }
 }
 
-async fn build_with_docker(dir: &str, langr: &LangRuntime) -> (bool, String, String) {
+async fn build_with_docker(auth: &Auth, dir: &str, langr: &LangRuntime) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
-        Lang::Node => get_token().await,
+        Lang::Node => get_token(auth).await,
         _ => String::from(""),
     };
 
@@ -161,7 +145,7 @@ fn should_build_deps() -> bool {
     }
 }
 
-pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> BuildStatus {
+pub async fn build(auth: &Auth, dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> BuildStatus {
     let Build { command, pre, post, .. } = bs;
 
     if should_build_deps() {
@@ -177,7 +161,7 @@ pub async fn build(dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> Bu
         gen_dockerignore(dir);
         bar.inc(2);
 
-        let (status, out, err) = build_with_docker(dir, langr).await;
+        let (status, out, err) = build_with_docker(auth, dir, langr).await;
         bar.inc(3);
 
         if !status {
