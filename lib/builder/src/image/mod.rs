@@ -122,7 +122,7 @@ async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
     }
 }
 
-async fn init_centralized_auth() -> Auth {
+pub async fn init_centralized_auth() -> Auth {
     let config = ConfigSpec::new(None);
     let profile = config.aws.lambda.layers_profile.clone();
     let auth = init(profile.clone(), None).await;
