@@ -145,7 +145,7 @@ pub async fn invoke_emulator(
     let payload = read_payload_local(payload);
     match maybe_entity {
         Some(e) => {
-            let (entity, component) = Entity::as_entity_component(&e);
+            let (entity, _component) = Entity::as_entity_component(&e);
             match entity {
                 Entity::Function => function::invoke_emulator(&payload).await,
                 Entity::State => {

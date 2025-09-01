@@ -61,7 +61,7 @@ async fn build_with_docker(
 
     let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
 
-    u::runcmd_stream(&create_cont_str, dir);
+    u::sh(&create_cont_str, dir);
 
     let cmd_str = if code_only {
         format!("docker build --platform=linux/amd64 -t {} .", name)

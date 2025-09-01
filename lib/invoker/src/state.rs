@@ -78,7 +78,7 @@ pub async fn invoke_emulator(
     payload: &str
 ) {
 
-    let Auth { region, account, .. } = auth;
+    let Auth { region, .. } = auth;
     let role = "arn:aws:iam::012345678901:role/DummyRole";
     let arn = auth.sfn_arn(fqn);
     let cmd_pre = format!("AWS_REGION={} AWS_PROFILE={} aws stepfunctions --endpoint http://localhost:8083", region, &auth.name);
