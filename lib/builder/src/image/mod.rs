@@ -57,7 +57,9 @@ async fn build_with_docker(
     let secret_file = format!("/tmp/{}-secret.txt", cont_name);
     let session_file = format!("/tmp/{}-session.txt", cont_name);
 
-    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name cont_{cont_name} --use --bootstrap");
+    let container_sha = format!("{}_{}", cont_name, u::checksum_str(dir));
+
+    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
 
     u::runcmd_stream(&create_cont_str, dir);
 
@@ -72,7 +74,7 @@ async fn build_with_docker(
         u::write_str(&secret_file, &secret);
         u::write_str(&session_file, &token);
 
-        format!("docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder cont_{cont_name} --build-context shared={root} .",
+        format!("docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
         name, &key_file, &secret_file, &session_file)
     };
 
@@ -102,8 +104,37 @@ fn find_base_image_uri(uri: &str, version: Option<String>) -> String {
     format!("{}_{}_base_{}", prefix, fname, version)
 }
 
+
+async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            let role = match assume_role {
+                Some(r) => Some(r),
+                None => {
+                    let config = composer::config(&kit::pwd());
+                    let p = u::maybe_string(profile.clone(), "default");
+                    config.ci.roles.get(&p).cloned()
+                }
+            };
+            Auth::new(profile.clone(), role).await
+        }
+        Err(_) => Auth::new(profile.clone(), assume_role).await,
+    }
+}
+
+async fn init_centralized_auth() -> Auth {
+    let config = ConfigSpec::new(None);
+    let profile = config.aws.lambda.layers_profile.clone();
+    let auth = init(profile.clone(), None).await;
+    let centralized = auth
+        .assume(profile.clone(), config.role_to_assume(profile))
+        .await;
+    centralized
+}
+
+
 pub async fn build(
-    auth: &Auth,
+    _auth: &Auth,
     dir: &str,
     name: &str,
     langr: &LangRuntime,
@@ -113,6 +144,8 @@ pub async fn build(
 ) -> BuildStatus {
 
     let Build { pre, post, version, .. } = bspec;
+
+    let auth = init_centralized_auth().await;
 
     aws_ecr::login(&auth, dir).await;
 
