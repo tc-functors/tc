@@ -57,6 +57,10 @@ async fn build_with_docker(
     let secret_file = format!("/tmp/{}-secret.txt", cont_name);
     let session_file = format!("/tmp/{}-session.txt", cont_name);
 
+    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name cont_{cont_name} --use --bootstrap");
+
+    u::runcmd_stream(&create_cont_str, dir);
+
     let cmd_str = if code_only {
         format!("docker build --platform=linux/amd64 -t {} .", name)
     } else {
@@ -68,7 +72,7 @@ async fn build_with_docker(
         u::write_str(&secret_file, &secret);
         u::write_str(&session_file, &token);
 
-        format!("docker buildx build --platform=linux/amd64 --ssh default --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={}  --build-context shared={root} .",
+        format!("docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder cont_{cont_name} --build-context shared={root} .",
         name, &key_file, &secret_file, &session_file)
     };
 
@@ -142,6 +146,7 @@ pub async fn build(
         // }
         gen_code_dockerfile(dir, langr, &base_image_uri);
     } else {
+        println!("Generating base docker file");
         gen_base_dockerfile(dir, langr, pre, post);
     }
 
