@@ -146,7 +146,6 @@ pub async fn build(
         // }
         gen_code_dockerfile(dir, langr, &base_image_uri);
     } else {
-        println!("Generating base docker file");
         gen_base_dockerfile(dir, langr, pre, post);
     }
 
