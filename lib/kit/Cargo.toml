@@ -30,6 +30,7 @@ tabled = "0.10.0"
 text_placeholder = "0.5.0"
 tracing = "0.1.37"
 uuid = { version = "1.4.1", features = ["v4"] }
+chksum = "0.4.0"
 
 [dependencies.tracing-subscriber]
 version = "0.3.15"
