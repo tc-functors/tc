@@ -55,6 +55,38 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     outs
 }
 
+async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            let role = match assume_role {
+                Some(r) => Some(r),
+                None => {
+                    let config = composer::config(&kit::pwd());
+                    let p = u::maybe_string(profile.clone(), "default");
+                    config.ci.roles.get(&p).cloned()
+                }
+            };
+            Auth::new(profile.clone(), role).await
+        }
+        Err(_) => Auth::new(profile.clone(), assume_role).await,
+    }
+}
+
+async fn init_centralized_auth(given_auth: &Auth) -> Auth {
+    let config = ConfigSpec::new(None);
+    let profile = config.aws.lambda.layers_profile.clone();
+    match profile {
+        Some(_) => {
+            let cauth = init(profile.clone(), None).await;
+            let centralized = cauth
+                .assume(profile.clone(), config.role_to_assume(profile))
+                .await;
+            centralized
+        },
+        None => given_auth.clone()
+    }
+}
+
 pub async fn build(
     auth: &Auth,
     function: &Function,
@@ -78,14 +110,15 @@ pub async fn build(
     };
 
     let name = u::maybe_string(name, &function.name);
+    let auth = init_centralized_auth(auth).await;
 
     let build_status = match kind {
-        BuildKind::Image => image::build(auth, dir, &name, langr, &runtime.uri, &build, code_only).await,
-        BuildKind::Inline => inline::build(auth, dir, &name, langr, &build).await,
+        BuildKind::Image => image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await,
+        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr),
         BuildKind::Slab => library::build(dir, langr),
-        BuildKind::Code => code::build(auth, dir, &name, langr, &build).await,
+        BuildKind::Code => code::build(&auth, dir, &name, langr, &build).await,
         BuildKind::Extension => extension::build(dir, &name, langr),
         BuildKind::Runtime => todo!(),
     };
@@ -147,17 +180,19 @@ pub fn clean(recursive: bool) {
 }
 
 pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
+    let auth = init_centralized_auth(auth).await;
     for build in builds {
         tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
             BuildKind::Layer | BuildKind::Library => layer::publish(&auth, &build).await,
-            BuildKind::Image => image::publish(auth, &build).await,
+            BuildKind::Image => image::publish(&auth, &build).await,
             _ => (),
         }
     }
 }
 
 pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
+    let auth = init_centralized_auth(auth).await;
     println!(
         "Attempting to sync latest code images for the following functions. This may take a while zzz..."
     );
@@ -168,7 +203,7 @@ pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
     for build in builds {
         println!("Syncing {}", &build.artifact);
         match build.kind {
-            BuildKind::Image => image::sync(auth, &build).await,
+            BuildKind::Image => image::sync(&auth, &build).await,
             _ => todo!(),
         }
     }
@@ -180,6 +215,7 @@ pub async fn promote(auth: &Auth, name: &str, dir: &str, version: Option<String>
 }
 
 pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
+    let auth = init_centralized_auth(auth).await;
     let function = composer::current_function(dir);
 
 
@@ -191,7 +227,7 @@ pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
             None => spec.kind.clone(),
         };
 
-        image::shell(auth, dir, &f.runtime.uri, spec.version, kind).await
+        image::shell(&auth, dir, &f.runtime.uri, spec.version, kind).await
 
     } else {
         println!("No function found");

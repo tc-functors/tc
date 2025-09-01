@@ -105,36 +105,9 @@ fn find_base_image_uri(uri: &str, version: Option<String>) -> String {
 }
 
 
-async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
-    match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => {
-            let role = match assume_role {
-                Some(r) => Some(r),
-                None => {
-                    let config = composer::config(&kit::pwd());
-                    let p = u::maybe_string(profile.clone(), "default");
-                    config.ci.roles.get(&p).cloned()
-                }
-            };
-            Auth::new(profile.clone(), role).await
-        }
-        Err(_) => Auth::new(profile.clone(), assume_role).await,
-    }
-}
-
-pub async fn init_centralized_auth() -> Auth {
-    let config = ConfigSpec::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    let auth = init(profile.clone(), None).await;
-    let centralized = auth
-        .assume(profile.clone(), config.role_to_assume(profile))
-        .await;
-    centralized
-}
-
 
 pub async fn build(
-    _auth: &Auth,
+    auth: &Auth,
     dir: &str,
     name: &str,
     langr: &LangRuntime,
@@ -144,8 +117,6 @@ pub async fn build(
 ) -> BuildStatus {
 
     let Build { pre, post, version, .. } = bspec;
-
-    let auth = init_centralized_auth().await;
 
     aws_ecr::login(&auth, dir).await;
 
@@ -203,10 +174,9 @@ pub async fn build(
     }
 }
 
-pub async fn publish(_auth: &Auth, build: &BuildOutput) {
+pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, artifact, .. } = build;
 
-    let auth = init_centralized_auth().await;
     aws_ecr::login(&auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
     u::run(&cmd, &dir);

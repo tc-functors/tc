@@ -9,7 +9,6 @@ use composer::{
 use crate::types::{
     BuildStatus,
 };
-use crate::image;
 
 use kit as u;
 use kit::sh;
@@ -129,7 +128,6 @@ pub async fn build(
 
             if !pre.is_empty() {
                 gen_dockerfile(dir, langr, pre);
-                let auth = image::init_centralized_auth().await;
                 let (status, out, err) = build_with_docker(&auth, name, dir).await;
                 sh("rm -f Dockerfile wrapper", dir);
                 if status {
