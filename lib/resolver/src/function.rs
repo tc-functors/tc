@@ -356,7 +356,10 @@ pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> Has
         Ok(_) => vec![],
         Err(_) => files_modified_uncommitted()
     };
-    let fmod_2 = files_modified_in_branch();
+    let fmod_2 = match std::env::var("TC_IGNORE_BRANCH_DIFF") {
+        Ok(_) => vec![],
+        Err(_) => files_modified_in_branch()
+    };
 
 
     let mut changed_fns: HashMap<String, Function> = HashMap::new();
