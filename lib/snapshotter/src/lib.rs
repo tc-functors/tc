@@ -3,7 +3,10 @@ use kit as u;
 mod aws;
 mod versions;
 
-use composer::{Topology, TopologyKind};
+use composer::{
+    Topology,
+    TopologyKind,
+};
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use tabled::{

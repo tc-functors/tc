@@ -1,8 +1,10 @@
-use std::fs::read_dir;
 use chksum::sha1;
+use rand::{
+    Rng,
+    distributions::Alphanumeric,
+};
+use std::fs::read_dir;
 use uuid::Uuid;
-use rand::{distributions::Alphanumeric, Rng};
-
 
 pub fn checksum_dir(dir: &str) -> String {
     let readdir = read_dir(dir).unwrap();

@@ -46,7 +46,7 @@ pub fn gen_base_dockerfile(
     dir: &str,
     runtime: &LangRuntime,
     pre: &Vec<String>,
-    post: &Vec<String>
+    post: &Vec<String>,
 ) {
     let pre_commands = deps_str(pre);
     let post_commands = deps_str(post);

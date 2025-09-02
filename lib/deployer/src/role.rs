@@ -2,14 +2,14 @@ use crate::aws::{
     iam,
     iam::Role,
 };
-use std::collections::HashMap;
 use authorizer::Auth;
 use composer;
+use std::collections::HashMap;
 
 fn should_delete() -> bool {
     match std::env::var("TC_FORCE_DELETE") {
         Ok(_) => true,
-        Err(_) => false
+        Err(_) => false,
     }
 }
 
@@ -24,14 +24,19 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
                 policy_arn: role.policy_arn.clone(),
                 policy_name: role.policy_name.clone(),
                 policy_doc: role.policy.to_string(),
-                tags: None
+                tags: None,
             };
             let _ = r.delete().await;
         }
     }
 }
 
-async fn create_aux(profile: String, role_arn: Option<String>, role: composer::Role, tags: HashMap<String, String>) {
+async fn create_aux(
+    profile: String,
+    role_arn: Option<String>,
+    role: composer::Role,
+    tags: HashMap<String, String>,
+) {
     let auth = Auth::new(Some(profile), role_arn).await;
     let client = iam::make_client(&auth).await;
 
@@ -42,7 +47,7 @@ async fn create_aux(profile: String, role_arn: Option<String>, role: composer::R
         policy_arn: role.policy_arn.clone(),
         policy_name: role.policy_name.clone(),
         policy_doc: role.policy.to_string(),
-        tags: Some(iam::make_tags(tags.clone()))
+        tags: Some(iam::make_tags(tags.clone())),
     };
 
     let _ = match role.kind.to_str().as_ref() {
@@ -64,8 +69,11 @@ async fn create_aux(profile: String, role_arn: Option<String>, role: composer::R
     };
 }
 
-pub async fn create_or_update(auth: &Auth, roles: &HashMap<String, composer::Role>, tags: &HashMap<String, String>) {
-
+pub async fn create_or_update(
+    auth: &Auth,
+    roles: &HashMap<String, composer::Role>,
+    tags: &HashMap<String, String>,
+) {
     let mut tasks = vec![];
 
     for (_, role) in roles.clone() {

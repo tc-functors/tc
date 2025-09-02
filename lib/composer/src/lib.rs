@@ -63,7 +63,7 @@ pub fn config(dir: &str) -> ConfigSpec {
 fn should_recurse(given: bool, maybe_bool: Option<bool>) -> bool {
     match maybe_bool {
         Some(b) => b,
-        None => given
+        None => given,
     }
 }
 
@@ -73,7 +73,6 @@ pub fn compose(dir: &str, recursive: bool) -> Topology {
     let recurse = should_recurse(recursive, spec.recursive);
     Topology::new(dir, recurse, false)
 }
-
 
 pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
     let f = format!("{}/topology.yml", dir);
@@ -145,7 +144,6 @@ pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     h
 }
 
-
 // deprecated
 pub fn find_layers() -> Vec<Layer> {
     let dir = u::pwd();
@@ -186,22 +184,20 @@ pub fn is_topology_dir(dir: &str) -> bool {
 
 // display
 
-
 pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
     match format {
         "table" => display::topology::print_stats(topologies),
         "tree" => {
             println!("")
-        },
-        _ => ()
+        }
+        _ => (),
     }
 }
 
 pub fn display_root() {
     let topologies = list_topologies();
     display::topology::print_stats(topologies)
- }
-
+}
 
 pub fn display_topology(dir: &str, format: &str, recursive: bool) {
     let topology = compose(&dir, recursive);
@@ -223,22 +219,22 @@ pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
             if let Some(f) = topology.current_function(dir) {
                 u::pp_json(&f)
             }
-        },
+        }
         "versions" => {
             let versions = lookup_versions(dir);
             display::topology::print_versions(versions, f);
-        },
+        }
 
         "stats" => {
             let topologies = compose_root(dir, true);
             display::topology::print_stats(topologies)
-        },
+        }
 
         "roles" => {
             let topology = compose(&dir, recursive);
             u::pp_json(&topology.roles);
         }
-        _ =>  {
+        _ => {
             let topology = compose(&dir, recursive);
             display::try_display(&topology, e, format)
         }
@@ -294,15 +290,37 @@ pub fn count_of(topology: &Topology) -> String {
 }
 
 pub fn entities_of(topology: &Topology) -> Vec<Entity> {
-    let Topology { routes, events, channels, queues, functions, pages, mutations, flow, .. } = topology;
+    let Topology {
+        routes,
+        events,
+        channels,
+        queues,
+        functions,
+        pages,
+        mutations,
+        flow,
+        ..
+    } = topology;
     let mut xs: Vec<Entity> = vec![];
 
-    if functions.len() > 0 { xs.push(Entity::Function) }
-    if routes.len() > 0 { xs.push(Entity::Route) }
-    if events.len() > 0 { xs.push(Entity::Event) }
-    if pages.len() > 0 { xs.push(Entity::Page) }
-    if channels.len() > 0 { xs.push(Entity::Channel) }
-    if queues.len() > 0 { xs.push(Entity::Queue) }
+    if functions.len() > 0 {
+        xs.push(Entity::Function)
+    }
+    if routes.len() > 0 {
+        xs.push(Entity::Route)
+    }
+    if events.len() > 0 {
+        xs.push(Entity::Event)
+    }
+    if pages.len() > 0 {
+        xs.push(Entity::Page)
+    }
+    if channels.len() > 0 {
+        xs.push(Entity::Channel)
+    }
+    if queues.len() > 0 {
+        xs.push(Entity::Queue)
+    }
     if let Some(_f) = flow {
         xs.push(Entity::State);
     }
@@ -312,7 +330,6 @@ pub fn entities_of(topology: &Topology) -> Vec<Entity> {
                 xs.push(Entity::Mutation)
             }
         }
-
     }
 
     xs

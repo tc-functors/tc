@@ -52,7 +52,7 @@ pub async fn resolve(
     sandbox: &str,
     topology: &Topology,
     cache: bool,
-    diff: bool
+    diff: bool,
 ) -> Topology {
     let maybe_topology = if cache {
         read_cached_topology(&auth.name, &topology.namespace, sandbox).await
@@ -63,9 +63,7 @@ pub async fn resolve(
     match maybe_topology {
         Some(t) => t,
         None => {
-            let mut root = topology::resolve(
-                topology, topology, auth, sandbox, diff
-            ).await;
+            let mut root = topology::resolve(topology, topology, auth, sandbox, diff).await;
             let nodes = &topology.nodes;
             let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
             // FIXME: recurse
@@ -87,7 +85,7 @@ async fn resolve_entity(
     sandbox: &str,
     topology: &Topology,
     entity: &Entity,
-    diff: bool
+    diff: bool,
 ) -> Topology {
     let mut root = topology::resolve_entity(topology, auth, sandbox, entity, diff).await;
     let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
@@ -106,20 +104,21 @@ async fn resolve_entity_component(
     sandbox: &str,
     topology: &Topology,
     entity: &Entity,
-    component: &str
+    component: &str,
 ) -> Topology {
-    let mut root = topology::resolve_entity_component(topology, auth, sandbox, entity, component).await;
+    let mut root =
+        topology::resolve_entity_component(topology, auth, sandbox, entity, component).await;
     let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
     let nodes = &topology.nodes;
 
     for (name, node) in nodes {
-        let node_t = topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
+        let node_t =
+            topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
         resolved_nodes.insert(name.to_string(), node_t);
     }
     root.nodes = resolved_nodes;
     root
 }
-
 
 pub async fn try_resolve(
     auth: &Auth,
@@ -127,7 +126,7 @@ pub async fn try_resolve(
     topology: &Topology,
     maybe_entity: &Option<String>,
     cache: bool,
-    diff: bool
+    diff: bool,
 ) -> Topology {
     match maybe_entity {
         Some(e) => {

@@ -1,14 +1,18 @@
 use crate::aws::gateway;
 use authorizer::Auth;
+use composer::Route;
 use kit as u;
 use kit::*;
-use std::collections::HashMap;
 use serde_json::Value;
-use composer::Route;
+use std::collections::HashMap;
 
 pub async fn request(auth: &Auth, route: &Route) -> Value {
-
-    let Route { gateway, path, method, .. } = route;
+    let Route {
+        gateway,
+        path,
+        method,
+        ..
+    } = route;
 
     let client = gateway::make_client(auth).await;
     let maybe_api_id = gateway::find_api_id(&client, gateway).await;
@@ -28,11 +32,8 @@ pub async fn request(auth: &Auth, route: &Route) -> Value {
         match method.as_ref() {
             "GET" => u::http_get(&url, h).await,
             "POST" => todo!(),
-            &_ => todo!()
+            &_ => todo!(),
         }
-
-
-
     } else {
         panic!("No gateway found");
     }

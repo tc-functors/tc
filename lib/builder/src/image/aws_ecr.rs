@@ -55,7 +55,11 @@ pub async fn login(auth: &Auth, dir: &str) {
     }
 }
 
-async fn list_images_by_token(client: &Client, repo: &str, token: &str) -> (Vec<String>, Option<String>) {
+async fn list_images_by_token(
+    client: &Client,
+    repo: &str,
+    token: &str,
+) -> (Vec<String>, Option<String>) {
     let res = client
         .list_images()
         .next_token(token)
@@ -93,8 +97,7 @@ async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
         Some(tk) => {
             token = Some(tk);
             while token.is_some() {
-                let (xs, t) =
-                    list_images_by_token(&client, repo, &token.unwrap()).await;
+                let (xs, t) = list_images_by_token(&client, repo, &token.unwrap()).await;
                 images.extend(xs.clone());
                 token = t.clone();
                 if let Some(x) = t {
@@ -103,7 +106,7 @@ async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
                     }
                 }
             }
-        },
+        }
         None => (),
     }
     images

@@ -13,12 +13,14 @@ mod tag;
 mod template;
 pub mod version;
 
-use crate::Entity;
-use crate::spec::{
-    TopologyKind,
-    TopologySpec,
-    config::ConfigSpec,
-    TestSpec
+use crate::{
+    Entity,
+    spec::{
+        TestSpec,
+        TopologyKind,
+        TopologySpec,
+        config::ConfigSpec,
+    },
 };
 pub use channel::Channel;
 pub use event::Event;
@@ -30,7 +32,10 @@ pub use function::{
 };
 use kit as u;
 use kit::*;
-pub use mutation::{Mutation, Resolver};
+pub use mutation::{
+    Mutation,
+    Resolver,
+};
 pub use page::Page;
 pub use pool::Pool;
 pub use queue::Queue;
@@ -73,7 +78,7 @@ pub struct Topology {
     pub flow: Option<Flow>,
     pub config: ConfigSpec,
     pub roles: HashMap<String, Role>,
-    pub tests: HashMap<String, TestSpec>
+    pub tests: HashMap<String, TestSpec>,
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -235,7 +240,10 @@ fn function_dirs(dir: &str) -> Vec<String> {
         xs.append(&mut xm)
     }
     for d in dirs {
-        if path_exists(&d, "function.yml") || path_exists(&d, "function.json") || is_inferred_dir(&d) {
+        if path_exists(&d, "function.yml")
+            || path_exists(&d, "function.json")
+            || is_inferred_dir(&d)
+        {
             xs.push(d.to_string())
         }
     }
@@ -391,7 +399,7 @@ fn make_events(
     fqn: &str,
     config: &ConfigSpec,
     fns: &HashMap<String, Function>,
-    resolvers: &HashMap<String, Resolver>
+    resolvers: &HashMap<String, Resolver>,
 ) -> HashMap<String, Event> {
     let events = &spec.events;
     let mut h: HashMap<String, Event> = HashMap::new();
@@ -467,7 +475,13 @@ fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool>
     }
 }
 
-fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: &usize, events: &usize, states: &Option<Flow>) -> HashMap<String, Role> {
+fn make_roles(
+    functions: &HashMap<String, Function>,
+    mutations: &usize,
+    routes: &usize,
+    events: &usize,
+    states: &Option<Flow>,
+) -> HashMap<String, Role> {
     let mut h: HashMap<String, Role> = HashMap::new();
     for (_, f) in functions {
         if &f.runtime.role.kind.to_str() != "provided" {
@@ -497,7 +511,7 @@ fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: 
     for b in entities {
         let r = match std::env::var("TC_LEGACY_ROLES") {
             Ok(_) => Role::provided_by_entity(b),
-            Err(_) =>  Role::default(b)
+            Err(_) => Role::default(b),
         };
         h.insert(r.name.clone(), r);
     }
@@ -507,10 +521,10 @@ fn make_roles(functions: &HashMap<String, Function>, mutations: &usize, routes: 
 fn make_test(
     t: Option<HashMap<String, TestSpec>>,
     fns: &HashMap<String, Function>,
-) -> HashMap<String, TestSpec>{
+) -> HashMap<String, TestSpec> {
     let mut tspecs = match t {
         Some(spec) => spec,
-        None => HashMap::new()
+        None => HashMap::new(),
     };
     for (fname, f) in fns {
         for (name, mut tspec) in f.test.clone() {
@@ -573,7 +587,7 @@ fn make(
 
     let resolvers = match &mutations.get("default") {
         Some(m) => m.resolvers.clone(),
-        None => HashMap::new()
+        None => HashMap::new(),
     };
 
     let events = make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers);
@@ -589,7 +603,13 @@ fn make(
         dir: dir.to_string(),
         hyphenated_names: spec.hyphenated_names.to_owned(),
         nodes: nodes,
-        roles: make_roles(&functions, &resolvers.len(), &routes.len(), &events.len(), &flow),
+        roles: make_roles(
+            &functions,
+            &resolvers.len(),
+            &routes.len(),
+            &events.len(),
+            &flow,
+        ),
         events: events,
         routes: routes,
         tests: make_test(spec.tests.clone(), &functions),

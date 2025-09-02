@@ -1,6 +1,11 @@
-use super::{template, Role};
-use crate::spec::ScheduleSpec;
-use crate::Entity;
+use super::{
+    Role,
+    template,
+};
+use crate::{
+    Entity,
+    spec::ScheduleSpec,
+};
 use kit as u;
 use kit::*;
 use serde_derive::{

@@ -101,7 +101,13 @@ pub async fn trigger_release(repo: &str, prefix: &str, version: &str, suffix: &s
     url
 }
 
-pub async fn trigger_tag(repo: &str, env: &str, sandbox: &str, prefix: &str, version: &str) -> String {
+pub async fn trigger_tag(
+    repo: &str,
+    env: &str,
+    sandbox: &str,
+    prefix: &str,
+    version: &str,
+) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
         r#"
@@ -122,7 +128,13 @@ pub async fn trigger_tag(repo: &str, env: &str, sandbox: &str, prefix: &str, ver
     ci.trigger_workflow(payload).await
 }
 
-pub async fn trigger_branch(repo: &str, env: &str, sandbox: &str, prefix: &str, branch: &str) -> String {
+pub async fn trigger_branch(
+    repo: &str,
+    env: &str,
+    sandbox: &str,
+    prefix: &str,
+    branch: &str,
+) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
         r#"
@@ -157,13 +169,9 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
               "api_call": true
            }}}}"#
     );
-    println!(
-        "Triggering build {}:{}:{}",
-        prefix, function, branch
-    );
+    println!("Triggering build {}:{}:{}", prefix, function, branch);
     ci.trigger_workflow(payload).await
 }
-
 
 pub async fn update_var(repo: &str, key: &str, val: &str) {
     let ci = Circle::init(repo);

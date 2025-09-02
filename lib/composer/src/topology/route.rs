@@ -1,7 +1,7 @@
 use super::{
+    Role,
     function::Function,
     template,
-    Role
 };
 use crate::{
     Entity,
@@ -81,7 +81,7 @@ impl Route {
         spec: &TopologySpec,
         rspec: &RouteSpec,
         fns: &HashMap<String, Function>,
-        skip: bool
+        skip: bool,
     ) -> Route {
         let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
@@ -158,7 +158,7 @@ impl Route {
             request_template: make_request_template(&method, rspec.request_template.clone()),
             response_template: make_response_template(),
             cors: rspec.cors.clone(),
-            skip: skip
+            skip: skip,
         }
     }
 }

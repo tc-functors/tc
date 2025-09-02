@@ -1,4 +1,7 @@
-use super::{template, Role};
+use super::{
+    Role,
+    template,
+};
 use crate::{
     Entity,
     spec::{

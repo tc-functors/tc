@@ -1,9 +1,7 @@
 mod aws;
 
-use aws::{
-    eventbridge,
-};
 use authorizer::Auth;
+use aws::eventbridge;
 use composer::ConfigSpec;
 
 fn target_id(name: &str) -> String {

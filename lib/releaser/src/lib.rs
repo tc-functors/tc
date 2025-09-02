@@ -39,5 +39,4 @@ pub async fn deploy_branch(env: &str, service: &str, sandbox: &str, branch: &str
 pub async fn build(service: &str, function: &str, branch: &str) -> String {
     let repo = current_repo();
     circleci::trigger_build(&repo, service, function, branch).await
-
 }

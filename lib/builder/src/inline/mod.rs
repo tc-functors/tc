@@ -60,7 +60,12 @@ async fn get_token(auth: &Auth) -> String {
     }
 }
 
-async fn build_with_docker(auth: &Auth, dir: &str, langr: &LangRuntime, name: &str) -> (bool, String, String) {
+async fn build_with_docker(
+    auth: &Auth,
+    dir: &str,
+    langr: &LangRuntime,
+    name: &str,
+) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
         Lang::Node => get_token(auth).await,
@@ -68,7 +73,9 @@ async fn build_with_docker(auth: &Auth, dir: &str, langr: &LangRuntime, name: &s
     };
     let container_sha = format!("{}_{}", name, u::checksum_str(dir));
 
-    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
+    let create_cont_str = format!(
+        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
+    );
     u::sh(&create_cont_str, dir);
 
     let cmd_str = match std::env::var("DOCKER_SSH") {
@@ -149,8 +156,16 @@ fn should_build_deps() -> bool {
     }
 }
 
-pub async fn build(auth: &Auth, dir: &str, name: &str, langr: &LangRuntime, bs: &Build) -> BuildStatus {
-    let Build { command, pre, post, .. } = bs;
+pub async fn build(
+    auth: &Auth,
+    dir: &str,
+    name: &str,
+    langr: &LangRuntime,
+    bs: &Build,
+) -> BuildStatus {
+    let Build {
+        command, pre, post, ..
+    } = bs;
 
     if should_build_deps() {
         sh("rm -rf lambda.zip deps.zip build", &dir);

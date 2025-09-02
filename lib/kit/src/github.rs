@@ -1,12 +1,14 @@
+use crate::{
+    core::nth,
+    http,
+    io::*,
+};
 use serde_derive::Deserialize;
 use std::{
     collections::HashMap,
     env,
     fs,
 };
-use crate::core::nth;
-use crate::io::*;
-use crate::http;
 
 fn arch_os() -> String {
     let os = env::consts::OS;
@@ -51,8 +53,14 @@ impl Github {
     fn headers(&self) -> HashMap<String, String> {
         let mut h = HashMap::new();
         //h.insert(String::from("authorization"), format!("Bearer {}", self.token));
-        h.insert(String::from("accept"), String::from("application/vnd.github+json"));
-        h.insert(String::from("x-github-api-version"), String::from("2022-11-28"));
+        h.insert(
+            String::from("accept"),
+            String::from("application/vnd.github+json"),
+        );
+        h.insert(
+            String::from("x-github-api-version"),
+            String::from("2022-11-28"),
+        );
         h.insert(
             String::from("user-agent"),
             String::from("libcurl/7.64.1 r-curl/4.3.2 httr/1.4.2"),

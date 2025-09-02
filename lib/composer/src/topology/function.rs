@@ -49,9 +49,9 @@ fn is_singular_function_dir() -> bool {
     let function_file = "function.yml";
     let function_file_json = "function.json";
     let topology_file = "topology.yml";
-    (u::file_exists(function_file) || u::file_exists(function_file_json)) && u::file_exists(topology_file)
+    (u::file_exists(function_file) || u::file_exists(function_file_json))
+        && u::file_exists(topology_file)
 }
-
 
 fn find_fqn(given_fqn: &str, namespace: &str, name: &str, format: &str) -> String {
     if !given_fqn.is_empty() {
@@ -100,7 +100,6 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
     }
 }
 
-
 fn files_modified() -> Vec<String> {
     match std::env::var("CIRCLE_SHA1") {
         Ok(sha) => {
@@ -127,22 +126,21 @@ fn is_dirty(dir: &str) -> bool {
     let modified = files_modified();
     for m in modified {
         if m.starts_with(dir) {
-            return true
-       }
+            return true;
+        }
     }
-    return false
+    return false;
 }
 
-fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec>{
+fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec> {
     match t {
         Some(spec) => spec,
-        None => HashMap::new()
+        None => HashMap::new(),
     }
 }
 
 impl Function {
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
-
         let config = ConfigSpec::new(None);
 
         let fspec = FunctionSpec::new(dir);

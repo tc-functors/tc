@@ -54,14 +54,12 @@ pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     apis.get(name).cloned()
 }
 
-
 #[derive(Clone, Debug)]
 pub struct Api {
     pub id: String,
     pub https: String,
     pub wss: String,
 }
-
 
 async fn list_graphql_apis(client: &Client) -> HashMap<String, Api> {
     let mut h: HashMap<String, Api> = HashMap::new();

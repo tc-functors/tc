@@ -87,11 +87,7 @@ pub async fn invoke_sync(client: &Client, name: &str, payload: &str) -> Result<S
         .await?;
 
     match r.payload {
-        Some(p) => {
-            Ok(String::from_utf8_lossy(&p.into_inner()).to_string())
-        }
-        _ => {
-            Ok(String::from(""))
-        }
+        Some(p) => Ok(String::from_utf8_lossy(&p.into_inner()).to_string()),
+        _ => Ok(String::from("")),
     }
 }

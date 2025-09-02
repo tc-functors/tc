@@ -71,7 +71,9 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
 
     tracing::debug!(
         "Uploading code from {} to s3://{}/{}",
-        dist, bucket, bucket_prefix
+        dist,
+        bucket,
+        bucket_prefix
     );
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 
@@ -131,7 +133,7 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>) {
 
         if !u::path_exists(&u::pwd(), dist) {
             println!("Dist directory not found, aborting");
-                return;
+            return;
         }
 
         let s3_client = s3::make_client(auth).await;
@@ -170,8 +172,6 @@ pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str)
         }
     }
 }
-
-
 
 // pub async fn update_config(auth: &Auth, topology: &HashMap<String, Topology>) {
 //     let rest_url = "";

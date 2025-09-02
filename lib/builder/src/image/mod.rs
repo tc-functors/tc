@@ -1,44 +1,34 @@
 mod aws_ecr;
 mod python;
 
-use itertools::Itertools;
 use crate::types::{
     BuildOutput,
     BuildStatus,
 };
-
 use authorizer::Auth;
 use colored::Colorize;
 use composer::{
-    LangRuntime,
     Build,
+    LangRuntime,
     spec::{
+        BuildKind,
         ConfigSpec,
         Lang,
-        BuildKind
     },
 };
+use itertools::Itertools;
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
 
-fn gen_base_dockerfile(
-    dir: &str,
-    runtime: &LangRuntime,
-    pre: &Vec<String>,
-    post: &Vec<String>
-) {
+fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     match runtime.to_lang() {
         Lang::Python => python::gen_base_dockerfile(dir, runtime, pre, post),
         _ => todo!(),
     }
 }
 
-fn gen_code_dockerfile(
-    dir: &str,
-    runtime: &LangRuntime,
-    base_image_uri: &str,
-) {
+fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str) {
     match runtime.to_lang() {
         Lang::Python => python::gen_code_dockerfile(dir, base_image_uri),
         _ => todo!(),
@@ -52,14 +42,15 @@ async fn build_with_docker(
     name: &str,
     code_only: bool,
 ) -> (bool, String, String) {
-
     let key_file = format!("/tmp/{}-key.txt", cont_name);
     let secret_file = format!("/tmp/{}-secret.txt", cont_name);
     let session_file = format!("/tmp/{}-session.txt", cont_name);
 
     let container_sha = format!("{}_{}", cont_name, u::checksum_str(dir));
 
-    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
+    let create_cont_str = format!(
+        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
+    );
 
     u::sh(&create_cont_str, dir);
 
@@ -69,13 +60,14 @@ async fn build_with_docker(
         let root = &u::root();
         let (key, secret, token) = auth.get_keys().await;
 
-
         u::write_str(&key_file, &key);
         u::write_str(&secret_file, &secret);
         u::write_str(&session_file, &token);
 
-        format!("docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
-        name, &key_file, &secret_file, &session_file)
+        format!(
+            "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
+            name, &key_file, &secret_file, &session_file
+        )
     };
 
     tracing::debug!("Building with docker {}", &cmd_str);
@@ -104,8 +96,6 @@ fn find_base_image_uri(uri: &str, version: Option<String>) -> String {
     format!("{}_{}_base_{}", prefix, fname, version)
 }
 
-
-
 pub async fn build(
     auth: &Auth,
     dir: &str,
@@ -113,10 +103,11 @@ pub async fn build(
     langr: &LangRuntime,
     uri: &str,
     bspec: &Build,
-    code_only: bool
+    code_only: bool,
 ) -> BuildStatus {
-
-    let Build { pre, post, version, .. } = bspec;
+    let Build {
+        pre, post, version, ..
+    } = bspec;
 
     aws_ecr::login(&auth, dir).await;
 
@@ -129,11 +120,7 @@ pub async fn build(
 
     let bar = u::progress(3);
 
-    let prefix = format!(
-        "Building {} ({}/image)",
-        name.blue(),
-        langr.to_str(),
-    );
+    let prefix = format!("Building {} ({}/image)", name.blue(), langr.to_str(),);
 
     bar.set_prefix(prefix);
 
@@ -183,7 +170,12 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
 }
 
 pub async fn sync(auth: &Auth, build: &BuildOutput) {
-    let BuildOutput { dir, artifact, version, .. } = build;
+    let BuildOutput {
+        dir,
+        artifact,
+        version,
+        ..
+    } = build;
     aws_ecr::login(auth, &dir).await;
     let base_image_uri = find_base_image_uri(&artifact, version.clone());
     println!("Pulling {}", &base_image_uri);
@@ -205,7 +197,7 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, k
     let uri = match kind {
         BuildKind::Image => find_base_image_uri(&uri, version.clone()),
         BuildKind::Code => uri,
-        _ => uri
+        _ => uri,
     };
     let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
     tracing::debug!("{}", cmd);

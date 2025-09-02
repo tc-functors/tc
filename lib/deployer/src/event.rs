@@ -97,7 +97,10 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
         };
 
         if target_arn.is_empty() || target_arn == "none" {
-            println!("WARN: Event Target {}'s arn is invalid: {}. perhaps retry ?", &target.id, &target_arn);
+            println!(
+                "WARN: Event Target {}'s arn is invalid: {}. perhaps retry ?",
+                &target.id, &target_arn
+            );
             std::process::exit(1);
         }
 

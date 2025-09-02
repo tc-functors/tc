@@ -2,15 +2,17 @@ use super::{
     Role,
     template,
 };
-use crate::spec::TopologySpec;
+use crate::{
+    Entity,
+    spec::TopologySpec,
+};
+use kit as u;
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use serde_json::Value;
-use crate::Entity;
-use kit as u;
 
 mod sfn;
 mod sfn_ext;

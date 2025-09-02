@@ -156,13 +156,9 @@ impl StateMachine {
                     &name,
                     state.as_str().green()
                 ));
-
             }
             Err(e) => panic!("{:?}", e),
         }
-
-
-
     }
 
     async fn update(self, arn: &str) {
@@ -170,7 +166,8 @@ impl StateMachine {
         println!("Updating state {} (permissions)", &self.name);
         let tracing = make_tracing_config();
 
-        let _ = &self.client
+        let _ = &self
+            .client
             .update_state_machine()
             .state_machine_arn(arn.to_string())
             .role_arn(&self.role_arn)
@@ -178,8 +175,8 @@ impl StateMachine {
             .await
             .unwrap();
 
-
-        // BAFFLING: sfn update is eventually consistent. Active state needs a second or more to reflect
+        // BAFFLING: sfn update is eventually consistent. Active state needs a second or more to
+        // reflect
         sleep(1000);
         println!("Updating state {} (definition)", &self.name);
 

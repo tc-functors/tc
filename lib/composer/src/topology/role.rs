@@ -1,17 +1,15 @@
 use super::template;
 use crate::Entity;
-use kit::*;
 use kit as u;
-mod trust;
+use kit::*;
 mod policy;
+mod trust;
+use policy::Policy;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-
-
 use trust::Trust;
-use policy::Policy;
 
 fn read_policy(path: &str) -> Policy {
     tracing::debug!("Reading {}", path);
@@ -24,16 +22,15 @@ fn read_policy(path: &str) -> Policy {
 pub enum Kind {
     Base,
     Override,
-    Provided
+    Provided,
 }
 
 impl Kind {
-
     pub fn to_str(&self) -> String {
         match self {
             Kind::Base => s!("base"),
             Kind::Override => s!("override"),
-            Kind::Provided => s!("provided")
+            Kind::Provided => s!("provided"),
         }
     }
 }
@@ -45,7 +42,7 @@ fn find_legacy_role_name(entity: Entity) -> String {
         Entity::Route => s!("tc-base-api-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
         Entity::State => s!("tc-base-sfn-role"),
-        _ => s!("tc-base-lambda-role")
+        _ => s!("tc-base-lambda-role"),
     }
 }
 
@@ -60,7 +57,6 @@ pub struct Role {
     pub policy_arn: String,
 }
 
-
 fn legacy_name_of(entity: Entity) -> String {
     match entity {
         Entity::Route => s!("tc-base-api-role"),
@@ -74,13 +70,11 @@ fn legacy_name_of(entity: Entity) -> String {
 impl Role {
     pub fn new(entity: Entity, role_file: &str, namespace: &str, entity_name: &str) -> Role {
         if u::file_exists(&role_file) {
-
-
             let abbr = if entity_name.chars().count() > 10 {
                 u::abbreviate(entity_name, "-")
             } else {
                 entity_name.to_string()
-             };
+            };
             let name = format!("tc-{}-{}-{{{{sandbox}}}}", namespace, abbr);
             Role {
                 name: s!(&name),
@@ -106,7 +100,6 @@ impl Role {
     }
 
     pub fn default(entity: Entity) -> Role {
-
         match std::env::var("TC_LEGACY_ROLES") {
             Ok(_) => {
                 let name = find_legacy_role_name(entity.clone());
@@ -119,8 +112,7 @@ impl Role {
                     policy_name: s!(&name),
                     policy_arn: template::policy_arn(&name),
                 }
-
-            },
+            }
 
             Err(_) => {
                 let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
@@ -143,8 +135,6 @@ impl Role {
             }
         }
     }
-
-
 
     pub fn provided(name: &str) -> Role {
         Role {
@@ -182,8 +172,5 @@ impl Role {
                 template::role_arn(&name)
             }
         }
-
     }
-
-
 }

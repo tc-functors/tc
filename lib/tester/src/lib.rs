@@ -1,14 +1,27 @@
+use assert_json_diff::{
+    assert_json_eq,
+    assert_json_include,
+};
 use authorizer::Auth;
-use composer::{Function, Entity, Topology};
-use composer::spec::TestSpec;
-use invoker::aws::{lambda, sfn, eventbridge};
-use std::collections::HashMap;
 use colored::Colorize;
+use composer::{
+    Entity,
+    Function,
+    Topology,
+    spec::TestSpec,
+};
+use invoker::aws::{
+    eventbridge,
+    lambda,
+    sfn,
+};
+use jsonpath_rust::JsonPath;
 use kit as u;
 use serde_json::Value;
-use jsonpath_rust::JsonPath;
-use assert_json_diff::{assert_json_eq, assert_json_include};
-use std::time::Instant;
+use std::{
+    collections::HashMap,
+    time::Instant,
+};
 
 fn render(s: &str, sandbox: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
@@ -18,10 +31,7 @@ fn render(s: &str, sandbox: &str) -> String {
 
 fn assert_json_path(data: Value, expected: Value, path: &str) {
     let vec: Vec<&Value> = data.query(path).unwrap();
-    assert_json_eq!(
-        vec.iter().collect::<Vec<_>>(),
-        vec![&expected]
-    );
+    assert_json_eq!(vec.iter().collect::<Vec<_>>(), vec![&expected]);
 }
 
 fn assert_case(expected: Option<String>, response: &str, cond: Option<String>) {
@@ -36,7 +46,7 @@ fn assert_case(expected: Option<String>, response: &str, cond: Option<String>) {
         "includes" | "contains" => {
             assert_json_include!(actual: response, expected: expected)
         }
-        _ => assert_json_path(response, expected, &cond)
+        _ => assert_json_path(response, expected, &cond),
     }
 }
 
@@ -45,7 +55,7 @@ async fn invoke_function(auth: &Auth, fqn: &str, payload: &str) -> String {
     let maybe_response = lambda::invoke_sync(&client, fqn, &payload).await;
     match maybe_response {
         Ok(r) => r,
-        Err(_) => panic!("Failed to execute test")
+        Err(_) => panic!("Failed to execute test"),
     }
 }
 
@@ -69,7 +79,13 @@ fn get_fqn(namespace: &str, topology: &Topology, name: &str) -> Option<String> {
     }
 }
 
-async fn invoke(auth: &Auth, namespace: &str, topology: &Topology, entity: &str, payload: &str) -> String {
+async fn invoke(
+    auth: &Auth,
+    namespace: &str,
+    topology: &Topology,
+    entity: &str,
+    payload: &str,
+) -> String {
     let (entity, component) = Entity::as_entity_component(entity);
     match entity {
         Entity::Function => {
@@ -77,12 +93,12 @@ async fn invoke(auth: &Auth, namespace: &str, topology: &Topology, entity: &str,
                 let maybe_fqn = get_fqn(namespace, topology, &c);
                 match maybe_fqn {
                     Some(fqn) => invoke_function(auth, &fqn, payload).await,
-                    None => panic!("No function defined")
+                    None => panic!("No function defined"),
                 }
             } else {
                 panic!("Component not specified")
             }
-        },
+        }
         Entity::State => {
             let client = sfn::make_client(auth).await;
             let arn = auth.sfn_arn(&topology.fqn);
@@ -99,25 +115,23 @@ async fn invoke(auth: &Auth, namespace: &str, topology: &Topology, entity: &str,
             };
             match maybe_response {
                 Some(r) => r,
-                None => panic!("Failed to execute test")
+                None => panic!("Failed to execute test"),
             }
-        },
+        }
         Entity::Event => {
             if let Some(c) = component {
                 if let Some(e) = &topology.events.get(&c) {
                     let client = eventbridge::make_client(auth).await;
                     let detail_type = &e.pattern.detail_type.first().unwrap();
                     let source = &e.pattern.source.first().unwrap();
-                    eventbridge::put_event(
-                        client, &e.bus, detail_type, source, payload
-                    ).await
+                    eventbridge::put_event(client, &e.bus, detail_type, source, payload).await
                 } else {
                     panic!("Event not found")
                 }
             } else {
                 panic!("No component defined")
             }
-        },
+        }
         Entity::Route => {
             if let Some(c) = component {
                 if let Some(r) = &topology.routes.get(&c) {
@@ -129,16 +143,20 @@ async fn invoke(auth: &Auth, namespace: &str, topology: &Topology, entity: &str,
             } else {
                 panic!("No component defined")
             }
+        }
 
-        },
-
-        _ => todo!()
-
+        _ => todo!(),
     }
 }
 
 async fn test_function_unit(auth: &Auth, fname: &str, fqn: &str, t: &TestSpec) {
-    let TestSpec { name, payload, expect, condition, .. } = t;
+    let TestSpec {
+        name,
+        payload,
+        expect,
+        condition,
+        ..
+    } = t;
     let start = Instant::now();
     let dir = u::pwd();
     let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
@@ -146,18 +164,22 @@ async fn test_function_unit(auth: &Auth, fname: &str, fqn: &str, t: &TestSpec) {
     assert_case(expect.clone(), &response, condition.clone());
     let name = match name {
         Some(n) => n,
-        None => fname
+        None => fname,
     };
     let duration = start.elapsed();
-    let _ = println!("Test unit {} (function/{}) ({}) {:#}",
-                     name,
-                     fname, "pass".green(), u::time_format(duration));
+    let _ = println!(
+        "Test unit {} (function/{}) ({}) {:#}",
+        name,
+        fname,
+        "pass".green(),
+        u::time_format(duration)
+    );
 }
 
 pub async fn test_function(auth: &Auth, sandbox: &str, function: &Function, unit: Option<String>) {
     let tspecs = &function.test;
     if let Some(u) = unit {
-        if let Some(t) =  tspecs.get(&u) {
+        if let Some(t) = tspecs.get(&u) {
             let fqn = render(&function.fqn, sandbox);
             test_function_unit(auth, &function.name, &fqn, &t).await;
         }
@@ -170,9 +192,21 @@ pub async fn test_function(auth: &Auth, sandbox: &str, function: &Function, unit
     }
 }
 
-pub async fn test_topology_unit(auth: &Auth, namespace: &str, name: &str, topology: &Topology, spec: &TestSpec) {
+pub async fn test_topology_unit(
+    auth: &Auth,
+    namespace: &str,
+    name: &str,
+    topology: &Topology,
+    spec: &TestSpec,
+) {
     let dir = u::pwd();
-    let TestSpec { payload, expect, condition, entity, .. } = spec;
+    let TestSpec {
+        payload,
+        expect,
+        condition,
+        entity,
+        ..
+    } = spec;
 
     tracing::debug!("Testing {}/{}", namespace, name);
 
@@ -185,11 +219,15 @@ pub async fn test_topology_unit(auth: &Auth, namespace: &str, name: &str, topolo
     assert_case(expect.clone(), &response, condition.clone());
 
     let duration = start.elapsed();
-    let _ = println!("[{}] {}/{}/{} ({:#})",
-                     "pass".green(), namespace.cyan(), &entity, name,
-                     u::time_format(duration));
+    let _ = println!(
+        "[{}] {}/{}/{} ({:#})",
+        "pass".green(),
+        namespace.cyan(),
+        &entity,
+        name,
+        u::time_format(duration)
+    );
 }
-
 
 fn get_tspecs(topology: &Topology) -> HashMap<String, TestSpec> {
     let mut tests: HashMap<String, TestSpec> = HashMap::new();
@@ -209,22 +247,13 @@ fn get_tspecs(topology: &Topology) -> HashMap<String, TestSpec> {
     tests
 }
 
-async fn test_topology_aux(
-    auth: &Auth,
-    name: String,
-    spec: TestSpec,
-    topology: &Topology
-) {
+async fn test_topology_aux(auth: &Auth, name: String, spec: TestSpec, topology: &Topology) {
     let cname = u::maybe_string(spec.name.clone(), &name);
     let namespace = u::maybe_string(spec.namespace.clone(), &topology.namespace);
     test_topology_unit(auth, &namespace, &cname, topology, &spec).await;
 }
 
-pub async fn test_topology(
-    auth: &Auth,
-    topology: &Topology,
-    unit: Option<String>
-) {
+pub async fn test_topology(auth: &Auth, topology: &Topology, unit: Option<String>) {
     let tspecs = get_tspecs(topology);
 
     if let Some(u) = unit {

@@ -1,39 +1,52 @@
-use composer::spec::{BuildKind, Lang};
-use composer::spec::function::{LangRuntime};
-use composer::topology::Role;
-use composer::Entity;
-use inquire::{Text, Select, InquireError, Confirm};
-use kit::*;
+use composer::{
+    Entity,
+    spec::{
+        BuildKind,
+        Lang,
+        function::LangRuntime,
+    },
+    topology::Role,
+};
+use inquire::{
+    Confirm,
+    InquireError,
+    Select,
+    Text,
+};
 use kit as u;
-use std::str::FromStr;
+use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
+use std::str::FromStr;
 
 // handler
 
 fn gen_py_handler() -> String {
-    format!(r#"
+    format!(
+        r#"
 def handler(event, context):
     return {{'status': 'ok'}}
-"#)
-
+"#
+    )
 }
 
 fn gen_ruby_handler() -> String {
-    format!(r#"
+    format!(
+        r#"
 require 'json'
 
 def handler(event:, context:)
     {{ event: JSON.generate(event), context: JSON.generate(context.inspect) }}
 end
-"#)
-
+"#
+    )
 }
 
 fn gen_node_handler() -> String {
-    format!(r#"
+    format!(
+        r#"
 const handler = async(event) => {{
     try {{
       return 'Success';
@@ -46,28 +59,27 @@ const handler = async(event) => {{
 module.exports = {{
   handler
 }};
-"#)
-
+"#
+    )
 }
 
 fn write_handler(fdir: &str, langr: &LangRuntime) {
     let data = match langr.to_lang() {
         Lang::Python => gen_py_handler(),
-        Lang::Ruby   => gen_ruby_handler(),
+        Lang::Ruby => gen_ruby_handler(),
         Lang::Node => gen_node_handler(),
-        _ => String::from("")
+        _ => String::from(""),
     };
     let file = match langr.to_lang() {
         Lang::Python => "handler.py",
-        Lang::Ruby   => "handler.rb",
+        Lang::Ruby => "handler.rb",
         Lang::Node => "handler.js",
-        _ => "handler.unknown"
+        _ => "handler.unknown",
     };
     let path = format!("{}/{}", fdir, &file);
     if !u::file_exists(&path) {
         u::write_str(&path, &data);
     }
-
 }
 
 // infra
@@ -95,7 +107,6 @@ fn default_vars(memory: &str, timeout: &str) -> String {
     )
 }
 
-
 fn write_role(roles_dir: &str, name: &str, role: &Role) {
     let role_path = format!("{}/{}.json", roles_dir, name);
     if !u::file_exists(&role_path) {
@@ -118,7 +129,6 @@ fn write_vars(vars_dir: &str, name: &str, timeout: &str, memory: &str) {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Runtime {
     lang: LangRuntime,
@@ -130,28 +140,26 @@ struct Build {
     kind: BuildKind,
     pre: Vec<String>,
     post: Vec<String>,
-    command: String
+    command: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Spec {
     name: String,
     runtime: Runtime,
-    build: Build
+    build: Build,
 }
 
 fn make_command(kind: &BuildKind, lang: &Lang) -> String {
     match kind {
         BuildKind::Image => String::from(""),
         BuildKind::Layer => String::from(""),
-        BuildKind::Inline | BuildKind::Code => {
-            match lang {
-                Lang::Python => s!("zip -9 -q lambda.zip *.py"),
-                Lang::Ruby => s!("zip -9 -q lambda.zip *.rb"),
-                _ => s!("")
-            }
+        BuildKind::Inline | BuildKind::Code => match lang {
+            Lang::Python => s!("zip -9 -q lambda.zip *.py"),
+            Lang::Ruby => s!("zip -9 -q lambda.zip *.rb"),
+            _ => s!(""),
         },
-        _ => s!("")
+        _ => s!(""),
     }
 }
 
@@ -163,18 +171,18 @@ fn function_spec(_dir: &str, name: &str, lang: &str, build_kind: &str) -> Spec {
         kind: kind.clone(),
         pre: vec![],
         post: vec![],
-        command: make_command(&kind, &langr.to_lang())
+        command: make_command(&kind, &langr.to_lang()),
     };
 
-    let rspec = Runtime  {
+    let rspec = Runtime {
         lang: langr,
-        handler: s!("handler.handler")
+        handler: s!("handler.handler"),
     };
 
     Spec {
         name: s!(name),
         runtime: rspec,
-        build: bspec
+        build: bspec,
     }
 }
 
@@ -182,7 +190,6 @@ fn write_file(path: &str, data: &str) {
     if u::file_exists(&path) {
         println!("File already exists!");
         std::process::exit(1)
-
     } else {
         u::write_str(&path, data);
     }
@@ -195,14 +202,13 @@ fn write(dir: &str, spec: Spec) {
 }
 
 fn create(kind: &str, dir: &str, name: &str, runtime: &str, build_kind: &str) {
-
     let fdir = if kind != "Standalone" {
         format!("{}/{}", dir, name)
     } else {
         dir.to_string()
     };
     u::mkdir(&fdir);
-    let spec = function_spec(&fdir, name, runtime,  build_kind);
+    let spec = function_spec(&fdir, name, runtime, build_kind);
     write(&fdir, spec);
     let langr = LangRuntime::from_str(runtime).unwrap();
     write_handler(&fdir, &langr);
@@ -218,14 +224,10 @@ fn create_infra(infra_dir: &str, name: &str, memory: &str, timeout: &str) {
     write_vars(&vars_dir, name, memory, timeout);
 }
 
-
 pub fn scaffold() {
     let name = Text::new("Function name:").prompt();
 
-    let kinds: Vec<&str> = vec![
-        "Namespaced",
-        "Standalone",
-    ];
+    let kinds: Vec<&str> = vec!["Namespaced", "Standalone"];
 
     let function_kind: Result<&str, InquireError> = Select::new("Function kind", kinds)
         .without_help_message()
@@ -238,7 +240,9 @@ pub fn scaffold() {
         composer::topology_name(&dir)
     } else {
         if &kind == &"Namespaced" {
-            println!("Warn: No topology.yml file found. Please add topology.yml. Continuing anyway..")
+            println!(
+                "Warn: No topology.yml file found. Please add topology.yml. Continuing anyway.."
+            )
         }
         u::basename(&dir)
     };
@@ -251,36 +255,22 @@ pub fn scaffold() {
         "clojure",
         "janet",
         "node22",
-
     ];
 
     let runtime: Result<&str, InquireError> = Select::new("Select language", runtimes)
         .without_help_message()
         .prompt();
 
-    let deps: Vec<&str> = vec![
-        "Inline",
-        "Image",
-        "Layer",
-        "None"
-    ];
+    let deps: Vec<&str> = vec!["Inline", "Image", "Layer", "None"];
 
     let build_kind: Result<&str, InquireError> = Select::new("Select dependency mechanism", deps)
         .without_help_message()
         .prompt();
 
-
-
     let name = &name.unwrap();
     println!("Creating {} function dir {}", &kind, name);
 
-    create(
-        &kind,
-        &dir,
-        name,
-        &runtime.unwrap(),
-        &build_kind.unwrap()
-    );
+    create(&kind, &dir, name, &runtime.unwrap(), &build_kind.unwrap());
 
     let proceed_infra = Confirm::new("Override default runtime parameters (roles, vars) ?")
         .with_default(false)
@@ -289,18 +279,13 @@ pub fn scaffold() {
     let infra = match proceed_infra {
         Ok(true) => true,
         Ok(false) => false,
-        Err(_) => false
+        Err(_) => false,
     };
 
-
     if infra {
-
         let default_infra_dir = &format!("{}/infrastructure/tc/{}", &u::roots(), namespace);
 
-        let dirs: Vec<&str> = vec![
-            default_infra_dir,
-            "./infra"
-        ];
+        let dirs: Vec<&str> = vec![default_infra_dir, "./infra"];
 
         let infra_dir: Result<&str, InquireError> = Select::new("Select Infra dir", dirs)
             .without_help_message()
@@ -310,6 +295,11 @@ pub fn scaffold() {
 
         let timeout = Text::new("Timeout").with_default("10").prompt();
 
-        create_infra(&infra_dir.unwrap(), name, &memory.unwrap(), &timeout.unwrap());
+        create_infra(
+            &infra_dir.unwrap(),
+            name,
+            &memory.unwrap(),
+            &timeout.unwrap(),
+        );
     }
 }

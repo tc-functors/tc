@@ -1,9 +1,13 @@
+mod aws;
 mod function;
 mod state;
-mod aws;
 
 use authorizer::Auth;
-use composer::{Entity, Topology, BuildKind};
+use composer::{
+    BuildKind,
+    Entity,
+    Topology,
+};
 use kit as u;
 
 pub async fn emulate(auth: &Auth, topology: &Topology, entity_component: &str) {
@@ -13,13 +17,13 @@ pub async fn emulate(auth: &Auth, topology: &Topology, entity_component: &str) {
             let dir = u::pwd();
             let maybe_function = match component {
                 Some(c) => topology.functions.get(&c).cloned(),
-                None => composer::current_function(&dir)
+                None => composer::current_function(&dir),
             };
             if let Some(func) = maybe_function {
                 let kind = &func.build.kind;
                 match kind {
                     BuildKind::Image => function::image::run(auth, &dir, &func).await,
-                    _ => function::default::run(auth, &dir, &func).await
+                    _ => function::default::run(auth, &dir, &func).await,
                 }
             }
         }

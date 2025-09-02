@@ -1,9 +1,12 @@
 use crate::aws;
-use composer::{Function, ConfigSpec};
-use kit::*;
-use kit as u;
 use authorizer::Auth;
 use colored::Colorize;
+use composer::{
+    ConfigSpec,
+    Function,
+};
+use kit as u;
+use kit::*;
 use std::collections::HashMap;
 
 fn gen_entry_point(lang: &str) -> String {
@@ -36,7 +39,7 @@ EOF
 
 fn docker_run_cmd(name: &str) -> String {
     format!(
-    "docker run -p 9000:8080 -v $(pwd)/build:/opt -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -v $HOME/.aws:/root/aws:ro -e AWS_REGION=us-west-2 -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"
+        "docker run -p 9000:8080 -v $(pwd)/build:/opt -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -v $HOME/.aws:/root/aws:ro -e AWS_REGION=us-west-2 -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"
     )
 }
 
@@ -67,7 +70,8 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function) {
 
     println!(
         "Building emulator: {} from {}",
-        &name.cyan(), &code_image_uri
+        &name.cyan(),
+        &code_image_uri
     );
 
     let b_cmd = docker_build_cmd(&name, &code_image_uri);

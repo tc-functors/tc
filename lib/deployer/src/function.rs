@@ -10,9 +10,9 @@ use composer::{
     function::Runtime,
     spec::function::Provider,
 };
+use kit as u;
 use std::collections::HashMap;
 use tabled::Tabled;
-use kit as u;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
     let builds = builder::build(auth, function, None, None, true).await;
@@ -117,17 +117,18 @@ pub async fn make_lambda(auth: &Auth, f: Function) -> lambda::Function {
     }
 }
 
-
 pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
     let lambda = make_lambda(&auth, f.clone()).await;
     let maybe_current = lambda::find_config(&lambda.client, &f.fqn).await;
     let id = if let Some(current) = maybe_current {
         let package_type = f.runtime.package_type.to_lowercase();
         let current_package_type = current.package_type.to_lowercase();
-        tracing::debug!("Recreating {} {}", current_package_type, package_type);
         if current_package_type != package_type {
-            tracing::debug!("Recreating function: {} -> {}",
-                            current_package_type, package_type);
+            tracing::debug!(
+                "Recreating function: {} -> {}",
+                current_package_type,
+                package_type
+            );
             lambda.clone().delete().await.unwrap();
             lambda.clone().create_or_update().await
         } else {
@@ -142,7 +143,6 @@ pub async fn create_lambda(auth: &Auth, f: &Function) -> String {
     }
     id
 }
-
 
 async fn create_function(auth: &Auth, f: Function) -> String {
     maybe_build(auth, &f).await;
@@ -294,7 +294,6 @@ pub async fn update(auth: &Auth, functions: &HashMap<String, Function>, componen
     }
 }
 
-
 // list
 
 #[derive(Tabled, Clone, Debug, PartialEq)]
@@ -307,7 +306,7 @@ pub struct Record {
     pub package_type: String,
     pub updated: String,
     pub version: String,
-    pub uri: String
+    pub uri: String,
 }
 
 pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
@@ -315,9 +314,7 @@ pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
     let mut rows: Vec<Record> = vec![];
     for (_, f) in fns {
         let arn = auth.lambda_arn(&f.fqn);
-        let tags = lambda::list_tags(&client, &arn)
-            .await
-            .unwrap();
+        let tags = lambda::list_tags(&client, &arn).await.unwrap();
 
         let config = lambda::find_config(&client, &arn).await;
         let maybe_uri = lambda::find_uri(&client, &arn).await;

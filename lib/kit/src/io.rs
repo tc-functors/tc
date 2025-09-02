@@ -434,9 +434,5 @@ pub fn root() -> String {
 
 pub fn roots() -> String {
     let (status, x, _) = runc("git rev-parse --show-toplevel", &pwd());
-    if status {
-        x
-    } else {
-        String::from(".")
-    }
+    if status { x } else { String::from(".") }
 }

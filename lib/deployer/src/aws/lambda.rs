@@ -379,7 +379,11 @@ impl Function {
         };
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
-        let _ = log_update.render(&format!("Updating function {} ({})", name, &f.code_size.cyan()));
+        let _ = log_update.render(&format!(
+            "Updating function {} ({})",
+            name,
+            &f.code_size.cyan()
+        ));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
 
         let res = match f.package_type {
@@ -521,8 +525,11 @@ impl Function {
                     sleep(500)
                 }
                 if state == State::Failed {
-                    let _ =
-                        log_update.render(&format!("Checking function {} ({})", name, "ok".green()));
+                    let _ = log_update.render(&format!(
+                        "Checking function {} ({})",
+                        name,
+                        "ok".green()
+                    ));
                 }
                 Ok(())
             }
@@ -820,21 +827,13 @@ pub async fn find_config(client: &Client, name: &str) -> Option<Config> {
     }
 }
 
-
 pub async fn find_uri(client: &Client, name: &str) -> Option<String> {
-    let r = client
-        .get_function()
-        .function_name(s!(name))
-        .send()
-        .await;
+    let r = client.get_function().function_name(s!(name)).send().await;
     match r {
-        Ok(res) => {
-            res.code.unwrap().image_uri
-        }
-        Err(_) => None
+        Ok(res) => res.code.unwrap().image_uri,
+        Err(_) => None,
     }
 }
-
 
 pub async fn delete_by_arn(client: &Client, arn: &str) {
     println!("Deleting {}", arn);
@@ -845,6 +844,5 @@ pub async fn delete_by_arn(client: &Client, arn: &str) {
         .await
         .unwrap();
 }
-
 
 //pub type LambdaClient = Client;

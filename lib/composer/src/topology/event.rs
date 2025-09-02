@@ -72,7 +72,7 @@ pub fn make_targets(
     espec: &EventSpec,
     fallback_fqn: &str,
     fns: &HashMap<String, Function>,
-    resolvers: &HashMap<String, Resolver>
+    resolvers: &HashMap<String, Resolver>,
 ) -> Vec<Target> {
     let EventSpec {
         function,
@@ -91,15 +91,7 @@ pub fn make_targets(
         let id = format!("{}_lambda_target", event_name);
         let name = find_function(&f, fns);
         let arn = template::lambda_arn(&name);
-        let t = Target::new(
-            Entity::Function,
-            &id,
-            &name,
-            &arn,
-            &consumer_ns,
-            None,
-            None,
-        );
+        let t = Target::new(Entity::Function, &id, &name, &arn, &consumer_ns, None, None);
         xs.push(t);
     }
 
@@ -108,15 +100,7 @@ pub fn make_targets(
             let id = format!("{}_{}_target", event_name, &f);
             let name = find_function(&f, fns);
             let arn = template::lambda_arn(&name);
-            let t = Target::new(
-                Entity::Function,
-                &id,
-                &name,
-                &arn,
-                &consumer_ns,
-                None,
-                None,
-            );
+            let t = Target::new(Entity::Function, &id, &name, &arn, &consumer_ns, None, None);
             xs.push(t);
         }
     }
@@ -131,7 +115,7 @@ pub fn make_targets(
                 "EventMetadata" => s!("$.detail.metadata"),
                 _ => m.input.clone(),
             },
-            None => s!("$.detail")
+            None => s!("$.detail"),
         };
         h.insert(s!("detail"), input);
 
@@ -153,15 +137,7 @@ pub fn make_targets(
     if let Some(s) = state {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(s);
-        let t = Target::new(
-            Entity::State,
-            &id,
-            s,
-            &arn,
-            &consumer_ns,
-            None,
-            None,
-        );
+        let t = Target::new(Entity::State, &id, s, &arn, &consumer_ns, None, None);
         xs.push(t)
     }
 
@@ -234,7 +210,6 @@ pub struct EventPattern {
 impl EventPattern {
     fn new(event_name: &str, source: Vec<String>, filter: Option<String>) -> EventPattern {
         let detail = Detail::new(filter);
-
 
         EventPattern {
             detail_type: vec![event_name.to_string()],

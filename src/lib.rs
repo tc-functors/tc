@@ -2,9 +2,7 @@ use authorizer::Auth;
 use composer::{
     Entity,
     Topology,
-    spec::{
-        ConfigSpec,
-    },
+    spec::ConfigSpec,
 };
 use kit as u;
 use std::{
@@ -27,7 +25,7 @@ pub struct BuildOpts {
     pub sync: bool,
     pub shell: bool,
     pub kind: Option<String>,
-    pub version: Option<String>
+    pub version: Option<String>,
 }
 
 async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
@@ -37,14 +35,12 @@ async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
         Some(p) => p,
         None => match maybe_profile {
             Some(x) => x,
-            None => panic!("Please specify profile")
-        }
+            None => panic!("Please specify profile"),
+        },
     };
     let prof = Some(profile);
     let auth = init(prof.clone(), None).await;
-    let centralized = auth
-        .assume(prof.clone(), config.role_to_assume(prof))
-        .await;
+    let centralized = auth.assume(prof.clone(), config.role_to_assume(prof)).await;
     centralized
 }
 
@@ -61,7 +57,6 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
         version,
         ..
     } = opts;
-
 
     if recursive {
         let auth = init_centralized_auth(profile).await;
@@ -118,18 +113,12 @@ pub async fn test_interactive(auth: Auth, sandbox: Option<String>) {
             let resolved = resolver::render(&auth, &sandbox, &topology).await;
             tester::test_topology_unit(&auth, &topology.namespace, &name, &resolved, &spec).await;
         }
-    }
-    else {
+    } else {
         println!("Interactive mode supported only in topology directory");
     }
 }
 
-pub async fn test(
-    auth: Auth,
-    sandbox: Option<String>,
-    unit: Option<String>,
-    recursive: bool,
-) {
+pub async fn test(auth: Auth, sandbox: Option<String>, unit: Option<String>, recursive: bool) {
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
 
@@ -137,7 +126,6 @@ pub async fn test(
         let topology = composer::compose(&dir, recursive);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
         tester::test_topology(&auth, &resolved, unit).await;
-
     } else {
         if let Some(f) = composer::current_function(&dir) {
             tester::test_function(&auth, &sandbox, &f, unit).await;
@@ -152,18 +140,15 @@ pub struct ComposeOpts {
     pub format: Option<String>,
 }
 
-
 pub async fn compose_root(dir: Option<String>, format: Option<String>) {
-
     let root_dir = match dir {
         Some(d) => d,
-        None => u::root()
+        None => u::root(),
     };
     let fmt = u::maybe_string(format, "table");
     let tps = composer::compose_root(&root_dir, true);
     composer::print_topologies(&fmt, tps);
 }
-
 
 pub async fn compose(opts: ComposeOpts) {
     let ComposeOpts {
@@ -204,7 +189,7 @@ pub async fn resolve(
     maybe_entity: Option<String>,
     recursive: bool,
     cache: bool,
-    trace: bool
+    trace: bool,
 ) {
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
@@ -215,12 +200,7 @@ pub async fn resolve(
     }
 }
 
-pub async fn resolve_diff(
-    auth: Auth,
-    sandbox: Option<String>,
-    recursive: bool,
-    _trace: bool
-) {
+pub async fn resolve_diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: bool) {
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &None, false, true).await;
@@ -322,20 +302,14 @@ pub async fn create(
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 
-async fn update_aux(
-    auth: &Auth,
-    sandbox: &str,
-    topology: &Topology,
-    maybe_entity: Option<String>
-) {
-
+async fn update_aux(auth: &Auth, sandbox: &str, topology: &Topology, maybe_entity: Option<String>) {
     let diff = false;
     let cache = false;
 
     let start = Instant::now();
     match maybe_entity {
         Some(ref e) => println!("Resolving {} ...", &e),
-        None => println!("Resolving topology {}...", &topology.namespace)
+        None => println!("Resolving topology {}...", &topology.namespace),
     }
 
     let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, diff).await;
@@ -357,7 +331,7 @@ pub async fn update(
     maybe_entity: Option<String>,
     recursive: bool,
     _cache: bool,
-    interactive: bool
+    interactive: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
 
@@ -503,12 +477,12 @@ pub async fn ci_deploy(
     env: Option<String>,
     sandbox: Option<String>,
     version: Option<String>,
-    branch: Option<String>
+    branch: Option<String>,
 ) {
     let dir = u::pwd();
     let env = match env {
         Some(e) => e,
-        None => panic!("No env or profile specified")
+        None => panic!("No env or profile specified"),
     };
     let namespace = composer::topology_name(&dir);
     let name = u::maybe_string(topology, &namespace);
@@ -528,8 +502,7 @@ pub async fn ci_deploy_interactive() {
     let dir = u::root();
     u::sh("git fetch --tags", &dir);
     let versions = composer::lookup_versions(&dir);
-    let (namespace, version, env, sandbox) =
-        interactive::prompt_versions(&versions);
+    let (namespace, version, env, sandbox) = interactive::prompt_versions(&versions);
     let url = releaser::deploy(&env, &namespace, &sandbox, &version).await;
     open::that(&url).unwrap();
 }
@@ -567,7 +540,6 @@ pub async fn ci_build(service: Option<String>, function: Option<String>, branch:
     let url = releaser::build(&topology_name, &function, &branch).await;
     open::that(url).unwrap();
 }
-
 
 // local
 
@@ -693,7 +665,6 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>) {
     deployer::list_all(auth, &sandbox).await;
 }
 
-
 pub fn scaffold(kind: Option<String>) {
     let kind = u::maybe_string(kind, "function");
     scaffolder::scaffold(&kind)
@@ -709,14 +680,9 @@ pub async fn sync(env: &str, sandbox: &str) {
         println!("Syncing {} {} ", &ns, &ver);
         // todo
     }
-
 }
 
-pub async fn emulate(
-    auth: &Auth,
-    sandbox: Option<String>,
-    maybe_entity: Option<String>
-) {
+pub async fn emulate(auth: &Auth, sandbox: Option<String>, maybe_entity: Option<String>) {
     let sandbox = u::maybe_string(sandbox, "stable");
     let topology = composer::compose(&u::pwd(), false);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, false, true).await;

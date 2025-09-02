@@ -1,8 +1,8 @@
-pub mod git;
 mod changelog;
-use notifier::RichText;
+pub mod git;
 use kit as u;
 use kit::*;
+use notifier::RichText;
 
 fn inc_patch(v: &str) -> String {
     let version = git::maybe_semver(v);
@@ -239,7 +239,6 @@ fn delete_current_minor(prefix: &str, version: &str) {
     let cmd = format!("git tag -d {} && git push --tag origin :{}", &tag, &tag);
     u::runcmd_stream(&cmd, &u::pwd());
 }
-
 
 // pub
 

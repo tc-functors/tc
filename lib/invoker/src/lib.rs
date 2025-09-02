@@ -1,11 +1,15 @@
 pub mod aws;
 mod event;
 mod function;
-mod state;
-pub mod route;
 mod repl;
+pub mod route;
+mod state;
 use authorizer::Auth;
-use composer::{Entity, Topology, ConfigSpec};
+use composer::{
+    ConfigSpec,
+    Entity,
+    Topology,
+};
 use kit as u;
 
 async fn read_uri(auth: &Auth, uri: &str) -> String {
@@ -26,7 +30,6 @@ pub fn read_payload_local(payload: Option<String>) -> String {
     }
 }
 
-
 fn find_bucket() -> String {
     let cfg = ConfigSpec::new(None);
     let maybe_bucket = cfg.tester.bucket;
@@ -34,14 +37,14 @@ fn find_bucket() -> String {
         Some(b) => b,
         None => match std::env::var("TC_TEST_BUCKET") {
             Ok(p) => p,
-            Err(_) => panic!("No test bucket specified")
-        }
+            Err(_) => panic!("No test bucket specified"),
+        },
     }
 }
 pub async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
     match s {
         Some(p) => {
-            if p.starts_with("s3://")  {
+            if p.starts_with("s3://") {
                 read_uri(auth, &p).await
             } else if p.starts_with("//") {
                 let bucket = find_bucket();
@@ -68,7 +71,13 @@ pub async fn read_payload(auth: &Auth, dir: &str, s: Option<String>) -> String {
     }
 }
 
-async fn invoke_component(auth: &Auth, topology: &Topology, entity: Entity, component: &str, payload: &str) {
+async fn invoke_component(
+    auth: &Auth,
+    topology: &Topology,
+    entity: Entity,
+    component: &str,
+    payload: &str,
+) {
     match entity {
         Entity::Function => {
             let functions = &topology.functions;
@@ -100,8 +109,8 @@ async fn invoke_component(auth: &Auth, topology: &Topology, entity: Entity, comp
 
         Entity::State => {
             todo!()
-        },
-        _ => todo!()
+        }
+        _ => todo!(),
     }
 }
 
@@ -115,16 +124,24 @@ pub async fn invoke(
     let dir = u::pwd();
     let payload = read_payload(auth, &dir, payload).await;
 
-    let Topology { flow, fqn, namespace, sandbox, .. } = topology;
+    let Topology {
+        flow,
+        fqn,
+        namespace,
+        sandbox,
+        ..
+    } = topology;
 
     match maybe_entity {
         Some(e) => {
             let (entity, component) = Entity::as_entity_component(&e);
             match component {
                 Some(c) => invoke_component(auth, topology, entity, &c, &payload).await,
-                None => repl::start(&auth.name, &namespace, &sandbox).await.expect("REASON")
+                None => repl::start(&auth.name, &namespace, &sandbox)
+                    .await
+                    .expect("REASON"),
             }
-        },
+        }
         None => {
             let mode = match flow {
                 Some(f) => &f.mode,
@@ -153,12 +170,11 @@ pub async fn invoke_emulator(
                         let dir = u::pwd();
                         let def = serde_json::to_string(&flow.definition).unwrap();
                         state::invoke_emulator(auth, &dir, &def, &topology.fqn, &payload).await;
-
                     }
                 }
-                _ => ()
+                _ => (),
             }
-        },
-        None => function::invoke_emulator(&payload).await
+        }
+        None => function::invoke_emulator(&payload).await,
     }
 }

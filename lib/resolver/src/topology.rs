@@ -4,22 +4,20 @@ use super::{
     function,
     pool,
 };
-use function::Root;
-
 use authorizer::Auth;
 use composer::{
     Entity,
     Topology,
 };
+use function::Root;
 
 pub async fn resolve(
     root: &Topology,
     topology: &Topology,
     auth: &Auth,
     sandbox: &str,
-    diff: bool
+    diff: bool,
 ) -> Topology {
-
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -32,13 +30,19 @@ pub async fn resolve(
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
-    let Topology { namespace, fqn, version, kind, .. } = root;
+    let Topology {
+        namespace,
+        fqn,
+        version,
+        kind,
+        ..
+    } = root;
 
     let rt = Root {
         namespace: namespace.to_string(),
         fqn: ctx.render(&fqn),
         version: version.to_string(),
-        kind: kind.clone()
+        kind: kind.clone(),
     };
 
     tracing::debug!("Resolving events {}", topology.namespace);
@@ -46,7 +50,6 @@ pub async fn resolve(
     tracing::debug!("Resolving pools {}", topology.namespace);
     partial_t.pools = pool::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving functions {}", topology.namespace);
-
 
     partial_t.functions = function::resolve(&ctx, &rt, &partial_t, diff).await;
     partial_t
@@ -57,9 +60,8 @@ pub async fn resolve_entity(
     auth: &Auth,
     sandbox: &str,
     entity: &Entity,
-    diff: bool
+    diff: bool,
 ) -> Topology {
-
     let ctx = Context {
         auth: auth.clone(),
         namespace: topology.namespace.to_owned(),
@@ -72,13 +74,19 @@ pub async fn resolve_entity(
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
-    let Topology { namespace, fqn, version, kind, .. } = topology;
+    let Topology {
+        namespace,
+        fqn,
+        version,
+        kind,
+        ..
+    } = topology;
 
     let rt = Root {
         namespace: namespace.to_string(),
         fqn: ctx.render(&fqn),
         version: version.to_string(),
-        kind: kind.clone()
+        kind: kind.clone(),
     };
 
     match entity {
@@ -101,9 +109,8 @@ pub async fn resolve_entity_component(
     auth: &Auth,
     sandbox: &str,
     entity: &Entity,
-    component: &str
+    component: &str,
 ) -> Topology {
-
     tracing::debug!("Resolving {}", component);
 
     let ctx = Context {

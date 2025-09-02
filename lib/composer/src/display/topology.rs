@@ -1,14 +1,12 @@
 use super::Topology;
 use colored::Colorize;
-use kit::*;
 use kit as u;
+use kit::*;
 use ptree::{
     builder::TreeBuilder,
     item::StringItem,
 };
-use serde_derive::{
-    Serialize,
-};
+use serde_derive::Serialize;
 use std::collections::HashMap;
 use tabled::{
     Style,
@@ -123,7 +121,7 @@ pub fn print_versions(versions: HashMap<String, String>, format: &str) {
     for (namespace, version) in versions {
         let v = Version {
             namespace: s!(namespace),
-            version: s!(version)
+            version: s!(version),
         };
         xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
         xs.reverse();
@@ -133,11 +131,10 @@ pub fn print_versions(versions: HashMap<String, String>, format: &str) {
         "table" => {
             let table = Table::new(xs).with(Style::psql()).to_string();
             println!("{}", table);
-        },
+        }
         "json" => u::pp_json(&xs),
-        &_ => todo!()
+        &_ => todo!(),
     }
-
 }
 
 pub fn count_str(topology: &Topology) -> String {
@@ -161,11 +158,7 @@ pub fn count_str(topology: &Topology) -> String {
     let mut q: usize = queues.len();
     let mut r: usize = routes.len();
     let mut p: usize = pages.len();
-    let mut s: usize = if let Some(_f) = flow {
-        1
-    } else {
-        0
-    };
+    let mut s: usize = if let Some(_f) = flow { 1 } else { 0 };
 
     let nodes = &topology.nodes;
 
@@ -189,11 +182,7 @@ pub fn count_str(topology: &Topology) -> String {
         q = q + queues.len();
         r = r + routes.len();
         p = p + pages.len();
-        let snode = if let Some(_) = flow {
-            1
-        } else {
-            0
-        };
+        let snode = if let Some(_) = flow { 1 } else { 0 };
         s = s + snode;
     }
 

@@ -1,24 +1,23 @@
 mod core;
+mod crypto;
+mod github;
 mod http;
 mod io;
 mod json;
 mod pprint;
 mod text;
 mod time;
-mod github;
-mod crypto;
 
 pub use self::{
     core::*,
+    crypto::*,
+    github::*,
     http::*,
     io::*,
     json::*,
     pprint::*,
     text::*,
     time::*,
-    github::*,
-    crypto::*
-
 };
 
 #[macro_export]
