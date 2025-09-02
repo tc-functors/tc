@@ -308,7 +308,7 @@ fn files_modified_in_branch() -> Vec<String> {
     let dir = u::pwd();
     let cmd = "git rev-parse --abbrev-ref HEAD";
     let branch = sh(&cmd, &dir);
-    if branch == "main" {
+    if branch == "main" || branch == "HEAD" {
         vec![]
     } else {
         let out = u::sh(&format!("git whatchanged --name-only --pretty=\"\" main..{} | xargs dirname | uniq", branch), &dir);
@@ -352,7 +352,10 @@ pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> Has
 
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
-    let fmod_1 = files_modified_uncommitted();
+    let fmod_1 = match std::env::var("CI") {
+        Ok(_) => vec![],
+        Err(_) => files_modified_uncommitted()
+    };
     let fmod_2 = files_modified_in_branch();
 
 
