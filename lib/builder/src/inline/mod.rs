@@ -82,22 +82,10 @@ async fn build_with_docker(
         Lang::Node => get_token(auth).await,
         _ => String::from(""),
     };
-
-    let should_cache = match std::env::var("TC_CACHE_INLINE_BUILD") {
-        Ok(_) => true,
-        Err(_) => false
-    };
-
-    let cmd_str = if should_cache {
-        let container_sha = create_buildx_container(name, dir);
-        format!("docker buildx build --platform=linux/amd64 --ssh default --load  -t {} --build-arg AUTH_TOKEN={} --builder {container_sha} --build-context shared={root} .",
+    let container_sha = create_buildx_container(name, dir);
+    let cmd_str = format!("docker buildx build --platform=linux/amd64 --ssh default --load  -t {} --build-arg AUTH_TOKEN={} --builder {container_sha} --build-context shared={root} .",
             u::basedir(dir),
-            &token)
-    } else {
-        format!("docker buildx build --platform=linux/amd64 --ssh default -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
-            u::basedir(dir),
-            &token)
-    };
+            &token);
 
     let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
