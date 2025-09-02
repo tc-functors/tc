@@ -329,13 +329,17 @@ fn files_modified_uncommitted() -> Vec<String> {
 }
 
 fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
+    let dir = pwd();
+    sh(&format!("git fetch origin refs/tags/{}-{}", namespace, to), &dir);
+    sh(&format!("git fetch origin refs/tags/{}-{}", namespace, from), &dir);
     let cmd = format!(
         r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
         namespace, from, namespace, to
     );
     tracing::debug!("Find modified: {}", &cmd);
 
-    let (status, out, err) = runc(&cmd, &pwd());
+
+    let (status, out, err) = runc(&cmd, &dir);
     tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
     let lines = kit::split_lines(&out);
     lines.iter().map(|s| s.to_string()).collect()
@@ -357,6 +361,7 @@ pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> Has
         Err(_) => files_modified_uncommitted()
     };
     let fmod_2 = files_modified_in_branch();
+
 
     let mut changed_fns: HashMap<String, Function> = HashMap::new();
     if let Some(target_version) = maybe_version {
