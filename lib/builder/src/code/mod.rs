@@ -80,14 +80,6 @@ async fn build_with_docker(auth: &Auth, name: &str, dir: &str) -> (bool, String,
     let secret_file = format!("/tmp/{}-secret.txt", name);
     let session_file = format!("/tmp/{}-session.txt", name);
 
-    let container_sha = format!("{}_{}", name, u::checksum_str(dir));
-
-    let create_cont_str = format!(
-        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
-    );
-
-    u::sh(&create_cont_str, dir);
-
     let root = &u::root();
     let (key, secret, token) = auth.get_keys().await;
 
@@ -96,7 +88,7 @@ async fn build_with_docker(auth: &Auth, name: &str, dir: &str) -> (bool, String,
     u::write_str(&session_file, &token);
 
     let cmd_str = format!(
-        "docker buildx build --platform=linux/amd64 --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
+        "docker buildx build --platform=linux/amd64 --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-context shared={root} .",
         name, &key_file, &secret_file, &session_file
     );
 
