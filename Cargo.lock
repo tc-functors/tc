@@ -2174,7 +2174,6 @@ dependencies = [
  "colored",
  "composer",
  "kit",
- "resolver",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",

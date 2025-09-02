@@ -60,6 +60,17 @@ async fn get_token(auth: &Auth) -> String {
     }
 }
 
+fn create_buildx_container(name: &str, dir: &str) -> String {
+    let container_sha = format!("{}_{}", name, u::checksum_str(dir));
+
+    let create_cont_str = format!(
+        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
+    );
+    u::sh(&create_cont_str, dir);
+    container_sha
+}
+
+
 async fn build_with_docker(
     auth: &Auth,
     dir: &str,
@@ -71,26 +82,23 @@ async fn build_with_docker(
         Lang::Node => get_token(auth).await,
         _ => String::from(""),
     };
-    let container_sha = format!("{}_{}", name, u::checksum_str(dir));
 
-    let create_cont_str = format!(
-        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
-    );
-    u::sh(&create_cont_str, dir);
-
-    let cmd_str = match std::env::var("DOCKER_SSH") {
-        Ok(e) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
-            &e,
-            &token,
-            u::basedir(dir)
-        ),
-        Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default --load  -t {} --build-arg AUTH_TOKEN={} --builder {container_sha} --build-context shared={root} .",
-            u::basedir(dir),
-            &token
-        ),
+    let should_cache = match std::env::var("TC_CACHE_INLINE_BUILD") {
+        Ok(_) => true,
+        Err(_) => false
     };
+
+    let cmd_str = if should_cache {
+        let container_sha = create_buildx_container(name, dir);
+        format!("docker buildx build --platform=linux/amd64 --ssh default --load  -t {} --build-arg AUTH_TOKEN={} --builder {container_sha} --build-context shared={root} .",
+            u::basedir(dir),
+            &token)
+    } else {
+        format!("docker buildx build --platform=linux/amd64 --ssh default -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+            u::basedir(dir),
+            &token)
+    };
+
     let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
         sh("rm -f Dockerfile wrapper", dir);

@@ -61,6 +61,16 @@ fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str) {
     }
 }
 
+fn create_buildx_container(name: &str, dir: &str) -> String {
+    let container_sha = format!("{}_{}", name, u::checksum_str(dir));
+
+    let create_cont_str = format!(
+        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
+    );
+    u::sh(&create_cont_str, dir);
+    container_sha
+}
+
 async fn build_with_docker(
     auth: &Auth,
     cont_name: &str,
@@ -72,14 +82,6 @@ async fn build_with_docker(
     let secret_file = format!("/tmp/{}-secret.txt", cont_name);
     let session_file = format!("/tmp/{}-session.txt", cont_name);
 
-    let container_sha = format!("{}_{}", cont_name, u::checksum_str(dir));
-
-    let create_cont_str = format!(
-        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
-    );
-
-    u::sh(&create_cont_str, dir);
-
     let cmd_str = if code_only {
         format!("docker build --platform=linux/amd64 -t {} .", name)
     } else {
@@ -90,10 +92,24 @@ async fn build_with_docker(
         u::write_str(&secret_file, &secret);
         u::write_str(&session_file, &token);
 
-        format!(
-            "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
-            name, &key_file, &secret_file, &session_file
-        )
+        let should_cache = match std::env::var("TC_CACHE_IMAGE_BUILD") {
+            Ok(_) => true,
+            Err(_) => false
+        };
+
+
+        if should_cache {
+            let container_sha = create_buildx_container(cont_name, dir);
+            format!(
+                "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
+                name, &key_file, &secret_file, &session_file
+            )
+        } else {
+            format!(
+                "docker buildx build --platform=linux/amd64 --ssh default --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-context shared={root} .",
+                name, &key_file, &secret_file, &session_file
+            )
+        }
     };
 
     tracing::debug!("Building with docker {}", &cmd_str);
