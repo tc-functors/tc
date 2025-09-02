@@ -29,6 +29,31 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
+fn gen_dockerignore(dir: &str) {
+    let f = format!(
+        r#"
+**/node_modules/
+**/dist
+**/logs
+**/target
+**/vendor
+**/build
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
+.venv
+.pyenv
+**/.venv/
+**/site-packages/
+*.zip
+"#
+    );
+    let file = format!("{}/.dockerignore", dir);
+    u::write_str(&file, &f);
+}
+
 fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>) {
     let pre_commands = deps_str(pre.to_vec());
     let build_image = find_build_image(runtime);
@@ -123,10 +148,11 @@ pub async fn build(
             let Build { command, pre, .. } = spec;
 
             if !pre.is_empty() {
+                gen_dockerignore(dir);
                 gen_dockerfile(dir, langr, pre);
 
                 let (status, out, err) = build_with_docker(&auth, name, dir).await;
-                sh("rm -f Dockerfile wrapper", dir);
+                sh("rm -f Dockerfile wrapper .dockerignore", dir);
                 if status {
                     copy_from_docker(dir, name);
                     let cmd = "zip -q -9 -r ../lambda.zip .";
