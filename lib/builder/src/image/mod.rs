@@ -71,6 +71,11 @@ fn create_buildx_container(name: &str, dir: &str) -> String {
     container_sha
 }
 
+fn cleanup_docker(uri: &str, dir: &str) {
+    //u::sh("docker buildx prune --force", dir);
+    u::sh(&format!("docker rmi {}", uri), dir);
+}
+
 async fn build_with_docker(
     auth: &Auth,
     cont_name: &str,
@@ -92,24 +97,12 @@ async fn build_with_docker(
         u::write_str(&secret_file, &secret);
         u::write_str(&session_file, &token);
 
-        let should_cache = match std::env::var("TC_CACHE_IMAGE_BUILD") {
-            Ok(_) => true,
-            Err(_) => false
-        };
+        let container_sha = create_buildx_container(cont_name, dir);
+        format!(
+            "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
+            name, &key_file, &secret_file, &session_file
+        )
 
-
-        if should_cache {
-            let container_sha = create_buildx_container(cont_name, dir);
-            format!(
-                "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
-                name, &key_file, &secret_file, &session_file
-            )
-        } else {
-            format!(
-                "docker buildx build --platform=linux/amd64 --ssh default --provenance=false -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-context shared={root} .",
-                name, &key_file, &secret_file, &session_file
-            )
-        }
     };
 
     tracing::debug!("Building with docker {}", &cmd_str);
@@ -211,6 +204,10 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     aws_ecr::login(&auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
     u::run(&cmd, &dir);
+    match std::env::var("TC_BUILD_CACHE_CLEAN") {
+        Ok(_) => cleanup_docker(artifact, dir),
+        Err(_) => ()
+    }
 }
 
 pub async fn sync(auth: &Auth, build: &BuildOutput) {
