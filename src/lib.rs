@@ -200,17 +200,36 @@ pub async fn resolve(
     }
 }
 
-pub async fn resolve_diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: bool) {
+pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: bool) {
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let rt = resolver::try_resolve(&auth, &sandbox, &topology, &None, false, true).await;
+
+    let topology = resolver::render(&auth, &sandbox, &topology).await;
+    let Topology {
+        namespace,
+        fqn,
+        version,
+        kind,
+        ..
+    } = topology.clone();
+
+
+    let rt = resolver::function::Root {
+        namespace: namespace.to_string(),
+        fqn: fqn.to_string(),
+        version: version.to_string(),
+        kind: kind.clone(),
+    };
+
+    let functions = resolver::function::find_modified(&auth, &rt, &topology).await;
     println!("Modified functions:");
-    for (name, _) in &rt.functions {
-        println!(" {}", name);
+    for (name, _) in functions {
+        println!("{}", name);
     }
-    for (_, node) in &rt.nodes {
-        for (name, _) in &node.functions {
-            println!("  {}/{}", node.namespace, name);
+    for (_, node) in &topology.nodes {
+        let functions = resolver::function::find_modified(&auth, &rt, &node).await;
+        for (name, _) in functions {
+            println!("{}/{}", node.namespace, name);
         }
     }
 }

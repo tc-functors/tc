@@ -13,6 +13,7 @@ use composer::{
     },
 };
 use kit::*;
+use kit as u;
 use std::collections::HashMap;
 
 // aws
@@ -303,46 +304,94 @@ pub struct Root {
     pub version: String,
 }
 
-async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap<String, Function> {
+fn files_modified_in_branch() -> Vec<String> {
+    let dir = u::pwd();
+    let cmd = "git rev-parse --abbrev-ref HEAD";
+    let branch = sh(&cmd, &dir);
+    if branch == "main" {
+        vec![]
+    } else {
+        let out = u::sh(&format!("git whatchanged --name-only --pretty=\"\" main..{} | xargs dirname | uniq", branch), &dir);
+        u::split_lines(&out)
+            .iter()
+            .map(|v| v.to_string())
+            .collect()
+    }
+}
+
+fn files_modified_uncommitted() -> Vec<String> {
+    let dir = u::pwd();
+    let out = u::sh("git ls-files -m | xargs dirname | sort | uniq", &dir);
+    u::split_lines(&out)
+        .iter()
+        .map(|v| v.to_string())
+        .collect()
+}
+
+fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
+    let cmd = format!(
+        r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
+        namespace, from, namespace, to
+    );
+    tracing::debug!("Find modified: {}", &cmd);
+
+    let (status, out, err) = runc(&cmd, &pwd());
+    tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
+    let lines = kit::split_lines(&out);
+    lines.iter().map(|s| s.to_string()).collect()
+}
+
+pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap<String, Function> {
     let Root {
         namespace,
         fqn,
         kind,
         version,
     } = root;
+
+
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
-    tracing::debug!(
-        "Finding version {} {:?} sandbox: {:?}, git: {}",
-        &root.fqn,
-        &root.kind,
-        maybe_version,
-        version
-    );
+    let fmod_1 = files_modified_uncommitted();
+    let fmod_2 = files_modified_in_branch();
+
 
     let mut changed_fns: HashMap<String, Function> = HashMap::new();
     if let Some(target_version) = maybe_version {
-        if &target_version != version {
-            return changed_fns;
-        }
 
-        let cmd = format!(
-            r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
-            namespace, target_version, namespace, version
+        tracing::debug!(
+            "Diffing namespace {} sandbox: {} git: {}",
+            &namespace,
+            &target_version,
+            &version
         );
-        tracing::debug!("Find modified: {}", &cmd);
 
-        let (status, out, err) = runc(&cmd, &pwd());
-        tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
-        let lines = kit::split_lines(&out);
+        let lines = if &target_version == version {
+            vec![]
+        } else {
+            find_between_versions(&namespace, &target_version, &version)
+        };
 
         for (name, f) in &topology.functions {
+            let rdir = &f.dir.strip_prefix(
+                &format!("{}/", u::root())
+            ).unwrap();
             for line in &lines {
-                let rdir = &f.dir.strip_prefix(&format!("{}/", kit::root())).unwrap();
+
                 if line.starts_with(rdir) {
                     changed_fns.insert(name.to_string(), f.clone());
                 }
             }
+
+            let pdir = &f.dir.strip_prefix(&format!("{}/",
+                                           u::pwd())).unwrap();
+            if fmod_1.contains(&pdir.to_string()) {
+                changed_fns.insert(name.to_string(), f.clone());
+            }
+            if fmod_2.contains(&rdir.to_string()) {
+                changed_fns.insert(name.to_string(), f.clone());
+            }
+
         }
     }
     changed_fns
