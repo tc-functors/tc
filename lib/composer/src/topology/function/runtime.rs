@@ -68,10 +68,19 @@ fn find_git_sha(dir: &str) -> String {
     sh("git rev-parse --short HEAD", dir)
 }
 
+fn is_branch(dir: &str) -> bool {
+    let branch = sh("git branch --show-current", dir);
+    !branch.is_empty()
+}
+
 fn find_image_tag(dir: &str, namespace: &str) -> String {
     match std::env::var("TC_VERSION_IMAGES") {
         Ok(_) => version::current_semver(namespace),
-        Err(_) => find_git_sha(dir),
+        Err(_) => if is_branch(dir) {
+            find_git_sha(dir)
+        } else {
+            version::current_semver(namespace)
+        }
     }
 }
 
