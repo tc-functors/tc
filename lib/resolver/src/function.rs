@@ -354,7 +354,7 @@ pub async fn resolve(
     topology: &Topology,
     _diff: bool,
 ) -> HashMap<String, Function> {
-    let fns = match std::env::var("TC_RESOLVER_DIFF") {
+    let fns = match std::env::var("TC_DIFFER") {
         Ok(_) => &find_modified(&ctx.auth, root, topology).await,
         Err(_) => &topology.functions,
     };
