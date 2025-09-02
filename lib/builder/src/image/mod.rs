@@ -21,6 +21,32 @@ use kit as u;
 use kit::sh;
 use std::collections::HashMap;
 
+fn gen_dockerignore(dir: &str) {
+    let f = format!(
+        r#"
+**/node_modules/
+**/dist
+**/logs
+**/target
+**/vendor
+**/build
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
+.venv
+.pyenv
+**/.venv/
+**/site-packages/
+*.zip
+"#
+    );
+    let file = format!("{}/.dockerignore", dir);
+    u::write_str(&file, &f);
+}
+
+
 fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     match runtime.to_lang() {
         Lang::Python => python::gen_base_dockerfile(dir, runtime, pre, post),
@@ -140,6 +166,8 @@ pub async fn build(
         gen_base_dockerfile(dir, langr, pre, post);
     }
 
+    gen_dockerignore(dir);
+
     let uri = if code_only {
         code_image_uri
     } else {
@@ -151,7 +179,7 @@ pub async fn build(
     tracing::debug!("Building {}", uri);
 
     bar.inc(3);
-    sh("rm -rf Dockerfile build build.json", dir);
+    sh("rm -rf Dockerfile build build.json .dockerignore", dir);
     bar.finish();
     BuildStatus {
         path: uri.to_string(),
