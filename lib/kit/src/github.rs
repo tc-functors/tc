@@ -111,7 +111,7 @@ impl Github {
                 let path = format!("/releases/assets/{}", id);
                 http::download(&self.url(&path), headers.clone(), outfile).await;
                 replace_exe(outfile);
-                println!("Everything you can imagine is real - Pablo Picasso");
+                println!("Simplicity does not precede complexity, but follows it - Alan Perlis");
             }
         }
     }
