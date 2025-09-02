@@ -2,7 +2,7 @@ mod aws;
 pub mod cache;
 mod context;
 mod event;
-mod function;
+pub mod function;
 mod pool;
 mod topology;
 
@@ -13,6 +13,7 @@ use composer::{
 };
 pub use context::Context;
 use std::collections::HashMap;
+pub use function::Root;
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
     match s {

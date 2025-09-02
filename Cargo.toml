@@ -61,7 +61,7 @@ members = [
    "lib/notifier",
    "lib/router",
    "lib/scaffolder",
-   "lib/emulator"
+   "lib/emulator",
 ]
 
 [profile.release]

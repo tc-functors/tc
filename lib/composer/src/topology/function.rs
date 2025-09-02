@@ -29,7 +29,6 @@ pub struct Target {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Function {
-    pub skip: bool,
     pub name: String,
     pub actual_name: String,
     pub namespace: String,
@@ -100,38 +99,6 @@ fn make_fqn(fspec: &FunctionSpec, namespace: &str, format: &str) -> String {
     }
 }
 
-fn files_modified() -> Vec<String> {
-    match std::env::var("CIRCLE_SHA1") {
-        Ok(sha) => {
-            let dir = u::pwd();
-            let s = format!("git diff --name-only {}^1", sha);
-            let out = u::sh(&s, &dir);
-            u::split_lines(&out)
-                .iter()
-                .map(|v| u::absolutize(&dir, v))
-                .collect()
-        }
-        Err(_) => {
-            let dir = u::pwd();
-            let out = u::sh("git ls-files -m", &dir);
-            u::split_lines(&out)
-                .iter()
-                .map(|v| u::absolutize(&dir, v))
-                .collect()
-        }
-    }
-}
-
-fn is_dirty(dir: &str) -> bool {
-    let modified = files_modified();
-    for m in modified {
-        if m.starts_with(dir) {
-            return true;
-        }
-    }
-    return false;
-}
-
 fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec> {
     match t {
         Some(spec) => spec,
@@ -159,7 +126,6 @@ impl Function {
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
         Function {
-            skip: !is_dirty(dir),
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
             arn: template::lambda_arn(&fqn),
@@ -197,7 +163,6 @@ impl Function {
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
         Function {
-            skip: !is_dirty(dir),
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
             arn: template::lambda_arn(&fqn),

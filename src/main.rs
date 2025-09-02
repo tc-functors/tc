@@ -49,6 +49,8 @@ enum Cmd {
     Create(CreateArgs),
     /// Delete a sandboxed topology
     Delete(DeleteArgs),
+    /// Diff Sandboxe and local state
+    Diff(DiffArgs),
     /// Emulate a topology or entity
     Emulate(EmulateArgs),
     /// Freeze a sandbox and make it immutable
@@ -164,9 +166,23 @@ pub struct ResolveArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action)]
-    diff: bool,
-    #[arg(long, action)]
     cache: bool,
+    #[arg(long, action, short = 't')]
+    trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct DiffArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 'R')]
+    role: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -650,18 +666,29 @@ async fn resolve(args: ResolveArgs) {
         recursive,
         cache,
         trace,
-        diff,
         ..
     } = args;
 
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-    if diff {
-        tc::resolve_diff(env, sandbox, recursive, trace).await;
-    } else {
-        tc::resolve(env, sandbox, entity, recursive, cache, trace).await;
-    }
+    tc::resolve(env, sandbox, entity, recursive, cache, trace).await;
+}
+
+async fn diff(args: DiffArgs) {
+    let DiffArgs {
+        profile,
+        role,
+        sandbox,
+        recursive,
+        trace,
+        ..
+    } = args;
+
+    init_tracing(trace);
+
+    let env = tc::init(profile, role).await;
+    tc::diff(env, sandbox, recursive, trace).await;
 }
 
 async fn invoke(args: InvokeArgs) {
@@ -938,6 +965,7 @@ async fn run() {
         Cmd::Config(args) => config(args).await,
         Cmd::Doc(args) => doc(args).await,
         Cmd::Compose(args) => compose(args).await,
+        Cmd::Diff(args) => diff(args).await,
         Cmd::Resolve(args) => resolve(args).await,
         Cmd::Create(args) => create(args).await,
         Cmd::Delete(args) => delete(args).await,
