@@ -4,14 +4,18 @@ use aws_sdk_iam::{
     Error,
     config as iam_config,
     config::retry::RetryConfig,
+    types::{
+        Tag,
+        builders::TagBuilder,
+    },
 };
-use std::collections::HashMap;
-use aws_sdk_iam::types::Tag;
-use aws_sdk_iam::types::builders::TagBuilder;
+use colored::Colorize;
 use kit as u;
 use kit::LogUpdate;
-use std::io::stdout;
-use colored::Colorize;
+use std::{
+    collections::HashMap,
+    io::stdout,
+};
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -44,29 +48,46 @@ pub struct Role {
     pub policy_arn: String,
     pub trust_policy: String,
     pub policy_doc: String,
-    pub tags: Option<Vec<Tag>>
+    pub tags: Option<Vec<Tag>>,
 }
 
 impl Role {
     async fn create(&self) {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
 
-        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "creating policy".cyan()));
+        let _ = log_update.render(&format!(
+            "Creating role {} ({})",
+            self.name,
+            "creating policy".cyan()
+        ));
         self.find_or_create_policy().await;
 
-        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attachable".cyan()));
+        let _ = log_update.render(&format!(
+            "Creating role {} ({})",
+            self.name,
+            "attachable".cyan()
+        ));
         self.wait_until_attachable().await;
 
         let _ = log_update.render(&format!("Creating role {} ({})", self.name, "role".cyan()));
         self.find_or_create_role().await;
 
-        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attaching".cyan()));
+        let _ = log_update.render(&format!(
+            "Creating role {} ({})",
+            self.name,
+            "attaching".cyan()
+        ));
         self.attach_policy().await;
         self.wait_until_attached().await;
-        // FIXME: iam is eventually consistent. There is no way to know if the role is really useable
+        // FIXME: iam is eventually consistent. There is no way to know if the role is really
+        // useable
         u::sleep(4000);
 
-        let _ = log_update.render(&format!("Creating role {} ({})", self.name, "attached".green()));
+        let _ = log_update.render(&format!(
+            "Creating role {} ({})",
+            self.name,
+            "attached".green()
+        ));
     }
 
     pub async fn delete(&self) -> Result<(), Error> {
@@ -81,7 +102,11 @@ impl Role {
     async fn update(&self) -> Result<(), Error> {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
 
-        let _ = log_update.render(&format!("Updating role {} ({})", self.name, "detaching policy".blue()));
+        let _ = log_update.render(&format!(
+            "Updating role {} ({})",
+            self.name,
+            "detaching policy".blue()
+        ));
         self.detach_policy().await?;
 
         self.wait_until_detached().await;
@@ -144,9 +169,7 @@ impl Role {
             .await;
         match res {
             Ok(r) => Ok(r.policy.unwrap().arn),
-            Err(_) => {
-                Ok(None)
-            }
+            Err(_) => Ok(None),
         }
     }
 
@@ -242,7 +265,6 @@ impl Role {
             .send()
             .await;
         res.unwrap().policy.unwrap().is_attachable
-
     }
 
     pub async fn is_policy_attached(&self) -> bool {
@@ -254,13 +276,12 @@ impl Role {
             .await;
 
         match res {
-            Ok(r) =>  {
+            Ok(r) => {
                 let c = r.policy.unwrap().attachment_count.unwrap();
                 c > 0
-            },
-            Err(_) => false
+            }
+            Err(_) => false,
         }
-
     }
 
     pub async fn wait_until_attachable(&self) {

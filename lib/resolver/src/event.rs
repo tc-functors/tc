@@ -43,7 +43,6 @@ async fn get_graphql_arn_id(auth: &Auth, name: &str) -> Option<String> {
     }
 }
 
-
 fn make_mutation(name: &str, mutations: &HashMap<String, Mutation>) -> String {
     // FIXME: mutations hashmap key is api-name. Using default
     let mutation = mutations.get("default").unwrap();
@@ -134,7 +133,7 @@ pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Even
 
         let guard = match std::env::var("TC_CREATE_EVENTS") {
             Ok(_) => false,
-            Err(_) => config.deployer.guard_stable_updates
+            Err(_) => config.deployer.guard_stable_updates,
         };
 
         if guard {

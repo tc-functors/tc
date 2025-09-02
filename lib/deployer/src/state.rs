@@ -3,10 +3,10 @@ use crate::aws::{
     sfn,
     sfn::StateMachine,
 };
-use kit::*;
-use kit as u;
 use authorizer::Auth;
 use composer::Flow;
+use kit as u;
+use kit::*;
 use std::collections::HashMap;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: &Flow) {
@@ -157,7 +157,6 @@ pub async fn freeze(auth: &Auth, fqn: &str) {
         let _ = sfn::update_tags(&client, &arn, kv).await;
     }
 }
-
 
 pub async fn unfreeze(auth: &Auth, fqn: &str) {
     let client = sfn::make_client(auth).await;

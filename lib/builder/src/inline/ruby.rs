@@ -17,7 +17,7 @@ fn shared_objects() -> Vec<&'static str> {
         "&& cp /usr/lib64/libssl3.so /build/ruby/lib/libssl3.so",
         "&& cp /usr/lib64/libunistring.so.0.1.2 /build/ruby/lib/libunistring.so.0",
         "&& cp /usr/lib64/libsasl2.so.3.0.0 /build/ruby/lib/libsasl2.so.3",
-        "&& cp /usr/lib64/libssh2.so.1.0.1 /build/ruby/lib/libssh2.so.1"
+        "&& cp /usr/lib64/libssh2.so.1.0.1 /build/ruby/lib/libssh2.so.1",
     ]
 }
 

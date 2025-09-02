@@ -1,10 +1,13 @@
 use crate::aws;
 use authorizer::Auth;
-use composer::{Function, ConfigSpec};
+use colored::Colorize;
+use composer::{
+    ConfigSpec,
+    Function,
+};
+use kit as u;
 use kit::*;
 use std::collections::HashMap;
-use kit as u;
-use colored::Colorize;
 
 fn gen_entry_point(lang: &str) -> String {
     match lang {

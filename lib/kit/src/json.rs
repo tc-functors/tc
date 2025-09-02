@@ -71,15 +71,13 @@ pub fn value_to_string(val: Option<&Value>) -> String {
     }
 }
 
-
 pub fn merge_json_maps(a: &mut Value, b: Value) {
     if let Value::Object(a) = a {
         if let Value::Object(b) = b {
             for (k, v) in b {
                 if v.is_null() {
                     a.remove(&k);
-                }
-                else {
+                } else {
                     merge_json_maps(a.entry(k).or_insert(Value::Null), v);
                 }
             }

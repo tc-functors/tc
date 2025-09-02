@@ -1,15 +1,10 @@
+use crate::types::BuildStatus;
 use authorizer::Auth;
 use composer::{
     Build,
     Lang,
-    spec::{
-        LangRuntime,
-    },
+    spec::LangRuntime,
 };
-use crate::types::{
-    BuildStatus,
-};
-
 use kit as u;
 use kit::sh;
 
@@ -55,33 +50,30 @@ RUN --mount=type=ssh --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --moun
     u::write_str(&dockerfile, &f);
 }
 
-async fn build_with_docker(
-    auth: &Auth,
-    name: &str,
-    dir: &str,
-) -> (bool, String, String) {
-
+async fn build_with_docker(auth: &Auth, name: &str, dir: &str) -> (bool, String, String) {
     let key_file = format!("/tmp/{}-key.txt", name);
     let secret_file = format!("/tmp/{}-secret.txt", name);
     let session_file = format!("/tmp/{}-session.txt", name);
 
-
     let container_sha = format!("{}_{}", name, u::checksum_str(dir));
 
-    let create_cont_str = format!("docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap");
+    let create_cont_str = format!(
+        "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
+    );
 
     u::sh(&create_cont_str, dir);
 
     let root = &u::root();
     let (key, secret, token) = auth.get_keys().await;
 
-
     u::write_str(&key_file, &key);
     u::write_str(&secret_file, &secret);
     u::write_str(&session_file, &token);
 
-    let cmd_str = format!("docker buildx build --platform=linux/amd64 --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
-                          name, &key_file, &secret_file, &session_file);
+    let cmd_str = format!(
+        "docker buildx build --platform=linux/amd64 --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
+        name, &key_file, &secret_file, &session_file
+    );
 
     tracing::debug!("Building with docker {}", &cmd_str);
 
@@ -118,19 +110,16 @@ fn copy_from_docker(dir: &str, name: &str) {
     sh("rm -f Dockerfile wrapper", dir);
 }
 
-
 pub async fn build(
     auth: &Auth,
     dir: &str,
     name: &str,
     langr: &LangRuntime,
-    spec: &Build
+    spec: &Build,
 ) -> BuildStatus {
-
     match langr.to_lang() {
         Lang::Rust => super::inline::build(auth, dir, name, langr, spec).await,
         _ => {
-
             let Build { command, pre, .. } = spec;
 
             if !pre.is_empty() {

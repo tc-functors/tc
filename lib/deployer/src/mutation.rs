@@ -2,8 +2,8 @@ use crate::aws::{
     appsync,
     lambda,
 };
-use aws_sdk_appsync::Client;
 use authorizer::Auth;
+use aws_sdk_appsync::Client;
 use composer::Mutation;
 use std::collections::HashMap;
 
@@ -13,7 +13,12 @@ async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
     let _ = lambda::add_permission_basic(client, authorizer_arn, principal, statement_id).await;
 }
 
-async fn create_mutation(auth: &Auth, client: &Client, mutation: Mutation, tags: HashMap<String, String>) {
+async fn create_mutation(
+    auth: &Auth,
+    client: &Client,
+    mutation: Mutation,
+    tags: HashMap<String, String>,
+) {
     let Mutation {
         api_name,
         authorizer,

@@ -1,2 +1,2 @@
-pub mod lambda;
 pub mod ecr;
+pub mod lambda;

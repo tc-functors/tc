@@ -53,7 +53,11 @@ impl Auth {
         let secret = credentials.secret_access_key();
         let session_token = credentials.session_token().unwrap_or_default();
 
-        (key.to_string(), secret.to_string(), session_token.to_string())
+        (
+            key.to_string(),
+            secret.to_string(),
+            session_token.to_string(),
+        )
     }
 
     pub fn sfn_uri(&self) -> String {

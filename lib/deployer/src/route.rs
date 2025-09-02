@@ -38,7 +38,12 @@ fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
     }
 }
 
-async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>, tags: &HashMap<String, String>) -> Api {
+async fn make_api(
+    auth: &Auth,
+    route: &Route,
+    cors: Option<Cors>,
+    tags: &HashMap<String, String>,
+) -> Api {
     let client = gateway::make_client(auth).await;
 
     Api {
@@ -52,7 +57,7 @@ async fn make_api(auth: &Auth, route: &Route, cors: Option<Cors>, tags: &HashMap
         sync: route.sync.to_owned(),
         request_template: route.request_template.clone(),
         cors: cors,
-        tags: tags.clone()
+        tags: tags.clone(),
     }
 }
 
@@ -162,7 +167,12 @@ async fn create_api(
     println!("Endpoint {}", &endpoint);
 }
 
-async fn create_route(auth: &Auth, route: &Route, cors: Option<Cors>, tags: &HashMap<String, String>) {
+async fn create_route(
+    auth: &Auth,
+    route: &Route,
+    cors: Option<Cors>,
+    tags: &HashMap<String, String>,
+) {
     let api = make_api(auth, route, cors, tags).await;
     let api_id = api.create_or_update().await;
     let auth_id = if route.create_authorizer {

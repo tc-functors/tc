@@ -15,7 +15,7 @@ pub fn guess_runtime(dir: &str) -> LangRuntime {
 }
 
 pub fn layerable(dir: &str) -> bool {
-    if u::path_exists(dir, "function.yml") || u::path_exists(dir, "function.json")  {
+    if u::path_exists(dir, "function.yml") || u::path_exists(dir, "function.json") {
         u::path_exists(dir, "Gemfile")
             || u::path_exists(dir, "pyproject.toml")
             || u::path_exists(dir, "requirements.txt")

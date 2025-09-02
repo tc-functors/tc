@@ -2,16 +2,16 @@ mod aws;
 mod channel;
 mod event;
 mod function;
+pub mod guard;
 mod mutation;
 mod page;
 mod pool;
 mod queue;
+mod resource;
 mod role;
 mod route;
 mod schedule;
 mod state;
-mod resource;
-pub mod guard;
 
 use authorizer::Auth;
 use colored::Colorize;
@@ -20,9 +20,14 @@ use composer::{
     Function,
     Topology,
 };
-use std::collections::HashMap;
-use tabled::{Style, Table};
-use std::str::FromStr;
+use std::{
+    collections::HashMap,
+    str::FromStr,
+};
+use tabled::{
+    Style,
+    Table,
+};
 
 pub async fn create(auth: &Auth, topology: &Topology) {
     let Topology {
@@ -342,18 +347,17 @@ pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<
 }
 
 pub async fn freeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, .. }  = topology;
+    let Topology { fqn, .. } = topology;
     state::freeze(auth, fqn).await;
-
 }
 
 pub async fn unfreeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, .. }  = topology;
+    let Topology { fqn, .. } = topology;
     state::unfreeze(auth, fqn).await;
 }
 
 pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
-    let Topology { functions, fqn, .. }  = topology;
+    let Topology { functions, fqn, .. } = topology;
     match maybe_entity {
         Some(e) => {
             let entity = Entity::from_str(&e).unwrap();
@@ -362,16 +366,14 @@ pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<St
                     let rs = function::list(auth, &functions).await;
                     let table = Table::new(rs).with(Style::psql()).to_string();
                     println!("{}", table);
-                },
+                }
                 Entity::Mutation => {
                     mutation::list(auth, &fqn).await;
-                },
-                Entity::State => {
-
                 }
-                _ => todo!()
+                Entity::State => {}
+                _ => todo!(),
             }
-        },
+        }
         None => {
             let rs = function::list(auth, &functions).await;
             let table = Table::new(rs).with(Style::psql()).to_string();

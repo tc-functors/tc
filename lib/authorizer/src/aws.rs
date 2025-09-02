@@ -63,11 +63,9 @@ pub async fn get_config(profile: &str, assume_role: Option<String>) -> SdkConfig
 pub fn get_region() -> String {
     match std::env::var("TC_IGNORE_AWS_VARS") {
         Ok(_) => String::from("us-west-2"),
-        Err(_) => {
-            match std::env::var("AWS_REGION") {
-                Ok(e) => e,
-                Err(_) => String::from("us-west-2"),
-            }
-        }
+        Err(_) => match std::env::var("AWS_REGION") {
+            Ok(e) => e,
+            Err(_) => String::from("us-west-2"),
+        },
     }
 }

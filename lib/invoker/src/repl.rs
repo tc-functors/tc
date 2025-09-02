@@ -1,6 +1,9 @@
 use colored::Colorize;
-use rustyline::error::ReadlineError;
-use rustyline::{DefaultEditor, Result};
+use rustyline::{
+    DefaultEditor,
+    Result,
+    error::ReadlineError,
+};
 
 async fn process_cmd(line: &str) {
     let parts = line.split(' ').collect::<Vec<&str>>();

@@ -36,7 +36,7 @@ pub struct Api {
     pub sync: bool,
     pub request_template: String,
     pub cors: Option<Cors>,
-    pub tags: HashMap<String, String>
+    pub tags: HashMap<String, String>,
 }
 
 pub fn make_cors(methods: Vec<String>, origins: Vec<String>, headers: Option<Vec<String>>) -> Cors {

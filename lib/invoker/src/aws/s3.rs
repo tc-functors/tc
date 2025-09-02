@@ -1,7 +1,5 @@
 use authorizer::Auth;
-use aws_sdk_s3::{
-    Client,
-};
+use aws_sdk_s3::Client;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

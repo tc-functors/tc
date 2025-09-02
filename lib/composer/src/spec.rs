@@ -31,7 +31,7 @@ pub use function::{
     InlineFunctionSpec,
     Lang,
     LangRuntime,
-    TestSpec
+    TestSpec,
 };
 pub use mutation::MutationSpec;
 pub use page::PageSpec;
@@ -40,7 +40,6 @@ pub use queue::QueueSpec;
 pub use route::RouteSpec;
 
 // topology
-
 
 fn default_nodes() -> Nodes {
     Nodes {
@@ -193,7 +192,7 @@ impl TopologySpec {
                 channels: None,
                 triggers: None,
                 pages: None,
-                tests: None
+                tests: None,
             }
         }
     }

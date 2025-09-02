@@ -1,15 +1,13 @@
+mod code;
 mod extension;
 mod image;
 mod inline;
 mod layer;
 mod library;
-mod code;
 pub mod page;
 mod types;
 
-use crate::types::{
-    BuildOutput,
-};
+use crate::types::BuildOutput;
 use authorizer::Auth;
 use colored::Colorize;
 use composer::{
@@ -25,7 +23,6 @@ use std::{
     panic,
     str::FromStr,
 };
-
 
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
@@ -46,7 +43,7 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
                     artifact: image::render_uri(&f.runtime.uri, repo),
                     kind: b.kind.clone(),
                     runtime: f.runtime.lang.clone(),
-                    version: b.version.clone()
+                    version: b.version.clone(),
                 };
                 outs.push(out);
             }
@@ -82,8 +79,8 @@ async fn init_centralized_auth(given_auth: &Auth) -> Auth {
                 .assume(profile.clone(), config.role_to_assume(profile))
                 .await;
             centralized
-        },
-        None => given_auth.clone()
+        }
+        None => given_auth.clone(),
     }
 }
 
@@ -93,7 +90,6 @@ pub async fn build(
     name: Option<String>,
     kind: Option<String>,
     code_only: bool,
-
 ) -> Vec<BuildOutput> {
     let Function {
         dir,
@@ -113,7 +109,9 @@ pub async fn build(
     let auth = init_centralized_auth(auth).await;
 
     let build_status = match kind {
-        BuildKind::Image => image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await,
+        BuildKind::Image => {
+            image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await
+        }
         BuildKind::Inline => inline::build(&auth, dir, &name, langr, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr),
@@ -138,16 +136,12 @@ pub async fn build(
         artifact: build_status.path,
         kind: kind.clone(),
         runtime: langr.clone(),
-        version: build.version.clone()
+        version: build.version.clone(),
     };
     vec![out]
 }
 
-pub async fn build_recursive(
-    auth: &Auth,
-    dir: &str,
-    _parallel: bool,
-) -> Vec<BuildOutput> {
+pub async fn build_recursive(auth: &Auth, dir: &str, _parallel: bool) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
 
     //TODO  parallelize
@@ -218,7 +212,6 @@ pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
     let auth = init_centralized_auth(auth).await;
     let function = composer::current_function(dir);
 
-
     if let Some(f) = function {
         let spec = f.build;
 
@@ -228,7 +221,6 @@ pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
         };
 
         image::shell(&auth, dir, &f.runtime.uri, spec.version, kind).await
-
     } else {
         println!("No function found");
     }

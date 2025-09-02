@@ -1,16 +1,17 @@
+use crate::{
+    aws,
+    aws::resourcetag,
+};
+use authorizer::Auth;
+use composer::Entity;
 use std::collections::{
     HashMap,
     hash_map::Entry,
 };
-use authorizer::Auth;
-use composer::Entity;
-use crate::aws::resourcetag;
-use crate::aws;
 
 pub async fn list(auth: &Auth, sandbox: &str) -> Vec<String> {
     let client = resourcetag::make_client(auth).await;
     resourcetag::get_resources(&client, "sandbox", sandbox).await
-
 }
 
 pub fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
@@ -65,11 +66,10 @@ pub fn filter_arns(arns: Vec<String>, filter: Option<String>) -> Vec<String> {
                 }
             }
             xs
-        },
-        None => arns
+        }
+        None => arns,
     }
 }
-
 
 pub async fn delete_arns(auth: &Auth, grouped: HashMap<Entity, Vec<String>>) {
     for (entity, arns) in grouped {

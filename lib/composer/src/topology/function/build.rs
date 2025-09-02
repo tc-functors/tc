@@ -33,7 +33,6 @@ fn infer_kind(package_type: &str) -> BuildKind {
     }
 }
 
-
 impl Build {
     pub fn new(
         dir: &str,

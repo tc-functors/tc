@@ -1,6 +1,4 @@
-use super::{
-    layer,
-};
+use super::layer;
 use crate::{
     Entity,
     spec::{
@@ -22,16 +20,13 @@ use crate::{
         version,
     },
 };
-
 use kit as u;
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use std::{
-    collections::HashMap,
-};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {
@@ -76,18 +71,23 @@ fn find_git_sha(dir: &str) -> String {
 fn find_image_tag(dir: &str, namespace: &str) -> String {
     match std::env::var("TC_VERSION_IMAGES") {
         Ok(_) => version::current_semver(namespace),
-        Err(_) => find_git_sha(dir)
+        Err(_) => find_git_sha(dir),
     }
 }
 
-fn as_uri(dir: &str, namespace: &str, name: &str, package_type: &str, uri: Option<String>) -> String {
+fn as_uri(
+    dir: &str,
+    namespace: &str,
+    name: &str,
+    package_type: &str,
+    uri: Option<String>,
+) -> String {
     match package_type {
         "Image" | "image" | "oci" => match uri {
             Some(u) => u,
             None => {
                 let tag = find_image_tag(dir, namespace);
-                format!("{{{{repo}}}}:{}_{}_{}",
-                        namespace, name, &tag)
+                format!("{{{{repo}}}}:{}_{}_{}", namespace, name, &tag)
             }
         },
         _ => format!("{}/lambda.zip", dir),
@@ -132,7 +132,8 @@ fn is_singular_function_dir() -> bool {
     let function_file = "function.yml";
     let function_file_json = "function.json";
     let topology_file = "topology.yml";
-    (u::file_exists(function_file) || u::file_exists(function_file_json)) && u::file_exists(topology_file)
+    (u::file_exists(function_file) || u::file_exists(function_file_json))
+        && u::file_exists(topology_file)
 }
 
 fn find_build_kind(fspec: &FunctionSpec) -> BuildKind {
@@ -201,7 +202,13 @@ fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str)
     }
 }
 
-fn lookup_role(infra_dir: &str, r: &RuntimeSpec, namespace: &str, _fqn: &str, function_name: &str) -> Role {
+fn lookup_role(
+    infra_dir: &str,
+    r: &RuntimeSpec,
+    namespace: &str,
+    _fqn: &str,
+    function_name: &str,
+) -> Role {
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
@@ -218,7 +225,7 @@ fn lookup_role(infra_dir: &str, r: &RuntimeSpec, namespace: &str, _fqn: &str, fu
             } else {
                 match std::env::var("TC_LEGACY_ROLES") {
                     Ok(_) => Role::provided_by_entity(Entity::Function),
-                    Err(_) => Role::default(Entity::Function)
+                    Err(_) => Role::default(Entity::Function),
                 }
             }
         }
@@ -276,19 +283,8 @@ fn make_env_vars(
             }
         },
         Lang::Python => {
-
-            hmap.insert(
-                s!("PYTHONPATH"),
-                format!(
-                    "/opt/python:/var/runtime",
-                ),
-            );
-            hmap.insert(
-                s!("MODEL_PATH"),
-                format!(
-                    "/model",
-                ),
-            );
+            hmap.insert(s!("PYTHONPATH"), format!("/opt/python:/var/runtime",));
+            hmap.insert(s!("MODEL_PATH"), format!("/model",));
 
             // legacy
             if let Some(assets) = maybe_assets {
@@ -441,7 +437,6 @@ fn lookup_infraspec(
     InfraSpec::new(infra_spec_file.clone())
 }
 
-
 fn lookup_infraspec_default(infra_dir: &str, function_name: &str) -> HashMap<String, InfraSpec> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f = follow_path(&f);
@@ -520,13 +515,11 @@ fn make_lambda(
     let package_type = match &r.package_type {
         Some(x) => x.to_string(),
         None => match build_kind {
-            BuildKind::Image =>  s!("image"),
-            _ => s!("zip")
-        }
+            BuildKind::Image => s!("image"),
+            _ => s!("zip"),
+        },
     };
-    let uri = as_uri(
-        dir, namespace, &fspec.name, &package_type, r.uri.clone(),
-    );
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
@@ -585,7 +578,13 @@ fn make_fargate(
 ) -> Runtime {
     let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
     let package_type = s!("Image");
-    let uri = as_uri(dir, namespace, &fspec.name, &package_type, rspec.uri.clone());
+    let uri = as_uri(
+        dir,
+        namespace,
+        &fspec.name,
+        &package_type,
+        rspec.uri.clone(),
+    );
     let role = lookup_role(&infra_dir, &rspec, namespace, fqn, &fspec.name);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
     let default_infra_spec = infra_spec.get("default").unwrap();
@@ -651,7 +650,6 @@ impl Runtime {
             Some(p) => p.to_string(),
             None => as_infra_dir(dir, t_infra_dir),
         };
-
 
         match rspec {
             Some(r) => {

@@ -304,22 +304,32 @@ pub struct Root {
 }
 
 async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap<String, Function> {
-
-    let Root { namespace, fqn, kind, version }  = root;
+    let Root {
+        namespace,
+        fqn,
+        kind,
+        version,
+    } = root;
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
-    tracing::debug!("Finding version {} {:?} sandbox: {:?}, git: {}",
-                    &root.fqn, &root.kind, maybe_version, version);
+    tracing::debug!(
+        "Finding version {} {:?} sandbox: {:?}, git: {}",
+        &root.fqn,
+        &root.kind,
+        maybe_version,
+        version
+    );
 
     let mut changed_fns: HashMap<String, Function> = HashMap::new();
     if let Some(target_version) = maybe_version {
         if &target_version != version {
-            return changed_fns
+            return changed_fns;
         }
 
-        let cmd = format!(r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
-                          namespace, target_version,
-                          namespace, version);
+        let cmd = format!(
+            r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
+            namespace, target_version, namespace, version
+        );
         tracing::debug!("Find modified: {}", &cmd);
 
         let (status, out, err) = runc(&cmd, &pwd());
@@ -328,9 +338,7 @@ async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap
 
         for (name, f) in &topology.functions {
             for line in &lines {
-                let rdir = &f.dir
-                    .strip_prefix(&format!("{}/", kit::root()))
-                    .unwrap();
+                let rdir = &f.dir.strip_prefix(&format!("{}/", kit::root())).unwrap();
                 if line.starts_with(rdir) {
                     changed_fns.insert(name.to_string(), f.clone());
                 }
@@ -340,11 +348,15 @@ async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap
     changed_fns
 }
 
-pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, _diff: bool) -> HashMap<String, Function> {
-
+pub async fn resolve(
+    ctx: &Context,
+    root: &Root,
+    topology: &Topology,
+    _diff: bool,
+) -> HashMap<String, Function> {
     let fns = match std::env::var("TC_RESOLVER_DIFF") {
         Ok(_) => &find_modified(&ctx.auth, root, topology).await,
-        Err(_) => &topology.functions
+        Err(_) => &topology.functions,
     };
 
     tracing::debug!("Modified fns: {}", &fns.len());
@@ -363,9 +375,8 @@ pub async fn resolve(ctx: &Context, root: &Root, topology: &Topology, _diff: boo
 pub async fn resolve_given(
     ctx: &Context,
     topology: &Topology,
-    component: &str
+    component: &str,
 ) -> HashMap<String, Function> {
-
     let mut functions: HashMap<String, Function> = HashMap::new();
     let fns = &topology.functions;
     if let Some(f) = fns.get(component) {

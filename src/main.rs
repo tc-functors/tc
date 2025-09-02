@@ -435,7 +435,6 @@ pub struct EmulateArgs {
     trace: bool,
 }
 
-
 #[derive(Debug, Args)]
 pub struct ChangelogArgs {
     #[arg(long, short = 'b')]
@@ -640,7 +639,6 @@ async fn compose(args: ComposeArgs) {
     } else {
         tc::compose(opts).await;
     }
-
 }
 
 async fn resolve(args: ResolveArgs) {
@@ -793,10 +791,8 @@ async fn ci_build(args: CBuildArgs) {
         ..
     } = args;
 
-
     tc::ci_build(topology, function, branch).await;
 }
-
 
 async fn cache(args: CacheArgs) {
     let CacheArgs {
@@ -845,7 +841,7 @@ async fn changelog(args: ChangelogArgs) {
 
 fn init_tracing(trace: bool) {
     if trace {
-        unsafe {  std::env::set_var("TC_TRACE", "2") };
+        unsafe { std::env::set_var("TC_TRACE", "2") };
         let filter = Targets::new()
             .with_target("tc", tracing::Level::DEBUG)
             .with_default(tracing::Level::DEBUG)
@@ -858,7 +854,6 @@ fn init_tracing(trace: bool) {
             .with(tracing_subscriber::fmt::layer())
             .with(filter)
             .init();
-
     } else {
         match env::var("TC_TRACE") {
             Ok(_) => {
@@ -870,10 +865,9 @@ fn init_tracing(trace: bool) {
                     .with(tracing_subscriber::fmt::layer())
                     .with(filter)
                     .init();
-            },
-            Err(_) => ()
+            }
+            Err(_) => (),
         }
-
     }
 }
 
@@ -908,7 +902,6 @@ async fn emulate(args: EmulateArgs) {
     tc::emulate(&env, sandbox, entity).await;
 }
 
-
 async fn scaffold(args: ScaffoldArgs) {
     tc::scaffold(args.kind);
 }
@@ -932,46 +925,41 @@ async fn list(args: ListArgs) {
 }
 
 async fn sync(args: SyncArgs) {
-    let SyncArgs {
-        env,
-        sandbox,
-        ..
-    } = args;
+    let SyncArgs { env, sandbox, .. } = args;
     tc::sync(&env, &sandbox).await;
 }
-
 
 async fn run() {
     let args = Tc::parse();
 
     match args.cmd {
-        Cmd::Build(args)     => build(args).await,
-        Cmd::Cache(args)     => cache(args).await,
-        Cmd::Config(args)    => config(args).await,
-        Cmd::Doc(args)       => doc(args).await,
-        Cmd::Compose(args)   => compose(args).await,
-        Cmd::Resolve(args)   => resolve(args).await,
-        Cmd::Create(args)    => create(args).await,
-        Cmd::Delete(args)    => delete(args).await,
-        Cmd::Emulate(args)   => emulate(args).await,
-        Cmd::Freeze(args)    => freeze(args).await,
-        Cmd::Invoke(args)    => invoke(args).await,
-        Cmd::List(args)      => list(args).await,
-        Cmd::Prune(args)     => prune(args).await,
-        Cmd::Route(args)     => route(args).await,
-        Cmd::Snapshot(args)  => snapshot(args).await,
-        Cmd::Tag(args)       => tag(args).await,
-        Cmd::Test(args)      => test(args).await,
-        Cmd::Unfreeze(args)  => unfreeze(args).await,
-        Cmd::Update(args)    => update(args).await,
-        Cmd::Upgrade(args)   => upgrade(args).await,
+        Cmd::Build(args) => build(args).await,
+        Cmd::Cache(args) => cache(args).await,
+        Cmd::Config(args) => config(args).await,
+        Cmd::Doc(args) => doc(args).await,
+        Cmd::Compose(args) => compose(args).await,
+        Cmd::Resolve(args) => resolve(args).await,
+        Cmd::Create(args) => create(args).await,
+        Cmd::Delete(args) => delete(args).await,
+        Cmd::Emulate(args) => emulate(args).await,
+        Cmd::Freeze(args) => freeze(args).await,
+        Cmd::Invoke(args) => invoke(args).await,
+        Cmd::List(args) => list(args).await,
+        Cmd::Prune(args) => prune(args).await,
+        Cmd::Route(args) => route(args).await,
+        Cmd::Snapshot(args) => snapshot(args).await,
+        Cmd::Tag(args) => tag(args).await,
+        Cmd::Test(args) => test(args).await,
+        Cmd::Unfreeze(args) => unfreeze(args).await,
+        Cmd::Update(args) => update(args).await,
+        Cmd::Upgrade(args) => upgrade(args).await,
         Cmd::Changelog(args) => changelog(args).await,
-        Cmd::Version(..)     => version().await,
-        Cmd::Scaffold(args)  => scaffold(args).await,
-        Cmd::Sync(args)  => sync(args).await,
-        Cmd::Release(args)   => ci_release(args).await,
-        Cmd::CBuild(args)   => ci_build(args).await,
-        Cmd::Deploy(args)    => ci_deploy(args).await,
+        Cmd::Version(..) => version().await,
+        Cmd::Scaffold(args) => scaffold(args).await,
+        Cmd::Sync(args) => sync(args).await,
+        Cmd::Release(args) => ci_release(args).await,
+        Cmd::CBuild(args) => ci_build(args).await,
+        Cmd::Deploy(args) => ci_deploy(args).await,
     }
 }
 
