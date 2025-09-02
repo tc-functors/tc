@@ -447,6 +447,8 @@ pub struct EmulateArgs {
     entity: Option<String>,
     #[arg(long, short = 'k')]
     kind: Option<String>,
+    #[arg(long, action, short = 'l')]
+    shell: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -921,12 +923,13 @@ async fn emulate(args: EmulateArgs) {
         profile,
         sandbox,
         entity,
+        shell,
         trace,
         ..
     } = args;
     init_tracing(trace);
     let env = tc::init(profile, None).await;
-    tc::emulate(&env, sandbox, entity).await;
+    tc::emulate(&env, sandbox, entity, shell).await;
 }
 
 async fn scaffold(args: ScaffoldArgs) {

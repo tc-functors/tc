@@ -701,10 +701,15 @@ pub async fn sync(env: &str, sandbox: &str) {
     }
 }
 
-pub async fn emulate(auth: &Auth, sandbox: Option<String>, maybe_entity: Option<String>) {
+pub async fn emulate(
+    auth: &Auth,
+    sandbox: Option<String>,
+    maybe_entity: Option<String>,
+    shell: bool
+) {
     let sandbox = u::maybe_string(sandbox, "stable");
     let topology = composer::compose(&u::pwd(), false);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, false, true).await;
     let entity_component = u::maybe_string(maybe_entity, "function");
-    emulator::emulate(auth, &rt, &entity_component).await;
+    emulator::emulate(auth, &rt, &entity_component, shell).await;
 }

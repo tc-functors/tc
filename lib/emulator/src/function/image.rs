@@ -11,9 +11,9 @@ use std::collections::HashMap;
 
 fn gen_entry_point(lang: &str) -> String {
     match lang {
-        "python3.10" | "python3.9" => format!(
+        "python3.12" | "python3.11" | "python3.10" | "python3.9" => format!(
             r"#!/bin/sh
-exec /usr/local/bin/aws-lambda-rie /var/lang/bin/python3.10 -m awslambdaric $@
+exec /usr/local/bin/aws-lambda-rie /var/lang/bin/{lang} -m awslambdaric $@
 "
         ),
         _ => s!(""),
@@ -24,7 +24,6 @@ fn docker_build_cmd(name: &str, uri: &str) -> String {
     format!(
         r#"docker build -t build_{name} -f- . <<EOF
 FROM {uri}
-RUN pip install boto3 -q -q -q --exists-action i
 COPY ./entry_script.sh /entry_script.sh
 RUN chmod +x /entry_script.sh
 ENTRYPOINT [ "/entry_script.sh", "handler.handler" ]
@@ -33,13 +32,21 @@ EOF
     )
 }
 
-// fn as_env_str(kvs: HashMap<String, String>) {
+fn as_env_str(kvs: HashMap<String, String>) -> String {
+    let mut s: String = String::from("");
+    for (k, v) in kvs {
+        let m = format!("-e {}={} ", &k, &v);
+        s.push_str(&m);
+    }
+    s
+}
 
-// }
-
-fn docker_run_cmd(name: &str) -> String {
+async fn docker_run_cmd(auth: &Auth, name: &str, vars: &HashMap<String, String>) -> String {
+    let env_str = as_env_str(vars.clone());
+    let (key, secret, token) = auth.get_keys().await;
     format!(
-        "docker run -p 9000:8080 -v $(pwd)/build:/opt -w /var/task -v $(pwd):/var/task -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -v $HOME/.aws:/root/aws:ro -e AWS_REGION=us-west-2 -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}"
+        "docker run -p 9000:8080 -w /var/task -v $(pwd):/var/task {} -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_ACCESS_KEY_ID={} -e AWS_SECRET_ACCESS_KEY={} -e AWS_SESSION_TOKEN={} -e AWS_DEFAULT_REGION={} -e AWS_REGION={} -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}",
+        &env_str, &key, &secret, &token, &auth.region, &auth.region
     )
 }
 
@@ -49,7 +56,15 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
     u::stencil(uri, table)
 }
 
-pub async fn run(auth: &Auth, dir: &str, function: &Function) {
+pub fn docker_shell_cmd(name: &str, region: &str, profile: &str, vars: &HashMap<String, String>) -> String {
+    let env_str = as_env_str(vars.clone());
+    format!(
+            "docker run -p 8888:8888 -w /var/task -v $(pwd):/var/task {} -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION={} -e AWS_PROFILE={} -v $HOME/.aws:/root/aws:ro -it --entrypoint /bin/bash build_{name}",
+        &env_str, region, profile
+    )
+}
+
+pub async fn run(auth: &Auth, dir: &str, function: &Function, shell: bool) {
     aws::ecr::login(auth, &dir).await;
 
     let Function { runtime, name, .. } = function;
@@ -77,7 +92,15 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function) {
     let b_cmd = docker_build_cmd(&name, &code_image_uri);
     u::sh(&b_cmd, dir);
 
-    let cmd = docker_run_cmd(&name);
+    let vars = &function.runtime.environment;
+
+    let cmd = if shell {
+        docker_shell_cmd(&name, &auth.region, &auth.name, vars)
+    } else {
+        docker_run_cmd(&auth, &name, vars).await
+    };
     u::runcmd_stream(&cmd, dir);
     u::sh("rm -f entry_script.sh", dir);
 }
+
+// shell
