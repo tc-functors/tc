@@ -125,12 +125,27 @@ pub async fn resolve_entity_component(
     let rendered = ctx.render(&templated);
     let mut partial_t: Topology = serde_json::from_str(&rendered).unwrap();
 
+    let Topology {
+        namespace,
+        fqn,
+        version,
+        kind,
+        ..
+    } = topology;
+
+    let rt = Root {
+        namespace: namespace.to_string(),
+        fqn: ctx.render(&fqn),
+        version: version.to_string(),
+        kind: kind.clone(),
+    };
+
     match entity {
         Entity::Event => {
             partial_t.events = event::resolve(&ctx, &partial_t).await;
         }
         Entity::Function => {
-            partial_t.functions = function::resolve_given(&ctx, &partial_t, component).await;
+            partial_t.functions = function::resolve_given(&ctx, &rt, &partial_t, component).await;
         }
         Entity::Trigger => {
             partial_t.pools = pool::resolve(&ctx, &partial_t).await;

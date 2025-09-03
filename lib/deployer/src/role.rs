@@ -31,7 +31,8 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
     }
 }
 
-async fn create_aux(
+
+pub async fn create_aux(
     profile: String,
     role_arn: Option<String>,
     role: composer::Role,

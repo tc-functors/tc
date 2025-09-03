@@ -3,6 +3,7 @@ use crate::aws::{
     ecs::TaskDef,
     lambda,
 };
+use crate::role;
 use authorizer::Auth;
 use composer::{
     Function,
@@ -230,6 +231,18 @@ async fn update_vars(auth: &Auth, funcs: &HashMap<String, Function>) {
         }
     }
 }
+async fn update_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
+    let mut roles: HashMap<String, composer::Role> = HashMap::new();
+    for (_, f) in funcs {
+        let kind = f.runtime.role.kind.clone();
+        let role_kind: &str  = &kind.to_str();
+        if  role_kind != "base" || role_kind != "provided" {
+            roles.insert(f.runtime.role.name.clone(), f.runtime.role.clone());
+        }
+    }
+    role::create_or_update(auth, &roles, &HashMap::new()).await;
+}
+
 
 async fn update_concurrency(auth: &Auth, funcs: &HashMap<String, Function>) {
     for (_, f) in funcs {
@@ -289,7 +302,7 @@ pub async fn update(auth: &Auth, functions: &HashMap<String, Function>, componen
         "concurrency" => update_concurrency(&auth, functions).await,
         "runtime" => update_runtime_version(&auth, functions).await,
         "tags" => update_tags(&auth, functions).await,
-        "roles" => (),
+        "roles" => update_roles(&auth, functions).await,
         _ => update_dir(&auth, functions, component).await,
     }
 }
