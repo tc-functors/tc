@@ -364,23 +364,29 @@ pub fn diff(namespace: &str, from: &str, to: &str, fns: &HashMap<String, Functio
     let fmod_2 = files_modified_in_branch();
 
     for (name, f) in fns {
-        let rdir = &f.dir.strip_prefix(
+        let maybe_rdir = &f.dir.strip_prefix(
             &format!("{}/", u::root())
-        ).unwrap();
-        for line in &lines {
+        );
 
-            if line.starts_with(rdir) {
+        if let Some(rdir) = maybe_rdir {
+
+            for line in &lines {
+
+                if line.starts_with(rdir) {
+                    changed_fns.insert(name.to_string(), f.clone());
+                }
+            }
+
+            let maybe_pdir = &f.dir.strip_prefix(&format!("{}/",
+                                                    u::pwd()));
+            if let Some(pdir) = maybe_pdir {
+                if fmod_1.contains(&pdir.to_string()) {
+                    changed_fns.insert(name.to_string(), f.clone());
+                }
+            }
+            if fmod_2.contains(&rdir.to_string()) {
                 changed_fns.insert(name.to_string(), f.clone());
             }
-        }
-
-        let pdir = &f.dir.strip_prefix(&format!("{}/",
-                                                u::pwd())).unwrap();
-        if fmod_1.contains(&pdir.to_string()) {
-            changed_fns.insert(name.to_string(), f.clone());
-        }
-        if fmod_2.contains(&rdir.to_string()) {
-            changed_fns.insert(name.to_string(), f.clone());
         }
 
     }
@@ -431,6 +437,7 @@ pub async fn resolve(
 
 pub async fn resolve_given(
     ctx: &Context,
+    root: &Root,
     topology: &Topology,
     component: &str,
 ) -> HashMap<String, Function> {
@@ -440,6 +447,8 @@ pub async fn resolve_given(
         let mut fu: Function = f.clone();
         fu.runtime = resolve_runtime(ctx, &f.runtime).await;
         functions.insert(component.to_string(), fu.clone());
+        functions
+    } else {
+        resolve(ctx, root, topology, true).await
     }
-    functions
 }
