@@ -181,6 +181,8 @@ pub struct DiffArgs {
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
     entity: Option<String>,
+    #[arg(long, short = 'b')]
+    between: Option<String>,
     #[arg(long, action, short = 'r')]
     recursive: bool,
     #[arg(long, action, short = 't')]
@@ -683,14 +685,19 @@ async fn diff(args: DiffArgs) {
         role,
         sandbox,
         recursive,
+        between,
         trace,
         ..
     } = args;
 
     init_tracing(trace);
 
-    let env = tc::init(profile, role).await;
-    tc::diff(env, sandbox, recursive, trace).await;
+    if let Some(b) = between {
+        tc::diff_between(&b).await;
+    } else {
+        let env = tc::init(profile, role).await;
+        tc::diff(env, sandbox, recursive, trace).await;
+    }
 }
 
 async fn invoke(args: InvokeArgs) {
