@@ -169,7 +169,7 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
               "api_call": true
            }}}}"#
     );
-    println!("Triggering build {}:{}:{}", prefix, function, branch);
+    println!("Triggering build {}/{}:{}", prefix, function, branch);
     ci.trigger_workflow(payload).await
 }
 

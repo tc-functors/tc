@@ -75,7 +75,7 @@ async fn build_with_docker(
     auth: &Auth,
     dir: &str,
     langr: &LangRuntime,
-    name: &str,
+    _name: &str,
 ) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
