@@ -328,21 +328,74 @@ fn files_modified_uncommitted() -> Vec<String> {
         .collect()
 }
 
-fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
+pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
     let dir = pwd();
-    sh(&format!("git fetch origin refs/tags/{}-{}", namespace, to), &dir);
-    sh(&format!("git fetch origin refs/tags/{}-{}", namespace, from), &dir);
+    let from_tag = format!("{}-{}", namespace, from);
+    let to_tag = format!("{}-{}", namespace, to);
+    sh(&format!("git fetch origin +refs/tags/{}:refs/tags/{}", &to_tag, &to_tag), &dir);
+    sh(&format!("git fetch origin +refs/tags/{}:refs/tags/{}", &from_tag, &from_tag), &dir);
     let cmd = format!(
-        r#"git diff {}-{}...{}-{} --name-only . | xargs dirname | sort | uniq"#,
-        namespace, from, namespace, to
+        r#"git diff {}...{} --name-only . | xargs dirname | sort | uniq"#,
+        &from_tag, &to_tag
     );
     tracing::debug!("Find modified: {}", &cmd);
 
 
     let (status, out, err) = runc(&cmd, &dir);
     tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
-    let lines = kit::split_lines(&out);
-    lines.iter().map(|s| s.to_string()).collect()
+    if status {
+        let lines = kit::split_lines(&out);
+        lines.iter().map(|s| s.to_string()).collect()
+    } else {
+        vec![]
+    }
+}
+
+
+pub fn diff(namespace: &str, from: &str, to: &str, fns: &HashMap<String, Function>) -> HashMap<String, Function> {
+    let mut changed_fns: HashMap<String, Function> = HashMap::new();
+
+    tracing::debug!("Diffing namespace {} from: {} to: {}", namespace, from, to);
+
+    let lines = if to == from {
+        vec![]
+    } else {
+        let xs = find_between_versions(namespace, from, to);
+        if xs.is_empty() {
+            find_between_versions(namespace, to, from)
+        } else {
+            xs
+        }
+    };
+
+    let fmod_1 = match std::env::var("CI") {
+        Ok(_) => vec![],
+        Err(_) => files_modified_uncommitted()
+    };
+    let fmod_2 = files_modified_in_branch();
+
+    for (name, f) in fns {
+        let rdir = &f.dir.strip_prefix(
+            &format!("{}/", u::root())
+        ).unwrap();
+        for line in &lines {
+
+            if line.starts_with(rdir) {
+                changed_fns.insert(name.to_string(), f.clone());
+            }
+        }
+
+        let pdir = &f.dir.strip_prefix(&format!("{}/",
+                                                u::pwd())).unwrap();
+        if fmod_1.contains(&pdir.to_string()) {
+            changed_fns.insert(name.to_string(), f.clone());
+        }
+        if fmod_2.contains(&rdir.to_string()) {
+            changed_fns.insert(name.to_string(), f.clone());
+        }
+
+    }
+    changed_fns
 }
 
 pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> HashMap<String, Function> {
@@ -356,52 +409,11 @@ pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> Has
 
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
-    let fmod_1 = match std::env::var("CI") {
-        Ok(_) => vec![],
-        Err(_) => files_modified_uncommitted()
-    };
-    let fmod_2 = files_modified_in_branch();
-
-
-    let mut changed_fns: HashMap<String, Function> = HashMap::new();
     if let Some(target_version) = maybe_version {
-
-        tracing::debug!(
-            "Diffing namespace {} sandbox: {} git: {}",
-            &namespace,
-            &target_version,
-            &version
-        );
-
-        let lines = if &target_version == version {
-            vec![]
-        } else {
-            find_between_versions(&namespace, &target_version, &version)
-        };
-
-        for (name, f) in &topology.functions {
-            let rdir = &f.dir.strip_prefix(
-                &format!("{}/", u::root())
-            ).unwrap();
-            for line in &lines {
-
-                if line.starts_with(rdir) {
-                    changed_fns.insert(name.to_string(), f.clone());
-                }
-            }
-
-            let pdir = &f.dir.strip_prefix(&format!("{}/",
-                                           u::pwd())).unwrap();
-            if fmod_1.contains(&pdir.to_string()) {
-                changed_fns.insert(name.to_string(), f.clone());
-            }
-            if fmod_2.contains(&rdir.to_string()) {
-                changed_fns.insert(name.to_string(), f.clone());
-            }
-
-        }
+        diff(&namespace, &target_version, &version, &topology.functions)
+    } else {
+        HashMap::new()
     }
-    changed_fns
 }
 
 pub async fn resolve(

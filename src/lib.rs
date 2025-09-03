@@ -13,6 +13,7 @@ use tabled::{
     Style,
     Table,
 };
+use itertools::Itertools;
 mod interactive;
 
 pub struct BuildOpts {
@@ -233,6 +234,25 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
         }
     }
 }
+
+pub async fn diff_between(between: &str) {
+    let topology = composer::compose(&u::pwd(), true);
+
+    let (from, to) = between.split("...").collect_tuple().unwrap();
+    let fns = resolver::function::diff(&topology.namespace, &from, &to, &topology.functions);
+
+    println!("Modified functions:");
+    for (name, _) in fns {
+        println!("{}", name);
+    }
+    for (_, node) in &topology.nodes {
+        let fns = resolver::function::diff(&topology.namespace, &from, &to, &node.functions);
+        for (name, _) in fns {
+            println!("{}/{}", node.namespace, name);
+        }
+    }
+}
+
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {
     let Topology {
