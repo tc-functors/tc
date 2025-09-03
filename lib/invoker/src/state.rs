@@ -53,6 +53,13 @@ pub async fn execute_state_machine(auth: &Auth, name: &str, payload: &str, mode:
     }
 }
 
+pub async fn execute_sync_state_machine(auth: &Auth, name: &str, payload: &str) -> Option<String> {
+    let client = sfn::make_client(auth).await;
+    let arn = auth.sfn_arn(name);
+    let result = sfn::start_sync_execution(client.clone(), &arn, &payload, Some(name.to_string())).await;
+    result
+}
+
 fn build_vars(auth: &Auth) -> HashMap<String, String> {
     let mut vars: HashMap<String, String> = HashMap::new();
     vars.insert(s!("account"), auth.account.clone());
@@ -67,7 +74,13 @@ pub fn augment_payload(payload_str: &str, vars: HashMap<String, String>) -> Stri
 pub async fn invoke(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bool) {
     let vars = build_vars(auth);
     let payload = augment_payload(payload, vars);
-    execute_state_machine(auth, name, &payload, mode, dumb).await;
+
+    if mode == "Express" {
+        let result = execute_sync_state_machine(auth, name, &payload).await;
+        println!("{:?}", result);
+    } else {
+        execute_state_machine(auth, name, &payload, mode, dumb).await;
+    };
 }
 
 pub async fn invoke_emulator(auth: &Auth, dir: &str, definition: &str, fqn: &str, payload: &str) {

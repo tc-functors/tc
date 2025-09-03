@@ -16,7 +16,7 @@ pub async fn make_client(auth: &Auth) -> Client {
 }
 
 pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
-    println!("Invoking {}", arn);
+    println!("Invoking Standard State Machine with ARN: {}", arn);
     let res = client
         .start_execution()
         .state_machine_arn(arn.to_string())
@@ -41,6 +41,7 @@ pub async fn start_sync_execution(
     input: &str,
     name: Option<String>,
 ) -> Option<String> {
+    println!("Invoking Express State Machine with ARN: {}", arn);
     let res = client
         .start_sync_execution()
         .state_machine_arn(arn.to_string())
