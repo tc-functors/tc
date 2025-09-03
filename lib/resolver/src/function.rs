@@ -338,17 +338,11 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
         r#"git diff {}...{} --name-only . | xargs dirname | sort | uniq"#,
         &from_tag, &to_tag
     );
-    tracing::debug!("Find modified: {}", &cmd);
-
-
     let (status, out, err) = runc(&cmd, &dir);
     tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
-    if status {
-        let lines = kit::split_lines(&out);
-        lines.iter().map(|s| s.to_string()).collect()
-    } else {
-        vec![]
-    }
+
+    let lines = kit::split_lines(&out);
+    lines.iter().map(|s| s.to_string()).collect()
 }
 
 
@@ -360,12 +354,7 @@ pub fn diff(namespace: &str, from: &str, to: &str, fns: &HashMap<String, Functio
     let lines = if to == from {
         vec![]
     } else {
-        let xs = find_between_versions(namespace, from, to);
-        if xs.is_empty() {
-            find_between_versions(namespace, to, from)
-        } else {
-            xs
-        }
+        find_between_versions(namespace, from, to)
     };
 
     let fmod_1 = match std::env::var("CI") {
@@ -412,7 +401,7 @@ pub async fn find_modified(auth: &Auth, root: &Root, topology: &Topology) -> Has
     if let Some(target_version) = maybe_version {
         diff(&namespace, &target_version, &version, &topology.functions)
     } else {
-        HashMap::new()
+        topology.functions.clone()
     }
 }
 

@@ -571,18 +571,24 @@ pub async fn ci_release_interactive() {
 }
 
 pub async fn ci_build(_service: Option<String>, _function: Option<String>, branch: Option<String>) {
-    let dir = u::root();
+    let dir = u::pwd();
     let maybe_function = composer::current_function(&dir);
     if let Some(f) = maybe_function {
         let rdir = &f.dir.strip_prefix(
             &format!("{}/", u::root())
         ).unwrap();
-        let namespace = u::split_first(&rdir, "/");
+        let namespace = u::second(&rdir, "/");
         let branch = u::maybe_string(branch, &tagger::git::branch_name(&dir));
         let url = releaser::build(&namespace, &rdir, &branch).await;
         open::that(url).unwrap();
     } else {
-        println!("Function not found")
+        let rdir = &dir.strip_prefix(
+            &format!("{}/", u::root())
+        ).unwrap();
+        let namespace = u::second(&rdir, "/");
+        let branch = u::maybe_string(branch, &tagger::git::branch_name(&dir));
+        let url = releaser::build(&namespace, &rdir, &branch).await;
+        open::that(url).unwrap();
     }
 }
 
