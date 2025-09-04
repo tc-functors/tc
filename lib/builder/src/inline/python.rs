@@ -69,3 +69,39 @@ RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {p
     let dockerfile = format!("{}/Dockerfile", dir);
     u::write_str(&dockerfile, &f);
 }
+
+pub fn gen_dockerfile_unshared(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+    let pre = deps_str(pre.to_vec());
+    let post = deps_str(post.to_vec());
+    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
+        Ok(_) => "pip install -r requirements.txt --target=/build/python",
+        Err(_) => {
+            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all:"
+        }
+    };
+
+    let image = find_image(&runtime);
+    let req_cmd = gen_req_cmd(dir);
+
+    let f = format!(
+        r#"
+FROM {image} AS intermediate
+WORKDIR {dir}
+
+COPY pyproject.toml ./
+
+RUN {req_cmd}
+
+RUN rm -rf /build/python && mkdir -p /build
+
+RUN {pre}
+
+RUN --mount=type=cache,target=/.root/cache {pip_cmd}
+
+RUN {post}
+
+"#
+    );
+    let dockerfile = format!("{}/Dockerfile", dir);
+    u::write_str(&dockerfile, &f);
+}

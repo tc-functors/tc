@@ -18,6 +18,7 @@ pub struct Build {
     pub post: Vec<String>,
     pub version: Option<String>,
     pub command: String,
+    pub shared_context: bool,
     pub environment: HashMap<String, String>,
 }
 
@@ -48,6 +49,10 @@ impl Build {
                 post: b.post,
                 command: b.command,
                 version: b.version,
+                shared_context: match b.shared_context {
+                    Some(s) => s,
+                    None => true
+                },
                 environment: HashMap::new(),
             },
             None => {
@@ -63,6 +68,7 @@ impl Build {
                     post: vec![],
                     version: None,
                     command: command,
+                    shared_context: false,
                     environment: HashMap::new(),
                 }
             }
