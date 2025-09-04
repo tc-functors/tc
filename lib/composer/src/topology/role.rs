@@ -99,6 +99,33 @@ impl Role {
         }
     }
 
+
+    pub fn new_static(entity: Entity, role_file: &str, _namespace: &str, entity_name: &str) -> Role {
+        if u::file_exists(&role_file) {
+            let name = entity_name;
+            Role {
+                name: s!(&name),
+                kind: Kind::Override,
+                trust: Trust::new(),
+                arn: template::role_arn(&name),
+                policy: read_policy(&role_file),
+                policy_name: s!(&name),
+                policy_arn: template::policy_arn(&name),
+            }
+        } else {
+            let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+            Role {
+                name: s!(&name),
+                kind: Kind::Base,
+                trust: Trust::new(),
+                arn: template::role_arn(&name),
+                policy: Policy::new(entity),
+                policy_name: s!(name),
+                policy_arn: template::policy_arn(&name),
+            }
+        }
+    }
+
     pub fn default(entity: Entity) -> Role {
         match std::env::var("TC_LEGACY_ROLES") {
             Ok(_) => {
