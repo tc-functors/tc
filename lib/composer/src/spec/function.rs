@@ -273,6 +273,7 @@ pub struct RuntimeSpec {
 
     pub vars_file: Option<String>,
     pub role_file: Option<String>,
+    pub role_name: Option<String>,
     pub role: Option<String>,
 
     pub uri: Option<String>,
