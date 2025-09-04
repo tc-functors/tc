@@ -130,7 +130,7 @@ fn zip(dir: &str, langr: &LangRuntime) {
             sh(&cmd, &format!("{}/build/python", dir));
         }
         Lang::Ruby => {
-            let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
+            let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && sed -i \"/group/,/end:/d\" Gemfile && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
             sh(&cmd, dir);
         }
         Lang::Node => {
