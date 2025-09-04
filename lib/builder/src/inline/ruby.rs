@@ -44,6 +44,8 @@ WORKDIR {dir}
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY Gemfile ./
 
+RUN sed -i "/group/,/end:/d" Gemfile
+
 COPY --from=shared . {build_context}/
 
 RUN mkdir -p /build/ruby/lib /build/lib
