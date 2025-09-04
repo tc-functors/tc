@@ -211,6 +211,9 @@ pub struct BuildSpec {
     #[serde(default)]
     pub package_manager: Option<String>,
 
+    #[serde(default)]
+    pub shared_context: Option<bool>,
+
     /// Command to use when build kind is Code
     #[serde(default = "default_command")]
     pub command: String,

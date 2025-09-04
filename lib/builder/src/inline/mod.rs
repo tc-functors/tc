@@ -25,6 +25,17 @@ fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<
     }
 }
 
+fn gen_dockerfile_unshared(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+    match langr.to_lang() {
+        Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
+        Lang::Ruby => ruby::gen_dockerfile_unshared(dir, pre, post),
+        Lang::Rust => rust::gen_dockerfile(dir),
+        Lang::Node => node::gen_dockerfile(dir),
+        _ => todo!(),
+    }
+}
+
+
 fn gen_dockerignore(dir: &str) {
     let f = format!(
         r#"
@@ -76,6 +87,7 @@ async fn build_with_docker(
     dir: &str,
     langr: &LangRuntime,
     _name: &str,
+    shared_context: bool
 ) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
@@ -83,9 +95,15 @@ async fn build_with_docker(
         _ => String::from(""),
     };
     //let container_sha = create_buildx_container(name, dir);
-    let cmd_str = format!("docker buildx build --platform=linux/amd64 --ssh default -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+
+    let cmd_str = if shared_context {
+
+        format!("docker buildx build --platform=linux/amd64 --ssh default -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             u::basedir(dir),
-            &token);
+            &token)
+    } else {
+        format!("docker buildx build --platform=linux/amd64 .")
+    };
 
     let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
@@ -160,7 +178,7 @@ pub async fn build(
     bs: &Build,
 ) -> BuildStatus {
     let Build {
-        command, pre, post, ..
+        command, pre, post, shared_context, ..
     } = bs;
 
     if should_build_deps() {
@@ -171,12 +189,16 @@ pub async fn build(
         let prefix = format!("Building {} ({}/inline)", name.blue(), langr.to_str());
         bar.set_prefix(prefix);
 
-        gen_dockerfile(dir, langr, pre, post);
+        if *shared_context {
+            gen_dockerfile(dir, langr, pre, post);
+        } else {
+            gen_dockerfile_unshared(dir, langr, pre, post);
+        }
         bar.inc(1);
         gen_dockerignore(dir);
         bar.inc(2);
 
-        let (status, out, err) = build_with_docker(auth, dir, langr, name).await;
+        let (status, out, err) = build_with_docker(auth, dir, langr, name, *shared_context).await;
         bar.inc(3);
 
         if !status {
