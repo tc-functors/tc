@@ -50,7 +50,7 @@ RUN mkdir -p /build/ruby/lib /build/lib
 
 RUN {pre}
 
-RUN --mount=type=ssh --mount=type=cache,target=/.root/cache bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
+RUN --mount=type=ssh --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
 
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
