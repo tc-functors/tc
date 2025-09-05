@@ -43,20 +43,22 @@ WORKDIR {dir}
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 COPY Gemfile ./
-
-RUN sed -i "/group/,/end:/d" Gemfile
+COPY Gemfile.lock ./
 
 COPY --from=shared . {build_context}/
+RUN sed -i "/group/,/end:/d" Gemfile
 
 RUN mkdir -p /build/ruby/lib /build/lib
 
 RUN {pre}
 
-RUN --mount=type=ssh --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
+RUN --mount=type=ssh --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install
+RUN --mount=type=ssh BUNDLE_WITHOUT="test:development" bundle install --without development test
 
+ENV BUNDLE_WITHOUT "test:development"
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
-RUN cp Gemfile.lock /build/ruby/ && cp Gemfile /build/ruby/
+RUN cp Gemfile.lock /build/ruby/Gemfile.lock && cp Gemfile /build/ruby/
 RUN mkdir -p /build/ruby/vendor
 RUN cp -r vendor/cache /build/ruby/vendor/cache
 RUN rm -rf vendor ruby /build/ruby/lib/cache/
@@ -85,7 +87,8 @@ RUN mkdir -p /build/ruby/lib /build/lib
 
 RUN {pre}
 
-RUN --mount=type=ssh --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install
+ENV BUNDLE_WITHOUT "test:development"
+RUN --mount=type=ssh --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install --without development test
 
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
