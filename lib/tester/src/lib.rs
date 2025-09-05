@@ -107,12 +107,12 @@ async fn invoke(
                 Some(f) => &f.mode,
                 None => "Standard",
             };
-            let maybe_response = if mode == "Express" {
+            let Ok((_exec_arn, maybe_response)) = (if mode == "Express" {
                 sfn::start_sync_execution(client, &arn, &payload, None).await
             } else {
-                let id = sfn::start_execution(client, &arn, &payload).await;
-                Some(id)
-            };
+                let Ok((exec_arn, maybe_response)) = sfn::start_execution(client, &arn, &payload).await else { todo!() };
+                Ok((exec_arn, maybe_response))
+            }) else { todo!() };
             match maybe_response {
                 Some(r) => r,
                 None => panic!("Failed to execute test"),
