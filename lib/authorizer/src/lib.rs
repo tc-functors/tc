@@ -132,11 +132,13 @@ impl Auth {
     }
 
     pub fn sfn_url_express(&self, arn: &str) -> String {
+        let express_exec_arn = arn.replace("stateMachine", "express");
+
         format!(
             "https://{}.console.aws.amazon.com/states/home?region={}#/express-executions/details/{}?startDate={}",
             &self.region,
             &self.region,
-            arn,
+            express_exec_arn,
             kit::current_millis() - 200000
         )
     }

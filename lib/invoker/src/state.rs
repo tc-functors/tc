@@ -47,17 +47,35 @@ struct Response {
 pub async fn execute_state_machine(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bool) {
     let client = sfn::make_client(auth).await;
     let arn = auth.sfn_arn(name);
-    let exec_arn = sfn::start_execution(client.clone(), &arn, &payload).await;
-    if !dumb {
-        open_execution(auth, mode, &exec_arn);
+
+    match sfn::start_execution(client.clone(), &arn, &payload).await {
+        Ok((exec_arn, _start_date)) => {
+            if !dumb {
+                open_execution(auth, mode, &exec_arn);
+            }
+        }
+        Err(error) => {
+            eprintln!("Failed to execute Standard Step Function {}. Error: {}", name, error);
+        }
     }
 }
 
-pub async fn execute_sync_state_machine(auth: &Auth, name: &str, payload: &str) -> Option<String> {
+pub async fn execute_sync_state_machine(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bool) -> Option<String> {
     let client = sfn::make_client(auth).await;
     let arn = auth.sfn_arn(name);
-    let result = sfn::start_sync_execution(client.clone(), &arn, &payload, Some(name.to_string())).await;
-    result
+
+    match sfn::start_sync_execution(client.clone(), &arn, &payload, Some(name.to_string())).await {
+        Ok((exec_arn, output)) => {
+            if !dumb {
+                open_execution(auth, mode, &exec_arn);
+            }
+            output
+        }
+        Err(error) => {
+           eprintln!("Failed to execute Express Step Function {}. Error: {}", name, error);
+           return None
+        }
+    }
 }
 
 fn build_vars(auth: &Auth) -> HashMap<String, String> {
@@ -76,8 +94,10 @@ pub async fn invoke(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bo
     let payload = augment_payload(payload, vars);
 
     if mode == "Express" {
-        let result = execute_sync_state_machine(auth, name, &payload).await;
-        println!("{:?}", result);
+        let result = execute_sync_state_machine(auth, name, &payload, mode, dumb).await;
+        if let Some(res) = result {
+            println!("{}", &res);
+        }
     } else {
         execute_state_machine(auth, name, &payload, mode, dumb).await;
     };
