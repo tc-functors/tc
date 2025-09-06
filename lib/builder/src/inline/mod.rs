@@ -15,17 +15,21 @@ use composer::{
 use kit as u;
 use kit::sh;
 
-fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, skip_dev_deps: bool) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile(dir, langr, pre, post),
-        Lang::Ruby => ruby::gen_dockerfile(dir, pre, post),
+        Lang::Ruby => if skip_dev_deps {
+            ruby::gen_dockerfile(dir, pre, post);
+        } else {
+            ruby::gen_dockerfile_no_wrap(dir, pre, post);
+        }
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
 }
 
-fn gen_dockerfile_unshared(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+fn gen_dockerfile_unshared(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, _wrap: bool) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, pre, post),
@@ -34,6 +38,7 @@ fn gen_dockerfile_unshared(dir: &str, langr: &LangRuntime, pre: &Vec<String>, po
         _ => todo!(),
     }
 }
+
 
 
 fn gen_dockerignore(dir: &str) {
@@ -97,7 +102,6 @@ async fn build_with_docker(
     //let container_sha = create_buildx_container(name, dir);
 
     let cmd_str = if shared_context {
-
         format!("docker buildx build --platform=linux/amd64 --ssh default --load -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             u::basedir(dir),
             &token)
@@ -107,7 +111,9 @@ async fn build_with_docker(
 
     let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
+        println!("Build failed: {} {}", out, err);
         sh("rm -f Dockerfile wrapper", dir);
+        panic!("Build failed");
     }
     (status, out, err)
 }
@@ -178,7 +184,7 @@ pub async fn build(
     bs: &Build,
 ) -> BuildStatus {
     let Build {
-        command, pre, post, shared_context, ..
+        command, pre, post, shared_context, skip_dev_deps, ..
     } = bs;
 
     if should_build_deps() {
@@ -190,9 +196,9 @@ pub async fn build(
         bar.set_prefix(prefix);
 
         if *shared_context {
-            gen_dockerfile(dir, langr, pre, post);
+            gen_dockerfile(dir, langr, pre, post, *skip_dev_deps)
         } else {
-            gen_dockerfile_unshared(dir, langr, pre, post);
+            gen_dockerfile_unshared(dir, langr, pre, post, *skip_dev_deps);
         }
         bar.inc(1);
         gen_dockerignore(dir);

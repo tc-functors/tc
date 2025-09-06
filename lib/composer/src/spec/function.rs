@@ -214,6 +214,9 @@ pub struct BuildSpec {
     #[serde(default)]
     pub shared_context: Option<bool>,
 
+    #[serde(default)]
+    pub skip_dev_deps: Option<bool>,
+
     /// Command to use when build kind is Code
     #[serde(default = "default_command")]
     pub command: String,

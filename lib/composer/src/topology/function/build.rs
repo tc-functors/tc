@@ -19,6 +19,7 @@ pub struct Build {
     pub version: Option<String>,
     pub command: String,
     pub shared_context: bool,
+    pub skip_dev_deps: bool,
     pub environment: HashMap<String, String>,
 }
 
@@ -53,6 +54,10 @@ impl Build {
                     Some(s) => s,
                     None => true
                 },
+                skip_dev_deps: match b.skip_dev_deps {
+                    Some(s) => s,
+                    None => true
+                },
                 environment: HashMap::new(),
             },
             None => {
@@ -69,6 +74,7 @@ impl Build {
                     version: None,
                     command: command,
                     shared_context: false,
+                    skip_dev_deps: false,
                     environment: HashMap::new(),
                 }
             }
