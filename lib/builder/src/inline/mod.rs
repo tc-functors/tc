@@ -98,11 +98,11 @@ async fn build_with_docker(
 
     let cmd_str = if shared_context {
 
-        format!("docker buildx build --platform=linux/amd64 --ssh default -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+        format!("docker buildx build --platform=linux/amd64 --ssh default --load -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             u::basedir(dir),
             &token)
     } else {
-        format!("docker buildx build --platform=linux/amd64 .")
+        format!("docker buildx build --platform=linux/amd64 -t {} .", u::basedir(dir))
     };
 
     let (status, out, err) = u::runc(&cmd_str, dir);
