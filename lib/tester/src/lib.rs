@@ -107,15 +107,19 @@ async fn invoke(
                 Some(f) => &f.mode,
                 None => "Standard",
             };
-            let maybe_response = if mode == "Express" {
-                sfn::start_sync_execution(client, &arn, &payload, None).await
+
+            if mode == "Express" {
+                let (exec_arn, _maybe_response) = match sfn::start_sync_execution(client, &arn, &payload, None).await {
+                   Ok((exec_arn, maybe_response)) => (exec_arn, maybe_response),
+                   Err(error) => panic!("Failed to invoke. Error: {}", error)
+                };
+                return exec_arn
             } else {
-                let id = sfn::start_execution(client, &arn, &payload).await;
-                Some(id)
-            };
-            match maybe_response {
-                Some(r) => r,
-                None => panic!("Failed to execute test"),
+                let (exec_arn, _maybe_response) = match sfn::start_execution(client, &arn, &payload).await {
+                    Ok((exec_arn, maybe_response)) => (exec_arn, maybe_response),
+                    Err(error) => panic!("Failed to invoke. Error: {}", error)
+                };
+                return exec_arn
             }
         }
         Entity::Event => {

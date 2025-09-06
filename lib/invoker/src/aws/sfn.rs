@@ -3,8 +3,8 @@ use aws_sdk_sfn::{
     Client,
     config as sfn_config,
     config::retry::RetryConfig,
+    Error,
 };
-use std::panic;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -15,24 +15,24 @@ pub async fn make_client(auth: &Auth) -> Client {
     )
 }
 
-pub async fn start_execution(client: Client, arn: &str, input: &str) -> String {
-    println!("Invoking {}", arn);
-    let res = client
+pub async fn start_execution(
+    client: Client, 
+    arn: &str, 
+    input: &str
+) -> Result<(String, Option<String>), Error> {
+    println!("Invoking Standard State Machine with ARN: {}", arn);
+    let response = client
         .start_execution()
         .state_machine_arn(arn.to_string())
         .input(input)
         .send()
-        .await;
-    match res {
-        Ok(r) => r.execution_arn,
-        Err(e) => {
-            println!("{:?}", e);
-            panic::set_hook(Box::new(|_| {
-                println!("Error: Failed to invoke. Check payload or sandbox");
-            }));
-            panic!("Failed to invoke")
-        }
-    }
+        .await?;
+    
+    let execution_arn = response.execution_arn;
+    let start_date_ts = Some(response.start_date);
+    let start_date: Option<String> = start_date_ts.map(|dt| dt.to_string());
+
+    Ok((execution_arn, start_date))
 }
 
 pub async fn start_sync_execution(
@@ -40,14 +40,18 @@ pub async fn start_sync_execution(
     arn: &str,
     input: &str,
     name: Option<String>,
-) -> Option<String> {
-    let res = client
+) -> Result<(String, Option<String>), Error> {
+    println!("Invoking Express State Machine with ARN: {}", arn);
+    let response = client
         .start_sync_execution()
         .state_machine_arn(arn.to_string())
         .input(input)
         .set_name(name)
         .send()
-        .await
-        .unwrap();
-    res.output
+        .await?;
+
+    let execution_arn = response.execution_arn;
+    let output = response.output;
+
+    Ok((execution_arn, output))
 }
