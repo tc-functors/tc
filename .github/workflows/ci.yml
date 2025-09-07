@@ -20,7 +20,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Cache
-        run: rustup toolchain install stable --profile minimal --no-self-update
         uses: Swatinem/rust-cache@v2
 
       - name: Build Musl
@@ -65,7 +64,6 @@ jobs:
           targets: "${{ matrix.target }}"
 
       - name: Setup Cache
-        run: rustup toolchain install stable --profile minimal --no-self-update
         uses: Swatinem/rust-cache@v2
 
       - name: Build
