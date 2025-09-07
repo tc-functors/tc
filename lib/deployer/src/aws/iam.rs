@@ -4,16 +4,11 @@ use aws_sdk_iam::{
     Error,
     config as iam_config,
     config::retry::RetryConfig,
-    types::{
-        Tag,
-        builders::TagBuilder,
-    },
 };
 use colored::Colorize;
 use kit as u;
 use kit::LogUpdate;
 use std::{
-    collections::HashMap,
     io::stdout,
 };
 
@@ -26,20 +21,6 @@ pub async fn make_client(auth: &Auth) -> Client {
     )
 }
 
-fn make_tag(key: String, value: String) -> Tag {
-    let tb = TagBuilder::default();
-    tb.key(key).value(value).build().unwrap()
-}
-
-pub fn make_tags(kvs: HashMap<String, String>) -> Vec<Tag> {
-    let mut tags: Vec<Tag> = vec![];
-    for (k, v) in kvs.into_iter() {
-        let tag = make_tag(k, v);
-        tags.push(tag);
-    }
-    tags
-}
-
 #[derive(Debug)]
 pub struct Role {
     pub client: Client,
@@ -48,7 +29,6 @@ pub struct Role {
     pub policy_arn: String,
     pub trust_policy: String,
     pub policy_doc: String,
-    pub tags: Option<Vec<Tag>>,
 }
 
 impl Role {
