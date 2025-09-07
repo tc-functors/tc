@@ -24,12 +24,15 @@ jobs:
         with:
           args: cargo build --target x86_64-unknown-linux-musl --release
 
+      - name: copy tc
+        run: cp target/x86_64-unknown-linux-musl/release/tc tc
+
       - name: Compress binary
         uses: crazy-max/ghaction-upx@v3
         with:
           version: latest
           files: |
-            target/x86_64-unknown-linux-musl/release/tc
+            ./tc
             args: -fq -o tc
 
       - name: Release MUSL
