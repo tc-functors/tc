@@ -190,7 +190,7 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
            {{
              "branch": "main",
              "parameters": {{
-              "tc-build-service": "{prefix}",
+              "tc-build-only": true,
               "tc-build-branch": "{branch}",
               "tc-build-function": "{function}",
               "api_call": true
