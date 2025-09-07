@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.9"
+version = "0.9.10"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.9.9"
+version = "0.9.10"
 
 [dependencies]
 serde = "1.0"
@@ -21,6 +21,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tabled = "0.10.0"
 openssl-sys = "0.9.107"
 clap-markdown = "0.1.4"
+clap-stdin = "0.7.0"
 inquire = "0.7.5"
 itertools = "0.10.5"
 open = "5.0.0"

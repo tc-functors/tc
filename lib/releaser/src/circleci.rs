@@ -45,6 +45,7 @@ impl Circle {
         )
     }
 
+
     fn headers(&self) -> HashMap<String, String> {
         let mut h = HashMap::new();
         h.insert(s!("circle-token"), self.token.clone());
@@ -152,6 +153,32 @@ pub async fn trigger_branch(
     println!(
         "Triggering branch deploy {}:{}:{}/{}",
         env, sandbox, prefix, branch
+    );
+    ci.trigger_workflow(payload).await
+}
+
+pub async fn trigger_dir(
+    repo: &str,
+    env: &str,
+    sandbox: &str,
+    dir: &str,
+) -> String {
+    let ci = Circle::init(repo);
+    let payload = format!(
+        r#"
+           {{
+             "branch": "main",
+             "parameters": {{
+              "tc-deploy-dir": "{dir}",
+              "tc-deploy-only-dir": true,
+              "tc-deploy-sandbox": "{sandbox}",
+              "tc-deploy-env": "{env}",
+              "api_call": true
+           }}}}"#
+    );
+    println!(
+        "Triggering dir deploy {}:{} {}",
+        env, sandbox, dir
     );
     ci.trigger_workflow(payload).await
 }

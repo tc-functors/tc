@@ -16,6 +16,8 @@ use clap::{
     Subcommand,
 };
 
+use clap_stdin::MaybeStdin;
+
 #[derive(Debug, Parser)]
 struct Tc {
     #[clap(subcommand)]
@@ -69,8 +71,6 @@ enum Cmd {
     Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
-    /// Sync all topologies between sandboxes
-    Sync(SyncArgs),
     /// Run tests in topology
     Test(TestArgs),
     /// Create semver tags scoped by a topology
@@ -116,11 +116,13 @@ pub struct DeployArgs {
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long)]
-    manifest: Option<String>,
+    snapshot: Option<MaybeStdin<String>>,
     #[arg(long, short = 'v')]
     version: Option<String>,
     #[arg(long, short = 'b')]
     branch: Option<String>,
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
     #[arg(long, action, short = 'i')]
     interactive: bool,
 }
@@ -197,8 +199,10 @@ pub struct SnapshotArgs {
     sandbox: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
-    #[arg(long, action, short = 'm')]
-    manifest: bool,
+    #[arg(long, action, alias = "with-changelog")]
+    changelog: bool,
+    #[arg(long, action, alias = "with-component-versions")]
+    versions: bool,
     #[arg(long, short = 'S')]
     save: Option<String>,
     #[arg(long, alias = "target-profile")]
@@ -792,14 +796,24 @@ async fn ci_deploy(args: DeployArgs) {
         topology,
         version,
         branch,
+        snapshot,
+        dir,
         interactive,
         ..
     } = args;
 
     if interactive {
         tc::ci_deploy_interactive().await;
+    } else if let Some(ver) = version {
+        tc::ci_deploy_version(topology, env, sandbox, &ver).await;
+    } else if let Some(br) = branch {
+        tc::ci_deploy_branch(topology, env, sandbox, &br).await;
+    } else if let Some(snap) = snapshot {
+        tc::ci_deploy_snapshot(env, sandbox, &snap).await;
+    } else if let Some(d) = dir {
+        tc::ci_deploy_dir(env, sandbox, &d).await;
     } else {
-        tc::ci_deploy(topology, env, sandbox, version, branch).await;
+        println!("Please specify any of --version, --branch, --snapshot")
     }
 }
 
@@ -856,12 +870,20 @@ async fn snapshot(args: SnapshotArgs) {
         sandbox,
         format,
         save,
-        manifest,
+        changelog,
+        versions,
         target_profile,
         ..
     } = args;
 
-    tc::snapshot(profile, sandbox, format, manifest, save, target_profile).await;
+    let opts = tc::SnapshotOpts {
+        format: format,
+        save: save,
+        target_profile: target_profile,
+        gen_changelog: changelog,
+        gen_sub_versions: versions
+    };
+    tc::snapshot(profile, sandbox, opts).await;
 }
 
 async fn changelog(args: ChangelogArgs) {
@@ -961,11 +983,6 @@ async fn list(args: ListArgs) {
     }
 }
 
-async fn sync(args: SyncArgs) {
-    let SyncArgs { env, sandbox, .. } = args;
-    tc::sync(&env, &sandbox).await;
-}
-
 async fn run() {
     let args = Tc::parse();
 
@@ -994,7 +1011,6 @@ async fn run() {
         Cmd::Changelog(args) => changelog(args).await,
         Cmd::Version(..) => version().await,
         Cmd::Scaffold(args) => scaffold(args).await,
-        Cmd::Sync(args) => sync(args).await,
         Cmd::Release(args) => ci_release(args).await,
         Cmd::CBuild(args) => ci_build(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,

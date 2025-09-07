@@ -1,73 +1,82 @@
 use authorizer::Auth;
 use kit as u;
+use kit::*;
 mod aws;
-mod versions;
+mod manifest;
 
 use composer::{
-    Topology,
     TopologyKind,
 };
-use serde_derive::Serialize;
-use std::collections::HashMap;
 use tabled::{
     Table,
+    builder::Builder,
     settings::Style,
 };
-pub use versions::Record;
 
-pub fn pretty_print(records: Vec<Record>, format: &str) {
-    match format {
-        "table" => {
-            let table = Table::new(records).with(Style::psql()).to_string();
-            println!("{}", table);
-        }
-        "json" => {
-            let s = u::pretty_json(records);
-            println!("{}", &s);
-        }
-        _ => (),
-    }
-}
+pub use manifest::Manifest;
 
 pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
     let topologies = composer::compose_root(dir, false);
-    versions::find_by_profiles(sandbox, profiles, topologies).await;
-}
+    let mut builder = Builder::default();
 
-pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Record> {
-    let topologies = composer::compose_root(dir, false);
-    versions::find(auth, sandbox, topologies).await
+    let mut cols: Vec<String> = vec![];
+    cols.push(s!("Topology"));
+    cols.extend(profiles.clone());
+
+    builder.push_record(cols);
+
+    for (_, node) in topologies {
+        let mut row: Vec<String> = vec![];
+        let name = manifest::render(&node.fqn, sandbox);
+
+        row.push(s!(&node.namespace));
+
+        for profile in &profiles {
+            let auth = Auth::new(Some(s!(profile)), None).await;
+            let tags = manifest::lookup_tags(&auth, &node.kind, &name).await;
+            let version = u::safe_unwrap(tags.get("version"));
+            row.push(version);
+        }
+        builder.push_record(row);
+    }
+
+    let mut table = builder.build();
+    println!("{}", table.with(Style::psql()));
 }
 
 pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option<String> {
-    versions::find_version(auth, fqn, kind).await
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct Manifest {
-    time: String,
-    env: String,
-    sandbox: String,
-    namespace: String,
-    version: String,
-    tc_version: String,
-    updated_at: String,
-    changelog: Vec<String>,
-    topology: Option<Topology>,
-}
-
-fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
-    if !version.is_empty() {
-        u::split_lines(&tagger::changelogs_since_last(&namespace, &version))
-            .iter()
-            .map(|s| s.to_string())
-            .collect()
+    let tags = manifest::lookup_tags(auth, kind, fqn).await;
+    let namespace = u::safe_unwrap(tags.get("namespace"));
+    if !&namespace.is_empty() {
+        let version = u::safe_unwrap(tags.get("version"));
+        if version != "0.0.1" {
+            Some(version)
+        } else {
+            None
+        }
     } else {
-        vec![]
+        None
     }
 }
 
-async fn save_manifest(auth: &Auth, uri: &str, payload: &str, target_profile: Option<String>) {
+pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
+    let topologies = composer::compose_root(dir, false);
+    let mut rows: Vec<Manifest> = vec![];
+    for (_, node) in topologies {
+        let row = Manifest::new(auth, sandbox, &node, gen_changelog).await;
+        rows.push(row)
+    }
+    rows.sort_by(|a, b| b.namespace.cmp(&a.namespace));
+    rows.reverse();
+    rows
+}
+
+pub fn load(s: &str) -> Vec<Manifest> {
+    let xs: Vec<Manifest> = serde_json::from_str(s).unwrap();
+    xs
+}
+
+pub async fn save(auth: &Auth, uri: &str, payload: &str, target_profile: Option<String>) {
     let auth = match target_profile {
         Some(p) => &init_auth(&p).await,
         None => auth,
@@ -90,37 +99,16 @@ async fn init_auth(target_profile: &str) -> Auth {
     }
 }
 
-pub async fn generate_manifest(
-    auth: &Auth,
-    dir: &str,
-    sandbox: &str,
-    save: Option<String>,
-    target_profile: Option<String>,
-) {
-    let topologies = composer::compose_root(dir, false);
-    let versions = versions::find(auth, sandbox, topologies.clone()).await;
-    let mut xs: HashMap<String, Manifest> = HashMap::new();
-
-    for v in versions {
-        let m = Manifest {
-            time: u::utc_now(),
-            version: v.version.clone(),
-            namespace: v.namespace.clone(),
-            env: auth.name.clone(),
-            sandbox: v.sandbox,
-            tc_version: v.tc_version,
-            updated_at: v.updated_at,
-            changelog: find_changelog(&v.namespace, &v.version),
-            topology: topologies.get(&v.namespace).cloned(),
-        };
-        xs.insert(v.namespace.clone(), m);
-    }
-
-    let s = serde_json::to_string_pretty(&xs).unwrap();
-
-    if let Some(uri) = save {
-        save_manifest(auth, &uri, &s, target_profile).await
-    } else {
-        println!("{}", &s);
+pub fn pretty_print(records: &Vec<Manifest>, format: &str) {
+    match format {
+        "table" => {
+            let table = Table::new(records).with(Style::psql()).to_string();
+            println!("{}", table);
+        }
+        "json" => {
+            let s = u::pretty_json(records);
+            println!("{}", &s);
+        }
+        _ => (),
     }
 }

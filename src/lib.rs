@@ -511,12 +511,11 @@ pub async fn upgrade(version: Option<String>) {
 // ci
 // deprecated
 
-pub async fn ci_deploy(
+pub async fn ci_deploy_version(
     topology: Option<String>,
     env: Option<String>,
     sandbox: Option<String>,
-    version: Option<String>,
-    branch: Option<String>,
+    version: &str,
 ) {
     let dir = u::pwd();
     let env = match env {
@@ -526,15 +525,60 @@ pub async fn ci_deploy(
     let namespace = composer::topology_name(&dir);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
-    let url = match branch {
-        Some(b) => releaser::deploy_branch(&env, &name, &sandbox, &b).await,
-        None => {
-            let current_version = composer::topology_version(&namespace);
-            let version = u::maybe_string(version, &current_version);
-            releaser::deploy(&env, &name, &sandbox, &version).await
-        }
+    let version = if version == "latest" {
+        composer::topology_version(&namespace)
+    } else {
+        version.to_string()
     };
+    let url = releaser::deploy(&env, &name, &sandbox, &version).await;
     open::that(&url).unwrap();
+}
+
+pub async fn ci_deploy_branch(
+    topology: Option<String>,
+    env: Option<String>,
+    sandbox: Option<String>,
+    branch: &str,
+) {
+    let dir = u::pwd();
+    let env = match env {
+        Some(e) => e,
+        None => panic!("No env or profile specified"),
+    };
+    let namespace = composer::topology_name(&dir);
+    let name = u::maybe_string(topology, &namespace);
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let url = releaser::deploy_branch(&env, &name, &sandbox, branch).await;
+    open::that(&url).unwrap();
+}
+
+pub async fn ci_deploy_dir(
+    env: Option<String>,
+    sandbox: Option<String>,
+    dir: &str,
+) {
+    let env = match env {
+        Some(e) => e,
+        None => panic!("No env or profile specified"),
+    };
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let url = releaser::deploy_dir(&env, &sandbox, dir).await;
+    open::that(&url).unwrap();
+}
+
+pub async fn ci_deploy_snapshot(env: Option<String>, sandbox: Option<String>, snapshot: &str) {
+    let env = match env {
+        Some(e) => e,
+        None => panic!("No env or profile specified"),
+    };
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let manifests = snapshotter::load(snapshot);
+    for manifest in manifests {
+        if !&manifest.version.is_empty() {
+            println!("Triggering CI build {}@{}.{}/{}", &manifest.namespace, &sandbox, &env, &manifest.version);
+            releaser::deploy(&env, &manifest.namespace, &sandbox, &manifest.version).await;
+        }
+    }
 }
 
 pub async fn ci_deploy_interactive() {
@@ -637,17 +681,27 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
     }
 }
 
-pub async fn snapshot(
-    profile: Option<String>,
-    sandbox: Option<String>,
-    format: Option<String>,
-    manifest: bool,
-    save: Option<String>,
-    target_profile: Option<String>,
-) {
+pub struct SnapshotOpts {
+    pub save: Option<String>,
+    pub format: Option<String>,
+    pub target_profile: Option<String>,
+    pub gen_changelog: bool,
+    pub gen_sub_versions: bool
+}
+
+pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
+
+    let SnapshotOpts { save, format, target_profile, gen_changelog, gen_sub_versions } = opts;
+
     let dir = u::root();
-    let format = u::maybe_string(format, "json");
+    let format = u::maybe_string(format, "table");
     let sandbox = u::maybe_string(sandbox, "stable");
+
+    let format = if gen_changelog || gen_sub_versions {
+        "json"
+    } else {
+        &format
+    };
 
     match profile {
         Some(ref p) => {
@@ -657,12 +711,12 @@ pub async fn snapshot(
             } else {
                 let auth = init(profile.clone(), None).await;
 
-                if manifest {
-                    snapshotter::generate_manifest(&auth, &dir, &sandbox, save, target_profile)
-                        .await;
-                } else {
-                    let records = snapshotter::snapshot(&auth, &dir, &sandbox).await;
-                    snapshotter::pretty_print(records, &format);
+                let records = snapshotter::snapshot(&auth, &dir, &sandbox, gen_changelog).await;
+                snapshotter::pretty_print(&records, &format);
+
+                if let Some(uri) = save {
+                    let s = serde_json::to_string_pretty(&records).unwrap();
+                    snapshotter::save(&auth, &uri, &s, target_profile).await
                 }
             }
         }
@@ -719,18 +773,6 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>) {
 pub fn scaffold(kind: Option<String>) {
     let kind = u::maybe_string(kind, "function");
     scaffolder::scaffold(&kind)
-}
-
-pub async fn sync(env: &str, sandbox: &str) {
-    let auth = init(Some(String::from(env)), None).await;
-    let dir = u::root();
-    let records = snapshotter::snapshot(&auth, &dir, sandbox).await;
-    let selected = interactive::prompt_multi_names(records);
-    let (_to_env, _to_sandbox) = interactive::prompt_env_sandbox();
-    for (ns, ver) in selected {
-        println!("Syncing {} {} ", &ns, &ver);
-        // todo
-    }
 }
 
 pub async fn emulate(
