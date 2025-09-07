@@ -19,6 +19,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: linux-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: linux-cargo-
+
       - name: Build Musl
         uses: gmiam/rust-musl-action@master
         with:
@@ -80,6 +93,14 @@ jobs:
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Compress binaries
+        uses: svenstaro/upx-action@v2
+        with:
+          files: |
+            target/${{ matrix.target }}/release/tc
+          args: --best
+          strip: false
 
       - name: Release
         uses: svenstaro/upload-release-action@v2
