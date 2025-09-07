@@ -37,11 +37,13 @@ jobs:
         with:
           args: cargo build --target x86_64-unknown-linux-musl --release
 
-      - name: Compress binaries
-        uses: svenstaro/upx-action@v2
+      - name: Compress binary
+        uses: crazy-max/ghaction-upx@v3
         with:
+          version: latest
           files: |
             target/x86_64-unknown-linux-musl/release/tc
+            args: -fq
 
       - name: Release MUSL
         uses: svenstaro/upload-release-action@v2
@@ -88,14 +90,6 @@ jobs:
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Compress binaries
-        uses: svenstaro/upx-action@v2
-        with:
-          files: |
-            target/${{ matrix.target }}/release/tc
-            args: --best
-            strip: true
 
       - name: Release
         uses: svenstaro/upload-release-action@v2
