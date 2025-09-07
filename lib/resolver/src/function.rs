@@ -364,8 +364,9 @@ pub fn diff(namespace: &str, from: &str, to: &str, fns: &HashMap<String, Functio
     let fmod_2 = files_modified_in_branch();
 
     for (name, f) in fns {
+
         let maybe_rdir = &f.dir.strip_prefix(
-            &format!("{}/", u::root())
+            &format!("{}/", &u::root())
         );
 
         if let Some(rdir) = maybe_rdir {
