@@ -24,7 +24,6 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
                 policy_arn: role.policy_arn.clone(),
                 policy_name: role.policy_name.clone(),
                 policy_doc: role.policy.to_string(),
-                tags: None,
             };
             let _ = r.delete().await;
         }
@@ -36,7 +35,7 @@ pub async fn create_aux(
     profile: String,
     role_arn: Option<String>,
     role: composer::Role,
-    tags: HashMap<String, String>,
+    _tags: HashMap<String, String>,
 ) {
     let auth = Auth::new(Some(profile), role_arn).await;
     let client = iam::make_client(&auth).await;
@@ -48,7 +47,6 @@ pub async fn create_aux(
         policy_arn: role.policy_arn.clone(),
         policy_name: role.policy_name.clone(),
         policy_doc: role.policy.to_string(),
-        tags: Some(iam::make_tags(tags.clone())),
     };
 
     let _ = match role.kind.to_str().as_ref() {
