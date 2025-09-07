@@ -16,6 +16,7 @@ use clap::{
     Subcommand,
 };
 
+mod remote;
 use clap_stdin::MaybeStdin;
 
 #[derive(Debug, Parser)]
@@ -29,14 +30,11 @@ enum Cmd {
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
     /// Trigger deploy via CI
-    #[clap(name = "ci-create", alias = "ci-deploy", hide = true)]
+    #[clap(alias = "ci-deploy", hide = true)]
     Deploy(DeployArgs),
     /// Trigger release via CI
     #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
-    /// Trigger build via CI
-    #[clap(name = "ci-build", hide = true)]
-    CBuild(CBuildArgs),
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
@@ -311,6 +309,8 @@ pub struct CreateArgs {
     dirty: bool,
     #[arg(long, action)]
     sync: bool,
+    #[arg(long, action)]
+    remote: bool,
 }
 
 #[derive(Debug, Args)]
@@ -331,8 +331,6 @@ pub struct UpdateArgs {
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
     entity: Option<String>,
-    #[arg(long, short = 'a')]
-    asset: Option<String>,
     #[arg(long, action)]
     notify: bool,
     #[arg(long, action, short = 'r')]
@@ -343,6 +341,8 @@ pub struct UpdateArgs {
     trace: bool,
     #[arg(long, action, short = 'i')]
     interactive: bool,
+    #[arg(long, action)]
+    remote: bool,
 }
 
 #[derive(Debug, Args)]
@@ -560,11 +560,14 @@ async fn build(args: BuildArgs) {
         parallel: parallel,
         promote: promote,
         version: version,
-        remote: remote,
         shell: shell,
     };
     init_tracing(trace);
-    tc::build(profile, name, &dir, opts).await;
+    if remote {
+        remote::build().await;
+    } else {
+        tc::build(profile, name, &dir, opts).await;
+    }
 }
 
 async fn test(args: TestArgs) {
@@ -597,11 +600,16 @@ async fn create(args: CreateArgs) {
         topology,
         trace,
         sync,
+        remote,
         ..
     } = args;
 
     init_tracing(trace);
-    tc::create(profile, sandbox, notify, recursive, cache, topology, sync).await;
+    if remote {
+        remote::create(profile, sandbox).await;
+    } else {
+        tc::create(profile, sandbox, notify, recursive, cache, topology, sync).await;
+    }
 }
 
 async fn update(args: UpdateArgs) {
@@ -614,13 +622,17 @@ async fn update(args: UpdateArgs) {
         cache,
         interactive,
         trace,
+        remote,
         ..
     } = args;
 
     init_tracing(trace);
-    let env = tc::init(profile, role).await;
-
-    tc::update(env, sandbox, entity, recursive, cache, interactive).await;
+    if remote {
+        remote::update(profile, sandbox).await;
+    } else {
+        let env = tc::init(profile, role).await;
+        tc::update(env, sandbox, entity, recursive, cache, interactive).await;
+    }
 }
 
 async fn delete(args: DeleteArgs) {
@@ -800,23 +812,20 @@ async fn ci_deploy(args: DeployArgs) {
         version,
         branch,
         snapshot,
-        dir,
         interactive,
         ..
     } = args;
 
     if interactive {
-        tc::ci_deploy_interactive().await;
+        remote::deploy_interactive().await;
     } else if let Some(ver) = version {
-        tc::ci_deploy_version(topology, env, sandbox, &ver).await;
+        remote::deploy_version(topology, env, sandbox, &ver).await;
     } else if let Some(br) = branch {
-        tc::ci_deploy_branch(topology, env, sandbox, &br).await;
+        remote::deploy_branch(topology, env, sandbox, &br).await;
     } else if let Some(snap) = snapshot {
-        tc::ci_deploy_snapshot(env, sandbox, &snap).await;
-    } else if let Some(d) = dir {
-        tc::ci_deploy_dir(env, sandbox, &d).await;
+        remote::deploy_snapshot(env, sandbox, &snap).await;
     } else {
-        println!("Please specify any of --version, --branch, --snapshot")
+        println!("Please specify --version, --branch or --snapshot");
     }
 }
 
@@ -830,21 +839,10 @@ async fn ci_release(args: ReleaseArgs) {
     } = args;
 
     if interactive {
-        tc::ci_release_interactive().await;
+        remote::release_interactive().await;
     } else {
-        tc::ci_release(topology, suffix, unwind).await;
+        remote::release(topology, suffix, unwind).await;
     }
-}
-
-async fn ci_build(args: CBuildArgs) {
-    let CBuildArgs {
-        topology,
-        function,
-        branch,
-        ..
-    } = args;
-
-    tc::ci_build(topology, function, branch).await;
 }
 
 async fn cache(args: CacheArgs) {
@@ -1015,7 +1013,6 @@ async fn run() {
         Cmd::Version(..) => version().await,
         Cmd::Scaffold(args) => scaffold(args).await,
         Cmd::Release(args) => ci_release(args).await,
-        Cmd::CBuild(args) => ci_build(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,
     }
 }

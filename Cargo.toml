@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.10"
+version = "0.9.11"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.9.10"
+version = "0.9.11"
 
 [dependencies]
 serde = "1.0"
@@ -38,7 +38,7 @@ notifier = { path = "lib/notifier" }
 router = { path = "lib/router" }
 scaffolder = { path = "lib/scaffolder" }
 kit = { path = "lib/kit" }
-releaser = { path = "lib/releaser" }
+executor = { path = "lib/executor" }
 emulator = { path = "lib/emulator" }
 
 [features]
@@ -63,6 +63,7 @@ members = [
    "lib/router",
    "lib/scaffolder",
    "lib/emulator",
+   "lib/executor",
 ]
 
 [profile.release]
