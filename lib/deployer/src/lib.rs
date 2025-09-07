@@ -29,7 +29,7 @@ use tabled::{
     Table,
 };
 
-pub async fn create(auth: &Auth, topology: &Topology) {
+pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     let Topology {
         namespace,
         version,
@@ -57,7 +57,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     );
 
     role::create_or_update(auth, roles, tags).await;
-    function::create(auth, functions).await;
+    function::create(auth, functions, sync).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
     queue::create(&auth, queues).await;
@@ -153,7 +153,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     );
     match entity {
         Entity::Event => event::create(&auth, events, tags).await,
-        Entity::Function => function::create(&auth, functions).await,
+        Entity::Function => function::create(&auth, functions, false).await,
         Entity::Mutation => mutation::create(&auth, mutations, tags).await,
         Entity::Queue => queue::create(&auth, queues).await,
         Entity::Channel => channel::create(&auth, channels).await,

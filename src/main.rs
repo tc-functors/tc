@@ -29,7 +29,7 @@ enum Cmd {
     /// Build layers, extensions and pack function code
     Build(BuildArgs),
     /// Trigger deploy via CI
-    #[clap(name = "ci-deploy", hide = true)]
+    #[clap(name = "ci-create", alias = "ci-deploy", hide = true)]
     Deploy(DeployArgs),
     /// Trigger release via CI
     #[clap(name = "ci-release", hide = true)]
@@ -309,6 +309,8 @@ pub struct CreateArgs {
     trace: bool,
     #[arg(long, action, short = 'd')]
     dirty: bool,
+    #[arg(long, action)]
+    sync: bool,
 }
 
 #[derive(Debug, Args)]
@@ -594,11 +596,12 @@ async fn create(args: CreateArgs) {
         cache,
         topology,
         trace,
+        sync,
         ..
     } = args;
 
     init_tracing(trace);
-    tc::create(profile, sandbox, notify, recursive, cache, topology).await;
+    tc::create(profile, sandbox, notify, recursive, cache, topology, sync).await;
 }
 
 async fn update(args: UpdateArgs) {
