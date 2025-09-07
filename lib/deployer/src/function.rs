@@ -153,29 +153,33 @@ async fn create_function(auth: &Auth, f: Function) -> String {
     }
 }
 
-pub async fn create(auth: &Auth, fns: &HashMap<String, Function>) {
-    match std::env::var("TC_SYNC_CREATE") {
-        Ok(_) => {
-            for (_, function) in fns.clone() {
-                let a = auth.clone();
-                let f = function.clone();
-                create_function(&a, f).await;
-            }
+fn should_sync(sync: bool) -> bool {
+    sync ||
+        match std::env::var("TC_SYNC_CREATE") {
+            Ok(_) => true,
+            Err(_) => false
         }
+}
 
-        Err(_) => {
-            let mut tasks = vec![];
-            for (_, function) in fns.clone() {
-                let a = auth.clone();
-                let f = function.clone();
-                let h = tokio::spawn(async move {
-                    create_function(&a, f).await;
-                });
-                tasks.push(h);
-            }
-            for task in tasks {
-                let _ = task.await;
-            }
+pub async fn create(auth: &Auth, fns: &HashMap<String, Function>, sync: bool) {
+    if should_sync(sync) {
+        for (_, function) in fns.clone() {
+            let a = auth.clone();
+            let f = function.clone();
+            create_function(&a, f).await;
+        }
+    } else {
+        let mut tasks = vec![];
+        for (_, function) in fns.clone() {
+            let a = auth.clone();
+            let f = function.clone();
+            let h = tokio::spawn(async move {
+                create_function(&a, f).await;
+            });
+            tasks.push(h);
+        }
+        for task in tasks {
+            let _ = task.await;
         }
     }
 }
