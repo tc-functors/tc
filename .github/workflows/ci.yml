@@ -20,12 +20,19 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Cache
+        run: rustup toolchain install stable --profile minimal --no-self-update
         uses: Swatinem/rust-cache@v2
 
       - name: Build Musl
         uses: gmiam/rust-musl-action@master
         with:
           args: cargo build --target x86_64-unknown-linux-musl --release
+
+      - name: Compress binaries
+        uses: svenstaro/upx-action@v2
+        with:
+          files: |
+            target/x86_64-unknown-linux-musl/release/tc
 
       - name: Release MUSL
         uses: svenstaro/upload-release-action@v2
@@ -58,10 +65,19 @@ jobs:
           targets: "${{ matrix.target }}"
 
       - name: Setup Cache
+        run: rustup toolchain install stable --profile minimal --no-self-update
         uses: Swatinem/rust-cache@v2
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Compress binaries
+        uses: svenstaro/upx-action@v2
+        with:
+          files: |
+            target/${{ matrix.target }}/release/tc
+            args: --best
+            strip: true
 
       - name: Release
         uses: svenstaro/upload-release-action@v2
