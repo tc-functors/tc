@@ -19,14 +19,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.7
-
       - name: Build Musl
         uses: gmiam/rust-musl-action@master
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: "sccache"
         with:
           args: cargo build --target x86_64-unknown-linux-musl --release
 
