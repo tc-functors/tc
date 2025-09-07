@@ -37,6 +37,9 @@ jobs:
         with:
           args: cargo build --target x86_64-unknown-linux-musl --release
 
+      - name: Writable dir
+        run: chmod a+rwx -R target/x86_64-unknown-linux-musl/release/
+
       - name: Compress binary
         uses: crazy-max/ghaction-upx@v3
         with:
