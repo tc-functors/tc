@@ -148,7 +148,7 @@ pub async fn trigger_create(
     let payload = format!(
         r#"
            {{
-             "branch": "tc-ci-deploy-fixes",
+             "branch": "main",
              "parameters": {{
               "tc-deploy-dir": "{dir}",
               "tc-create-from-dir": true,
@@ -176,7 +176,7 @@ pub async fn trigger_update(
     let payload = format!(
         r#"
            {{
-             "branch": "tc-ci-deploy-fixes",
+             "branch": "main",
              "parameters": {{
               "tc-deploy-dir": "{dir}",
               "tc-update-from-dir": true,
@@ -199,7 +199,7 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
     let payload = format!(
         r#"
            {{
-             "branch": "tc-ci-deploy-fixes",
+             "branch": "main",
              "parameters": {{
               "tc-build-from-dir": true,
               "tc-build-branch": "{branch}",
