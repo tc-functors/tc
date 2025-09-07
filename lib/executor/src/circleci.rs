@@ -38,14 +38,6 @@ impl Circle {
         )
     }
 
-    pub fn context_url(&self, context_id: &str, key: &str) -> String {
-        format!(
-            "https://circleci.com/api/v2/context/{}/environment_variable/{}",
-            context_id, key
-        )
-    }
-
-
     fn headers(&self) -> HashMap<String, String> {
         let mut h = HashMap::new();
         h.insert(s!("circle-token"), self.token.clone());
@@ -70,18 +62,6 @@ impl Circle {
             "https://app.circleci.com/pipelines/github/Informed/{}/{}",
             self.repo, num
         )
-    }
-
-    pub async fn get_context(&self, _name: &str) -> Option<String> {
-        None
-    }
-
-    pub async fn update_context(&self, context: &str, key: &str, payload: &str) {
-        let url = &self.context_url(context, key);
-        let res = u::http_post(url, self.headers(), payload.to_string())
-            .await
-            .unwrap();
-        println!("{:?}", &res)
     }
 }
 
@@ -157,40 +137,71 @@ pub async fn trigger_branch(
     ci.trigger_workflow(payload).await
 }
 
-pub async fn trigger_dir(
+pub async fn trigger_create(
     repo: &str,
     env: &str,
     sandbox: &str,
     dir: &str,
+    branch: &str
 ) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
         r#"
            {{
-             "branch": "main",
+             "branch": "tc-ci-deploy-fixes",
              "parameters": {{
               "tc-deploy-dir": "{dir}",
-              "tc-deploy-only-dir": true,
+              "tc-create-from-dir": true,
               "tc-deploy-sandbox": "{sandbox}",
+              "tc-build-branch": "{branch}",
               "tc-deploy-env": "{env}",
               "api_call": true
            }}}}"#
     );
     println!(
-        "Triggering dir deploy {}:{} {}",
+        "Triggering create from dir deploy {}:{} {}",
         env, sandbox, dir
     );
     ci.trigger_workflow(payload).await
 }
+
+pub async fn trigger_update(
+    repo: &str,
+    env: &str,
+    sandbox: &str,
+    dir: &str,
+    branch: &str
+) -> String {
+    let ci = Circle::init(repo);
+    let payload = format!(
+        r#"
+           {{
+             "branch": "tc-ci-deploy-fixes",
+             "parameters": {{
+              "tc-deploy-dir": "{dir}",
+              "tc-update-from-dir": true,
+              "tc-deploy-sandbox": "{sandbox}",
+              "tc-build-branch": "{branch}",
+              "tc-deploy-env": "{env}",
+              "api_call": true
+           }}}}"#
+    );
+    println!(
+        "Triggering update from dir deploy {}:{} {}",
+        env, sandbox, dir
+    );
+    ci.trigger_workflow(payload).await
+}
+
 
 pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &str) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
         r#"
            {{
-             "branch": "main",
+             "branch": "tc-ci-deploy-fixes",
              "parameters": {{
-              "tc-build-only": true,
+              "tc-build-from-dir": true,
               "tc-build-branch": "{branch}",
               "tc-build-function": "{function}",
               "api_call": true
@@ -198,22 +209,4 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
     );
     println!("Triggering build {} {}:{}", prefix, function, branch);
     ci.trigger_workflow(payload).await
-}
-
-pub async fn update_var(repo: &str, key: &str, val: &str) {
-    let ci = Circle::init(repo);
-    let payload = format!(
-        r#"
-           {{
-              "value": "{val}",
-           }}"#
-    );
-    let maybe_context_id = ci.get_context("tc").await;
-    match maybe_context_id {
-        Some(cid) => {
-            println!("Updating CICLECI envvar {} {}", key, val);
-            ci.update_context(&cid, key, &payload).await;
-        }
-        None => panic!("No context found"),
-    }
 }

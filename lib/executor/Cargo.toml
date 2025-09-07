@@ -1,5 +1,5 @@
 [package]
-name = "releaser"
+name = "executor"
 version.workspace = true
 edition = "2024"
 
