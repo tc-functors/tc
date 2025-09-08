@@ -71,6 +71,12 @@ parameters:
   api_call:
     type: boolean
     default: false
+  tc-deploy-env:
+    type: string
+    default: dev
+  tc-deploy-sandbox:
+    type: string
+    default: main
 
 jobs:
 {job_def}
