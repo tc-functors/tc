@@ -38,7 +38,7 @@ fn build_with_docker(dir: &str) -> (bool, String, String) {
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default  -t {} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default  --load -t {} --build-context shared={root} .",
             u::basedir(dir)
         ),
     };
