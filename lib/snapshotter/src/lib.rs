@@ -3,6 +3,7 @@ use kit as u;
 use kit::*;
 mod aws;
 mod manifest;
+mod pipeline;
 
 use composer::{
     TopologyKind,
@@ -107,6 +108,10 @@ pub fn pretty_print(records: &Vec<Manifest>, format: &str) {
         }
         "json" => {
             let s = u::pretty_json(records);
+            println!("{}", &s);
+        }
+        "pipeline-config" => {
+            let s = pipeline::generate_config(records);
             println!("{}", &s);
         }
         _ => (),

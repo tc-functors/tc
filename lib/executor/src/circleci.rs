@@ -9,7 +9,14 @@ use std::{
 #[derive(Clone, Debug)]
 pub struct Circle {
     pub repo: String,
+    pub org: String,
     pub token: String,
+}
+
+fn find_org() -> String {
+    let s1 = u::sh("git config --get remote.origin.url", &u::pwd());
+    let s2 = u::second(&s1, ":");
+    u::split_first(&s2, "/")
 }
 
 impl Circle {
@@ -24,8 +31,11 @@ impl Circle {
             }
         };
 
+
+
         Circle {
             repo: String::from(repo),
+            org: find_org(),
             token: token,
         }
     }
@@ -33,7 +43,8 @@ impl Circle {
     fn url(&self) -> String {
         //FIXME: parameterize repo
         format!(
-            "https://circleci.com/api/v2/project/github/Informed/{}/pipeline",
+            "https://circleci.com/api/v2/project/github/{}/{}/pipeline",
+            self.org,
             self.repo
         )
     }
@@ -53,14 +64,17 @@ impl Circle {
     pub async fn trigger_workflow(&self, payload: String) -> String {
         let url = &self.url();
         let res = u::http_post(url, self.headers(), payload).await.unwrap();
+        println!("{} {:?}", url, &res);
         let num = res["number"].to_string();
         self.workflow_url(&num)
     }
 
     pub fn workflow_url(&self, num: &str) -> String {
         format!(
-            "https://app.circleci.com/pipelines/github/Informed/{}/{}",
-            self.repo, num
+            "https://app.circleci.com/pipelines/github/{}/{}/{}",
+            self.org,
+            self.repo,
+            num
         )
     }
 }
@@ -78,8 +92,7 @@ pub async fn trigger_release(repo: &str, prefix: &str, version: &str, suffix: &s
            }}}}"#
     );
     println!("Triggering release {}-{}", prefix, version);
-    let url = ci.trigger_workflow(payload).await;
-    url
+    ci.trigger_workflow(payload).await
 }
 
 pub async fn trigger_tag(
@@ -199,7 +212,7 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
     let payload = format!(
         r#"
            {{
-             "branch": "main",
+             "branch": "tc-ci-deploy-fixes",
              "parameters": {{
               "tc-build-from-dir": true,
               "tc-build-branch": "{branch}",
@@ -208,5 +221,21 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
            }}}}"#
     );
     println!("Triggering build {} {}:{}", prefix, function, branch);
+    ci.trigger_workflow(payload).await
+}
+
+
+pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str) -> String {
+    let ci = Circle::init(repo);
+    let payload = format!(
+        r#"
+           {{
+             "branch": "tc-ci-deploy-fixes",
+             "parameters": {{
+              "tc-deploy-snapshot-pipeline": true,
+              "api_call": true
+           }}}}"#
+    );
+    println!("Triggering snapshot pipeline");
     ci.trigger_workflow(payload).await
 }
