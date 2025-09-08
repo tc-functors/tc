@@ -1,19 +1,68 @@
 use crate::Manifest;
+use kit as u;
 
-struct Job {
-
+fn make_job_def(env: &str, sandbox: &str) -> String {
+    format!(r#"
+  tc-deploy-topology:
+    docker:
+      - image: cimg/base:2025.08
+    resource_class: large
+    parameters:
+      tag:
+        type: string
+      name:
+        type: string
+        default: "default"
+      workdir:
+        type: string
+        default: "default"
+    steps:
+      - checkout
+      - download-tc-latest
+      - run: git fetch origin << parameters.tag >>
+      - run: git checkout << parameters.tag >>
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: << parameters.name >>
+          working_directory: << parameters.workdir >>
+          command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync"#)
 }
 
-
-struct Workflow {
-
-
+fn make_job(name: &str, dir: &str, tag: &str) -> String {
+    format!(r#"
+      - tc-deploy-topology:
+          name: {name}
+          workdir: {dir}
+          tag:  {tag}
+          context:
+            - tc
+            - cicd-aws-user-creds"#)
 }
 
+pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> String {
+    let job_def = make_job_def(env, sandbox);
+    let mut jobs: String = String::from("");
+    for record in records {
+        let Manifest { namespace, dir, version, .. } = record;
+        let tag = format!("{}-{}", namespace, version);
+        let job = make_job(&namespace,  &dir, &tag);
+        jobs.push_str(&job);
+    }
 
-pub fn generate_config(records: &Vec<Manifest>) -> String {
+    let workflow_name = format!("{}-{}-{}-deploy", env, sandbox, u::simple_date());
+
     format!(r#"
 version: 2.1
+
+commands:
+  download-tc-latest:
+    steps:
+      - run:
+          name: "Download tc executable"
+          command: |
+            curl -L -H "Accept: application/octet-stream"  -H "x-github-api-version: 2022-11-28" https://api.github.com/repos/tc-functors/tc/releases/assets/$TC_RELEASE_ID -o tc && chmod +x tc
+            sudo mv tc /usr/local/bin/tc
 
 parameters:
   tc-deploy-snapshot-pipeline:
@@ -24,30 +73,12 @@ parameters:
     default: false
 
 jobs:
-  hello1:
-    docker:
-      - image: cimg/base:2025.08
-    steps:
-      - run: echo "hello world1"
-
-  hello2:
-    docker:
-      - image: cimg/base:2025.08
-    steps:
-      - run: echo "hello world2"
-
-  hello3:
-    docker:
-      - image: cimg/base:2025.08
-    steps:
-      - run: echo "hello world3"
+{job_def}
 
 workflows:
-  all-hellos:
+  {workflow_name}:
     jobs:
-      - hello1
-      - hello2
-      - hello3
+{jobs}
 
 "#)
 }

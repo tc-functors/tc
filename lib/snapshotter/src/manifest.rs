@@ -68,6 +68,8 @@ fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Manifest {
+    #[tabled(skip)]
+    pub dir: String,
     pub namespace: String,
     pub sandbox: String,
     pub version: String,
@@ -83,7 +85,7 @@ pub struct Manifest {
 impl Manifest {
 
     pub async fn new(auth: &Auth, sandbox: &str, topology: &Topology, gen_changelog: bool) -> Manifest {
-        let Topology { kind, fqn, .. } = topology;
+        let Topology { kind, dir, fqn, .. } = topology;
 
         let name = render(&fqn, sandbox);
         let tags = lookup_tags(auth, &kind, &name).await;
@@ -101,7 +103,14 @@ impl Manifest {
             None
         };
 
+        let maybe_rdir = dir.strip_prefix(&format!("{}/", u::root()));
+        let dir = match maybe_rdir {
+            Some(d) => d,
+            None => dir
+        };
+
         Manifest {
+            dir: dir.to_string(),
             namespace: name.to_string(),
             sandbox: u::safe_unwrap(tags.get("sandbox")),
             version: version,

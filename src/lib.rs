@@ -555,13 +555,16 @@ pub struct SnapshotOpts {
     pub save: Option<String>,
     pub format: Option<String>,
     pub target_profile: Option<String>,
+    pub target_env: Option<String>,
+    pub target_sandbox: Option<String>,
     pub gen_changelog: bool,
     pub gen_sub_versions: bool
 }
 
 pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
 
-    let SnapshotOpts { save, format, target_profile, gen_changelog, gen_sub_versions } = opts;
+    let SnapshotOpts { save, format, target_profile, gen_changelog,
+                       gen_sub_versions, target_env, target_sandbox } = opts;
 
     let dir = u::root();
     let format = u::maybe_string(format, "table");
@@ -582,7 +585,7 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
                 let auth = init(profile.clone(), None).await;
 
                 let records = snapshotter::snapshot(&auth, &dir, &sandbox, gen_changelog).await;
-                snapshotter::pretty_print(&records, &format);
+                snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
 
                 if let Some(uri) = save {
                     let s = serde_json::to_string_pretty(&records).unwrap();

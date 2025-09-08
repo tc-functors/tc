@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.12-dev"
+version = "0.9.12-dev1"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.9.12-dev"
+version = "0.9.12-dev1"
 
 [dependencies]
 serde = "1.0"
