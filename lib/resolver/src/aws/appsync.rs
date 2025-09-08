@@ -19,7 +19,7 @@ async fn list_apis_by_token(client: &Client, token: &str) -> (HashMap<String, St
     let mut h: HashMap<String, String> = HashMap::new();
     let apis = res.graphql_apis.unwrap();
     for api in apis {
-        h.insert(api.name.unwrap(), api.arn.unwrap().to_string() );
+        h.insert(api.name.unwrap(), api.api_id.unwrap().to_string() );
     }
     (h, res.next_token)
 }
@@ -37,7 +37,7 @@ async fn list_apis(client: &Client) -> HashMap<String, String> {
 
             let apis = res.graphql_apis.unwrap();
             for api in apis {
-                h.insert(api.name.unwrap(), api.arn.unwrap().to_string() );
+                h.insert(api.name.unwrap(), api.api_id.unwrap().to_string() );
             }
 
             match token {
