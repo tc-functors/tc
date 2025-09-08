@@ -10,7 +10,7 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
     parameters:
       tag:
         type: string
-      name:
+      namespace:
         type: string
         default: "default"
       workdir:
@@ -24,7 +24,7 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: << parameters.name >>
+          name: tc-create-<< parameters.namespace >>
           working_directory: << parameters.workdir >>
           command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync"#)
 }
