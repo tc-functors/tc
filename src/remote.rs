@@ -138,12 +138,23 @@ pub async fn deploy_snapshot(env: Option<String>, sandbox: Option<String>, snaps
     };
     let sandbox = u::maybe_string(sandbox, "stable");
     let manifests = snapshotter::load(snapshot);
+
     for manifest in manifests {
         if !&manifest.version.is_empty() {
             println!("Triggering CI build {}@{}.{}/{}", &manifest.namespace, &sandbox, &env, &manifest.version);
             executor::deploy(&env, &manifest.namespace, &sandbox, &manifest.version).await;
         }
     }
+}
+
+pub async fn deploy_pipeline(env: Option<String>, sandbox: Option<String>) {
+    let env = match env {
+        Some(e) => e,
+        None => panic!("No env or profile specified"),
+    };
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let url = executor::deploy_pipeline(&env, &sandbox).await;
+    open::that(&url).unwrap();
 }
 
 pub async fn deploy_version(

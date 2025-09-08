@@ -123,6 +123,8 @@ pub struct DeployArgs {
     dir: Option<String>,
     #[arg(long, action, short = 'i')]
     interactive: bool,
+    #[arg(long, action, short = 'p')]
+    pipeline: bool,
 }
 
 #[derive(Debug, Args)]
@@ -813,6 +815,7 @@ async fn ci_deploy(args: DeployArgs) {
         branch,
         snapshot,
         interactive,
+        pipeline,
         ..
     } = args;
 
@@ -824,8 +827,10 @@ async fn ci_deploy(args: DeployArgs) {
         remote::deploy_branch(topology, env, sandbox, &br).await;
     } else if let Some(snap) = snapshot {
         remote::deploy_snapshot(env, sandbox, &snap).await;
+    } else if pipeline {
+        remote::deploy_pipeline(env, sandbox).await;
     } else {
-        println!("Please specify --version, --branch or --snapshot");
+        println!("Please specify --version, --branch, --pipeline or --snapshot");
     }
 }
 
