@@ -207,6 +207,12 @@ pub struct SnapshotArgs {
     save: Option<String>,
     #[arg(long, alias = "target-profile")]
     target_profile: Option<String>,
+    #[arg(long, alias = "target-env")]
+    target_env: Option<String>,
+    #[arg(long, alias = "target-sandbox")]
+    target_sandbox: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
 }
 
 #[derive(Debug, Args)]
@@ -879,6 +885,9 @@ async fn snapshot(args: SnapshotArgs) {
         changelog,
         versions,
         target_profile,
+        target_env,
+        target_sandbox,
+        trace,
         ..
     } = args;
 
@@ -887,8 +896,11 @@ async fn snapshot(args: SnapshotArgs) {
         save: save,
         target_profile: target_profile,
         gen_changelog: changelog,
-        gen_sub_versions: versions
+        gen_sub_versions: versions,
+        target_env: target_env,
+        target_sandbox: target_sandbox
     };
+    init_tracing(trace);
     tc::snapshot(profile, sandbox, opts).await;
 }
 

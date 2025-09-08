@@ -64,7 +64,6 @@ impl Circle {
     pub async fn trigger_workflow(&self, payload: String) -> String {
         let url = &self.url();
         let res = u::http_post(url, self.headers(), payload).await.unwrap();
-        println!("{} {:?}", url, &res);
         let num = res["number"].to_string();
         self.workflow_url(&num)
     }
@@ -233,6 +232,8 @@ pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str) -> String {
              "branch": "tc-ci-deploy-fixes",
              "parameters": {{
               "tc-deploy-snapshot-pipeline": true,
+              "tc-deploy-sandbox": "{sandbox}",
+              "tc-deploy-env": "{env}",
               "api_call": true
            }}}}"#
     );

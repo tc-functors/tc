@@ -100,7 +100,7 @@ async fn init_auth(target_profile: &str) -> Auth {
     }
 }
 
-pub fn pretty_print(records: &Vec<Manifest>, format: &str) {
+pub fn pretty_print(records: &Vec<Manifest>, format: &str, env: Option<String>, sandbox: Option<String>) {
     match format {
         "table" => {
             let table = Table::new(records).with(Style::psql()).to_string();
@@ -110,8 +110,18 @@ pub fn pretty_print(records: &Vec<Manifest>, format: &str) {
             let s = u::pretty_json(records);
             println!("{}", &s);
         }
-        "pipeline-config" => {
-            let s = pipeline::generate_config(records);
+        "pipeline-config" | "pipeline" => {
+
+            let env = match env {
+                Some(e) => e,
+                None => panic!("Please provide --target-env")
+            };
+
+            let sandbox = match sandbox {
+                Some(e) => e,
+                None => panic!("Please provide --target-sandbox")
+            };
+            let s = pipeline::generate_config(records, &env, &sandbox);
             println!("{}", &s);
         }
         _ => (),
