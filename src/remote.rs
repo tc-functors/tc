@@ -157,9 +157,19 @@ pub async fn deploy_pipeline(env: Option<String>, sandbox: Option<String>) {
         None => panic!("No env or profile specified"),
     };
     let sandbox = u::maybe_string(sandbox, "stable");
-    let url = executor::deploy_pipeline(&env, &sandbox).await;
-    println!("Opening {}", &url);
-    open::that(&url).unwrap();
+    let msg = format!("This command will trigger a deploy to {}@{}. Do you want to continue?", &env, &sandbox);
+    let ans = Confirm::new(&msg).with_default(false).prompt();
+
+    let should_continue = match ans {
+        Ok(true) => true,
+        Ok(false) | Err(_) => false
+    };
+
+    if should_continue {
+        let url = executor::deploy_pipeline(&env, &sandbox).await;
+        println!("Opening {}", &url);
+        open::that(&url).unwrap();
+    }
 }
 
 pub async fn deploy_version(

@@ -27,7 +27,7 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
           docker_layer_caching: true
       - run:
           name: tc-upgrade-<< parameters.tc_version >>
-          command: tc upgrade --version << parameters.tc_version >>
+          command: sudo tc upgrade --version << parameters.tc_version >>
       - run:
           name: tc-create-<< parameters.namespace >>
           working_directory: << parameters.workdir >>
