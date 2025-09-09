@@ -62,6 +62,7 @@ pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
     let topologies = composer::compose_root(dir, false);
+    u::sh("git fetch --tags", dir);
     let mut rows: Vec<Manifest> = vec![];
     for (_, node) in topologies {
         let row = Manifest::new(auth, sandbox, &node, gen_changelog).await;
