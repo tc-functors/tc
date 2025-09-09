@@ -322,6 +322,19 @@ impl Function {
         Ok(res.function_arn.unwrap_or_default())
     }
 
+    pub async fn update_tags(self, arn: &str) {
+        let res = self.client
+            .tag_resource()
+            .resource(arn)
+            .set_tags(Some(self.tags))
+            .send()
+            .await;
+        match res {
+            Ok(_) => (),
+            Err(_) => println!("error updating tags"),
+        }
+    }
+
     pub async fn update_function(self, arn: &str) -> Result<String, Error> {
         let f = self.clone();
         let name = if kit::trace() {
@@ -363,10 +376,13 @@ impl Function {
             state = self.clone().get_update_status(&f.name).await;
             sleep(800)
         }
-        match res {
+        let id = match res {
             Ok(r) => Ok(r.function_arn.unwrap_or_default()),
             Err(e) => panic!("{:?}", e),
-        }
+        };
+        self.update_tags(arn).await;
+
+        id
     }
 
     pub async fn update_code(self, arn: &str) -> Result<String> {
