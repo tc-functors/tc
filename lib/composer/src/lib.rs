@@ -108,7 +108,7 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
         } else {
             for d in given_root_dirs {
                 tracing::debug!("Given root: {}", &d);
-                let dir = u::absolutize(&u::pwd(), &d);
+                let dir = u::absolutize(dir, &d);
                 let t = compose(&dir, recursive);
                 h.insert(t.namespace.to_string(), t);
             }
