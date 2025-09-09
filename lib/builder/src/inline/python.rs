@@ -36,7 +36,7 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post:
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python",
         Err(_) => {
-            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all:"
+            "pip install -r requirements.txt --target=/build/python --prefer-binary"
         }
     };
 
@@ -76,7 +76,7 @@ pub fn gen_dockerfile_unshared(dir: &str, runtime: &LangRuntime, pre: &Vec<Strin
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python",
         Err(_) => {
-            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all:"
+            "pip install -r requirements.txt --target=/build/python --implementation cp --only-binary=:all:"
         }
     };
 
