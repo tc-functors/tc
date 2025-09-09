@@ -71,9 +71,10 @@ pub struct Manifest {
     #[tabled(skip)]
     pub dir: String,
     pub namespace: String,
+    pub kind: String,
     pub sandbox: String,
     pub version: String,
-    pub kind: String,
+    pub git_version: String,
     pub frozen: String,
     pub tc_version: String,
     #[tabled(skip)]
@@ -113,8 +114,9 @@ impl Manifest {
             dir: dir.to_string(),
             namespace: name.to_string(),
             sandbox: u::safe_unwrap(tags.get("sandbox")),
-            version: version,
             kind: kind.to_str(),
+            version: version,
+            git_version: topology.version.to_string(),
             frozen: u::safe_unwrap(tags.get("freeze")),
             tc_version: u::safe_unwrap(tags.get("tc_version")),
             changelog: changelog,
