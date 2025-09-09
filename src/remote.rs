@@ -78,6 +78,7 @@ pub async fn deploy_interactive() {
     let versions = composer::lookup_versions(&dir);
     let (namespace, version, env, sandbox) = prompt_versions(&versions);
     let url = executor::deploy(&env, &namespace, &sandbox, &version).await;
+    println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
 
@@ -88,6 +89,7 @@ pub async fn release_interactive() {
     let namespace = prompt_names(&versions);
     let tag = tagger::next_tag(&namespace, "minor", "default");
     let url = executor::release(&namespace, "default", &tag.version).await;
+    println!("Opening {}", &url);
     open::that(url).unwrap();
 }
 
@@ -112,6 +114,7 @@ pub async fn build() {
         let namespace = u::second(&rdir, "/");
         let branch = &tagger::git::branch_name(&dir);
         let url = executor::build(&namespace, &rdir, &branch).await;
+        println!("Opening {}", &url);
         open::that(url).unwrap();
     }
 }
@@ -127,6 +130,7 @@ pub async fn release(service: Option<String>, suffix: Option<String>, unwind: bo
     } else {
         let tag = tagger::next_tag(&service, "minor", &suffix);
         let url = executor::release(&service, &suffix, &tag.version).await;
+        println!("Opening {}", &url);
         open::that(&url).unwrap();
     }
 }
@@ -154,6 +158,7 @@ pub async fn deploy_pipeline(env: Option<String>, sandbox: Option<String>) {
     };
     let sandbox = u::maybe_string(sandbox, "stable");
     let url = executor::deploy_pipeline(&env, &sandbox).await;
+    println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
 
@@ -177,6 +182,7 @@ pub async fn deploy_version(
         version.to_string()
     };
     let url = executor::deploy(&env, &name, &sandbox, &version).await;
+    println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
 
@@ -195,6 +201,7 @@ pub async fn deploy_branch(
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let url = executor::deploy_branch(&env, &name, &sandbox, branch).await;
+    println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
 
@@ -214,6 +221,7 @@ pub async fn create(
     let sandbox = u::maybe_string(sandbox, "stable");
     let branch = u::sh("git rev-parse --abbrev-ref HEAD", &dir);
     let url = executor::create(&env, &sandbox, &rdir, &branch).await;
+    println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
 
@@ -233,5 +241,6 @@ pub async fn update(
     let sandbox = u::maybe_string(sandbox, "stable");
     let branch = u::sh("git rev-parse --abbrev-ref HEAD", &dir);
     let url = executor::update(&env, &sandbox, &rdir, &branch).await;
+    println!("Opening {}", &url);
     open::that(&url).unwrap();
 }

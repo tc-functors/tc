@@ -16,6 +16,8 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
       workdir:
         type: string
         default: "default"
+      tc_version:
+        type: string
     steps:
       - checkout
       - download-tc-latest
@@ -24,17 +26,21 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
+          name: tc-upgrade-<< parameters.tc_version >>
+          command: tc upgrade --version << parameters.tc_version >>
+      - run:
           name: tc-create-<< parameters.namespace >>
           working_directory: << parameters.workdir >>
           command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync"#)
 }
 
-fn make_job(name: &str, dir: &str, tag: &str) -> String {
+fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
     format!(r#"
       - tc-deploy-topology:
           name: {name}
           workdir: {dir}
           tag:  {tag}
+          tc_version:  {tc_version}
           context:
             - tc
             - cicd-aws-user-creds"#)
@@ -44,9 +50,20 @@ pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> Str
     let job_def = make_job_def(env, sandbox);
     let mut jobs: String = String::from("");
     for record in records {
-        let Manifest { namespace, dir, version, .. } = record;
-        let tag = format!("{}-{}", namespace, version);
-        let job = make_job(&namespace,  &dir, &tag);
+        let Manifest { namespace, dir, version, tc_version, .. } = record;
+        let ver = if version.is_empty() {
+            "non-existent"
+        } else {
+            &version
+        };
+
+        let tag = format!("{}-{}", namespace, ver);
+        let tver = if tc_version.is_empty() {
+            "0.9.12"
+        } else {
+            &tc_version
+        };
+        let job = make_job(&namespace,  &dir, &tag, tver);
         jobs.push_str(&job);
     }
 
