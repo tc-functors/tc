@@ -666,7 +666,7 @@ fn make_standalone(dir: &str) -> Topology {
         mutations: HashMap::new(),
         queues: HashMap::new(),
         channels: HashMap::new(),
-        tags: HashMap::new(),
+        tags: tag::make(&namespace, ""),
         schedules: HashMap::new(),
         pages: HashMap::new(),
         tests: HashMap::new(),
