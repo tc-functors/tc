@@ -12,10 +12,8 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
         type: string
       namespace:
         type: string
-        default: "default"
       workdir:
         type: string
-        default: "default"
       tc_version:
         type: string
     steps:
@@ -26,10 +24,7 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: tc-upgrade-<< parameters.tc_version >>
-          command: sudo tc upgrade --version << parameters.tc_version >>
-      - run:
-          name: tc-create-<< parameters.namespace >>
+          name: tc-create-<< parameters.tag >>
           working_directory: << parameters.workdir >>
           command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync"#)
 }
@@ -37,7 +32,8 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
 fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
     format!(r#"
       - tc-deploy-topology:
-          name: {name}
+          name: {tag}
+          namespace: {name}
           workdir: {dir}
           tag:  {tag}
           tc_version:  {tc_version}
