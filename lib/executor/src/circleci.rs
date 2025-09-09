@@ -211,7 +211,7 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
     let payload = format!(
         r#"
            {{
-             "branch": "tc-ci-deploy-fixes",
+             "branch": "main",
              "parameters": {{
               "tc-build-from-dir": true,
               "tc-build-branch": "{branch}",
@@ -229,7 +229,7 @@ pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str) -> String {
     let payload = format!(
         r#"
            {{
-             "branch": "tc-ci-deploy-fixes",
+             "branch": "main",
              "parameters": {{
               "tc-deploy-snapshot-pipeline": true,
               "tc-deploy-sandbox": "{sandbox}",
