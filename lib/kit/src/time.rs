@@ -45,3 +45,7 @@ pub fn ms_to_dt(ms: i64) -> DateTime<Local> {
     let converted: DateTime<Local> = DateTime::from(utc.unwrap());
     converted
 }
+
+pub fn ymd() -> String {
+    Utc::now().format("%Y-%m-%d").to_string()
+}
