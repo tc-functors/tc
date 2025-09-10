@@ -165,7 +165,8 @@ pub async fn create_or_update_api(
         Some(id) => {
             let graphql_api_arn = auth.graphql_api_arn(&id);
             update_api(client, name, authorizer_arn, &id, tags.clone()).await;
-            _ = graphql_api_waiter(client, &id).await;
+            println!("Waiting for update of GraphQL API '{}' to complete", name);
+            sleep(1000);
             update_tags(client, &graphql_api_arn, tags).await
         }
         None => create_api(client, name, authorizer_arn, tags).await
@@ -452,28 +453,28 @@ pub async fn update_tags(
     }
 }
 
-pub async fn graphql_api_waiter(client: &Client, api_id: &str, ) -> Result<(), aws_sdk_appsync::Error> {
-    println!("Waiting for update of GraphQL API '{}' to complete", api_id);
-    let _ = loop {
-        let request = client
-            .get_introspection_schema()
-            .api_id(api_id)
-            .format(Json);
+// pub async fn graphql_api_waiter(client: &Client, api_id: &str, ) -> Result<(), aws_sdk_appsync::Error> {
+//     println!("Waiting for update of GraphQL API '{}' to complete", api_id);
+//     let _ = loop {
+//         let request = client
+//             .get_introspection_schema()
+//             .api_id(api_id)
+//             .format(Json);
         
-        match request.send().await {
-            Ok(output) => {
-                let schema = output.schema().unwrap();
-                println!("API is Active. Schema received with size: {} bytes", schema.as_ref().len());
-                break;
-            }
-            Err(_) => {
-                print!("retrying...");
-                sleep(1000)
-            }
-        }
-    };
-    Ok(())
-}
+//         match request.send().await {
+//             Ok(output) => {
+//                 let schema = output.schema().unwrap();
+//                 println!("API is Active. Schema received with size: {} bytes", schema.as_ref().len());
+//                 break;
+//             }
+//             Err(_) => {
+//                 print!("retrying...");
+//                 sleep(1000)
+//             }
+//         }
+//     };
+//     Ok(())
+// }
 
 pub async fn create_events_api(client: &Client, api_name: &str) -> String {
     events::find_or_create_api(client, api_name).await
