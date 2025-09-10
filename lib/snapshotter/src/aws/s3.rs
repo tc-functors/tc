@@ -26,8 +26,3 @@ pub async fn put_str(client: &Client, bucket: &str, key: &str, payload: &str) ->
         Err(e) => panic!("{}", e),
     }
 }
-
-pub fn parts_of(uri: &str) -> (String, String) {
-    let uri = s3uri::from_uri(uri).unwrap();
-    (uri.bucket, uri.key.unwrap().to_string())
-}

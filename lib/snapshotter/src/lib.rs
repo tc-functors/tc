@@ -6,6 +6,7 @@ mod manifest;
 mod pipeline;
 
 use composer::{
+    ConfigSpec,
     TopologyKind,
 };
 use tabled::{
@@ -78,16 +79,26 @@ pub fn load(s: &str) -> Vec<Manifest> {
     xs
 }
 
-pub async fn save(auth: &Auth, uri: &str, payload: &str, target_profile: Option<String>) {
-    let auth = match target_profile {
-        Some(p) => &init_auth(&p).await,
-        None => auth,
-    };
+pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
+    let cfg = ConfigSpec::new(None);
 
-    let (bucket, key) = aws::s3::parts_of(uri);
-    let client = aws::s3::make_client(auth).await;
-    println!("Saving manifest to {}", uri);
-    let _ = aws::s3::put_str(&client, &bucket, &key, payload).await;
+    let maybe_bucket = cfg.snapshotter.bucket;
+    let maybe_prefix = cfg.snapshotter.prefix;
+    let maybe_target_profile = cfg.snapshotter.profile;
+
+    if let (Some(bucket), Some(prefix)) = (maybe_bucket, maybe_prefix) {
+        let auth = match maybe_target_profile {
+            Some(p) => &init_auth(&p).await,
+            None => auth,
+        };
+        let key = format!("{}/{}/{}/{}.json", prefix, env, sandbox, u::ymd());
+        let client = aws::s3::make_client(auth).await;
+        tracing::debug!("Saving manifest to s3://{}/{}", &bucket, &key);
+        let _ = aws::s3::put_str(&client, &bucket, &key, payload).await;
+    } else {
+        tracing::debug!("No snapshot bucket configured. Skipping save");
+    }
+
 }
 
 async fn init_auth(target_profile: &str) -> Auth {

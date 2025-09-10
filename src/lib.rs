@@ -552,9 +552,8 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
 }
 
 pub struct SnapshotOpts {
-    pub save: Option<String>,
+    pub save: bool,
     pub format: Option<String>,
-    pub target_profile: Option<String>,
     pub target_env: Option<String>,
     pub target_sandbox: Option<String>,
     pub gen_changelog: bool,
@@ -563,7 +562,7 @@ pub struct SnapshotOpts {
 
 pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
 
-    let SnapshotOpts { save, format, target_profile, gen_changelog,
+    let SnapshotOpts { save, format, gen_changelog,
                        gen_sub_versions, target_env, target_sandbox } = opts;
 
     let dir = u::root();
@@ -581,16 +580,18 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
             let profiles: Vec<String> = p.split(",").map(|v| v.to_string()).collect();
             if profiles.len() > 1 {
                 snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
+
             } else {
                 let auth = init(profile.clone(), None).await;
 
                 let records = snapshotter::snapshot(&auth, &dir, &sandbox, gen_changelog).await;
+
+                if save {
+                    let records_str = serde_json::to_string_pretty(&records).unwrap();
+                    snapshotter::save(&auth, &records_str, &p, &sandbox).await
+                }
                 snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
 
-                if let Some(uri) = save {
-                    let s = serde_json::to_string_pretty(&records).unwrap();
-                    snapshotter::save(&auth, &uri, &s, target_profile).await
-                }
             }
         }
         None => println!("Please specify profile"),

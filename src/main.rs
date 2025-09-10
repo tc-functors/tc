@@ -203,8 +203,8 @@ pub struct SnapshotArgs {
     changelog: bool,
     #[arg(long, action, alias = "with-component-versions")]
     versions: bool,
-    #[arg(long, short = 'S')]
-    save: Option<String>,
+    #[arg(long, action)]
+    save: bool,
     #[arg(long, alias = "target-profile")]
     target_profile: Option<String>,
     #[arg(long, alias = "target-env")]
@@ -884,7 +884,6 @@ async fn snapshot(args: SnapshotArgs) {
         save,
         changelog,
         versions,
-        target_profile,
         target_env,
         target_sandbox,
         trace,
@@ -894,7 +893,6 @@ async fn snapshot(args: SnapshotArgs) {
     let opts = tc::SnapshotOpts {
         format: format,
         save: save,
-        target_profile: target_profile,
         gen_changelog: changelog,
         gen_sub_versions: versions,
         target_env: target_env,
