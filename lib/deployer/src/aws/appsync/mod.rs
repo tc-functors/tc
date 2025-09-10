@@ -16,7 +16,7 @@ use aws_sdk_appsync::{
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
-use tracing::{debug, info};
+use tracing::{debug};
 
 mod dynamodb;
 mod eventbridge;
