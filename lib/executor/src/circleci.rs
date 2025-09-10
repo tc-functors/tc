@@ -14,9 +14,14 @@ pub struct Circle {
 }
 
 fn find_org() -> String {
-    let s1 = u::sh("git config --get remote.origin.url", &u::pwd());
-    let s2 = u::second(&s1, ":");
-    u::split_first(&s2, "/")
+    match std::env::var("GITHUB_ORG") {
+        Ok(k) => k,
+        Err(_) => {
+            let s1 = u::sh("git config --get remote.origin.url", &u::pwd());
+            let s2 = u::second(&s1, ":");
+            u::split_first(&s2, "/")
+        }
+    }
 }
 
 impl Circle {
@@ -64,6 +69,7 @@ impl Circle {
     pub async fn trigger_workflow(&self, payload: String) -> String {
         let url = &self.url();
         let res = u::http_post(url, self.headers(), payload).await.unwrap();
+        println!("{:?}", &res);
         let num = res["number"].to_string();
         self.workflow_url(&num)
     }
