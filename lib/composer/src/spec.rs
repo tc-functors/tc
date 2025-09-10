@@ -87,6 +87,8 @@ pub enum TopologyKind {
     Evented,
     #[serde(alias = "grapqhl")]
     Graphql,
+    #[serde(alias = "routed")]
+    Routed,
 }
 
 impl TopologyKind {
@@ -96,6 +98,7 @@ impl TopologyKind {
             TopologyKind::Function => s!("function"),
             TopologyKind::Graphql => s!("graphql"),
             TopologyKind::Evented => s!("evented"),
+            TopologyKind::Routed => s!("routed"),
         }
     }
 }
