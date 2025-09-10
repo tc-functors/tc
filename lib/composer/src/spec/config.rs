@@ -113,6 +113,14 @@ pub struct Tester {
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
+pub struct Snapshotter {
+    pub bucket: Option<String>,
+    pub prefix: Option<String>,
+    pub profile: Option<String>,
+}
+
+#[derive(Derivative, Serialize, Deserialize, Clone)]
+#[derivative(Debug, Default)]
 pub struct Resolver {
     #[derivative(Default(value = "default_bool()"))]
     #[serde(default = "default_bool")]
@@ -377,6 +385,9 @@ pub struct ConfigSpec {
 
     #[serde(default = "Notifier::default")]
     pub notifier: Notifier,
+
+    #[serde(default = "Snapshotter::default")]
+    pub snapshotter: Snapshotter,
 
     #[serde(default = "Ci::default")]
     pub ci: Ci,
