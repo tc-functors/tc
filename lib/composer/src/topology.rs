@@ -490,6 +490,11 @@ fn make_roles(
         }
     }
 
+    if let Some(f) = states {
+        let role = &f.role;
+        h.insert(role.name.clone(), role.clone());
+    }
+
     let mut entities: Vec<Entity> = vec![];
 
     if *mutations > 0 {
