@@ -29,7 +29,7 @@ async fn create_mutation(
     } = mutation;
     let authorizer_arn = auth.lambda_arn(&authorizer);
     let (api_id, _) =
-        appsync::create_or_update_api(&client, auth, &api_name, &authorizer_arn, tags.clone()).await;
+        appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
 
     add_permission(auth, &api_name, &authorizer_arn).await;
     appsync::create_types(auth, &api_id, types).await;
@@ -52,7 +52,7 @@ async fn create_mutation(
             .await;
         appsync::find_or_create_resolver(&client, &api_id, &field_name, datasource_name).await;
     }
-    appsync::update_tags(&client, &auth.graphql_arn(&api_id), tags.clone()).await;
+    appsync::update_tags(&client, &auth.graphql_api_arn(&api_id), tags.clone()).await;
 }
 
 pub async fn create(

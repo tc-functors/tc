@@ -155,22 +155,14 @@ async fn update_api(
 
 pub async fn create_or_update_api(
     client: &Client,
-    auth: &Auth,
     name: &str,
     authorizer_arn: &str,
     tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {
-        Some(id) => {
-            let graphql_api_arn = auth.graphql_api_arn(&id);
-            let (api_id, uris) = update_api(client, name, authorizer_arn, &id, tags.clone()).await;
-            update_waiter().await;
-            update_tags(client, &graphql_api_arn, tags).await;
-            (api_id, uris)
-
-        }
-        None => create_api(client, name, authorizer_arn, tags).await
+        Some(id) => update_api(client, name, authorizer_arn, &id, tags.clone()).await,
+        None     => create_api(client, name, authorizer_arn, tags).await
     }
 }
 
@@ -450,18 +442,6 @@ pub async fn update_tags(
             (graphql_arn.to_string(), tags.clone())
         }
         Err(e) => panic!("{}", e),
-    }
-}
-
-pub async fn update_waiter() {
-    match std::env::var("TC_UPDATE_WAIT") {
-        Ok(_) => {
-            debug!("TC_UPDATE_WAIT Env Variable found. Waiting for update to complete");
-            sleep(1000);
-        },
-        Err(_) => {
-            debug!("TC_UPDATE_WAIT Env Variable Not found. Continuing...");
-        }
     }
 }
 
