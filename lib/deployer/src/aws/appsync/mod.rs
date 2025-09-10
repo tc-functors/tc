@@ -16,6 +16,7 @@ use aws_sdk_appsync::{
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
+use tracing::{debug};
 
 mod dynamodb;
 mod eventbridge;
@@ -154,19 +155,24 @@ async fn update_api(
 
 pub async fn create_or_update_api(
     client: &Client,
+    auth: &Auth,
     name: &str,
     authorizer_arn: &str,
     tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {
-        Some(id) => update_api(client, name, authorizer_arn, &id, tags).await,
-        None => create_api(client, name, authorizer_arn, tags).await,
+        Some(id) => {
+            let graphql_api_arn = auth.graphql_api_arn(&id);
+            update_api(client, name, authorizer_arn, &id, tags.clone()).await;
+            update_waiter().await;
+            update_tags(client, &graphql_api_arn, tags).await
+        }
+        None => create_api(client, name, authorizer_arn, tags).await
     }
 }
 
 // types
-
 async fn list_types(client: &Client, api_id: &str) -> Vec<String> {
     let mut v: Vec<String> = vec![];
     let r = client
@@ -423,13 +429,38 @@ pub async fn create_types(auth: &Auth, api_id: &str, types: HashMap<String, Stri
     }
 }
 
-pub async fn update_tags(client: &Client, graphql_arn: &str, tags: HashMap<String, String>) {
-    let _ = client
+pub async fn update_tags(
+    client: &Client, 
+    graphql_arn: &str, 
+    tags: HashMap<String, String>
+) -> (String, HashMap<String, String>) {
+    debug!("Updating tags of api {}", graphql_arn.green());
+    let r = client
         .tag_resource()
         .resource_arn(graphql_arn)
-        .set_tags(Some(tags))
+        .set_tags(Some(tags.clone()))
         .send()
         .await;
+
+    match r {
+        Ok(_res) => {
+            let _resp = graphql_arn;
+            (graphql_arn.to_string(), tags.clone())
+        }
+        Err(e) => panic!("{}", e),
+    }
+}
+
+pub async fn update_waiter() {
+    match std::env::var("TC_UPDATE_WAIT") {
+        Ok(_) => {
+            debug!("TC_UPDATE_WAIT Env Variable found. Waiting for update to complete");
+            sleep(1000);
+        },
+        Err(_) => {
+            debug!("TC_UPDATE_WAIT Env Variable Not found. Continuing...");
+        }
+    }
 }
 
 pub async fn create_events_api(client: &Client, api_name: &str) -> String {

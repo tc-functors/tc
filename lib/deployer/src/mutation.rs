@@ -29,7 +29,7 @@ async fn create_mutation(
     } = mutation;
     let authorizer_arn = auth.lambda_arn(&authorizer);
     let (api_id, _) =
-        appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
+        appsync::create_or_update_api(&client, auth, &api_name, &authorizer_arn, tags.clone()).await;
 
     add_permission(auth, &api_name, &authorizer_arn).await;
     appsync::create_types(auth, &api_id, types).await;
