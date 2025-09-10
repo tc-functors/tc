@@ -187,6 +187,13 @@ impl Auth {
         )
     }
 
+     pub fn graphql_api_arn(&self, id: &str) -> String {
+        format!(
+            "arn:aws:appsync:{}:{}:apis/{}",
+            &self.region, &self.account, id
+        )
+    }
+
     pub fn sqs_arn(&self, name: &str) -> String {
         format!("arn:aws:sqs:{}:{}:{}", &self.region, &self.account, name)
     }

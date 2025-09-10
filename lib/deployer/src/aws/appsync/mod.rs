@@ -154,14 +154,20 @@ async fn update_api(
 
 pub async fn create_or_update_api(
     client: &Client,
+    auth: &Auth,
     name: &str,
     authorizer_arn: &str,
     tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {
-        Some(id) => update_api(client, name, authorizer_arn, &id, tags).await,
-        None => create_api(client, name, authorizer_arn, tags).await,
+        Some(id) => {
+            let graphql_api_arn = auth.graphql_api_arn(&id);
+            update_api(client, name, authorizer_arn, &id, tags.clone()).await;
+            _ = graphql_api_waiter(client, &id).await;
+            update_tags(client, &graphql_api_arn, tags).await
+        }
+        None => create_api(client, name, authorizer_arn, tags).await
     }
 }
 
@@ -423,13 +429,52 @@ pub async fn create_types(auth: &Auth, api_id: &str, types: HashMap<String, Stri
     }
 }
 
-pub async fn update_tags(client: &Client, graphql_arn: &str, tags: HashMap<String, String>) {
-    let _ = client
+pub async fn update_tags(
+    client: &Client, 
+    graphql_arn: &str, 
+    tags: HashMap<String, String>
+) -> (String, HashMap<String, String>) {
+    println!("Updating tags of api {}", graphql_arn.green());
+    let r = client
         .tag_resource()
         .resource_arn(graphql_arn)
         .set_tags(Some(tags))
         .send()
         .await;
+
+    let dummy_map: HashMap<String, String> = HashMap::new();
+    match r {
+        Ok(_res) => {
+            let _resp = graphql_arn;
+            (graphql_arn.to_string(), dummy_map)
+        }
+        Err(e) => panic!("{}", e),
+    }
+}
+
+pub async fn graphql_api_waiter(client: &Client, api_id: &str, ) -> Result<(), aws_sdk_appsync::Error> {
+    println!("Waiting for update of GraphQL API '{}' to complete", api_id);
+    loop {
+        let get_api_result = client
+            .get_graphql_api()
+            .api_id(api_id)
+            .send()
+            .await?;
+
+        if let Some(api) = get_api_result.graphql_api {
+            if let Some(status) = api.api_type {
+                println!("Current API status: {:?}", status);
+
+                if status == aws_sdk_appsync::types::GraphQlApiType::Graphql {
+                    println!("GraphQL API update complete. Final status: {:?}", status);
+                    break;
+                }
+            }
+        }
+        sleep(1000)
+    }
+
+    Ok(())
 }
 
 pub async fn create_events_api(client: &Client, api_name: &str) -> String {
