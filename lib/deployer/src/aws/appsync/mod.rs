@@ -16,6 +16,7 @@ use aws_sdk_appsync::{
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
+use tracing::{debug, info};
 
 mod dynamodb;
 mod eventbridge;
@@ -172,7 +173,6 @@ pub async fn create_or_update_api(
 }
 
 // types
-
 async fn list_types(client: &Client, api_id: &str) -> Vec<String> {
     let mut v: Vec<String> = vec![];
     let r = client
@@ -434,7 +434,7 @@ pub async fn update_tags(
     graphql_arn: &str, 
     tags: HashMap<String, String>
 ) -> (String, HashMap<String, String>) {
-    println!("Updating tags of api {}", graphql_arn.green());
+    debug!("Updating tags of api {}", graphql_arn.green());
     let r = client
         .tag_resource()
         .resource_arn(graphql_arn)
@@ -454,11 +454,11 @@ pub async fn update_tags(
 pub async fn update_waiter() {
     match std::env::var("TC_UPDATE_WAIT") {
         Ok(_) => {
-            println!("TC_UPDATE_WAIT Env Variable found. Waiting for update to complete");
+            debug!("TC_UPDATE_WAIT Env Variable found. Waiting for update to complete");
             sleep(1000);
         },
         Err(_) => {
-            println!("TC_UPDATE_WAIT Env Variable Not found. Continuing...");
+            debug!("TC_UPDATE_WAIT Env Variable Not found. Continuing...");
         }
     }
 }
