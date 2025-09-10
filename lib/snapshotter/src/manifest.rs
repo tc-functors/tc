@@ -2,6 +2,7 @@ use crate::aws::{
     appsync,
     lambda,
     sfn,
+    apigateway
 };
 use authorizer::Auth;
 use composer::{
@@ -44,6 +45,10 @@ pub async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMa
             } else {
                 HashMap::new()
             }
+        }
+        TopologyKind::Routed => {
+            let client = apigateway::make_client(auth).await;
+            apigateway::find_tags(&client, &name).await
         }
         TopologyKind::Evented => HashMap::new(),
     }

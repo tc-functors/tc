@@ -436,6 +436,7 @@ impl Function {
             name,
             pp_status(&state).green()
         ));
+        self.update_tags(arn).await;
         Ok(res.function_arn.unwrap_or_default())
     }
 

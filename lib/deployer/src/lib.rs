@@ -57,7 +57,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     );
 
     role::create_or_update(auth, roles, tags).await;
-    function::create(auth, functions, sync).await;
+    function::create(auth, functions, &tags, sync).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
     queue::create(&auth, queues).await;
@@ -70,7 +70,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     }
 }
 
-async fn update_function(auth: &Auth, namespace: &str, sandbox: &str, f: &Function) {
+async fn update_function(auth: &Auth, namespace: &str, sandbox: &str, f: &Function, tags: &HashMap<String, String>) {
     println!(
         "Updating function {}@{}.{}/functions/{}",
         &namespace.green(),
@@ -80,7 +80,7 @@ async fn update_function(auth: &Auth, namespace: &str, sandbox: &str, f: &Functi
     );
     let mut fns: HashMap<String, Function> = HashMap::new();
     fns.insert(f.name.clone(), f.clone());
-    function::update_code(auth, &fns).await
+    function::update_code(auth, &fns, tags).await
 }
 
 async fn update_topology(auth: &Auth, topology: &Topology) {
@@ -111,7 +111,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     );
 
     role::create_or_update(&auth, roles, tags).await;
-    function::update_code(&auth, functions).await;
+    function::update_code(&auth, functions, &tags).await;
     mutation::create(&auth, mutations, &tags).await;
     channel::create(&auth, channels).await;
     event::create(&auth, events, &tags).await;
@@ -153,7 +153,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     );
     match entity {
         Entity::Event => event::create(&auth, events, tags).await,
-        Entity::Function => function::create(&auth, functions, false).await,
+        Entity::Function => function::create(&auth, functions, tags, false).await,
         Entity::Mutation => mutation::create(&auth, mutations, tags).await,
         Entity::Queue => queue::create(&auth, queues).await,
         Entity::Channel => channel::create(&auth, channels).await,
@@ -199,7 +199,7 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
 
     match entity {
         Entity::Event => event::update(&auth, events, tags, component).await,
-        Entity::Function => function::update(&auth, functions, component).await,
+        Entity::Function => function::update(&auth, functions, tags, component).await,
         Entity::Mutation => mutation::update(&auth, mutations, &component).await,
         Entity::Queue => queue::update(&auth, queues, component).await,
         Entity::Channel => channel::update(&auth, channels, component).await,
@@ -326,7 +326,7 @@ pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<
             let dir = kit::pwd();
             let maybe_function = topology.current_function(&dir);
             match maybe_function {
-                Some(f) => update_function(auth, &topology.namespace, &topology.sandbox, &f).await,
+                Some(f) => update_function(auth, &topology.namespace, &topology.sandbox, &f, &topology.tags).await,
                 None => update_topology(auth, topology).await,
             }
         }
