@@ -7,6 +7,7 @@ use aws_sdk_appsync::{
         LambdaAuthorizerConfig,
         ResolverKind,
         TypeDefinitionFormat,
+        OutputType::Json,
         builders::{
             AdditionalAuthenticationProviderBuilder,
             LambdaAuthorizerConfigBuilder,
@@ -438,15 +439,14 @@ pub async fn update_tags(
     let r = client
         .tag_resource()
         .resource_arn(graphql_arn)
-        .set_tags(Some(tags))
+        .set_tags(Some(tags.clone()))
         .send()
         .await;
 
-    let dummy_map: HashMap<String, String> = HashMap::new();
     match r {
         Ok(_res) => {
             let _resp = graphql_arn;
-            (graphql_arn.to_string(), dummy_map)
+            (graphql_arn.to_string(), tags.clone())
         }
         Err(e) => panic!("{}", e),
     }
@@ -454,26 +454,24 @@ pub async fn update_tags(
 
 pub async fn graphql_api_waiter(client: &Client, api_id: &str, ) -> Result<(), aws_sdk_appsync::Error> {
     println!("Waiting for update of GraphQL API '{}' to complete", api_id);
-    loop {
-        let get_api_result = client
-            .get_graphql_api()
+    let _ = loop {
+        let request = client
+            .get_introspection_schema()
             .api_id(api_id)
-            .send()
-            .await?;
-
-        if let Some(api) = get_api_result.graphql_api {
-            if let Some(status) = api.api_type {
-                println!("Current API status: {:?}", status);
-
-                if status == aws_sdk_appsync::types::GraphQlApiType::Graphql {
-                    println!("GraphQL API update complete. Final status: {:?}", status);
-                    break;
-                }
+            .format(Json);
+        
+        match request.send().await {
+            Ok(output) => {
+                let schema = output.schema().unwrap();
+                println!("API is Active. Schema received with size: {} bytes", schema.as_ref().len());
+                break;
+            }
+            Err(_) => {
+                print!("retrying...");
+                sleep(1000)
             }
         }
-        sleep(1000)
-    }
-
+    };
     Ok(())
 }
 
