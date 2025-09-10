@@ -7,7 +7,6 @@ use aws_sdk_appsync::{
         LambdaAuthorizerConfig,
         ResolverKind,
         TypeDefinitionFormat,
-        OutputType::Json,
         builders::{
             AdditionalAuthenticationProviderBuilder,
             LambdaAuthorizerConfigBuilder,
