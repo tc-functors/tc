@@ -164,9 +164,11 @@ pub async fn create_or_update_api(
     match api {
         Some(id) => {
             let graphql_api_arn = auth.graphql_api_arn(&id);
-            update_api(client, name, authorizer_arn, &id, tags.clone()).await;
+            let (api_id, uris) = update_api(client, name, authorizer_arn, &id, tags.clone()).await;
             update_waiter().await;
-            update_tags(client, &graphql_api_arn, tags).await
+            update_tags(client, &graphql_api_arn, tags).await;
+            (api_id, uris)
+
         }
         None => create_api(client, name, authorizer_arn, tags).await
     }
@@ -430,8 +432,8 @@ pub async fn create_types(auth: &Auth, api_id: &str, types: HashMap<String, Stri
 }
 
 pub async fn update_tags(
-    client: &Client, 
-    graphql_arn: &str, 
+    client: &Client,
+    graphql_arn: &str,
     tags: HashMap<String, String>
 ) -> (String, HashMap<String, String>) {
     debug!("Updating tags of api {}", graphql_arn.green());
