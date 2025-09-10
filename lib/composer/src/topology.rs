@@ -540,6 +540,7 @@ fn find_kind(
     flow: &Option<Flow>,
     functions: &HashMap<String, Function>,
     mutations: &HashMap<String, Mutation>,
+    routes: &HashMap<String, Route>,
 ) -> TopologyKind {
     match given_kind {
         Some(k) => k.clone(),
@@ -548,6 +549,8 @@ fn find_kind(
             None => {
                 if !mutations.is_empty() {
                     return TopologyKind::Graphql;
+                } else if !routes.is_empty() {
+                    return TopologyKind::Routed;
                 } else if !functions.is_empty() {
                     return TopologyKind::Function;
                 } else {
@@ -596,7 +599,7 @@ fn make(
         namespace: namespace.clone(),
         fqn: fqn.clone(),
         env: template::profile(),
-        kind: find_kind(&spec.kind, &flow, &functions, &mutations),
+        kind: find_kind(&spec.kind, &flow, &functions, &mutations, &routes),
         version: version,
         infra: u::gdir(&infra_dir),
         sandbox: template::sandbox(),
