@@ -69,7 +69,6 @@ impl Circle {
     pub async fn trigger_workflow(&self, payload: String) -> String {
         let url = &self.url();
         let res = u::http_post(url, self.headers(), payload).await.unwrap();
-        println!("{:?}", &res);
         let num = res["number"].to_string();
         self.workflow_url(&num)
     }
