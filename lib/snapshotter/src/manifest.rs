@@ -72,6 +72,13 @@ fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
 }
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Node {
+    pub name: String,
+    pub dir: String,
+    pub kind: String
+}
+
+#[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Manifest {
     #[tabled(skip)]
     pub dir: String,
@@ -84,6 +91,8 @@ pub struct Manifest {
     pub tc_version: String,
     #[tabled(skip)]
     pub changelog: Option<Vec<String>>,
+    #[tabled(skip)]
+    pub nodes: Vec<Node>,
     pub updated_at: String,
     pub updated_by: String,
 }
@@ -102,6 +111,23 @@ impl Manifest {
         } else {
             &namespace
         };
+
+        let mut nodes: Vec<Node> = vec![];
+
+        for (name, node) in &topology.nodes {
+            let maybe_rdir = node.dir.strip_prefix(&format!("{}/", u::root()));
+            let dir = match maybe_rdir {
+                Some(d) => d,
+                None => dir
+            };
+
+            let n = Node {
+                name: name.to_string(),
+                dir: dir.to_string(),
+                kind: node.kind.to_str()
+            };
+            nodes.push(n);
+        }
 
         let changelog = if gen_changelog {
             Some(find_changelog(&namespace, &version))
@@ -125,6 +151,7 @@ impl Manifest {
             frozen: u::safe_unwrap(tags.get("freeze")),
             tc_version: u::safe_unwrap(tags.get("tc_version")),
             changelog: changelog,
+            nodes: nodes,
             updated_at: u::safe_unwrap(tags.get("updated_at")),
             updated_by: u::safe_unwrap(tags.get("updated_by")),
         }

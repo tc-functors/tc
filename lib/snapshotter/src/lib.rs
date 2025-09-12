@@ -62,7 +62,10 @@ pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option
 }
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
-    let topologies = composer::compose_root(dir, false);
+    let topologies = match std::env::var("TC_SNAPSHOT_BREAKOUT") {
+        Ok(_) => composer::compose_root(dir, true),
+        Err(_) => composer::compose_root(dir, false)
+    };
     u::sh("git fetch --tags", dir);
     let mut rows: Vec<Manifest> = vec![];
     for (_, node) in topologies {

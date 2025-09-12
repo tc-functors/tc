@@ -1,7 +1,7 @@
 use crate::Manifest;
 use kit as u;
 
-fn make_job_def(env: &str, sandbox: &str) -> String {
+fn make_recursive_job_def(env: &str, sandbox: &str) -> String {
     format!(r#"
   tc-deploy-topology:
     docker:
@@ -29,6 +29,34 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
           command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync"#)
 }
 
+fn make_job_def(env: &str, sandbox: &str) -> String {
+    format!(r#"
+  tc-deploy-topology:
+    docker:
+      - image: cimg/base:2025.08
+    resource_class: large
+    parameters:
+      tag:
+        type: string
+      namespace:
+        type: string
+      workdir:
+        type: string
+      tc_version:
+        type: string
+    steps:
+      - checkout
+      - download-tc-latest
+      - run: git fetch origin << parameters.tag >>
+      - run: git checkout << parameters.tag >>
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: tc-create-<< parameters.tag >>
+          working_directory: << parameters.workdir >>
+          command: tc create -e {env} --sandbox {sandbox} --trace"#)
+}
+
 fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
     format!(r#"
       - tc-deploy-topology:
@@ -42,11 +70,30 @@ fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
             - cicd-aws-user-creds"#)
 }
 
+fn make_node_job(parent: &str, name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
+    format!(r#"
+      - tc-deploy-topology:
+          name: {name}
+          namespace: {name}
+          workdir: {dir}
+          tag:  {tag}
+          tc_version:  {tc_version}
+          requires:
+            - {parent}
+          context:
+            - tc
+            - cicd-aws-user-creds"#)
+}
+
 pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> String {
-    let job_def = make_job_def(env, sandbox);
+    let job_def = match std::env::var("TC_SNAPSHOT_BREAKOUT") {
+        Ok(_) => make_job_def(env, sandbox),
+        Err(_) => make_recursive_job_def(env, sandbox)
+    };
+
     let mut jobs: String = String::from("");
     for record in records {
-        let Manifest { namespace, dir, version, tc_version, .. } = record;
+        let Manifest { namespace, nodes, dir, version, tc_version, .. } = record;
         let ver = if version.is_empty() {
             "non-existent"
         } else {
@@ -55,12 +102,17 @@ pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> Str
 
         let tag = format!("{}-{}", namespace, ver);
         let tver = if tc_version.is_empty() {
-            "0.9.12"
+            "0.9.17"
         } else {
             &tc_version
         };
-        let job = make_job(&namespace,  &dir, &tag, tver);
+        let job = make_job(&namespace, &dir, &tag, tver);
         jobs.push_str(&job);
+        for node in nodes {
+            let parent = &tag;
+            let node_job = make_node_job(parent, &node.name, &node.dir, &tag, tver);
+            jobs.push_str(&node_job)
+        }
     }
 
     let workflow_name = format!("{}-{}-{}-deploy", env, sandbox, u::simple_date());
