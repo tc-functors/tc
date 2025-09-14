@@ -1,11 +1,8 @@
 use crate::Auth;
 use anyhow::Result;
-use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
     Client,
     Error,
-    config as lambda_config,
-    config::retry::RetryConfig,
     primitives::Blob,
     types::{
         Architecture,
@@ -75,12 +72,7 @@ fn pp_status(status: &LastUpdateStatus) -> String {
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::from_conf(
-        lambda_config::Builder::from(shared_config)
-            .behavior_version(BehaviorVersion::latest())
-            .retry_config(RetryConfig::standard().with_max_attempts(10))
-            .build(),
-    )
+    Client::new(shared_config)
 }
 
 pub fn make_blob_from_str(payload: &str) -> Blob {
