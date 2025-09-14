@@ -119,6 +119,7 @@ pub struct Page {
     pub origin_domain: String,
     pub default_root_object: String,
     pub domains: Vec<String>,
+    pub config_template: Option<String>
 }
 
 fn find_bucket(
@@ -224,6 +225,7 @@ fn make(
         origin_paths: paths,
         default_root_object: s!("index.html"),
         domains: find_domains(&ps.domains, infra),
+        config_template: ps.config_template.clone()
     }
 }
 

@@ -463,3 +463,16 @@ pub async fn delete_by_id(client: &Client, api_id: &str) {
         .unwrap();
     println!("{:?}", &res);
 }
+
+pub async fn list_api_keys(client: &Client, api_id: &str) -> Vec<String> {
+    let res = client
+        .list_api_keys()
+        .api_id(api_id)
+        .send()
+        .await
+        .unwrap();
+    match res.api_keys {
+        Some(xs) => xs.into_iter().map(|x| x.id.unwrap()).collect(),
+        None => vec![]
+    }
+}
