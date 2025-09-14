@@ -1,9 +1,11 @@
-use provider::aws::{
-    iam,
-    iam::Role,
-};
-use provider::Auth;
 use composer;
+use provider::{
+    Auth,
+    aws::{
+        iam,
+        iam::Role,
+    },
+};
 use std::collections::HashMap;
 
 fn should_delete() -> bool {
@@ -29,7 +31,6 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
         }
     }
 }
-
 
 pub async fn create_aux(
     profile: String,

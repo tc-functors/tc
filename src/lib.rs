@@ -1,10 +1,11 @@
-use provider::Auth;
-use configurator::Config;
 use composer::{
     Entity,
     Topology,
 };
+use configurator::Config;
+use itertools::Itertools;
 use kit as u;
+use provider::Auth;
 use std::{
     panic,
     time::Instant,
@@ -13,7 +14,6 @@ use tabled::{
     Style,
     Table,
 };
-use itertools::Itertools;
 mod interactive;
 
 pub struct BuildOpts {
@@ -213,7 +213,6 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
         ..
     } = topology.clone();
 
-
     let rt = resolver::function::Root {
         namespace: namespace.to_string(),
         fqn: fqn.to_string(),
@@ -251,7 +250,6 @@ pub async fn diff_between(between: &str) {
         }
     }
 }
-
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {
     let Topology {
@@ -302,7 +300,7 @@ pub async fn create(
     recursive: bool,
     cache: bool,
     topology_path: Option<String>,
-    sync: bool
+    sync: bool,
 ) {
     let start = Instant::now();
 
@@ -557,13 +555,18 @@ pub struct SnapshotOpts {
     pub target_env: Option<String>,
     pub target_sandbox: Option<String>,
     pub gen_changelog: bool,
-    pub gen_sub_versions: bool
+    pub gen_sub_versions: bool,
 }
 
 pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
-
-    let SnapshotOpts { save, format, gen_changelog,
-                       gen_sub_versions, target_env, target_sandbox } = opts;
+    let SnapshotOpts {
+        save,
+        format,
+        gen_changelog,
+        gen_sub_versions,
+        target_env,
+        target_sandbox,
+    } = opts;
 
     let dir = u::root();
     let format = u::maybe_string(format, "table");
@@ -580,7 +583,6 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
             let profiles: Vec<String> = p.split(",").map(|v| v.to_string()).collect();
             if profiles.len() > 1 {
                 snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
-
             } else {
                 let auth = init(profile.clone(), None).await;
 
@@ -591,7 +593,6 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
                     snapshotter::save(&auth, &records_str, &p, &sandbox).await
                 }
                 snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
-
             }
         }
         None => println!("Please specify profile"),
@@ -653,7 +654,7 @@ pub async fn emulate(
     auth: &Auth,
     sandbox: Option<String>,
     maybe_entity: Option<String>,
-    shell: bool
+    shell: bool,
 ) {
     let sandbox = u::maybe_string(sandbox, "stable");
     let topology = composer::compose(&u::pwd(), false);

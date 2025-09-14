@@ -6,9 +6,9 @@ use convert_case::{
     Case,
     Casing,
 };
+use regex::Regex;
 use std::collections::HashMap;
 use text_placeholder::Template;
-use regex::Regex;
 
 pub fn kebab_case(s: &str) -> String {
     s.to_case(Case::Kebab)

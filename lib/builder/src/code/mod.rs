@@ -1,5 +1,7 @@
-use crate::types::BuildStatus;
-use crate::Auth;
+use crate::{
+    Auth,
+    types::BuildStatus,
+};
 use composer::{
     Build,
     Lang,

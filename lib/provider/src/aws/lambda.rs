@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::Auth;
+use anyhow::Result;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
     Client,
@@ -13,7 +13,9 @@ use aws_sdk_lambda::{
         Environment,
         FileSystemConfig,
         FunctionCode,
+        InvocationType,
         LastUpdateStatus,
+        LogType,
         LoggingConfig,
         PackageType,
         Runtime,
@@ -22,8 +24,6 @@ use aws_sdk_lambda::{
         State,
         UpdateRuntimeOn,
         VpcConfig,
-        InvocationType,
-        LogType,
         builders::{
             DeadLetterConfigBuilder,
             EnvironmentBuilder,
@@ -34,16 +34,15 @@ use aws_sdk_lambda::{
         },
     },
 };
+use base64::{
+    Engine as _,
+    engine::general_purpose,
+};
 use colored::Colorize;
 use kit::{
     LogUpdate,
     *,
 };
-use base64::{
-    Engine as _,
-    engine::general_purpose,
-};
-
 use std::{
     collections::HashMap,
     fs::File,
@@ -330,7 +329,8 @@ impl Function {
     }
 
     pub async fn update_tags(self, arn: &str) {
-        let res = self.client
+        let res = self
+            .client
             .tag_resource()
             .resource(arn)
             .set_tags(Some(self.tags))
@@ -868,7 +868,6 @@ pub async fn delete_by_arn(client: &Client, arn: &str) {
         .await
         .unwrap();
 }
-
 
 fn print_logs(log_result: Option<String>, payload: Option<Blob>) {
     match log_result {

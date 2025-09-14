@@ -2,7 +2,6 @@ use assert_json_diff::{
     assert_json_eq,
     assert_json_include,
 };
-use provider::Auth;
 use colored::Colorize;
 use composer::{
     Entity,
@@ -10,13 +9,16 @@ use composer::{
     Topology,
     spec::TestSpec,
 };
-use provider::aws::{
-    eventbridge,
-    lambda,
-    sfn,
-};
 use jsonpath_rust::JsonPath;
 use kit as u;
+use provider::{
+    Auth,
+    aws::{
+        eventbridge,
+        lambda,
+        sfn,
+    },
+};
 use serde_json::Value;
 use std::{
     collections::HashMap,
@@ -109,17 +111,19 @@ async fn invoke(
             };
 
             if mode == "Express" {
-                let (exec_arn, _maybe_response) = match sfn::start_sync_execution(client, &arn, &payload, None).await {
-                   Ok((exec_arn, maybe_response)) => (exec_arn, maybe_response),
-                   Err(error) => panic!("Failed to invoke. Error: {}", error)
-                };
-                return exec_arn
+                let (exec_arn, _maybe_response) =
+                    match sfn::start_sync_execution(client, &arn, &payload, None).await {
+                        Ok((exec_arn, maybe_response)) => (exec_arn, maybe_response),
+                        Err(error) => panic!("Failed to invoke. Error: {}", error),
+                    };
+                return exec_arn;
             } else {
-                let (exec_arn, _maybe_response) = match sfn::start_execution(client, &arn, &payload).await {
-                    Ok((exec_arn, maybe_response)) => (exec_arn, maybe_response),
-                    Err(error) => panic!("Failed to invoke. Error: {}", error)
-                };
-                return exec_arn
+                let (exec_arn, _maybe_response) =
+                    match sfn::start_execution(client, &arn, &payload).await {
+                        Ok((exec_arn, maybe_response)) => (exec_arn, maybe_response),
+                        Err(error) => panic!("Failed to invoke. Error: {}", error),
+                    };
+                return exec_arn;
             }
         }
         Entity::Event => {

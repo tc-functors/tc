@@ -35,9 +35,7 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post:
     let post = deps_str(post.to_vec());
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python",
-        Err(_) => {
-            "pip install -r requirements.txt --target=/build/python --prefer-binary"
-        }
+        Err(_) => "pip install -r requirements.txt --target=/build/python --prefer-binary",
     };
 
     let build_context = &u::root();
@@ -70,7 +68,12 @@ RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {p
     u::write_str(&dockerfile, &f);
 }
 
-pub fn gen_dockerfile_unshared(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+pub fn gen_dockerfile_unshared(
+    dir: &str,
+    runtime: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>,
+) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let pip_cmd = match std::env::var("TC_FORCE_BUILD") {

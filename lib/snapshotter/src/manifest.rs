@@ -1,24 +1,23 @@
-use provider::aws::{
-    appsync,
-    lambda,
-    sfn,
-    gateway
-};
-use provider::Auth;
 use composer::{
     Topology,
     TopologyKind,
 };
 use kit as u;
+use provider::{
+    Auth,
+    aws::{
+        appsync,
+        gateway,
+        lambda,
+        sfn,
+    },
+};
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use std::collections::HashMap;
-
-use tabled::{
-    Tabled,
-};
+use tabled::Tabled;
 
 async fn get_graphql_api_arn(auth: &Auth, name: &str) -> Option<String> {
     let client = appsync::make_client(auth).await;
@@ -75,7 +74,7 @@ fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
 pub struct Node {
     pub name: String,
     pub dir: String,
-    pub kind: String
+    pub kind: String,
 }
 
 #[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -98,8 +97,12 @@ pub struct Manifest {
 }
 
 impl Manifest {
-
-    pub async fn new(auth: &Auth, sandbox: &str, topology: &Topology, gen_changelog: bool) -> Manifest {
+    pub async fn new(
+        auth: &Auth,
+        sandbox: &str,
+        topology: &Topology,
+        gen_changelog: bool,
+    ) -> Manifest {
         let Topology { kind, dir, fqn, .. } = topology;
 
         let name = render(&fqn, sandbox);
@@ -118,13 +121,13 @@ impl Manifest {
             let maybe_rdir = node.dir.strip_prefix(&format!("{}/", u::root()));
             let dir = match maybe_rdir {
                 Some(d) => d,
-                None => dir
+                None => dir,
             };
 
             let n = Node {
                 name: name.to_string(),
                 dir: dir.to_string(),
-                kind: node.kind.to_str()
+                kind: node.kind.to_str(),
             };
             nodes.push(n);
         }
@@ -138,7 +141,7 @@ impl Manifest {
         let maybe_rdir = dir.strip_prefix(&format!("{}/", u::root()));
         let dir = match maybe_rdir {
             Some(d) => d,
-            None => dir
+            None => dir,
         };
 
         Manifest {
@@ -156,5 +159,4 @@ impl Manifest {
             updated_by: u::safe_unwrap(tags.get("updated_by")),
         }
     }
-
 }

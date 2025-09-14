@@ -4,6 +4,7 @@ mod parser;
 pub mod spec;
 pub mod topology;
 
+use configurator::Config;
 use display::Format;
 pub use display::topology::TopologyCount;
 pub use entity::Entity;
@@ -23,8 +24,6 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
-use configurator::Config;
-
 pub use topology::{
     Topology,
     channel::Channel,

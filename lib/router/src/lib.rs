@@ -1,6 +1,8 @@
-use provider::Auth;
-use provider::aws::eventbridge;
 use configurator::Config;
+use provider::{
+    Auth,
+    aws::eventbridge,
+};
 
 fn target_id(name: &str) -> String {
     format!("{}_target", name)

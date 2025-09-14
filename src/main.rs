@@ -896,7 +896,7 @@ async fn snapshot(args: SnapshotArgs) {
         gen_changelog: changelog,
         gen_sub_versions: versions,
         target_env: target_env,
-        target_sandbox: target_sandbox
+        target_sandbox: target_sandbox,
     };
     init_tracing(trace);
     tc::snapshot(profile, sandbox, opts).await;

@@ -3,14 +3,16 @@ mod function;
 mod repl;
 pub mod route;
 mod state;
-use provider::aws::Auth;
-use provider::aws;
-use configurator::Config;
 use composer::{
     Entity,
     Topology,
 };
+use configurator::Config;
 use kit as u;
+use provider::{
+    aws,
+    aws::Auth,
+};
 
 async fn read_uri(auth: &Auth, uri: &str) -> String {
     let client = aws::s3::make_client(auth).await;

@@ -1,13 +1,13 @@
 mod function;
 mod state;
 
-use provider::aws::Auth;
 use composer::{
     BuildKind,
     Entity,
     Topology,
 };
 use kit as u;
+use provider::aws::Auth;
 
 pub async fn emulate(auth: &Auth, topology: &Topology, entity_component: &str, shell: bool) {
     let (entity, component) = Entity::as_entity_component(entity_component);

@@ -1,18 +1,19 @@
-use provider::aws::{
-    cloudfront,
-    s3,
-    ssm,
-};
-use provider::Auth;
-use configurator::Config;
 use composer::{
     Page,
     topology::page::BucketPolicy,
 };
+use configurator::Config;
 use kit as u;
 use kit::*;
+use provider::{
+    Auth,
+    aws::{
+        cloudfront,
+        s3,
+        ssm,
+    },
+};
 use std::collections::HashMap;
-
 
 fn build_page(dir: &str, name: &str, command: &Option<String>, config_template: &Option<String>) {
     match command {
@@ -42,7 +43,6 @@ fn augment_policy(
     let policy_str = serde_json::to_string(&policy).unwrap();
     render(&policy_str, dist_id)
 }
-
 
 async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
     match std::env::var("TC_ASSUME_ROLE") {
@@ -92,8 +92,12 @@ async fn resolve_vars(auth: &Auth, keys: Vec<String>) -> HashMap<String, String>
     h
 }
 
-async fn render_config_template(auth: &Auth, dir: &str, path: &str, config: &HashMap<String, String>) {
-
+async fn render_config_template(
+    auth: &Auth,
+    dir: &str,
+    path: &str,
+    config: &HashMap<String, String>,
+) {
     let p = format!("{}/{}", dir, path);
     if u::file_exists(&p) {
         let s = u::slurp(&p);
@@ -247,9 +251,17 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMa
     }
 }
 
-pub async fn update_config(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
-    for(_,  page) in pages {
-        let Page { dir, config_template, .. } = page;
+pub async fn update_config(
+    auth: &Auth,
+    pages: &HashMap<String, Page>,
+    config: &HashMap<String, String>,
+) {
+    for (_, page) in pages {
+        let Page {
+            dir,
+            config_template,
+            ..
+        } = page;
         if let Some(path) = config_template {
             println!("Rendering config: {}", &path);
             render_config_template(auth, dir, &path, config).await;
@@ -257,7 +269,12 @@ pub async fn update_config(auth: &Auth, pages: &HashMap<String, Page>, config: &
     }
 }
 
-pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str, config: &HashMap<String, String>) {
+pub async fn update(
+    auth: &Auth,
+    pages: &HashMap<String, Page>,
+    component: &str,
+    config: &HashMap<String, String>,
+) {
     match component {
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,

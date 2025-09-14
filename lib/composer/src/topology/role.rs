@@ -99,8 +99,12 @@ impl Role {
         }
     }
 
-
-    pub fn new_static(entity: Entity, role_file: &str, _namespace: &str, entity_name: &str) -> Role {
+    pub fn new_static(
+        entity: Entity,
+        role_file: &str,
+        _namespace: &str,
+        entity_name: &str,
+    ) -> Role {
         if u::file_exists(&role_file) {
             let name = entity_name;
             Role {

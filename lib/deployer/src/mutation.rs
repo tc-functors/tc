@@ -1,12 +1,14 @@
-use provider::aws::{
-    appsync,
-    lambda,
-};
-use provider::Auth;
-use provider::aws::appsync::AppsyncClient;
 use composer::Mutation;
-use std::collections::HashMap;
 use kit::*;
+use provider::{
+    Auth,
+    aws::{
+        appsync,
+        appsync::AppsyncClient,
+        lambda,
+    },
+};
+use std::collections::HashMap;
 
 async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
     let client = lambda::make_client(auth).await;
@@ -107,6 +109,6 @@ pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
             }
             h
         }
-        _ => HashMap::new()
+        _ => HashMap::new(),
     }
 }

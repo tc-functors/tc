@@ -119,14 +119,10 @@ pub struct Page {
     pub origin_domain: String,
     pub default_root_object: String,
     pub domains: Vec<String>,
-    pub config_template: Option<String>
+    pub config_template: Option<String>,
 }
 
-fn find_bucket(
-    given_bucket: &Option<String>,
-    config: &Config,
-    infra: &Option<Infra>,
-) -> String {
+fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<Infra>) -> String {
     match given_bucket {
         Some(b) => b.to_string(),
         None => match infra {
@@ -225,15 +221,11 @@ fn make(
         origin_paths: paths,
         default_root_object: s!("index.html"),
         domains: find_domains(&ps.domains, infra),
-        config_template: ps.config_template.clone()
+        config_template: ps.config_template.clone(),
     }
 }
 
-pub fn make_all(
-    spec: &TopologySpec,
-    infra_dir: &str,
-    config: &Config,
-) -> HashMap<String, Page> {
+pub fn make_all(spec: &TopologySpec, infra_dir: &str, config: &Config) -> HashMap<String, Page> {
     let mut h: HashMap<String, Page> = HashMap::new();
     if let Some(pspec) = &spec.pages {
         for (name, ps) in pspec {

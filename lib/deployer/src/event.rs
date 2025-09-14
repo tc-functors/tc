@@ -1,13 +1,15 @@
-use provider::aws::{
-    appsync,
-    eventbridge,
-    lambda,
-};
-use provider::Auth;
 use colored::Colorize;
 use composer::{
     Entity,
     Event,
+};
+use provider::{
+    Auth,
+    aws::{
+        appsync,
+        eventbridge,
+        lambda,
+    },
 };
 use std::collections::HashMap;
 

@@ -1,6 +1,8 @@
-use provider::aws::appsync;
-use provider::Auth;
 use composer::Channel;
+use provider::{
+    Auth,
+    aws::appsync,
+};
 use std::collections::HashMap;
 
 pub async fn create(auth: &Auth, channels: &HashMap<String, Channel>) {

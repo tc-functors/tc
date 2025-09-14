@@ -2,8 +2,6 @@ use super::{
     Context,
     Topology,
 };
-use provider::aws;
-use provider::Auth;
 use composer::{
     Entity,
     Event,
@@ -12,6 +10,10 @@ use composer::{
 };
 use kit as u;
 use kit::*;
+use provider::{
+    Auth,
+    aws,
+};
 use std::collections::HashMap;
 
 fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {

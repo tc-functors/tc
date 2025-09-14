@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::Auth;
+use anyhow::Result;
 use aws_sdk_sfn::{
     Client,
     Error,
@@ -325,7 +325,7 @@ pub async fn delete_by_arn(client: &Client, arn: &str) {
 pub async fn start_execution(
     client: Client,
     arn: &str,
-    input: &str
+    input: &str,
 ) -> Result<(String, Option<String>), Error> {
     println!("Invoking Standard State Machine with ARN: {}", arn);
     let response = client

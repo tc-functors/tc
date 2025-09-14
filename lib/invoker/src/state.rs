@@ -1,7 +1,7 @@
 use crate::aws::sfn;
-use provider::Auth;
 use kit as u;
 use kit::*;
+use provider::Auth;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -55,12 +55,21 @@ pub async fn execute_state_machine(auth: &Auth, name: &str, payload: &str, mode:
             }
         }
         Err(error) => {
-            eprintln!("Failed to execute Standard Step Function {}. Error: {}", name, error);
+            eprintln!(
+                "Failed to execute Standard Step Function {}. Error: {}",
+                name, error
+            );
         }
     }
 }
 
-pub async fn execute_sync_state_machine(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bool) -> Option<String> {
+pub async fn execute_sync_state_machine(
+    auth: &Auth,
+    name: &str,
+    payload: &str,
+    mode: &str,
+    dumb: bool,
+) -> Option<String> {
     let client = sfn::make_client(auth).await;
     let arn = auth.sfn_arn(name);
 
@@ -72,8 +81,11 @@ pub async fn execute_sync_state_machine(auth: &Auth, name: &str, payload: &str, 
             output
         }
         Err(error) => {
-           eprintln!("Failed to execute Express Step Function {}. Error: {}", name, error);
-           return None
+            eprintln!(
+                "Failed to execute Express Step Function {}. Error: {}",
+                name, error
+            );
+            return None;
         }
     }
 }

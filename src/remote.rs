@@ -1,11 +1,11 @@
-use kit as u;
+use configurator::Config;
 use inquire::{
     Confirm,
     InquireError,
     Select,
     Text,
 };
-use configurator::Config;
+use kit as u;
 use std::collections::HashMap;
 
 // interactive
@@ -69,7 +69,6 @@ pub fn prompt_names(topologies: &HashMap<String, String>) -> String {
     t.to_string()
 }
 
-
 pub async fn deploy_interactive() {
     let dir = u::root();
     u::sh("git fetch --tags", &dir);
@@ -93,22 +92,17 @@ pub async fn release_interactive() {
 
 //
 
-
 pub async fn build() {
     let dir = u::pwd();
     let maybe_function = composer::current_function(&dir);
     if let Some(f) = maybe_function {
-        let rdir = &f.dir.strip_prefix(
-            &format!("{}/", u::root())
-        ).unwrap();
+        let rdir = &f.dir.strip_prefix(&format!("{}/", u::root())).unwrap();
         let namespace = u::second(&rdir, "/");
         let branch = tagger::git::branch_name(&dir);
         let url = executor::build(&namespace, &rdir, &branch).await;
         open::that(url).unwrap();
     } else {
-        let rdir = &dir.strip_prefix(
-            &format!("{}/", u::root())
-        ).unwrap();
+        let rdir = &dir.strip_prefix(&format!("{}/", u::root())).unwrap();
         let namespace = u::second(&rdir, "/");
         let branch = &tagger::git::branch_name(&dir);
         let url = executor::build(&namespace, &rdir, &branch).await;
@@ -116,7 +110,6 @@ pub async fn build() {
         open::that(url).unwrap();
     }
 }
-
 
 pub async fn release(service: Option<String>, suffix: Option<String>, unwind: bool) {
     let dir = u::pwd();
@@ -143,7 +136,10 @@ pub async fn deploy_snapshot(env: Option<String>, sandbox: Option<String>, snaps
 
     for manifest in manifests {
         if !&manifest.version.is_empty() {
-            println!("Triggering CI build {}@{}.{}/{}", &manifest.namespace, &sandbox, &env, &manifest.version);
+            println!(
+                "Triggering CI build {}@{}.{}/{}",
+                &manifest.namespace, &sandbox, &env, &manifest.version
+            );
             executor::deploy(&env, &manifest.namespace, &sandbox, &manifest.version).await;
         }
     }
@@ -155,12 +151,15 @@ pub async fn deploy_pipeline(env: Option<String>, sandbox: Option<String>) {
         None => panic!("No env or profile specified"),
     };
     let sandbox = u::maybe_string(sandbox, "stable");
-    let msg = format!("This command will trigger a deploy to {}@{}. Do you want to continue?", &env, &sandbox);
+    let msg = format!(
+        "This command will trigger a deploy to {}@{}. Do you want to continue?",
+        &env, &sandbox
+    );
     let ans = Confirm::new(&msg).with_default(false).prompt();
 
     let should_continue = match ans {
         Ok(true) => true,
-        Ok(false) | Err(_) => false
+        Ok(false) | Err(_) => false,
     };
 
     if should_continue {
@@ -213,19 +212,14 @@ pub async fn deploy_branch(
     open::that(&url).unwrap();
 }
 
-pub async fn create(
-    env: Option<String>,
-    sandbox: Option<String>,
-) {
+pub async fn create(env: Option<String>, sandbox: Option<String>) {
     let env = match env {
         Some(e) => e,
         None => panic!("No env or profile specified"),
     };
 
     let dir = u::pwd();
-    let rdir = &dir.strip_prefix(
-        &format!("{}/", u::root())
-    ).unwrap();
+    let rdir = &dir.strip_prefix(&format!("{}/", u::root())).unwrap();
     let sandbox = u::maybe_string(sandbox, "stable");
     let branch = u::sh("git rev-parse --abbrev-ref HEAD", &dir);
     let url = executor::create(&env, &sandbox, &rdir, &branch).await;
@@ -233,19 +227,14 @@ pub async fn create(
     open::that(&url).unwrap();
 }
 
-pub async fn update(
-    env: Option<String>,
-    sandbox: Option<String>,
-) {
+pub async fn update(env: Option<String>, sandbox: Option<String>) {
     let dir = u::pwd();
     let env = match env {
         Some(e) => e,
         None => panic!("No env or profile specified"),
     };
 
-    let rdir = &dir.strip_prefix(
-        &format!("{}/", u::root())
-    ).unwrap();
+    let rdir = &dir.strip_prefix(&format!("{}/", u::root())).unwrap();
     let sandbox = u::maybe_string(sandbox, "stable");
     let branch = u::sh("git rev-parse --abbrev-ref HEAD", &dir);
     let url = executor::update(&env, &sandbox, &rdir, &branch).await;

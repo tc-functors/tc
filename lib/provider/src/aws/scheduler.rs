@@ -1,8 +1,8 @@
+use crate::Auth;
 use anyhow::{
     Error,
     Result,
 };
-use crate::Auth;
 use aws_sdk_scheduler::{
     Client,
     types::{
