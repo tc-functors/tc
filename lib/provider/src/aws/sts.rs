@@ -4,6 +4,7 @@ use aws_config::{
     environment::credentials::EnvironmentVariableCredentialsProvider,
     sts::AssumeRoleProvider,
 };
+use aws_smithy_types::retry::RetryConfig;
 use aws_sdk_sts::Client;
 use std::panic;
 
@@ -40,6 +41,7 @@ pub async fn get_account_id(client: &Client) -> String {
     }
 }
 
+
 async fn assume_given_role(role_arn: &str) -> SdkConfig {
     let session_name = "TcSession";
     let provider = AssumeRoleProvider::builder(role_arn)
@@ -47,6 +49,7 @@ async fn assume_given_role(role_arn: &str) -> SdkConfig {
         .build_from_provider(EnvironmentVariableCredentialsProvider::new())
         .await;
     aws_config::from_env()
+        .retry_config(RetryConfig::adaptive())
         .credentials_provider(provider)
         .behavior_version(BehaviorVersion::latest())
         .load()
@@ -56,7 +59,13 @@ async fn assume_given_role(role_arn: &str) -> SdkConfig {
 pub async fn get_config(profile: &str, assume_role: Option<String>) -> SdkConfig {
     match assume_role {
         Some(role_arn) => assume_given_role(&role_arn).await,
-        None => aws_config::from_env().profile_name(profile).load().await,
+        None => {
+            aws_config::from_env()
+                .profile_name(profile)
+                .retry_config(RetryConfig::adaptive())
+                .load()
+                .await
+        }
     }
 }
 

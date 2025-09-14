@@ -3,8 +3,6 @@ use anyhow::Result;
 use aws_sdk_sfn::{
     Client,
     Error,
-    config as sfn_config,
-    config::retry::RetryConfig,
     types::{
         LogLevel,
         LoggingConfiguration,
@@ -34,11 +32,7 @@ use std::{
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::from_conf(
-        sfn_config::Builder::from(shared_config)
-            .retry_config(RetryConfig::standard().with_max_attempts(7))
-            .build(),
-    )
+    Client::new(shared_config)
 }
 
 fn make_tag(key: String, value: String) -> Tag {

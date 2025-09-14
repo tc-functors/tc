@@ -4061,6 +4061,7 @@ dependencies = [
  "aws-sdk-sqs",
  "aws-sdk-ssm",
  "aws-sdk-sts",
+ "aws-smithy-types",
  "base64 0.21.7",
  "colored",
  "configurator",
