@@ -1,6 +1,8 @@
-use provider::aws;
-use provider::Auth;
 use composer::Schedule;
+use provider::{
+    Auth,
+    aws,
+};
 use std::collections::HashMap;
 
 pub async fn create_schedule(auth: &Auth, schedule: &Schedule) {

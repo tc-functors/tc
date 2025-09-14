@@ -1,9 +1,11 @@
-use provider::aws::{
-    cognito,
-    lambda,
-};
-use provider::Auth;
 use composer::topology::Pool;
+use provider::{
+    Auth,
+    aws::{
+        cognito,
+        lambda,
+    },
+};
 use std::collections::HashMap;
 
 pub async fn delete(_auth: &Auth, _pools: &HashMap<String, Pool>) {

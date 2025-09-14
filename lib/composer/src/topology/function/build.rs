@@ -52,11 +52,11 @@ impl Build {
                 version: b.version,
                 shared_context: match b.shared_context {
                     Some(s) => s,
-                    None => true
+                    None => true,
                 },
                 skip_dev_deps: match b.skip_dev_deps {
                     Some(s) => s,
-                    None => true
+                    None => true,
                 },
                 environment: HashMap::new(),
             },

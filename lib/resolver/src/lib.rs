@@ -5,14 +5,14 @@ pub mod function;
 mod pool;
 mod topology;
 
-use provider::Auth;
 use composer::{
     Entity,
     Topology,
 };
 pub use context::Context;
-use std::collections::HashMap;
 pub use function::Root;
+use provider::Auth;
+use std::collections::HashMap;
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
     match s {

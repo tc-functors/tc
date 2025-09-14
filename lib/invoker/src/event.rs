@@ -1,7 +1,7 @@
 use crate::aws::eventbridge;
-use provider::Auth;
 use colored::Colorize;
 use composer::Event;
+use provider::Auth;
 
 pub async fn trigger(auth: &Auth, event: &Event, payload: &str) {
     let Event { pattern, bus, .. } = event;

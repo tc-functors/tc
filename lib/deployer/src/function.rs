@@ -1,10 +1,4 @@
-use provider::aws::{
-    ecs,
-    ecs::TaskDef,
-    lambda,
-};
 use crate::role;
-use provider::Auth;
 use composer::{
     Function,
     Lang,
@@ -12,6 +6,14 @@ use composer::{
     spec::function::Provider,
 };
 use kit as u;
+use provider::{
+    Auth,
+    aws::{
+        ecs,
+        ecs::TaskDef,
+        lambda,
+    },
+};
 use std::collections::HashMap;
 use tabled::Tabled;
 
@@ -58,7 +60,11 @@ async fn create_container(auth: &Auth, function: &Function) -> String {
     taskdef_arn
 }
 
-pub async fn make_lambda(auth: &Auth, f: Function, tags: &HashMap<String, String>) -> lambda::Function {
+pub async fn make_lambda(
+    auth: &Auth,
+    f: Function,
+    tags: &HashMap<String, String>,
+) -> lambda::Function {
     let client = lambda::make_client(auth).await;
     let package_type = &f.runtime.package_type;
 
@@ -154,14 +160,18 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
 }
 
 fn should_sync(sync: bool) -> bool {
-    sync ||
-        match std::env::var("TC_SYNC_CREATE") {
-            Ok(_) => true,
-            Err(_) => false
-        }
+    sync || match std::env::var("TC_SYNC_CREATE") {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
 
-pub async fn create(auth: &Auth, fns: &HashMap<String, Function>, tags: &HashMap<String, String>, sync: bool) {
+pub async fn create(
+    auth: &Auth,
+    fns: &HashMap<String, Function>,
+    tags: &HashMap<String, String>,
+    sync: bool,
+) {
     if should_sync(sync) {
         for (_, function) in fns.clone() {
             let a = auth.clone();
@@ -185,7 +195,11 @@ pub async fn create(auth: &Auth, fns: &HashMap<String, Function>, tags: &HashMap
     }
 }
 
-pub async fn update_code(auth: &Auth, fns: &HashMap<String, Function>, tags: &HashMap<String, String>) {
+pub async fn update_code(
+    auth: &Auth,
+    fns: &HashMap<String, Function>,
+    tags: &HashMap<String, String>,
+) {
     let mut tasks = vec![];
     for (_, function) in fns.clone() {
         let a = auth.clone();
@@ -241,14 +255,13 @@ async fn update_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
     let mut roles: HashMap<String, composer::Role> = HashMap::new();
     for (_, f) in funcs {
         let kind = f.runtime.role.kind.clone();
-        let role_kind: &str  = &kind.to_str();
-        if  role_kind != "base" || role_kind != "provided" {
+        let role_kind: &str = &kind.to_str();
+        if role_kind != "base" || role_kind != "provided" {
             roles.insert(f.runtime.role.name.clone(), f.runtime.role.clone());
         }
     }
     role::create_or_update(auth, &roles, &HashMap::new()).await;
 }
-
 
 async fn update_concurrency(auth: &Auth, funcs: &HashMap<String, Function>) {
     for (_, f) in funcs {
@@ -266,7 +279,11 @@ async fn update_concurrency(auth: &Auth, funcs: &HashMap<String, Function>) {
     }
 }
 
-async fn update_tags(auth: &Auth, funcs: &HashMap<String, Function>, tags: &HashMap<String, String>) {
+async fn update_tags(
+    auth: &Auth,
+    funcs: &HashMap<String, Function>,
+    tags: &HashMap<String, String>,
+) {
     let client = lambda::make_client(auth).await;
     for (_, f) in funcs {
         let arn = auth.lambda_arn(&f.fqn);
@@ -288,7 +305,12 @@ async fn update_runtime_version(auth: &Auth, fns: &HashMap<String, Function>) {
     }
 }
 
-pub async fn update_dir(auth: &Auth, functions: &HashMap<String, Function>, dir: &str, tags: &HashMap<String,String>) {
+pub async fn update_dir(
+    auth: &Auth,
+    functions: &HashMap<String, Function>,
+    dir: &str,
+    tags: &HashMap<String, String>,
+) {
     if kit::file_exists(dir) {
         match functions.get(dir) {
             Some(f) => {
@@ -301,7 +323,12 @@ pub async fn update_dir(auth: &Auth, functions: &HashMap<String, Function>, dir:
     }
 }
 
-pub async fn update(auth: &Auth, functions: &HashMap<String, Function>, tags: &HashMap<String, String>, component: &str) {
+pub async fn update(
+    auth: &Auth,
+    functions: &HashMap<String, Function>,
+    tags: &HashMap<String, String>,
+    component: &str,
+) {
     match component {
         "layers" => update_layers(&auth, functions).await,
         "vars" => update_vars(&auth, functions).await,

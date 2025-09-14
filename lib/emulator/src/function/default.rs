@@ -1,12 +1,12 @@
-use provider::aws;
-use provider::Auth;
 use colored::Colorize;
+use composer::Function;
 use configurator::Config;
-use composer::{
-    Function,
-};
 use kit as u;
 use kit::*;
+use provider::{
+    Auth,
+    aws,
+};
 use std::collections::HashMap;
 
 fn gen_entry_point(lang: &str) -> String {

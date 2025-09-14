@@ -1,16 +1,20 @@
-use provider::aws::{
-    gateway,
-    gateway::Api,
-    gateway::GatewayCors as Cors,
-    lambda,
-};
-use provider::Auth;
 use composer::{
     Entity,
     Route,
 };
 use itertools::Itertools;
 use kit::*;
+use provider::{
+    Auth,
+    aws::{
+        gateway,
+        gateway::{
+            Api,
+            GatewayCors as Cors,
+        },
+        lambda,
+    },
+};
 use std::collections::HashMap;
 
 fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {

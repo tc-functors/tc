@@ -1,12 +1,14 @@
-use provider::aws::{
-    cloudwatch,
-    sfn,
-    sfn::StateMachine,
-};
-use provider::Auth;
 use composer::Flow;
 use kit as u;
 use kit::*;
+use provider::{
+    Auth,
+    aws::{
+        cloudwatch,
+        sfn,
+        sfn::StateMachine,
+    },
+};
 use std::collections::HashMap;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: &Flow) {

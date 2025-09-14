@@ -1,5 +1,5 @@
-use provider::Auth;
 use kit as u;
+use provider::Auth;
 
 pub async fn run(auth: &Auth) {
     let (key, secret, token) = auth.get_keys().await;

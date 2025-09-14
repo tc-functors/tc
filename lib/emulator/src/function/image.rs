@@ -1,12 +1,12 @@
-use provider::aws;
-use provider::Auth;
 use colored::Colorize;
+use composer::Function;
 use configurator::Config;
-use composer::{
-    Function,
-};
 use kit as u;
 use kit::*;
+use provider::{
+    Auth,
+    aws,
+};
 use std::collections::HashMap;
 
 fn gen_entry_point(lang: &str) -> String {
@@ -56,10 +56,15 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
     u::stencil(uri, table)
 }
 
-pub fn docker_shell_cmd(name: &str, region: &str, profile: &str, vars: &HashMap<String, String>) -> String {
+pub fn docker_shell_cmd(
+    name: &str,
+    region: &str,
+    profile: &str,
+    vars: &HashMap<String, String>,
+) -> String {
     let env_str = as_env_str(vars.clone());
     format!(
-            "docker run -p 8888:8888 -w /var/task -v $(pwd):/var/task {} -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION={} -e AWS_PROFILE={} -v $HOME/.aws:/root/aws:ro -it --entrypoint /bin/bash build_{name}",
+        "docker run -p 8888:8888 -w /var/task -v $(pwd):/var/task {} -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION={} -e AWS_PROFILE={} -v $HOME/.aws:/root/aws:ro -it --entrypoint /bin/bash build_{name}",
         &env_str, region, profile
     )
 }

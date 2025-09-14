@@ -4,12 +4,12 @@ use super::{
     function,
     pool,
 };
-use provider::Auth;
 use composer::{
     Entity,
     Topology,
 };
 use function::Root;
+use provider::Auth;
 
 pub async fn resolve(
     root: &Topology,

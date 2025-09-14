@@ -1,11 +1,13 @@
 mod aws_lambda;
 mod python;
 mod ruby;
-use crate::types::{
-    BuildOutput,
-    BuildStatus,
+use crate::{
+    Auth,
+    types::{
+        BuildOutput,
+        BuildStatus,
+    },
 };
-use crate::Auth;
 use colored::Colorize;
 use composer::{
     Build,

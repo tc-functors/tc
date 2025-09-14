@@ -4,8 +4,6 @@ mod ruby;
 mod rust;
 
 use crate::types::BuildStatus;
-use provider::Auth;
-use provider::aws;
 use colored::Colorize;
 use composer::{
     Build,
@@ -14,14 +12,26 @@ use composer::{
 };
 use kit as u;
 use kit::sh;
+use provider::{
+    Auth,
+    aws,
+};
 
-fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, skip_dev_deps: bool) {
+fn gen_dockerfile(
+    dir: &str,
+    langr: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>,
+    skip_dev_deps: bool,
+) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile(dir, langr, pre, post),
-        Lang::Ruby => if skip_dev_deps {
-            ruby::gen_dockerfile(dir, pre, post);
-        } else {
-            ruby::gen_dockerfile_no_wrap(dir, pre, post);
+        Lang::Ruby => {
+            if skip_dev_deps {
+                ruby::gen_dockerfile(dir, pre, post);
+            } else {
+                ruby::gen_dockerfile_no_wrap(dir, pre, post);
+            }
         }
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
@@ -29,7 +39,13 @@ fn gen_dockerfile(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<
     }
 }
 
-fn gen_dockerfile_unshared(dir: &str, langr: &LangRuntime, pre: &Vec<String>, post: &Vec<String>, _wrap: bool) {
+fn gen_dockerfile_unshared(
+    dir: &str,
+    langr: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>,
+    _wrap: bool,
+) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, pre, post),
@@ -38,8 +54,6 @@ fn gen_dockerfile_unshared(dir: &str, langr: &LangRuntime, pre: &Vec<String>, po
         _ => todo!(),
     }
 }
-
-
 
 fn gen_dockerignore(dir: &str) {
     let f = format!(
@@ -86,13 +100,12 @@ fn _create_buildx_container(name: &str, dir: &str) -> String {
     container_sha
 }
 
-
 async fn build_with_docker(
     auth: &Auth,
     dir: &str,
     langr: &LangRuntime,
     _name: &str,
-    shared_context: bool
+    shared_context: bool,
 ) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
@@ -102,11 +115,16 @@ async fn build_with_docker(
     //let container_sha = create_buildx_container(name, dir);
 
     let cmd_str = if shared_context {
-        format!("docker buildx build --platform=linux/amd64 --ssh default --load -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+        format!(
+            "docker buildx build --platform=linux/amd64 --ssh default --load -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             u::basedir(dir),
-            &token)
+            &token
+        )
     } else {
-        format!("docker buildx build --platform=linux/amd64 -t {} .", u::basedir(dir))
+        format!(
+            "docker buildx build --platform=linux/amd64 -t {} .",
+            u::basedir(dir)
+        )
     };
 
     let (status, out, err) = u::runc(&cmd_str, dir);
@@ -184,7 +202,12 @@ pub async fn build(
     bs: &Build,
 ) -> BuildStatus {
     let Build {
-        command, pre, post, shared_context, skip_dev_deps, ..
+        command,
+        pre,
+        post,
+        shared_context,
+        skip_dev_deps,
+        ..
     } = bs;
 
     if should_build_deps() {

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use provider::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
     Client,
@@ -14,6 +13,7 @@ use aws_sdk_lambda::{
     },
 };
 use kit::*;
+use provider::Auth;
 use std::{
     fs::File,
     io::{

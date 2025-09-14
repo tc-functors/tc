@@ -1,9 +1,9 @@
+use composer::Entity;
 use provider::{
+    Auth,
     aws,
     aws::resourcetag,
 };
-use provider::Auth;
-use composer::Entity;
 use std::collections::{
     HashMap,
     hash_map::Entry,

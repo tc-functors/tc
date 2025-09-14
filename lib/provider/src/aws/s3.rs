@@ -10,7 +10,6 @@ use aws_sdk_s3::{
         builders::CreateBucketConfigurationBuilder,
     },
 };
-
 use kit::*;
 use std::path::Path;
 use walkdir::WalkDir;

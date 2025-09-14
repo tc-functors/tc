@@ -17,7 +17,7 @@ use aws_sdk_appsync::{
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
-use tracing::{debug};
+use tracing::debug;
 
 mod dynamodb;
 mod eventbridge;
@@ -36,7 +36,10 @@ fn make_auth_type() -> AdditionalAuthenticationProvider {
     v.authentication_type(auth_type).build()
 }
 
-async fn list_apis_by_token(client: &Client, token: &str) -> (HashMap<String, String>, Option<String>) {
+async fn list_apis_by_token(
+    client: &Client,
+    token: &str,
+) -> (HashMap<String, String>, Option<String>) {
     let res = client
         .list_graphql_apis()
         .next_token(token.to_string())
@@ -47,33 +50,28 @@ async fn list_apis_by_token(client: &Client, token: &str) -> (HashMap<String, St
     let mut h: HashMap<String, String> = HashMap::new();
     let apis = res.graphql_apis.unwrap();
     for api in apis {
-        h.insert(api.name.unwrap(), api.api_id.unwrap().to_string() );
+        h.insert(api.name.unwrap(), api.api_id.unwrap().to_string());
     }
     (h, res.next_token)
 }
 
-
 async fn list_apis(client: &Client) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
-    let r = client
-        .list_graphql_apis()
-        .max_results(20)
-        .send().await;
+    let r = client.list_graphql_apis().max_results(20).send().await;
     match r {
         Ok(res) => {
             let mut token: Option<String> = res.next_token;
 
             let apis = res.graphql_apis.unwrap();
             for api in apis {
-                h.insert(api.name.unwrap(), api.api_id.unwrap().to_string() );
+                h.insert(api.name.unwrap(), api.api_id.unwrap().to_string());
             }
 
             match token {
                 Some(tk) => {
                     token = Some(tk);
                     while token.is_some() {
-                        let (xs, t) =
-                            list_apis_by_token(client, &token.unwrap()).await;
+                        let (xs, t) = list_apis_by_token(client, &token.unwrap()).await;
                         h.extend(xs.clone());
                         token = t.clone();
                         if let Some(x) = t {
@@ -82,8 +80,8 @@ async fn list_apis(client: &Client) -> HashMap<String, String> {
                             }
                         }
                     }
-                },
-                None => ()
+                }
+                None => (),
             }
         }
         Err(e) => panic!("{}", e),
@@ -203,7 +201,7 @@ pub async fn create_or_update_api(
     let api = find_api(client, name).await;
     match api {
         Some(id) => update_api(client, name, authorizer_arn, &id, tags.clone()).await,
-        None     => create_api(client, name, authorizer_arn, tags).await
+        None => create_api(client, name, authorizer_arn, tags).await,
     }
 }
 
@@ -467,7 +465,7 @@ pub async fn create_types(auth: &Auth, api_id: &str, types: HashMap<String, Stri
 pub async fn update_tags(
     client: &Client,
     graphql_arn: &str,
-    tags: HashMap<String, String>
+    tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     debug!("Updating tags of api {}", graphql_arn.green());
     let r = client
@@ -506,15 +504,10 @@ pub async fn delete_by_id(client: &Client, api_id: &str) {
 }
 
 pub async fn list_api_keys(client: &Client, api_id: &str) -> Vec<String> {
-    let res = client
-        .list_api_keys()
-        .api_id(api_id)
-        .send()
-        .await
-        .unwrap();
+    let res = client.list_api_keys().api_id(api_id).send().await.unwrap();
     match res.api_keys {
         Some(xs) => xs.into_iter().map(|x| x.id.unwrap()).collect(),
-        None => vec![]
+        None => vec![],
     }
 }
 

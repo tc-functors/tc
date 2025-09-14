@@ -36,8 +36,6 @@ impl Circle {
             }
         };
 
-
-
         Circle {
             repo: String::from(repo),
             org: find_org(),
@@ -49,8 +47,7 @@ impl Circle {
         //FIXME: parameterize repo
         format!(
             "https://circleci.com/api/v2/project/github/{}/{}/pipeline",
-            self.org,
-            self.repo
+            self.org, self.repo
         )
     }
 
@@ -76,9 +73,7 @@ impl Circle {
     pub fn workflow_url(&self, num: &str) -> String {
         format!(
             "https://app.circleci.com/pipelines/github/{}/{}/{}",
-            self.org,
-            self.repo,
-            num
+            self.org, self.repo, num
         )
     }
 }
@@ -159,7 +154,7 @@ pub async fn trigger_create(
     env: &str,
     sandbox: &str,
     dir: &str,
-    branch: &str
+    branch: &str,
 ) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
@@ -187,7 +182,7 @@ pub async fn trigger_update(
     env: &str,
     sandbox: &str,
     dir: &str,
-    branch: &str
+    branch: &str,
 ) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
@@ -210,7 +205,6 @@ pub async fn trigger_update(
     ci.trigger_workflow(payload).await
 }
 
-
 pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &str) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
@@ -227,7 +221,6 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
     println!("Triggering build {} {}:{}", prefix, function, branch);
     ci.trigger_workflow(payload).await
 }
-
 
 pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str) -> String {
     let ci = Circle::init(repo);

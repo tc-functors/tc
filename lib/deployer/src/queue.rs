@@ -1,11 +1,13 @@
-use provider::aws::{
-    lambda,
-    sqs,
-};
-use provider::Auth;
 use composer::{
     Entity,
     Queue,
+};
+use provider::{
+    Auth,
+    aws::{
+        lambda,
+        sqs,
+    },
 };
 use std::collections::HashMap;
 

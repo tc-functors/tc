@@ -13,8 +13,6 @@ mod tag;
 mod template;
 pub mod version;
 
-use configurator::Config;
-
 use crate::{
     Entity,
     spec::{
@@ -24,6 +22,7 @@ use crate::{
     },
 };
 pub use channel::Channel;
+use configurator::Config;
 pub use event::Event;
 pub use flow::Flow;
 pub use function::{

@@ -8,9 +8,7 @@ use aws_sdk_iam::{
 use colored::Colorize;
 use kit as u;
 use kit::LogUpdate;
-use std::{
-    io::stdout,
-};
+use std::io::stdout;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;

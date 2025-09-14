@@ -8,7 +8,6 @@ pub mod page;
 mod types;
 
 use crate::types::BuildOutput;
-use provider::Auth;
 use colored::Colorize;
 use composer::{
     Function,
@@ -19,6 +18,7 @@ use composer::{
 };
 use kit as u;
 use kit::sh;
+use provider::Auth;
 use std::{
     panic,
     str::FromStr,

@@ -6,16 +6,14 @@ use super::{
 };
 use crate::{
     Entity,
-    spec::{
-        EventSpec,
-    },
+    spec::EventSpec,
 };
+use configurator::Config;
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use configurator::Config;
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

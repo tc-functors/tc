@@ -1,21 +1,18 @@
-use provider::Auth;
 use kit as u;
 use kit::*;
+use provider::Auth;
 mod manifest;
 mod pipeline;
 
-use provider::aws;
+use composer::TopologyKind;
 use configurator::Config;
-use composer::{
-    TopologyKind,
-};
+pub use manifest::Manifest;
+use provider::aws;
 use tabled::{
     Table,
     builder::Builder,
     settings::Style,
 };
-
-pub use manifest::Manifest;
 
 pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
     let topologies = composer::compose_root(dir, false);
@@ -64,7 +61,7 @@ pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
     let topologies = match std::env::var("TC_SNAPSHOT_BREAKOUT") {
         Ok(_) => composer::compose_root(dir, true),
-        Err(_) => composer::compose_root(dir, false)
+        Err(_) => composer::compose_root(dir, false),
     };
     u::sh("git fetch --tags", dir);
     let mut rows: Vec<Manifest> = vec![];
@@ -101,7 +98,6 @@ pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
     } else {
         tracing::debug!("No snapshot bucket configured. Skipping save");
     }
-
 }
 
 async fn init_auth(target_profile: &str) -> Auth {
@@ -115,7 +111,12 @@ async fn init_auth(target_profile: &str) -> Auth {
     }
 }
 
-pub fn pretty_print(records: &Vec<Manifest>, format: &str, env: Option<String>, sandbox: Option<String>) {
+pub fn pretty_print(
+    records: &Vec<Manifest>,
+    format: &str,
+    env: Option<String>,
+    sandbox: Option<String>,
+) {
     match format {
         "table" => {
             let table = Table::new(records).with(Style::psql()).to_string();
@@ -126,15 +127,14 @@ pub fn pretty_print(records: &Vec<Manifest>, format: &str, env: Option<String>, 
             println!("{}", &s);
         }
         "pipeline-config" | "pipeline" => {
-
             let env = match env {
                 Some(e) => e,
-                None => panic!("Please provide --target-env")
+                None => panic!("Please provide --target-env"),
             };
 
             let sandbox = match sandbox {
                 Some(e) => e,
-                None => panic!("Please provide --target-sandbox")
+                None => panic!("Please provide --target-sandbox"),
             };
             let s = pipeline::generate_config(records, &env, &sandbox);
             println!("{}", &s);

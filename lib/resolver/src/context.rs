@@ -1,6 +1,6 @@
-use provider::Auth;
 use configurator::Config;
 use kit as u;
+use provider::Auth;
 use std::collections::HashMap;
 
 fn abbr(name: &str) -> String {

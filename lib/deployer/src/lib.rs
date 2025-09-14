@@ -12,13 +12,14 @@ mod route;
 mod schedule;
 mod state;
 
-use provider::Auth;
 use colored::Colorize;
 use composer::{
     Entity,
     Function,
     Topology,
 };
+use kit::*;
+use provider::Auth;
 use std::{
     collections::HashMap,
     str::FromStr,
@@ -27,7 +28,6 @@ use tabled::{
     Style,
     Table,
 };
-use kit::*;
 
 pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     let Topology {
@@ -71,7 +71,13 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     }
 }
 
-async fn update_function(auth: &Auth, namespace: &str, sandbox: &str, f: &Function, tags: &HashMap<String, String>) {
+async fn update_function(
+    auth: &Auth,
+    namespace: &str,
+    sandbox: &str,
+    f: &Function,
+    tags: &HashMap<String, String>,
+) {
     println!(
         "Updating function {}@{}.{}/functions/{}",
         &namespace.green(),
@@ -334,7 +340,16 @@ pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<
             let dir = kit::pwd();
             let maybe_function = topology.current_function(&dir);
             match maybe_function {
-                Some(f) => update_function(auth, &topology.namespace, &topology.sandbox, &f, &topology.tags).await,
+                Some(f) => {
+                    update_function(
+                        auth,
+                        &topology.namespace,
+                        &topology.sandbox,
+                        &f,
+                        &topology.tags,
+                    )
+                    .await
+                }
                 None => update_topology(auth, topology).await,
             }
         }
@@ -414,7 +429,12 @@ pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
 }
 
 pub async fn make_config(auth: &Auth, topology: &Topology) -> HashMap<String, String> {
-    let Topology { fqn, sandbox, mutations, .. } = topology;
+    let Topology {
+        fqn,
+        sandbox,
+        mutations,
+        ..
+    } = topology;
     let mut h: HashMap<String, String> = HashMap::new();
     if let Some(_m) = mutations.get("default") {
         let mutation_config = mutation::config(auth, fqn).await;

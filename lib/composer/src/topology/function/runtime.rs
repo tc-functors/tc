@@ -76,7 +76,7 @@ fn _is_branch(dir: &str) -> bool {
 fn find_image_tag(dir: &str, namespace: &str) -> String {
     match std::env::var("TC_VERSION_IMAGES") {
         Ok(_) => version::current_semver(namespace),
-        Err(_) => find_git_sha(dir)
+        Err(_) => find_git_sha(dir),
     }
 }
 
@@ -217,7 +217,6 @@ fn lookup_role(
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
-
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
@@ -229,9 +228,8 @@ fn lookup_role(
             if let Some(p) = path {
                 match &r.role_name {
                     Some(name) => Role::new_static(Entity::Function, &p, namespace, &name),
-                    None => Role::new(Entity::Function, &p, namespace, function_name)
+                    None => Role::new(Entity::Function, &p, namespace, function_name),
                 }
-
             } else {
                 match std::env::var("TC_LEGACY_ROLES") {
                     Ok(_) => Role::provided_by_entity(Entity::Function),

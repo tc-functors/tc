@@ -4,9 +4,6 @@ use crate::types::{
     BuildOutput,
     BuildStatus,
 };
-use provider::Auth;
-use provider::aws;
-
 use colored::Colorize;
 use composer::{
     Build,
@@ -20,6 +17,10 @@ use composer::{
 use itertools::Itertools;
 use kit as u;
 use kit::sh;
+use provider::{
+    Auth,
+    aws,
+};
 use std::collections::HashMap;
 
 fn gen_dockerignore(dir: &str) {
@@ -46,7 +47,6 @@ npm-debug.log
     let file = format!("{}/.dockerignore", dir);
     u::write_str(&file, &f);
 }
-
 
 fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     match runtime.to_lang() {
@@ -103,7 +103,6 @@ async fn build_with_docker(
             "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --builder {container_sha} --build-context shared={root} .",
             name, &key_file, &secret_file, &session_file
         )
-
     };
 
     tracing::debug!("Building with docker {}", &cmd_str);
@@ -207,7 +206,7 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     u::run(&cmd, &dir);
     match std::env::var("TC_BUILD_CACHE_CLEAN") {
         Ok(_) => cleanup_docker(artifact, dir),
-        Err(_) => ()
+        Err(_) => (),
     }
 }
 

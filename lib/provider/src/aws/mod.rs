@@ -1,23 +1,23 @@
-pub mod sts;
 pub mod appsync;
 pub mod cloudfront;
 pub mod cloudwatch;
+pub mod codeartifact;
 pub mod cognito;
+pub mod ecr;
 pub mod ecs;
+pub mod efs;
 pub mod eventbridge;
 pub mod gateway;
 pub mod iam;
 pub mod lambda;
+pub mod layer;
 pub mod resourcetag;
-pub mod codeartifact;
 pub mod s3;
 pub mod scheduler;
 pub mod sfn;
 pub mod sqs;
 pub mod ssm;
-pub mod efs;
-pub mod layer;
-pub mod ecr;
+pub mod sts;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
@@ -205,7 +205,7 @@ impl Auth {
         )
     }
 
-     pub fn graphql_api_arn(&self, id: &str) -> String {
+    pub fn graphql_api_arn(&self, id: &str) -> String {
         format!(
             "arn:aws:appsync:{}:{}:apis/{}",
             &self.region, &self.account, id
