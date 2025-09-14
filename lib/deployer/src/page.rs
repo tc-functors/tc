@@ -2,7 +2,6 @@ use composer::{
     Page,
     topology::page::BucketPolicy,
 };
-use configurator::Config;
 use kit as u;
 use kit::*;
 use provider::{
@@ -44,41 +43,9 @@ fn augment_policy(
     render(&policy_str, dist_id)
 }
 
-async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
-    match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => {
-            let role = match assume_role {
-                Some(r) => Some(r),
-                None => {
-                    let config = composer::config(&kit::pwd());
-                    let p = u::maybe_string(profile.clone(), "default");
-                    config.ci.roles.get(&p).cloned()
-                }
-            };
-            Auth::new(profile.clone(), role).await
-        }
-        Err(_) => Auth::new(profile.clone(), assume_role).await,
-    }
-}
-
-async fn init_centralized_auth(given_auth: &Auth) -> Auth {
-    let config = Config::new(None);
-    let profile = config.aws.lambda.layers_profile.clone();
-    match profile {
-        Some(_) => {
-            let cauth = init(profile.clone(), None).await;
-            let centralized = cauth
-                .assume(profile.clone(), config.role_to_assume(profile))
-                .await;
-            centralized
-        }
-        None => given_auth.clone(),
-    }
-}
-
 async fn resolve_vars(auth: &Auth, keys: Vec<String>) -> HashMap<String, String> {
     tracing::debug!("Resolving SSM vars");
-    let auth = init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth).await;
     let client = ssm::make_client(&auth).await;
 
     let mut h: HashMap<String, String> = HashMap::new();

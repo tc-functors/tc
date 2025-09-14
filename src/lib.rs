@@ -29,7 +29,7 @@ pub struct BuildOpts {
 }
 
 async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
-    let config = Config::new(None);
+    let config = Config::new();
     let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
     let profile = match maybe_cfg_profile {
         Some(p) => p,
@@ -507,7 +507,7 @@ pub async fn upgrade(version: Option<String>) {
 }
 
 pub async fn show_config() {
-    let config = Config::new(None);
+    let config = Config::new();
     println!("{}", config.render());
 }
 

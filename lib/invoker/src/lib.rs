@@ -33,7 +33,7 @@ pub fn read_payload_local(payload: Option<String>) -> String {
 }
 
 fn find_bucket() -> String {
-    let cfg = Config::new(None);
+    let cfg = Config::new();
     let maybe_bucket = cfg.tester.bucket;
     match maybe_bucket {
         Some(b) => b,

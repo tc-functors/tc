@@ -80,7 +80,7 @@ pub fn load(s: &str) -> Vec<Manifest> {
 }
 
 pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
-    let cfg = Config::new(None);
+    let cfg = Config::new();
 
     let maybe_bucket = cfg.snapshotter.bucket;
     let maybe_prefix = cfg.snapshotter.prefix;

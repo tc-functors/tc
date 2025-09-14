@@ -25,7 +25,7 @@ pub fn prompt_versions(topologies: &HashMap<String, String>) -> (String, String,
 
     let selected_version = Text::new("Version").with_default(version).prompt();
 
-    let config = Config::new(None);
+    let config = Config::new();
     let roles = config.ci.roles;
 
     let mut profiles: Vec<String> = roles.keys().cloned().collect();

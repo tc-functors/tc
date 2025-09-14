@@ -128,7 +128,7 @@ async fn download(url: &str, target_dir: &str) {
 
 async fn download_layers(auth: &Auth, layers: Vec<String>) {
     let client = aws::lambda::make_client(auth).await;
-    let config = Config::new(None);
+    let config = Config::new();
     let resolved_layers = resolve_layers(auth, &config, layers).await;
     let target_dir = format!("{}/build", &u::pwd());
     u::sh(&format!("rm -rf {}", &target_dir), &u::pwd());
