@@ -4063,6 +4063,7 @@ dependencies = [
  "aws-sdk-sts",
  "base64 0.21.7",
  "colored",
+ "configurator",
  "kit",
  "s3uri",
  "tracing",
