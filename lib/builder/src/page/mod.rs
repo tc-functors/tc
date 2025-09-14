@@ -66,12 +66,12 @@ fn copy_from_docker(dir: &str) {
     sh("rm -f Dockerfile wrapper", dir);
 }
 
-pub fn build(dir: &str, name: &str, command: &str) {
+pub fn build(dir: &str, name: &str, command: &str, config_template: &Option<String>) {
     let bar = u::progress(5);
 
     let prefix = format!("Building {} (node/page)", name);
     bar.set_prefix(prefix);
-    node::gen_dockerfile(dir, command);
+    node::gen_dockerfile(dir, command, config_template);
 
     bar.inc(1);
     gen_dockerignore(dir);

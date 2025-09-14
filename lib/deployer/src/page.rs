@@ -1,24 +1,29 @@
 use crate::aws::{
     cloudfront,
     s3,
+    ssm,
 };
 use authorizer::Auth;
 use composer::{
     Page,
+    ConfigSpec,
     topology::page::BucketPolicy,
 };
 use kit as u;
+use kit::*;
 use std::collections::HashMap;
 
-fn build_page(dir: &str, name: &str, command: &Option<String>) {
+
+fn build_page(dir: &str, name: &str, command: &Option<String>, config_template: &Option<String>) {
     match command {
         Some(c) => {
-            builder::page::build(dir, name, &c);
+            builder::page::build(dir, name, &c, config_template);
         }
         None => (),
     }
 }
 
+// policy
 fn render(s: &str, id: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
     table.insert("lazy_id", id);
@@ -38,7 +43,82 @@ fn augment_policy(
     render(&policy_str, dist_id)
 }
 
-async fn create_page(auth: &Auth, name: &str, page: &Page) {
+
+async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            let role = match assume_role {
+                Some(r) => Some(r),
+                None => {
+                    let config = composer::config(&kit::pwd());
+                    let p = u::maybe_string(profile.clone(), "default");
+                    config.ci.roles.get(&p).cloned()
+                }
+            };
+            Auth::new(profile.clone(), role).await
+        }
+        Err(_) => Auth::new(profile.clone(), assume_role).await,
+    }
+}
+
+async fn init_centralized_auth(given_auth: &Auth) -> Auth {
+    let config = ConfigSpec::new(None);
+    let profile = config.aws.lambda.layers_profile.clone();
+    match profile {
+        Some(_) => {
+            let cauth = init(profile.clone(), None).await;
+            let centralized = cauth
+                .assume(profile.clone(), config.role_to_assume(profile))
+                .await;
+            centralized
+        }
+        None => given_auth.clone(),
+    }
+}
+
+async fn resolve_vars(auth: &Auth, keys: Vec<String>) -> HashMap<String, String> {
+    tracing::debug!("Resolving SSM vars");
+    let auth = init_centralized_auth(auth).await;
+    let client = ssm::make_client(&auth).await;
+
+    let mut h: HashMap<String, String> = HashMap::new();
+    for k in keys {
+        if k.starts_with("ssm:/") {
+            let key = kit::split_last(&k, ":");
+            let val = ssm::get(client.clone(), &key).await.unwrap();
+            h.insert(s!(k), val);
+        }
+    }
+    h
+}
+
+async fn render_config_template(auth: &Auth, dir: &str, path: &str, config: &HashMap<String, String>) {
+
+    let p = format!("{}/{}", dir, path);
+    if u::file_exists(&p) {
+        let s = u::slurp(&p);
+        let mut table: HashMap<&str, &str> = HashMap::new();
+        for (k, v) in config {
+            table.insert(&k, &v);
+        }
+        let mut rs = u::stencil(&s, table);
+
+        // resolve ssm keys
+        let matches = u::find_matches(&rs, r"ssm:(/[a-zA-Z0-9!@#$&()\\-`.+,/]*$)");
+        println!("m {:?}", &matches);
+        let resolved = resolve_vars(auth, matches).await;
+
+        for (k, v) in resolved {
+            rs = rs.replace(&k, &v);
+        }
+        let out_file = format!("{}_tmp", &p);
+        u::write_str(&out_file, &rs);
+    } else {
+        println!("Config template {} does not exist", path);
+    }
+}
+
+async fn create_page(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
     let Page {
         bucket,
         bucket_policy,
@@ -52,11 +132,17 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
         build,
         domains,
         default_root_object,
+        config_template,
         ..
     } = page;
 
+    if let Some(path) = config_template {
+        println!("Rendering config: {}", &path);
+        render_config_template(auth, dir, &path, config).await;
+    }
+
     println!("Building page {} ({})", name, dir);
-    build_page(dir, name, build);
+    build_page(dir, name, build, config_template);
 
     if !u::path_exists(&u::pwd(), dist) {
         tracing::debug!("Dist directory not found, aborting");
@@ -110,13 +196,13 @@ async fn create_page(auth: &Auth, name: &str, page: &Page) {
     println!("url - https://{}", url);
 }
 
-pub async fn create(auth: &Auth, pages: &HashMap<String, Page>) {
+pub async fn create(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
     for (name, page) in pages {
-        create_page(auth, &name, &page).await
+        create_page(auth, &name, &page, config).await
     }
 }
 
-async fn update_code(auth: &Auth, pages: &HashMap<String, Page>) {
+async fn update_code(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
     for (name, page) in pages {
         let Page {
             bucket,
@@ -125,11 +211,17 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>) {
             dist,
             dir,
             build,
+            config_template,
             ..
         } = page;
 
+        if let Some(path) = config_template {
+            println!("Rendering config: {}", &path);
+            render_config_template(auth, dir, &path, config).await;
+        }
+
         println!("Building page {}", name);
-        build_page(dir, name, build);
+        build_page(dir, name, build, config_template);
 
         if !u::path_exists(&u::pwd(), dist) {
             println!("Dist directory not found, aborting");
@@ -155,30 +247,34 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>) {
     }
 }
 
-pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str) {
-    match component {
-        "code" => update_code(auth, pages).await,
-        "build" => {
-            for (name, page) in pages {
-                build_page(&page.dir, name, &page.build);
-            }
-        }
-        _ => {
-            if let Some(page) = pages.get(component) {
-                create_page(auth, component, page).await;
-            } else {
-                update_code(auth, pages).await;
-            }
+pub async fn update_config(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
+    for(_,  page) in pages {
+        let Page { dir, config_template, .. } = page;
+        if let Some(path) = config_template {
+            println!("Rendering config: {}", &path);
+            render_config_template(auth, dir, &path, config).await;
         }
     }
 }
 
-// pub async fn update_config(auth: &Auth, topology: &HashMap<String, Topology>) {
-//     let rest_url = "";
-//     let appsync_url = "";
-//     let channel_url = "";
-
-// }
+pub async fn update(auth: &Auth, pages: &HashMap<String, Page>, component: &str, config: &HashMap<String, String>) {
+    match component {
+        "code" => update_code(auth, pages, config).await,
+        "config" => update_config(auth, pages, config).await,
+        "build" => {
+            for (name, page) in pages {
+                build_page(&page.dir, name, &page.build, &page.config_template);
+            }
+        }
+        _ => {
+            if let Some(page) = pages.get(component) {
+                create_page(auth, component, page, config).await;
+            } else {
+                update_code(auth, pages, config).await;
+            }
+        }
+    }
+}
 
 pub async fn delete(_auth: &Auth, _pages: &HashMap<String, Page>) {
     for (name, _page) in _pages {

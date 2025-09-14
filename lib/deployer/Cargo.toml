@@ -27,6 +27,7 @@ aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-ecs = { version = "1.75.0", features = ["behavior-version-latest"] }
 aws-sdk-sqs = { version = "1.65.0", features = ["behavior-version-latest"] }
+aws-sdk-ssm = { version = "1.72.0", features = ["behavior-version-latest"] }
 aws-sdk-cognitoidentityprovider = { version = "1.79.0", features = ["behavior-version-latest"] }
 aws-sdk-cloudfront = { version = "1.79.0", features = ["behavior-version-latest"] }
 aws-sdk-s3 = { version = "1.70.0", features = ["behavior-version-latest"] }

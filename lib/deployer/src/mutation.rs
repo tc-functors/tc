@@ -6,6 +6,7 @@ use authorizer::Auth;
 use aws_sdk_appsync::Client;
 use composer::Mutation;
 use std::collections::HashMap;
+use kit::*;
 
 async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
     let client = lambda::make_client(auth).await;
@@ -88,5 +89,24 @@ pub async fn list(auth: &Auth, name: &str) {
             println!("wss: {}", &a.wss);
         }
         _ => (),
+    }
+}
+
+pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
+    let client = appsync::make_client(auth).await;
+    let api = appsync::find_graphql_api(&client, name).await;
+    match api {
+        Some(a) => {
+            let mut h: HashMap<String, String> = HashMap::new();
+            h.insert(s!("GRAPHQL_ID"), a.id.clone());
+            h.insert(s!("GRAPHQL_ENDPOINT"), a.https.clone());
+            h.insert(s!("GRAPHQL_WSS_ENDPOINT"), a.wss.clone());
+            let keys = appsync::list_api_keys(&client, &a.id).await;
+            if let Some(key) = keys.first() {
+                h.insert(s!("GRAPHQL_API_KEY"), key.to_string());
+            }
+            h
+        }
+        _ => HashMap::new()
     }
 }

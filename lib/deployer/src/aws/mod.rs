@@ -12,3 +12,4 @@ pub mod s3;
 pub mod scheduler;
 pub mod sfn;
 pub mod sqs;
+pub mod ssm;

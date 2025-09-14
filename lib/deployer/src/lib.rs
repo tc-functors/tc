@@ -28,6 +28,7 @@ use tabled::{
     Style,
     Table,
 };
+use kit::*;
 
 pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     let Topology {
@@ -64,7 +65,8 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes, &tags).await;
-    page::create(&auth, pages).await;
+    let cfg = make_config(&auth, topology).await;
+    page::create(&auth, pages, &cfg).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -118,7 +120,8 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     queue::create(&auth, queues).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes, &tags).await;
-    page::create(&auth, pages).await;
+    let cfg = make_config(&auth, topology).await;
+    page::create(&auth, pages, &cfg).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -160,7 +163,10 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         Entity::Schedule => schedule::create(&auth, schedules).await,
         Entity::Trigger => pool::create(&auth, pools).await,
         Entity::Route => route::create(&auth, routes, tags).await,
-        Entity::Page => page::create(&auth, pages).await,
+        Entity::Page => {
+            let cfg = make_config(&auth, topology).await;
+            page::create(&auth, pages, &cfg).await;
+        }
         Entity::State => {
             if let Some(f) = flow {
                 state::create(&auth, f, tags).await;
@@ -206,7 +212,10 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         Entity::Schedule => schedule::update(&auth, schedules).await,
         Entity::Trigger => pool::update(&auth, pools, component).await,
         Entity::Route => route::update(&auth, routes, component).await,
-        Entity::Page => page::update(&auth, pages, component).await,
+        Entity::Page => {
+            let cfg = make_config(&auth, topology).await;
+            page::update(&auth, pages, component, &cfg).await;
+        }
         Entity::State => {
             if let Some(f) = flow {
                 state::update(&auth, f, tags, component).await;
@@ -403,4 +412,17 @@ pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
         std::process::exit(1);
     }
     resource::delete_arns(auth, grouped).await;
+}
+
+pub async fn make_config(auth: &Auth, topology: &Topology) -> HashMap<String, String> {
+    let Topology { fqn, sandbox, mutations, .. } = topology;
+    let mut h: HashMap<String, String> = HashMap::new();
+    if let Some(_m) = mutations.get("default") {
+        let mutation_config = mutation::config(auth, fqn).await;
+        h.extend(mutation_config);
+    }
+    h.insert(s!("REGION"), auth.region.clone());
+    h.insert(s!("ENV"), auth.name.clone());
+    h.insert(s!("SANDBOX"), sandbox.to_string());
+    h
 }

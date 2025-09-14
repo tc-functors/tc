@@ -8,6 +8,7 @@ use convert_case::{
 };
 use std::collections::HashMap;
 use text_placeholder::Template;
+use regex::Regex;
 
 pub fn kebab_case(s: &str) -> String {
     s.to_case(Case::Kebab)
@@ -40,4 +41,13 @@ pub fn green(s: &str) -> ColoredString {
 
 pub fn mangenta(s: &str) -> ColoredString {
     s.magenta()
+}
+
+pub fn find_matches(s: &str, pattern: &str) -> Vec<String> {
+    let regex = Regex::new(pattern).unwrap();
+    let mut xs: Vec<String> = vec![];
+    for (_, [m]) in regex.captures_iter(s).map(|c| c.extract()) {
+        xs.push(m.to_string());
+    }
+    xs
 }
