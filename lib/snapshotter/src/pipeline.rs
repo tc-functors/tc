@@ -126,7 +126,7 @@ commands:
       - run:
           name: "Download tc executable"
           command: |
-            curl -L -H "Accept: application/octet-stream"  -H "x-github-api-version: 2022-11-28" https://api.github.com/repos/tc-functors/tc/releases/assets/$TC_RELEASE_ID -o tc && chmod +x tc
+            curl  --connect-timeout 10 --retry 5 --retry-delay 0 --retry-max-time 40 --max-time 10 -L -H "Accept: application/octet-stream"  -H "x-github-api-version: 2022-11-28" https://api.github.com/repos/tc-functors/tc/releases/assets/$TC_RELEASE_ID -o tc && chmod +x tc
             sudo mv tc /usr/local/bin/tc
 
 parameters:
