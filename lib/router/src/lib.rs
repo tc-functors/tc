@@ -17,7 +17,7 @@ pub fn role_arn(acc: &str, namespace: &str, sandbox: &str, id: &str) -> String {
 
 pub async fn route(auth: &Auth, event_id: &str, service: &str, sandbox: &str, rule: &str) {
     let client = eventbridge::make_client(auth).await;
-    let config = Config::new(None);
+    let config = Config::new();
     let bus = &config.aws.eventbridge.bus;
     let target_name = format!("{}_{}", service, sandbox);
     let target_id = target_id(event_id);

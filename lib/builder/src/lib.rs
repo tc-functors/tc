@@ -74,7 +74,7 @@ pub async fn build(
     };
 
     let name = u::maybe_string(name, &function.name);
-    let auth = init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth).await;
 
     let build_status = match kind {
         BuildKind::Image => {
@@ -142,7 +142,7 @@ pub fn clean(recursive: bool) {
 }
 
 pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
-    let auth = init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth).await;
     for build in builds {
         tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
@@ -154,7 +154,7 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
 }
 
 pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
-    let auth = init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth).await;
     println!(
         "Attempting to sync latest code images for the following functions. This may take a while zzz..."
     );
@@ -177,7 +177,7 @@ pub async fn promote(auth: &Auth, name: &str, dir: &str, version: Option<String>
 }
 
 pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
-    let auth = init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth).await;
     let function = composer::current_function(dir);
 
     if let Some(f) = function {

@@ -75,7 +75,7 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, shell: bool) {
     let Function { runtime, name, .. } = function;
     let lang = runtime.lang.to_str();
 
-    let config = Config::new(None);
+    let config = Config::new();
 
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),

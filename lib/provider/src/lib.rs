@@ -11,7 +11,7 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
             let role = match assume_role {
                 Some(r) => Some(r),
                 None => {
-                    let config = Config::new(None);
+                    let config = Config::new();
                     let p = u::maybe_string(profile.clone(), "default");
                     config.ci.roles.get(&p).cloned()
                 }
@@ -23,7 +23,7 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
 }
 
 pub async fn init_centralized_auth(given_auth: &Auth) -> Auth {
-    let config = Config::new(None);
+    let config = Config::new();
     let profile = config.aws.lambda.layers_profile.clone();
     match profile {
         Some(_) => {

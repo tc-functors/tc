@@ -573,7 +573,7 @@ fn make(
     functions: HashMap<String, Function>,
     nodes: HashMap<String, Topology>,
 ) -> Topology {
-    let config = Config::new(None);
+    let config = Config::new();
 
     let mut functions = functions;
     let namespace = spec.name.to_owned();
@@ -630,7 +630,7 @@ fn make(
         tags: tag::make(&spec.name, &infra_dir),
         pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
-        config: Config::new(None),
+        config: Config::new(),
     }
 }
 
@@ -678,7 +678,7 @@ fn make_standalone(dir: &str) -> Topology {
         schedules: HashMap::new(),
         pages: HashMap::new(),
         tests: HashMap::new(),
-        config: Config::new(None),
+        config: Config::new(),
     }
 }
 

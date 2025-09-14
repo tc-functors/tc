@@ -406,16 +406,13 @@ fn render(s: &str) -> String {
 }
 
 impl Config {
-    pub fn new(path: Option<String>) -> Config {
+    pub fn new() -> Config {
         let config_path = match std::env::var("TC_CONFIG_PATH") {
             Ok(p) => kit::expand_path(&p),
-            Err(_) => match path {
-                Some(p) => p,
-                None => {
-                    let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
-                    format!("{}/infrastructure/tc/config.yml", root)
-                }
-            },
+            Err(_) => {
+                let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
+                format!("{}/infrastructure/tc/config.yml", root)
+            }
         };
 
         match fs::read_to_string(&config_path) {
