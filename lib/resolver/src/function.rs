@@ -1,6 +1,6 @@
 use super::Context;
-use crate::aws;
-use authorizer::Auth;
+use provider::aws;
+use provider::Auth;
 use composer::{
     Function,
     InfraSpec,

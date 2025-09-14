@@ -2,7 +2,7 @@ use assert_json_diff::{
     assert_json_eq,
     assert_json_include,
 };
-use authorizer::Auth;
+use provider::Auth;
 use colored::Colorize;
 use composer::{
     Entity,
@@ -10,7 +10,7 @@ use composer::{
     Topology,
     spec::TestSpec,
 };
-use invoker::aws::{
+use provider::aws::{
     eventbridge,
     lambda,
     sfn,

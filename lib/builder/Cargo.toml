@@ -20,4 +20,4 @@ aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
 aws-sdk-codeartifact = { version = "1.74.0", features = ["behavior-version-latest"] }
 kit = { path = "../kit" }
 composer = { path = "../composer" }
-authorizer = { path = "../authorizer" }
+provider = { path = "../provider" }

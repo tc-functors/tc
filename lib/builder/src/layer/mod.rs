@@ -5,7 +5,7 @@ use crate::types::{
     BuildOutput,
     BuildStatus,
 };
-use authorizer::Auth;
+use crate::Auth;
 use colored::Colorize;
 use composer::{
     Build,

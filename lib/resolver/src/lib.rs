@@ -1,4 +1,3 @@
-mod aws;
 pub mod cache;
 mod context;
 mod event;
@@ -6,7 +5,7 @@ pub mod function;
 mod pool;
 mod topology;
 
-use authorizer::Auth;
+use provider::Auth;
 use composer::{
     Entity,
     Topology,

@@ -1,5 +1,5 @@
 use crate::aws::eventbridge;
-use authorizer::Auth;
+use provider::Auth;
 use colored::Colorize;
 use composer::Event;
 

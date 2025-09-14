@@ -11,7 +11,7 @@ jsonpath-rust = "1.0.4"
 colored = "2.0.0"
 tracing = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-authorizer = { path = "../authorizer" }
 kit = { path = "../kit" }
 composer = { path = "../composer" }
 invoker = { path = "../invoker" }
+provider = { path = "../provider" }

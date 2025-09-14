@@ -1,8 +1,8 @@
-use crate::aws::{
+use provider::aws::{
     lambda,
     sqs,
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer::{
     Entity,
     Queue,

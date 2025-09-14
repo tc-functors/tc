@@ -1,8 +1,8 @@
-use crate::aws;
-use authorizer::Auth;
+use provider::aws;
+use provider::Auth;
 use colored::Colorize;
+use configurator::Config;
 use composer::{
-    ConfigSpec,
     Function,
 };
 use kit as u;
@@ -70,7 +70,7 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, shell: bool) {
     let Function { runtime, name, .. } = function;
     let lang = runtime.lang.to_str();
 
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None);
 
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),

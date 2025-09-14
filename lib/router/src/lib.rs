@@ -1,8 +1,6 @@
-mod aws;
-
-use authorizer::Auth;
-use aws::eventbridge;
-use composer::ConfigSpec;
+use provider::Auth;
+use provider::aws::eventbridge;
+use configurator::Config;
 
 fn target_id(name: &str) -> String {
     format!("{}_target", name)
@@ -17,7 +15,7 @@ pub fn role_arn(acc: &str, namespace: &str, sandbox: &str, id: &str) -> String {
 
 pub async fn route(auth: &Auth, event_id: &str, service: &str, sandbox: &str, rule: &str) {
     let client = eventbridge::make_client(auth).await;
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None);
     let bus = &config.aws.eventbridge.bus;
     let target_name = format!("{}_{}", service, sandbox);
     let target_id = target_id(event_id);

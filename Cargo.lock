@@ -314,18 +314,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "authorizer"
-version = "0.9.17-a"
-dependencies = [
- "aws-config",
- "aws-credential-types",
- "aws-sdk-sts",
- "kit",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -605,9 +593,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-efs"
-version = "1.67.0"
+version = "1.77.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "116beefc3e7496b50c7b488a99ec1d8cdce3064649132df842dcefd96d5411de"
+checksum = "7a39a9ae87fda569c4ae51431bee8f483a61e1e100a9482ed3cfec6634e84ba3"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -621,7 +609,6 @@ dependencies = [
  "bytes",
  "fastrand",
  "http 0.2.12",
- "once_cell",
  "regex-lite",
  "tracing",
 ]
@@ -1290,10 +1277,9 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "anyhow",
- "authorizer",
  "aws-config",
  "aws-sdk-codeartifact",
  "aws-sdk-ecr",
@@ -1305,6 +1291,7 @@ dependencies = [
  "itertools",
  "kit",
  "log",
+ "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -1728,11 +1715,12 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "anyhow",
  "bincode",
  "colored",
+ "configurator",
  "daggy",
  "derivative",
  "kit",
@@ -1776,6 +1764,19 @@ dependencies = [
  "serde_json",
  "toml 0.5.11",
  "yaml-rust",
+]
+
+[[package]]
+name = "configurator"
+version = "0.9.18"
+dependencies = [
+ "derivative",
+ "kit",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "serde_yaml",
+ "tracing",
 ]
 
 [[package]]
@@ -1993,33 +1994,17 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "anyhow",
- "authorizer",
- "aws-config",
- "aws-sdk-apigatewayv2",
- "aws-sdk-appsync",
- "aws-sdk-cloudfront",
- "aws-sdk-cloudwatchlogs",
- "aws-sdk-cognitoidentityprovider",
- "aws-sdk-ecs",
- "aws-sdk-eventbridge",
- "aws-sdk-iam",
- "aws-sdk-lambda",
- "aws-sdk-resourcegroupstagging",
- "aws-sdk-s3",
- "aws-sdk-scheduler",
- "aws-sdk-sfn",
- "aws-sdk-sqs",
- "aws-sdk-ssm",
- "base64 0.21.7",
  "builder",
  "colored",
  "composer",
+ "configurator",
  "itertools",
  "kit",
  "log",
+ "provider",
  "question",
  "serde 1.0.217",
  "serde_derive",
@@ -2028,7 +2013,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "walkdir",
 ]
 
 [[package]]
@@ -2172,18 +2156,15 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "anyhow",
- "authorizer",
- "aws-config",
- "aws-sdk-ecr",
- "aws-sdk-lambda",
  "base64 0.21.7",
- "clap",
  "colored",
  "composer",
+ "configurator",
  "kit",
+ "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -2277,7 +2258,7 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "kit",
 ]
@@ -3106,24 +3087,16 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
- "anyhow",
- "authorizer",
- "aws-config",
- "aws-sdk-apigatewayv2",
- "aws-sdk-eventbridge",
- "aws-sdk-lambda",
- "aws-sdk-s3",
- "aws-sdk-sfn",
- "base64 0.21.7",
  "colored",
  "composer",
+ "configurator",
  "gql_client",
  "kit",
  "open",
+ "provider",
  "rustyline",
- "s3uri",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -3221,7 +3194,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -3576,10 +3549,10 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "colored",
- "composer",
+ "configurator",
  "kit",
  "regex",
  "semver 0.7.0",
@@ -4063,6 +4036,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "provider"
+version = "0.9.18"
+dependencies = [
+ "anyhow",
+ "aws-config",
+ "aws-credential-types",
+ "aws-sdk-apigatewayv2",
+ "aws-sdk-appsync",
+ "aws-sdk-cloudfront",
+ "aws-sdk-cloudwatchlogs",
+ "aws-sdk-codeartifact",
+ "aws-sdk-cognitoidentityprovider",
+ "aws-sdk-ecr",
+ "aws-sdk-ecs",
+ "aws-sdk-efs",
+ "aws-sdk-eventbridge",
+ "aws-sdk-iam",
+ "aws-sdk-lambda",
+ "aws-sdk-resourcegroupstagging",
+ "aws-sdk-s3",
+ "aws-sdk-scheduler",
+ "aws-sdk-sfn",
+ "aws-sdk-sqs",
+ "aws-sdk-ssm",
+ "aws-sdk-sts",
+ "base64 0.21.7",
+ "colored",
+ "kit",
+ "s3uri",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
+]
+
+[[package]]
 name = "ptree"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4316,18 +4324,13 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
- "authorizer",
- "aws-config",
- "aws-sdk-appsync",
- "aws-sdk-efs",
- "aws-sdk-eventbridge",
- "aws-sdk-lambda",
- "aws-sdk-ssm",
  "cacache",
  "composer",
+ "configurator",
  "kit",
+ "provider",
  "regex",
  "serde 1.0.217",
  "serde_derive",
@@ -4365,16 +4368,13 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "anyhow",
- "authorizer",
- "aws-config",
- "aws-sdk-eventbridge",
- "aws-sdk-sfn",
  "colored",
- "composer",
+ "configurator",
  "kit",
+ "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -4577,7 +4577,7 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "composer",
  "inquire",
@@ -4960,19 +4960,14 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
- "authorizer",
- "aws-sdk-apigatewayv2",
- "aws-sdk-appsync",
- "aws-sdk-eventbridge",
- "aws-sdk-lambda",
- "aws-sdk-s3",
- "aws-sdk-sfn",
  "colored",
  "composer",
+ "configurator",
  "kit",
  "log",
+ "provider",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
@@ -5178,7 +5173,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "colored",
  "kit",
@@ -5192,15 +5187,15 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
- "authorizer",
  "builder",
  "clap",
  "clap-markdown",
  "clap-stdin",
  "colored",
  "composer",
+ "configurator",
  "deployer",
  "emulator",
  "executor",
@@ -5214,6 +5209,7 @@ dependencies = [
  "open",
  "openssl",
  "openssl-sys",
+ "provider",
  "resolver",
  "router",
  "scaffolder",
@@ -5260,15 +5256,15 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.9.17-a"
+version = "0.9.18"
 dependencies = [
  "assert-json-diff",
- "authorizer",
  "colored",
  "composer",
  "invoker",
  "jsonpath-rust",
  "kit",
+ "provider",
  "serde 1.0.217",
  "serde_json",
  "tokio",

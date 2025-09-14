@@ -1,4 +1,4 @@
-use authorizer::Auth;
+use provider::Auth;
 use kit as u;
 
 pub async fn run(auth: &Auth) {

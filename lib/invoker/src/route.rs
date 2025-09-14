@@ -1,5 +1,5 @@
 use crate::aws::gateway;
-use authorizer::Auth;
+use provider::Auth;
 use composer::Route;
 use kit as u;
 use kit::*;

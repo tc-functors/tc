@@ -13,13 +13,14 @@ mod tag;
 mod template;
 pub mod version;
 
+use configurator::Config;
+
 use crate::{
     Entity,
     spec::{
         TestSpec,
         TopologyKind,
         TopologySpec,
-        config::ConfigSpec,
     },
 };
 pub use channel::Channel;
@@ -76,7 +77,7 @@ pub struct Topology {
     pub pages: HashMap<String, Page>,
     pub tags: HashMap<String, String>,
     pub flow: Option<Flow>,
-    pub config: ConfigSpec,
+    pub config: Config,
     pub roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
 }
@@ -397,7 +398,7 @@ fn make_events(
     namespace: &str,
     spec: &TopologySpec,
     fqn: &str,
-    config: &ConfigSpec,
+    config: &Config,
     fns: &HashMap<String, Function>,
     resolvers: &HashMap<String, Resolver>,
 ) -> HashMap<String, Event> {
@@ -436,7 +437,7 @@ fn make_routes(
     }
 }
 
-fn make_queues(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Queue> {
+fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> {
     let mut h: HashMap<String, Queue> = HashMap::new();
     if let Some(queues) = &spec.queues {
         tracing::debug!("Compiling queues");
@@ -447,7 +448,7 @@ fn make_queues(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Que
     h
 }
 
-fn make_mutations(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Mutation> {
+fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Mutation> {
     let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
     if let Some(ref m) = mutations {
@@ -457,14 +458,14 @@ fn make_mutations(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, 
     h
 }
 
-fn make_channels(spec: &TopologySpec, _config: &ConfigSpec) -> HashMap<String, Channel> {
+fn make_channels(spec: &TopologySpec, _config: &Config) -> HashMap<String, Channel> {
     match &spec.channels {
         Some(c) => channel::make(&spec.name, c.clone()),
         None => HashMap::new(),
     }
 }
 
-fn make_pools(spec: &TopologySpec, config: &ConfigSpec) -> HashMap<String, Pool> {
+fn make_pools(spec: &TopologySpec, config: &Config) -> HashMap<String, Pool> {
     let pools = match &spec.pools {
         Some(p) => p.clone(),
         None => vec![],
@@ -573,7 +574,7 @@ fn make(
     functions: HashMap<String, Function>,
     nodes: HashMap<String, Topology>,
 ) -> Topology {
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None);
 
     let mut functions = functions;
     let namespace = spec.name.to_owned();
@@ -630,7 +631,7 @@ fn make(
         tags: tag::make(&spec.name, &infra_dir),
         pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
-        config: ConfigSpec::new(None),
+        config: Config::new(None),
     }
 }
 
@@ -678,7 +679,7 @@ fn make_standalone(dir: &str) -> Topology {
         schedules: HashMap::new(),
         pages: HashMap::new(),
         tests: HashMap::new(),
-        config: ConfigSpec::new(None),
+        config: Config::new(None),
     }
 }
 

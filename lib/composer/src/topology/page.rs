@@ -1,8 +1,8 @@
 use crate::spec::{
-    ConfigSpec,
     PageSpec,
     TopologySpec,
 };
+use configurator::Config;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -124,7 +124,7 @@ pub struct Page {
 
 fn find_bucket(
     given_bucket: &Option<String>,
-    config: &ConfigSpec,
+    config: &Config,
     infra: &Option<Infra>,
 ) -> String {
     match given_bucket {
@@ -197,7 +197,7 @@ fn make(
     namespace: &str,
     ps: &PageSpec,
     infra: &Option<Infra>,
-    config: &ConfigSpec,
+    config: &Config,
 ) -> Page {
     let bucket = find_bucket(&ps.bucket, config, infra);
     let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
@@ -232,7 +232,7 @@ fn make(
 pub fn make_all(
     spec: &TopologySpec,
     infra_dir: &str,
-    config: &ConfigSpec,
+    config: &Config,
 ) -> HashMap<String, Page> {
     let mut h: HashMap<String, Page> = HashMap::new();
     if let Some(pspec) = &spec.pages {

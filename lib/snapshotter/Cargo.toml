@@ -12,13 +12,8 @@ log = "0.4"
 tabled = "0.20.0"
 tracing = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-aws-sdk-apigatewayv2 = { version = "1.66.0", features = ["behavior-version-latest"] }
-aws-sdk-lambda = { version = "1.76.0", features = ["behavior-version-latest"] }
-aws-sdk-appsync = { version = "1.76.0", features = ["behavior-version-latest"] }
-aws-sdk-eventbridge = { version = "1.70.0", features = ["behavior-version-latest"] }
-aws-sdk-s3 = { version = "1.70.0", features = ["behavior-version-latest"] }
-aws-sdk-sfn = { version = "1.69.0", features = ["behavior-version-latest"] }
 kit = { path = "../kit" }
-authorizer = { path = "../authorizer" }
+provider = { path = "../provider" }
+configurator = { path = "../configurator" }
 composer = { path = "../composer" }
 tagger = { path = "../tagger" }

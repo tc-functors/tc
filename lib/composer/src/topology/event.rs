@@ -7,7 +7,6 @@ use super::{
 use crate::{
     Entity,
     spec::{
-        ConfigSpec,
         EventSpec,
     },
 };
@@ -16,6 +15,7 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
+use configurator::Config;
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -236,7 +236,7 @@ impl Event {
         event_name: &str,
         espec: &EventSpec,
         targets: Vec<Target>,
-        config: &ConfigSpec,
+        config: &Config,
         skip: bool,
     ) -> Event {
         let EventSpec {

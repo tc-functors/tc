@@ -1,9 +1,9 @@
-use crate::aws::{
+use provider::aws::{
     appsync,
     eventbridge,
     lambda,
 };
-use authorizer::Auth;
+use provider::Auth;
 use colored::Colorize;
 use composer::{
     Entity,

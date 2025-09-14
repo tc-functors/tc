@@ -1,8 +1,7 @@
-mod aws;
 mod function;
 mod state;
 
-use authorizer::Auth;
+use provider::aws::Auth;
 use composer::{
     BuildKind,
     Entity,

@@ -1,10 +1,10 @@
-use crate::aws::{
+use provider::aws::{
     appsync,
     lambda,
     sfn,
-    apigateway
+    gateway
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer::{
     Topology,
     TopologyKind,
@@ -35,7 +35,7 @@ pub async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMa
         TopologyKind::Function => {
             let client = lambda::make_client(auth).await;
             let lambda_arn = auth.lambda_arn(&name);
-            lambda::list_tags(client, &lambda_arn).await.unwrap()
+            lambda::list_tags(&client, &lambda_arn).await.unwrap()
         }
         TopologyKind::Graphql => {
             let client = appsync::make_client(auth).await;
@@ -47,8 +47,8 @@ pub async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMa
             }
         }
         TopologyKind::Routed => {
-            let client = apigateway::make_client(auth).await;
-            apigateway::find_tags(&client, &name).await
+            let client = gateway::make_client(auth).await;
+            gateway::find_tags(&client, &name).await
         }
         TopologyKind::Evented => HashMap::new(),
     }

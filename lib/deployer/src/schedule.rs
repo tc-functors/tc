@@ -1,5 +1,5 @@
-use crate::aws;
-use authorizer::Auth;
+use provider::aws;
+use provider::Auth;
 use composer::Schedule;
 use std::collections::HashMap;
 

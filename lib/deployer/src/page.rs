@@ -1,12 +1,12 @@
-use crate::aws::{
+use provider::aws::{
     cloudfront,
     s3,
     ssm,
 };
-use authorizer::Auth;
+use provider::Auth;
+use configurator::Config;
 use composer::{
     Page,
-    ConfigSpec,
     topology::page::BucketPolicy,
 };
 use kit as u;
@@ -62,7 +62,7 @@ async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
 }
 
 async fn init_centralized_auth(given_auth: &Auth) -> Auth {
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None);
     let profile = config.aws.lambda.layers_profile.clone();
     match profile {
         Some(_) => {

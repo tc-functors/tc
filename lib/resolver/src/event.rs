@@ -2,8 +2,8 @@ use super::{
     Context,
     Topology,
 };
-use crate::aws;
-use authorizer::Auth;
+use provider::aws;
+use provider::Auth;
 use composer::{
     Entity,
     Event,
