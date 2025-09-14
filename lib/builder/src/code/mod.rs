@@ -1,5 +1,5 @@
 use crate::types::BuildStatus;
-use authorizer::Auth;
+use crate::Auth;
 use composer::{
     Build,
     Lang,

@@ -11,4 +11,4 @@ regex = "1.9.1"
 semver = "0.7.0"
 colored = "2.0.0"
 kit = { path = "../kit" }
-composer = { path = "../composer" }
+configurator = { path = "../configurator" }

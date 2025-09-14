@@ -1,10 +1,10 @@
-use crate::aws::{
+use provider::aws::{
     ecs,
     ecs::TaskDef,
     lambda,
 };
 use crate::role;
-use authorizer::Auth;
+use provider::Auth;
 use composer::{
     Function,
     Lang,

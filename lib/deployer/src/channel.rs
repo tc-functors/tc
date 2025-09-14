@@ -1,5 +1,5 @@
-use crate::aws::appsync;
-use authorizer::Auth;
+use provider::aws::appsync;
+use provider::Auth;
 use composer::Channel;
 use std::collections::HashMap;
 

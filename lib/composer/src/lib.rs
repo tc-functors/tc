@@ -12,7 +12,6 @@ use kit::*;
 pub use spec::{
     TopologyKind,
     TopologySpec,
-    config::ConfigSpec,
     function::{
         BuildKind,
         Lang,
@@ -24,6 +23,8 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
+use configurator::Config;
+
 pub use topology::{
     Topology,
     channel::Channel,
@@ -55,7 +56,7 @@ pub fn is_root_dir(dir: &str) -> bool {
     topology::is_root_topology(&f)
 }
 
-pub fn config(dir: &str) -> ConfigSpec {
+pub fn config(dir: &str) -> Config {
     let t = Topology::new(dir, false, true);
     t.config
 }

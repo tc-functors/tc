@@ -1,8 +1,8 @@
-use crate::{
+use provider::{
     aws,
     aws::resourcetag,
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer::Entity;
 use std::collections::{
     HashMap,

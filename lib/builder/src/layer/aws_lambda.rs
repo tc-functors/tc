@@ -1,5 +1,5 @@
 use anyhow::Result;
-use authorizer::Auth;
+use provider::Auth;
 use aws_config::BehaviorVersion;
 use aws_sdk_lambda::{
     Client,

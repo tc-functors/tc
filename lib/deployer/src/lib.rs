@@ -1,4 +1,3 @@
-mod aws;
 mod channel;
 mod event;
 mod function;
@@ -13,7 +12,7 @@ mod route;
 mod schedule;
 mod state;
 
-use authorizer::Auth;
+use provider::Auth;
 use colored::Colorize;
 use composer::{
     Entity,

@@ -1,10 +1,10 @@
-use crate::aws::{
+use provider::aws::{
     gateway,
     gateway::Api,
+    gateway::GatewayCors as Cors,
     lambda,
 };
-use authorizer::Auth;
-use aws_sdk_apigatewayv2::types::Cors;
+use provider::Auth;
 use composer::{
     Entity,
     Route,

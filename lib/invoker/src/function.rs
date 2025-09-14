@@ -1,5 +1,5 @@
 use crate::aws::lambda;
-use authorizer::Auth;
+use provider::Auth;
 use kit as u;
 use kit::*;
 use std::collections::HashMap;

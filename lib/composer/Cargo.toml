@@ -20,8 +20,9 @@ nom = "7.1.3"
 rand = { version = "^0.8.4"}
 derivative = "2.2.0"
 lazy_static = "1.4"
-kit = { path = "../kit" }
 bincode = "1.2.1"
 daggy = { version = "0.8.1", features = ["serde-1"] }
 anyhow = "1.0.71"
 serde_with = "3.14.0"
+kit = { path = "../kit" }
+configurator = { path = "../configurator" }

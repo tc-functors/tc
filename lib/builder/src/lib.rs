@@ -8,7 +8,7 @@ pub mod page;
 mod types;
 
 use crate::types::BuildOutput;
-use authorizer::Auth;
+use provider::Auth;
 use colored::Colorize;
 use composer::{
     Function,

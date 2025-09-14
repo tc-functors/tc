@@ -1,8 +1,8 @@
-use crate::aws::{
+use provider::aws::{
     iam,
     iam::Role,
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer;
 use std::collections::HashMap;
 

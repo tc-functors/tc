@@ -1,5 +1,5 @@
 use crate::aws::sfn;
-use authorizer::Auth;
+use provider::Auth;
 use kit as u;
 use kit::*;
 use serde_derive::{

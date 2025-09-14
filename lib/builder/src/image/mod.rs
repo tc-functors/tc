@@ -1,11 +1,12 @@
-mod aws_ecr;
 mod python;
 
 use crate::types::{
     BuildOutput,
     BuildStatus,
 };
-use authorizer::Auth;
+use provider::Auth;
+use provider::aws;
+
 use colored::Colorize;
 use composer::{
     Build,
@@ -144,7 +145,7 @@ pub async fn build(
         pre, post, version, ..
     } = bspec;
 
-    aws_ecr::login(&auth, dir).await;
+    aws::ecr::login(&auth, dir).await;
 
     let config = ConfigSpec::new(None);
 
@@ -201,7 +202,7 @@ pub async fn build(
 pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let BuildOutput { dir, artifact, .. } = build;
 
-    aws_ecr::login(&auth, &dir).await;
+    aws::ecr::login(&auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
     u::run(&cmd, &dir);
     match std::env::var("TC_BUILD_CACHE_CLEAN") {
@@ -217,7 +218,7 @@ pub async fn sync(auth: &Auth, build: &BuildOutput) {
         version,
         ..
     } = build;
-    aws_ecr::login(auth, &dir).await;
+    aws::ecr::login(auth, &dir).await;
     let base_image_uri = find_base_image_uri(&artifact, version.clone());
     println!("Pulling {}", &base_image_uri);
     let cmd = format!("AWS_PROFILE={} docker pull {}", &auth.name, &base_image_uri);
@@ -232,7 +233,7 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, k
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
-    aws_ecr::login(auth, &dir).await;
+    aws::ecr::login(auth, &dir).await;
     let uri = render_uri(uri, repo);
 
     let uri = match kind {

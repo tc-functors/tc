@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.17-a"
+version = "0.9.18"
 edition = "2024"
 rust-version = "1.86"
 
 [workspace.package]
-version = "0.9.17-a"
+version = "0.9.18"
 
 [dependencies]
 serde = "1.0"
@@ -25,7 +25,7 @@ clap-stdin = "0.7.0"
 inquire = "0.7.5"
 itertools = "0.10.5"
 open = "5.0.0"
-authorizer =  { path = "lib/authorizer" }
+configurator =  { path = "lib/configurator" }
 composer =  { path = "lib/composer" }
 resolver =  { path = "lib/resolver" }
 builder =  { path = "lib/builder" }
@@ -40,6 +40,7 @@ scaffolder = { path = "lib/scaffolder" }
 kit = { path = "lib/kit" }
 executor = { path = "lib/executor" }
 emulator = { path = "lib/emulator" }
+provider = { path = "lib/provider" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -64,6 +65,8 @@ members = [
    "lib/scaffolder",
    "lib/emulator",
    "lib/executor",
+   "lib/provider",
+   "lib/configurator",
 ]
 
 [profile.release]

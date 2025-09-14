@@ -1,8 +1,8 @@
 use super::template;
 use crate::spec::{
-    ConfigSpec,
     TriggerSpec,
 };
+use configurator::Config;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -38,7 +38,7 @@ pub fn make_triggers(spec: HashMap<String, TriggerSpec>) -> HashMap<String, Stri
 pub fn make(
     pools: Vec<String>,
     spec: HashMap<String, TriggerSpec>,
-    config: &ConfigSpec,
+    config: &Config,
 ) -> HashMap<String, Pool> {
     let mut h: HashMap<String, Pool> = HashMap::new();
     for pool in pools {

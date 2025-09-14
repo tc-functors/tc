@@ -1,9 +1,9 @@
-use crate::aws::{
+use provider::aws::{
     cloudwatch,
     sfn,
     sfn::StateMachine,
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer::Flow;
 use kit as u;
 use kit::*;

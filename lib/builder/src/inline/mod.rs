@@ -1,11 +1,11 @@
-mod aws;
 mod node;
 mod python;
 mod ruby;
 mod rust;
 
 use crate::types::BuildStatus;
-use authorizer::Auth;
+use provider::Auth;
+use provider::aws;
 use colored::Colorize;
 use composer::{
     Build,

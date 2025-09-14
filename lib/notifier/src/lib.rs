@@ -1,4 +1,4 @@
-use composer::ConfigSpec;
+use configurator::Config;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -84,7 +84,7 @@ pub fn wrap_msg(s: &str) -> String {
 }
 
 pub async fn slack(scope: &str, payload: String) {
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None);
     let url = config.notifier.webhooks.get(scope);
     match url {
         Some(u) => {

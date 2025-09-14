@@ -4,7 +4,7 @@ use super::{
     function,
     pool,
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer::{
     Entity,
     Topology,

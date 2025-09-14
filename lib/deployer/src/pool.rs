@@ -1,8 +1,8 @@
-use crate::aws::{
+use provider::aws::{
     cognito,
     lambda,
 };
-use authorizer::Auth;
+use provider::Auth;
 use composer::topology::Pool;
 use std::collections::HashMap;
 

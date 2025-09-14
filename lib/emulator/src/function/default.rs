@@ -1,8 +1,8 @@
-use crate::aws;
-use authorizer::Auth;
+use provider::aws;
+use provider::Auth;
 use colored::Colorize;
+use configurator::Config;
 use composer::{
-    ConfigSpec,
     Function,
 };
 use kit as u;
@@ -94,18 +94,18 @@ fn docker_run_cmd(name: &str, lang: &str) -> String {
     }
 }
 
-async fn make_layer_auth(auth: &Auth, config: &ConfigSpec) -> Auth {
+async fn make_layer_auth(auth: &Auth, config: &Config) -> Auth {
     let profile = config.aws.lambda.layers_profile.clone();
     auth.assume(profile.clone(), config.role_to_assume(profile))
         .await
 }
 
-async fn resolve_layers(auth: &Auth, config: &ConfigSpec, layers: Vec<String>) -> Vec<String> {
+async fn resolve_layers(auth: &Auth, config: &Config, layers: Vec<String>) -> Vec<String> {
     let auth = make_layer_auth(auth, config).await;
     let client = aws::lambda::make_client(&auth).await;
     let mut v: Vec<String> = vec![];
     for layer in layers {
-        let arn = aws::lambda::find_version(client.clone(), &layer)
+        let arn = aws::layer::find_version(client.clone(), &layer)
             .await
             .unwrap();
         v.push(arn);
@@ -128,13 +128,13 @@ async fn download(url: &str, target_dir: &str) {
 
 async fn download_layers(auth: &Auth, layers: Vec<String>) {
     let client = aws::lambda::make_client(auth).await;
-    let config = ConfigSpec::new(None);
+    let config = Config::new(None);
     let resolved_layers = resolve_layers(auth, &config, layers).await;
     let target_dir = format!("{}/build", &u::pwd());
     u::sh(&format!("rm -rf {}", &target_dir), &u::pwd());
     for layer in resolved_layers {
         println!("Fetching layer: {}", &layer);
-        let maybe_url = aws::lambda::get_code_url(&client, &layer).await;
+        let maybe_url = aws::layer::get_code_url(&client, &layer).await;
         match maybe_url {
             Some(url) => download(&url, &target_dir).await,
             None => (),

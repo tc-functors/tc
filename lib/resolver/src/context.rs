@@ -1,5 +1,5 @@
-use authorizer::Auth;
-use composer::ConfigSpec;
+use provider::Auth;
+use configurator::Config;
 use kit as u;
 use std::collections::HashMap;
 
@@ -16,7 +16,7 @@ pub struct Context {
     pub namespace: String,
     pub sandbox: String,
     pub trace: bool,
-    pub config: ConfigSpec,
+    pub config: Config,
 }
 
 impl Context {

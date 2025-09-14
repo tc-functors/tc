@@ -1,9 +1,9 @@
-use crate::aws::{
+use provider::aws::{
     appsync,
     lambda,
 };
-use authorizer::Auth;
-use aws_sdk_appsync::Client;
+use provider::Auth;
+use provider::aws::appsync::AppsyncClient;
 use composer::Mutation;
 use std::collections::HashMap;
 use kit::*;
@@ -16,7 +16,7 @@ async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
 
 async fn create_mutation(
     auth: &Auth,
-    client: &Client,
+    client: &AppsyncClient,
     mutation: Mutation,
     tags: HashMap<String, String>,
 ) {

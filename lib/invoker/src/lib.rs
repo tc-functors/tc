@@ -1,12 +1,12 @@
-pub mod aws;
 mod event;
 mod function;
 mod repl;
 pub mod route;
 mod state;
-use authorizer::Auth;
+use provider::aws::Auth;
+use provider::aws;
+use configurator::Config;
 use composer::{
-    ConfigSpec,
     Entity,
     Topology,
 };
@@ -31,7 +31,7 @@ pub fn read_payload_local(payload: Option<String>) -> String {
 }
 
 fn find_bucket() -> String {
-    let cfg = ConfigSpec::new(None);
+    let cfg = Config::new(None);
     let maybe_bucket = cfg.tester.bucket;
     match maybe_bucket {
         Some(b) => b,

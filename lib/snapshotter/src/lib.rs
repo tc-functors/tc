@@ -1,12 +1,12 @@
-use authorizer::Auth;
+use provider::Auth;
 use kit as u;
 use kit::*;
-mod aws;
 mod manifest;
 mod pipeline;
 
+use provider::aws;
+use configurator::Config;
 use composer::{
-    ConfigSpec,
     TopologyKind,
 };
 use tabled::{
@@ -83,7 +83,7 @@ pub fn load(s: &str) -> Vec<Manifest> {
 }
 
 pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
-    let cfg = ConfigSpec::new(None);
+    let cfg = Config::new(None);
 
     let maybe_bucket = cfg.snapshotter.bucket;
     let maybe_prefix = cfg.snapshotter.prefix;
