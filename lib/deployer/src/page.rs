@@ -44,16 +44,18 @@ fn augment_policy(
 }
 
 async fn resolve_vars(auth: &Auth, keys: Vec<String>) -> HashMap<String, String> {
-    tracing::debug!("Resolving SSM vars");
     let auth = provider::init_centralized_auth(auth).await;
     let client = ssm::make_client(&auth).await;
 
     let mut h: HashMap<String, String> = HashMap::new();
     for k in keys {
         if k.starts_with("ssm:/") {
+            tracing::debug!("Resolving SSM var {}", &k);
             let key = kit::split_last(&k, ":");
             let val = ssm::get(client.clone(), &key).await.unwrap();
-            h.insert(s!(k), val);
+            if !val.is_empty() {
+                h.insert(s!(k), val);
+            }
         }
     }
     h
@@ -67,6 +69,7 @@ async fn render_config_template(
 ) {
     let p = format!("{}/{}", dir, path);
     if u::file_exists(&p) {
+
         let s = u::slurp(&p);
         let mut table: HashMap<&str, &str> = HashMap::new();
         for (k, v) in config {
@@ -75,12 +78,15 @@ async fn render_config_template(
         let mut rs = u::stencil(&s, table);
 
         // resolve ssm keys
-        let matches = u::find_matches(&rs, r"ssm:(/[a-zA-Z0-9!@#$&()\\-`.+,/]*$)");
-        println!("m {:?}", &matches);
+        let matches = u::find_matches(&rs, r"ssm:/([^/]+)/(.*?([^/]+)/?)(\r\n|\r|\n)");
+
         let resolved = resolve_vars(auth, matches).await;
 
         for (k, v) in resolved {
-            rs = rs.replace(&k, &v);
+            if let Some(m) = rs.find(&k) {
+                let n = m + k.len();
+                rs.replace_range(m..n, &v);
+            }
         }
         let out_file = format!("{}_tmp", &p);
         u::write_str(&out_file, &rs);
