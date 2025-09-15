@@ -25,6 +25,7 @@ clap-stdin = "0.7.0"
 inquire = "0.7.5"
 itertools = "0.10.5"
 open = "5.0.0"
+compiler =  { path = "lib/compiler" }
 configurator =  { path = "lib/configurator" }
 composer =  { path = "lib/composer" }
 resolver =  { path = "lib/resolver" }
@@ -53,6 +54,7 @@ mockall = "0.12.1"
 [workspace]
 members = [
    "lib/kit",
+   "lib/compiler",
    "lib/composer",
    "lib/resolver",
    "lib/builder",

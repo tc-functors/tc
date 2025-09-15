@@ -1714,6 +1714,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "compiler"
+version = "0.9.18"
+dependencies = [
+ "anyhow",
+ "colored",
+ "derivative",
+ "kit",
+ "rustyline",
+ "serde 1.0.217",
+ "serde_derive",
+ "serde_json",
+ "serde_with",
+ "serde_yaml",
+ "toml 0.8.19",
+ "tracing",
+ "walkdir",
+]
+
+[[package]]
 name = "composer"
 version = "0.9.18"
 dependencies = [
@@ -5196,6 +5215,7 @@ dependencies = [
  "clap-markdown",
  "clap-stdin",
  "colored",
+ "compiler",
  "composer",
  "configurator",
  "deployer",
