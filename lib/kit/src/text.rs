@@ -44,10 +44,15 @@ pub fn mangenta(s: &str) -> ColoredString {
 }
 
 pub fn find_matches(s: &str, pattern: &str) -> Vec<String> {
-    let regex = Regex::new(pattern).unwrap();
-    let mut xs: Vec<String> = vec![];
-    for (_, [m]) in regex.captures_iter(s).map(|c| c.extract()) {
-        xs.push(m.to_string());
+
+    let re = Regex::new(pattern).unwrap();
+
+    let mut res: Vec<String> = vec![];
+    let xs: Vec<_> = re.find_iter(s).map(|mat| mat.as_str()).collect();
+    for x in xs {
+        let parts: Vec<&str> = x.split("\n").collect();
+        res.push(parts.clone().first().unwrap().to_string());
     }
-    xs
+    res
+
 }
