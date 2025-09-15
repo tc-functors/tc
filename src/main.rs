@@ -40,6 +40,8 @@ enum Cmd {
     Cache(CacheArgs),
     /// Generate changelog for topology
     Changelog(ChangelogArgs),
+    /// Compile Topology Spec
+    Compile(CompileArgs),
     /// Compose a Topology
     Compose(ComposeArgs),
     /// Show config
@@ -273,6 +275,20 @@ pub struct ComposeArgs {
     format: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct CompileArgs {
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
+    #[arg(long, action)]
+    root: bool,
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
+    #[arg(long, action, short = 't')]
+    trace: bool,
+    #[arg(long, action, short = 'R')]
+    repl: bool,
 }
 
 #[derive(Debug, Args)]
@@ -661,6 +677,23 @@ async fn delete(args: DeleteArgs) {
     tc::delete(env, sandbox, entity, recursive, cache).await;
 }
 
+async fn compile(args: CompileArgs) {
+    let CompileArgs {
+        recursive,
+        trace,
+        repl,
+        dir,
+        ..
+    } = args;
+
+    init_tracing(trace);
+    if repl {
+        println!("Start repl")
+    } else {
+        tc::compile(dir, recursive).await;
+    }
+}
+
 async fn compose(args: ComposeArgs) {
     let ComposeArgs {
         versions,
@@ -1007,6 +1040,7 @@ async fn run() {
         Cmd::Cache(args) => cache(args).await,
         Cmd::Config(args) => config(args).await,
         Cmd::Doc(args) => doc(args).await,
+        Cmd::Compile(args) => compile(args).await,
         Cmd::Compose(args) => compose(args).await,
         Cmd::Diff(args) => diff(args).await,
         Cmd::Resolve(args) => resolve(args).await,

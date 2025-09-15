@@ -140,6 +140,12 @@ pub struct ComposeOpts {
     pub format: Option<String>,
 }
 
+pub async fn compile(dir: Option<String>, recursive: bool) {
+    let dir = u::maybe_string(dir, &u::pwd());
+    let spec = compiler::compile(&dir, recursive);
+    spec.pprint()
+}
+
 pub async fn compose_root(dir: Option<String>, format: Option<String>) {
     let root_dir = match dir {
         Some(d) => d,
