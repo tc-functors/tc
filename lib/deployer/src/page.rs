@@ -61,6 +61,22 @@ async fn resolve_vars(auth: &Auth, keys: Vec<String>) -> HashMap<String, String>
     h
 }
 
+async fn resolve_entities(auth: &Auth, keys: Vec<String>) -> HashMap<String, String> {
+    let mut h: HashMap<String, String> = HashMap::new();
+    for k in keys {
+        if k.starts_with("mutation:/") {
+            let client = provider::aws::appsync::make_client(auth).await;
+            tracing::debug!("Resolving Mutations var {}", &k);
+            let key = kit::split_last(&k, ":/");
+            let api = provider::aws::appsync::find_graphql_api(&client, &key).await;
+            if let Some(a) = api {
+                h.insert(s!(k), a.https.clone());
+            }
+        }
+    }
+    h
+}
+
 async fn render_config_template(
     auth: &Auth,
     dir: &str,
@@ -79,7 +95,6 @@ async fn render_config_template(
 
         // resolve ssm keys
         let matches = u::find_matches(&rs, r"ssm:/([^/]+)/(.*?([^/]+)/?)(\r\n|\r|\n)");
-
         let resolved = resolve_vars(auth, matches).await;
 
         for (k, v) in resolved {
@@ -88,6 +103,17 @@ async fn render_config_template(
                 rs.replace_range(m..n, &v);
             }
         }
+
+        let entity_matches = u::find_matches(&rs, r"mutation:/(.*?([^/]+)/?)(\r\n|\r|\n)");
+        let resolved = resolve_entities(auth, entity_matches).await;
+
+        for (k, v) in resolved {
+            if let Some(m) = rs.find(&k) {
+                let n = m + k.len();
+                rs.replace_range(m..n, &v);
+            }
+        }
+
         let out_file = format!("{}_tmp", &p);
         u::write_str(&out_file, &rs);
     } else {
