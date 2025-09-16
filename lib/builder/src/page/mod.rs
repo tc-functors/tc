@@ -16,7 +16,6 @@ fn gen_dockerignore(dir: &str) {
 npm-debug.log
 .coverage
 .coverage.*
-.env
 .venv
 .pyenv
 **/.venv/

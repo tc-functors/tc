@@ -3,13 +3,8 @@ use kit::*;
 
 fn find_copy_command(dir: &str, ct: &Option<String>) -> String {
     if let Some(p) = ct {
-        let path = format!("{}/{}", dir, &p);
         let tmp = format!("{}_tmp", &p);
-        if u::file_exists(&path) && u::file_exists(&tmp) {
-            format!("cp {} {}", &tmp, &p)
-        } else {
-            s!("echo 1")
-        }
+        format!("cp {} {}", &tmp, &p)
     } else {
         s!("echo 1")
     }
