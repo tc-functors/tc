@@ -1021,12 +1021,13 @@ async fn list(args: ListArgs) {
         trace,
         entity,
         all,
+        format,
         ..
     } = args;
     init_tracing(trace);
     let env = tc::init(profile, None).await;
     if all {
-        tc::list_all(&env, sandbox).await;
+        tc::list_all(&env, sandbox, format).await;
     } else {
         tc::list(&env, sandbox, entity).await;
     }

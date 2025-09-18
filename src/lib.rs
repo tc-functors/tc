@@ -629,7 +629,7 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
     match sandbox {
         Some(sbox) => {
             if dry_run {
-                deployer::list_all(auth, &sbox).await;
+                deployer::list_all(auth, &sbox, "default").await;
             } else {
                 deployer::guard::prevent_stable_updates(&sbox);
                 deployer::prune(auth, &sbox, filter).await;
@@ -646,9 +646,10 @@ pub async fn list(auth: &Auth, sandbox: Option<String>, entity: Option<String>) 
     deployer::try_list(auth, &topology, &entity).await;
 }
 
-pub async fn list_all(auth: &Auth, sandbox: Option<String>) {
+pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<String>) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    deployer::list_all(auth, &sandbox).await;
+    let format = u::maybe_string(format, "default");
+    deployer::list_all(auth, &sandbox, &format).await;
 }
 
 pub fn scaffold(kind: Option<String>) {

@@ -405,15 +405,22 @@ pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<St
     }
 }
 
-pub async fn list_all(auth: &Auth, sandbox: &str) {
+pub async fn list_all(auth: &Auth, sandbox: &str, format: &str) {
     let mut arns = resource::list(auth, sandbox).await;
     arns.sort();
-    for arn in &arns {
-        println!("{}", &arn)
+    let grouped = resource::group_entities(arns.clone());
+    match format {
+        "json" => kit::pp_json(&grouped),
+        _ => {
+            for arn in &arns {
+                println!("{}", &arn)
+            }
+            println!("");
+            println!("{}", resource::count_of(&grouped));
+        }
     }
-    let grouped = resource::group_entities(arns);
-    println!("");
-    println!("{}", resource::count_of(&grouped));
+
+
 }
 
 pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
