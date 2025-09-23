@@ -187,6 +187,7 @@ pub fn is_topology_dir(dir: &str) -> bool {
 pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
     match format {
         "table" => display::topology::print_stats(topologies),
+        "json" => display::topology::print_stats_json(topologies),
         "tree" => {
             println!("")
         }

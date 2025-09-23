@@ -14,7 +14,7 @@ use tabled::{
     Tabled,
 };
 
-#[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct TopologyCount {
     pub name: String,
     pub kind: String,
@@ -94,6 +94,18 @@ pub fn print_stats(topologies: HashMap<String, Topology>) {
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
 }
+
+pub fn print_stats_json(topologies: HashMap<String, Topology>) {
+    let mut xs: Vec<TopologyCount> = vec![];
+    for (_, t) in topologies {
+        let c = TopologyCount::new(&t);
+        xs.push(c)
+    }
+    xs.sort_by(|a, b| b.name.cmp(&a.name));
+    xs.reverse();
+    kit::pp_json(&xs);
+}
+
 
 pub fn build_tree(topology: &Topology) -> StringItem {
     let mut t = TreeBuilder::new(s!(topology.namespace.blue()));
