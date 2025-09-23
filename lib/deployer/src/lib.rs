@@ -65,7 +65,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     pool::create(&auth, pools).await;
     route::create(&auth, routes, &tags).await;
     let cfg = make_config(&auth, topology).await;
-    page::create(&auth, pages, &cfg).await;
+    page::create(&auth, pages, &cfg, sandbox).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -126,7 +126,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     pool::create(&auth, pools).await;
     route::create(&auth, routes, &tags).await;
     let cfg = make_config(&auth, topology).await;
-    page::create(&auth, pages, &cfg).await;
+    page::create(&auth, pages, &cfg, &sandbox).await;
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
@@ -170,7 +170,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
         Entity::Route => route::create(&auth, routes, tags).await,
         Entity::Page => {
             let cfg = make_config(&auth, topology).await;
-            page::create(&auth, pages, &cfg).await;
+            page::create(&auth, pages, &cfg, &sandbox).await;
         }
         Entity::State => {
             if let Some(f) = flow {
@@ -219,7 +219,7 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         Entity::Route => route::update(&auth, routes, component).await,
         Entity::Page => {
             let cfg = make_config(&auth, topology).await;
-            page::update(&auth, pages, component, &cfg).await;
+            page::update(&auth, pages, component, &cfg, &sandbox).await;
         }
         Entity::State => {
             if let Some(f) = flow {
