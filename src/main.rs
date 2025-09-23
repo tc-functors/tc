@@ -18,6 +18,7 @@ use clap::{
 
 mod remote;
 use clap_stdin::MaybeStdin;
+use clap_stdin::FileOrStdin;
 
 #[derive(Debug, Parser)]
 struct Tc {
@@ -287,6 +288,8 @@ pub struct CompileArgs {
     dir: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, short = 'f')]
+    file: Option<FileOrStdin>,
     #[arg(long, action, short = 'R')]
     repl: bool,
 }
@@ -688,7 +691,11 @@ async fn compile(args: CompileArgs) {
 
     init_tracing(trace);
     if repl {
-        println!("Start repl")
+        compiler::repl().await;
+    } else if let Some(f) = args.file {
+        println!("{}", 1);
+        let contents = f.contents().unwrap();
+        compiler::load(&contents)
     } else {
         tc::compile(dir, recursive).await;
     }
