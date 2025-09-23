@@ -140,9 +140,9 @@ pub struct ComposeOpts {
     pub format: Option<String>,
 }
 
-pub async fn compile(dir: Option<String>, recursive: bool) {
+pub async fn compile(dir: Option<String>, _recursive: bool) {
     let dir = u::maybe_string(dir, &u::pwd());
-    let spec = compiler::compile(&dir, recursive);
+    let spec = compiler::compile(&dir);
     spec.pprint()
 }
 
