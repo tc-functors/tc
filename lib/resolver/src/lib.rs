@@ -5,9 +5,7 @@ pub mod function;
 mod pool;
 mod topology;
 use compiler::Entity;
-use composer::{
-    Topology,
-};
+use composer::Topology;
 pub use context::Context;
 pub use function::Root;
 use provider::Auth;

@@ -4,9 +4,7 @@ mod repl;
 pub mod route;
 mod state;
 use compiler::Entity;
-use composer::{
-    Topology,
-};
+use composer::Topology;
 use configurator::Config;
 use kit as u;
 use provider::{

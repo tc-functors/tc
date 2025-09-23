@@ -4,17 +4,16 @@ mod expr;
 mod parser;
 mod symbol;
 
+use colored::Colorize;
 use env::Env;
 use expr::Expr;
-use std::io::BufRead;
-use symbol::Symbol;
-use colored::Colorize;
 use rustyline::{
     DefaultEditor,
     Result,
     error::ReadlineError,
 };
-
+use std::io::BufRead;
+use symbol::Symbol;
 
 fn make_env() -> Env {
     let mut env = Env::new();

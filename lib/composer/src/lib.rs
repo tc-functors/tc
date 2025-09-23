@@ -1,6 +1,5 @@
-mod display;
-pub mod topology;
 pub mod channel;
+mod display;
 pub mod event;
 pub mod flow;
 pub mod function;
@@ -13,48 +12,44 @@ pub mod route;
 pub mod schedule;
 mod tag;
 mod template;
+pub mod topology;
 pub mod version;
 
-
+pub use channel::Channel;
+use compiler::{
+    entity::Entity,
+    spec::{
+        TopologySpec,
+        function::LangRuntime,
+    },
+};
 use configurator::Config;
 use display::Format;
 pub use display::topology::TopologyCount;
-use compiler::entity::Entity;
+pub use event::{
+    Event,
+    Target,
+};
+pub use flow::Flow;
+pub use function::{
+    Function,
+    build::Build,
+    layer::Layer,
+    runtime::Runtime,
+};
 use kit as u;
 use kit::*;
-use compiler::spec::{
-    TopologySpec,
-    function::{
-        LangRuntime,
-    },
-};
+pub use mutation::Mutation;
+pub use page::Page;
+pub use queue::Queue;
+pub use role::Role;
+pub use route::Route;
+pub use schedule::Schedule;
 use std::{
     collections::HashMap,
     str::FromStr,
 };
-pub use topology::{
-    Topology
-};
-pub use {
-    channel::Channel,
-    event::{
-        Event,
-        Target,
-    },
-    flow::Flow,
-    function::{
-        Function,
-        build::Build,
-        layer::Layer,
-        runtime::Runtime,
-    },
-    mutation::Mutation,
-    page::Page,
-    queue::Queue,
-    role::Role,
-    route::Route,
-    schedule::Schedule,
-};
+pub use topology::Topology;
 use walkdir::WalkDir;
 
 pub fn is_root_dir(dir: &str) -> bool {

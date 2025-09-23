@@ -1,8 +1,8 @@
-use compiler::Entity;
-use compiler::spec::TestSpec;
-use composer::{
-    Topology,
+use compiler::{
+    Entity,
+    spec::TestSpec,
 };
+use composer::Topology;
 use inquire::{
     InquireError,
     Select,

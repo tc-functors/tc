@@ -1,8 +1,6 @@
 use colored::Colorize;
 use compiler::Entity;
-use composer::{
-    Event,
-};
+use composer::Event;
 use provider::{
     Auth,
     aws::{

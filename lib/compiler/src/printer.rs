@@ -1,13 +1,12 @@
-use serde_derive::Serialize;
-use kit::*;
 use kit as u;
-
+use kit::*;
+use serde_derive::Serialize;
+use std::collections::HashMap;
 use tabled::{
     Style,
     Table,
     Tabled,
 };
-use std::collections::HashMap;
 
 #[derive(Tabled, Clone, Debug, Serialize)]
 struct Version {

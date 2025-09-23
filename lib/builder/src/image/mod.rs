@@ -5,21 +5,15 @@ use crate::types::{
     BuildStatus,
 };
 use colored::Colorize;
-
-use composer::{
-    Build,
-};
-use configurator::Config;
-
 use compiler::{
     LangRuntime,
-    spec::{
-        function::BuildKind,
-        function::Lang,
+    spec::function::{
+        BuildKind,
+        Lang,
     },
 };
-
-
+use composer::Build;
+use configurator::Config;
 use itertools::Itertools;
 use kit as u;
 use kit::sh;

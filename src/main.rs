@@ -17,8 +17,10 @@ use clap::{
 };
 
 mod remote;
-use clap_stdin::MaybeStdin;
-use clap_stdin::FileOrStdin;
+use clap_stdin::{
+    FileOrStdin,
+    MaybeStdin,
+};
 
 #[derive(Debug, Parser)]
 struct Tc {

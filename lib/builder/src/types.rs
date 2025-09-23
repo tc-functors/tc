@@ -1,6 +1,6 @@
-use compiler::spec::{
-    function::LangRuntime,
-    function::BuildKind,
+use compiler::spec::function::{
+    BuildKind,
+    LangRuntime,
 };
 
 #[derive(Debug, Clone)]
