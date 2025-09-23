@@ -25,9 +25,12 @@ fn make_recursive_job_def(env: &str, sandbox: &str) -> String {
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
+          name: tc-upgrade-<< parameters.tc_version >>
+          command: sudo tc upgrade --version << parameters.tc_version >>
+      - run:
           name: tc-create-<< parameters.tag >>
           working_directory: << parameters.workdir >>
-          command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync"#
+          command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync --notify"#
     )
 }
 
@@ -55,9 +58,12 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
+          name: tc-upgrade-<< parameters.tc_version >>
+          command: sudo tc upgrade --version << parameters.tc_version >>
+      - run:
           name: tc-create-<< parameters.tag >>
           working_directory: << parameters.workdir >>
-          command: tc create -e {env} --sandbox {sandbox} --trace"#
+          command: tc create -e {env} --sandbox {sandbox} --trace --notify"#
     )
 }
 
