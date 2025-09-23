@@ -1,3 +1,4 @@
+use crate::template;
 use compiler::spec::{
     PageSpec,
     TopologySpec,
@@ -10,7 +11,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-use crate::template;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyStatement {
@@ -152,7 +152,10 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
     }
 }
 
-fn find_domains(given_domains: &Option<HashMap<String, String>>, infra: &Option<Infra>) -> HashMap<String, String> {
+fn find_domains(
+    given_domains: &Option<HashMap<String, String>>,
+    infra: &Option<Infra>,
+) -> HashMap<String, String> {
     match given_domains {
         Some(d) => d.clone(),
         None => {

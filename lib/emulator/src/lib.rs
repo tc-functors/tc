@@ -1,10 +1,11 @@
 mod function;
 mod state;
 
-use compiler::{Entity, BuildKind};
-use composer::{
-    Topology,
+use compiler::{
+    BuildKind,
+    Entity,
 };
+use composer::Topology;
 use kit as u;
 use provider::aws::Auth;
 

@@ -1,4 +1,9 @@
 use super::layer;
+use crate::{
+    role::Role,
+    template,
+    version,
+};
 use compiler::{
     Entity,
     spec::{
@@ -14,13 +19,7 @@ use compiler::{
         infra::InfraSpec,
     },
 };
-
 use configurator::Config;
-use crate::{
-    role::Role,
-    template,
-    version,
-};
 use kit as u;
 use kit::*;
 use serde_derive::{

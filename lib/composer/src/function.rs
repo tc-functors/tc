@@ -3,15 +3,15 @@ pub mod layer;
 pub mod runtime;
 
 use super::template;
-use configurator::Config;
+pub use build::Build;
 use compiler::{
     Entity,
     spec::{
-        function::FunctionSpec,
         TestSpec,
+        function::FunctionSpec,
     },
 };
-pub use build::Build;
+use configurator::Config;
 use kit as u;
 use kit::*;
 pub use runtime::Runtime;

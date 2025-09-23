@@ -5,9 +5,7 @@ use super::{
     pool,
 };
 use compiler::Entity;
-use composer::{
-    Topology,
-};
+use composer::Topology;
 use function::Root;
 use provider::Auth;
 

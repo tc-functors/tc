@@ -419,8 +419,6 @@ pub async fn list_all(auth: &Auth, sandbox: &str, format: &str) {
             println!("{}", resource::count_of(&grouped));
         }
     }
-
-
 }
 
 pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {

@@ -1,4 +1,34 @@
-
+pub use crate::{
+    Channel,
+    event::Event,
+    flow::Flow,
+    function::{
+        Function,
+        layer,
+        layer::Layer,
+    },
+    mutation::{
+        Mutation,
+        Resolver,
+    },
+    page::Page,
+    pool::Pool,
+    queue::Queue,
+    role::Role,
+    route::Route,
+    schedule::Schedule,
+};
+use crate::{
+    channel,
+    event,
+    mutation,
+    page,
+    pool,
+    schedule,
+    tag,
+    template,
+    version,
+};
 use compiler::{
     Entity,
     spec::{
@@ -7,36 +37,9 @@ use compiler::{
         TopologySpec,
     },
 };
-pub use crate::Channel;
-pub use crate::event::Event;
 use configurator::Config;
-pub use crate::flow::Flow;
-pub use crate::function::{
-    Function,
-    layer,
-    layer::Layer,
-};
-use crate::event;
-use crate::mutation;
-use crate::channel;
-use crate::pool;
-use crate::version;
-use crate::template;
-use crate::schedule;
-use crate::tag;
-use crate::page;
 use kit as u;
 use kit::*;
-pub use crate::mutation::{
-    Mutation,
-    Resolver,
-};
-pub use crate::page::Page;
-pub use crate::pool::Pool;
-pub use crate::queue::Queue;
-pub use crate::role::Role;
-pub use crate::route::Route;
-pub use crate::schedule::Schedule;
 use serde_derive::{
     Deserialize,
     Serialize,

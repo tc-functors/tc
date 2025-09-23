@@ -1,5 +1,6 @@
 mod core;
 mod crypto;
+mod git;
 mod github;
 mod http;
 mod io;
@@ -7,11 +8,11 @@ mod json;
 mod pprint;
 mod text;
 mod time;
-mod git;
 
 pub use self::{
     core::*,
     crypto::*,
+    git::*,
     github::*,
     http::*,
     io::*,
@@ -19,7 +20,6 @@ pub use self::{
     pprint::*,
     text::*,
     time::*,
-    git::*,
 };
 
 #[macro_export]

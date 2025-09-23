@@ -1,7 +1,5 @@
 use compiler::Entity;
-use composer::{
-    Route,
-};
+use composer::Route;
 use itertools::Itertools;
 use kit::*;
 use provider::{

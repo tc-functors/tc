@@ -1,7 +1,5 @@
 use compiler::Entity;
-use composer::{
-    Topology,
-};
+use composer::Topology;
 use configurator::Config;
 use itertools::Itertools;
 use kit as u;

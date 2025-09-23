@@ -4,8 +4,8 @@ use aws_config::{
     environment::credentials::EnvironmentVariableCredentialsProvider,
     sts::AssumeRoleProvider,
 };
-use aws_smithy_types::retry::RetryConfig;
 use aws_sdk_sts::Client;
+use aws_smithy_types::retry::RetryConfig;
 use std::panic;
 
 // sts
@@ -40,7 +40,6 @@ pub async fn get_account_id(client: &Client) -> String {
         }
     }
 }
-
 
 async fn assume_given_role(role_arn: &str) -> SdkConfig {
     let session_name = "TcSession";

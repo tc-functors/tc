@@ -1,7 +1,7 @@
-use kit as u;
-use kit::sh;
 use crate::layer;
 use compiler::spec::LangRuntime;
+use kit as u;
+use kit::sh;
 
 pub fn build(dir: &str) -> String {
     u::run("rm -rf deps.zip build", &dir);
@@ -9,10 +9,7 @@ pub fn build(dir: &str) -> String {
     u::run("mkdir -p build/python/lib && mkdir -p build/lib", &dir);
     for d in dirs {
         if !d.ends_with("build") {
-            let cmd = format!(
-                "cp -r {}/src/* build/python/",
-                &d
-            );
+            let cmd = format!("cp -r {}/src/* build/python/", &d);
             u::run(&cmd, &dir);
             let langr = LangRuntime::Python310;
 

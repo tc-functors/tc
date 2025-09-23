@@ -9,13 +9,9 @@ mod types;
 
 use crate::types::BuildOutput;
 use colored::Colorize;
+use compiler::spec::function::BuildKind;
+use composer::Function;
 use configurator::Config;
-use compiler::spec::function::{
-        BuildKind,
-};
-use composer::{
-    Function,
-};
 use kit as u;
 use kit::sh;
 use provider::Auth;

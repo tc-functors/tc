@@ -1,7 +1,5 @@
 use compiler::TopologyKind;
-use composer::{
-    Topology,
-};
+use composer::Topology;
 use kit as u;
 use provider::{
     Auth,

@@ -43,9 +43,7 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
 
     let _pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
-        Err(_) => {
-            "pip install -r requirements.txt --without dev --target=/build/python"
-        }
+        Err(_) => "pip install -r requirements.txt --without dev --target=/build/python",
     };
 
     let build_context = &u::root();

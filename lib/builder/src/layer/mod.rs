@@ -9,13 +9,11 @@ use crate::{
     },
 };
 use colored::Colorize;
-use composer::{
-    Build,
-};
 use compiler::{
     Lang,
     LangRuntime,
 };
+use composer::Build;
 use kit as u;
 use kit::sh;
 use std::collections::HashMap;
@@ -230,6 +228,6 @@ pub fn build(dir: &str, name: &str, langr: &LangRuntime, _bspec: &Build) -> Buil
         path: format!("{}/deps.zip", dir),
         status: status,
         out: out,
-         err: err,
+        err: err,
     }
 }

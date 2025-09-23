@@ -1,28 +1,27 @@
-mod yaml;
+pub mod entity;
 mod lisp;
 mod printer;
 pub mod spec;
-pub mod entity;
+mod yaml;
 
+pub use entity::Entity;
+use kit as u;
 pub use spec::{
     TopologyKind,
     TopologySpec,
     function,
     function::{
         BuildKind,
+        FunctionSpec,
         Lang,
         LangRuntime,
-        FunctionSpec
     },
     infra::InfraSpec,
 };
-
 use std::{
     collections::HashMap,
     path::Path,
 };
-use kit as u;
-pub use entity::Entity;
 
 pub fn compile(dir: &str) -> TopologySpec {
     let yaml_file = format!("{}/topology.yml", dir);
@@ -135,7 +134,6 @@ pub fn pprint(dir: &str, component: &str, format: &str) {
     let versions = lookup_versions(dir);
     match component {
         "versions" => printer::print_versions(versions, format),
-        _ => ()
+        _ => (),
     }
-
 }

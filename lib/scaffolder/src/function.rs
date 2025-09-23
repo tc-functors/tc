@@ -1,9 +1,11 @@
 use compiler::{
     Entity,
     spec::{
-        function::BuildKind,
         Lang,
-        function::LangRuntime,
+        function::{
+            BuildKind,
+            LangRuntime,
+        },
     },
 };
 use composer::topology::Role;

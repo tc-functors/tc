@@ -1,7 +1,5 @@
 use compiler::Entity;
-use composer::{
-    Queue,
-};
+use composer::Queue;
 use provider::{
     Auth,
     aws::{

@@ -44,7 +44,6 @@ pub fn mangenta(s: &str) -> ColoredString {
 }
 
 pub fn find_matches(s: &str, pattern: &str) -> Vec<String> {
-
     let re = Regex::new(pattern).unwrap();
 
     let mut res: Vec<String> = vec![];
@@ -54,5 +53,4 @@ pub fn find_matches(s: &str, pattern: &str) -> Vec<String> {
         res.push(parts.clone().first().unwrap().to_string());
     }
     res
-
 }

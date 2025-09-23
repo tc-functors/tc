@@ -106,7 +106,6 @@ pub fn print_stats_json(topologies: HashMap<String, Topology>) {
     kit::pp_json(&xs);
 }
 
-
 pub fn build_tree(topology: &Topology) -> StringItem {
     let mut t = TreeBuilder::new(s!(topology.namespace.blue()));
     t.begin_child(s!("functions"));
