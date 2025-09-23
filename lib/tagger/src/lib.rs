@@ -165,8 +165,7 @@ async fn dry_run(next: &str, tag: Tag, has_suffix: bool) {
     match next {
         "patch" => {
             let tag = format!("{}-{}", &prefix, &version);
-            let commit_msg = git::commit_message(&tag);
-            println!("{}", commit_msg);
+            println!("{}", &tag);
         }
         "minor" => {
             let changes = changelog_since_last(&prefix, &version, has_suffix);

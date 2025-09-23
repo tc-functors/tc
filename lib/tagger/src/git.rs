@@ -20,7 +20,8 @@ pub fn maybe_semver(v: &str) -> Version {
 }
 
 pub fn latest_version(prefix: &str) -> String {
-    let cmd = format!("git describe --tags --abbrev=0 --match {}-*", prefix);
+    let cmd = format!("git describe --tags --abbrev=0 --match {}-[0-9]*.[0-9]*.[0-9]*", prefix);
+    println!("latest: {}", &cmd);
     let out = sh(&cmd, &pwd());
     if out.contains("fatal: No names found") {
         String::from("0.0.1")
