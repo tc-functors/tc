@@ -13,5 +13,6 @@ tracing = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 kit = { path = "../kit" }
 composer = { path = "../composer" }
+compiler = { path = "../compiler" }
 invoker = { path = "../invoker" }
 provider = { path = "../provider" }

@@ -1286,7 +1286,9 @@ dependencies = [
  "aws-sdk-lambda",
  "base64 0.21.7",
  "colored",
+ "compiler",
  "composer",
+ "configurator",
  "glob",
  "itertools",
  "kit",
@@ -1739,6 +1741,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "colored",
+ "compiler",
  "configurator",
  "daggy",
  "derivative",
@@ -2018,6 +2021,7 @@ dependencies = [
  "anyhow",
  "builder",
  "colored",
+ "compiler",
  "composer",
  "configurator",
  "itertools",
@@ -2180,6 +2184,7 @@ dependencies = [
  "anyhow",
  "base64 0.21.7",
  "colored",
+ "compiler",
  "composer",
  "configurator",
  "kit",
@@ -3109,6 +3114,7 @@ name = "invoker"
 version = "0.9.21"
 dependencies = [
  "colored",
+ "compiler",
  "composer",
  "configurator",
  "gql_client",
@@ -4348,6 +4354,7 @@ name = "resolver"
 version = "0.9.21"
 dependencies = [
  "cacache",
+ "compiler",
  "composer",
  "configurator",
  "kit",
@@ -4600,6 +4607,7 @@ dependencies = [
 name = "scaffolder"
 version = "0.9.21"
 dependencies = [
+ "compiler",
  "composer",
  "inquire",
  "kit",
@@ -4984,6 +4992,7 @@ name = "snapshotter"
 version = "0.9.21"
 dependencies = [
  "colored",
+ "compiler",
  "composer",
  "configurator",
  "kit",
@@ -5282,6 +5291,7 @@ version = "0.9.21"
 dependencies = [
  "assert-json-diff",
  "colored",
+ "compiler",
  "composer",
  "invoker",
  "jsonpath-rust",

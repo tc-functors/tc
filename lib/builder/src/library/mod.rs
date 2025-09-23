@@ -2,7 +2,7 @@ mod python;
 mod ruby;
 
 use crate::types::BuildStatus;
-use composer::{
+use compiler::spec::{
     Lang,
     LangRuntime,
 };

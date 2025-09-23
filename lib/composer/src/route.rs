@@ -3,7 +3,7 @@ use super::{
     function::Function,
     template,
 };
-use crate::{
+use compiler::{
     Entity,
     spec::{
         RouteSpec,

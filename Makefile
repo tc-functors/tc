@@ -6,7 +6,7 @@ PROJECT_VERSION=$(shell git rev-parse --short HEAD)
 
 build:
 	@mkdir -p $(BIN_DIR)
-	cargo build
+	RUSTUP_TOOLCHAIN=1.90 cargo build
 	@cp $(TARGET_DIR)/debug/tc tc
 
 x86_64-linux:

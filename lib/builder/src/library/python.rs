@@ -1,7 +1,7 @@
 use kit as u;
 use kit::sh;
 use crate::layer;
-use composer::LangRuntime;
+use compiler::spec::LangRuntime;
 
 pub fn build(dir: &str) -> String {
     u::run("rm -rf deps.zip build", &dir);
@@ -19,7 +19,7 @@ pub fn build(dir: &str) -> String {
             println!("Building {}", &d);
 
             layer::gen_dockerfile(&d, &langr);
-            let (status, out, err) = layer::build_with_docker(&d);
+            let (_status, _out, _err) = layer::build_with_docker(&d);
             layer::copy_from_docker(&d);
             let cmd = format!("cp -rv . {}/build", dir);
             println!("cmd {}", &cmd);

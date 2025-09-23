@@ -1,7 +1,7 @@
+use compiler::Entity;
+use compiler::spec::TestSpec;
 use composer::{
-    Entity,
     Topology,
-    spec::TestSpec,
 };
 use inquire::{
     InquireError,

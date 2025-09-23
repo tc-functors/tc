@@ -25,7 +25,10 @@ pub use event::EventSpec;
 pub use function::{
     InlineFunctionSpec,
     TestSpec,
+    Lang,
+    LangRuntime
 };
+pub use infra::InfraSpec;
 pub use mutation::MutationSpec;
 pub use page::PageSpec;
 use yaml::Transformer;

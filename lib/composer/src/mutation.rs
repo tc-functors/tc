@@ -2,7 +2,7 @@ use super::{
     Role,
     template,
 };
-use crate::{
+use compiler::{
     Entity,
     spec::{
         MutationSpec,

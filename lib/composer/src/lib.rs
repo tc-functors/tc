@@ -1,50 +1,57 @@
 mod display;
-mod entity;
-mod parser;
-pub mod spec;
 pub mod topology;
+pub mod channel;
+pub mod event;
+pub mod flow;
+pub mod function;
+pub mod mutation;
+pub mod page;
+pub mod pool;
+pub mod queue;
+pub mod role;
+pub mod route;
+pub mod schedule;
+mod tag;
+mod template;
+pub mod version;
+
 
 use configurator::Config;
 use display::Format;
 pub use display::topology::TopologyCount;
-pub use entity::Entity;
+use compiler::entity::Entity;
 use kit as u;
 use kit::*;
-pub use spec::{
-    TopologyKind,
+use compiler::spec::{
     TopologySpec,
     function::{
-        BuildKind,
-        Lang,
         LangRuntime,
     },
-    infra::InfraSpec,
 };
 use std::{
     collections::HashMap,
     str::FromStr,
 };
 pub use topology::{
-    Topology,
+    Topology
+};
+pub use {
     channel::Channel,
     event::{
         Event,
         Target,
     },
     flow::Flow,
-    function,
     function::{
         Function,
         build::Build,
         layer::Layer,
         runtime::Runtime,
     },
-    mutation,
     mutation::Mutation,
     page::Page,
     queue::Queue,
     role::Role,
-    route,
     route::Route,
     schedule::Schedule,
 };
@@ -86,7 +93,7 @@ pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
         let f = format!("{}/{}/topology.yml", dir, &d);
         let spec = TopologySpec::new(&f);
         if &spec.name != "tc" {
-            let version = topology::version::current_semver(&spec.name);
+            let version = version::current_semver(&spec.name);
             h.insert(spec.name, version);
         }
     }
@@ -257,7 +264,7 @@ pub fn topology_name(dir: &str) -> String {
 }
 
 pub fn topology_version(namespace: &str) -> String {
-    topology::version::current_semver(&namespace)
+    version::current_semver(&namespace)
 }
 
 pub fn current_function(dir: &str) -> Option<Function> {

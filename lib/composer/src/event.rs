@@ -4,8 +4,8 @@ use super::{
     mutation::Resolver,
     template,
 };
-use crate::{
-    Entity,
+use compiler::{
+    entity::Entity,
     spec::EventSpec,
 };
 use configurator::Config;

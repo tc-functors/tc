@@ -1,6 +1,6 @@
+use compiler::TopologyKind;
 use composer::{
     Topology,
-    TopologyKind,
 };
 use kit as u;
 use provider::{

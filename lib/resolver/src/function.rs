@@ -1,10 +1,12 @@
 use super::Context;
+use compiler::{
+    TopologyKind,
+    spec::InfraSpec,
+};
 use composer::{
     Function,
-    InfraSpec,
     Runtime,
     Topology,
-    TopologyKind,
     function::runtime::{
         FileSystem,
         Network,

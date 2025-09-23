@@ -1,4 +1,4 @@
-use composer::Entity;
+use compiler::Entity;
 use provider::{
     Auth,
     aws,

@@ -1,7 +1,7 @@
 use super::Runtime;
-use crate::spec::{
-    BuildKind,
-    BuildSpec,
+use compiler::spec::{
+    function::BuildKind,
+    function::BuildSpec,
 };
 use kit::*;
 use serde_derive::{

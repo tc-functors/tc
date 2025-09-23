@@ -15,4 +15,5 @@ tracing = "0.1"
 kit = { path = "../kit" }
 provider = { path = "../provider" }
 composer = { path = "../composer" }
+compiler = { path = "../compiler" }
 configurator = { path = "../configurator" }

@@ -5,15 +5,21 @@ use crate::types::{
     BuildStatus,
 };
 use colored::Colorize;
+
 use composer::{
     Build,
+};
+use configurator::Config;
+
+use compiler::{
     LangRuntime,
     spec::{
-        BuildKind,
-        ConfigSpec,
-        Lang,
+        function::BuildKind,
+        function::Lang,
     },
 };
+
+
 use itertools::Itertools;
 use kit as u;
 use kit::sh;
@@ -146,7 +152,7 @@ pub async fn build(
 
     aws::ecr::login(&auth, dir).await;
 
-    let config = ConfigSpec::new(None);
+    let config = Config::new();
 
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
@@ -227,7 +233,7 @@ pub async fn sync(auth: &Auth, build: &BuildOutput) {
 }
 
 pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, kind: BuildKind) {
-    let config = ConfigSpec::new(None);
+    let config = Config::new();
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,

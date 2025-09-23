@@ -9,12 +9,12 @@ mod types;
 
 use crate::types::BuildOutput;
 use colored::Colorize;
+use configurator::Config;
+use compiler::spec::function::{
+        BuildKind,
+};
 use composer::{
     Function,
-    spec::{
-        BuildKind,
-        ConfigSpec,
-    },
 };
 use kit as u;
 use kit::sh;
@@ -26,7 +26,7 @@ use std::{
 
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
-    let config = ConfigSpec::new(None);
+    let config = Config::new();
     let mut outs: Vec<BuildOutput> = vec![];
     let repo = match std::env::var("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),

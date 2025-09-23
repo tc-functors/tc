@@ -18,6 +18,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 kit = { path = "../kit" }
 provider = { path = "../provider" }
+compiler = { path = "../compiler" }
 composer = { path = "../composer" }
 builder = { path = "../builder" }
 configurator = { path = "../configurator" }

@@ -4,8 +4,8 @@ use super::{
     function,
     pool,
 };
+use compiler::Entity;
 use composer::{
-    Entity,
     Topology,
 };
 use function::Root;
