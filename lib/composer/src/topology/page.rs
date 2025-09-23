@@ -10,6 +10,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use crate::topology::template;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyStatement {
@@ -89,7 +90,7 @@ impl BucketPolicy {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Infra {
     pub bucket: Option<String>,
-    pub domains: Option<Vec<String>>,
+    pub domains: Option<HashMap<String, String>>,
 }
 
 impl Infra {
@@ -107,6 +108,7 @@ impl Infra {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Page {
+    pub fqn: String,
     pub namespace: String,
     pub dir: String,
     pub dist: String,
@@ -118,7 +120,7 @@ pub struct Page {
     pub origin_paths: HashMap<String, String>,
     pub origin_domain: String,
     pub default_root_object: String,
-    pub domains: Vec<String>,
+    pub domains: HashMap<String, String>,
     pub config_template: Option<String>,
 }
 
@@ -150,18 +152,18 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
     }
 }
 
-fn find_domains(given_domains: &Option<Vec<String>>, infra: &Option<Infra>) -> Vec<String> {
+fn find_domains(given_domains: &Option<HashMap<String, String>>, infra: &Option<Infra>) -> HashMap<String, String> {
     match given_domains {
-        Some(d) => d.to_vec(),
+        Some(d) => d.clone(),
         None => {
             if let Some(inf) = infra {
                 if let Some(domains) = &inf.domains {
-                    domains.to_vec()
+                    domains.clone()
                 } else {
-                    vec![]
+                    HashMap::new()
                 }
             } else {
-                vec![]
+                HashMap::new()
             }
         }
     }
@@ -209,13 +211,14 @@ fn make(
     let paths = make_paths(namespace, name);
 
     Page {
+        fqn: template::topology_fqn(&namespace, false),
         namespace: namespace.to_string(),
         dir: dir,
         dist: dist,
         build: build,
         caller_ref: caller_ref,
         bucket_policy: bucket_policy,
-        bucket_prefix: format!("{}/{}", namespace, name),
+        bucket_prefix: format!("{}/{{{{sandbox}}}}/{}", namespace, name),
         bucket: bucket,
         origin_domain: origin_domain,
         origin_paths: paths,

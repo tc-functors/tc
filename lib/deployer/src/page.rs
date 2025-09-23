@@ -121,7 +121,7 @@ async fn render_config_template(
     }
 }
 
-async fn create_page(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
+async fn create_page(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>, sandbox: &str) {
     let Page {
         bucket,
         bucket_policy,
@@ -164,6 +164,7 @@ async fn create_page(auth: &Auth, name: &str, page: &Page, config: &HashMap<Stri
         bucket,
         bucket_prefix
     );
+
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 
     let client = cloudfront::make_client(auth).await;
@@ -174,13 +175,18 @@ async fn create_page(auth: &Auth, name: &str, page: &Page, config: &HashMap<Stri
     tracing::debug!("Configuring page {} - setting cache policy ", name);
     let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
 
+    let domains = match domains.get(sandbox) {
+        Some(d) => vec![d.to_string()],
+        None => vec![]
+    };
+
     let dist_config = cloudfront::make_dist_config(
         namespace,
         default_root_object,
         caller_ref,
         origin_domain,
         origin_paths.clone(),
-        domains.clone(),
+        domains,
         &oac_id,
         &cache_policy_id,
     );
@@ -199,9 +205,9 @@ async fn create_page(auth: &Auth, name: &str, page: &Page, config: &HashMap<Stri
     println!("url - https://{}", url);
 }
 
-pub async fn create(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
+pub async fn create(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>, sandbox: &str) {
     for (name, page) in pages {
-        create_page(auth, &name, &page, config).await
+        create_page(auth, &name, &page, config, sandbox).await
     }
 }
 
@@ -262,7 +268,26 @@ pub async fn update_config(
             ..
         } = page;
         if let Some(path) = config_template {
-            println!("Rendering config: {}", &path);
+             println!("Rendering config: {}", &path);
+            render_config_template(auth, dir, &path, config).await;
+        }
+    }
+}
+
+pub async fn update_domains(
+    auth: &Auth,
+    pages: &HashMap<String, Page>,
+    config: &HashMap<String, String>,
+    sandbox: &str
+) {
+    for (_, page) in pages {
+        let Page {
+            dir,
+            config_template,
+            ..
+        } = page;
+        if let Some(path) = config_template {
+             println!("Rendering config: {}", &path);
             render_config_template(auth, dir, &path, config).await;
         }
     }
@@ -273,10 +298,12 @@ pub async fn update(
     pages: &HashMap<String, Page>,
     component: &str,
     config: &HashMap<String, String>,
+    sandbox: &str
 ) {
     match component {
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,
+        "domains" => update_domains(auth, pages, config, sandbox).await,
         "build" => {
             for (name, page) in pages {
                 build_page(&page.dir, name, &page.build, &page.config_template);
@@ -284,7 +311,7 @@ pub async fn update(
         }
         _ => {
             if let Some(page) = pages.get(component) {
-                create_page(auth, component, page, config).await;
+                create_page(auth, component, page, config, sandbox).await;
             } else {
                 update_code(auth, pages, config).await;
             }
