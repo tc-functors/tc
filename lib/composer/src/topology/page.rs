@@ -218,7 +218,7 @@ fn make(
         build: build,
         caller_ref: caller_ref,
         bucket_policy: bucket_policy,
-        bucket_prefix: format!("{}/{{{{sandbox}}}}/{}", namespace, name),
+        bucket_prefix: format!("{}/{}", namespace, name),
         bucket: bucket,
         origin_domain: origin_domain,
         origin_paths: paths,
