@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use super::template;
-use crate::spec::function::InlineFunctionSpec;
+use compiler::spec::function::InlineFunctionSpec;
 use kit as u;
 use kit::*;
 use serde_derive::{

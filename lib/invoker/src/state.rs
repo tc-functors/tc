@@ -2,11 +2,6 @@ use crate::aws::sfn;
 use kit as u;
 use kit::*;
 use provider::Auth;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
-use serde_json::Value;
 use std::collections::HashMap;
 
 fn get_id(arn: &str) -> &str {
@@ -35,13 +30,6 @@ pub fn open_execution(auth: &Auth, mode: &str, exec_arn: &str) {
     };
     println!("{}", url);
     open::that(url).unwrap();
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-struct Response {
-    error: Option<String>,
-    cause: Option<String>,
-    output: Value,
 }
 
 pub async fn execute_state_machine(auth: &Auth, name: &str, payload: &str, mode: &str, dumb: bool) {

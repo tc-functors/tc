@@ -1,10 +1,12 @@
 use crate::role;
 use composer::{
     Function,
-    Lang,
     function::Runtime,
-    spec::function::Provider,
+
 };
+use compiler::spec::function::Lang;
+use compiler::spec::function::Provider;
+
 use kit as u;
 use provider::{
     Auth,

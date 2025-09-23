@@ -1,6 +1,6 @@
 use colored::Colorize;
+use compiler::Entity;
 use composer::{
-    Entity,
     Event,
 };
 use provider::{

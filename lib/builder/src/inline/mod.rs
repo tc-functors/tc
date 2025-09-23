@@ -5,8 +5,8 @@ mod rust;
 
 use crate::types::BuildStatus;
 use colored::Colorize;
-use composer::{
-    Build,
+use composer::Build;
+use compiler::{
     Lang,
     LangRuntime,
 };

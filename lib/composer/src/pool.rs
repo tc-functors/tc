@@ -1,5 +1,5 @@
 use super::template;
-use crate::spec::TriggerSpec;
+use compiler::spec::TriggerSpec;
 use configurator::Config;
 use serde_derive::{
     Deserialize,

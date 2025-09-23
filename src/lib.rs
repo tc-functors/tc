@@ -1,5 +1,5 @@
+use compiler::Entity;
 use composer::{
-    Entity,
     Topology,
 };
 use configurator::Config;

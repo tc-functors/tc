@@ -4,11 +4,11 @@ use assert_json_diff::{
 };
 use colored::Colorize;
 use composer::{
-    Entity,
     Function,
     Topology,
-    spec::TestSpec,
 };
+use compiler::Entity;
+use compiler::spec::TestSpec;
 use jsonpath_rust::JsonPath;
 use kit as u;
 use provider::{

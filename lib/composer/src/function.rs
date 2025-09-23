@@ -3,11 +3,11 @@ pub mod layer;
 pub mod runtime;
 
 use super::template;
-use crate::{
+use configurator::Config;
+use compiler::{
     Entity,
     spec::{
-        ConfigSpec,
-        FunctionSpec,
+        function::FunctionSpec,
         TestSpec,
     },
 };
@@ -108,7 +108,7 @@ fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec> 
 
 impl Function {
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
-        let config = ConfigSpec::new(None);
+        let config = Config::new();
 
         let fspec = FunctionSpec::new(dir);
 
@@ -148,7 +148,7 @@ impl Function {
         dir: &str,
         infra_dir: &str,
     ) -> Function {
-        let config = ConfigSpec::new(None);
+        let config = Config::new();
         let namespace = match fspec.namespace {
             Some(ref n) => n,
             None => &namespace.to_string(),

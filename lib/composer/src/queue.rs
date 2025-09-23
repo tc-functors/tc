@@ -1,5 +1,5 @@
 use super::template;
-use crate::{
+use compiler::{
     Entity,
     spec::QueueSpec,
 };

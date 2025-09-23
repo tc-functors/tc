@@ -1,5 +1,5 @@
 use super::Function;
-use crate::spec::function::{
+use compiler::spec::function::{
     FunctionSpec,
     LangRuntime,
 };

@@ -26,3 +26,4 @@ anyhow = "1.0.71"
 serde_with = "3.14.0"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
+compiler = { path = "../compiler" }

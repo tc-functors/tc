@@ -13,8 +13,8 @@ mod schedule;
 mod state;
 
 use colored::Colorize;
+use compiler::Entity;
 use composer::{
-    Entity,
     Function,
     Topology,
 };

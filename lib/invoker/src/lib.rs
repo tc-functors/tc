@@ -3,8 +3,8 @@ mod function;
 mod repl;
 pub mod route;
 mod state;
+use compiler::Entity;
 use composer::{
-    Entity,
     Topology,
 };
 use configurator::Config;

@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.21"
+version = "0.9.22"
 edition = "2024"
 rust-version = "1.90"
 
 [workspace.package]
-version = "0.9.21"
+version = "0.9.22"
 
 [dependencies]
 serde = "1.0"
@@ -82,3 +82,6 @@ codegen-units = 1
 incremental = false
 overflow-checks = true
 strip = true
+
+# [target.x86_64-unknown-linux-gnu]
+# rustflags = ["-Clinker-features=-lld"]

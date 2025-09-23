@@ -1,8 +1,7 @@
 use super::layer;
-use crate::{
+use compiler::{
     Entity,
     spec::{
-        ConfigSpec,
         function::{
             AssetsSpec,
             BuildKind,
@@ -14,11 +13,13 @@ use crate::{
         },
         infra::InfraSpec,
     },
-    topology::{
-        role::Role,
-        template,
-        version,
-    },
+};
+
+use configurator::Config;
+use crate::{
+    role::Role,
+    template,
+    version,
 };
 use kit as u;
 use kit::*;
@@ -582,7 +583,7 @@ fn make_fargate(
     fqn: &str,
     fspec: &FunctionSpec,
     rspec: &RuntimeSpec,
-    c: &ConfigSpec,
+    c: &Config,
 ) -> Runtime {
     let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
     let package_type = s!("Image");
@@ -650,7 +651,7 @@ impl Runtime {
         namespace: &str,
         fspec: &FunctionSpec,
         fqn: &str,
-        cspec: &ConfigSpec,
+        cspec: &Config,
     ) -> Runtime {
         let rspec = fspec.runtime.clone();
 

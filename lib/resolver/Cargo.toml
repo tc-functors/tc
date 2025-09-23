@@ -13,6 +13,7 @@ cacache = "13.0.0"
 tabled = "0.10.0"
 kit = { path = "../kit" }
 provider = { path = "../provider" }
+compiler = { path = "../compiler" }
 composer = { path = "../composer" }
 configurator = { path = "../configurator" }
 snapshotter = { path = "../snapshotter" }

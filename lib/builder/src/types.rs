@@ -1,5 +1,5 @@
-use composer::spec::{
-    LangRuntime,
+use compiler::spec::{
+    function::LangRuntime,
     function::BuildKind,
 };
 

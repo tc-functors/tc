@@ -4,7 +4,7 @@ use provider::Auth;
 mod manifest;
 mod pipeline;
 
-use composer::TopologyKind;
+use compiler::TopologyKind;
 use configurator::Config;
 pub use manifest::Manifest;
 use provider::aws;

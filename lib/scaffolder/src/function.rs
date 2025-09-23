@@ -1,12 +1,12 @@
-use composer::{
+use compiler::{
     Entity,
     spec::{
-        BuildKind,
+        function::BuildKind,
         Lang,
         function::LangRuntime,
     },
-    topology::Role,
 };
+use composer::topology::Role;
 use inquire::{
     Confirm,
     InquireError,

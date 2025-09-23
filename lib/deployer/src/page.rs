@@ -1,6 +1,6 @@
 use composer::{
     Page,
-    topology::page::BucketPolicy,
+    page::BucketPolicy,
 };
 use kit as u;
 use kit::*;
@@ -278,7 +278,7 @@ pub async fn update_domains(
     auth: &Auth,
     pages: &HashMap<String, Page>,
     config: &HashMap<String, String>,
-    sandbox: &str
+    _sandbox: &str
 ) {
     for (_, page) in pages {
         let Page {

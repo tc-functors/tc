@@ -1,4 +1,4 @@
-use crate::spec::{
+use compiler::spec::{
     PageSpec,
     TopologySpec,
 };
@@ -10,7 +10,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-use crate::topology::template;
+use crate::template;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyStatement {

@@ -2,8 +2,8 @@ use super::{
     Context,
     Topology,
 };
+use compiler::Entity;
 use composer::{
-    Entity,
     Event,
     Mutation,
     Target,

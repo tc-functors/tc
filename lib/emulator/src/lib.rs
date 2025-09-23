@@ -1,9 +1,8 @@
 mod function;
 mod state;
 
+use compiler::{Entity, BuildKind};
 use composer::{
-    BuildKind,
-    Entity,
     Topology,
 };
 use kit as u;
