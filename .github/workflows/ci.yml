@@ -5,6 +5,7 @@ on:
       - "*"
 env:
   PROJECT_NAME: tc
+  RUSTUP_TOOLCHAIN: 1.90
 
 permissions:
   contents: write
