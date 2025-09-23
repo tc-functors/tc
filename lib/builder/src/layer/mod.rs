@@ -128,7 +128,7 @@ pub async fn promote(auth: &Auth, layer_name: &str, lang: &str, version: Option<
     }
 }
 
-fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
+pub fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile(dir, langr),
         Lang::Ruby => ruby::gen_dockerfile(dir),
@@ -136,7 +136,7 @@ fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
     }
 }
 
-fn copy_from_docker(dir: &str) {
+pub fn copy_from_docker(dir: &str) {
     let temp_cont = &format!("tmp-{}", u::basedir(dir));
     let clean = &format!("docker rm -f {}", &temp_cont);
 
@@ -228,6 +228,6 @@ pub fn build(dir: &str, name: &str, langr: &LangRuntime, _bspec: &Build) -> Buil
         path: format!("{}/deps.zip", dir),
         status: status,
         out: out,
-        err: err,
+         err: err,
     }
 }

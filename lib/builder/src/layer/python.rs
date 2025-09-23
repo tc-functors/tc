@@ -31,7 +31,7 @@ fn find_image(runtime: &LangRuntime) -> String {
 fn gen_req_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
         format!(
-            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --without dev --format=requirements.txt > requirements.txt"
         )
     } else {
         format!("echo 1")
@@ -44,7 +44,7 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let _pip_cmd = match std::env::var("TC_FORCE_BUILD") {
         Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
         Err(_) => {
-            "pip install -r requirements.txt --platform manylinux2014_x86_64 --target=/build/python --implementation cp --only-binary=:all: --upgrade"
+            "pip install -r requirements.txt --without dev --target=/build/python"
         }
     };
 
