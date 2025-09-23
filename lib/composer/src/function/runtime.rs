@@ -221,7 +221,13 @@ fn lookup_role(
                 Some(f) => Some(follow_path(&f)),
                 None => {
                     let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                    if u::file_exists(&f) { Some(f) } else { None }
+                    if u::file_exists(&f) {
+                        Some(f)
+                    } else {
+                        u::any_path(
+                            vec![format!("{}/roles/function.json", infra_dir)]
+                        )
+                    }
                 }
             };
 

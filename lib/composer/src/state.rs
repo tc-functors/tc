@@ -38,7 +38,16 @@ fn read_definition(dir: &str, def: Value) -> Value {
 }
 
 fn make_role(infra_dir: &str, fqn: &str) -> Role {
-    let role_file = format!("{}/roles/sfn.json", infra_dir);
+    let maybe_role_file = u::any_path(
+        vec![
+            format!("{}/roles/sfn.json", infra_dir),
+            format!("{}/roles/state.json", infra_dir)
+        ]
+    );
+    let role_file = maybe_role_file {
+        Some(r) => r,
+        None => format!("{}/roles/sfn.json", infra_dir)
+    };
     let role_name = format!("tc-{}-sfn-role", fqn);
     let policy_name = format!("tc-{}-sfn-policy", fqn);
     if u::file_exists(&role_file) {
