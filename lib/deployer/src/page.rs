@@ -143,9 +143,19 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
         }
         acm::wait_until_validated(&client, &cert_arn).await;
     } else {
-        println!("Cert issued, skipping");
+        println!("Checking cert status: Issued");
     }
     cert_arn
+}
+
+fn find_domain(domains: &HashMap<String, HashMap<String, String>>, env: &str, sandbox: &str) -> Option<String> {
+    match domains.get(env) {
+        Some(e) => e.get(sandbox).cloned(),
+        None => match domains.get("default") {
+            Some(d) => d.get(sandbox).cloned(),
+            None => None
+        }
+    }
 }
 
 async fn create_page(
@@ -208,7 +218,7 @@ async fn create_page(
     tracing::debug!("Configuring page {} - setting cache policy ", name);
     let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
 
-    let maybe_domain = domains.get(sandbox);
+    let maybe_domain = find_domain(domains, &auth.name, sandbox);
     let maybe_cert_arn = if let Some(domain) = &maybe_domain {
         let arn = find_or_create_cert(auth, domain, "98256344").await;
         Some(arn)
@@ -222,7 +232,7 @@ async fn create_page(
         caller_ref,
         origin_domain,
         origin_paths.clone(),
-        maybe_domain.cloned(),
+        maybe_domain.clone(),
         maybe_cert_arn,
         &oac_id,
         &cache_policy_id,
@@ -230,6 +240,8 @@ async fn create_page(
 
     tracing::debug!("Configuring page {} - creating distribution", name);
     let dist_id = cloudfront::create_or_update_distribution(&client, namespace, dist_config).await;
+
+    cloudfront::wait_until_updated(&client, &dist_id).await;
 
     let existing_policy = s3::get_bucket_policy(&s3_client, bucket).await;
     let policy = augment_policy(existing_policy, bucket_policy.clone(), &dist_id);
