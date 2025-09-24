@@ -95,6 +95,11 @@ async fn get_status(client: &Client, cert_arn: &str) -> CertificateStatus {
     status
 }
 
+pub async fn is_cert_issued(client: &Client, cert_arn: &str) -> bool {
+    let status = get_status(client, cert_arn).await;
+    status == CertificateStatus::Issued
+}
+
 pub async fn wait_until_validated(client: &Client, arn: &str) {
     let st = get_status(client, arn).await;
     let mut status: CertificateStatus = st;
