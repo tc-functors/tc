@@ -122,16 +122,19 @@ async fn render_config_template(
     }
 }
 
-async fn create_domain(auth: &Auth, domain: &str, token: &str) -> String {
+async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
     let client = acm::make_client(auth).await;
 
     let maybe_cert = acm::find_cert(&client, domain).await;
-    if let Some(arn) = maybe_cert {
-        println!("Cert already exists {}", &arn);
+    let cert_arn = if let Some(arn) = maybe_cert {
+        tracing::debug!("Cert already exists {}", &arn);
         arn
     } else {
-        println!("Creating domain {}", domain);
-        let cert_arn = acm::request_cert(&client, domain, token).await;
+        println!("Creating cert {}", domain);
+        acm::request_cert(&client, domain, token).await
+    };
+    u::sleep(1000);
+    if !acm::is_cert_issued(&client, &cert_arn).await {
         u::sleep(10000);
         let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
         let route53_client = route53::make_client(auth).await;
@@ -139,8 +142,10 @@ async fn create_domain(auth: &Auth, domain: &str, token: &str) -> String {
             route53::create_record_set(&route53_client, &rec.name, &rec.r#type.as_str(), &rec.value).await;
         }
         acm::wait_until_validated(&client, &cert_arn).await;
-        cert_arn
+    } else {
+        println!("Cert issued, skipping");
     }
+    cert_arn
 }
 
 async fn create_page(
@@ -204,16 +209,11 @@ async fn create_page(
     let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
 
     let maybe_domain = domains.get(sandbox);
-
-    if let Some(domain) = &maybe_domain {
-        create_domain(auth, domain, "98256344").await;
-    }
-
-    let domains = match domains.get(sandbox) {
-        Some(d) => {
-             vec![d.to_string()]
-        }
-        None => vec![],
+    let maybe_cert_arn = if let Some(domain) = &maybe_domain {
+        let arn = find_or_create_cert(auth, domain, "98256344").await;
+        Some(arn)
+    } else {
+        None
     };
 
     let dist_config = cloudfront::make_dist_config(
@@ -222,7 +222,8 @@ async fn create_page(
         caller_ref,
         origin_domain,
         origin_paths.clone(),
-        vec![],
+        maybe_domain.cloned(),
+        maybe_cert_arn,
         &oac_id,
         &cache_policy_id,
     );
@@ -245,7 +246,6 @@ async fn create_page(
         let rclient = route53::make_client(auth).await;
         route53::create_record_set(&rclient, domain, "CNAME", &url).await;
         u::sleep(5000);
-        cloudfront::assoc_alias(&client, &dist_id, domain).await;
 
         println!("url - https://{}", domain);
     } else {
