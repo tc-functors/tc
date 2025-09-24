@@ -55,8 +55,13 @@ use aws_sdk_cloudfront::{
         },
     },
 };
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    io::stdout,
+};
+
 use kit as u;
+use kit::LogUpdate;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.get_global_config().await;
@@ -268,7 +273,7 @@ async fn update_distribution(
     dc: DistributionConfig,
 ) -> String {
 
-    let res = client
+    let _ = client
         .update_distribution()
         .id(id)
         .distribution_config(dc)
@@ -294,10 +299,12 @@ async fn get_status(client: &Client, dist_id: &str) -> String {
 }
 
 pub async fn wait_until_updated(client: &Client, dist_id: &str) {
+    let mut log_update = LogUpdate::new(stdout()).unwrap();
     let mut status: String = get_status(client, dist_id).await;
+    let _ = log_update.render(&format!("Waiting for distribution update: {}", &status));
     while status != "Deployed" || status.is_empty() {
         u::sleep(10000);
-        println!("Waiting for distribution update {}", &status);
+        let _ = log_update.render(&format!("Waiting for distribution update: {}", &status));
         status = get_status(client, dist_id).await;
     }
 }
@@ -309,9 +316,7 @@ async fn create_distribution(client: &Client, dc: DistributionConfig) -> String 
         .send()
         .await
         .unwrap();
-    let dist_id = res.distribution.unwrap().id;
-    wait_until_updated(client, &dist_id).await;
-    dist_id
+    res.distribution.unwrap().id
 }
 
 pub async fn create_or_update_distribution(
@@ -457,14 +462,6 @@ pub async fn create_invalidation(client: &Client, dist_id: &str) {
         .send()
         .await
         .unwrap();
-}
-
-async fn get_invalidation_status() {
-
-}
-
-pub async fn wait_until_invalidation() {
-
 }
 
 pub async fn assoc_alias(client: &Client, dist_id: &str, domain: &str) {
