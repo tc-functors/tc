@@ -10,6 +10,8 @@ use provider::{
         cloudfront,
         s3,
         ssm,
+        acm,
+        route53
     },
 };
 use std::collections::HashMap;
@@ -120,6 +122,27 @@ async fn render_config_template(
     }
 }
 
+async fn create_domain(auth: &Auth, domain: &str, token: &str) -> String {
+    let client = acm::make_client(auth).await;
+
+    let maybe_cert = acm::find_cert(&client, domain).await;
+    if let Some(arn) = maybe_cert {
+        println!("Cert already exists {}", &arn);
+        arn
+    } else {
+        println!("Creating domain {}", domain);
+        let cert_arn = acm::request_cert(&client, domain, token).await;
+        u::sleep(10000);
+        let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
+        let route53_client = route53::make_client(auth).await;
+        for rec in validation_records {
+            route53::create_record_set(&route53_client, &rec.name, &rec.r#type.as_str(), &rec.value).await;
+        }
+        acm::wait_until_validated(&client, &cert_arn).await;
+        cert_arn
+    }
+}
+
 async fn create_page(
     auth: &Auth,
     name: &str,
@@ -180,8 +203,16 @@ async fn create_page(
     tracing::debug!("Configuring page {} - setting cache policy ", name);
     let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
 
+    let maybe_domain = domains.get(sandbox);
+
+    if let Some(domain) = &maybe_domain {
+        create_domain(auth, domain, "98256344").await;
+    }
+
     let domains = match domains.get(sandbox) {
-        Some(d) => vec![d.to_string()],
+        Some(d) => {
+             vec![d.to_string()]
+        }
         None => vec![],
     };
 
@@ -191,7 +222,7 @@ async fn create_page(
         caller_ref,
         origin_domain,
         origin_paths.clone(),
-        domains,
+        vec![],
         &oac_id,
         &cache_policy_id,
     );
@@ -205,9 +236,21 @@ async fn create_page(
 
     tracing::debug!("Configuring page {} - invalidating cache", name);
     cloudfront::create_invalidation(&client, &dist_id).await;
+    // wait for invalidation
 
     let url = cloudfront::get_url(&client, &dist_id).await;
-    println!("url - https://{}", url);
+
+    if let Some(domain) = &maybe_domain {
+        tracing::debug!("Associating domain {} with {}", domain, &dist_id);
+        let rclient = route53::make_client(auth).await;
+        route53::create_record_set(&rclient, domain, "CNAME", &url).await;
+        u::sleep(5000);
+        cloudfront::assoc_alias(&client, &dist_id, domain).await;
+
+        println!("url - https://{}", domain);
+    } else {
+        println!("url - https://{}", &url);
+    }
 }
 
 pub async fn create(
@@ -260,6 +303,7 @@ async fn update_code(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMa
         let client = cloudfront::make_client(auth).await;
         println!("Configuring page {} - invalidating cache", name);
         let maybe_dist_id = cloudfront::find_distribution(&client, namespace).await;
+
         if let Some((dist_id, _)) = maybe_dist_id {
             cloudfront::create_invalidation(&client, &dist_id).await;
         }
