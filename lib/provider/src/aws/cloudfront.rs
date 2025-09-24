@@ -40,7 +40,7 @@ use aws_sdk_cloudfront::{
 use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {
-    let shared_config = &auth.aws_config;
+    let shared_config = &auth.get_global_config().await;
     Client::new(&shared_config)
 }
 
@@ -169,7 +169,7 @@ pub async fn find_distribution(client: &Client, name: &str) -> Option<(String, S
     dists.get(name).cloned()
 }
 
-async fn _update_distribution(
+async fn update_distribution(
     client: &Client,
     id: &str,
     e_tag: &str,
@@ -187,6 +187,11 @@ async fn _update_distribution(
     res.e_tag.unwrap()
 }
 
+pub async fn wait_until_creation(client: &Client, dist_id: &str) {
+
+
+}
+
 async fn create_distribution(client: &Client, dc: DistributionConfig) -> String {
     let res = client
         .create_distribution()
@@ -202,10 +207,10 @@ pub async fn create_or_update_distribution(
     name: &str,
     dc: DistributionConfig,
 ) -> String {
-    //update_distribution(client, &id, &e_tag, dc).await,
+    //update_distribution(client, &id, &e_tag, dc).await;
     let maybe_dist = find_distribution(client, name).await;
     match maybe_dist {
-        Some((id, _e_tag)) => id,
+        Some((id, e_tag)) => id,
         None => create_distribution(client, dc).await,
     }
 }
@@ -338,6 +343,24 @@ pub async fn create_invalidation(client: &Client, dist_id: &str) {
         .create_invalidation()
         .distribution_id(dist_id)
         .invalidation_batch(invalidation_batch)
+        .send()
+        .await
+        .unwrap();
+}
+
+async fn get_invalidation_status() {
+
+}
+
+pub async fn wait_until_invalidation() {
+
+}
+
+pub async fn assoc_alias(client: &Client, dist_id: &str, domain: &str) {
+    client
+        .associate_alias()
+        .alias(domain)
+        .target_distribution_id(dist_id)
         .send()
         .await
         .unwrap();

@@ -18,6 +18,8 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
+pub mod acm;
+pub mod route53;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
@@ -39,7 +41,6 @@ impl Auth {
         };
 
         let config = sts::get_config(&name, assume_role.clone()).await;
-
         let client = sts::make_client(&config).await;
         let account = sts::get_account_id(&client).await;
         let region = sts::get_region();
@@ -61,6 +62,11 @@ impl Auth {
             },
             None => self.clone(),
         }
+    }
+
+
+    pub async fn get_global_config(&self) -> SdkConfig {
+        sts::get_global_config(&self.name, self.assume_role.clone()).await
     }
 
     pub async fn get_keys(&self) -> (String, String, String) {
