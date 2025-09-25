@@ -4,6 +4,3 @@ pages:
   static:
     kind: SPA
     dir: '.'
-    bucket: 'informed-web-assets-{{env}}'
-    domains:
-      ps2: ps2.dev.informediq-infra.com
