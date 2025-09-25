@@ -52,7 +52,7 @@ impl BucketPolicy {
         condition.insert(s!("StringEquals"), cond_exp);
 
         let statement = PolicyStatement {
-            sid: format!("AllowCloudFront{}{}", namespace, name),
+            sid: format!("AllowCloudFront{}{}{{{{sandbox}}}}", namespace, name),
             effect: s!("Allow"),
             principal: principal,
             action: s!("s3:GetObject"),
@@ -207,7 +207,8 @@ fn make(
     let bucket = find_bucket(&ps.bucket, config, infra);
     let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
     let bucket_policy = BucketPolicy::new(namespace, name, &bucket);
-    let caller_ref = format!("{}-{}", namespace, name);
+    let fqn = template::topology_fqn(&namespace, false);
+    let caller_ref = format!("{}-{}", &fqn, name);
     let dir = u::maybe_string(ps.dir.clone(), &u::pwd());
     let build = match &ps.build {
         Some(bs) => Some(bs.join(" && ")),
@@ -218,14 +219,14 @@ fn make(
     let paths = make_paths(namespace, name);
 
     Page {
-        fqn: template::topology_fqn(&namespace, false),
+        fqn: fqn,
         namespace: namespace.to_string(),
         dir: dir,
         dist: dist,
         build: build,
         caller_ref: caller_ref,
         bucket_policy: bucket_policy,
-        bucket_prefix: format!("{}/{}", namespace, name),
+        bucket_prefix: format!("{}/{{{{sandbox}}}}/{}", namespace, name),
         bucket: bucket,
         origin_domain: origin_domain,
         origin_paths: paths,

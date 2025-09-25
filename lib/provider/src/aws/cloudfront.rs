@@ -210,6 +210,7 @@ pub fn make_dist_config(
     oac_id: &str,
     cache_policy_id: &str,
 ) -> DistributionConfig {
+
     let it = DistributionConfigBuilder::default();
     let origins = make_origins(origin_domain, origin_paths, oac_id);
     let aliases = make_aliases(alias);
@@ -430,7 +431,7 @@ pub async fn find_or_create_oac(client: &Client, origin_domain: &str) -> String 
 }
 
 // get domain
-pub async fn get_url(client: &Client, dist_id: &str) -> String {
+pub async fn get_cname(client: &Client, dist_id: &str) -> String {
     let res = client.get_distribution().id(dist_id).send().await.unwrap();
     res.distribution.unwrap().domain_name
 }

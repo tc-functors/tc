@@ -80,9 +80,9 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> Option<String> {
     }
 }
 
-pub async fn create_record_set(client: &Client, name: &str, rtype: &str, value: &str) {
+pub async fn create_record_set(client: &Client, domain: &str, name: &str, rtype: &str, value: &str) {
     tracing::debug!("Creating Recordset {} {} {}", name, rtype, value);
-    let maybe_hosted_zone_id = get_hosted_zone_id(client, name).await;
+    let maybe_hosted_zone_id = get_hosted_zone_id(client, domain).await;
 
     if let Some(hosted_zone_id) = maybe_hosted_zone_id {
         let vr = ValidationRecord {
