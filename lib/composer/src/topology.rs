@@ -1,5 +1,5 @@
-pub use crate::{
-    Channel,
+pub use crate::aws::{
+    channel::Channel,
     event::Event,
     flow::Flow,
     function::{
@@ -18,17 +18,16 @@ pub use crate::{
     route::Route,
     schedule::Schedule,
 };
-use crate::{
+use crate::aws::{
     channel,
     event,
     mutation,
     page,
     pool,
     schedule,
-    tag,
     template,
-    version,
 };
+use crate::tag;
 use compiler::{
     Entity,
     spec::{
@@ -585,7 +584,7 @@ fn make(
     let interned = intern_functions(&namespace, &infra_dir, &spec);
     functions.extend(interned);
 
-    let version = version::current_semver(&namespace);
+    let version = u::current_semver(&namespace);
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
     let mutations = make_mutations(&spec, &config);
@@ -657,7 +656,7 @@ fn make_standalone(dir: &str) -> Topology {
         env: template::profile(),
         fqn: template::topology_fqn(&namespace, false),
         kind: TopologyKind::Function,
-        version: version::current_semver(&namespace),
+        version: u::current_semver(&namespace),
         sandbox: template::sandbox(),
         infra: u::empty(),
         dir: s!(dir),

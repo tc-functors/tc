@@ -1,8 +1,7 @@
 use super::layer;
-use crate::{
+use crate::aws::{
     role::Role,
     template,
-    version,
 };
 use compiler::{
     Entity,
@@ -75,7 +74,7 @@ fn _is_branch(dir: &str) -> bool {
 
 fn find_image_tag(dir: &str, namespace: &str) -> String {
     match std::env::var("TC_VERSION_IMAGES") {
-        Ok(_) => version::current_semver(namespace),
+        Ok(_) => u::current_semver(namespace),
         Err(_) => find_git_sha(dir),
     }
 }
@@ -383,7 +382,7 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     let tc_version = option_env!("PROJECT_VERSION")
         .unwrap_or(env!("CARGO_PKG_VERSION"))
         .to_string();
-    let version = version::current_semver(namespace);
+    let version = u::current_semver(namespace);
     let mut h: HashMap<String, String> = HashMap::new();
     h.insert(s!("namespace"), s!(namespace));
     h.insert(s!("sandbox"), template::sandbox());
