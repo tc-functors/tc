@@ -1,9 +1,9 @@
-use super::{
-    Role,
+use crate::aws::{
+    role::Role,
     function::Function,
     mutation::Resolver,
-    template,
 };
+use super::template;
 use compiler::{
     entity::Entity,
     spec::EventSpec,

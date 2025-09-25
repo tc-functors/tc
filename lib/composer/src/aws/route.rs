@@ -1,5 +1,5 @@
-use super::{
-    Role,
+use crate::aws::{
+    role::Role,
     function::Function,
     template,
 };

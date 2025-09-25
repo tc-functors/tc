@@ -1,4 +1,4 @@
-use crate::template;
+use super::template;
 use compiler::spec::{
     PageSpec,
     TopologySpec,

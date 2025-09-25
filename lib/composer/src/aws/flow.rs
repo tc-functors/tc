@@ -1,5 +1,5 @@
 use super::{
-    Role,
+    role::Role,
     template,
 };
 use compiler::{

@@ -35,6 +35,5 @@ aws-sdk-codeartifact = { version = "1.74.0", features = ["behavior-version-lates
 aws-sdk-acm = { version = "1.74.0", features = ["behavior-version-latest"] }
 aws-sdk-route53 = { version = "1.74.0", features = ["behavior-version-latest"] }
 s3uri = "1.0.0-beta.9"
-tldextract-rs = "0.1.1"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
