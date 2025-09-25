@@ -139,7 +139,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
         let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
         let route53_client = route53::make_client(auth).await;
         for rec in validation_records {
-            route53::create_record_set(&route53_client, &rec.name, &rec.r#type.as_str(), &rec.value).await;
+            route53::create_record_set(&route53_client, domain, &rec.name, &rec.r#type.as_str(), &rec.value).await;
         }
         acm::wait_until_validated(&client, &cert_arn).await;
     } else {
@@ -158,26 +158,27 @@ fn find_domain(domains: &HashMap<String, HashMap<String, String>>, env: &str, sa
     }
 }
 
-async fn create_page(
-    auth: &Auth,
-    name: &str,
-    page: &Page,
-    config: &HashMap<String, String>,
-    sandbox: &str,
-) {
+async fn update_bucket_policy(auth: &Auth, bucket: &str, bucket_policy: &BucketPolicy, dist_id: &str) {
+    tracing::debug!("Updating bucket policy");
+    let s3_client = s3::make_client(auth).await;
+    let existing_policy = s3::get_bucket_policy(&s3_client, bucket).await;
+    let policy = augment_policy(existing_policy, bucket_policy.clone(), dist_id);
+    s3::update_bucket_policy(&s3_client, bucket, &policy).await;
+}
+
+async fn update_dns_record(auth: &Auth, domain: &str, dist_id: &str, cname: &str) {
+    tracing::debug!("Associating domain {} with {}", domain, &dist_id);
+    let rclient = route53::make_client(auth).await;
+    route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
+}
+
+async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
     let Page {
         bucket,
-        bucket_policy,
         bucket_prefix,
-        origin_paths,
-        namespace,
-        origin_domain,
-        caller_ref,
         dist,
         dir,
         build,
-        domains,
-        default_root_object,
         config_template,
         ..
     } = page;
@@ -186,7 +187,6 @@ async fn create_page(
         println!("Rendering config: {}", &path);
         render_config_template(auth, dir, &path, config).await;
     }
-
     println!("Building page {} ({})", name, dir);
     build_page(dir, name, build, config_template);
 
@@ -194,14 +194,11 @@ async fn create_page(
         tracing::debug!("Dist directory not found, aborting");
         return;
     }
-
-    println!("Creating page {}", name);
-
     let s3_client = s3::make_client(auth).await;
 
     s3::find_or_create_bucket(&s3_client, bucket).await;
 
-    tracing::debug!(
+    println!(
         "Uploading code from {} to s3://{}/{}",
         dist,
         bucket,
@@ -209,6 +206,17 @@ async fn create_page(
     );
 
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
+}
+
+async fn create_or_update_distribution(auth: &Auth, name: &str, page: &Page, sandbox: &str, maybe_domain: Option<String>) -> (String, String) {
+    let Page {
+        fqn,
+        origin_paths,
+        origin_domain,
+        caller_ref,
+        default_root_object,
+        ..
+    } = page;
 
     let client = cloudfront::make_client(auth).await;
 
@@ -218,16 +226,16 @@ async fn create_page(
     tracing::debug!("Configuring page {} - setting cache policy ", name);
     let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
 
-    let maybe_domain = find_domain(domains, &auth.name, sandbox);
     let maybe_cert_arn = if let Some(domain) = &maybe_domain {
-        let arn = find_or_create_cert(auth, domain, "98256344").await;
+        let idempotency_token = sandbox;
+        let arn = find_or_create_cert(auth, domain, idempotency_token).await;
         Some(arn)
     } else {
         None
     };
 
     let dist_config = cloudfront::make_dist_config(
-        namespace,
+        fqn,
         default_root_object,
         caller_ref,
         origin_domain,
@@ -239,30 +247,46 @@ async fn create_page(
     );
 
     tracing::debug!("Configuring page {} - creating distribution", name);
-    let dist_id = cloudfront::create_or_update_distribution(&client, namespace, dist_config).await;
+    let dist_id = cloudfront::create_or_update_distribution(&client, fqn, dist_config).await;
 
     cloudfront::wait_until_updated(&client, &dist_id).await;
 
-    let existing_policy = s3::get_bucket_policy(&s3_client, bucket).await;
-    let policy = augment_policy(existing_policy, bucket_policy.clone(), &dist_id);
-    s3::update_bucket_policy(&s3_client, bucket, &policy).await;
+    let cname = cloudfront::get_cname(&client, &dist_id).await;
 
     tracing::debug!("Configuring page {} - invalidating cache", name);
     cloudfront::create_invalidation(&client, &dist_id).await;
-    // wait for invalidation
+    (dist_id, cname)
+}
 
-    let url = cloudfront::get_url(&client, &dist_id).await;
+async fn create_page(
+    auth: &Auth,
+    name: &str,
+    page: &Page,
+    config: &HashMap<String, String>,
+    sandbox: &str,
+) {
+    let Page {
+        bucket,
+        bucket_policy,
+        domains,
+        ..
+    } = page;
+
+
+    let maybe_domain = find_domain(domains, &auth.name, sandbox);
+
+    println!("Building page");
+    build_and_upload(auth, name, page, config).await;
+    let (dist_id, cname) = create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
 
     if let Some(domain) = &maybe_domain {
-        tracing::debug!("Associating domain {} with {}", domain, &dist_id);
-        let rclient = route53::make_client(auth).await;
-        route53::create_record_set(&rclient, domain, "CNAME", &url).await;
-        u::sleep(5000);
-
+        update_dns_record(auth, domain, &dist_id, &cname).await;
         println!("url - https://{}", domain);
     } else {
-        println!("url - https://{}", &url);
+        println!("url - https://{}", &cname);
     }
+
+    update_bucket_policy(auth, bucket, bucket_policy, &dist_id).await;
 }
 
 pub async fn create(
@@ -279,38 +303,12 @@ pub async fn create(
 async fn update_code(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
     for (name, page) in pages {
         let Page {
-            bucket,
-            bucket_prefix,
             namespace,
-            dist,
-            dir,
-            build,
-            config_template,
             ..
         } = page;
 
-        if let Some(path) = config_template {
-            println!("Rendering config: {}", &path);
-            render_config_template(auth, dir, &path, config).await;
-        }
-
-        println!("Building page {}", name);
-        build_page(dir, name, build, config_template);
-
-        if !u::path_exists(&u::pwd(), dist) {
-            println!("Dist directory not found, aborting");
-            return;
-        }
-
-        let s3_client = s3::make_client(auth).await;
-
-        s3::find_or_create_bucket(&s3_client, bucket).await;
-
-        println!(
-            "Uploading code from {} to s3://{}/{}",
-            dist, bucket, bucket_prefix
-        );
-        s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
+        println!("Building page");
+        build_and_upload(auth, name, page, config).await;
 
         let client = cloudfront::make_client(auth).await;
         println!("Configuring page {} - invalidating cache", name);
@@ -340,21 +338,26 @@ pub async fn update_config(
     }
 }
 
-pub async fn update_domains(
+async fn update_domains(
     auth: &Auth,
     pages: &HashMap<String, Page>,
-    config: &HashMap<String, String>,
-    _sandbox: &str,
+    _config: &HashMap<String, String>,
+    sandbox: &str,
 ) {
-    for (_, page) in pages {
+    for (name, page) in pages {
         let Page {
-            dir,
-            config_template,
+            domains,
             ..
         } = page;
-        if let Some(path) = config_template {
-            println!("Rendering config: {}", &path);
-            render_config_template(auth, dir, &path, config).await;
+
+        let maybe_domain = find_domain(domains, &auth.name, sandbox);
+        let (dist_id, cname) = create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
+
+        if let Some(domain) = &maybe_domain {
+            update_dns_record(auth, domain, &dist_id, &cname).await;
+            println!("url - https://{}", domain);
+        } else {
+            println!("url - https://{}", &cname);
         }
     }
 }
