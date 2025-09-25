@@ -56,7 +56,7 @@ impl BucketPolicy {
             effect: s!("Allow"),
             principal: principal,
             action: s!("s3:GetObject"),
-            resource: format!("arn:aws:s3:::{}/{}/{}/*", bucket, namespace, name),
+            resource: format!("arn:aws:s3:::{}/{}/{{{{sandbox}}}}/{}/*", bucket, namespace, name),
             condition: condition,
         };
 
@@ -178,7 +178,7 @@ fn find_domains(
 
 fn make_paths(namespace: &str, name: &str) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
-    let p = format!("/{}/{}", namespace, name);
+    let p = format!("/{}/{{{{sandbox}}}}/{}", namespace, name);
     let id = format!("{}", name);
     h.insert(id, p);
     h

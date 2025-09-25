@@ -3,4 +3,7 @@ name: pages-static
 pages:
   static:
     kind: SPA
-    dist: .
+    dir: '.'
+    bucket: 'informed-web-assets-{{env}}'
+    domains:
+      ps2: ps2.dev.informediq-infra.com
