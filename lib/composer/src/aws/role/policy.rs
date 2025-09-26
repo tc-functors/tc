@@ -270,9 +270,9 @@ fn make_appsync_actions() -> Vec<Action> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Policy {
     #[serde(rename(serialize = "Version", deserialize = "Version"))]
-    version: String,
+    pub version: String,
     #[serde(rename(serialize = "Statement", deserialize = "Statement"))]
-    statement: Vec<Action>,
+    pub statement: Vec<Action>,
 }
 
 impl Policy {

@@ -1,5 +1,5 @@
 use super::template;
-use crate::Entity;
+use crate::{aws::role, Entity};
 use kit as u;
 use kit::*;
 mod policy;
@@ -9,13 +9,61 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
+use crate::aws::role::policy::Action;
 use trust::Trust;
+use tracing::debug;
+use std::{
+    fs,
+    io::{
+        ErrorKind
+    }
+};
+
+fn default_policy() -> String {
+    ("{\"Version\": \"2012-10-17\", \"Statement\": []}").to_string()
+}
 
 fn read_policy(path: &str) -> Policy {
     tracing::debug!("Reading {}", path);
     let data = u::slurp(path);
     let policy: Policy = serde_json::from_str(&data).unwrap();
     policy
+}
+
+pub fn read_policy_file(path: &str) -> String {
+    match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == ErrorKind::NotFound => default_policy(),
+        Err(error) => {
+            debug!("Error reading file: {}", error);
+            default_policy()
+        }
+    }
+}
+
+fn get_policy_statements(path: &str) -> (Vec<Action>, String) {
+    tracing::debug!("Reading {}", path);
+    let topology_policy = read_policy_file(path);
+    let policy: Policy = serde_json::from_str(&topology_policy).unwrap();
+
+    (policy.statement, policy.version)
+}
+
+fn generate_topology_policy(entity: Entity, role_file: &str) -> Policy {
+    let base_roles_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
+    let base_role_json_file = format!("{}/{}.json", base_roles_dir, &entity.to_str());
+
+    let (mut base_statements, version) = get_policy_statements(&base_role_json_file);
+    let (topology_statements, _) = get_policy_statements(&role_file);
+
+    base_statements.extend(topology_statements);
+
+    let policy = Policy {
+        version: String::from(version),
+        statement: Vec::<Action>::from(base_statements)
+    };
+
+    policy 
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -81,7 +129,7 @@ impl Role {
                 kind: Kind::Override,
                 trust: Trust::new(),
                 arn: template::role_arn(&name),
-                policy: read_policy(&role_file),
+                policy: generate_topology_policy(entity, &role_file),
                 policy_name: s!(&name),
                 policy_arn: template::policy_arn(&name),
             }
