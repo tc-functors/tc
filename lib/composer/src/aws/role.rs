@@ -19,8 +19,15 @@ use std::{
     }
 };
 
-fn default_policy() -> String {
-    ("{\"Version\": \"2012-10-17\", \"Statement\": []}").to_string()
+static IAM_POLICY_VERSION: &str = "2012-10-17";
+
+impl Default for Policy { 
+    fn default() -> Self {
+        Policy { 
+            version: IAM_POLICY_VERSION.to_string(),
+            statement: vec![],
+        }
+    }
 }
 
 fn read_policy(path: &str) -> Policy {
@@ -33,10 +40,10 @@ fn read_policy(path: &str) -> Policy {
 pub fn read_policy_file(path: &str) -> String {
     match fs::read_to_string(path) {
         Ok(content) => content,
-        Err(error) if error.kind() == ErrorKind::NotFound => default_policy(),
+        Err(error) if error.kind() == ErrorKind::NotFound => Policy::default().to_string(), 
         Err(error) => {
             debug!("Error reading file: {}", error);
-            default_policy()
+            Policy::default().to_string()
         }
     }
 }
@@ -49,8 +56,8 @@ fn get_policy_statements(path: &str) -> (Vec<Action>, String) {
     (policy.statement, policy.version)
 }
 
-fn generate_topology_policy(entity: Entity, role_file: &str) -> Policy {
-    let base_roles_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
+fn generate_topology_policy(infra_dir: &str, entity: Entity, role_file: &str) -> Policy {
+    let base_roles_dir = format!("{}/{}/base/roles", &u::root(), infra_dir);
     let base_role_json_file = format!("{}/{}.json", base_roles_dir, &entity.to_str());
 
     let (mut base_statements, version) = get_policy_statements(&base_role_json_file);
@@ -129,7 +136,7 @@ impl Role {
                 kind: Kind::Override,
                 trust: Trust::new(),
                 arn: template::role_arn(&name),
-                policy: generate_topology_policy(entity, &role_file),
+                policy: generate_topology_policy("infrastructure/tc", entity, &role_file),
                 policy_name: s!(&name),
                 policy_arn: template::policy_arn(&name),
             }
