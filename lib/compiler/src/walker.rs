@@ -513,7 +513,7 @@ fn make(
     ts.clone()
 }
 
-pub fn walk(spec: &TopologySpec) -> TopologySpec {
+pub fn walk(spec: &TopologySpec, recursive: bool) -> TopologySpec {
     let dir = match &spec.dir {
         Some(d) => d,
         None => panic!("No dir found")
@@ -527,7 +527,11 @@ pub fn walk(spec: &TopologySpec) -> TopologySpec {
     } else if is_topology_dir(dir) {
         let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
         tracing::debug!("Infra dir: {}  {}", &spec.name, &infra_dir);
-        let children = make_nodes(dir, &spec);
+        let children = if recursive {
+            make_nodes(dir, &spec)
+        } else {
+            HashMap::new()
+        };
         tracing::debug!("Discovering functions {}", dir);
         let functions = discover_functions(dir, &infra_dir, &spec);
         make(dir, dir, &spec, functions, children)
