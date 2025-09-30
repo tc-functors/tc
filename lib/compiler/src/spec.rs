@@ -206,16 +206,27 @@ impl TopologySpec {
             tracing::debug!("Loading topology {}", topology_spec_file);
             let path = PathBuf::from(topology_spec_file);
 
-            let tn = Transformer::new(path, false);
-            let v = match tn {
-                Ok(transformer) => transformer.parse(),
-                Err(e) => panic!("{:?}", e),
-            };
-            let mut spec: TopologySpec = serde_yaml::from_value(v).unwrap();
-            let dir = u::parent_dir(topology_spec_file);
-            spec.states = state::make(&dir, &spec);
-            spec.dir = Some(dir);
-            spec
+
+            match std::env::var("TC_SPEC_SIMPLE") {
+                Ok(_) => {
+                    let data: String = u::slurp(topology_spec_file);
+                    let mut spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
+                    spec.dir = Some(u::parent_dir(topology_spec_file));
+                    spec
+                }
+                Err(_) => {
+                    let tn = Transformer::new(path, false);
+                    let v = match tn {
+                        Ok(transformer) => transformer.parse(),
+                        Err(e) => panic!("{:?}", e),
+                    };
+                    let mut spec: TopologySpec = serde_yaml::from_value(v).unwrap();
+                    let dir = u::parent_dir(topology_spec_file);
+                    spec.states = state::make(&dir, &spec);
+                    spec.dir = Some(dir);
+                    spec
+                }
+            }
         } else {
             TopologySpec::default()
         }
@@ -233,8 +244,8 @@ impl TopologySpec {
         }
     }
 
-    pub fn walk(&self) -> TopologySpec {
-        walker::walk(&self)
+    pub fn walk(&self, recursive: bool) -> TopologySpec {
+        walker::walk(&self, recursive)
     }
 
     pub fn to_yaml(&self) {
@@ -250,6 +261,7 @@ impl TopologySpec {
         let byea: Vec<u8> = bincode::serialize(self).unwrap();
         let path = format!("{}.tc", self.name);
         kit::write_bytes(&path, byea);
+        println!("Generated {} ({})", &path, &u::file_size_human(u::file_size(&path)));
     }
 
     pub fn read_bincode(path: &str) -> TopologySpec {

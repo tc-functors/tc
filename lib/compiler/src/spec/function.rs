@@ -38,7 +38,8 @@ pub struct AssetsSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FunctionSpec {
-    pub name: String,
+    #[serde(default)]
+    pub name:String,
     pub uri: Option<String>,
     pub root: Option<bool>,
     pub dir: Option<String>,

@@ -53,11 +53,7 @@ pub fn compile(dir: &str, recursive: bool) -> TopologySpec {
         panic!("No topology spec found");
     };
     let recurse = should_recurse(recursive, spec.recursive);
-    if recurse {
-        spec.walk()
-    } else {
-        spec
-    }
+    spec.walk(recurse)
 }
 
 pub fn compile_root(dir: &str, recursive: bool) -> HashMap<String, TopologySpec> {
