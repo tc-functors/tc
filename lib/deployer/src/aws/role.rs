@@ -89,3 +89,11 @@ pub async fn create_or_update(
         let _ = task.await;
     }
 }
+
+
+pub async fn create_dry_run(roles: &HashMap<String, composer::Role>) {
+
+    for (_, role) in roles {
+        println!("Creating role {}", role.name);
+    }
+}
