@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 use super::template;
-use compiler::spec::function::InlineFunctionSpec;
+use compiler::spec::function::FunctionSpec;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -73,7 +73,7 @@ fn as_bool(b: Option<bool>) -> bool {
     }
 }
 
-pub fn read(fns: HashMap<String, InlineFunctionSpec>) -> Value {
+pub fn generate(fns: HashMap<String, FunctionSpec>) -> Value {
     let mut root = String::from("");
     let mut graph: HashMap<String, String> = HashMap::new();
     for (name, f) in fns {

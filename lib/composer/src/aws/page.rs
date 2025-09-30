@@ -1,7 +1,6 @@
 use super::template;
 use compiler::spec::{
     PageSpec,
-    TopologySpec,
 };
 use configurator::Config;
 use kit as u;
@@ -197,53 +196,47 @@ fn find_dist(dir: &str, given_dist: Option<String>) -> String {
     }
 }
 
-fn make(
-    name: &str,
-    namespace: &str,
-    ps: &PageSpec,
-    infra: &Option<Infra>,
-    config: &Config,
-) -> Page {
-    let bucket = find_bucket(&ps.bucket, config, infra);
-    let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
-    let bucket_policy = BucketPolicy::new(namespace, name, &bucket);
-    let fqn = template::topology_fqn(&namespace, false);
-    let caller_ref = format!("{}-{}", &fqn, name);
-    let dir = u::maybe_string(ps.dir.clone(), &u::pwd());
-    let build = match &ps.build {
-        Some(bs) => Some(bs.join(" && ")),
-        None => None,
-    };
-    let dist = find_dist(&dir, ps.dist.clone());
+impl Page {
+    pub fn new(
+        name: &str,
+        namespace: &str,
+        infra_dir: &str,
+        ps: &PageSpec,
+        config: &Config,
+    ) -> Page {
 
-    let paths = make_paths(namespace, name);
+        let infra = Infra::new(infra_dir, namespace, &name);
 
-    Page {
-        fqn: fqn,
-        namespace: namespace.to_string(),
-        dir: dir,
-        dist: dist,
-        build: build,
-        caller_ref: caller_ref,
-        bucket_policy: bucket_policy,
-        bucket_prefix: format!("{}/{{{{sandbox}}}}/{}", namespace, name),
-        bucket: bucket,
-        origin_domain: origin_domain,
-        origin_paths: paths,
-        default_root_object: s!("index.html"),
-        domains: find_domains(&ps.domains, infra),
-        config_template: ps.config_template.clone(),
-    }
-}
+        let bucket = find_bucket(&ps.bucket, config, &infra);
+        let origin_domain = format!("{}.s3.{{{{region}}}}.amazonaws.com", &bucket);
+        let bucket_policy = BucketPolicy::new(namespace, name, &bucket);
+        let fqn = template::topology_fqn(&namespace);
+        let caller_ref = format!("{}-{}", &fqn, name);
+        let dir = u::maybe_string(ps.dir.clone(), &u::pwd());
+        let build = match &ps.build {
+            Some(bs) => Some(bs.join(" && ")),
+            None => None,
+        };
+        let dist = find_dist(&dir, ps.dist.clone());
 
-pub fn make_all(spec: &TopologySpec, infra_dir: &str, config: &Config) -> HashMap<String, Page> {
-    let mut h: HashMap<String, Page> = HashMap::new();
-    if let Some(pspec) = &spec.pages {
-        for (name, ps) in pspec {
-            let maybe_infra = Infra::new(infra_dir, &spec.name, &name);
-            let page = make(&name, &spec.name, ps, &maybe_infra, config);
-            h.insert(name.to_string(), page);
+        let paths = make_paths(namespace, name);
+
+        Page {
+            fqn: fqn,
+            namespace: namespace.to_string(),
+            dir: dir,
+            dist: dist,
+            build: build,
+            caller_ref: caller_ref,
+            bucket_policy: bucket_policy,
+            bucket_prefix: format!("{}/{{{{sandbox}}}}/{}", namespace, name),
+            bucket: bucket,
+            origin_domain: origin_domain,
+            origin_paths: paths,
+            default_root_object: s!("index.html"),
+            domains: find_domains(&ps.domains, &infra),
+            config_template: ps.config_template.clone(),
         }
     }
-    h
+
 }

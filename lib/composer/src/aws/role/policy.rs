@@ -1,4 +1,4 @@
-use crate::Entity;
+use compiler::Entity;
 use kit::*;
 use serde_derive::{
     Deserialize,

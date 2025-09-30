@@ -1,6 +1,6 @@
 use compiler::spec::function::{
-    BuildKind,
-    LangRuntime,
+    build::BuildKind,
+    runtime::LangRuntime,
 };
 
 #[derive(Debug, Clone)]

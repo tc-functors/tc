@@ -2,17 +2,13 @@ use crate::{
     Entity,
     Topology,
 };
-use kit as u;
-use std::{
-    collections::HashMap,
-    str::FromStr,
-};
 
-mod event;
-mod function;
-mod mutation;
-mod state;
-pub mod topology;
+use crate::graph;
+use layout::backends::svg::SVGWriter;
+use layout::core::utils::save_to_file;
+use layout::gv;
+use gv::parser::DotParser;
+use gv::GraphBuilder;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -22,6 +18,7 @@ pub enum Format {
     Table,
     JSON,
     YAML,
+    Dot,
     Graphql,
 }
 
@@ -35,12 +32,13 @@ impl FromStr for Format {
             "table" => Ok(Format::Table),
             "yaml" => Ok(Format::YAML),
             "graphql" | "gql" => Ok(Format::Graphql),
+            "dot" | "graphviz" => Ok(Format::Dot),
             _ => Ok(Format::JSON),
         }
     }
 }
 
-pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
+pub fn print_entity(topology: &Topology, entity: Entity, fmt: Format) {
     let Topology {
         events,
         routes,
@@ -65,10 +63,6 @@ pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
         Entity::Channel => u::pp_json(channels),
 
         Entity::Function => match fmt {
-            Format::Tree => {
-                let tree = function::build_tree(topology);
-                kit::print_tree(tree);
-            }
             Format::JSON => u::pp_json(&topology.functions),
             Format::Table => u::pp_json(&topology.functions),
             _ => todo!(),
@@ -90,28 +84,50 @@ pub fn display_entity(entity: Entity, fmt: Format, topology: &Topology) {
         },
         Entity::Page => u::pp_json(&topology.pages),
         _ => (),
-    }
 }
 
-fn display_component(entity: Entity, component: &str, _fmt: Format, topology: &Topology) {
-    match entity {
-        Entity::Function => function::display_component(topology, component),
-        Entity::State => state::display_component(topology, component),
-        Entity::Event => event::display_component(topology, component),
-        _ => (),
-    }
-}
-
-pub fn try_display(topology: &Topology, maybe_entity: &str, fmt: Format) {
-    let (entity, component) = Entity::as_entity_component(maybe_entity);
-    match component {
-        Some(c) => display_component(entity, &c, fmt, topology),
-        None => display_entity(entity, fmt, topology),
-    }
-}
-
-fn print_graphql(types: &HashMap<String, String>) {
+pub fn print_graphql(types: &HashMap<String, String>) {
     for (_, v) in types {
         println!("{}", v)
     }
+}
+
+pub fn print_dot(topology: &Topology) {
+    let dir = u::pwd();
+    let path = format!("{}/output.svg", &dir);
+
+    let dot_str = graph::build(topology);
+    let mut parser = DotParser::new(&dot_str);
+
+    let tree = parser.process();
+
+    match tree {
+        Result::Err(err) => {
+            parser.print_error();
+            println!("Error: {}", err);
+        }
+
+        Result::Ok(g) => {
+            gv::dump_ast(&g);
+
+            let mut gb = GraphBuilder::new();
+            gb.visit_graph(&g);
+            let mut vg = gb.get();
+            let mut svg = SVGWriter::new();
+            vg.do_it(false, false, false, &mut svg);
+            let content = svg.finalize();
+            let res = save_to_file(&path, &content);
+            if let Result::Err(err) = res {
+                println!("Could not write the file {}", &path);
+                println!("Error {}", err);
+                return;
+            }
+        }
+    }
+    open::that(path).unwrap();
+}
+
+pub fn print_seqd() {
+
+
 }

@@ -21,10 +21,6 @@ pub fn profile() -> String {
     format!("{{{{profile}}}}")
 }
 
-pub fn account() -> String {
-    format!("{{{{account}}}}")
-}
-
 pub fn sqs_arn(name: &str) -> String {
     format!("arn:aws:sqs:{{{{region}}}}:{{{{account}}}}:{}", name)
 }
@@ -50,12 +46,8 @@ pub fn sfn_arn(name: &str) -> String {
     )
 }
 
-pub fn topology_fqn(namespace: &str, hyphenated_names: bool) -> String {
-    if hyphenated_names {
-        format!("{}-{{{{sandbox}}}}", namespace)
-    } else {
-        format!("{}_{{{{sandbox}}}}", namespace)
-    }
+pub fn topology_fqn(namespace: &str) -> String {
+    format!("{}_{{{{sandbox}}}}", namespace)
 }
 
 pub fn _api_integration_arn(name: &str) -> String {

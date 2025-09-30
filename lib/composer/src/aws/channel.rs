@@ -69,7 +69,7 @@ pub fn make(namespace: &str, spec: HashMap<String, ChannelSpec>) -> HashMap<Stri
         let c = Channel {
             name: format!("{}-{{{{sandbox}}}}", name),
             handler: handler,
-            api_name: template::topology_fqn(namespace, false),
+            api_name: template::topology_fqn(namespace),
             targets: vec![],
         };
         h.insert(name, c);

@@ -13,27 +13,40 @@ use std::{
 pub mod channel;
 pub mod event;
 pub mod function;
-pub mod infra;
 pub mod mutation;
 pub mod page;
 pub mod queue;
 pub mod route;
+pub mod table;
+pub mod test;
+pub mod tag;
+pub mod role;
+pub mod schedule;
+pub mod template;
+pub mod state;
 
+use crate::walker;
 use crate::yaml;
 pub use channel::ChannelSpec;
 pub use event::EventSpec;
 pub use function::{
-    InlineFunctionSpec,
-    Lang,
-    LangRuntime,
-    TestSpec,
+    build::BuildKind,
+    build::BuildSpec,
+    runtime::RuntimeSpec,
+    FunctionSpec,
+    runtime::Lang,
+    runtime::LangRuntime,
 };
-pub use infra::InfraSpec;
 pub use mutation::MutationSpec;
 pub use page::PageSpec;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
+pub use table::TableSpec;
+pub use test::TestSpec;
+pub use role::RoleSpec;
+pub use schedule::ScheduleSpec;
 use yaml::Transformer;
+use configurator::Config;
 
 // topology
 
@@ -58,13 +71,6 @@ pub struct Nodes {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Functions {
     pub shared: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ScheduleSpec {
-    pub cron: String,
-    pub target: String,
-    pub payload: Value,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -103,10 +109,9 @@ impl TopologyKind {
 pub struct TopologySpec {
     #[serde(default)]
     pub name: String,
-
     pub recursive: Option<bool>,
     pub auto: Option<bool>,
-
+    pub fqn: Option<String>,
     pub dir: Option<String>,
 
     pub kind: Option<TopologyKind>,
@@ -117,20 +122,17 @@ pub struct TopologySpec {
     #[serde(default)]
     pub infra: Option<String>,
 
-    #[serde(default)]
-    pub config: Option<String>,
+    pub config: Option<Config>,
 
     pub mode: Option<String>,
-
-    #[serde(default)]
-    pub hyphenated_names: bool,
 
     #[serde(default)]
     pub pools: Option<Vec<String>>,
 
     #[serde(default = "default_nodes")]
     pub nodes: Nodes,
-    pub functions: Option<HashMap<String, InlineFunctionSpec>>,
+    pub children: Option<HashMap<String, TopologySpec>>,
+    pub functions: Option<HashMap<String, FunctionSpec>>,
     pub events: Option<HashMap<String, EventSpec>>,
     pub routes: Option<HashMap<String, RouteSpec>>,
     pub mutations: Option<MutationSpec>,
@@ -138,74 +140,110 @@ pub struct TopologySpec {
     pub channels: Option<HashMap<String, ChannelSpec>>,
     pub triggers: Option<HashMap<String, TriggerSpec>>,
     pub pages: Option<HashMap<String, PageSpec>>,
+    pub tables: Option<HashMap<String, TableSpec>>,
+    pub schedules: Option<HashMap<String, ScheduleSpec>>,
+    pub roles: Option<HashMap<String, RoleSpec>>,
     pub tests: Option<HashMap<String, TestSpec>>,
+    pub tags: Option<HashMap<String, String>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
 }
 
+impl Default for TopologySpec {
+    fn default() -> Self {
+
+        let config = Config::new();
+        TopologySpec {
+            name: s!("tc"),
+            recursive: Some(false),
+            auto: Some(false),
+            fqn: None,
+            kind: Some(TopologyKind::Function),
+            dir: Some(u::pwd()),
+            version: None,
+            children: None,
+            infra: None,
+            mode: None,
+            pools: None,
+            functions: None,
+            routes: None,
+            events: None,
+            nodes: default_nodes(),
+            states: None,
+            roles: None,
+            flow: None,
+            queues: None,
+            mutations: None,
+            channels: None,
+            schedules: None,
+            triggers: None,
+            tables: None,
+            pages: None,
+            tags: None,
+            tests: None,
+            config: Some(config)
+        }
+    }
+
+}
+
 impl TopologySpec {
+
     pub fn new(topology_spec_file: &str) -> TopologySpec {
         if u::file_exists(topology_spec_file) {
             tracing::debug!("Loading topology {}", topology_spec_file);
             let path = PathBuf::from(topology_spec_file);
 
-            match std::env::var("TC_SPEC_SIMPLE") {
-                Ok(_) => {
-                    let data: String = u::slurp(topology_spec_file);
-                    let mut spec: TopologySpec = serde_yaml::from_str(&data).unwrap();
-                    spec.dir = Some(u::parent_dir(topology_spec_file));
-                    spec
-                }
-                Err(_) => {
-                    let tn = Transformer::new(path, false);
-                    let v = match tn {
-                        Ok(transformer) => transformer.parse(),
-                        Err(e) => panic!("{:?}", e),
-                    };
-                    let mut spec: TopologySpec = serde_yaml::from_value(v).unwrap();
-                    spec.dir = Some(u::parent_dir(topology_spec_file));
-                    spec
-                }
-            }
+            let tn = Transformer::new(path, false);
+            let v = match tn {
+                Ok(transformer) => transformer.parse(),
+                Err(e) => panic!("{:?}", e),
+            };
+            let mut spec: TopologySpec = serde_yaml::from_value(v).unwrap();
+            let dir = u::parent_dir(topology_spec_file);
+            spec.states = state::make(&dir, &spec);
+            spec.dir = Some(dir);
+            spec
         } else {
-            TopologySpec {
-                name: s!("tc"),
-                recursive: Some(false),
-                auto: Some(false),
-                kind: Some(TopologyKind::Function),
-                dir: Some(u::pwd()),
-                hyphenated_names: false,
-                version: None,
-                infra: None,
-                config: None,
-                mode: None,
-                pools: None,
-                functions: None,
-                routes: None,
-                events: None,
-                nodes: default_nodes(),
-                states: None,
-                flow: None,
-                queues: None,
-                mutations: None,
-                channels: None,
-                triggers: None,
-                pages: None,
-                tests: None,
-            }
+            TopologySpec::default()
         }
     }
 
-    pub fn fmt(&self) -> &str {
-        if self.hyphenated_names {
-            "hyphenated"
-        } else {
-            "regular"
+    pub fn standalone(dir: &str, namespace: &str, functions: HashMap<String, FunctionSpec>) -> TopologySpec {
+        let config = Config::new();
+        TopologySpec {
+            name: s!(namespace),
+            dir: Some(s!(dir)),
+            kind: Some(TopologyKind::Function),
+            functions: Some(functions),
+            config: Some(config),
+            ..Default::default()
         }
     }
 
-    pub fn pprint(&self) {
+    pub fn walk(&self) -> TopologySpec {
+        walker::walk(&self)
+    }
+
+    pub fn to_yaml(&self) {
         let yaml = serde_yaml::to_string(self).unwrap();
         println!("{}", &yaml);
     }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    pub fn to_bincode(&self) {
+        let byea: Vec<u8> = bincode::serialize(self).unwrap();
+        let path = format!("{}.tc", self.name);
+        kit::write_bytes(&path, byea);
+    }
+
+    pub fn read_bincode(path: &str) -> TopologySpec {
+        let data = kit::read_bytes(path);
+        let t: TopologySpec = bincode::deserialize(&data).unwrap();
+        t
+    }
+
 }
