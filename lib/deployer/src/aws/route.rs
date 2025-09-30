@@ -258,3 +258,9 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
 }
 
 pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str) {}
+
+pub async fn create_dry_run(routes: &HashMap<String, Route>) {
+    for (_, route) in routes {
+        println!("Creating route {} {}", &route.method, &route.path);
+    }
+}

@@ -170,3 +170,7 @@ pub async fn unfreeze(auth: &Auth, fqn: &str) {
         let _ = sfn::update_tags(&client, &arn, kv).await;
     }
 }
+
+pub async fn create_dry_run(flow: &Flow) {
+    println!("Creating state: {}", flow.name);
+}

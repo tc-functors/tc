@@ -393,3 +393,9 @@ pub async fn delete(_auth: &Auth, _pages: &HashMap<String, Page>) {
         println!("Deleting page {}", &name);
     }
 }
+
+pub async fn create_dry_run(pages: &HashMap<String, Page>) {
+    for (name, _page) in pages {
+        println!("Creating page {}", &name);
+    }
+}

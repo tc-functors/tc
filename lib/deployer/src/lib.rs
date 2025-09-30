@@ -451,3 +451,36 @@ pub async fn make_config(auth: &Auth, topology: &Topology) -> HashMap<String, St
     h.insert(s!("SANDBOX"), sandbox.to_string());
     h
 }
+
+pub async fn create_dry_run(auth: &Auth, topology: &Topology) {
+    let Topology {
+        namespace,
+        version,
+        sandbox,
+        functions,
+        routes,
+        events,
+        mutations,
+        pages,
+        flow,
+        roles,
+        ..
+    } = topology;
+
+    println!(
+        "Creating functor {}@{}.{}/{}",
+        &namespace.green(),
+        &sandbox.cyan(),
+        &auth.name.blue(),
+        &version
+    );
+
+    function::create_dry_run(functions).await;
+    mutation::create_dry_run(mutations).await;
+    event::create_dry_run(events).await;
+    route::create_dry_run(routes).await;
+    page::create_dry_run(pages).await;
+    if let Some(f) = flow {
+        state::create_dry_run(&f).await;
+    }
+}

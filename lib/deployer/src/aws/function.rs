@@ -387,3 +387,9 @@ pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
     }
     rows
 }
+
+pub async fn create_dry_run(fns: &HashMap<String, Function>) {
+        for (_, function) in fns {
+            println!("Creating function: {}", &function.fqn);
+        }
+}
