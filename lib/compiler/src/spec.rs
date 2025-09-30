@@ -5,6 +5,7 @@ use serde_derive::{
     Serialize,
 };
 use serde_json::Value;
+use safe_unwrap::safe_unwrap;
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -187,6 +188,17 @@ impl Default for TopologySpec {
 
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TopologyMetadata {
+    pub name: String,
+    pub fqn: String,
+    pub dir: String,
+    pub kind: TopologyKind,
+    pub version: String,
+    pub infra: String,
+    pub config: Config,
+}
+
 impl TopologySpec {
 
     pub fn new(topology_spec_file: &str) -> TopologySpec {
@@ -244,6 +256,18 @@ impl TopologySpec {
         let data = kit::read_bytes(path);
         let t: TopologySpec = bincode::deserialize(&data).unwrap();
         t
+    }
+
+    pub fn metadata(&self) -> TopologyMetadata {
+        TopologyMetadata {
+            name: self.name.clone(),
+            dir: safe_unwrap!("No dir found", self.dir.clone()),
+            fqn: safe_unwrap!("No fqn found", self.fqn.clone()),
+            kind: safe_unwrap!("No kind found", self.kind.clone()),
+            version: safe_unwrap!("No version found", self.version.clone()),
+            infra: safe_unwrap!("No infra found", self.infra.clone()),
+            config: safe_unwrap!("No config found", self.config.clone())
+        }
     }
 
 }

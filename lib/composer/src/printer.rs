@@ -1,5 +1,5 @@
+use compiler::Entity;
 use crate::{
-    Entity,
     Topology,
 };
 
@@ -9,6 +9,10 @@ use layout::core::utils::save_to_file;
 use layout::gv;
 use gv::parser::DotParser;
 use gv::GraphBuilder;
+use std::str::FromStr;
+
+use std::collections::HashMap;
+use kit as u;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -84,6 +88,7 @@ pub fn print_entity(topology: &Topology, entity: Entity, fmt: Format) {
         },
         Entity::Page => u::pp_json(&topology.pages),
         _ => (),
+    }
 }
 
 pub fn print_graphql(types: &HashMap<String, String>) {
@@ -127,7 +132,65 @@ pub fn print_dot(topology: &Topology) {
     open::that(path).unwrap();
 }
 
-pub fn print_seqd() {
+pub fn count_str(topology: &Topology) -> String {
+    let Topology {
+        functions,
+        mutations,
+        events,
+        queues,
+        routes,
+        pages,
+        flow,
+        ..
+    } = topology;
 
+    let mut f: usize = functions.len();
+    let mut m: usize = match mutations.get("default") {
+        Some(mx) => mx.resolvers.len(),
+        _ => 0,
+    };
+    let mut e: usize = events.len();
+    let mut q: usize = queues.len();
+    let mut r: usize = routes.len();
+    let mut p: usize = pages.len();
+    let mut s: usize = if let Some(_f) = flow { 1 } else { 0 };
 
+    let nodes = &topology.nodes;
+
+    for (_, node) in nodes {
+        let Topology {
+            functions,
+            mutations,
+            events,
+            queues,
+            routes,
+            pages,
+            flow,
+            ..
+        } = node;
+        f = f + functions.len();
+        m = m + match mutations.get("default") {
+            Some(mx) => mx.resolvers.len(),
+            _ => 0,
+        };
+        e = e + events.len();
+        q = q + queues.len();
+        r = r + routes.len();
+        p = p + pages.len();
+        let snode = if let Some(_) = flow { 1 } else { 0 };
+        s = s + snode;
+    }
+
+    let msg = format!(
+        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, states: {}, pages: {}",
+        nodes.len() + 1,
+        f,
+        m,
+        e,
+        r,
+        q,
+        s,
+        p
+    );
+    msg
 }

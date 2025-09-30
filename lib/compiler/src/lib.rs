@@ -10,6 +10,7 @@ use kit as u;
 pub use spec::{
     TopologyKind,
     TopologySpec,
+    TopologyMetadata,
     function,
     function::{
         build::{BuildKind, BuildSpec},
@@ -133,6 +134,10 @@ pub fn namespace_of(dir: &str) -> String {
     spec.name
 }
 
+pub fn version_of(namespace: &str) -> String {
+    u::current_semver(&namespace)
+}
+
 pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
@@ -182,8 +187,8 @@ pub fn pprint_component(dir: &str, component: &str, format: &str) {
     }
 }
 
-pub fn count_of(spec: &TopologySpec) -> String {
-    printer::count_str(spec)
+pub fn print_specs(specs: HashMap<String, TopologySpec>, _fmt: &str) {
+    printer::print_count(specs)
 }
 
 pub fn is_root_dir(dir: &str) -> bool {
@@ -198,4 +203,9 @@ pub fn is_root_topology(spec_file: &str) -> bool {
     } else {
         spec.nodes.root.is_some()
     }
+}
+
+pub fn print_root(dir: &str) {
+    let specs = compile_root(dir, true);
+    print_specs(specs, "")
 }

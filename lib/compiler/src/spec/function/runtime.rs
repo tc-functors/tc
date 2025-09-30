@@ -490,7 +490,7 @@ pub struct RuntimeSpec {
     pub reserved_concurrency: Option<i32>,
     pub mount_fs: Option<bool>,
     pub snapstart: Option<bool>,
-    pub infra_spec: HashMap<String, InfraSpec>,
+    pub infra_spec: Option<HashMap<String, InfraSpec>>,
 
     #[serde(default = "default_layers")]
     pub layers: Vec<String>,

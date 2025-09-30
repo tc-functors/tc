@@ -22,5 +22,6 @@ lazy_static = "1.4"
 serde_with = "3.14.0"
 tracing = "0.1"
 bincode = "1.2.1"
+safe_unwrap = "0.4.1"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }

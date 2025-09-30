@@ -1,21 +1,10 @@
 use super::Topology;
 use daggy::Dag;
 use daggy::petgraph::dot::{Dot, Config};
-use serde_derive::Serialize;
-use std::fmt;
+//use serde_derive::Serialize;
+//use std::fmt;
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Node {
-    pub name: String,
-    pub kind: String,
-}
-
-impl fmt::Display for Node {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.name)
-    }
-}
-pub type Graph = Dag<String, Node>;
+//pub type Graph = Dag<String, Node>;
 
 pub fn build(_t: &Topology) -> String {
     let mut dag = Dag::<&str, &str>::new();
@@ -39,6 +28,6 @@ pub fn build(_t: &Topology) -> String {
 }
 
 
-pub fn digraph(dag: &Graph) -> String {
-    format!("{}", Dot::with_config(dag, &[Config::EdgeNoLabel]))
-}
+// pub fn digraph(dag: &Graph) -> String {
+//     format!("{}", Dot::with_config(dag, &[Config::EdgeNoLabel]))
+// }

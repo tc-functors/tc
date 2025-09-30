@@ -1,14 +1,10 @@
 use compiler::{
     Entity,
-    spec::{
-        Lang,
-        function::{
-            BuildKind,
-            LangRuntime,
-        },
-    },
+    Lang,
+    LangRuntime,
+    BuildKind
 };
-use composer::topology::Role;
+use compiler::spec::RoleSpec;
 use inquire::{
     Confirm,
     InquireError,
@@ -109,7 +105,7 @@ fn default_vars(memory: &str, timeout: &str) -> String {
     )
 }
 
-fn write_role(roles_dir: &str, name: &str, role: &Role) {
+fn write_role(roles_dir: &str, name: &str, role: &RoleSpec) {
     let role_path = format!("{}/{}.json", roles_dir, name);
     if !u::file_exists(&role_path) {
         println!("Scaffolding role {}", &role_path);
@@ -219,7 +215,7 @@ fn create(kind: &str, dir: &str, name: &str, runtime: &str, build_kind: &str) {
 fn create_infra(infra_dir: &str, name: &str, memory: &str, timeout: &str) {
     let role_dir = format!("{}/roles", infra_dir);
     let vars_dir = format!("{}/vars", infra_dir);
-    let role = Role::default(Entity::Function);
+    let role = RoleSpec::default(Entity::Function);
     u::mkdir(&role_dir);
     u::mkdir(&vars_dir);
     write_role(&role_dir, name, &role);
@@ -239,7 +235,7 @@ pub fn scaffold() {
 
     let dir = u::pwd();
     let namespace = if u::path_exists(&dir, "topology.yml") {
-        composer::topology_name(&dir)
+        compiler::namespace_of(&dir)
     } else {
         if &kind == &"Namespaced" {
             println!(

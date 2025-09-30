@@ -274,12 +274,3 @@ pub fn print_count(topologies: HashMap<String, TopologySpec>) {
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
 }
-
-pub fn count_str(spec: &TopologySpec) -> String {
-    let tc = TopologyCount::new(spec);
-    format!(
-        "nodes: {}, functions: {}, mutations: {}, events: {}, routes: {}, queues: {}, states: {}, pages: {}",
-        tc.nodes, tc.functions, tc.mutations, tc.events,
-        tc.routes, tc.queues, tc.states, tc.pages
-    )
-}

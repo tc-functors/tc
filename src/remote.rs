@@ -72,7 +72,7 @@ pub fn prompt_names(topologies: &HashMap<String, String>) -> String {
 pub async fn deploy_interactive() {
     let dir = u::root();
     u::sh("git fetch --tags", &dir);
-    let versions = composer::lookup_versions(&dir);
+    let versions = compiler::lookup_versions(&dir);
     let (namespace, version, env, sandbox) = prompt_versions(&versions);
     let url = executor::deploy(&env, &namespace, &sandbox, &version).await;
     println!("Opening {}", &url);
@@ -82,7 +82,7 @@ pub async fn deploy_interactive() {
 pub async fn release_interactive() {
     let dir = u::root();
     u::sh("git fetch --tags", &dir);
-    let versions = composer::lookup_versions(&dir);
+    let versions = compiler::lookup_versions(&dir);
     let namespace = prompt_names(&versions);
     let tag = tagger::next_tag(&namespace, "minor", "default");
     let url = executor::release(&namespace, "default", &tag.version).await;
@@ -114,7 +114,7 @@ pub async fn build() {
 pub async fn release(service: Option<String>, suffix: Option<String>, unwind: bool) {
     let dir = u::pwd();
     let suffix = u::maybe_string(suffix, "default");
-    let namespace = composer::topology_name(&dir);
+    let namespace = compiler::namespace_of(&dir);
     let service = u::maybe_string(service, &namespace);
     if unwind {
         tagger::unwind(&service);
@@ -180,11 +180,11 @@ pub async fn deploy_version(
         Some(e) => e,
         None => panic!("No env or profile specified"),
     };
-    let namespace = composer::topology_name(&dir);
+    let namespace = compiler::namespace_of(&dir);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let version = if version == "latest" {
-        composer::topology_version(&namespace)
+        compiler::version_of(&namespace)
     } else {
         version.to_string()
     };
@@ -204,7 +204,7 @@ pub async fn deploy_branch(
         Some(e) => e,
         None => panic!("No env or profile specified"),
     };
-    let namespace = composer::topology_name(&dir);
+    let namespace = compiler::namespace_of(&dir);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
     let url = executor::deploy_branch(&env, &name, &sandbox, branch).await;

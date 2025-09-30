@@ -1,4 +1,3 @@
-use compiler::Entity;
 use composer::Topology;
 use configurator::Config;
 use itertools::Itertools;
@@ -102,8 +101,9 @@ pub async fn test_interactive(auth: Auth, sandbox: Option<String>) {
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
 
-    if composer::is_topology_dir(&dir) {
-        let topology = composer::compose(&dir, false);
+    if compiler::is_topology_dir(&dir) {
+        let spec = compiler::compile(&dir, false);
+        let topology = composer::compose(&spec);
         let units = &topology.tests;
 
         let (name, maybe_unit) = interactive::prompt_test_units(units.clone());
@@ -120,8 +120,9 @@ pub async fn test(auth: Auth, sandbox: Option<String>, unit: Option<String>, rec
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
 
-    if composer::is_topology_dir(&dir) {
-        let topology = composer::compose(&dir, recursive);
+    if compiler::is_topology_dir(&dir) {
+        let spec = compiler::compile(&dir, recursive);
+        let topology = composer::compose(&spec);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
         tester::test_topology(&auth, &resolved, unit).await;
     } else {
@@ -131,27 +132,24 @@ pub async fn test(auth: Auth, sandbox: Option<String>, unit: Option<String>, rec
     }
 }
 
+pub async fn compile(dir: Option<String>, recursive: bool, format: Option<String>) {
+    let dir = u::maybe_string(dir, &u::pwd());
+
+    if compiler::is_root_dir(&dir) {
+        let fmt = u::maybe_string(format, "table");
+        let tps = compiler::compile_root(&dir, true);
+        compiler::print_specs(tps, &fmt);
+    } else {
+        let spec = compiler::compile(&dir, recursive);
+        u::pp_json(&spec);
+    }
+}
+
 pub struct ComposeOpts {
     pub versions: bool,
     pub recursive: bool,
     pub entity: Option<String>,
     pub format: Option<String>,
-}
-
-pub async fn compile(dir: Option<String>, _recursive: bool) {
-    let dir = u::maybe_string(dir, &u::pwd());
-    let spec = compiler::compile(&dir);
-    spec.pprint()
-}
-
-pub async fn compose_root(dir: Option<String>, format: Option<String>) {
-    let root_dir = match dir {
-        Some(d) => d,
-        None => u::root(),
-    };
-    let fmt = u::maybe_string(format, "table");
-    let tps = composer::compose_root(&root_dir, true);
-    composer::print_topologies(&fmt, tps);
 }
 
 pub async fn compose(opts: ComposeOpts) {
@@ -166,14 +164,23 @@ pub async fn compose(opts: ComposeOpts) {
     let fmt = u::maybe_string(format.clone(), "json");
 
     match entity {
-        Some(e) => composer::display_entity(&dir, &e, &fmt, recursive),
+        Some(e) => {
+            let spec = compiler::compile(&dir, recursive);
+            let topology = composer::compose(&spec);
+            composer::print_entity(&topology, &e, &fmt);
+        },
         None => match format {
-            Some(fmt) => composer::display_topology(&dir, &fmt, recursive),
+            Some(fmt) => {
+                let spec = compiler::compile(&dir, recursive);
+                let topology = composer::compose(&spec);
+                composer::pprint(&topology, &fmt);
+            }
             None => {
-                if composer::is_root_dir(&dir) {
-                    composer::display_root();
+                if compiler::is_root_dir(&dir) {
+                    compiler::print_root(&dir);
                 } else {
-                    let topology = composer::compose(&dir, recursive);
+                    let spec = compiler::compile(&dir, recursive);
+                    let topology = composer::compose(&spec);
                     match std::env::var("TC_DUMP_TOPOLOGY") {
                         Ok(_) => {
                             kit::write_str("topology.json", &topology.to_str());
@@ -195,17 +202,22 @@ pub async fn resolve(
     cache: bool,
     trace: bool,
 ) {
-    let topology = composer::compose(&u::pwd(), recursive);
+    let spec = compiler::compile(&u::pwd(), recursive);
+    let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
     if !trace {
-        let entity = Entity::as_entity(maybe_entity);
-        composer::pprint(&rt, entity)
+        if let Some(entity) = maybe_entity {
+            composer::print_entity(&rt, &entity, "json")
+        } else {
+            u::pp_json(&rt)
+        }
     }
 }
 
 pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: bool) {
-    let topology = composer::compose(&u::pwd(), recursive);
+    let spec = compiler::compile(&u::pwd(), recursive);
+    let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
 
     let topology = resolver::render(&auth, &sandbox, &topology).await;
@@ -238,7 +250,8 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
 }
 
 pub async fn diff_between(between: &str) {
-    let topology = composer::compose(&u::pwd(), true);
+    let spec = compiler::compile(&u::pwd(), true);
+    let topology = composer::compose(&spec);
 
     let (from, to) = between.split("...").collect_tuple().unwrap();
     let fns = resolver::function::diff(&topology.namespace, &from, &to, &topology.functions);
@@ -317,8 +330,13 @@ pub async fn create(
             let sandbox = resolver::maybe_sandbox(sandbox);
             deployer::guard::prevent_stable_updates(&sandbox);
             let dir = u::pwd();
-            println!("Composing topology {} ...", &composer::topology_name(&dir));
-            let ct = composer::compose(&dir, recursive);
+            let namespace = compiler::namespace_of(&dir);
+            println!("Compiling spec {} ...", &namespace);
+            let spec = compiler::compile(&dir, recursive);
+
+            println!("Composing topology {} ...", &namespace);
+            let ct = composer::compose(&spec);
+
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache, true).await;
             rt
@@ -378,8 +396,11 @@ pub async fn update(
 
     deployer::guard::prevent_stable_updates(&sandbox);
 
+    println!("Compiling spec...");
+    let spec = compiler::compile(&u::pwd(), recursive);
+
     println!("Composing topology...");
-    let topology = composer::compose(&u::pwd(), recursive);
+    let topology = composer::compose(&spec);
     let msg = composer::count_of(&topology);
     println!("{}", msg);
 
@@ -404,8 +425,11 @@ pub async fn delete(
     deployer::guard::prevent_stable_updates(&sandbox);
 
     let start = Instant::now();
+    println!("Compiling spec...");
+    let spec = compiler::compile(&u::pwd(), recursive);
+
     println!("Composing topology...");
-    let topology = composer::compose(&u::pwd(), recursive);
+    let topology = composer::compose(&spec);
 
     composer::count_of(&topology);
     println!("Resolving topology...");
@@ -442,7 +466,8 @@ pub async fn invoke(profile: Option<String>, opts: InvokeOptions) {
 
     let dir = u::maybe_string(dir, &u::pwd());
 
-    let topology = composer::compose(&dir, false);
+    let spec = compiler::compile(&dir, false);
+    let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
 
     if emulator {
@@ -489,7 +514,8 @@ pub async fn route(
 }
 
 pub async fn freeze(auth: Auth, sandbox: Option<String>) {
-    let topology = composer::compose(&u::pwd(), true);
+    let spec = compiler::compile(&u::pwd(), true);
+    let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topology = resolver::render(&auth, &sandbox, &topology).await;
     deployer::freeze(&auth, &topology).await;
@@ -498,7 +524,8 @@ pub async fn freeze(auth: Auth, sandbox: Option<String>) {
 }
 
 pub async fn unfreeze(auth: Auth, sandbox: Option<String>) {
-    let topology = composer::compose(&u::pwd(), true);
+    let spec = compiler::compile(&u::pwd(), true);
+    let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topology = resolver::render(&auth, &sandbox, &topology).await;
     deployer::unfreeze(&auth, &topology).await;
@@ -521,7 +548,7 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
             let role = match assume_role {
                 Some(r) => Some(r),
                 None => {
-                    let config = composer::config(&kit::pwd());
+                    let config = Config::new();
                     let p = u::maybe_string(profile.clone(), "default");
                     config.ci.roles.get(&p).cloned()
                 }
@@ -605,12 +632,12 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
 
 pub async fn changelog(between: Option<String>, search: Option<String>, verbose: bool) {
     let dir = u::pwd();
-    let namespace = composer::topology_name(&dir);
+    let namespace = compiler::namespace_of(&dir);
     match search {
         Some(s) => {
-            let is_root = composer::is_root_dir(&dir);
+            let is_root = compiler::is_root_dir(&dir);
             if is_root {
-                let namespaces = composer::root_namespaces(&dir);
+                let namespaces = compiler::root_namespaces(&dir);
                 for (_, namespace) in namespaces {
                     let version = tagger::find_version_history(&namespace, &s).await;
                     if let Some(v) = version {
@@ -638,7 +665,8 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
 }
 
 pub async fn list(auth: &Auth, sandbox: Option<String>, entity: Option<String>) {
-    let topology = composer::compose(&u::pwd(), true);
+    let spec = compiler::compile(&u::pwd(), true);
+    let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topology = resolver::render(&auth, &sandbox, &topology).await;
     deployer::try_list(auth, &topology, &entity).await;
@@ -662,7 +690,8 @@ pub async fn emulate(
     shell: bool,
 ) {
     let sandbox = u::maybe_string(sandbox, "stable");
-    let topology = composer::compose(&u::pwd(), false);
+    let spec = compiler::compile(&u::pwd(), true);
+    let topology = composer::compose(&spec);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, false, true).await;
     let entity_component = u::maybe_string(maybe_entity, "function");
     emulator::emulate(auth, &rt, &entity_component, shell).await;

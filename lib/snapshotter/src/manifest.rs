@@ -1,5 +1,4 @@
-use compiler::TopologyKind;
-use composer::Topology;
+use compiler::{TopologyKind, TopologyMetadata, TopologySpec};
 use kit as u;
 use provider::{
     Auth,
@@ -98,28 +97,31 @@ impl Manifest {
     pub async fn new(
         auth: &Auth,
         sandbox: &str,
-        topology: &Topology,
+        spec: &TopologySpec,
         gen_changelog: bool,
     ) -> Manifest {
-        let Topology { kind, dir, fqn, .. } = topology;
+
+        let TopologyMetadata { kind, dir, fqn, .. } = spec.metadata();
 
         let name = render(&fqn, sandbox);
         let tags = lookup_tags(auth, &kind, &name).await;
         let namespace = u::safe_unwrap(tags.get("namespace"));
         let version = u::safe_unwrap(tags.get("version"));
         let name = if namespace.is_empty() {
-            &topology.namespace
+            &name
         } else {
             &namespace
         };
 
         let mut nodes: Vec<Node> = vec![];
 
-        for (name, node) in &topology.nodes {
+        if let Some(ns) = &spec.children {
+        for (name, node) in ns {
+            let node = node.metadata();
             let maybe_rdir = node.dir.strip_prefix(&format!("{}/", u::root()));
             let dir = match maybe_rdir {
                 Some(d) => d,
-                None => dir,
+                None => &dir,
             };
 
             let n = Node {
@@ -129,6 +131,7 @@ impl Manifest {
             };
             nodes.push(n);
         }
+}
 
         let changelog = if gen_changelog {
             Some(find_changelog(&namespace, &version))
@@ -139,16 +142,17 @@ impl Manifest {
         let maybe_rdir = dir.strip_prefix(&format!("{}/", u::root()));
         let dir = match maybe_rdir {
             Some(d) => d,
-            None => dir,
+            None => &dir,
         };
+
 
         Manifest {
             dir: dir.to_string(),
             namespace: name.to_string(),
             sandbox: u::safe_unwrap(tags.get("sandbox")),
             kind: kind.to_str(),
-            version: version,
-            git_version: topology.version.to_string(),
+            version: version.clone(),
+            git_version: version.to_string(),
             frozen: u::safe_unwrap(tags.get("freeze")),
             tc_version: u::safe_unwrap(tags.get("tc_version")),
             changelog: changelog,
@@ -156,5 +160,6 @@ impl Manifest {
             updated_at: u::safe_unwrap(tags.get("updated_at")),
             updated_by: u::safe_unwrap(tags.get("updated_by")),
         }
+
     }
 }

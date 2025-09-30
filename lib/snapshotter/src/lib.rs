@@ -15,7 +15,7 @@ use tabled::{
 };
 
 pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
-    let topologies = composer::compose_root(dir, false);
+    let topologies = compiler::compile_root(dir, false);
     let mut builder = Builder::default();
 
     let mut cols: Vec<String> = vec![];
@@ -26,13 +26,13 @@ pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) 
 
     for (_, node) in topologies {
         let mut row: Vec<String> = vec![];
-        let name = manifest::render(&node.fqn, sandbox);
+        let name = manifest::render(&node.fqn.unwrap(), sandbox);
 
-        row.push(s!(&node.namespace));
+        row.push(s!(&node.name));
 
         for profile in &profiles {
             let auth = Auth::new(Some(s!(profile)), None).await;
-            let tags = manifest::lookup_tags(&auth, &node.kind, &name).await;
+            let tags = manifest::lookup_tags(&auth, &node.kind.clone().unwrap(), &name).await;
             let version = u::safe_unwrap(tags.get("version"));
             row.push(version);
         }
@@ -60,8 +60,8 @@ pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
     let topologies = match std::env::var("TC_SNAPSHOT_BREAKOUT") {
-        Ok(_) => composer::compose_root(dir, true),
-        Err(_) => composer::compose_root(dir, false),
+        Ok(_) => compiler::compile_root(dir, true),
+        Err(_) => compiler::compile_root(dir, false),
     };
     u::sh("git fetch --tags", dir);
     let mut rows: Vec<Manifest> = vec![];
@@ -101,7 +101,7 @@ pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
 }
 
 async fn init_auth(target_profile: &str) -> Auth {
-    let config = composer::config(&u::pwd());
+    let config = Config::new();
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = config.ci.roles.get(target_profile).cloned();

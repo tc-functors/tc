@@ -107,10 +107,10 @@ pub async fn build(
 
 pub async fn build_recursive(auth: &Auth, dir: &str, _parallel: bool) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
-
-    //TODO  parallelize
-
-    let topology = composer::compose(dir, true);
+    println!("Compiling spec...");
+    let spec = compiler::compile(dir, true);
+    println!("Composing topology...");
+    let topology = composer::compose(&spec);
 
     for (_, function) in topology.functions {
         let mut out = build(auth, &function, None, None, false).await;

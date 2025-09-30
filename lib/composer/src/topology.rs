@@ -18,6 +18,7 @@ pub use crate::aws::{
 };
 
 use safe_unwrap::safe_unwrap;
+use kit as u;
 
 use crate::aws::{
     channel,
@@ -312,4 +313,13 @@ impl Topology {
         }
         None
     }
+
+    pub fn to_str(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    pub fn pprint(&self) {
+        u::pp_json(self)
+    }
+
 }

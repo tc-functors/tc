@@ -48,6 +48,7 @@ pub struct Runtime {
     pub provisioned_concurrency: Option<i32>,
     pub reserved_concurrency: Option<i32>,
     pub enable_fs: bool,
+    pub infra_spec: HashMap<String, InfraSpec>,
     pub network: Option<Network>,
     pub fs: Option<FileSystem>,
     pub role: Role,
@@ -106,10 +107,14 @@ impl Runtime {
 
         let rspec = safe_unwrap!("No runtime defined", fspec.runtime.clone());
         let role_spec = safe_unwrap!("No role_spec defined", rspec.role_spec);
-        let infra_spec = rspec.infra_spec;
         let role = Role::new(&role_spec);
 
-        let default_infra_spec = infra_spec.get("default").unwrap();
+        let infra_spec = match rspec.infra_spec {
+            Some(is) => is,
+            None => HashMap::new()
+        };
+        let inf = infra_spec.clone();
+        let default_infra_spec = inf.get("default").unwrap();
 
         let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
 
@@ -129,6 +134,7 @@ impl Runtime {
             snapstart: u::opt_as_bool(rspec.snapstart),
             role: role,
             enable_fs: false,
+            infra_spec: infra_spec,
             fs: make_fs(&default_infra_spec, enable_fs),
             network: make_network(&default_infra_spec, enable_fs)
         }
