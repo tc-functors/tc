@@ -1796,6 +1796,7 @@ dependencies = [
  "ptree",
  "rand",
  "rustyline",
+ "safe_unwrap",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
