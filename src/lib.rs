@@ -337,15 +337,18 @@ pub async fn create(
             let dir = u::pwd();
             println!("Composing topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
+            let msg = composer::count_of(&ct);
+            println!("C: {}", msg);
+
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache, true).await;
+            let msg = composer::count_of(&rt);
+            println!("R: {}", msg);
             rt
         }
     };
 
     let auth = init(Some(topology.env.to_string()), None).await;
-    let msg = composer::count_of(&topology);
-    println!("{}", msg);
     create_topology(&auth, &topology, sync).await;
 
     match std::env::var("TC_INSPECT_BUILD") {
