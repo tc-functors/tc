@@ -132,7 +132,7 @@ pub async fn test(auth: Auth, sandbox: Option<String>, unit: Option<String>, rec
     }
 }
 
-pub async fn compile(dir: Option<String>, recursive: bool, format: Option<String>) {
+pub async fn compile(dir: Option<String>, recursive: bool, entity: Option<String>, format: Option<String>) {
     let dir = u::maybe_string(dir, &u::pwd());
 
     if compiler::is_root_dir(&dir) {
@@ -140,8 +140,14 @@ pub async fn compile(dir: Option<String>, recursive: bool, format: Option<String
         let tps = compiler::compile_root(&dir, true);
         compiler::print_specs(tps, &fmt);
     } else {
-        let spec = compiler::compile(&dir, recursive);
-        u::pp_json(&spec);
+        if let Some(c) = entity {
+            let fmt = u::maybe_string(format, "json");
+            compiler::pprint_component(&dir, &c, &fmt);
+        } else {
+            let spec = compiler::compile(&dir, recursive);
+            let fmt = u::maybe_string(format, "tree");
+            compiler::pprint(&spec, &fmt);
+        }
     }
 }
 
@@ -150,6 +156,7 @@ pub struct ComposeOpts {
     pub recursive: bool,
     pub entity: Option<String>,
     pub format: Option<String>,
+    pub diagram: Option<String>,
 }
 
 pub async fn compose(opts: ComposeOpts) {
@@ -157,6 +164,7 @@ pub async fn compose(opts: ComposeOpts) {
         recursive,
         entity,
         format,
+        diagram,
         ..
     } = opts;
 

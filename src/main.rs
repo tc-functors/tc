@@ -274,6 +274,8 @@ pub struct ComposeArgs {
     dir: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
+    #[arg(long, short = 'D')]
+    diagram: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -286,6 +288,8 @@ pub struct CompileArgs {
     dir: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
     #[arg(long, short = 'i')]
@@ -686,6 +690,7 @@ async fn compile(args: CompileArgs) {
         trace,
         repl,
         dir,
+        entity,
         format,
         ..
     } = args;
@@ -698,7 +703,7 @@ async fn compile(args: CompileArgs) {
         let contents = f.contents().unwrap();
         compiler::load(&contents)
     } else {
-        tc::compile(dir, recursive, format).await;
+        tc::compile(dir, recursive, entity, format).await;
     }
 }
 
@@ -708,6 +713,7 @@ async fn compose(args: ComposeArgs) {
         recursive,
         entity,
         format,
+        diagram,
         trace,
         ..
     } = args;
@@ -718,7 +724,8 @@ async fn compose(args: ComposeArgs) {
         versions: versions,
         recursive: recursive,
         entity: entity,
-        format: format.clone(),
+        format: format,
+        diagram: diagram
     };
     tc::compose(opts).await;
 }
