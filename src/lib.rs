@@ -198,12 +198,12 @@ pub async fn resolve(
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
-    for (name, f) in &rt.functions {
+    for (name, _f) in &rt.functions {
         println!("{}", &name);
     }
 
-    for (name, node) in &rt.nodes {
-         for (name, f) in &node.functions {
+    for (_name, node) in &rt.nodes {
+         for (name, _f) in &node.functions {
              println!("{}", &name);
          }
     }

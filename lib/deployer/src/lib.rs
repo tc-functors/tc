@@ -463,7 +463,6 @@ pub async fn create_dry_run(auth: &Auth, topology: &Topology) {
         mutations,
         pages,
         flow,
-        roles,
         ..
     } = topology;
 
