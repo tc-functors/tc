@@ -354,8 +354,8 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
         r#"git diff {}...{} --name-only . | xargs dirname | sort | uniq"#,
         &from_tag, &to_tag
     );
-    let (status, out, err) = runc(&cmd, &dir);
-    tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
+    let out = sh(&cmd, &dir);
+    //tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
 
     let lines = kit::split_lines(&out);
     lines.iter().map(|s| s.to_string()).collect()
