@@ -338,6 +338,8 @@ pub struct CreateArgs {
     trace: bool,
     #[arg(long, action, short = 'd')]
     dirty: bool,
+    #[arg(long, action, alias = "dry-run")]
+    dry_run: bool,
     #[arg(long, action)]
     sync: bool,
     #[arg(long, action)]
@@ -631,6 +633,7 @@ async fn create(args: CreateArgs) {
         topology,
         trace,
         sync,
+        dry_run,
         remote,
         ..
     } = args;
@@ -638,6 +641,8 @@ async fn create(args: CreateArgs) {
     init_tracing(trace);
     if remote {
         remote::create(profile, sandbox).await;
+    } else if dry_run {
+        tc::dry_run_create(profile, sandbox, recursive).await;
     } else {
         tc::create(profile, sandbox, notify, recursive, cache, topology, sync).await;
     }

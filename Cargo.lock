@@ -1342,7 +1342,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -1783,7 +1783,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1810,7 +1810,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "colored",
@@ -1864,7 +1864,7 @@ dependencies = [
 
 [[package]]
 name = "configurator"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "derivative",
  "kit",
@@ -2090,7 +2090,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "builder",
@@ -2253,7 +2253,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2356,7 +2356,7 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "kit",
 ]
@@ -3196,7 +3196,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "colored",
  "compiler",
@@ -3304,7 +3304,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -3659,7 +3659,7 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "colored",
  "configurator",
@@ -4147,7 +4147,7 @@ dependencies = [
 
 [[package]]
 name = "provider"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -4439,7 +4439,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "cacache",
  "compiler",
@@ -4484,7 +4484,7 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "anyhow",
  "colored",
@@ -4702,7 +4702,7 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "compiler",
  "composer",
@@ -5086,7 +5086,7 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "snapshotter"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "colored",
  "compiler",
@@ -5310,7 +5310,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "colored",
  "kit",
@@ -5324,7 +5324,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "builder",
  "clap",
@@ -5394,7 +5394,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.9.23"
+version = "0.9.24"
 dependencies = [
  "assert-json-diff",
  "colored",

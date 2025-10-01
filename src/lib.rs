@@ -214,6 +214,15 @@ pub async fn resolve(
     let topology = composer::compose(&spec);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
+    for (name, _f) in &rt.functions {
+        println!("{}", &name);
+    }
+
+    for (_name, node) in &rt.nodes {
+         for (name, _f) in &node.functions {
+             println!("{}", &name);
+         }
+    }
     if !trace {
         if let Some(entity) = maybe_entity {
             composer::print_entity(&rt, &entity, "json")
@@ -299,6 +308,15 @@ async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
     }
 }
 
+async fn create_topology_dry_run(auth: &Auth, topology: &Topology) {
+    deployer::create_dry_run(auth, topology).await;
+
+    for (_, node) in &topology.nodes {
+        deployer::create_dry_run(auth, node).await;
+    }
+}
+
+
 async fn read_topology(path: Option<String>) -> Option<Topology> {
     if u::option_exists(path.clone()) {
         let data = match path {
@@ -347,13 +365,13 @@ pub async fn create(
 
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache, true).await;
+            let msg = composer::count_of(&rt);
+            println!("R: {}", msg);
             rt
         }
     };
 
     let auth = init(Some(topology.env.to_string()), None).await;
-    let msg = composer::count_of(&topology);
-    println!("{}", msg);
     create_topology(&auth, &topology, sync).await;
 
     match std::env::var("TC_INSPECT_BUILD") {
@@ -367,6 +385,21 @@ pub async fn create(
 
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
+}
+
+pub async fn dry_run_create(profile: Option<String>, sandbox: Option<String>, recursive: bool) {
+    let auth = init(profile, None).await;
+    let sandbox = resolver::maybe_sandbox(sandbox);
+    let dir = u::pwd();
+    println!("Composing topology {} ...", &composer::topology_name(&dir));
+    let ct = composer::compose(&dir, recursive);
+    let msg = composer::count_of(&ct);
+    println!("C: {}", msg);
+    println!("Resolving topology {} ...", &ct.namespace);
+    let rt = resolver::resolve(&auth, &sandbox, &ct, false, true).await;
+    let msg = composer::count_of(&rt);
+    println!("R: {}", msg);
+    create_topology_dry_run(&auth, &rt).await;
 }
 
 async fn update_aux(auth: &Auth, sandbox: &str, topology: &Topology, maybe_entity: Option<String>) {

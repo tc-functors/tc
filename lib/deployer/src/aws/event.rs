@@ -154,3 +154,11 @@ pub async fn update(
         create_event(auth, event, tags).await;
     }
 }
+
+pub async fn create_dry_run(events: &HashMap<String, Event>) {
+    for (_, event) in events {
+        for target in &event.targets {
+            println!("Creating event {} -> {}", event.name, target.arn);
+        }
+    }
+}

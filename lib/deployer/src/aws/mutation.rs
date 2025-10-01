@@ -112,3 +112,11 @@ pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
         _ => HashMap::new(),
     }
 }
+
+pub async fn create_dry_run(mutations: &HashMap<String, Mutation>) {
+    for (_, mutation) in mutations {
+        for (name, _) in &mutation.resolvers {
+            println!("Creating mutation: {}", name)
+        }
+    }
+}
