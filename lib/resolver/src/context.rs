@@ -43,6 +43,7 @@ impl Context {
         table.insert("profile", &self.auth.name);
         table.insert("repo", repo);
         table.insert("lazy_id", &lazy_id);
+        table.insert("API_GATEWAY_URL", "{{API_GATEWAY_URL}}");
         u::stencil(s, table)
     }
 }

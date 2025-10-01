@@ -20,14 +20,42 @@ use provider::{
 };
 use std::collections::HashMap;
 
+
 // aws
+
+pub async fn lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
+    let client = aws::gateway::make_client(auth).await;
+    let api = aws::gateway::find_api_id(&client, fqn).await;
+    tracing::debug!("Looking up api-id for {}", &fqn);
+    match api {
+        Some(a) => {
+            let endpoint = auth.api_endpoint(&a, "$default");
+            let mut h: HashMap<String, String> = HashMap::new();
+            h.insert(s!("API_GATEWAY_URL"), endpoint);
+            h
+        }
+        _ => HashMap::new(),
+    }
+}
+
+fn render_config(s: &str, config: &HashMap<String, String>) -> String {
+    let mut table: HashMap<&str, &str> = HashMap::new();
+    for (k, v) in config {
+        table.insert(&k, &v);
+    }
+    u::stencil(&s, table)
+}
 
 async fn resolve_vars(
     auth: &Auth,
     environment: HashMap<String, String>,
+    fqn: &str,
+    resolve_urls: bool
 ) -> HashMap<String, String> {
     tracing::debug!("Resolving env vars");
     let client = aws::ssm::make_client(auth).await;
+
+    let config = lookup_urls(auth, fqn).await;
 
     let mut h: HashMap<String, String> = HashMap::new();
     for (k, v) in environment.iter() {
@@ -35,6 +63,11 @@ async fn resolve_vars(
             let key = kit::split_last(v, ":");
             let val = aws::ssm::get(client.clone(), &key).await.unwrap();
             h.insert(s!(k), val);
+        } if v.starts_with("{{") {
+            if resolve_urls {
+                let val = render_config(v, &config);
+                h.insert(s!(k), val);
+            }
         } else {
             h.insert(s!(k), s!(v));
         }
@@ -106,6 +139,8 @@ async fn resolve_environment(
     lang: &str,
     default_vars: &HashMap<String, String>,
     sandbox_vars: Option<HashMap<String, String>>,
+    fqn: &str,
+    resolve_urls: bool
 ) -> HashMap<String, String> {
     let Context { auth, .. } = ctx;
     let mut default_vars = default_vars.clone();
@@ -121,7 +156,7 @@ async fn resolve_environment(
         None => default_vars,
     };
 
-    resolve_vars(auth, combined.clone()).await
+    resolve_vars(auth, combined.clone(), fqn, resolve_urls).await
 }
 
 async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
@@ -260,7 +295,7 @@ fn get_infra_spec(
     default.clone()
 }
 
-async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
+async fn resolve_runtime(ctx: &Context, runtime: &Runtime, fqn: &str, resolve_urls: bool) -> Runtime {
     let Context { auth, sandbox, .. } = ctx;
 
     let Runtime {
@@ -288,6 +323,8 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime) -> Runtime {
         &runtime.lang.to_str(),
         &runtime.environment,
         environment,
+        fqn,
+        resolve_urls
     )
     .await;
     if !layers.is_empty() {
@@ -441,12 +478,15 @@ pub async fn resolve(
 
     tracing::debug!("Modified fns: {}", &fns.len());
 
+    let resolve_urls = topology.routes.len() > 0;
+
     let mut functions: HashMap<String, Function> = HashMap::new();
 
     for (name, f) in fns {
         let mut fu: Function = f.clone();
         tracing::debug!("Resolving function {}", &name);
-        fu.runtime = resolve_runtime(ctx, &f.runtime).await;
+
+        fu.runtime = resolve_runtime(ctx, &f.runtime, &root.fqn, resolve_urls).await;
         functions.insert(name.to_string(), fu.clone());
     }
     functions
@@ -462,7 +502,10 @@ pub async fn resolve_given(
     let fns = &topology.functions;
     if let Some(f) = fns.get(component) {
         let mut fu: Function = f.clone();
-        fu.runtime = resolve_runtime(ctx, &f.runtime).await;
+
+        let resolve_urls = topology.routes.len() > 0;
+
+        fu.runtime = resolve_runtime(ctx, &f.runtime, &root.fqn, resolve_urls).await;
         functions.insert(component.to_string(), fu.clone());
         functions
     } else {
