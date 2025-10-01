@@ -50,7 +50,7 @@ pub fn compile(dir: &str, recursive: bool) -> TopologySpec {
         lisp::load(data);
         TopologySpec::new(&yaml_file)
     } else {
-        panic!("No topology spec found");
+        walker::make_standalone(dir)
     };
     let recurse = should_recurse(recursive, spec.recursive);
     spec.walk(recurse)

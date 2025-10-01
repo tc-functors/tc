@@ -361,7 +361,8 @@ fn discover_functions(
     for d in dirs {
         tracing::debug!("function {}", d);
         if u::is_dir(&d) && !ignore_function(&d, dir) {
-            let mut fs = FunctionSpec::new(&d);
+            let gfs = FunctionSpec::new(&d);
+            let mut fs = gfs.augment(&spec.name, &d, infra_dir, None);
             fs.namespace = Some(s!(spec.name));
             fs.infra_dir = Some(s!(infra_dir));
             functions.insert(fs.name.clone(), fs);
@@ -461,7 +462,7 @@ fn make_relative(dir: &str) -> TopologySpec {
     make(dir, dir, &spec, fns, nodes)
 }
 
-fn make_standalone(dir: &str) -> TopologySpec {
+pub fn make_standalone(dir: &str) -> TopologySpec {
     let mut function = FunctionSpec::new(dir);
     let namespace = &function.name.clone();
 
