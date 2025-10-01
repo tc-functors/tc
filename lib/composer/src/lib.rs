@@ -40,6 +40,12 @@ pub fn pprint(topology: &Topology, fmt: &str) {
     }
 }
 
+pub fn generate_diagram(topology: &Topology, kind: &str) {
+    match kind {
+        "sequence" => diagram::render_sequence(),
+        _ => ()
+    }
+
 
 pub fn print_entity(topology: &Topology, e: &str, f: &str) {
     let format = Format::from_str(f).unwrap();

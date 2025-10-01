@@ -111,9 +111,19 @@ pub fn print_tree(ts: &TopologySpec) {
     let mut t = TreeBuilder::new(s!(ts.name.blue()));
 
     if let Some(fns) = &ts.functions {
-        t.begin_child(s!("functions"));
+        t.begin_child(s!("functions".cyan()));
         for (_, f) in fns {
             t.add_empty_child(f.name.clone());
+            t.add_empty_child(format!("fqn: {}", u::sw(f.fqn.clone())));
+            if let Some(runtime) = &f.runtime {
+                if let Some(rs) = &runtime.role_spec {
+                    t.add_empty_child(format!("role: {}", rs.name.clone()));
+                }
+                t.add_empty_child(format!("uri: {}", u::sw(runtime.uri.clone())));
+            }
+            if let Some(build) = &f.build {
+                t.add_empty_child(format!("build: {}", build.kind.to_str()));
+            }
         }
         t.end_child();
     }
@@ -122,6 +132,14 @@ pub fn print_tree(ts: &TopologySpec) {
         t.begin_child(s!("events"));
         for (name, _e) in evs {
             t.add_empty_child(name.clone());
+        }
+        t.end_child();
+    }
+
+    if let Some(rs) = &ts.routes {
+        t.begin_child(s!("routes"));
+        for (_name, r) in rs {
+            t.add_empty_child(u::sw(r.path.clone()));
         }
         t.end_child();
     }
