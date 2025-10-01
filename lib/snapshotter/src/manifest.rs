@@ -19,7 +19,7 @@ use tabled::Tabled;
 
 async fn get_graphql_api_arn(auth: &Auth, name: &str) -> Option<String> {
     let client = appsync::make_client(auth).await;
-    appsync::find_api(&client, name).await
+    appsync::find_api_arn(&client, name).await
 }
 
 pub async fn lookup_tags(auth: &Auth, kind: &TopologyKind, name: &str) -> HashMap<String, String> {
