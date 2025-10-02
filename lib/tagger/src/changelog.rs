@@ -51,7 +51,7 @@ fn parse_version(version: &str) -> (String, String) {
     }
 }
 
-fn commits(from_tag: &str, to_tag: &str) -> String {
+pub fn commits(from_tag: &str, to_tag: &str) -> String {
     let from_sha = git::tag_revision(from_tag);
     let to_sha = git::tag_revision(to_tag);
     git::changelog(&from_sha, &to_sha)
