@@ -274,19 +274,26 @@ pub async fn diff_between(between: &str) {
     let spec = compiler::compile(&u::pwd(), true);
     let topology = composer::compose(&spec);
 
-    let (from, to) = between.split("...").collect_tuple().unwrap();
-    let fns = resolver::function::diff(&topology.namespace, &from, &to, &topology.functions);
+    let (from, to) = between.split("..").collect_tuple().unwrap();
+    let fns = differ::diff(&topology.namespace, &from, &to, &topology.functions);
 
     println!("Modified functions:");
     for (name, _) in fns {
-        println!("{}", name);
+        println!("  - {}", name);
     }
     for (_, node) in &topology.nodes {
-        let fns = resolver::function::diff(&topology.namespace, &from, &to, &node.functions);
+        let fns = differ::diff(&topology.namespace, &from, &to, &node.functions);
         for (name, _) in fns {
-            println!("{}/{}", node.namespace, name);
+            println!(" - {}/{}", node.namespace, name);
         }
     }
+
+    println!("");
+    println!("Changelog:");
+    let f = format!("{}-{}", &topology.namespace, &from);
+    let t = format!("{}-{}", &topology.namespace, &to);
+    let changes = tagger::commits(&f, &t);
+    println!("{}", changes);
 }
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {

@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.25"
+version = "0.9.26"
 edition = "2024"
 rust-version = "1.90"
 
 [workspace.package]
-version = "0.9.25"
+version = "0.9.26"
 
 [dependencies]
 serde = "1.0"
@@ -28,6 +28,7 @@ open = "5.0.0"
 compiler =  { path = "lib/compiler" }
 configurator =  { path = "lib/configurator" }
 composer =  { path = "lib/composer" }
+differ =  { path = "lib/differ" }
 resolver =  { path = "lib/resolver" }
 builder =  { path = "lib/builder" }
 deployer =  { path = "lib/deployer" }
@@ -69,6 +70,7 @@ members = [
    "lib/executor",
    "lib/provider",
    "lib/configurator",
+   "lib/differ",
 ]
 
 [profile.release]
