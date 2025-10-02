@@ -1,5 +1,5 @@
 [package]
-name = "resolver"
+name = "differ"
 version.workspace = true
 edition = "2024"
 
@@ -15,6 +15,3 @@ kit = { path = "../kit" }
 provider = { path = "../provider" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }
-differ = { path = "../differ" }
-configurator = { path = "../configurator" }
-snapshotter = { path = "../snapshotter" }
