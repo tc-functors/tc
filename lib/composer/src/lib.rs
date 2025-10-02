@@ -1,6 +1,7 @@
 mod aws;
 mod graph;
 mod printer;
+mod diagram;
 
 pub mod topology;
 use compiler::{Entity, TopologySpec};
@@ -42,9 +43,10 @@ pub fn pprint(topology: &Topology, fmt: &str) {
 
 pub fn generate_diagram(topology: &Topology, kind: &str) {
     match kind {
-        "sequence" => diagram::render_sequence(),
+        "sequence" => diagram::render_sequence(topology),
         _ => ()
     }
+}
 
 
 pub fn print_entity(topology: &Topology, e: &str, f: &str) {

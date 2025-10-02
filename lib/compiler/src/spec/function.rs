@@ -235,7 +235,11 @@ impl FunctionSpec {
         }
 
         if let Some(r) = &self.runtime {
-            let runtime = r.augment(namespace, &fqn, self, dir, t_infra_dir, infra_dir);
+            let runtime = r.augment(namespace, &fqn, self, dir, t_infra_dir, infra_dir.clone());
+            fs.runtime = Some(runtime);
+        } {
+            let rs = RuntimeSpec::new(dir);
+            let runtime = rs.augment(namespace, &fqn, self, dir, t_infra_dir, infra_dir);
             fs.runtime = Some(runtime);
         }
         fs.fqn = Some(fqn);

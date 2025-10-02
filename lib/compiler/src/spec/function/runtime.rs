@@ -500,6 +500,34 @@ pub struct RuntimeSpec {
 
 impl RuntimeSpec {
 
+    pub fn new(dir: &str) -> Self {
+        RuntimeSpec {
+            lang: infer_lang(dir),
+            handler: s!("handler.handler"),
+            package_type: Some(s!("zip")),
+            provider: None,
+            uri: None,
+            environment: None,
+            memory_size: None,
+            cpu: None,
+            timeout: None,
+            vars_file: None,
+            role_file: None,
+            role_name: None,
+            role_kind: None,
+            role: None,
+            role_spec: None,
+            provisioned_concurrency: None,
+            reserved_concurrency: None,
+            mount_fs: None,
+            snapstart: None,
+            infra_spec: None,
+            extensions: vec![],
+            layers: vec![]
+
+        }
+    }
+
     pub fn augment(&self,
                    namespace: &str,
                    fqn: &str,
@@ -560,6 +588,7 @@ impl RuntimeSpec {
         rs.memory_size = *memory_size;
         rs.timeout = *timeout;
         rs.role_spec = Some(role_spec);
+        rs.infra_spec = Some(infra_spec);
         rs
     }
 }

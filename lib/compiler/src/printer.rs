@@ -107,23 +107,40 @@ pub fn print_versions(versions: HashMap<String, String>, format: &str) {
     }
 }
 
+fn as_uri(s: Option<String>) -> String {
+    match s {
+        Some(p) => {
+            if p.starts_with("/") {
+                u::gdir(&p)
+            } else {
+                p
+            }
+        },
+        None => s!("")
+    }
+}
+
 pub fn print_tree(ts: &TopologySpec) {
     let mut t = TreeBuilder::new(s!(ts.name.blue()));
 
     if let Some(fns) = &ts.functions {
         t.begin_child(s!("functions".cyan()));
-        for (_, f) in fns {
+        for (name, f) in fns {
+            t.begin_child(s!(name.green()));
             t.add_empty_child(f.name.clone());
             t.add_empty_child(format!("fqn: {}", u::sw(f.fqn.clone())));
             if let Some(runtime) = &f.runtime {
                 if let Some(rs) = &runtime.role_spec {
                     t.add_empty_child(format!("role: {}", rs.name.clone()));
                 }
-                t.add_empty_child(format!("uri: {}", u::sw(runtime.uri.clone())));
+                t.add_empty_child(format!("uri: {}",
+                                          as_uri(runtime.uri.clone())));
+
             }
             if let Some(build) = &f.build {
                 t.add_empty_child(format!("build: {}", build.kind.to_str()));
             }
+            t.end_child();
         }
         t.end_child();
     }

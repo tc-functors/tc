@@ -232,14 +232,16 @@ fn intern_functions(
                 Some(_) => &spec.name,
                 None => root_namespace,
             };
-            let mut fs = FunctionSpec::new(&abs_dir);
+            let gfs = FunctionSpec::new(&abs_dir);
+            let mut fs = gfs.augment(&spec.name, &abs_dir, infra_dir, None);
             fs.infra_dir = Some(s!(infra_dir));
             fns.insert(s!(name), fs);
 
         } else {
             let dir = format!("{}/{}", root_dir, name);
             let namespace = &spec.name;
-            let fs = f.intern(namespace, &dir, infra_dir, &name);
+            let gfs = f.intern(namespace, &dir, infra_dir, &name);
+            let fs = gfs.augment(&spec.name, &dir, infra_dir, None);
             fns.insert(s!(name), fs);
         }
     }
@@ -309,7 +311,8 @@ fn ignore_function(dir: &str, root_dir: &str) -> bool {
 fn current_function(dir: &str, infra_dir: &str, _namespace: &str) -> HashMap<String, FunctionSpec> {
     let mut functions: HashMap<String, FunctionSpec> = HashMap::new();
     if u::is_dir(dir) && !dir.starts_with(".") {
-        let mut fs = FunctionSpec::new(dir);
+        let gfs = FunctionSpec::new(dir);
+        let mut fs = gfs.augment(&gfs.name, dir, infra_dir, None);
         fs.infra_dir = Some(s!(infra_dir));
         functions.insert(s!(fs.name), fs);
     }
@@ -451,25 +454,26 @@ fn make_relative(dir: &str) -> TopologySpec {
     let spec = TopologySpec::new(&f);
     let namespace = &spec.name;
     let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
-    let mut function = FunctionSpec::new(dir);
-    function.infra_dir = Some(infra_dir);
-    function.namespace = Some(s!(namespace));
+    let gfs = FunctionSpec::new(dir);
+    let mut fs = gfs.augment(&spec.name, dir, &infra_dir, None);
+    fs.infra_dir = Some(infra_dir);
+    fs.namespace = Some(s!(namespace));
 
     let mut fns: HashMap<String, FunctionSpec> = HashMap::new();
-    fns.insert(function.name.to_string(), function);
+    fns.insert(fs.name.to_string(), fs);
 
     let nodes = HashMap::new();
     make(dir, dir, &spec, fns, nodes)
 }
 
-pub fn make_standalone(dir: &str) -> TopologySpec {
-    let mut function = FunctionSpec::new(dir);
-    let namespace = &function.name.clone();
-
-    function.infra_dir = Some(s!(dir));
+pub fn make_standalone(dir: &str, infra_dir: &str) -> TopologySpec {
+    let gfs = FunctionSpec::new(dir);
+    let namespace = &gfs.name.clone();
+    let mut fs = gfs.augment(&namespace, dir, infra_dir, None);
+    fs.infra_dir = Some(s!(dir));
 
     let mut fns: HashMap<String, FunctionSpec> = HashMap::new();
-    fns.insert(function.name.to_string(), function);
+    fns.insert(fs.name.to_string(), fs);
 
     TopologySpec::standalone(dir, &namespace, fns)
 }
@@ -539,7 +543,8 @@ pub fn walk(spec: &TopologySpec, recursive: bool) -> TopologySpec {
     } else if is_relative_topology_dir(dir) {
             make_relative(dir)
     } else if is_standalone_function_dir(dir) {
-        make_standalone(dir)
+        let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
+        make_standalone(dir, &infra_dir)
     } else {
         println!("{}", dir);
         std::panic::set_hook(Box::new(|_| {

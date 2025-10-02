@@ -177,14 +177,18 @@ pub async fn compose(opts: ComposeOpts) {
             let topology = composer::compose(&spec);
             composer::print_entity(&topology, &e, &fmt);
         },
-        None => match format {
-            Some(fmt) => {
+        None => {
+            if let Some(fmt) = format {
                 let spec = compiler::compile(&dir, recursive);
                 let topology = composer::compose(&spec);
                 composer::pprint(&topology, &fmt);
-            }
-            None => {
-                if compiler::is_root_dir(&dir) {
+            } else  if let Some(dia) = diagram {
+                let spec = compiler::compile(&dir, recursive);
+                let topology = composer::compose(&spec);
+                composer::generate_diagram(&topology, &dia);
+            } else {
+
+if compiler::is_root_dir(&dir) {
                     compiler::print_root(&dir);
                 } else {
                     let spec = compiler::compile(&dir, recursive);
@@ -198,7 +202,7 @@ pub async fn compose(opts: ComposeOpts) {
                     }
                 }
             }
-        },
+        }
     }
 }
 
@@ -391,8 +395,11 @@ pub async fn dry_run_create(profile: Option<String>, sandbox: Option<String>, re
     let auth = init(profile, None).await;
     let sandbox = resolver::maybe_sandbox(sandbox);
     let dir = u::pwd();
-    println!("Composing topology {} ...", &composer::topology_name(&dir));
-    let ct = composer::compose(&dir, recursive);
+    println!("Compiling spec {} ...", &compiler::namespace_of(&dir));
+    let spec = compiler::compile(&dir, recursive);
+
+    println!("Composing topology ... ");
+    let ct = composer::compose(&spec);
     let msg = composer::count_of(&ct);
     println!("C: {}", msg);
     println!("Resolving topology {} ...", &ct.namespace);
