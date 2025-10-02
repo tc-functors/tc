@@ -265,7 +265,6 @@ pub async fn diff_between(between: &str) {
 
     println!("");
     println!("Changelog:");
-    let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
     let f = format!("{}-{}", &topology.namespace, &from);
     let t = format!("{}-{}", &topology.namespace, &to);
     let changes = tagger::commits(&f, &t);
