@@ -1,16 +1,19 @@
 name: todo
 
-mutations:
-  authorizer: "{{namespace}}_authorizer_{{sandbox}}"
-  types:
-    Task:
-      id: String!
-      title: String
-      status: String
+routes:
+  /todo:
+    method: POST
+    function: adder
+  /todos:
+    method: GET
+    function: fetcher
 
-  resolvers:
-    AddTask:
-      function: handler
-      input: Task
-      output: Task
-      subscribe: true
+pages:
+  app:
+    dir: webapp
+    dist: .
+
+tables:
+  todos:
+    hash_key: "Name"
+    range_key: "Task"

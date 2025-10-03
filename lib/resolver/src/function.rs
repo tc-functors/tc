@@ -1,7 +1,7 @@
 use super::Context;
 use compiler::{
     TopologyKind,
-    spec::InfraSpec,
+    InfraSpec,
 };
 use composer::{
     Function,

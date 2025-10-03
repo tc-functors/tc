@@ -1,4 +1,3 @@
-use super::version;
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
@@ -45,7 +44,7 @@ pub fn make(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
         .unwrap_or(env!("CARGO_PKG_VERSION"))
         .to_string();
 
-    let version = version::current_semver(namespace);
+    let version = u::current_semver(namespace);
     let mut h: HashMap<String, String> = HashMap::new();
     h.insert(s!("namespace"), s!(namespace));
     h.insert(s!("sandbox"), format!("{{{{sandbox}}}}"));

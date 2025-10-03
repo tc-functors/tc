@@ -268,14 +268,14 @@ pub struct ComposeArgs {
     versions: bool,
     #[arg(long, action, short = 'r')]
     recursive: bool,
-    #[arg(long, action)]
-    root: bool,
     #[arg(long, short = 'c')]
     entity: Option<String>,
     #[arg(long, short = 'd')]
     dir: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
+    #[arg(long, short = 'D')]
+    diagram: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -284,13 +284,15 @@ pub struct ComposeArgs {
 pub struct CompileArgs {
     #[arg(long, action, short = 'r')]
     recursive: bool,
-    #[arg(long, action)]
-    root: bool,
     #[arg(long, short = 'd')]
     dir: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
     #[arg(long, short = 'f')]
+    format: Option<String>,
+    #[arg(long, short = 'i')]
     file: Option<FileOrStdin>,
     #[arg(long, action, short = 'R')]
     repl: bool,
@@ -693,6 +695,8 @@ async fn compile(args: CompileArgs) {
         trace,
         repl,
         dir,
+        entity,
+        format,
         ..
     } = args;
 
@@ -704,7 +708,7 @@ async fn compile(args: CompileArgs) {
         let contents = f.contents().unwrap();
         compiler::load(&contents)
     } else {
-        tc::compile(dir, recursive).await;
+        tc::compile(dir, recursive, entity, format).await;
     }
 }
 
@@ -714,9 +718,8 @@ async fn compose(args: ComposeArgs) {
         recursive,
         entity,
         format,
+        diagram,
         trace,
-        root,
-        dir,
         ..
     } = args;
 
@@ -726,13 +729,10 @@ async fn compose(args: ComposeArgs) {
         versions: versions,
         recursive: recursive,
         entity: entity,
-        format: format.clone(),
+        format: format,
+        diagram: diagram
     };
-    if root {
-        tc::compose_root(dir, format).await;
-    } else {
-        tc::compose(opts).await;
-    }
+    tc::compose(opts).await;
 }
 
 async fn resolve(args: ResolveArgs) {

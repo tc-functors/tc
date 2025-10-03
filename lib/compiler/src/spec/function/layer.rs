@@ -1,7 +1,6 @@
-use super::Function;
-use compiler::spec::function::{
+use super::{
     FunctionSpec,
-    LangRuntime,
+    runtime::LangRuntime,
 };
 use kit as u;
 use kit::*;
@@ -10,8 +9,8 @@ use std::collections::HashMap;
 use walkdir::WalkDir;
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
-    let function = Function::new(dir, dir, "", "");
-    function.runtime.lang
+    let function = FunctionSpec::new(dir);
+    function.runtime.unwrap().lang
 }
 
 pub fn layerable(dir: &str) -> bool {
@@ -107,7 +106,7 @@ fn external_layers(dir: &str) -> Vec<Layer> {
 }
 
 fn function_layer(dir: &str) -> Layer {
-    let fspec = Function::new(dir, dir, "", "");
+    let fspec = FunctionSpec::new(dir);
     let name = match fspec.layer_name {
         Some(fln) => fln,
         None => u::basedir(dir).to_string(),
@@ -118,7 +117,7 @@ fn function_layer(dir: &str) -> Layer {
         source: s!("function"),
         name: name,
         path: dir.to_string(),
-        runtime: fspec.runtime.lang,
+        runtime: fspec.runtime.unwrap().lang,
         merge: false,
         dirty: is_dirty(dir),
     }
@@ -158,7 +157,7 @@ pub fn discover() -> Vec<Layer> {
     layers
 }
 
-pub fn find(functions: HashMap<String, Function>) -> Vec<Layer> {
+pub fn find(functions: HashMap<String, FunctionSpec>) -> Vec<Layer> {
     let mut layers: Vec<Layer> = vec![];
     for (path, f) in functions {
         match f.layer_name {
@@ -169,7 +168,7 @@ pub fn find(functions: HashMap<String, Function>) -> Vec<Layer> {
                         source: s!("topology"),
                         name: name,
                         path: path.to_owned(),
-                        runtime: f.runtime.lang.to_owned(),
+                        runtime: f.runtime.unwrap().lang.to_owned(),
                         merge: false,
                         dirty: is_dirty(&path),
                     };

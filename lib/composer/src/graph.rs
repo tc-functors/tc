@@ -1,31 +1,33 @@
 use super::Topology;
 use daggy::Dag;
-use serde_derive::Serialize;
-use std::fmt;
+use daggy::petgraph::dot::{Dot, Config};
+//use serde_derive::Serialize;
+//use std::fmt;
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Node {
-    pub name: String,
-    pub kind: String,
+//pub type Graph = Dag<String, Node>;
+
+pub fn build(_t: &Topology) -> String {
+    let mut dag = Dag::<&str, &str>::new();
+    let a = dag.add_node("a");
+
+    let (_, b) = dag.add_child(a, "a->b", "b");
+    let (_, c) = dag.add_child(a, "a->c", "c");
+    let (_, d) = dag.add_child(a, "a->d", "d");
+    let (_, e) = dag.add_child(a, "a->e", "e");
+
+    dag.add_edge(b, d, "b->d").unwrap();
+
+    dag.add_edge(c, d, "c->d").unwrap();
+    dag.add_edge(c, e, "c->e").unwrap();
+
+    dag.add_edge(d, e, "d->e").unwrap();
+
+    dag.transitive_reduce(vec![a]);
+
+    format!("{}", Dot::with_config(&dag, &[Config::EdgeNoLabel]))
 }
 
-impl fmt::Display for Node {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.name)
-    }
-}
 
-pub type Graph = Dag<String, Node>;
-
-pub fn generate(_t: &Topology) -> Graph {
-    // let Topology {
-    //     namespace, .. } = t;
-
-    let dag = Graph::new();
-
-    //let root = make_node(&namespace, "sfn");
-
-    //let n0 = dag.add_node("root".to_string());
-
-    dag
-}
+// pub fn digraph(dag: &Graph) -> String {
+//     format!("{}", Dot::with_config(dag, &[Config::EdgeNoLabel]))
+// }

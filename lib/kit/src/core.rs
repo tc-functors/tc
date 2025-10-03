@@ -201,3 +201,7 @@ pub fn opt_as_bool(b: Option<bool>) -> bool {
         None => false,
     }
 }
+
+pub fn sw(m: Option<String>) -> String {
+    m.unwrap_or_else(|| "".to_string())
+}

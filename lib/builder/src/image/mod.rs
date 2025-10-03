@@ -8,7 +8,7 @@ use colored::Colorize;
 use compiler::{
     LangRuntime,
     spec::function::{
-        BuildKind,
+        build::BuildKind,
         Lang,
     },
 };

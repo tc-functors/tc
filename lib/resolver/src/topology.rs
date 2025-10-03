@@ -143,7 +143,9 @@ pub async fn resolve_entity_component(
             partial_t.events = event::resolve(&ctx, &partial_t).await;
         }
         Entity::Function => {
-            partial_t.functions = function::resolve_given(&ctx, &rt, &partial_t, component).await;
+            if component != "roles" {
+                partial_t.functions = function::resolve_given(&ctx, &rt, &partial_t, component).await;
+            }
         }
         Entity::Trigger => {
             partial_t.pools = pool::resolve(&ctx, &partial_t).await;

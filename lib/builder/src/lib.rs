@@ -9,7 +9,7 @@ mod types;
 
 use crate::types::BuildOutput;
 use colored::Colorize;
-use compiler::spec::function::BuildKind;
+use compiler::spec::function::build::BuildKind;
 use composer::Function;
 use configurator::Config;
 use kit as u;
@@ -107,10 +107,10 @@ pub async fn build(
 
 pub async fn build_recursive(auth: &Auth, dir: &str, _parallel: bool) -> Vec<BuildOutput> {
     let mut outs: Vec<BuildOutput> = vec![];
-
-    //TODO  parallelize
-
-    let topology = composer::compose(dir, true);
+    println!("Compiling spec...");
+    let spec = compiler::compile(dir, true);
+    println!("Composing topology...");
+    let topology = composer::compose(&spec);
 
     for (_, function) in topology.functions {
         let mut out = build(auth, &function, None, None, false).await;
@@ -168,7 +168,7 @@ pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
 }
 
 pub async fn promote(auth: &Auth, name: &str, dir: &str, version: Option<String>) {
-    let lang = &composer::guess_runtime(dir);
+    let lang = &compiler::guess_runtime(dir);
     layer::promote(auth, name, &lang.to_str(), version).await;
 }
 

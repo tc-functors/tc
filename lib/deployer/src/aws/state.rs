@@ -13,21 +13,20 @@ use std::collections::HashMap;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: &Flow) {
     let Flow {
-        name, arn, role, ..
+        name, arn, role_arn, ..
     } = flow;
     let definition = serde_json::to_string(&flow.definition).unwrap();
     let mode = sfn::make_mode(&flow.mode);
 
     if !definition.is_empty() {
         let client = sfn::make_client(auth).await;
-        let role_arn = role.arn.clone();
 
         let sf = StateMachine {
             name: name.clone(),
             client: client,
             mode: mode,
             definition: definition,
-            role_arn: role_arn,
+            role_arn: role_arn.clone(),
             tags: tags.clone(),
         };
 
@@ -42,15 +41,14 @@ pub async fn create(auth: &Auth, flow: &Flow, tags: &HashMap<String, String>) {
 
     if !definition.is_empty() {
         let client = sfn::make_client(auth).await;
-        let role = flow.role.clone();
-        let role_arn = role.arn;
+        let role_arn = &flow.role_arn;
 
         let sf = StateMachine {
             name: name.clone(),
             client: client,
             mode: mode,
             definition: definition,
-            role_arn: role_arn,
+            role_arn: role_arn.to_string(),
             tags: tags.clone(),
         };
 
@@ -67,7 +65,7 @@ pub async fn delete(auth: &Auth, flow: &Flow) {
         definition,
         mode,
         arn,
-        role,
+        role_arn,
         ..
     } = flow;
 
@@ -84,7 +82,7 @@ pub async fn delete(auth: &Auth, flow: &Flow) {
             client: client,
             mode: mode,
             definition: definition,
-            role_arn: role.arn.to_string(),
+            role_arn: role_arn.to_string(),
             tags: HashMap::new(),
         };
 

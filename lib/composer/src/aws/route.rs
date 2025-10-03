@@ -110,7 +110,7 @@ impl Route {
             Some(f) => s!(f),
             None => match &rspec.function {
                 Some(x) => find_function(&x, fns),
-                None => template::topology_fqn(&spec.name, spec.hyphenated_names),
+                None => template::topology_fqn(&spec.name),
             },
         };
 

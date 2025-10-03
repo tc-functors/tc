@@ -1,0 +1,10 @@
+name: chat
+
+channels:
+  my-room:
+    on_publish:
+      handler: default
+
+pages:
+  my-chat-app:
+    dist: .

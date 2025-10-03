@@ -1,7 +1,0 @@
-name: example-ping
-
-routes:
-  ping:
-    path: /api/ping
-    method: GET
-    function: ponger

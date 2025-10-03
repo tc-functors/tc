@@ -4,7 +4,7 @@ mod ruby;
 use crate::types::BuildStatus;
 use compiler::spec::{
     Lang,
-    LangRuntime,
+    function::runtime::LangRuntime,
 };
 
 pub fn build(dir: &str, langr: &LangRuntime) -> BuildStatus {
