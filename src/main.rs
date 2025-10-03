@@ -767,7 +767,7 @@ async fn diff(args: DiffArgs) {
     init_tracing(trace);
 
     if let Some(b) = between {
-        tc::diff_between(&b).await;
+        tc::diff_between(&b, sandbox).await;
     } else {
         let env = tc::init(profile, role).await;
         tc::diff(env, sandbox, recursive, trace).await;

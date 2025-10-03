@@ -360,7 +360,7 @@ pub async fn find_modified(
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
     if let Some(target_version) = maybe_version {
-        differ::diff(&namespace, &target_version, &version, &topology.functions)
+        differ::diff_fns(&namespace, &target_version, &version, &topology.functions)
     } else {
         topology.functions.clone()
     }

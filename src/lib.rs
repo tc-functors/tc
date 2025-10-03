@@ -246,29 +246,29 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
     }
 }
 
-pub async fn diff_between(between: &str) {
+
+pub async fn diff_between(between: &str, sandbox: Option<String>) {
     let topology = composer::compose(&u::pwd(), true);
-
     let (from, to) = between.split("..").collect_tuple().unwrap();
-    let fns = differ::diff(&topology.namespace, &from, &to, &topology.functions);
 
-    println!("Modified functions:");
-    for (name, _) in fns {
-        println!("  - {}", name);
-    }
-    for (_, node) in &topology.nodes {
-        let fns = differ::diff(&topology.namespace, &from, &to, &node.functions);
-        for (name, _) in fns {
-            println!(" - {}/{}", node.namespace, name);
+    if let Some(sbox) = sandbox {
+        let from_auth = init(Some(from.to_string()), None).await;
+        let resolved = resolver::render(&from_auth, &sbox, &topology).await;
+        let fqn = &resolved.fqn;
+
+        let maybe_from_ver = snapshotter::find_version(&from_auth, fqn, &topology.kind).await;
+        let to_auth = init(Some(to.to_string()), None).await;
+        let maybe_to_ver = snapshotter::find_version(&to_auth, fqn, &topology.kind).await;
+        if let Some(from_ver) = maybe_from_ver && let Some(to_ver) = maybe_to_ver {
+            println!("Finding diff between {}..{}", &to_ver, &from_ver);
+            differ::diff(&topology, &to_ver, &from_ver);
+        } else {
+            println!("No versions found");
         }
-    }
 
-    println!("");
-    println!("Changelog:");
-    let f = format!("{}-{}", &topology.namespace, &from);
-    let t = format!("{}-{}", &topology.namespace, &to);
-    let changes = tagger::commits(&f, &t);
-    println!("{}", changes);
+    } else {
+        differ::diff(&topology, &from, &to);
+    }
 }
 
 async fn run_create_hook(auth: &Auth, root: &Topology) {
