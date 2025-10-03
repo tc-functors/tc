@@ -198,15 +198,6 @@ pub async fn resolve(
     let topology = composer::compose(&u::pwd(), recursive);
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
-    for (name, _f) in &rt.functions {
-        println!("{}", &name);
-    }
-
-    for (_name, node) in &rt.nodes {
-         for (name, _f) in &node.functions {
-             println!("{}", &name);
-         }
-    }
     if !trace {
         let entity = Entity::as_entity(maybe_entity);
         composer::pprint(&rt, entity)
