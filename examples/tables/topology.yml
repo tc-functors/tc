@@ -1,0 +1,6 @@
+name: basic-table
+
+tables:
+  basic:
+    hash_key: "Artist"
+    range_key: "SongTitle"

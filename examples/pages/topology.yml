@@ -1,0 +1,24 @@
+name: example-pages
+
+pages:
+  default:
+    kind: SPA
+    dir: static
+    dist: .
+
+  svelte:
+    kind: SPA
+    dir: spa-svelte
+    build:
+      - npm install --quiet --no-audit
+      - npm run build
+
+  mithril:
+    kind: SPA
+    dir: spa-mithril
+    dist: .
+
+  pwa:
+    kind: SPA
+    dir: pwa
+    dist: .

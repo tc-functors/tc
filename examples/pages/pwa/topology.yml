@@ -1,6 +1,0 @@
-name: example-pages-pwa
-
-pages:
-  pwa:
-    kind: PWA
-    dist: .
