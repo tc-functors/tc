@@ -1,10 +1,8 @@
 use composer::{
-    Function
+    Function,
+    Topology
 };
-use provider::{
-    Auth,
-    aws,
-};
+
 use std::collections::HashMap;
 use kit as u;
 use kit::*;
@@ -34,11 +32,6 @@ fn files_modified_uncommitted() -> Vec<String> {
 }
 
 
-pub fn find_between_envs(namespace: &str, from: &str, to: &str) -> Vec<String> {
-    println!("diffing between envs");
-    vec![]
-}
-
 pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
     let dir = pwd();
     let from_tag = format!("{}-{}", namespace, from);
@@ -62,14 +55,13 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
         &from_tag, &to_tag
     );
     let out = sh(&cmd, &dir);
-    //tracing::debug!("git diff status : {} out {} err {}", status, &out, &err);
 
     let lines = kit::split_lines(&out);
     lines.iter().map(|s| s.to_string()).collect()
 }
 
 
-pub fn diff(
+pub fn diff_fns(
     namespace: &str,
     from: &str,
     to: &str,
@@ -114,4 +106,28 @@ pub fn diff(
         }
     }
     changed_fns
+}
+
+
+pub fn diff(topology: &Topology, from: &str, to: &str) {
+    let fns = diff_fns(&topology.namespace, &from, &to, &topology.functions);
+
+    println!("Modified functions:");
+    for (name, _) in fns {
+        println!("  - {}", name);
+    }
+    for (_, node) in &topology.nodes {
+        let fns = diff_fns(&topology.namespace, &from, &to, &node.functions);
+        for (name, _) in fns {
+            println!(" - {}/{}", node.namespace, name);
+        }
+    }
+
+    println!("");
+    println!("Changelog:");
+
+    let f = format!("{}-{}", &topology.namespace, &from);
+    let t = format!("{}-{}", &topology.namespace, &to);
+    let changes = tagger::commits(&f, &t);
+    println!("{}", changes);
 }

@@ -2122,15 +2122,14 @@ name = "differ"
 version = "0.9.26"
 dependencies = [
  "cacache",
- "compiler",
  "composer",
  "kit",
- "provider",
  "regex",
  "serde 1.0.217",
  "serde_derive",
  "serde_json",
  "tabled 0.10.0",
+ "tagger",
  "tracing",
 ]
 
