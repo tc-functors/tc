@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo List App</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+      <h1 class="text-2xl font-semibold mb-4">Todo List</h1>
+      <!-- Todo list will go here -->
+      <div x-data="todoApp()">
+        <input x-model="newTodo" @keydown.enter="addTodo" placeholder="Add a new todo"
+          class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200">
+        <ul class="mt-4">
+          <template x-for="(todo, index) in todos">
+            <li class="flex justify-between items-center py-2">
+              <div class="cursor-pointer" x-text="todo">
+              </div>
+              <button @click="removeTodoAtIndex(index)" class="text-red-500 focus:outline-none">
+                <i class="material-icons">close</i>
+              </button>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function todoApp() {
+      return {
+        todos: [],
+        newTodo: '',
+
+        addTodo() {
+          this.todos.push(this.newTodo)
+          this.newTodo = ''
+        },
+
+        removeTodoAtIndex(index) {
+          this.todos.splice(index, 1)
+        }
+      }
+    }
+  </script>
+</body>
+</html>

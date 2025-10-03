@@ -1,1 +1,7 @@
 name: htmx
+
+routes:
+  all:
+    path: /*
+    method: *
+    function: processor
