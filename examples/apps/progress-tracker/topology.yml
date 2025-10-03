@@ -1,0 +1,37 @@
+name: progress-tracker
+
+events:
+  CompleteTask:
+    producer: adHoc
+    mutation: completeJob
+
+mutations:
+  authorizer: "{{namespace}}_authorizer_{{sandbox}}"
+  types:
+    JobInput:
+      id: String!
+    Job:
+      id: String!
+      status: String
+      message: String
+
+  resolvers:
+    startJob:
+      function: starter
+      input: JobInput
+      output: Job
+      subscribe: true
+
+    completeJob:
+      function: completer
+      input: EventData
+      output: Job
+      subscribe: true
+
+pages:
+  app:
+    dir: app
+    config_template: src/config.json
+    build:
+       - npm install --quiet --no-audit
+       - npm run build

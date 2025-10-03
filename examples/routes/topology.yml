@@ -1,0 +1,41 @@
+name: fanout
+
+routes:
+  ping:
+    path: /api/ping
+    method: GET
+    function: ponger
+
+  /api/fanout:
+    method: POST
+    event: MyEvent
+
+events:
+  MyEvent:
+    filter: '{"detail_type": ["FooBar"]}'
+    state: fanout
+
+states:
+  Comment: default topology
+  StartAt: foo
+  TimeoutSeconds: 600
+  States:
+    foo:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_foo_{{sandbox}}'
+        Payload:
+            data.$: $
+      Next: bar
+
+    bar:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_bar_{{sandbox}}'
+        Payload:
+            data.$: $
+      End: True

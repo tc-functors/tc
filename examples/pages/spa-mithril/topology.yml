@@ -1,6 +1,0 @@
-name: example-spa-mithril
-
-pages:
-  spa-mithril:
-    kind: SPA
-    dist: .
