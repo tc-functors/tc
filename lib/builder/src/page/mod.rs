@@ -65,6 +65,13 @@ fn copy_from_docker(dir: &str) {
     sh("rm -f Dockerfile wrapper", dir);
 }
 
+fn clean_tmp(dir: &str, ct: &Option<String>) {
+    if let Some(p) = ct {
+        let cmd = format!("rm -f {}_tmp", &p);
+        sh(&cmd, dir);
+    }
+}
+
 pub fn build(dir: &str, name: &str, command: &str, config_template: &Option<String>) {
     let bar = u::progress(5);
 
@@ -88,5 +95,6 @@ pub fn build(dir: &str, name: &str, command: &str, config_template: &Option<Stri
     copy_from_docker(dir);
     bar.inc(4);
     sh("rm -f Dockerfile wrapper .dockerignore", dir);
+    clean_tmp(dir, config_template);
     bar.inc(5);
 }
