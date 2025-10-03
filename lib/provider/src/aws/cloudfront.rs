@@ -195,7 +195,10 @@ fn make_viewer_cert(maybe_cert_arn: Option<String>) -> ViewerCertificate {
                 .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
                 .build()
         },
-        None => it.cloud_front_default_certificate(true).build()
+        None => it.cloud_front_default_certificate(true)
+            .ssl_support_method(SslSupportMethod::SniOnly)
+            .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
+            .build()
     }
 }
 
@@ -221,6 +224,8 @@ pub fn make_dist_config(
     let custom_error_responses = make_custom_error_responses();
     let restrictions = make_geo_restrictions();
     let logging = make_logging_config();
+
+    //viewer_certificate is None if domain is none
 
     it.caller_reference(caller_ref)
         .aliases(aliases)
