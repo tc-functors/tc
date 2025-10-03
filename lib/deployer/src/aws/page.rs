@@ -295,8 +295,14 @@ pub async fn create(
     config: &HashMap<String, String>,
     sandbox: &str,
 ) {
-    for (name, page) in pages {
-        create_page(auth, &name, &page, config, sandbox).await
+    if pages.len() > 0 {
+        if let Some(page) = pages.get("default") {
+            create_page(auth, "default", &page, config, sandbox).await;
+        }
+    } else {
+        for (name, page) in pages {
+            create_page(auth, &name, &page, config, sandbox).await;
+        }
     }
 }
 

@@ -64,7 +64,7 @@ RUN {req_cmd}
 
 RUN mkdir -p /build/lib
 
-RUN --mount=type=ssh --mount=target=shared,type=bind,source=. pip install -vvv -r requirements.txt --target=/build/python --implementation cp --only-binary=:all: --upgrade
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. pip install -vvv -r requirements.txt --target=/build/python --upgrade
 
 "#
     );

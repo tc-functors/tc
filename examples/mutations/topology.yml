@@ -1,0 +1,17 @@
+name: example-mutation
+
+mutations:
+  types:
+    JobInput:
+      id: String!
+    Job:
+      id: String!
+      status: String
+      message: String
+
+  resolvers:
+    startJob:
+      function: starter
+      input: JobInput
+      output: Job
+      subscribe: true

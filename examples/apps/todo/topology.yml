@@ -1,0 +1,19 @@
+name: todo
+
+routes:
+  /todo:
+    method: POST
+    function: adder
+  /todos:
+    method: GET
+    function: fetcher
+
+pages:
+  app:
+    dir: webapp
+    dist: .
+
+tables:
+  todos:
+    hash_key: "Name"
+    range_key: "Task"

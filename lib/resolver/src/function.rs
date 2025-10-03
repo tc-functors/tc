@@ -360,7 +360,7 @@ pub async fn find_modified(
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
     if let Some(target_version) = maybe_version {
-        differ::diff(&namespace, &target_version, &version, &topology.functions)
+        differ::diff_fns(&namespace, &target_version, &version, &topology.functions)
     } else {
         topology.functions.clone()
     }
@@ -372,9 +372,9 @@ pub async fn resolve(
     topology: &Topology,
     _diff: bool,
 ) -> HashMap<String, Function> {
-    let fns = match std::env::var("TC_DIFFER") {
-        Ok(_) => &find_modified(&ctx.auth, root, topology).await,
-        Err(_) => &topology.functions,
+    let fns = match std::env::var("TC_FORCE_DEPLOY") {
+        Ok(_) => &topology.functions,
+        Err(_) => &find_modified(&ctx.auth, root, topology).await,
     };
 
     tracing::debug!("Modified fns: {}", &fns.len());

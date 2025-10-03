@@ -1,6 +1,7 @@
 use kit as u;
 use kit::*;
 
+
 fn find_copy_command(_dir: &str, ct: &Option<String>) -> String {
     if let Some(p) = ct {
         let tmp = format!("{}_tmp", &p);
@@ -26,8 +27,6 @@ RUN rm -rf /build/node_modules && mkdir -p /build
 COPY . /build
 
 RUN {copy_config_cmd}
-
-RUN cat .env
 
 RUN {command}
 
