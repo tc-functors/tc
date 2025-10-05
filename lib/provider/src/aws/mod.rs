@@ -4,7 +4,6 @@ pub mod cloudwatch;
 pub mod codeartifact;
 pub mod cognito;
 pub mod ecr;
-pub mod ecs;
 pub mod efs;
 pub mod eventbridge;
 pub mod gateway;

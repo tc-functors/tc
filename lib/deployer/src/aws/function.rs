@@ -5,14 +5,11 @@ use compiler::spec::function::{
 };
 use composer::{
     Function,
-    function::Runtime,
 };
 use kit as u;
 use provider::{
     Auth,
     aws::{
-        ecs,
-        ecs::TaskDef,
         lambda,
     },
 };
@@ -22,44 +19,6 @@ use tabled::Tabled;
 async fn maybe_build(auth: &Auth, function: &Function) {
     let builds = builder::build(auth, function, None, None, true).await;
     builder::publish(auth, builds).await;
-}
-
-async fn create_container(auth: &Auth, function: &Function) -> String {
-    let Runtime {
-        cluster,
-        role,
-        uri,
-        memory_size,
-        cpu,
-        handler,
-        network,
-        ..
-    } = &function.runtime;
-    let fn_name = &function.name;
-
-    let subnets = match network {
-        Some(s) => s.subnets.clone(),
-        _ => vec![],
-    };
-
-    let mem = memory_size.unwrap().to_string();
-    let cpu = cpu.unwrap().to_string();
-
-    let client = ecs::make_client(auth).await;
-
-    let tdf = TaskDef::new(&fn_name, &role.arn, &mem, &cpu);
-    let cdf = ecs::make_cdf(&fn_name, &uri, &handler);
-    let net = ecs::make_network_config(subnets);
-    println!("Creating task def {}", fn_name);
-    let taskdef_arn = ecs::create_taskdef(&client, tdf, cdf).await;
-
-    let cluster = ecs::find_or_create_cluster(&client, &cluster).await;
-
-    // create service or run-task
-
-    println!("Run ecs task {}", &fn_name);
-    ecs::run_task(&client, &cluster, &fn_name, &taskdef_arn, net).await;
-    taskdef_arn
 }
 
 pub async fn make_lambda(
@@ -157,7 +116,7 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
     maybe_build(auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => create_lambda(&auth, &f, tags).await,
-        Provider::Fargate => create_container(&auth, &f).await,
+        Provider::Fargate => todo!()
     }
 }
 
