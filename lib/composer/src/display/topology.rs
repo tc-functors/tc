@@ -25,6 +25,7 @@ pub struct TopologyCount {
     pub routes: usize,
     pub mutations: usize,
     pub states: usize,
+    pub pages: usize,
 }
 
 impl TopologyCount {
@@ -37,6 +38,8 @@ impl TopologyCount {
             events,
             queues,
             routes,
+            flow,
+            pages,
             ..
         } = topology;
         let mut f: usize = functions.len();
@@ -47,6 +50,9 @@ impl TopologyCount {
         let mut e: usize = events.len();
         let mut q: usize = queues.len();
         let mut r: usize = routes.len();
+        let mut p: usize = pages.len();
+
+        let mut s: usize = if let Some(_f) = flow { 1 } else { 0 };
 
         let nodes = &topology.nodes;
 
@@ -57,6 +63,7 @@ impl TopologyCount {
                 events,
                 queues,
                 routes,
+                flow,
                 ..
             } = node;
             f = f + functions.len();
@@ -67,6 +74,8 @@ impl TopologyCount {
             e = e + events.len();
             q = q + queues.len();
             r = r + routes.len();
+            p = p + pages.len();
+            s = if let Some(_f) = flow { s + 1 } else { s + 0 };
         }
 
         TopologyCount {
@@ -78,7 +87,8 @@ impl TopologyCount {
             queues: q,
             routes: r,
             mutations: m,
-            states: 0,
+            states: s,
+            pages: p
         }
     }
 }

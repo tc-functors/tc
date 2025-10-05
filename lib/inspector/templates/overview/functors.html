@@ -49,7 +49,11 @@
 	{{item.routes}}
 	{% endif %}
       </td>
-      <td> </td>
+      <td>
+	{% if item.pages != 0 %}
+	{{item.pages}}
+	{% endif %}
+      </td>
       {% endfor %}
   </tbody>
 

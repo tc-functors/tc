@@ -24,6 +24,7 @@ struct Functor {
     routes: usize,
     mutations: usize,
     states: usize,
+    pages: usize,
     version: String,
 }
 
@@ -42,6 +43,7 @@ fn build(topologies: Vec<Topology>) -> Vec<Functor> {
             routes: t.routes,
             states: t.states,
             mutations: t.mutations,
+            pages: t.pages,
             version: String::from(&topology.version),
         };
         xs.push(f)
