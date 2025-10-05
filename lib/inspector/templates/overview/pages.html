@@ -1,0 +1,19 @@
+<table class="striped">
+  <thead>
+    <tr>
+      <td></td>
+      <td>Namespace</td>
+      <td>Name</td>
+      <td>Bucket</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for page in items %}
+    <tr>
+      <td>{{loop.index}}</td>
+      <td>{{page.namespace}}</td>
+      <td>{{page.name}}</td>
+      <td>{{page.bucket}}</td>
+    </tr>
+    {% endfor %}
+</table>

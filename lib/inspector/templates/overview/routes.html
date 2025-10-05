@@ -1,0 +1,29 @@
+<table class="striped">
+  <thead>
+    <tr>
+      <td></td>
+      <td>Namespace</td>
+      <td>Path</td>
+      <td>Method</td>
+      <td>Gateway</td>
+      <td>Authorizer</td>
+      <td>Target</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for route in items %}
+    <tr>
+      <td>{{loop.index}}</td>
+      <td>{{route.namespace}}</td>
+      <td>{{route.path}}</td>
+      <td>{{route.method}}</td>
+      <td>{{route.gateway}}</td>
+      <td>{{route.authorizer}}</td>
+      <td>
+	<b>{{route.target_kind}}</b>
+	<br/>
+	<small>{{route.target_arn}}</small>
+      </td>
+    </tr>
+    {% endfor %}
+</table>

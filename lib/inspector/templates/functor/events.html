@@ -1,0 +1,59 @@
+<div class="grid">
+
+  <div class="overflow-auto spaced" style="height: 82dvh;">
+    <br/>
+
+    <table class="bordered-table">
+
+      <tbody>
+
+	{% for item in items %}
+	<tr>
+	  <td><input type="radio" name="event" id="{{item.name}}" value="{{item.name}}"/></td>
+	  <td>{{item.name}}</td>
+	  <td>
+	    {{item.kind}}
+	  </td>
+	  <td>
+	    {{item.target}}
+	  </td>
+
+	</tr>
+	{% endfor %}
+
+    </table>
+
+  </div>
+
+  <div class="spaced">
+    <nav>
+      <ul></ul>
+	<ul>
+	  <li>
+	    <button class="mbtn"
+		    hx-post="/hx/functor/event/compile/{{root}}/{{namespace}}"
+		    hx-indicator="#viewer-status"
+		    hx-target="#functor-viewer"
+		    hx-swap="innerHtml">
+	      Compile
+	    </button>
+	  </li>
+
+	  <li>
+	    <button class="mbtn"
+		    hx-post="/hx/functor/event/test/{{root}}/{{namespace}}"
+		    hx-indicator="#viewer-status"
+		    hx-target="#functor-viewer"
+		    hx-swap="innerHtml">
+	      Test
+	    </button>
+	  </li>
+
+	</ul>
+
+      </nav>
+    <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+    </div>
+  </div>
+
+</div>

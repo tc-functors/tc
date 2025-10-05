@@ -1,0 +1,46 @@
+<div class="grid">
+
+  <div class="overflow-auto spaced" style="height: 84dvh;">
+    <br/>
+    {% include "code.html" %}
+
+  </div>
+
+  <div class="spaced">
+    <nav class="navbar">
+      <ul></ul>
+      <ul>
+
+	<li>
+	  <button class="mbtn"
+		  hx-trigger="click"
+		  hx-post="/hx/functor/topology/compose/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Compose
+	  </button>
+	</li>
+
+	<li>
+	  <button class="mbtn"
+		  hx-trigger="click"
+		  hx-post="/hx/functor/topology/flow/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Diagram
+	  </button>
+	</li>
+      </ul>
+
+    </nav>
+    <div id="functor-viewer" class="overflow-auto" style="height: 78dvh;">
+      <br/>
+      <span class="htmx-indicator" id="viewer-status" aria-busy="true">
+	  Loading...
+      </span>
+    </div>
+  </div>
+
+</div>

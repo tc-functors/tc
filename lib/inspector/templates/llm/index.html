@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+
+<br/>
+
+<div class="grid">
+<div class="spaced">
+
+  <article>
+    <div align="right">
+  <a href="#"
+     hx-get="/hx/llm/clear"
+     hx-target="#response-viewer"
+     hx-swap="outerHtml">
+    New
+  </a>
+</div>
+
+    <form>
+  <textarea name="text" rows=10 id="text"></textarea>
+  <br/>
+  <footer>
+  <button
+      hx-post="/hx/llm/prompt"
+      hx-indicator="#response-status"
+      hx-target="#response-viewer"
+      hx-swap="outerHtml">
+    Generate Topology
+  </button>
+  </footer>
+
+  </form>
+  </article>
+</div>
+
+<div class="spaced">
+  <span class="htmx-indicator" id="response-status">
+    <br/>
+    <br/>
+    <div align="center">
+      <h4>Thinking...</h4>
+      <progress/>
+    </div>
+  </span>
+
+  <div id="response-viewer" class="overflow-auto" style="height: 80dvh;">
+  </div>
+</div>
+
+{% endblock %}

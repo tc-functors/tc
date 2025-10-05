@@ -1,0 +1,58 @@
+<div class="grid">
+
+  <div class="overflow-auto spaced" style="height: 78dvh;">
+    <br/>
+    <table class="bordered-table">
+
+      <tbody>
+
+	{% for item in items %}
+	<tr>
+	  <td><input type="radio" name="function" id="{{item.name}}" value="{{item.name}}"/></td>
+	  <td>{{item.name}}</td>
+	  <td>{{item.build}}</td>
+	  <td>{{item.runtime}}</td>
+
+	</tr>
+	{% endfor %}
+
+    </table>
+  </div>
+
+    <div class="spaced">
+    <nav>
+      <ul></ul>
+      <ul>
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/function/compose/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-target="#functor-viewer"
+		  hx-include="[name='function']"
+		  hx-swap="innerHtml">
+	    Compose
+	  </button>
+	</li>
+
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/function/permissions/{{root}}/{{namespace}}"
+		  hx-indicator="#viewestatus"
+		  hx-target="#functor-viewer"
+		  hx-include="[name='function']"
+		  hx-swap="innerHtml">
+	    Permissions
+	  </button>
+	</li>
+
+      </ul>
+    </nav>
+
+      <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+      	<span class="htmx-indicator" id="viewer-status" aria-busy="true">
+	  Loading...
+	</span>
+      </div>
+    </div>
+
+</div>

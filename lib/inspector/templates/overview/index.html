@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+
+<br/>
+
+<div id="tabs"
+     class="spaced"
+     hx-target="#tab-contents"
+     role="tablist"
+     hx-on:htmx-after-on-load="let currentTab = document.querySelector('[aria-selected=true]');
+			       currentTab.setAttribute('aria-selected', 'false')
+			       currentTab.classList.remove('selected')
+			       currentTab.classList.remove('outline')
+			       let newTab = event.target
+			       newTab.setAttribute('aria-selected', 'true')
+			       newTab.classList.add('selected')">
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab selected"
+	  hx-get="/hx/overview/diagram">
+    Flow Diagram
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="true"
+	  hx-indicator="#tab-status"
+	  hx-get="/hx/overview/functors"
+	  class="tab">
+    Functors
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-indicator="#tab-status"
+	  hx-get="/hx/overview/functions">
+    Functions {% if functions != 0 %}<small>({{functions}})</small>{% endif %}
+  </button>
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/events">
+    Events {% if events != 0 %}<small>({{events}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/routes">
+    Routes {% if routes != 0 %}<small>({{routes}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/queues">
+    Queues {% if queues != 0 %}<small>({{queues}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/channels">
+    Channels {% if channels != 0 %}<small>({{channels}})</small>{% endif %}
+  </button>
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/mutations">
+    Mutations {% if mutations != 0 %}<small>({{mutations}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/states">
+    States {% if states != 0 %}<small>({{states}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/overview/pages">
+    Pages {% if pages != 0 %}<small>({{pages}})</small>{% endif %}
+  </button>
+
+
+
+</div>
+
+<div id="tab-contents"
+     class="functor spaced overflow-auto"
+     role="tabpanel"
+     style="height 70dvh;">
+
+  <br/>
+
+  <span class="htmx-indicator" id="tab-status" aria-busy="true">
+    Loading...
+  </span>
+
+  <div id="functors"
+       class="spaced"
+       hx-trigger="load"
+       hx-get="/hx/overview/functors"
+       hx-swap="innerHTML">
+
+    <div class="grid">
+      <div></div>
+      <div align="center" id="status" class="htmx-indicator">
+	<br/>
+	<br/>
+	<br/>
+	<article aria-busy="true"></article>
+      </div>
+      <div></div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

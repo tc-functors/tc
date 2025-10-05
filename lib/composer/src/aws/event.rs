@@ -21,6 +21,7 @@ pub struct Target {
     pub entity: Entity,
     pub id: String,
     pub name: String,
+    pub producer_ns: String,
     pub consumer_ns: String,
     pub arn: String,
     pub role_arn: String,
@@ -34,6 +35,7 @@ impl Target {
         id: &str,
         name: &str,
         arn: &str,
+        producer_ns: &str,
         consumer_ns: &str,
         input_paths_map: Option<HashMap<String, String>>,
         input_template: Option<String>,
@@ -48,6 +50,7 @@ impl Target {
             entity: entity,
             id: abbr_id,
             name: s!(name),
+            producer_ns: s!(producer_ns),
             consumer_ns: s!(consumer_ns),
             arn: s!(arn),
             role_arn: Role::entity_role_arn(Entity::Event),
@@ -64,6 +67,24 @@ fn find_function(f: &str, fns: &HashMap<String, Function>) -> String {
     }
 }
 
+fn as_ns(given: &Option<String>, xs: &Vec<String>) -> String {
+    match given {
+        Some(p) => s!(p),
+        None => {
+            if xs.len() > 0 {
+                let s = xs.into_iter().nth(0).unwrap();
+                if s.contains("/") {
+                    kit::split_first(s, "/")
+                } else {
+                    s!(s)
+                }
+            } else {
+                String::from("")
+            }
+        }
+    }
+}
+
 pub fn make_targets(
     namespace: &str,
     event_name: &str,
@@ -73,9 +94,11 @@ pub fn make_targets(
     resolvers: &HashMap<String, Resolver>,
 ) -> Vec<Target> {
     let EventSpec {
+        producer_ns,
         function,
         mutation,
         functions,
+        producer,
         state,
         channel,
         ..
@@ -83,13 +106,14 @@ pub fn make_targets(
 
     let mut xs: Vec<Target> = vec![];
 
+    let producer_ns = as_ns(producer_ns, producer);
     let consumer_ns = namespace;
 
     if let Some(f) = function {
         let id = format!("{}_lambda_target", event_name);
         let name = find_function(&f, fns);
         let arn = template::lambda_arn(&name);
-        let t = Target::new(Entity::Function, &id, &name, &arn, &consumer_ns, None, None);
+        let t = Target::new(Entity::Function, &id, &name, &arn, &producer_ns, &consumer_ns, None, None);
         xs.push(t);
     }
 
@@ -98,7 +122,7 @@ pub fn make_targets(
             let id = format!("{}_{}_target", event_name, &f);
             let name = find_function(&f, fns);
             let arn = template::lambda_arn(&name);
-            let t = Target::new(Entity::Function, &id, &name, &arn, &consumer_ns, None, None);
+            let t = Target::new(Entity::Function, &id, &name, &arn, &producer_ns, &consumer_ns, None, None);
             xs.push(t);
         }
     }
@@ -126,6 +150,7 @@ pub fn make_targets(
             &id,
             m,
             &arn,
+            &producer_ns,
             &consumer_ns,
             input_paths_map,
             input_template,
@@ -135,7 +160,7 @@ pub fn make_targets(
     if let Some(s) = state {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(s);
-        let t = Target::new(Entity::State, &id, s, &arn, &consumer_ns, None, None);
+        let t = Target::new(Entity::State, &id, s, &arn, &producer_ns, &consumer_ns, None, None);
         xs.push(t)
     }
 
@@ -150,6 +175,7 @@ pub fn make_targets(
             &id,
             namespace,
             &arn,
+            &producer_ns,
             &consumer_ns,
             input_paths_map,
             None,
@@ -166,6 +192,7 @@ pub fn make_targets(
             &id,
             fallback_fqn,
             &arn,
+            &producer_ns,
             &consumer_ns,
             None,
             None,

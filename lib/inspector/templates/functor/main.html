@@ -1,0 +1,87 @@
+
+<br/>
+
+<div id="tabs"
+     class="spaced"
+     hx-target="#tab-contents"
+     role="tablist"
+     hx-on:htmx-after-on-load="let currentTab = document.querySelector('[aria-selected=true]');
+			       currentTab.setAttribute('aria-selected', 'false')
+			       currentTab.classList.remove('selected')
+			       currentTab.classList.remove('outline')
+			       let newTab = event.target
+			       newTab.setAttribute('aria-selected', 'true')
+			       newTab.classList.add('selected')">
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="true"
+	  hx-get="/hx/functor/topology/{{root}}/{{namespace}}"
+	  class="tab selected">
+    Topology
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/functions/{{root}}/{{namespace}}">
+    Functions {% if functions != 0 %}<small>({{functions}})</small>{% endif %}
+  </button>
+
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/events/{{root}}/{{namespace}}">
+    Events {% if events != 0 %}<small>({{events}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/routes/{{root}}/{{namespace}}">
+    Routes {% if routes != 0 %}<small>({{routes}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/queues/{{root}}/{{namespace}}">
+    Queues {% if queues != 0 %}<small>({{queues}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/channels/{{root}}/{{namespace}}">
+    Channels {% if channels != 0 %}<small>({{channels}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/mutations/{{root}}/{{namespace}}">
+    Mutations {% if mutations != 0 %}<small>({{mutations}})</small>{% endif %}
+  </button>
+
+  <button role="tab"
+	  aria-controls="tab-contents"
+	  aria-selected="false"
+	  class="tab"
+	  hx-get="/hx/functor/states/{{root}}/{{namespace}}">
+    States {% if states != 0 %}<small>({{states}})</small>{% endif %}
+  </button>
+
+</div>
+
+<div id="tab-contents"
+     class="functor spaced"
+     role="tabpanel"
+     hx-get="/hx/functor/topology/{{root}}/{{namespace}}"
+     hx-trigger="load">
+</div>

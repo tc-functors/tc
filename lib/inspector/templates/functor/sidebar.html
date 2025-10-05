@@ -1,0 +1,17 @@
+<aside>
+  <nav>
+    <ul>
+      {% for item in items %}
+      <li>
+	{% if namespace == item|lower %}
+	<span class="side-selected">{{item}}</span>
+	{% else %}
+	<a href="#" hx-get="/functor/{{item}}/{{item}}" hx-target="#functor-content">
+	  {{item}}
+	</a>
+	{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+</aside>

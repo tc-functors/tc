@@ -1,0 +1,28 @@
+[package]
+name = "inspector"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+askama = "0.12.1"
+axum = { version = "0.8.1" }
+serde = { version = "1.0.198", features = ["derive"] }
+serde_json = "1.0.116"
+serde_yaml = "0.9.25"
+serde_derive = "1.0"
+tokio = { version = "1.41.1", features = ["full"] }
+tower-http = { version = "0.6.1", features = ["limit", "trace", "fs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4.*"}
+clap = { version = "4.5", features = ["derive"] }
+open = "5.0.0"
+anyhow = { version = "1.0.75" }
+surrealdb = { version = "1.0.0", features = ["kv-mem", "default"] }
+json-escape = "0.3.0"
+composer = { path = "../composer" }
+compiler = { path = "../compiler" }
+configurator = { path = "../configurator" }
+snapshotter = { path = "../snapshotter" }
+tagger = { path = "../tagger" }
+kit = { path = "../kit" }

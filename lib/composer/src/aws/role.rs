@@ -2,7 +2,7 @@ use super::template;
 use crate::Entity;
 use kit as u;
 use kit::*;
-mod policy;
+pub mod policy;
 mod trust;
 use policy::Policy;
 use serde_derive::{

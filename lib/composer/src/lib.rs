@@ -34,6 +34,7 @@ pub use aws::role::Role;
 pub use aws::route::Route;
 pub use aws::schedule::Schedule;
 pub use aws::flow::Flow;
+pub use aws::role::policy::Policy;
 
 pub use aws::function;
 pub use aws::page;

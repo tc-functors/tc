@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="x">
+  <div class="x20p sidebar">
+    <div class="overflow-auto" style="height: 92dvh;">
+      <div class="spaced"
+	   id="functors"
+	   hx-trigger="load"
+	   hx-indicator="#viewer-status"
+	   hx-get="/hx/functors/list/{{root}}/{{namespace}}">
+      </div>
+      <span class="htmx-indicator" id="viewer-status" aria-busy="true">
+	<br/>
+	<br/>
+	<div align="center">
+	  Loading...
+	</div>
+      </span>
+    </div>
+  </div>
+
+  <div id="functor-content" class="x80p spaced" style="height: 80dvh;">
+
+      <div align="center" id="content-status" class="htmx-indicator">
+	<br/>
+	<br/>
+	<br/>
+	<article aria-busy="true"></article>
+      </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -62,6 +62,8 @@ enum Cmd {
     Freeze(FreezeArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
+    /// Inspector UI
+    Inspect(InspectArgs),
     /// List resources in a topology
     List(ListArgs),
     /// Prune all resources in given sandbox
@@ -414,6 +416,14 @@ pub struct InvokeArgs {
     dumb: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct InspectArgs {
+    #[arg(long, short = 'p')]
+    port: Option<String>,
+    #[arg(long, short = 'c')]
+    config: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1028,6 +1038,15 @@ async fn scaffold(args: ScaffoldArgs) {
     tc::scaffold(args.kind);
 }
 
+async fn inspect(args: InspectArgs) {
+   let InspectArgs {
+        port,
+        config,
+        ..
+    } = args;
+    tc::inspect(port, config).await;
+}
+
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
@@ -1063,6 +1082,7 @@ async fn run() {
         Cmd::Delete(args) => delete(args).await,
         Cmd::Emulate(args) => emulate(args).await,
         Cmd::Freeze(args) => freeze(args).await,
+        Cmd::Inspect(args) => inspect(args).await,
         Cmd::Invoke(args) => invoke(args).await,
         Cmd::List(args) => list(args).await,
         Cmd::Prune(args) => prune(args).await,

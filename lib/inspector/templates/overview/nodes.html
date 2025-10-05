@@ -1,0 +1,67 @@
+<table class="striped">
+  <thead>
+    <tr>
+      <td></td>
+      <td></td>
+      <td>Namespace</td>
+      <td>Version</td>
+      <td>Nodes</td>
+      <td>Functions</td>
+      <td>Events</td>
+      <td>Queues</td>
+      <td>Mutations</td>
+      <td>Routes</td>
+      <td>States</td>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td><input type="checkbox" name={{item.namespace}}/></td>
+      <td>{{loop.index}}</td>
+      <td>
+	<a href="/definition/{{item.namespace}}">{{item.namespace}}<a/>
+      </td>
+      <td>{{item.version}}</td>
+      <td>
+	{% if item.nodes != 0 %}
+	<a href="/definitions/{{item.namespace}}/nodes">{{item.nodes}}</a>
+	{% endif %}
+      </td>
+      <td>
+	{% if item.functions != 0 %}
+	<a href="/definitions/{{item.namespace}}/functions">
+	  {{item.functions}}
+	</a>
+	{% endif %}
+      </td>
+      <td>
+	{% if item.events != 0 %}
+	<a href="/definitions/{{item.namespace}}/events">
+	  {{item.events}}
+	</a>
+	{% endif %}
+      </td>
+      <td>
+	{% if item.queues != 0 %}
+	{{item.queues}}
+	{% endif %}
+      </td>
+      <td>
+	{% if item.mutations != 0 %}
+	<a href="/definitions/{{item.namespace}}/mutations">
+	  {{item.mutations}}
+	</a>
+	{% endif %}
+      </td>
+      <td>
+	{% if item.routes != 0 %}
+	<a href="/definitions/{{item.namespace}}/routes">
+	  {{item.routes}}
+	</a>
+	{% endif %}
+      </td>
+      <td> </td>
+      {% endfor %}
+  </tbody>
+
+</table>

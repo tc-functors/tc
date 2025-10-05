@@ -1,0 +1,64 @@
+<div class="grid">
+
+  <div class="overflow-auto spaced" style="height: 82dvh;">
+
+    <br/>
+
+    <table class="bordered-table">
+
+      <tbody>
+
+	{% for item in items %}
+	<tr>
+	  <td><input type="radio" name="event" id="{{item.path}}" value="{{item.path}}"/></td>
+	  <td>{{item.path}}</td>
+	  <td>
+	    {{item.method}}
+	  </td>
+	  <td>
+	    {{item.kind}}
+	  </td>
+	  <td>
+	    {{item.target}}
+	  </td>
+
+	</tr>
+	{% endfor %}
+
+    </table>
+
+
+  </div>
+
+  <div class="spaced">
+    <nav class="navbar">
+      <ul></ul>
+      <ul>
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/route/compile/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Compile
+	  </button>
+	</li>
+
+	<li>
+	  <button class="mbtn"
+		  hx-post="/hx/functor/route/test/{{root}}/{{namespace}}"
+		  hx-indicator="#viewer-status"
+		  hx-target="#functor-viewer"
+		  hx-swap="innerHtml">
+	    Test
+	  </button>
+	</li>
+
+      </ul>
+
+    </nav>
+    <div id="functor-viewer" class="overflow-auto" style="height: 82dvh;">
+    </div>
+  </div>
+
+</div>
