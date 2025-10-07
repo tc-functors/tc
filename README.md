@@ -1,6 +1,8 @@
 # tc (Topology Composer)
 
-A graph-based, stateless, serverless application & infrastructure composer.
+tc is a graph-based, executable architecture description language and framework for cloud-native serverless systems, with fractal composition and infrastructure generation capabilities.
+
+tc (topology composer) provides a higher-level abstraction for serverless development, focusing on the logical relationships between abstract entities (functions, events, routes, queues, channels, mutations and pages) rather than the underlying infrastructure details.
 
 [![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
 [![Ask DeepWiki (useful but watch  for hallucinations)](https://deepwiki.com/badge.svg)](https://deepwiki.com/tc-functors/tc)
@@ -8,16 +10,27 @@ A graph-based, stateless, serverless application & infrastructure composer.
 tc's core value proposition is enabling developers to focus on business logic and component relationships rather than infrastructure management, while maintaining the ability to deploy consistently across environments and providers.
 
 `tc` enables developers to compose cloud applications using high-level abstractions called `Cloud Functors` without getting bogged down in provider-specific infrastructure details.
+
 The central concept in `tc` is the `Cloud Functor` - a namespaced, sandboxed, versioned, and isomorphic topology of serverless components. The term "functor" is borrowed from OCaml's parameterized modules, emphasizing first-class, composable units.
 
-`tc` defines, creates and manages the lifecycle of serveless entities such as functions, mutations, events, routes, states, queues and channels.
-It represents a higher-level abstraction for serverless development, focusing on the logical relationships between these entities rather than the underlying infrastructure details.
+## Key features
 
-## Key features of functors using tc
+**Entity Abstraction**
 
-### 1. Composable Entities
+At it's core, `tc` provides 7 entities (functions, events, mutations, queues, routes, states and channels). Entities can be thought of like atoms. They are core cloud primitives which abstract away all the low-level details. Entities are defined in a cloud-agnostic way. tc provides eight entities that are sufficient to build sophisticated serverless topologies.
 
-At it's core, `tc` provides 7 entities (functions, events, mutations, queues, routes, states and channels) that are agnostic to any cloud provider. These entities are core primitives to define the topology of any serverless system. For example, consider the following topology definition:
+
+**Namespacing**
+
+The above entities can be namespaced arbitrarily - typically domain-specific. Namespaces can be thought of modules in a programming language or molecules comprising of atoms.
+
+
+**Composition**
+
+tc provides a simple mechanism to define and connect these namespaced entities as a graph and thus the use of word topology. As a result of entity composition, tc can infer the infrastrucuture permissions etc and render it in arbitrary sandboxes thus enabling sophisticated workflows.
+
+
+Example Topology definition:
 
 ```yaml
 name: etl
@@ -48,67 +61,6 @@ channels:
 `/api/etl` HTTP route calls function `enhancer` which then triggers a pipeline of functions which are either local (subdirectories) or remote (git repos). In this example, loader finally generates an event `Notify` whose target is a websocket Channel called `Subscription`. We just defined an entire ETL flow without specifying anything about infrastructure, permissions or the provider. None of the infrastructure stuff has leaked into this definition that describes the high-level flow. This definition is good enough to render it in the cloud as services, as architecture diagrams and release manifests.
 
 `tc compose` maps these entities to the provider's serverless constructs. If the provider is AWS (default), tc maps `routes` to API Gateway, events to `Eventbridge`, `functions` to either `Lambda` or `ECS Fargate`, `channels` to `Appsync Events`, `mutations` to `Appsync Graphql` and `queues` to `SQS`
-
-### 2. Namespacing
-
-Now, if we run `tc compose` in the directory containing the above topology (topology.yml), we see that all the entities are namespaced. This implies there is room for several `foo`,`bar` or `MyEvent` entities in another topology. This also encourages developers to name the entities succinctly similar to function names in a module. With namespacing comes the benefit of having a single version of the namespace and thereby avoiding the need to manage the versions of sub-components.
-
-### 3. Sandboxing
-
-You can create a sandbox of this topology in the cloud (AWS is the default provider) using
-
-```
-tc create -s <sandbox-name> -e <aws-profile>
-```
-
-and can invoke (`tc invoke -s sandbox -e env -p payload.json`) this topology. This sandbox is also versioned and we can update specific entities or components in it. Sandboxing is fundamental to canary-based routing and deploys. `tc create` also knows how to build the functions, implicitly, for various language runtimes.
-
-```
-tc update -s sandbox -e env -c events|routes|mutations|functions|flow
-```
-
-### 4. Inferred Infrastructure
-
-`tc compose` generates a lot of the infrastructure (permissions, default configurations etc) boilerplate needed for the configured provider. Think of infrastructure as _Types_ in a dynamic programming language.
-
-### 5. Recursive Topology
-
-Functors can be created at any level in the code repository's heirarchy. They are like fractals where we can zoom in or out. For example, consider the following retail order management topology:
-
-```sh
-order/
-├── payment
-│   ├── other-payment-processor
-│   │   └── handler.py
-│   ├── stripe
-│   │   ├── handler
-│   │   └── topology.yml
-│   └── topology.yml
-└── topology.yml
-```
-
-There are two sub-topologies in the root topology. `order`, `payment` and `stripe` are valid topologies. `tc` can create and manage sandboxes at any level preserving the integrity of the overall graph.
-
-```
-cd order
-tc create -s <sandbox> -e <env> --recursive
-```
-
-This feature helps evolve the system and test individual nodes in isolation.
-
-```
-tc compose | tc resolve -s sandbox -e env | tc create
-```
-
-We can replace the resolver with `sed` or a template renderer with values from ENV variables, SSM parameter store, Vault etc. For example:
-
-```
-tc compose | sed -i 's/{{API_GATEWAY}}/my-gateway/g' |tc create
-```
-
-The resolver can also be written in any language that is easy to use and query the provider, efficiently.
-
-The output of the composer, the resolver and the sandbox's metadata as seen above are _isomorphic_. They are structurally the same and can be diffed like git-diff. Diffable infrastructure without having external state is a simple yet powerful feature.
 
 ## Install
 
@@ -142,17 +94,7 @@ Commands:
   upgrade  upgrade tc version
   version  display current tc version
 ```
-## History and Roadmap
-
-We've been working on tc for quite a while in a private repo, but much of that time was focused on the internal needs of Informed. Since the creation of this public repo we have started work on making it suitable for broader use cases beyond our own.
-
-Here is a snapshot of the history and future plans. Please let us know how we could make it useful for your use cases as well.
-
-![Roadmap](doc/images/tc-roadmap.png)
-
 ## Contributing
-
-Though significant work has been done previous to this public repo for internal use at Informed, this project is still quite nascent and is being actively developed to be suitable for use outside of Informed.
 
 We welcome contributions from the community! Whether you're just giving feedback, fixing bugs, improving documentation, or proposing new features, your efforts are appreciated.
 
@@ -195,10 +137,21 @@ The codebase is organized as a Rust workspace with multiple libraries:
 
 We aim to review all contributions promptly and look forward to collaborating with you!
 
+## Core Authors
+
+- Isaac Praveen
+- Rob Berger (Mentor)
 
 ## Thanks & Credits
 
-- Thanks to [Eric Harvey](https://github.com/EricHarvey) for brainstorming on several core features and ideas.
-- Thanks to [Rahul Salla](https://github.com/raaahulss), [Rachel Chung](https://github.com/rachel-yujin-chung), [Alper](https://github.com/alperinformed), [Alex](https://github.com/GalexyN), [Sanjeev](https://github.com/sanjeev247)  for their collaboration, testing and insights.
-- Thanks to [Abhijith Gopal](https://github.com/abhijith) for his thoughts and ideas on graph-based computations.
-- Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.
+Thanks to the following engineers for contributing ideas and testing.
+
+- [Eric Harvey](https://github.com/EricHarvey)
+- [Rachel Chung](https://github.com/rachel-yujin-chung)
+- [Rahul Salla](https://github.com/raaahulss)
+- [Alper Vural](https://github.com/alperinformed)
+- [Alexander Ngyuen](https://github.com/GalexyN)
+- [Sanjeev](https://github.com/sanjeev247)
+- [Abhijith Gopal](https://github.com/abhijith)
+
+Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.
