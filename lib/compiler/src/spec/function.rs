@@ -394,9 +394,22 @@ fn render(s: &str, version: &str) -> String {
     u::stencil(s, table)
 }
 
+pub fn find_fspec_file(dir: &str) -> String {
+    let name = match std::env::var("TC_FUNCTION_SPEC") {
+        Ok(r) => r,
+        Err(_) => "function.yml".to_string()
+    };
+    if u::path_exists(dir, &name) {
+        name
+    } else {
+        "function.yml".to_string()
+    }
+}
+
 fn load_fspec_file(version: &str, dir: &str) -> Option<FunctionSpec> {
+    let name = find_fspec_file(dir);
     let f1 = format!("{}/function.json", dir);
-    let f2 = format!("{}/function.yml", dir);
+    let f2 = format!("{}/{}", dir, &name);
     let f3 = format!("{}/function.yaml", dir);
     if u::file_exists(&f1) {
         let data = render(&u::slurp(&f1), &version);
