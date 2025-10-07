@@ -589,6 +589,8 @@ pub async fn list_cache(namespace: Option<String>, env: Option<String>, sandbox:
 
 pub struct SnapshotOpts {
     pub save: bool,
+    pub list: bool,
+    pub show: Option<String>,
     pub format: Option<String>,
     pub target_env: Option<String>,
     pub target_sandbox: Option<String>,
@@ -599,7 +601,9 @@ pub struct SnapshotOpts {
 pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
     let SnapshotOpts {
         save,
+        list,
         format,
+        show,
         gen_changelog,
         gen_sub_versions,
         target_env,
@@ -630,10 +634,23 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
                     let records_str = serde_json::to_string_pretty(&records).unwrap();
                     snapshotter::save(&auth, &records_str, &p, &sandbox).await
                 }
+
                 snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
             }
         }
-        None => println!("Please specify profile"),
+        None => {
+            if list {
+                let xs = snapshotter::list(&sandbox).await;
+                for x in xs {
+                    println!("{}", &x);
+                }
+            } else if let Some(s) = show {
+                let records = snapshotter::show(&s).await;
+                snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
+            } else {
+                println!("Please specify profile");
+            }
+        }
     }
 }
 

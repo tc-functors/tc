@@ -74,9 +74,50 @@ pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool
     rows
 }
 
-pub fn load(s: &str) -> Vec<Manifest> {
-    let xs: Vec<Manifest> = serde_json::from_str(s).unwrap();
-    xs
+pub async fn show(name: &str) -> Vec<Manifest> {
+    let cfg = Config::new();
+
+    let maybe_bucket = cfg.snapshotter.bucket;
+    let maybe_prefix = cfg.snapshotter.prefix;
+    let maybe_target_profile = cfg.snapshotter.profile;
+
+    if let (Some(bucket), Some(prefix), Some(profile)) = (maybe_bucket, maybe_prefix, maybe_target_profile) {
+        let auth = &init_auth(&profile).await;
+        let client = aws::s3::make_client(auth).await;
+        let key = format!("{}/{}.json", &prefix, name);
+        let s = aws::s3::get_str(&client, &bucket, &key).await;
+        let xs: Vec<Manifest> = serde_json::from_str(&s).unwrap();
+        xs
+    } else {
+        println!("No bucket configured");
+        vec![]
+    }
+}
+
+pub async fn list(_sandbox: &str) -> Vec<String> {
+    let cfg = Config::new();
+
+    let maybe_bucket = cfg.snapshotter.bucket;
+    let maybe_prefix = cfg.snapshotter.prefix;
+    let maybe_target_profile = cfg.snapshotter.profile;
+
+    if let (Some(bucket), Some(prefix), Some(profile)) = (maybe_bucket, maybe_prefix, maybe_target_profile) {
+        let auth = &init_auth(&profile).await;
+        let client = aws::s3::make_client(auth).await;
+        let keys = aws::s3::list_keys(&client, &bucket, &prefix).await;
+        let mut xs: Vec<String> = vec![];
+        for key in keys {
+            let part = u::split_last(&key, &format!("{}/", &prefix));
+            let name = u::split_first(&part, ".");
+            xs.push(name)
+        }
+        xs.sort();
+        xs.reverse();
+        xs
+    } else {
+        tracing::debug!("No snapshot bucket configured. Skipping save");
+        vec![]
+    }
 }
 
 pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {

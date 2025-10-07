@@ -37,9 +37,9 @@ pub async fn deploy_branch(env: &str, service: &str, sandbox: &str, branch: &str
     circleci::trigger_branch(&repo, &env, &sandbox, &service, branch).await
 }
 
-pub async fn deploy_pipeline(env: &str, sandbox: &str) -> String {
+pub async fn deploy_snapshot(env: &str, sandbox: &str, snapshot: &str) -> String {
     let repo = current_repo();
-    circleci::trigger_pipeline(&repo, env, sandbox).await
+    circleci::trigger_pipeline(&repo, env, sandbox, snapshot).await
 }
 
 pub async fn create(env: &str, sandbox: &str, dir: &str, branch: &str) -> String {
