@@ -222,7 +222,7 @@ pub async fn trigger_build(repo: &str, prefix: &str, function: &str, branch: &st
     ci.trigger_workflow(payload).await
 }
 
-pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str) -> String {
+pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str, snapshot: &str) -> String {
     let ci = Circle::init(repo);
     let payload = format!(
         r#"
@@ -230,6 +230,7 @@ pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str) -> String {
              "branch": "main",
              "parameters": {{
               "tc-deploy-snapshot-pipeline": true,
+              "tc-deploy-snapshot": "{snapshot}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
               "api_call": true

@@ -132,25 +132,6 @@ pub async fn deploy_snapshot(env: Option<String>, sandbox: Option<String>, snaps
         None => panic!("No env or profile specified"),
     };
     let sandbox = u::maybe_string(sandbox, "stable");
-    let manifests = snapshotter::load(snapshot);
-
-    for manifest in manifests {
-        if !&manifest.version.is_empty() {
-            println!(
-                "Triggering CI build {}@{}.{}/{}",
-                &manifest.namespace, &sandbox, &env, &manifest.version
-            );
-            executor::deploy(&env, &manifest.namespace, &sandbox, &manifest.version).await;
-        }
-    }
-}
-
-pub async fn deploy_pipeline(env: Option<String>, sandbox: Option<String>) {
-    let env = match env {
-        Some(e) => e,
-        None => panic!("No env or profile specified"),
-    };
-    let sandbox = u::maybe_string(sandbox, "stable");
     let msg = format!(
         "This command will trigger a deploy to {}@{}. Do you want to continue?",
         &env, &sandbox
@@ -163,7 +144,7 @@ pub async fn deploy_pipeline(env: Option<String>, sandbox: Option<String>) {
     };
 
     if should_continue {
-        let url = executor::deploy_pipeline(&env, &sandbox).await;
+        let url = executor::deploy_snapshot(&env, &sandbox, snapshot).await;
         println!("Opening {}", &url);
         open::that(&url).unwrap();
     }

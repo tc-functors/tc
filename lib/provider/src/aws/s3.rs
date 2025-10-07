@@ -146,3 +146,21 @@ pub fn parts_of(uri: &str) -> (String, String) {
     let uri = s3uri::from_uri(uri).unwrap();
     (uri.bucket, uri.key.unwrap().to_string())
 }
+
+pub async fn list_keys(client: &Client, bucket: &str, prefix: &str) -> Vec<String> {
+    tracing::debug!("s3:list s3://{}/{}", bucket, prefix);
+    let result = client
+        .list_objects()
+        .bucket(bucket)
+        .prefix(prefix)
+        .send()
+        .await
+        .unwrap();
+
+    let res = result.contents.unwrap();
+    let mut xs: Vec<String> = vec![];
+    for x in res {
+        xs.push(x.key.unwrap());
+    }
+    xs
+}
