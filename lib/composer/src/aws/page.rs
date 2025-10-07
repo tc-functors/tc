@@ -109,6 +109,7 @@ impl Infra {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Page {
     pub fqn: String,
+    pub kind: String,
     pub namespace: String,
     pub dir: String,
     pub dist: String,
@@ -122,7 +123,30 @@ pub struct Page {
     pub default_root_object: String,
     pub domains: HashMap<String, HashMap<String, String>>,
     pub config_template: Option<String>,
+    pub functions: HashMap<String, String>,
 }
+
+fn make_functions(kind: &str) -> HashMap<String, String> {
+    let mut xs: HashMap<String, String> = HashMap::new();
+    let redirect = format!(r#"
+function handler(event) {{
+    const request = event.request;
+    const uri = request.uri;
+    if (uri.endsWith('/') || !uri.includes('.')) {{
+        request.uri = '/index.html';
+    }}
+    return request;
+}}
+"#);
+    match kind {
+        "spa" | "SPA" => {
+            xs.insert(s!("redirect"), redirect);
+        },
+        _ => ()
+    }
+    xs
+}
+
 
 fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<Infra>) -> String {
     match given_bucket {
@@ -216,12 +240,18 @@ fn make(
     };
     let dist = find_dist(&dir, ps.dist.clone());
 
+    let kind = match &ps.kind {
+        Some(k) => &k,
+        None => "SPA"
+    };
+
     let paths = make_paths(namespace, name);
 
     Page {
         fqn: fqn,
         namespace: namespace.to_string(),
         dir: dir,
+        kind: kind.to_string(),
         dist: dist,
         build: build,
         caller_ref: caller_ref,
@@ -233,6 +263,7 @@ fn make(
         default_root_object: s!("index.html"),
         domains: find_domains(&ps.domains, infra),
         config_template: ps.config_template.clone(),
+        functions: make_functions(kind)
     }
 }
 
