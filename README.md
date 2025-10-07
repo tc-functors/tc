@@ -4,9 +4,7 @@
 [![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
 [![Ask DeepWiki (useful but watch  for hallucinations)](https://deepwiki.com/badge.svg)](https://deepwiki.com/tc-functors/tc)
 
-tc is a graph-based, executable architecture description language and framework for cloud-native serverless systems, with fractal composition and infrastructure generation capabilities.
-
-tc (topology composer) provides a higher-level abstraction for serverless development, focusing on the logical relationships between abstract entities (functions, events, routes, queues, channels, mutations and pages) rather than the underlying infrastructure details.
+tc (topology composer) is a **graph-based, executable architecture description language and framework** for cloud-native serverless systems, with fractal composition and infrastructure generation capabilities.
 
 tc's core value proposition is enabling developers to focus on business logic and component relationships rather than infrastructure management, while maintaining the ability to deploy consistently across environments and providers.
 
