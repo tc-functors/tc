@@ -1,6 +1,7 @@
 use crate::Auth;
 use aws_sdk_cloudfront::{
     Client,
+    primitives::Blob,
     types::{
         Aliases,
         AllowedMethods,
@@ -31,6 +32,10 @@ use aws_sdk_cloudfront::{
         CustomErrorResponses,
         GeoRestrictionType,
         Restrictions,
+        FunctionRuntime,
+        FunctionAssociation,
+        FunctionAssociations,
+        EventType,
         builders::{
             AliasesBuilder,
             CustomErrorResponsesBuilder,
@@ -51,7 +56,10 @@ use aws_sdk_cloudfront::{
             LambdaFunctionAssociationsBuilder,
             CacheBehaviorsBuilder,
             RestrictionsBuilder,
-            GeoRestrictionBuilder
+            GeoRestrictionBuilder,
+            FunctionConfigBuilder,
+            FunctionAssociationsBuilder,
+            FunctionAssociationBuilder,
         },
     },
 };
@@ -129,14 +137,34 @@ fn make_allowed_methods() -> AllowedMethods {
         .build().unwrap()
 }
 
-fn make_function_associations() -> LambdaFunctionAssociations {
+fn make_lambda_function_associations() -> LambdaFunctionAssociations {
     let it = LambdaFunctionAssociationsBuilder::default();
     it.quantity(0).build().unwrap()
 }
 
-fn make_default_cache_behavior(origin_id: &str, cache_policy_id: &str) -> DefaultCacheBehavior {
+fn make_function_assoc(arn: &str) -> FunctionAssociation {
+    let it = FunctionAssociationBuilder::default();
+    it.function_arn(arn).event_type(EventType::ViewerRequest).build().unwrap()
+}
+
+fn make_function_associations(functions: Vec<String>) -> FunctionAssociations {
+    let it = FunctionAssociationsBuilder::default();
+    let len = functions.len().try_into().unwrap();
+    if len == 0 {
+        it.quantity(0).build().unwrap()
+    } else {
+        let mut assocs: Vec<FunctionAssociation> = vec![];
+        for arn in functions {
+            assocs.push(make_function_assoc(&arn));
+        }
+        it.quantity(len).set_items(Some(assocs)).build().unwrap()
+    }
+}
+
+fn make_default_cache_behavior(origin_id: &str, cache_policy_id: &str, functions: Vec<String>) -> DefaultCacheBehavior {
     let allowed_methods = make_allowed_methods();
-    let function_assocs = make_function_associations();
+    let lambda_function_assocs = make_lambda_function_associations();
+    let function_assocs = make_function_associations(functions);
     let it = DefaultCacheBehaviorBuilder::default();
     it.target_origin_id(origin_id)
         .viewer_protocol_policy(ViewerProtocolPolicy::RedirectToHttps)
@@ -145,7 +173,8 @@ fn make_default_cache_behavior(origin_id: &str, cache_policy_id: &str) -> Defaul
         .smooth_streaming(false)
         .compress(false)
         .field_level_encryption_id("")
-        .lambda_function_associations(function_assocs)
+        .lambda_function_associations(lambda_function_assocs)
+        .function_associations(function_assocs)
         .build()
         .unwrap()
 }
@@ -212,6 +241,7 @@ pub fn make_dist_config(
     cert_arn: Option<String>,
     oac_id: &str,
     cache_policy_id: &str,
+    functions: Vec<String>
 ) -> DistributionConfig {
 
     let it = DistributionConfigBuilder::default();
@@ -219,7 +249,7 @@ pub fn make_dist_config(
     let aliases = make_aliases(alias);
     let cert = make_viewer_cert(cert_arn);
     let default_origin_id = origins.items.first().unwrap().id.clone();
-    let default_cache = make_default_cache_behavior(&default_origin_id, cache_policy_id);
+    let default_cache = make_default_cache_behavior(&default_origin_id, cache_policy_id, functions);
     let cache_behaviors = make_cache_behaviors();
     let custom_error_responses = make_custom_error_responses();
     let restrictions = make_geo_restrictions();
@@ -482,4 +512,67 @@ pub async fn assoc_alias(client: &Client, dist_id: &str, domain: &str) {
 
 // function
 
-// associate
+pub async fn create_function(client: &Client, name: &str, handler: &str) -> String {
+    let buffer = handler.as_bytes();
+    let blob = Blob::new(buffer);
+    let fcb = FunctionConfigBuilder::default();
+    let fc = fcb.runtime(FunctionRuntime::CloudfrontJs20).comment(name).build().unwrap();
+    let res = client
+        .create_function()
+        .name(name)
+        .function_config(fc)
+        .function_code(blob)
+        .send()
+        .await
+        .unwrap();
+    res.e_tag.unwrap()
+}
+
+pub async fn update_function(client: &Client, name: &str, handler: &str, etag: &str) -> String {
+    let buffer = handler.as_bytes();
+    let blob = Blob::new(buffer);
+    let fcb = FunctionConfigBuilder::default();
+    let fc = fcb.runtime(FunctionRuntime::CloudfrontJs20).comment(name).build().unwrap();
+    let res = client
+        .update_function()
+        .name(name)
+        .function_config(fc)
+        .function_code(blob)
+        .if_match(etag)
+        .send()
+        .await
+        .unwrap();
+    res.e_tag.unwrap()
+}
+
+pub async fn publish_function(client: &Client, name: &str, etag: &str) {
+    client
+        .publish_function()
+        .name(name)
+        .if_match(etag)
+        .send()
+        .await
+        .unwrap();
+}
+
+pub async fn find_function(client: &Client, name: &str) -> Option<String> {
+    let res = client
+        .get_function()
+        .name(name)
+        .send()
+        .await;
+
+    match res {
+        Ok(r) => r.e_tag,
+        Err(_) => None
+    }
+}
+
+pub async fn create_or_update_function(client: &Client, name: &str, handler: &str) {
+    let maybe_fn = find_function(client, name).await;
+    let etag = match maybe_fn {
+        Some(t) => update_function(client, name, handler, &t).await,
+        None => create_function(client, name, handler).await
+    };
+    publish_function(client, name, &etag).await;
+}

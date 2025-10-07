@@ -208,6 +208,14 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 }
 
+fn as_function_arns(auth: &Auth, functions: &HashMap<String, String>) -> Vec<String> {
+    let mut xs: Vec<String> = vec![];
+    for (name, _) in functions {
+        xs.push(auth.cloudfront_function_arn(&name));
+    }
+    xs
+}
+
 async fn create_or_update_distribution(auth: &Auth, name: &str, page: &Page, sandbox: &str, maybe_domain: Option<String>) -> (String, String) {
     let Page {
         fqn,
@@ -215,6 +223,7 @@ async fn create_or_update_distribution(auth: &Auth, name: &str, page: &Page, san
         origin_domain,
         caller_ref,
         default_root_object,
+        functions,
         ..
     } = page;
 
@@ -244,9 +253,15 @@ async fn create_or_update_distribution(auth: &Auth, name: &str, page: &Page, san
         maybe_cert_arn,
         &oac_id,
         &cache_policy_id,
+        as_function_arns(auth, functions)
     );
 
-    tracing::debug!("Configuring page {} - creating distribution", name);
+    for (name, handler) in functions {
+        println!("Configuring page: creating function {}", name);
+        cloudfront::create_or_update_function(&client, name, handler).await;
+    }
+
+    println!("Configuring page {} - creating distribution", name);
     let dist_id = cloudfront::create_or_update_distribution(&client, fqn, dist_config).await;
 
     cloudfront::wait_until_updated(&client, &dist_id).await;
@@ -295,14 +310,8 @@ pub async fn create(
     config: &HashMap<String, String>,
     sandbox: &str,
 ) {
-    if pages.len() > 0 {
-        if let Some(page) = pages.get("default") {
-            create_page(auth, "default", &page, config, sandbox).await;
-        }
-    } else {
-        for (name, page) in pages {
-            create_page(auth, &name, &page, config, sandbox).await;
-        }
+    for (name, page) in pages {
+        create_page(auth, &name, &page, config, sandbox).await;
     }
 }
 
@@ -368,6 +377,16 @@ async fn update_domains(
     }
 }
 
+async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>) {
+    let client = cloudfront::make_client(auth).await;
+    for (_, page) in pages {
+        for (name, handler) in &page.functions {
+            println!("Configuring page {} - creating function", &name);
+            cloudfront::create_or_update_function(&client, &name, &handler).await;
+        }
+    }
+}
+
 pub async fn update(
     auth: &Auth,
     pages: &HashMap<String, Page>,
@@ -379,6 +398,7 @@ pub async fn update(
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,
         "domains" => update_domains(auth, pages, config, sandbox).await,
+        "functions" => update_functions(auth, pages).await,
         "build" => {
             for (name, page) in pages {
                 build_page(&page.dir, name, &page.build, &page.config_template);

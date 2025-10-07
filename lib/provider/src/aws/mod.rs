@@ -227,4 +227,8 @@ impl Auth {
             &self.region, &self.account, name
         )
     }
+
+    pub fn cloudfront_function_arn(&self, name: &str) -> String {
+        format!("arn:aws:cloudfront::{}:function/{}", &self.account, name)
+    }
 }
