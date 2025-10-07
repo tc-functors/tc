@@ -138,8 +138,10 @@ pub fn is_relative_topology_dir(dir: &str) -> bool {
 }
 
 // functions
+
+
 fn is_standalone_function_dir(dir: &str) -> bool {
-    let function_file = "function.yml";
+    let function_file = &compiler::spec::function::find_fspec_file(dir);
     let function_file_json = "function.json";
     let topology_file = "topology.yml";
     let parent_file = match parent_topology_file(dir) {
