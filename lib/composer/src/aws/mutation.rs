@@ -20,6 +20,7 @@ use std::collections::HashMap;
 pub struct Resolver {
     pub entity: Entity,
     pub name: String,
+    pub target_name: String,
     pub target_arn: String,
     pub input: String,
     pub output: String,
@@ -51,6 +52,7 @@ fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Reso
         let resolver = Resolver {
             entity: entity,
             name: k.to_owned(),
+            target_name: target_name,
             target_arn: target_arn,
             input: r.input,
             output: r.output,

@@ -6,10 +6,6 @@
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.blue.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
-    <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script defer src="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.js"></script>
-    <link href="https://rawgit.com/abodelot/jquery.json-viewer/master/json-viewer/jquery.json-viewer.css" rel="stylesheet"/>
     <script defer src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
@@ -180,6 +176,27 @@
       .htmx-request.htmx-indicator{
 	display:inline;
       }
+
+      .loader {
+	display: none;
+      }
+
+    .htmx-request .loader {
+      display: block;
+    }
+
+    .htmx-request.loader {
+      display: block;
+    }
+
+   /* Hide previously loaded content during HTMX request */
+   .htmx-request .loaded-content {
+     display: none;
+   }
+
+   .htmx-request.loaded-content {
+     display: none;
+   }
 
       .x1 { flex: 0 0 100% }
       .x78 { flex: 0 0 78% }

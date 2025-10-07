@@ -20,7 +20,7 @@ struct Item {
     gateway: String,
     authorizer: String,
     target_kind: String,
-    target_arn: String,
+    target_name: String,
 }
 
 fn build_routes(namespace: &str, rs: HashMap<String, Route>) -> Vec<Item> {
@@ -37,7 +37,7 @@ fn build_routes(namespace: &str, rs: HashMap<String, Route>) -> Vec<Item> {
                 None => String::from(""),
             },
             target_kind: route.entity.to_str(),
-            target_arn: route.target_arn.clone(),
+            target_name: route.target_name.clone(),
         };
         xs.push(e);
     }

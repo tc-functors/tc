@@ -1,2 +1,19 @@
-
-<h3> States </h3>
+<table class="striped">
+  <thead>
+    <tr>
+      <td></td>
+      <td>Namespace</td>
+      <td>Mode</td>
+      <td>Role</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{loop.index}}</td>
+      <td>{{item.namespace}}</td>
+      <td>{{item.mode}}</td>
+      <td>{{item.role}}</td>
+    </tr>
+    {% endfor %}
+</table>

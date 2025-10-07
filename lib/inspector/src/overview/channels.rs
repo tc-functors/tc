@@ -8,31 +8,25 @@ use axum::{
     },
 };
 use composer::{
-    Event,
+    Channel,
     Topology,
 };
 use std::collections::HashMap;
 
 struct Item {
-    namespace: String,
     name: String,
-    rule_name: String,
-    pattern: String,
     targets: HashMap<String, String>,
 }
 
-fn build_events(namespace: &str, evs: HashMap<String, Event>) -> Vec<Item> {
+fn build_channels(_namespace: &str, channels: HashMap<String, Channel>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
-    for (_, event) in evs {
+    for (_, channel) in channels {
         let mut targets: HashMap<String, String> = HashMap::new();
-        for t in &event.targets {
+        for t in &channel.targets {
             targets.insert(t.entity.to_str(), t.name.clone());
         }
         let e = Item {
-            namespace: namespace.to_string(),
-            name: event.name.clone(),
-            rule_name: event.rule_name.clone(),
-            pattern: serde_json::to_string(&event.pattern).unwrap(),
+            name: channel.name.to_string(),
             targets: targets,
         };
         xs.push(e);
@@ -44,10 +38,10 @@ fn build(topologies: Vec<Topology>) -> Vec<Item> {
     let mut xs: Vec<Item> = vec![];
 
     for topology in topologies {
-        let fns = build_events(&topology.namespace, topology.events);
+        let fns = build_channels(&topology.namespace, topology.channels);
         xs.extend(fns);
         for (_, node) in topology.nodes {
-            let fns = build_events(&node.namespace, node.events);
+            let fns = build_channels(&node.namespace, node.channels);
             xs.extend(fns)
         }
     }
@@ -56,13 +50,13 @@ fn build(topologies: Vec<Topology>) -> Vec<Item> {
 
 #[derive(Template)]
 #[template(path = "overview/channels.html")]
-struct EventsTemplate {
+struct ChannelsTemplate {
     items: Vec<Item>,
 }
 
 pub async fn list(State(store): State<Store>) -> impl IntoResponse {
     let topologies = store.list_topologies().await;
-    let events = build(topologies);
-    let temp = EventsTemplate { items: events };
+    let channels = build(topologies);
+    let temp = ChannelsTemplate { items: channels };
     Html(temp.render().unwrap())
 }

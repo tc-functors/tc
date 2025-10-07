@@ -2,27 +2,17 @@
   <thead>
     <tr>
       <td></td>
-      <td>Namespace</td>
       <td>Name</td>
-      <td>Rule Name</td>
-      <td>Pattern</td>
       <td>Targets</td>
     </tr>
   </thead>
   <tbody>
-    {% for event in items %}
+    {% for channel in items %}
     <tr>
       <td>{{loop.index}}</td>
-      <td>{{event.namespace}}</td>
-      <td>{{event.name}}</td>
-      <td>{{event.rule_name}}</td>
+      <td>{{channel.name}}</td>
       <td>
-	<code>
-	  {{event.pattern}}
-	</code>
-      </td>
-      <td>
-	{% for (kind, name) in event.targets %}
+	{% for (kind, name) in channel.targets %}
 	<b>{{kind}}</b>
 	<br/>
 	{{name}}
