@@ -50,7 +50,6 @@ struct DiagramTemplate {
 pub async fn render(State(store): State<Store>) -> impl IntoResponse {
     let topologies = store.list_topologies().await;
     let chart = build(topologies);
-    println!("{}", &chart);
     let temp = DiagramTemplate { data: chart };
     Html(temp.render().unwrap())
 }
