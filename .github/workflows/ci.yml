@@ -45,7 +45,7 @@ jobs:
           version: latest
           files: |
             ./tc
-            args: -fq -o tc
+            args: --best --lzma -fq -o tc
 
       - name: Release MUSL
         uses: svenstaro/upload-release-action@v2
