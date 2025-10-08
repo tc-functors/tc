@@ -34,7 +34,7 @@ jobs:
       - name: Build Musl
         uses: gmiam/rust-musl-action@master
         with:
-          args: cargo build --target x86_64-unknown-linux-musl --release
+          args: cargo build --target x86_64-unknown-linux-musl --release --no-default-features
 
       - name: copy tc
         run: cp target/x86_64-unknown-linux-musl/release/tc tc
@@ -91,7 +91,7 @@ jobs:
           restore-keys: ${{ matrix.runner }}-cargo-
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} --no-default-features
 
       - name: Release
         uses: svenstaro/upload-release-action@v2

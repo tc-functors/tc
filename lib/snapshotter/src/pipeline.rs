@@ -158,6 +158,9 @@ parameters:
   tc-deploy-sandbox:
     type: string
     default: main
+  tc-deploy-snapshot:
+    type: string
+    default: main
 
 jobs:
 {job_def}
