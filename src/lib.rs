@@ -718,7 +718,3 @@ pub async fn emulate(
     let entity_component = u::maybe_string(maybe_entity, "function");
     emulator::emulate(auth, &rt, &entity_component, shell).await;
 }
-
-pub async fn inspect(port: Option<String>) {
-    inspector::init(port).await
-}
