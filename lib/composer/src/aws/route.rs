@@ -1,6 +1,6 @@
 use crate::aws::{
-    role::Role,
     function::Function,
+    role::Role,
     template,
 };
 use compiler::{

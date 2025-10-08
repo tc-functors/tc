@@ -1,10 +1,14 @@
 use crate::Auth;
-use aws_sdk_acm::Client;
-use aws_sdk_acm::types::CertificateStatus;
-use aws_sdk_acm::types::ValidationMethod;
-use aws_sdk_acm::types::ResourceRecord;
-use std::collections::HashMap;
+use aws_sdk_acm::{
+    Client,
+    types::{
+        CertificateStatus,
+        ResourceRecord,
+        ValidationMethod,
+    },
+};
 use kit as u;
+use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.get_global_config().await;
@@ -111,7 +115,7 @@ pub async fn wait_until_validated(client: &Client, arn: &str) {
     }
 }
 
-pub async fn get_domain_validation_records(client: &Client, arn: &str) ->  Vec<ResourceRecord> {
+pub async fn get_domain_validation_records(client: &Client, arn: &str) -> Vec<ResourceRecord> {
     let r = client
         .describe_certificate()
         .certificate_arn(arn)
@@ -123,7 +127,10 @@ pub async fn get_domain_validation_records(client: &Client, arn: &str) ->  Vec<R
             CertificateStatus::Issued => vec![],
             _ => {
                 let options = res.domain_validation_options.unwrap();
-                let xs: Vec<ResourceRecord> = options.into_iter().map(|opt|  opt.resource_record.unwrap()).collect();
+                let xs: Vec<ResourceRecord> = options
+                    .into_iter()
+                    .map(|opt| opt.resource_record.unwrap())
+                    .collect();
                 xs
             }
         }

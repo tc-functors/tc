@@ -1,12 +1,38 @@
-
-mod display;
 mod aws;
+mod display;
 
 mod tag;
 pub mod topology;
 pub mod version;
 
-
+pub use aws::{
+    channel::Channel,
+    event::{
+        Event,
+        Target,
+    },
+    flow::Flow,
+    function,
+    function::{
+        Function,
+        build::Build,
+        layer::Layer,
+        runtime::Runtime,
+    },
+    mutation::Mutation,
+    page,
+    page::{
+        BucketPolicy,
+        Page,
+    },
+    queue::Queue,
+    role::{
+        Role,
+        policy::Policy,
+    },
+    route::Route,
+    schedule::Schedule,
+};
 use compiler::{
     entity::Entity,
     spec::{
@@ -19,26 +45,6 @@ use display::Format;
 pub use display::topology::TopologyCount;
 use kit as u;
 use kit::*;
-pub use aws::function::{
-    Function,
-    build::Build,
-    layer::Layer,
-    runtime::Runtime,
-};
-pub use aws::event::{Event, Target};
-pub use aws::channel::Channel;
-pub use aws::mutation::Mutation;
-pub use aws::page::{Page, BucketPolicy};
-pub use aws::queue::Queue;
-pub use aws::role::Role;
-pub use aws::route::Route;
-pub use aws::schedule::Schedule;
-pub use aws::flow::Flow;
-pub use aws::role::policy::Policy;
-
-pub use aws::function;
-pub use aws::page;
-
 use std::{
     collections::HashMap,
     str::FromStr,

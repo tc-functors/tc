@@ -1,11 +1,10 @@
 use composer::{
     Function,
-    Topology
+    Topology,
 };
-
-use std::collections::HashMap;
 use kit as u;
 use kit::*;
+use std::collections::HashMap;
 
 fn files_modified_in_branch() -> Vec<String> {
     let dir = u::pwd();
@@ -30,7 +29,6 @@ fn files_modified_uncommitted() -> Vec<String> {
     let out = u::sh("git ls-files -m | xargs dirname | sort | uniq", &dir);
     u::split_lines(&out).iter().map(|v| v.to_string()).collect()
 }
-
 
 pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
     let dir = pwd();
@@ -60,14 +58,12 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
     lines.iter().map(|s| s.to_string()).collect()
 }
 
-
 pub fn diff_fns(
     namespace: &str,
     from: &str,
     to: &str,
     fns: &HashMap<String, Function>,
 ) -> HashMap<String, Function> {
-
     let mut changed_fns: HashMap<String, Function> = HashMap::new();
 
     tracing::debug!("Diffing namespace {} from: {} to: {}", namespace, from, to);
@@ -107,7 +103,6 @@ pub fn diff_fns(
     }
     changed_fns
 }
-
 
 pub fn diff(topology: &Topology, from: &str, to: &str) {
     let fns = diff_fns(&topology.namespace, &from, &to, &topology.functions);

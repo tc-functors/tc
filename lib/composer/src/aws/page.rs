@@ -56,7 +56,10 @@ impl BucketPolicy {
             effect: s!("Allow"),
             principal: principal,
             action: s!("s3:GetObject"),
-            resource: format!("arn:aws:s3:::{}/{}/{{{{sandbox}}}}/{}/*", bucket, namespace, name),
+            resource: format!(
+                "arn:aws:s3:::{}/{}/{{{{sandbox}}}}/{}/*",
+                bucket, namespace, name
+            ),
             condition: condition,
         };
 
@@ -128,7 +131,8 @@ pub struct Page {
 
 fn make_functions(kind: &str) -> HashMap<String, String> {
     let mut xs: HashMap<String, String> = HashMap::new();
-    let redirect = format!(r#"
+    let redirect = format!(
+        r#"
 function handler(event) {{
     const request = event.request;
     const uri = request.uri;
@@ -137,16 +141,16 @@ function handler(event) {{
     }}
     return request;
 }}
-"#);
+"#
+    );
     match kind {
         "spa" | "SPA" => {
             xs.insert(s!("redirect"), redirect);
-        },
-        _ => ()
+        }
+        _ => (),
     }
     xs
 }
-
 
 fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<Infra>) -> String {
     match given_bucket {
@@ -242,7 +246,7 @@ fn make(
 
     let kind = match &ps.kind {
         Some(k) => &k,
-        None => "SPA"
+        None => "SPA",
     };
 
     let paths = make_paths(namespace, name);
@@ -263,7 +267,7 @@ fn make(
         default_root_object: s!("index.html"),
         domains: find_domains(&ps.domains, infra),
         config_template: ps.config_template.clone(),
-        functions: make_functions(kind)
+        functions: make_functions(kind),
     }
 }
 

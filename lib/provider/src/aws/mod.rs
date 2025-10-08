@@ -1,3 +1,4 @@
+pub mod acm;
 pub mod appsync;
 pub mod cloudfront;
 pub mod cloudwatch;
@@ -11,14 +12,13 @@ pub mod iam;
 pub mod lambda;
 pub mod layer;
 pub mod resourcetag;
+pub mod route53;
 pub mod s3;
 pub mod scheduler;
 pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
-pub mod acm;
-pub mod route53;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
@@ -62,7 +62,6 @@ impl Auth {
             None => self.clone(),
         }
     }
-
 
     pub async fn get_global_config(&self) -> SdkConfig {
         sts::get_global_config(&self.name, self.assume_role.clone()).await

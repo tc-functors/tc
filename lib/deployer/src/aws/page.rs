@@ -7,11 +7,11 @@ use kit::*;
 use provider::{
     Auth,
     aws::{
+        acm,
         cloudfront,
+        route53,
         s3,
         ssm,
-        acm,
-        route53
     },
 };
 use std::collections::HashMap;
@@ -139,7 +139,14 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
         let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
         let route53_client = route53::make_client(auth).await;
         for rec in validation_records {
-            route53::create_record_set(&route53_client, domain, &rec.name, &rec.r#type.as_str(), &rec.value).await;
+            route53::create_record_set(
+                &route53_client,
+                domain,
+                &rec.name,
+                &rec.r#type.as_str(),
+                &rec.value,
+            )
+            .await;
         }
         acm::wait_until_validated(&client, &cert_arn).await;
     } else {
@@ -148,17 +155,26 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
     cert_arn
 }
 
-fn find_domain(domains: &HashMap<String, HashMap<String, String>>, env: &str, sandbox: &str) -> Option<String> {
+fn find_domain(
+    domains: &HashMap<String, HashMap<String, String>>,
+    env: &str,
+    sandbox: &str,
+) -> Option<String> {
     match domains.get(env) {
         Some(e) => e.get(sandbox).cloned(),
         None => match domains.get("default") {
             Some(d) => d.get(sandbox).cloned(),
-            None => None
-        }
+            None => None,
+        },
     }
 }
 
-async fn update_bucket_policy(auth: &Auth, bucket: &str, bucket_policy: &BucketPolicy, dist_id: &str) {
+async fn update_bucket_policy(
+    auth: &Auth,
+    bucket: &str,
+    bucket_policy: &BucketPolicy,
+    dist_id: &str,
+) {
     tracing::debug!("Updating bucket policy");
     let s3_client = s3::make_client(auth).await;
     let existing_policy = s3::get_bucket_policy(&s3_client, bucket).await;
@@ -200,9 +216,7 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
 
     println!(
         "Uploading code from {} to s3://{}/{}",
-        dist,
-        bucket,
-        bucket_prefix
+        dist, bucket, bucket_prefix
     );
 
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
@@ -216,7 +230,13 @@ fn as_function_arns(auth: &Auth, functions: &HashMap<String, String>) -> Vec<Str
     xs
 }
 
-async fn create_or_update_distribution(auth: &Auth, name: &str, page: &Page, sandbox: &str, maybe_domain: Option<String>) -> (String, String) {
+async fn create_or_update_distribution(
+    auth: &Auth,
+    name: &str,
+    page: &Page,
+    sandbox: &str,
+    maybe_domain: Option<String>,
+) -> (String, String) {
     let Page {
         fqn,
         origin_paths,
@@ -253,7 +273,7 @@ async fn create_or_update_distribution(auth: &Auth, name: &str, page: &Page, san
         maybe_cert_arn,
         &oac_id,
         &cache_policy_id,
-        as_function_arns(auth, functions)
+        as_function_arns(auth, functions),
     );
 
     for (name, handler) in functions {
@@ -287,12 +307,12 @@ async fn create_page(
         ..
     } = page;
 
-
     let maybe_domain = find_domain(domains, &auth.name, sandbox);
 
     println!("Building page");
     build_and_upload(auth, name, page, config).await;
-    let (dist_id, cname) = create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
+    let (dist_id, cname) =
+        create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
 
     if let Some(domain) = &maybe_domain {
         update_dns_record(auth, domain, &dist_id, &cname).await;
@@ -317,10 +337,7 @@ pub async fn create(
 
 async fn update_code(auth: &Auth, pages: &HashMap<String, Page>, config: &HashMap<String, String>) {
     for (name, page) in pages {
-        let Page {
-            namespace,
-            ..
-        } = page;
+        let Page { namespace, .. } = page;
 
         println!("Building page");
         build_and_upload(auth, name, page, config).await;
@@ -360,13 +377,11 @@ async fn update_domains(
     sandbox: &str,
 ) {
     for (name, page) in pages {
-        let Page {
-            domains,
-            ..
-        } = page;
+        let Page { domains, .. } = page;
 
         let maybe_domain = find_domain(domains, &auth.name, sandbox);
-        let (dist_id, cname) = create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
+        let (dist_id, cname) =
+            create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
 
         if let Some(domain) = &maybe_domain {
             update_dns_record(auth, domain, &dist_id, &cname).await;

@@ -1,15 +1,21 @@
 use crate::Auth;
-use aws_sdk_route53::Client;
-use aws_sdk_route53::types::ChangeBatch;
-use aws_sdk_route53::types::builders::ChangeBatchBuilder;
-use aws_sdk_route53::types::builders::ChangeBuilder;
-use aws_sdk_route53::types::ChangeAction;
-use aws_sdk_route53::types::Change;
-use aws_sdk_route53::types::ResourceRecordSet;
-use aws_sdk_route53::types::RrType;
-use aws_sdk_route53::types::builders::ResourceRecordSetBuilder;
-use aws_sdk_route53::types::ResourceRecord;
-use aws_sdk_route53::types::builders::ResourceRecordBuilder;
+use aws_sdk_route53::{
+    Client,
+    types::{
+        Change,
+        ChangeAction,
+        ChangeBatch,
+        ResourceRecord,
+        ResourceRecordSet,
+        RrType,
+        builders::{
+            ChangeBatchBuilder,
+            ChangeBuilder,
+            ResourceRecordBuilder,
+            ResourceRecordSetBuilder,
+        },
+    },
+};
 use std::collections::HashMap;
 
 pub async fn make_client(auth: &Auth) -> Client {
@@ -20,7 +26,7 @@ pub async fn make_client(auth: &Auth) -> Client {
 pub struct ValidationRecord {
     pub name: String,
     pub rtype: RrType,
-    pub value: String
+    pub value: String,
 }
 
 fn make_resource_record(value: &str) -> ResourceRecord {
@@ -43,7 +49,10 @@ fn make_record_set(vr: ValidationRecord) -> ResourceRecordSet {
 fn make_change(vr: ValidationRecord) -> Change {
     let b = ChangeBuilder::default();
     let record_set = make_record_set(vr);
-    b.action(ChangeAction::Upsert).resource_record_set(record_set).build().unwrap()
+    b.action(ChangeAction::Upsert)
+        .resource_record_set(record_set)
+        .build()
+        .unwrap()
 }
 
 fn make_change_batch(vr: ValidationRecord) -> ChangeBatch {
@@ -57,7 +66,7 @@ async fn list_hosted_zones(client: &Client) -> HashMap<String, String> {
     let res = client.list_hosted_zones().send().await.unwrap();
     let zones = res.hosted_zones;
     for zone in zones {
-        h.insert(zone.name,  zone.id);
+        h.insert(zone.name, zone.id);
     }
     h
 }
@@ -80,7 +89,13 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> Option<String> {
     }
 }
 
-pub async fn create_record_set(client: &Client, domain: &str, name: &str, rtype: &str, value: &str) {
+pub async fn create_record_set(
+    client: &Client,
+    domain: &str,
+    name: &str,
+    rtype: &str,
+    value: &str,
+) {
     tracing::debug!("Creating Recordset {} {} {}", name, rtype, value);
     let maybe_hosted_zone_id = get_hosted_zone_id(client, domain).await;
 
@@ -88,7 +103,7 @@ pub async fn create_record_set(client: &Client, domain: &str, name: &str, rtype:
         let vr = ValidationRecord {
             name: name.to_string(),
             rtype: RrType::from(rtype),
-            value: value.to_string()
+            value: value.to_string(),
         };
         let change_batch = make_change_batch(vr);
         let _ = client
@@ -101,5 +116,4 @@ pub async fn create_record_set(client: &Client, domain: &str, name: &str, rtype:
     } else {
         panic!("Hosted zone id not found");
     }
-
 }

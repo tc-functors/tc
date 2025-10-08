@@ -20,7 +20,6 @@ use provider::{
 };
 use std::collections::HashMap;
 
-
 // aws
 
 pub async fn lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
@@ -50,7 +49,7 @@ async fn resolve_vars(
     auth: &Auth,
     environment: HashMap<String, String>,
     fqn: &str,
-    resolve_urls: bool
+    resolve_urls: bool,
 ) -> HashMap<String, String> {
     tracing::debug!("Resolving env vars");
     let client = aws::ssm::make_client(auth).await;
@@ -140,7 +139,7 @@ async fn resolve_environment(
     default_vars: &HashMap<String, String>,
     sandbox_vars: Option<HashMap<String, String>>,
     fqn: &str,
-    resolve_urls: bool
+    resolve_urls: bool,
 ) -> HashMap<String, String> {
     let Context { auth, .. } = ctx;
     let mut default_vars = default_vars.clone();
@@ -295,7 +294,12 @@ fn get_infra_spec(
     default.clone()
 }
 
-async fn resolve_runtime(ctx: &Context, runtime: &Runtime, fqn: &str, resolve_urls: bool) -> Runtime {
+async fn resolve_runtime(
+    ctx: &Context,
+    runtime: &Runtime,
+    fqn: &str,
+    resolve_urls: bool,
+) -> Runtime {
     let Context { auth, sandbox, .. } = ctx;
 
     let Runtime {
@@ -324,7 +328,7 @@ async fn resolve_runtime(ctx: &Context, runtime: &Runtime, fqn: &str, resolve_ur
         &runtime.environment,
         environment,
         fqn,
-        resolve_urls
+        resolve_urls,
     )
     .await;
     if !layers.is_empty() {

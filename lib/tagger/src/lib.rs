@@ -1,10 +1,9 @@
 mod changelog;
 pub mod git;
+pub use changelog::commits;
 use kit as u;
 use kit::*;
 use notifier::RichText;
-
-pub use changelog::commits;
 
 fn inc_patch(v: &str) -> String {
     let version = git::maybe_semver(v);

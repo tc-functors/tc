@@ -83,7 +83,6 @@ async fn global_assume_given_role(role_arn: &str) -> SdkConfig {
         .await
 }
 
-
 pub async fn get_global_config(profile: &str, assume_role: Option<String>) -> SdkConfig {
     match assume_role {
         Some(role_arn) => global_assume_given_role(&role_arn).await,
@@ -97,7 +96,6 @@ pub async fn get_global_config(profile: &str, assume_role: Option<String>) -> Sd
         }
     }
 }
-
 
 pub fn get_region() -> String {
     match std::env::var("TC_IGNORE_AWS_VARS") {

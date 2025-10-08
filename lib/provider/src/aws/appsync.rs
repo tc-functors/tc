@@ -89,7 +89,6 @@ async fn list_apis(client: &Client) -> HashMap<String, String> {
     h
 }
 
-
 async fn list_api_arns_by_token(
     client: &Client,
     token: &str,
@@ -143,12 +142,10 @@ async fn list_api_arns(client: &Client) -> HashMap<String, String> {
     h
 }
 
-
 pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     let apis = list_apis(client).await;
     apis.get(name).cloned()
 }
-
 
 pub async fn find_api_arn(client: &Client, name: &str) -> Option<String> {
     let apis = list_api_arns(client).await;

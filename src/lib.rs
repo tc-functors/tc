@@ -237,7 +237,6 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
     }
 }
 
-
 pub async fn diff_between(between: &str, sandbox: Option<String>) {
     let topology = composer::compose(&u::pwd(), true);
     let (from, to) = between.split("..").collect_tuple().unwrap();
@@ -250,13 +249,14 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
         let maybe_from_ver = snapshotter::find_version(&from_auth, fqn, &topology.kind).await;
         let to_auth = init(Some(to.to_string()), None).await;
         let maybe_to_ver = snapshotter::find_version(&to_auth, fqn, &topology.kind).await;
-        if let Some(from_ver) = maybe_from_ver && let Some(to_ver) = maybe_to_ver {
+        if let Some(from_ver) = maybe_from_ver
+            && let Some(to_ver) = maybe_to_ver
+        {
             println!("Finding diff between {}..{}", &to_ver, &from_ver);
             differ::diff(&topology, &to_ver, &from_ver);
         } else {
             println!("No versions found");
         }
-
     } else {
         differ::diff(&topology, &from, &to);
     }
@@ -292,7 +292,6 @@ async fn create_topology_dry_run(auth: &Auth, topology: &Topology) {
         deployer::create_dry_run(auth, node).await;
     }
 }
-
 
 async fn read_topology(path: Option<String>) -> Option<Topology> {
     if u::option_exists(path.clone()) {

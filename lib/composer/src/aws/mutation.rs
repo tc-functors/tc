@@ -1,7 +1,5 @@
-use crate::aws::{
-    role::Role,
-};
 use super::template;
+use crate::aws::role::Role;
 use compiler::{
     Entity,
     spec::{

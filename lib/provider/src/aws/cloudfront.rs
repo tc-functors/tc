@@ -5,15 +5,25 @@ use aws_sdk_cloudfront::{
     types::{
         Aliases,
         AllowedMethods,
-        CachedMethods,
+        CacheBehaviors,
         CachePolicyConfig,
         CachePolicyType,
+        CachedMethods,
+        CustomErrorResponses,
+        CustomHeaders,
         DefaultCacheBehavior,
         DistributionConfig,
+        EventType,
+        FunctionAssociation,
+        FunctionAssociations,
+        FunctionRuntime,
+        GeoRestrictionType,
         HttpVersion,
         InvalidationBatch,
+        LambdaFunctionAssociations,
         LoggingConfig,
         Method,
+        MinimumProtocolVersion,
         Origin,
         OriginAccessControlConfig,
         OriginAccessControlOriginTypes,
@@ -22,54 +32,43 @@ use aws_sdk_cloudfront::{
         Origins,
         Paths,
         PriceClass,
+        Restrictions,
+        SslSupportMethod,
         ViewerCertificate,
         ViewerProtocolPolicy,
-        SslSupportMethod,
-        MinimumProtocolVersion,
-        CustomHeaders,
-        LambdaFunctionAssociations,
-        CacheBehaviors,
-        CustomErrorResponses,
-        GeoRestrictionType,
-        Restrictions,
-        FunctionRuntime,
-        FunctionAssociation,
-        FunctionAssociations,
-        EventType,
         builders::{
             AliasesBuilder,
-            CustomErrorResponsesBuilder,
             AllowedMethodsBuilder,
-            CachedMethodsBuilder,
+            CacheBehaviorsBuilder,
             CachePolicyConfigBuilder,
+            CachedMethodsBuilder,
+            CustomErrorResponsesBuilder,
+            CustomHeadersBuilder,
             DefaultCacheBehaviorBuilder,
             DistributionConfigBuilder,
+            FunctionAssociationBuilder,
+            FunctionAssociationsBuilder,
+            FunctionConfigBuilder,
+            GeoRestrictionBuilder,
             InvalidationBatchBuilder,
+            LambdaFunctionAssociationsBuilder,
             LoggingConfigBuilder,
             OriginAccessControlConfigBuilder,
             OriginBuilder,
             OriginsBuilder,
             PathsBuilder,
+            RestrictionsBuilder,
             S3OriginConfigBuilder,
             ViewerCertificateBuilder,
-            CustomHeadersBuilder,
-            LambdaFunctionAssociationsBuilder,
-            CacheBehaviorsBuilder,
-            RestrictionsBuilder,
-            GeoRestrictionBuilder,
-            FunctionConfigBuilder,
-            FunctionAssociationsBuilder,
-            FunctionAssociationBuilder,
         },
     },
 };
+use kit as u;
+use kit::LogUpdate;
 use std::{
     collections::HashMap,
     io::stdout,
 };
-
-use kit as u;
-use kit::LogUpdate;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.get_global_config().await;
@@ -124,7 +123,10 @@ fn make_origins(
 fn make_cached_methods() -> CachedMethods {
     let it = CachedMethodsBuilder::default();
     let cached_methods = vec![Method::Get, Method::Head];
-    it.quantity(2).set_items(Some(cached_methods)).build().unwrap()
+    it.quantity(2)
+        .set_items(Some(cached_methods))
+        .build()
+        .unwrap()
 }
 
 fn make_allowed_methods() -> AllowedMethods {
@@ -134,7 +136,8 @@ fn make_allowed_methods() -> AllowedMethods {
     it.quantity(3)
         .set_items(Some(methods))
         .cached_methods(cached_methods)
-        .build().unwrap()
+        .build()
+        .unwrap()
 }
 
 fn make_lambda_function_associations() -> LambdaFunctionAssociations {
@@ -144,7 +147,10 @@ fn make_lambda_function_associations() -> LambdaFunctionAssociations {
 
 fn make_function_assoc(arn: &str) -> FunctionAssociation {
     let it = FunctionAssociationBuilder::default();
-    it.function_arn(arn).event_type(EventType::ViewerRequest).build().unwrap()
+    it.function_arn(arn)
+        .event_type(EventType::ViewerRequest)
+        .build()
+        .unwrap()
 }
 
 fn make_function_associations(functions: Vec<String>) -> FunctionAssociations {
@@ -161,7 +167,11 @@ fn make_function_associations(functions: Vec<String>) -> FunctionAssociations {
     }
 }
 
-fn make_default_cache_behavior(origin_id: &str, cache_policy_id: &str, functions: Vec<String>) -> DefaultCacheBehavior {
+fn make_default_cache_behavior(
+    origin_id: &str,
+    cache_policy_id: &str,
+    functions: Vec<String>,
+) -> DefaultCacheBehavior {
     let allowed_methods = make_allowed_methods();
     let lambda_function_assocs = make_lambda_function_associations();
     let function_assocs = make_function_associations(functions);
@@ -191,11 +201,13 @@ fn make_custom_error_responses() -> CustomErrorResponses {
 
 fn make_geo_restrictions() -> Restrictions {
     let geo_res = GeoRestrictionBuilder::default()
-        .restriction_type(GeoRestrictionType::None).quantity(0).build().unwrap();
+        .restriction_type(GeoRestrictionType::None)
+        .quantity(0)
+        .build()
+        .unwrap();
     let it = RestrictionsBuilder::default();
     it.geo_restriction(geo_res).build()
 }
-
 
 fn make_logging_config() -> LoggingConfig {
     let it = LoggingConfigBuilder::default();
@@ -206,7 +218,7 @@ fn make_aliases(alias: Option<String>) -> Aliases {
     let it = AliasesBuilder::default();
     let domains = match alias {
         Some(a) => vec![a],
-        None => vec![]
+        None => vec![],
     };
     it.quantity(domains.len().try_into().unwrap())
         .set_items(Some(domains))
@@ -217,17 +229,16 @@ fn make_aliases(alias: Option<String>) -> Aliases {
 fn make_viewer_cert(maybe_cert_arn: Option<String>) -> ViewerCertificate {
     let it = ViewerCertificateBuilder::default();
     match maybe_cert_arn {
-        Some(arn) => {
-            it
-                .acm_certificate_arn(arn)
-                .ssl_support_method(SslSupportMethod::SniOnly)
-                .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
-                .build()
-        },
-        None => it.cloud_front_default_certificate(true)
+        Some(arn) => it
+            .acm_certificate_arn(arn)
             .ssl_support_method(SslSupportMethod::SniOnly)
             .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
-            .build()
+            .build(),
+        None => it
+            .cloud_front_default_certificate(true)
+            .ssl_support_method(SslSupportMethod::SniOnly)
+            .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
+            .build(),
     }
 }
 
@@ -241,9 +252,8 @@ pub fn make_dist_config(
     cert_arn: Option<String>,
     oac_id: &str,
     cache_policy_id: &str,
-    functions: Vec<String>
+    functions: Vec<String>,
 ) -> DistributionConfig {
-
     let it = DistributionConfigBuilder::default();
     let origins = make_origins(origin_domain, origin_paths, oac_id);
     let aliases = make_aliases(alias);
@@ -308,7 +318,6 @@ async fn update_distribution(
     e_tag: &str,
     dc: DistributionConfig,
 ) -> String {
-
     let _ = client
         .update_distribution()
         .id(id)
@@ -323,14 +332,10 @@ async fn update_distribution(
 }
 
 async fn get_status(client: &Client, dist_id: &str) -> String {
-    let res = client
-        .get_distribution()
-        .id(dist_id)
-        .send()
-        .await;
+    let res = client.get_distribution().id(dist_id).send().await;
     match res {
         Ok(r) => r.distribution.unwrap().status,
-        Err(_) => String::from("")
+        Err(_) => String::from(""),
     }
 }
 
@@ -516,7 +521,11 @@ pub async fn create_function(client: &Client, name: &str, handler: &str) -> Stri
     let buffer = handler.as_bytes();
     let blob = Blob::new(buffer);
     let fcb = FunctionConfigBuilder::default();
-    let fc = fcb.runtime(FunctionRuntime::CloudfrontJs20).comment(name).build().unwrap();
+    let fc = fcb
+        .runtime(FunctionRuntime::CloudfrontJs20)
+        .comment(name)
+        .build()
+        .unwrap();
     let res = client
         .create_function()
         .name(name)
@@ -532,7 +541,11 @@ pub async fn update_function(client: &Client, name: &str, handler: &str, etag: &
     let buffer = handler.as_bytes();
     let blob = Blob::new(buffer);
     let fcb = FunctionConfigBuilder::default();
-    let fc = fcb.runtime(FunctionRuntime::CloudfrontJs20).comment(name).build().unwrap();
+    let fc = fcb
+        .runtime(FunctionRuntime::CloudfrontJs20)
+        .comment(name)
+        .build()
+        .unwrap();
     let res = client
         .update_function()
         .name(name)
@@ -556,15 +569,11 @@ pub async fn publish_function(client: &Client, name: &str, etag: &str) {
 }
 
 pub async fn find_function(client: &Client, name: &str) -> Option<String> {
-    let res = client
-        .get_function()
-        .name(name)
-        .send()
-        .await;
+    let res = client.get_function().name(name).send().await;
 
     match res {
         Ok(r) => r.e_tag,
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
@@ -572,7 +581,7 @@ pub async fn create_or_update_function(client: &Client, name: &str, handler: &st
     let maybe_fn = find_function(client, name).await;
     let etag = match maybe_fn {
         Some(t) => update_function(client, name, handler, &t).await,
-        None => create_function(client, name, handler).await
+        None => create_function(client, name, handler).await,
     };
     publish_function(client, name, &etag).await;
 }

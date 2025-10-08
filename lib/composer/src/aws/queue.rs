@@ -1,6 +1,6 @@
 use super::template;
 use compiler::{
-     Entity,
+    Entity,
     spec::QueueSpec,
 };
 use serde_derive::{

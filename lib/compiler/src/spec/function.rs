@@ -397,7 +397,7 @@ fn render(s: &str, version: &str) -> String {
 pub fn find_fspec_file(dir: &str) -> String {
     let name = match std::env::var("TC_FUNCTION_SPEC") {
         Ok(r) => r,
-        Err(_) => "function.yml".to_string()
+        Err(_) => "function.yml".to_string(),
     };
     if u::path_exists(dir, &name) {
         name

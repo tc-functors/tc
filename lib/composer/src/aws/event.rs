@@ -1,9 +1,9 @@
+use super::template;
 use crate::aws::{
-    role::Role,
     function::Function,
     mutation::Resolver,
+    role::Role,
 };
-use super::template;
 use compiler::{
     entity::Entity,
     spec::EventSpec,
@@ -113,7 +113,16 @@ pub fn make_targets(
         let id = format!("{}_lambda_target", event_name);
         let name = find_function(&f, fns);
         let arn = template::lambda_arn(&name);
-        let t = Target::new(Entity::Function, &id, &name, &arn, &producer_ns, &consumer_ns, None, None);
+        let t = Target::new(
+            Entity::Function,
+            &id,
+            &name,
+            &arn,
+            &producer_ns,
+            &consumer_ns,
+            None,
+            None,
+        );
         xs.push(t);
     }
 
@@ -122,7 +131,16 @@ pub fn make_targets(
             let id = format!("{}_{}_target", event_name, &f);
             let name = find_function(&f, fns);
             let arn = template::lambda_arn(&name);
-            let t = Target::new(Entity::Function, &id, &name, &arn, &producer_ns, &consumer_ns, None, None);
+            let t = Target::new(
+                Entity::Function,
+                &id,
+                &name,
+                &arn,
+                &producer_ns,
+                &consumer_ns,
+                None,
+                None,
+            );
             xs.push(t);
         }
     }
@@ -160,7 +178,16 @@ pub fn make_targets(
     if let Some(s) = state {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(s);
-        let t = Target::new(Entity::State, &id, s, &arn, &producer_ns, &consumer_ns, None, None);
+        let t = Target::new(
+            Entity::State,
+            &id,
+            s,
+            &arn,
+            &producer_ns,
+            &consumer_ns,
+            None,
+            None,
+        );
         xs.push(t)
     }
 

@@ -18,16 +18,18 @@ pub use crate::aws::{
     route::Route,
     schedule::Schedule,
 };
-use crate::aws::{
-    channel,
-    event,
-    mutation,
-    page,
-    pool,
-    schedule,
-    template,
+use crate::{
+    aws::{
+        channel,
+        event,
+        mutation,
+        page,
+        pool,
+        schedule,
+        template,
+    },
+    tag,
 };
-use crate::tag;
 use compiler::{
     Entity,
     spec::{
@@ -138,7 +140,6 @@ pub fn is_relative_topology_dir(dir: &str) -> bool {
 }
 
 // functions
-
 
 fn is_standalone_function_dir(dir: &str) -> bool {
     let function_file = &compiler::spec::function::find_fspec_file(dir);

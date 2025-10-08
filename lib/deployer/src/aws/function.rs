@@ -3,15 +3,11 @@ use compiler::spec::function::{
     Lang,
     Provider,
 };
-use composer::{
-    Function,
-};
+use composer::Function;
 use kit as u;
 use provider::{
     Auth,
-    aws::{
-        lambda,
-    },
+    aws::lambda,
 };
 use std::collections::HashMap;
 use tabled::Tabled;
@@ -116,7 +112,7 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
     maybe_build(auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => create_lambda(&auth, &f, tags).await,
-        Provider::Fargate => todo!()
+        Provider::Fargate => todo!(),
     }
 }
 
@@ -348,7 +344,7 @@ pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
 }
 
 pub async fn create_dry_run(fns: &HashMap<String, Function>) {
-        for (_, function) in fns {
-            println!("Creating function: {}", &function.fqn);
-        }
+    for (_, function) in fns {
+        println!("Creating function: {}", &function.fqn);
+    }
 }

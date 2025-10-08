@@ -223,9 +223,7 @@ fn lookup_role(
                     if u::file_exists(&f) {
                         Some(f)
                     } else {
-                        u::any_path(
-                            vec![format!("{}/roles/function.json", infra_dir)]
-                        )
+                        u::any_path(vec![format!("{}/roles/function.json", infra_dir)])
                     }
                 }
             };

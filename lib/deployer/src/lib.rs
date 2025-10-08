@@ -1,18 +1,19 @@
-pub mod guard;
 mod aws;
-use aws::channel;
-use aws::event;
-use aws::function;
-use aws::mutation;
-use aws::page;
-use aws::pool;
-use aws::queue;
-use aws::resource;
-use aws::role;
-use aws::route;
-use aws::schedule;
-use aws::state;
-
+pub mod guard;
+use aws::{
+    channel,
+    event,
+    function,
+    mutation,
+    page,
+    pool,
+    queue,
+    resource,
+    role,
+    route,
+    schedule,
+    state,
+};
 use colored::Colorize;
 use compiler::Entity;
 use composer::{

@@ -88,7 +88,7 @@ impl TopologyCount {
             routes: r,
             mutations: m,
             states: s,
-            pages: p
+            pages: p,
         }
     }
 }

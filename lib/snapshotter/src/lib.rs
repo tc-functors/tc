@@ -81,7 +81,9 @@ pub async fn show(name: &str) -> Vec<Manifest> {
     let maybe_prefix = cfg.snapshotter.prefix;
     let maybe_target_profile = cfg.snapshotter.profile;
 
-    if let (Some(bucket), Some(prefix), Some(profile)) = (maybe_bucket, maybe_prefix, maybe_target_profile) {
+    if let (Some(bucket), Some(prefix), Some(profile)) =
+        (maybe_bucket, maybe_prefix, maybe_target_profile)
+    {
         let auth = &init_auth(&profile).await;
         let client = aws::s3::make_client(auth).await;
         let key = format!("{}/{}.json", &prefix, name);
@@ -101,7 +103,9 @@ pub async fn list(_sandbox: &str) -> Vec<String> {
     let maybe_prefix = cfg.snapshotter.prefix;
     let maybe_target_profile = cfg.snapshotter.profile;
 
-    if let (Some(bucket), Some(prefix), Some(profile)) = (maybe_bucket, maybe_prefix, maybe_target_profile) {
+    if let (Some(bucket), Some(prefix), Some(profile)) =
+        (maybe_bucket, maybe_prefix, maybe_target_profile)
+    {
         let auth = &init_auth(&profile).await;
         let client = aws::s3::make_client(auth).await;
         let keys = aws::s3::list_keys(&client, &bucket, &prefix).await;
