@@ -719,6 +719,6 @@ pub async fn emulate(
     emulator::emulate(auth, &rt, &entity_component, shell).await;
 }
 
-pub async fn inspect(port: Option<String>, config: Option<String>) {
-    inspector::init(port, config).await
+pub async fn inspect(port: Option<String>) {
+    inspector::init(port).await
 }
