@@ -16,6 +16,7 @@ fn default_sid() -> Option<String> {
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "PascalCase")]
 pub struct Action {
     #[serde_as(as = "OneOrMany<_, PreferOne>")]
     #[serde(rename(serialize = "Action", deserialize = "Action"))]
@@ -25,10 +26,7 @@ pub struct Action {
     #[serde_as(as = "OneOrMany<_, PreferOne>")]
     #[serde(rename(serialize = "Resource", deserialize = "Resource"))]
     resource: Vec<String>,
-    #[serde(
-        rename(serialize = "Sid", deserialize = "Sid"),
-        default = "default_sid"
-    )]
+    #[serde(skip_deserializing, default = "default_sid")]
     sid: Option<String>,
 }
 
@@ -270,9 +268,9 @@ fn make_appsync_actions() -> Vec<Action> {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Policy {
     #[serde(rename(serialize = "Version", deserialize = "Version"))]
-    version: String,
+    pub version: String,
     #[serde(rename(serialize = "Statement", deserialize = "Statement"))]
-    statement: Vec<Action>,
+    pub statement: Vec<Action>,
 }
 
 impl Policy {
