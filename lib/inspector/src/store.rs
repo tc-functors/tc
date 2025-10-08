@@ -1,7 +1,3 @@
-use crate::config::{
-    Config,
-    StoreMode,
-};
 use composer::{
     Channel,
     Event,
@@ -38,12 +34,8 @@ pub struct Store {
 pub const TOPOLOGY_TABLE: &str = "topology";
 
 impl Store {
-    pub async fn new(config: Config) -> Store {
-        // TODO: take db connection from config or param
-        let db = match config.store_mode {
-            StoreMode::Mem => Surreal::new::<Mem>(()).await.unwrap(),
-            _ => panic!("No StoreMode configured"),
-        };
+    pub async fn new() -> Store {
+        let db = Surreal::new::<Mem>(()).await.unwrap();
         db.use_ns("test").use_db("test").await.unwrap();
         Store {
             db: Arc::new(Mutex::new(db)),

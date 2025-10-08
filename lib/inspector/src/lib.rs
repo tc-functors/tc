@@ -1,6 +1,5 @@
 use axum::Router;
 
-mod config;
 mod counter;
 mod functor;
 mod llm;
@@ -8,7 +7,6 @@ mod index;
 mod overview;
 mod store;
 
-pub use config::Config;
 pub use store::Store;
 use tracing_subscriber::{
     filter::{
@@ -19,7 +17,7 @@ use tracing_subscriber::{
     util::SubscriberInitExt,
 };
 
-pub async fn init(port: Option<String>, config_file: Option<String>) {
+pub async fn init(port: Option<String>) {
     let port = match port {
         Some(p) => p,
         None => String::from("8080"),
@@ -27,8 +25,7 @@ pub async fn init(port: Option<String>, config_file: Option<String>) {
     let addr = format!("0.0.0.0:{}", &port);
     println!("Composing topologies...");
     let topologies = composer::compose_root(&kit::pwd(), true);
-    let config = Config::new(config_file);
-    let store = Store::new(config).await;
+    let store = Store::new().await;
     println!("Loading Graph database...");
     let _ = store.load(topologies).await;
 

@@ -424,8 +424,6 @@ pub struct InvokeArgs {
 pub struct InspectArgs {
     #[arg(long, short = 'p')]
     port: Option<String>,
-    #[arg(long, short = 'c')]
-    config: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1044,10 +1042,9 @@ async fn scaffold(args: ScaffoldArgs) {
 async fn inspect(args: InspectArgs) {
    let InspectArgs {
         port,
-        config,
         ..
     } = args;
-    tc::inspect(port, config).await;
+    tc::inspect(port).await;
 }
 
 async fn list(args: ListArgs) {
