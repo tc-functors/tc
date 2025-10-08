@@ -1,6 +1,5 @@
 [package]
 name = "emulator"
-version.workspace = true
 edition = "2024"
 
 [dependencies]

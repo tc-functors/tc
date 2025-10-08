@@ -1,6 +1,5 @@
 [package]
 name = "scaffolder"
-version.workspace = true
 edition = "2024"
 
 [dependencies]
