@@ -1,5 +1,6 @@
 [package]
 name = "composer"
+version.workspace = true
 edition = "2024"
 
 [dependencies]

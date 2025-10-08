@@ -1,5 +1,6 @@
 [package]
 name = "tagger"
+version.workspace = true
 edition = "2024"
 
 [dependencies]

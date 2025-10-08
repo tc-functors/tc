@@ -1,5 +1,6 @@
 [package]
 name = "provider"
+version.workspace = true
 edition = "2024"
 
 [dependencies]

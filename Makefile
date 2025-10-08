@@ -2,6 +2,7 @@ all: build
 
 TARGET_DIR=$(HOME)/.cargo/target
 BIN_DIR=bin
+PROJECT_VERSION=$(shell git rev-parse --short HEAD)
 
 build:
 	@mkdir -p $(BIN_DIR)
