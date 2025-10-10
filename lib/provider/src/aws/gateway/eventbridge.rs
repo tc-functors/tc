@@ -45,7 +45,7 @@ async fn create(
     role_arn: &str,
     request_parameters: HashMap<String, String>,
 ) -> Result<String, Error> {
-    let subtype = s!("Eventbridge-PutEvents");
+    let subtype = s!("EventBridge-PutEvents");
 
     let res = client
         .create_integration()

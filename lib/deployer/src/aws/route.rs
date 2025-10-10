@@ -1,7 +1,7 @@
 use compiler::Entity;
 use composer::Route;
+use composer::aws::route::Target;
 use itertools::Itertools;
-use kit::*;
 use provider::{
     Auth,
     aws::{
@@ -57,17 +57,24 @@ async fn make_api(
         path: route.to_owned().path,
         method: route.method.to_owned(),
         sync: route.sync.to_owned(),
-        request_template: route.request_template.clone(),
         cors: cors,
         tags: tags.clone(),
     }
 }
 
-async fn add_permission(auth: &Auth, lambda_arn: &str, api_id: &str) {
-    let client = lambda::make_client(auth).await;
-    let source_arn = auth.api_arn(api_id);
-    let principal = "apigateway.amazonaws.com";
-    let _ = lambda::add_permission(client, lambda_arn, principal, &source_arn, api_id).await;
+async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
+    let Target { entity, arn, .. } = target;
+    match entity {
+        Entity::Function => {
+            let client = lambda::make_client(auth).await;
+            let source_arn = auth.api_arn(api_id);
+            let principal = "apigateway.amazonaws.com";
+            let _ = lambda::add_permission(client, arn, principal, &source_arn, api_id).await;
+        },
+        _ => ()
+    }
+
+
 }
 
 async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str, auth_name: &str) {
@@ -81,48 +88,23 @@ fn integration_name(entity: &Entity, api: &Api) -> String {
     format!("{}-{}", entity.to_str(), api.method)
 }
 
-fn make_request_params(entity: &Entity, api: &Api, target_arn: &str) -> HashMap<String, String> {
-    let mut req: HashMap<String, String> = HashMap::new();
+async fn create_integration(api: &Api, api_id: &str, target: &Target) -> String {
+    let Target { entity, arn, request_params, .. } = target;
 
-    let name = integration_name(entity, api);
-
-    // TODO: get target for event and queue
-
-    match entity {
-        Entity::State => {
-            req.insert(s!("StateMachineArn"), s!(target_arn));
-            req.insert(s!("Name"), name);
-            req.insert(s!("Input"), api.request_template.to_string());
-        }
-        Entity::Event => {
-            req.insert(s!("Detail"), s!(""));
-            req.insert(s!("DetailType"), s!(""));
-            req.insert(s!("Source"), s!(""));
-        }
-        Entity::Queue => {
-            req.insert(s!("QueueUrl"), s!(""));
-            req.insert(s!("MessageBody"), s!(""));
-        }
-        _ => (),
-    }
-    req
-}
-
-async fn create_integration(entity: &Entity, api: &Api, api_id: &str, target_arn: &str) -> String {
-    let req_params = make_request_params(entity, api, target_arn);
     let int_name = integration_name(entity, api);
+
     match entity {
-        Entity::Function => api.create_lambda_integration(api_id, target_arn).await,
+        Entity::Function => api.create_lambda_integration(api_id, arn).await,
         Entity::State => {
-            api.create_sfn_integration(api_id, &int_name, req_params)
+            api.create_sfn_integration(api_id, &int_name, request_params.clone())
                 .await
         }
         Entity::Event => {
-            api.create_event_integration(api_id, &int_name, req_params)
+            api.create_event_integration(api_id, &int_name, request_params.clone())
                 .await
         }
         Entity::Queue => {
-            api.create_sqs_integration(api_id, &int_name, req_params)
+            api.create_sqs_integration(api_id, &int_name, request_params.clone())
                 .await
         }
         _ => todo!(),
@@ -152,13 +134,11 @@ async fn create_api(
     auth: &Auth,
     api: &Api,
     api_id: &str,
-    entity: &Entity,
-    target_arn: &str,
+    target: &Target,
     auth_id: Option<String>,
 ) {
-    add_permission(auth, target_arn, &api_id).await;
-
-    let integration_id = create_integration(entity, api, &api_id, target_arn).await;
+    add_target_permission(auth, &api_id, target).await;
+    let integration_id = create_integration(api, &api_id, target).await;
 
     api.find_or_create_route(&api_id, &integration_id, auth_id)
         .await;
@@ -189,8 +169,7 @@ async fn create_route(
         auth,
         &api,
         &api_id,
-        &route.entity,
-        &route.target_arn,
+        &route.target,
         auth_id,
     )
     .await;
@@ -206,10 +185,11 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap
     }
 }
 
-async fn delete_integration(entity: &Entity, api: &Api, api_id: &str, target_arn: &str) {
+async fn delete_integration(api: &Api, api_id: &str, target: &Target) {
+    let Target { entity, arn, .. } = target;
     let int_name = integration_name(entity, api);
     match entity {
-        Entity::Function => api.delete_lambda_integration(api_id, target_arn).await,
+        Entity::Function => api.delete_lambda_integration(api_id, arn).await,
         Entity::State => api.delete_sfn_integration(api_id, &int_name).await,
         Entity::Event => api.delete_event_integration(api_id, &int_name).await,
         Entity::Queue => api.delete_sqs_integration(api_id, &int_name).await,
@@ -232,7 +212,7 @@ async fn delete_route(auth: &Auth, route: &Route) {
                 }
                 _ => (),
             }
-            delete_integration(&route.entity, &api, &id, &route.target_arn).await;
+            delete_integration(&api, &id, &route.target).await;
             if route.create_authorizer {
                 if let Some(authorizer) = &route.authorizer {
                     api.delete_authorizer(&id, &authorizer).await;

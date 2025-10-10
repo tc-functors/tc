@@ -27,7 +27,7 @@ pub struct RouteSpec {
     pub path: Option<String>,
     pub gateway: Option<String>,
     pub authorizer: Option<String>,
-    pub proxy: Option<String>,
+    #[serde(default, alias = "proxy")]
     pub function: Option<String>,
     pub state: Option<String>,
     pub event: Option<String>,

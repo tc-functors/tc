@@ -79,3 +79,9 @@ pub fn maybe_namespace(s: &str) -> String {
         format!("{{{{namespace}}}}_{}_{{{{sandbox}}}}", s)
     }
 }
+
+pub fn sqs_url(name: &str) -> String {
+    format!(
+        "https://sqs.{{{{region}}}}.amazonaws.com/{{{{account}}}}/{}", name
+    )
+}

@@ -34,7 +34,6 @@ pub struct Api {
     pub path: String,
     pub method: String,
     pub sync: bool,
-    pub request_template: String,
     pub cors: Option<Cors>,
     pub tags: HashMap<String, String>,
 }

@@ -419,6 +419,8 @@ fn make_routes(
     spec: &TopologySpec,
     fqn: &str,
     fns: &HashMap<String, Function>,
+    events: &HashMap<String, Event>,
+    queues: &HashMap<String, Queue>,
 ) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
@@ -427,7 +429,7 @@ fn make_routes(
             for (name, rspec) in xs {
                 tracing::debug!("route {}", &name);
                 let skip = rspec.doc_only;
-                let route = Route::new(fqn, &name, spec, rspec, fns, skip);
+                let route = Route::new(fqn, &name, spec, rspec, fns, events, queues, skip);
                 h.insert(name.to_string(), route);
             }
             h
@@ -502,7 +504,7 @@ fn make_roles(
     }
 
     if *routes > 0 {
-        entities.push(Entity::Mutation);
+        entities.push(Entity::Route);
     }
 
     if *events > 0 {
@@ -591,14 +593,14 @@ fn make(
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
     let mutations = make_mutations(&spec, &config);
-    let routes = make_routes(&spec, &fqn, &functions);
 
     let resolvers = match &mutations.get("default") {
         Some(m) => m.resolvers.clone(),
         None => HashMap::new(),
     };
-
     let events = make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers);
+    let queues = make_queues(&spec, &config);
+    let routes = make_routes(&spec, &fqn, &functions, &events, &queues);
 
     Topology {
         namespace: namespace.clone(),
@@ -623,7 +625,7 @@ fn make(
         tests: make_test(spec.tests.clone(), &functions),
         functions: functions,
         schedules: schedule::make_all(&namespace, &infra_dir),
-        queues: make_queues(&spec, &config),
+        queues: queues,
         mutations: mutations,
         channels: make_channels(&spec, &config),
         pools: make_pools(&spec, &config),

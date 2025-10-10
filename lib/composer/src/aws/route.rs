@@ -1,5 +1,7 @@
 use crate::aws::{
     function::Function,
+    event::Event,
+    queue::Queue,
     role::Role,
     template,
 };
@@ -26,19 +28,23 @@ pub struct Route {
     pub gateway: String,
     pub create_authorizer: bool,
     pub authorizer: Option<String>,
-    pub entity: Entity,
     pub role_arn: String,
-    pub target_name: String,
-    pub target_arn: String,
     pub stage: String,
     pub stage_variables: HashMap<String, String>,
     pub sync: bool,
-    pub request_template: String,
-    pub response_template: String,
     pub cors: Option<CorsSpec>,
+    pub target: Target
 }
 
-fn make_response_template() -> String {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Target {
+    pub entity: Entity,
+    pub name: String,
+    pub arn: String,
+    pub request_params: HashMap<String, String>
+}
+
+fn _make_response_template() -> String {
     format!(r#"#set ($parsedPayload = $util.parseJson($input.json('$.output'))) $parsedPayload"#)
 }
 
@@ -59,18 +65,84 @@ fn make_request_template(method: &str, request_template: Option<String>) -> Stri
     }
 }
 
-fn find_target_arn(target_name: &str, entity: &Entity) -> String {
-    match entity {
-        Entity::Function => template::lambda_arn(&target_name),
-        Entity::State => template::sfn_arn(&target_name),
-        _ => template::lambda_arn(&target_name),
-    }
-}
-
 fn find_function(f: &str, fns: &HashMap<String, Function>) -> String {
     match fns.get(f) {
         Some(_) => template::maybe_namespace(f),
         None => f.to_string(),
+    }
+}
+
+fn make_target(
+    fqn: &str,
+    rspec: &RouteSpec,
+    method: &str,
+    fns: &HashMap<String, Function>,
+    events: &HashMap<String, Event>,
+    queues: &HashMap<String, Queue>,
+) -> Target {
+
+    if let Some(f) = &rspec.function {
+        let name = find_function(&f, fns);
+        return Target {
+            entity: Entity::Function,
+            name: name.clone(),
+            arn: template::lambda_arn(&name),
+            request_params: HashMap::new()
+        }
+    } else if let Some(ev) = &rspec.event {
+        let mut req: HashMap<String, String> = HashMap::new();
+        if let Some(event) = events.get(ev) {
+            let pattern = event.pattern.clone();
+            let detail = match method {
+                "GET" => s!("${request.path}"),
+                "POST" => s!("${request.body}"),
+                _ => s!("${request.path}")
+            };
+            let source = match pattern.source.first() {
+                Some(s) => s.clone(),
+                None => s!("default")
+            };
+            let detail_type = pattern.detail_type.first().unwrap();
+            req.insert(s!("Detail"), detail);
+            req.insert(s!("DetailType"), detail_type.clone());
+            req.insert(s!("Source"), source);
+            req.insert(s!("EventBusName"), event.bus.clone());
+        } else {
+            panic!("No event defined {}", &ev)
+        }
+        return Target {
+            entity: Entity::Event,
+            name: s!(ev),
+            arn: String::from(""),
+            request_params: req
+        }
+    } else if let Some(q) = &rspec.queue {
+        let mut req: HashMap<String, String> = HashMap::new();
+        if let Some(queue) = queues.get(q) {
+            req.insert(s!("QueueUrl"), template::sqs_url(&queue.name));
+            req.insert(s!("MessageBody"), format!("{{{{payload}}}}"));
+        } else {
+            panic!("No queue defined {}", &q)
+        }
+        return Target {
+            entity: Entity::Queue,
+            name: s!(q),
+            arn: String::from(""),
+            request_params: req
+        }
+    } else {
+        let arn = template::sfn_arn(fqn);
+        let input = make_request_template(method, rspec.request_template.clone());
+        let mut req: HashMap<String, String> = HashMap::new();
+        req.insert(s!("StateMachineArn"), s!(arn));
+        req.insert(s!("Name"), fqn.to_string());
+        req.insert(s!("Input"), input);
+        return Target {
+            entity: Entity::State,
+            name: fqn.to_string(),
+            arn: arn,
+            request_params: req
+        }
     }
 }
 
@@ -81,6 +153,8 @@ impl Route {
         spec: &TopologySpec,
         rspec: &RouteSpec,
         fns: &HashMap<String, Function>,
+        events: &HashMap<String, Event>,
+        queues: &HashMap<String, Queue>,
         skip: bool,
     ) -> Route {
         let gateway = match &rspec.gateway {
@@ -98,24 +172,6 @@ impl Route {
             None => s!("POST"),
         };
 
-        let entity = match &rspec.proxy {
-            Some(_) => Entity::Function,
-            None => match rspec.function {
-                Some(_) => Entity::Function,
-                None => Entity::State,
-            },
-        };
-
-        let target_name = match &rspec.proxy {
-            Some(f) => s!(f),
-            None => match &rspec.function {
-                Some(x) => find_function(&x, fns),
-                None => template::topology_fqn(&spec.name, spec.hyphenated_names),
-            },
-        };
-
-        let target_arn = find_target_arn(&target_name, &entity);
-
         let sync = match rspec.sync {
             Some(s) => s,
             None => false,
@@ -126,7 +182,7 @@ impl Route {
             None => s!("$default"),
         };
 
-        // FIXME: role_arn is flow.role.name if target is flow
+        let target = make_target(fqn, rspec, &method, fns, events, queues);
 
         let (create_authorizer, authorizer) = match &spec.functions {
             Some(fns) => {
@@ -148,15 +204,11 @@ impl Route {
             gateway: gateway,
             create_authorizer: create_authorizer,
             authorizer: authorizer,
-            entity: entity,
+            target: target,
             role_arn: Role::entity_role_arn(Entity::Route),
-            target_name: target_name,
-            target_arn: target_arn,
             stage: stage,
             stage_variables: HashMap::new(),
             sync: sync,
-            request_template: make_request_template(&method, rspec.request_template.clone()),
-            response_template: make_response_template(),
             cors: rspec.cors.clone(),
             skip: skip,
         }

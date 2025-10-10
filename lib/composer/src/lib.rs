@@ -1,4 +1,4 @@
-mod aws;
+pub mod aws;
 mod display;
 
 mod tag;
