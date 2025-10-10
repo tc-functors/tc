@@ -1,22 +1,26 @@
-name: api-async
+name: example-api-async
 
 routes:
-  /api/ping:
-    method: GET
-    function: ponger
-  /api/messages:
+  /api/message:
     method: POST
-    function: processor
+    event: ProcessMessage
 
 events:
-  ProcessedMessage:
-    channel: my-room
+  ProcessMessage:
+    mutation: runProcessor
 
-channels:
-  my-room:
-    handler: default
+mutations:
+  authorizer: "{{namespace}}_authorizer_{{sandbox}}"
+  types:
+    Message:
+      id: String!
+      text: String
+  resolvers:
+    function: processor
+    input: EventData
+    output: Job
+    subscribe: true
 
 pages:
   webapp:
-    dist: .
     dir: webapp

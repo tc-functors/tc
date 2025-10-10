@@ -1,0 +1,6 @@
+{
+  "aws_project_region": "us-west-2",
+  "aws_appsync_graphqlEndpoint": "{{GRAPHQL_ENDPOINT}}",
+  "aws_appsync_region": "us-west-2",
+  "aws_appsync_authenticationType": "AWS_LAMBDA"
+}

@@ -15,3 +15,8 @@ mutations:
       input: JobInput
       output: Job
       subscribe: true
+
+functions:
+  bar:
+    uri: ./uri
+    mutation: startJob
