@@ -2,7 +2,7 @@ name: x-function-mutation
 
 functions:
   foo:
-    mutation: processMy
+    mutation: processMessage
 
 mutations:
   types:
@@ -10,8 +10,8 @@ mutations:
       id: String!
       text: String
   resolvers:
-    processMy:
+    processMessage:
       input: Message
       output: Message
-      function: foo
+      function: bar
       subscribe: true
