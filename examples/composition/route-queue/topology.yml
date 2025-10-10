@@ -1,0 +1,10 @@
+name: x-route-queue
+
+routes:
+  /api/ping:
+    method: GET
+    queue: my-queue
+
+queues:
+  my-queue:
+    function: foo

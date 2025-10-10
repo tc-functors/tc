@@ -1,0 +1,17 @@
+name: x-function-mutation
+
+functions:
+  foo:
+    mutation: processMy
+
+mutations:
+  types:
+    Message:
+      id: String!
+      text: String
+  resolvers:
+    processMy:
+      input: Message
+      output: Message
+      function: foo
+      subscribe: true

@@ -1,0 +1,6 @@
+name: x-route-function
+
+routes:
+  /api/ping:
+    method: GET
+    function: ponger

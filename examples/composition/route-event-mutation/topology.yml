@@ -1,0 +1,24 @@
+name: x-rem
+
+routes:
+  /api/message:
+    method: POST
+    event: ProcessMessage
+
+events:
+  ProcessMessage:
+    producer: default
+    mutation: runProcessor
+
+mutations:
+  authorizer: "{{namespace}}_authorizer_{{sandbox}}"
+  types:
+    Message:
+      id: String!
+      text: String
+  resolvers:
+    runProcessor:
+      function: processor
+      input: EventData
+      output: Message
+      subscribe: true

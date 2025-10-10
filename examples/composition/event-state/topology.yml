@@ -1,0 +1,31 @@
+name: x-route-state
+
+events:
+  MyEvent:
+    producer: default
+    state: x-route-state
+
+states:
+  Comment: default topology
+  StartAt: foo
+  TimeoutSeconds: 600
+  States:
+    foo:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_foo_{{sandbox}}'
+        Payload:
+            data.$: $
+      Next: bar
+
+    bar:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_bar_{{sandbox}}'
+        Payload:
+            data.$: $
+      End: True

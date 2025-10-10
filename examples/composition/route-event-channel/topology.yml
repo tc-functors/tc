@@ -1,0 +1,14 @@
+name: x-rec
+
+routes:
+  /api/quickmsg:
+    method: POST
+    event: SendMessage
+
+events:
+  SendMessage:
+    channel: my-room
+
+channels:
+  my-room:
+    handler: default

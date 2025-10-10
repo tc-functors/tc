@@ -1,0 +1,11 @@
+name: x-route-event
+
+routes:
+  /api/poke:
+    method: POST
+    event: PokeEvent
+
+events:
+  PokeEvent:
+    producer: default
+    function: event-processor

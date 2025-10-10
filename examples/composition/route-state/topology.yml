@@ -1,0 +1,32 @@
+name: x-route-state
+mode: Express
+
+routes:
+  /api/run:
+    method: POST
+    state: example
+
+states:
+  Comment: default topology
+  StartAt: foo
+  TimeoutSeconds: 600
+  States:
+    foo:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_foo_{{sandbox}}'
+        Payload:
+            data.$: $
+      Next: bar
+
+    bar:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: '{{namespace}}_bar_{{sandbox}}'
+        Payload:
+            data.$: $
+      End: True

@@ -1,0 +1,10 @@
+name: x-function-event
+
+functions:
+  foo:
+    event: ProcessedMessage
+
+events:
+  ProcessedMessage:
+    producer: foo
+    function: bar
