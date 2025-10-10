@@ -105,6 +105,11 @@ pub async fn create_lambda(auth: &Auth, f: &Function, tags: &HashMap<String, Str
     if f.runtime.snapstart {
         lambda.publish_version().await;
     }
+    if let Some(target) = &f.target {
+        println!("Creating target {}", &target.entity.to_str());
+        lambda::update_destination(&lambda.client, &f.fqn, &target.arn).await;
+    }
+
     id
 }
 

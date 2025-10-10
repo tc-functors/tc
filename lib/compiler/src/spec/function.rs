@@ -8,6 +8,7 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
+use crate::Entity;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -349,6 +350,12 @@ pub struct AssetsSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TargetSpec {
+    pub entity: Entity,
+    pub name: String
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FunctionSpec {
     pub name: String,
     pub dir: Option<String>,
@@ -370,6 +377,8 @@ pub struct FunctionSpec {
     pub tasks: HashMap<String, String>,
     //deprecated
     pub assets: Option<AssetsSpec>,
+
+    pub target: Option<TargetSpec>,
 }
 
 fn find_revision(dir: &str) -> String {
@@ -460,6 +469,7 @@ impl FunctionSpec {
                 assets: None,
                 test: None,
                 tasks: HashMap::new(),
+                target: None
             },
         }
     }
@@ -473,6 +483,7 @@ pub struct InlineFunctionSpec {
     pub function: Option<String>,
     pub event: Option<String>,
     pub queue: Option<String>,
+    pub mutation: Option<String>,
     pub fqn: Option<String>,
     pub runtime: Option<RuntimeSpec>,
     pub build: Option<BuildSpec>,
@@ -481,6 +492,9 @@ pub struct InlineFunctionSpec {
 
 impl InlineFunctionSpec {
     pub fn intern(&self, namespace: &str, dir: &str, infra_dir: &str, name: &str) -> FunctionSpec {
+
+        let target = self.make_target_spec();
+
         FunctionSpec {
             name: s!(name),
             dir: Some(s!(dir)),
@@ -497,8 +511,32 @@ impl InlineFunctionSpec {
             infra_dir: Some(s!(infra_dir)),
             test: None,
             tasks: HashMap::new(),
+            target: target
         }
     }
+
+    fn  make_target_spec(&self) -> Option<TargetSpec> {
+        if let Some(f) = &self.function {
+            Some(TargetSpec {
+                entity: Entity::Function,
+                name: f.to_string()
+            })
+
+        } else if let Some(m) = &self.mutation {
+            Some(TargetSpec {
+                entity: Entity::Mutation,
+                name: m.to_string()
+            })
+        } else if let Some(e) = &self.event {
+            Some(TargetSpec {
+                entity: Entity::Event,
+                name: e.to_string()
+            })
+        } else {
+            None
+        }
+    }
+
 }
 
 pub fn infer_lang(dir: &str) -> LangRuntime {

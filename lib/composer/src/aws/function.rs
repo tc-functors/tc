@@ -1,11 +1,11 @@
 pub mod build;
 pub mod layer;
 pub mod runtime;
+pub mod target;
 
 use super::template;
 pub use build::Build;
 use compiler::{
-    Entity,
     spec::{
         TestSpec,
         function::FunctionSpec,
@@ -20,12 +20,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Target {
-    pub entity: Entity,
-    pub name: String,
-}
+use target::Target;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Function {
@@ -41,7 +36,7 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: HashMap<String, TestSpec>,
-    pub targets: Vec<Target>,
+    pub target: Option<Target>,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -125,6 +120,8 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
+        let target = Target::new(&namespace, &fspec, &config);
+
         Function {
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
@@ -138,7 +135,7 @@ impl Function {
             layer_name: fspec.layer_name,
             test: make_test(fspec.test),
             runtime: runtime,
-            targets: vec![],
+            target: target,
         }
     }
 
@@ -162,6 +159,8 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
+        let target = Target::new(&namespace, &fspec, &config);
+
         Function {
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
@@ -175,7 +174,7 @@ impl Function {
             layer_name: fspec.layer_name.clone(),
             test: make_test(fspec.test.clone()),
             runtime: runtime,
-            targets: vec![],
+            target: target,
         }
     }
 

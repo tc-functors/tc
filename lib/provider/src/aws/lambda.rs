@@ -21,6 +21,7 @@ use aws_sdk_lambda::{
         State,
         UpdateRuntimeOn,
         VpcConfig,
+        DestinationConfig,
         builders::{
             DeadLetterConfigBuilder,
             EnvironmentBuilder,
@@ -28,6 +29,8 @@ use aws_sdk_lambda::{
             FunctionCodeBuilder,
             SnapStartBuilder,
             VpcConfigBuilder,
+            DestinationConfigBuilder,
+            OnSuccessBuilder
         },
     },
 };
@@ -920,6 +923,41 @@ pub async fn invoke_sync(client: &Client, name: &str, payload: &str) -> Result<S
         Some(p) => Ok(String::from_utf8_lossy(&p.into_inner()).to_string()),
         _ => Ok(String::from("")),
     }
+}
+
+pub async fn invoke_async(client: &Client, name: &str, payload: &str) -> Result<String> {
+    let blob = make_blob_from_str(payload);
+    let r = client
+        .invoke()
+        .function_name(name)
+        .payload(blob)
+        .invocation_type(InvocationType::Event)
+        .send()
+        .await?;
+
+    match r.payload {
+        Some(p) => Ok(String::from_utf8_lossy(&p.into_inner()).to_string()),
+        _ => Ok(String::from("")),
+    }
+}
+
+fn make_destination_config(arn: &str) -> DestinationConfig {
+    let os = OnSuccessBuilder::default();
+    let on_success = os.destination(arn).build();
+    let f = DestinationConfigBuilder::default();
+    f.on_success(on_success)
+        .build()
+}
+
+pub async fn update_destination(client: &Client, name: &str, target_arn: &str) {
+    let dest_config = make_destination_config(target_arn);
+    let _ = client
+        .put_function_event_invoke_config()
+        .function_name(name)
+        .destination_config(dest_config)
+        .send()
+        .await
+        .unwrap();
 }
 
 

@@ -58,6 +58,10 @@ pub fn topology_fqn(namespace: &str, hyphenated_names: bool) -> String {
     }
 }
 
+pub fn lambda_fqn(namespace: &str, name: &str) -> String {
+    format!("{}_{}_{{{{sandbox}}}}", namespace, name)
+}
+
 pub fn _api_integration_arn(name: &str) -> String {
     format!(
         "arn:aws:apigateway:{{{{region}}}}:lambda:path/2015-03-31/functions/{}/invocations",
