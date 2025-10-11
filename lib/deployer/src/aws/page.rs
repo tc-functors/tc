@@ -115,7 +115,13 @@ async fn render_config_template(
             }
         }
 
-        let out_file = format!("{}_tmp", &p);
+        let out_file = if path == "index.html" {
+            u::sh("mkdir -p dist", dir);
+            u::sh(&format!("cp {} dist/{}", path, path), dir);
+            format!("{}/dist/{}", dir, path)
+        } else {
+            format!("{}_tmp", &p)
+        };
         u::write_str(&out_file, &rs);
     } else {
         println!("Config template {} does not exist", path);
@@ -365,6 +371,10 @@ pub async fn update_config(
         } = page;
         if let Some(path) = config_template {
             println!("Rendering config: {}", &path);
+            println!("Config: ");
+            for (k, v) in config {
+                println!("{}={}", k, v);
+            }
             render_config_template(auth, dir, &path, config).await;
         }
     }
@@ -409,6 +419,8 @@ pub async fn update(
     config: &HashMap<String, String>,
     sandbox: &str,
 ) {
+
+    println!("com {}", component);
     match component {
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,

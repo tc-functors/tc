@@ -119,6 +119,7 @@ async fn get_api(client: &Client, api_id: &str) -> Api {
 pub struct ApiCred {
     pub api_key: String,
     pub http_domain: String,
+    pub realtime_domain: String,
 }
 
 pub async fn find_api_creds(client: &Client, name: &str) -> Option<ApiCred> {
@@ -132,6 +133,7 @@ pub async fn find_api_creds(client: &Client, name: &str) -> Option<ApiCred> {
             let ac = ApiCred {
                 api_key: api_key.unwrap(),
                 http_domain: dns.get("HTTP").unwrap().to_string(),
+                realtime_domain: dns.get("REALTIME").unwrap().to_string(),
             };
             Some(ac)
         }

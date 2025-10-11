@@ -13,6 +13,7 @@ use provider::{
         lambda,
     },
 };
+use kit::*;
 use std::collections::HashMap;
 
 fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
@@ -242,5 +243,19 @@ pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str)
 pub async fn create_dry_run(routes: &HashMap<String, Route>) {
     for (_, route) in routes {
         println!("Creating route {} {}", &route.method, &route.path);
+    }
+}
+
+pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
+    let client = gateway::make_client(auth).await;
+    let maybe_api_id = gateway::find_api_id(&client, name).await;
+    match maybe_api_id {
+        Some(api_id) => {
+            let mut h: HashMap<String, String> = HashMap::new();
+            let endpoint = auth.api_endpoint(&api_id, "$default");
+            h.insert(s!("REST_ENDPOINT"), endpoint);
+            h
+        }
+        _ => HashMap::new(),
     }
 }

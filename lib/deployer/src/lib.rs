@@ -440,12 +440,22 @@ pub async fn make_config(auth: &Auth, topology: &Topology) -> HashMap<String, St
         fqn,
         sandbox,
         mutations,
+        routes,
+        channels,
         ..
     } = topology;
     let mut h: HashMap<String, String> = HashMap::new();
     if let Some(_m) = mutations.get("default") {
         let mutation_config = mutation::config(auth, fqn).await;
         h.extend(mutation_config);
+    }
+    if routes.len() > 0 {
+        let routes_config = route::config(auth, fqn).await;
+        h.extend(routes_config);
+    }
+    if channels.len() > 0 {
+        let channels_config = channel::config(auth, fqn, channels).await;
+        h.extend(channels_config);
     }
     h.insert(s!("REGION"), auth.region.clone());
     h.insert(s!("ENV"), auth.name.clone());
