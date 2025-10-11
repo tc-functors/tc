@@ -1,0 +1,12 @@
+name: example-chat
+
+channels:
+  my-channel:
+    handler: default
+
+pages:
+  app:
+    bucket: tc-functors-dev
+    dir: .
+    dist: dist
+    config_template: index.html
