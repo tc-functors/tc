@@ -1,0 +1,9 @@
+name: x-event-channel
+
+events:
+  ProcessMessage:
+    channel: my-channel
+
+channels:
+  my-channel:
+    handler: default

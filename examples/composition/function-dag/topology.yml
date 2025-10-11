@@ -1,0 +1,24 @@
+name: x-rfd
+
+routes:
+  /api/message:
+    method: POST
+    event: ProcessStart
+
+events:
+  ProcessStart:
+    function: f1
+  ProcessComplete:
+    channel: my-channel
+
+functions:
+  f1:
+    function: f2
+  f2:
+    function: f3
+  f3:
+    event: ProcessComplete
+
+channels:
+  my-channel:
+    handler: default

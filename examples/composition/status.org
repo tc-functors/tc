@@ -1,0 +1,15 @@
+* implementation status
+- [X] event-function
+- [X] event-mutation
+- [X] event-state
+- [X] event-channel
+- [ ] function-dag
+- [ ] function-event
+- [ ] function-function
+- [X] mutation-function
+- [ ] mutation-event
+- [X] route-event
+- [X] route-function
+- [X] route-queue
+- [X] route-state
+- [ ] queue-state
