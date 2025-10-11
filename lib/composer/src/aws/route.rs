@@ -1,6 +1,6 @@
 use crate::aws::{
-    function::Function,
     event::Event,
+    function::Function,
     queue::Queue,
     role::Role,
     template,
@@ -33,7 +33,7 @@ pub struct Route {
     pub stage_variables: HashMap<String, String>,
     pub sync: bool,
     pub cors: Option<CorsSpec>,
-    pub target: Target
+    pub target: Target,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -41,7 +41,7 @@ pub struct Target {
     pub entity: Entity,
     pub name: String,
     pub arn: String,
-    pub request_params: HashMap<String, String>
+    pub request_params: HashMap<String, String>,
 }
 
 fn _make_response_template() -> String {
@@ -80,15 +80,14 @@ fn make_target(
     events: &HashMap<String, Event>,
     queues: &HashMap<String, Queue>,
 ) -> Target {
-
     if let Some(f) = &rspec.function {
         let name = find_function(&f, fns);
         return Target {
             entity: Entity::Function,
             name: name.clone(),
             arn: template::lambda_arn(&name),
-            request_params: HashMap::new()
-        }
+            request_params: HashMap::new(),
+        };
     } else if let Some(ev) = &rspec.event {
         let mut req: HashMap<String, String> = HashMap::new();
         if let Some(event) = events.get(ev) {
@@ -96,11 +95,11 @@ fn make_target(
             let detail = match method {
                 "GET" => s!("${request.path}"),
                 "POST" => s!("${request.body}"),
-                _ => s!("${request.path}")
+                _ => s!("${request.path}"),
             };
             let source = match pattern.source.first() {
                 Some(s) => s.clone(),
-                None => s!("default")
+                None => s!("default"),
             };
             let detail_type = pattern.detail_type.first().unwrap();
             req.insert(s!("Detail"), detail);
@@ -114,8 +113,8 @@ fn make_target(
             entity: Entity::Event,
             name: s!(ev),
             arn: String::from(""),
-            request_params: req
-        }
+            request_params: req,
+        };
     } else if let Some(q) = &rspec.queue {
         let mut req: HashMap<String, String> = HashMap::new();
         if let Some(queue) = queues.get(q) {
@@ -128,8 +127,8 @@ fn make_target(
             entity: Entity::Queue,
             name: s!(q),
             arn: String::from(""),
-            request_params: req
-        }
+            request_params: req,
+        };
     } else {
         let arn = template::sfn_arn(fqn);
         let input = make_request_template(method, rspec.request_template.clone());
@@ -141,8 +140,8 @@ fn make_target(
             entity: Entity::State,
             name: fqn.to_string(),
             arn: arn,
-            request_params: req
-        }
+            request_params: req,
+        };
     }
 }
 

@@ -419,7 +419,6 @@ pub async fn update(
     config: &HashMap<String, String>,
     sandbox: &str,
 ) {
-
     println!("com {}", component);
     match component {
         "code" => update_code(auth, pages, config).await,

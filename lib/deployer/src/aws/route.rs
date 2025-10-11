@@ -1,7 +1,10 @@
 use compiler::Entity;
-use composer::Route;
-use composer::aws::route::Target;
+use composer::{
+    Route,
+    aws::route::Target,
+};
 use itertools::Itertools;
+use kit::*;
 use provider::{
     Auth,
     aws::{
@@ -13,7 +16,6 @@ use provider::{
         lambda,
     },
 };
-use kit::*;
 use std::collections::HashMap;
 
 fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
@@ -71,11 +73,9 @@ async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
             let source_arn = auth.api_arn(api_id);
             let principal = "apigateway.amazonaws.com";
             let _ = lambda::add_permission(client, arn, principal, &source_arn, api_id).await;
-        },
-        _ => ()
+        }
+        _ => (),
     }
-
-
 }
 
 async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str, auth_name: &str) {
@@ -90,7 +90,12 @@ fn integration_name(entity: &Entity, api: &Api) -> String {
 }
 
 async fn create_integration(api: &Api, api_id: &str, target: &Target) -> String {
-    let Target { entity, arn, request_params, .. } = target;
+    let Target {
+        entity,
+        arn,
+        request_params,
+        ..
+    } = target;
 
     let int_name = integration_name(entity, api);
 
@@ -166,14 +171,7 @@ async fn create_route(
     } else {
         None
     };
-    create_api(
-        auth,
-        &api,
-        &api_id,
-        &route.target,
-        auth_id,
-    )
-    .await;
+    create_api(auth, &api, &api_id, &route.target, auth_id).await;
 }
 
 pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>) {

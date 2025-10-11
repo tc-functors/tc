@@ -212,8 +212,7 @@ fn make_api_actions() -> Vec<Action> {
             effect: s!("Allow"),
             resource: v!["*"],
             sid: make_sid("ApiEvents"),
-        }
-
+        },
     ]
 }
 

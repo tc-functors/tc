@@ -1,10 +1,10 @@
 use composer::Channel;
+use kit::*;
 use provider::{
     Auth,
     aws::appsync,
 };
 use std::collections::HashMap;
-use kit::*;
 
 pub async fn create(auth: &Auth, channels: &HashMap<String, Channel>) {
     let client = appsync::make_client(&auth).await;
@@ -20,11 +20,15 @@ pub async fn delete(_auth: &Auth, _channels: &HashMap<String, Channel>) {}
 
 pub async fn update(_auth: &Auth, _channels: &HashMap<String, Channel>, _c: &str) {}
 
-pub async fn config(auth: &Auth, name: &str, channels: &HashMap<String, Channel>) -> HashMap<String, String> {
+pub async fn config(
+    auth: &Auth,
+    name: &str,
+    channels: &HashMap<String, Channel>,
+) -> HashMap<String, String> {
     let client = appsync::make_client(&auth).await;
     let maybe_creds = appsync::events::find_api_creds(&client, name).await;
     let mut channel: String = String::from("");
-    for (_, c ) in channels {
+    for (_, c) in channels {
         channel = c.name.clone();
     }
     match maybe_creds {

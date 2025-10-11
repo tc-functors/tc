@@ -7,6 +7,7 @@ use aws_sdk_lambda::{
     types::{
         Architecture,
         DeadLetterConfig,
+        DestinationConfig,
         Environment,
         FileSystemConfig,
         FunctionCode,
@@ -21,16 +22,15 @@ use aws_sdk_lambda::{
         State,
         UpdateRuntimeOn,
         VpcConfig,
-        DestinationConfig,
         builders::{
             DeadLetterConfigBuilder,
+            DestinationConfigBuilder,
             EnvironmentBuilder,
             FileSystemConfigBuilder,
             FunctionCodeBuilder,
+            OnSuccessBuilder,
             SnapStartBuilder,
             VpcConfigBuilder,
-            DestinationConfigBuilder,
-            OnSuccessBuilder
         },
     },
 };
@@ -945,8 +945,7 @@ fn make_destination_config(arn: &str) -> DestinationConfig {
     let os = OnSuccessBuilder::default();
     let on_success = os.destination(arn).build();
     let f = DestinationConfigBuilder::default();
-    f.on_success(on_success)
-        .build()
+    f.on_success(on_success).build()
 }
 
 pub async fn update_destination(client: &Client, name: &str, target_arn: &str) {
@@ -959,6 +958,5 @@ pub async fn update_destination(client: &Client, name: &str, target_arn: &str) {
         .await
         .unwrap();
 }
-
 
 //pub type LambdaClient = Client;

@@ -1,3 +1,4 @@
+use crate::Entity;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -8,7 +9,6 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
-use crate::Entity;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -352,7 +352,7 @@ pub struct AssetsSpec {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TargetSpec {
     pub entity: Entity,
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -469,7 +469,7 @@ impl FunctionSpec {
                 assets: None,
                 test: None,
                 tasks: HashMap::new(),
-                target: None
+                target: None,
             },
         }
     }
@@ -492,7 +492,6 @@ pub struct InlineFunctionSpec {
 
 impl InlineFunctionSpec {
     pub fn intern(&self, namespace: &str, dir: &str, infra_dir: &str, name: &str) -> FunctionSpec {
-
         let target = self.make_target_spec();
 
         FunctionSpec {
@@ -511,32 +510,30 @@ impl InlineFunctionSpec {
             infra_dir: Some(s!(infra_dir)),
             test: None,
             tasks: HashMap::new(),
-            target: target
+            target: target,
         }
     }
 
-    fn  make_target_spec(&self) -> Option<TargetSpec> {
+    fn make_target_spec(&self) -> Option<TargetSpec> {
         if let Some(f) = &self.function {
             Some(TargetSpec {
                 entity: Entity::Function,
-                name: f.to_string()
+                name: f.to_string(),
             })
-
         } else if let Some(m) = &self.mutation {
             Some(TargetSpec {
                 entity: Entity::Mutation,
-                name: m.to_string()
+                name: m.to_string(),
             })
         } else if let Some(e) = &self.event {
             Some(TargetSpec {
                 entity: Entity::Event,
-                name: e.to_string()
+                name: e.to_string(),
             })
         } else {
             None
         }
     }
-
 }
 
 pub fn infer_lang(dir: &str) -> LangRuntime {

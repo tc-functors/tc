@@ -5,11 +5,9 @@ pub mod target;
 
 use super::template;
 pub use build::Build;
-use compiler::{
-    spec::{
-        TestSpec,
-        function::FunctionSpec,
-    },
+use compiler::spec::{
+    TestSpec,
+    function::FunctionSpec,
 };
 use configurator::Config;
 use kit as u;
