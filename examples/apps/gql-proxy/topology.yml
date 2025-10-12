@@ -1,0 +1,26 @@
+name: apps-gql-proxy
+
+routes:
+  /api/trigger:
+    method: POST
+    function: gql-invoker
+
+mutations:
+  authorizer: authorizer
+  types:
+    Message:
+      id: String!
+      text: String
+  resolvers:
+    processMessage:
+      input: Message
+      output: Message
+      function: processor
+      subscribe: true
+
+pages:
+  app:
+    dir: .
+    dist: dist
+    bucket: tc-functors-dev
+    config_template: index.html
