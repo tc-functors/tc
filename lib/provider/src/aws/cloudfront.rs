@@ -585,3 +585,19 @@ pub async fn create_or_update_function(client: &Client, name: &str, handler: &st
     };
     publish_function(client, name, &etag).await;
 }
+
+pub async fn delete_distribution(client: &Client, name: &str) {
+    let maybe_dist = find_distribution(client, name).await;
+    match maybe_dist {
+        Some((id, e_tag)) => {
+            client
+                .delete_distribution()
+                .id(id)
+                .if_match(e_tag)
+                .send()
+                .await
+                .unwrap();
+        },
+        None => println!("CF distribution not found, skipping")
+    }
+}

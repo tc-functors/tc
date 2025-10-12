@@ -242,6 +242,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
         version,
         roles,
         queues,
+        pages,
         ..
     } = topology;
 
@@ -261,6 +262,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
     route::delete(&auth, routes).await;
     mutation::delete(&auth, mutations).await;
     queue::delete(&auth, queues).await;
+    page::delete(&auth, pages).await;
 }
 
 async fn delete_entity(auth: &Auth, topology: &Topology, entity: Entity) {

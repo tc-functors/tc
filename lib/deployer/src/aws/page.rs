@@ -419,7 +419,6 @@ pub async fn update(
     config: &HashMap<String, String>,
     sandbox: &str,
 ) {
-    println!("com {}", component);
     match component {
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,
@@ -440,9 +439,15 @@ pub async fn update(
     }
 }
 
-pub async fn delete(_auth: &Auth, _pages: &HashMap<String, Page>) {
-    for (name, _page) in _pages {
+async fn delete_page(auth: &Auth, page: &Page) {
+    let client = cloudfront::make_client(auth).await;
+    cloudfront::delete_distribution(&client, &page.fqn).await;
+}
+
+pub async fn delete(auth: &Auth, pages: &HashMap<String, Page>) {
+    for (name, page) in pages {
         println!("Deleting page {}", &name);
+        delete_page(auth, page).await;
     }
 }
 
