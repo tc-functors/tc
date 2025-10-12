@@ -245,6 +245,12 @@ fn make_event_actions() -> Vec<Action> {
             sid: make_sid("EventState"),
         },
         Action {
+            action: v!["events:InvokeApiDestination"],
+            effect: s!("Allow"),
+            resource: v!["*"],
+            sid: make_sid("EventApiDest"),
+        },
+        Action {
             action: v!["appsync:GraphQL"],
             effect: s!("Allow"),
             resource: v!["arn:aws:appsync:{{region}}:{{account}}:apis/*/types/Mutation/fields/*"],
