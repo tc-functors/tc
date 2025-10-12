@@ -19,6 +19,36 @@
 	  appsync_api_key: '{{GRAPHQL_API_KEY}}',
 
 	  job_id: '',
+	  startJob:
+	  `mutation StartJob($id: String!) {
+               startJob(id: $id) {
+                 id
+                 status
+                 message
+                 createdAt
+                 updatedAt
+                 __typename
+              }
+            }`,
+
+	  trigger_mutation() {
+	    fetch('{{GRAPHQL_ENDPOINT}}', {
+	      method: 'POST',
+	      headers: {
+		'Content-Type':'application/graphql',
+		'Access-Control-Allow-Origin':'*',
+		'x-api-key': this.appsync_api_key
+	      },
+	      body: JSON.stringify(
+		{'query': this.startJob, 'variables': {'id': this.job_id }}
+	      )
+	    })
+	      .then(res => console.log(res))
+	      .then(data => {
+		this.status = data;
+	      });
+	  },
+	  // subscriptions
 
 	  messages: [],
 	  conj(m) {
@@ -40,18 +70,6 @@
 	    const url = `wss://${this.appsync_realtime_host}/graphql?header=${header}&payload=${payload}`;
 	    return url;
 	  },
-
-	  startJob:
-	    `mutation StartJob($id: String!) {
-               startJob(id: $id) {
-                 id
-                 status
-                 message
-                 createdAt
-                 updatedAt
-                 __typename
-              }
-            }`,
 
 	  subscribeStartJob:
 	     `subscription SubscribeStartJob($id: String!) {
@@ -86,7 +104,7 @@
 		data: JSON.stringify({
 		  query: query,
 		  variables: {
-		    id: job_id
+		    id: this.job_id
 		  }
 		}),
 		extensions: {
@@ -100,7 +118,7 @@
 	    websocket.send(JSON.stringify(payload));
 	  },
 
-	  init() {
+	  subscribe() {
 	    const url = this.getWebsocketUrl();
 	    const socket = new WebSocket(url, ["graphql-ws"]);
 	    socket.onopen = () => {
@@ -117,7 +135,6 @@
 	      console.log(message);
 	      switch (message.type) {
 	      case "connection_ack":
-		this.sendQuery(socket, this.startJob);
 		this.sendQuery(socket, this.subscribeStartJob);
 		this.sendQuery(socket, this.subscribeCompleteJob);
 		break;
@@ -128,13 +145,25 @@
 		console.error(message);
 		break;
 	      case "data":
-		const text = message.payload.data.subscribeProcessMessage.text;
-		console.log(text)
-		this.conj(text)
+		const text1 = message.payload.data.subscribeStartJob;
+		const text2 = message.payload.data.subscribeCompleteJob;
+		if (text1) {
+		  this.conj(text1)
+		}
+		if (text2) {
+		  this.conj(text2)
+		}
+
 		break;
 	      }
 	    }
-	  } // eof init
+	  }, // eof subscribe
+
+	  start() {
+	    this.subscribe()
+	    this.trigger_mutation()
+	  }
+
 	}
       }
 
@@ -143,10 +172,21 @@
 
     <div x-data="init_subscription()">
 
+      <br/>
+      <div class="grid">
+	<fieldset role="group">
+	  <input type="text" x-model="job_id"/>
+	  <input type="submit" @click="start()" value="Start Job">
+	</fieldset>
+	<div></div>
+      </div>
+
+
 	 <article class="secondary" style="height: 80dvh;" class="overflow-auto">
 	   <template x-for="msg in messages">
              <div>
-	       <div x-html="msg"></div>
+	       <span x-text="msg.id"></span>
+	       <span x-text="msg.status"></span>
 	       <hr/>
              </div>
 	    </template>
