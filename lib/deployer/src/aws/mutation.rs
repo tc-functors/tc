@@ -101,9 +101,15 @@ pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
     match api {
         Some(a) => {
             let mut h: HashMap<String, String> = HashMap::new();
+            let host = str::replace(&a.https, "https://", "")
+                .replace("/graphql", "");
+            let rhost = str::replace(&a.wss, "wss://", "")
+                .replace("/graphql", "");
             h.insert(s!("GRAPHQL_ID"), a.id.clone());
             h.insert(s!("GRAPHQL_ENDPOINT"), a.https.clone());
+            h.insert(s!("GRAPHQL_HOST"), host);
             h.insert(s!("GRAPHQL_WSS_ENDPOINT"), a.wss.clone());
+            h.insert(s!("GRAPHQL_REALTIME_HOST"), rhost);
             let keys = appsync::list_api_keys(&client, &a.id).await;
             if let Some(key) = keys.first() {
                 h.insert(s!("GRAPHQL_API_KEY"), key.to_string());

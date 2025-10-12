@@ -401,8 +401,16 @@ pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<St
         }
         None => {
             let rs = function::list(auth, &functions).await;
-            let table = Table::new(rs).with(Style::psql()).to_string();
-            println!("{}", table);
+            if rs.len() > 0 {
+                let table = Table::new(rs).with(Style::psql()).to_string();
+                println!("{}", table);
+                println!("");
+            };
+
+            let config = make_config(auth, topology).await;
+            for (k, v) in config {
+                println!("{}={}", k, v);
+            }
         }
     }
 }

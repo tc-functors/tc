@@ -104,7 +104,7 @@ fn make_sub_fields(type_name: &str, output: String) -> String {
     format!(
         r#"{sub_name}(id: String!): {output}
    @aws_subscribe(mutations: ["{type_name}"])
-   @aws_lambda @aws_iam
+   @aws_lambda @aws_iam @aws_api_key
 "#
     )
 }
