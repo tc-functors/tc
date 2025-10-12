@@ -42,13 +42,19 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post:
     let image = find_image(&runtime);
     let req_cmd = gen_req_cmd(dir);
 
+    let cp_command = if u::path_exists(dir, "pyproject.toml") {
+        "COPY pyproject.toml ./"
+    } else {
+        "RUN echo 0"
+    };
+
     let f = format!(
         r#"
 FROM {image} AS intermediate
 WORKDIR {dir}
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-COPY pyproject.toml ./
+{cp_command}
 
 COPY --from=shared . {build_context}/
 
