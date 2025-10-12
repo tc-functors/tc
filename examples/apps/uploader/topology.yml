@@ -1,0 +1,6 @@
+name: file-uploader
+
+routes:
+  /api/file:
+    method: POST
+    multipart: true
