@@ -34,7 +34,7 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: HashMap<String, TestSpec>,
-    pub target: Option<Target>,
+    pub targets: Vec<Target>,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -118,7 +118,7 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
-        let target = Target::new(&namespace, &fspec, &config);
+        let targets = Target::make_all(&namespace, &fspec, &config);
 
         Function {
             name: fspec.name.to_string(),
@@ -133,7 +133,7 @@ impl Function {
             layer_name: fspec.layer_name,
             test: make_test(fspec.test),
             runtime: runtime,
-            target: target,
+            targets: targets,
         }
     }
 
@@ -157,7 +157,7 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
-        let target = Target::new(&namespace, &fspec, &config);
+        let targets = Target::make_all(&namespace, &fspec, &config);
 
         Function {
             name: fspec.name.to_string(),
@@ -172,7 +172,7 @@ impl Function {
             layer_name: fspec.layer_name.clone(),
             test: make_test(fspec.test.clone()),
             runtime: runtime,
-            target: target,
+            targets: targets,
         }
     }
 

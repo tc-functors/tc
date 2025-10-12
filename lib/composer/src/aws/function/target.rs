@@ -16,29 +16,34 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new(namespace: &str, spec: &FunctionSpec, config: &Config) -> Option<Target> {
+
+    pub fn make_all(namespace: &str, spec: &FunctionSpec, config: &Config) -> Vec<Target> {
+
+        let mut xs: Vec<Target> = vec![];
+
         if let Some(tspec) = &spec.target {
             match tspec.entity {
                 Entity::Function => {
                     let fqn = template::lambda_fqn(namespace, &tspec.name);
-                    Some(Target {
+                    let t = Target {
                         entity: Entity::Function,
                         arn: template::lambda_arn(&fqn),
                         shim: None,
-                    })
+                    };
+                    xs.push(t);
                 }
                 Entity::Event => {
                     let bus = &config.aws.eventbridge.bus;
-                    Some(Target {
+                    let t = Target {
                         entity: Entity::Event,
                         arn: template::event_bus_arn(&bus),
                         shim: None,
-                    })
+                    };
+                    xs.push(t);
                 }
-                _ => None,
+                _ => (),
             }
-        } else {
-            None
         }
+        xs
     }
 }
