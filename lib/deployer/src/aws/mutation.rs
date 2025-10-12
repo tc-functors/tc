@@ -56,6 +56,7 @@ async fn create_mutation(
         appsync::find_or_create_resolver(&client, &api_id, &field_name, datasource_name).await;
     }
     appsync::update_tags(&client, &auth.graphql_api_arn(&api_id), tags.clone()).await;
+    let _ = appsync::create_or_update_api_key(&client, &api_id).await;
 }
 
 pub async fn create(

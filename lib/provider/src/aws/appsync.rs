@@ -30,8 +30,14 @@ pub async fn make_client(auth: &Auth) -> Client {
     Client::new(shared_config)
 }
 
-fn make_auth_type() -> AdditionalAuthenticationProvider {
+fn make_iam_auth_type() -> AdditionalAuthenticationProvider {
     let auth_type = AuthenticationType::AwsIam;
+    let v = AdditionalAuthenticationProviderBuilder::default();
+    v.authentication_type(auth_type).build()
+}
+
+fn make_key_auth_type() -> AdditionalAuthenticationProvider {
+    let auth_type = AuthenticationType::ApiKey;
     let v = AdditionalAuthenticationProviderBuilder::default();
     v.authentication_type(auth_type).build()
 }
@@ -202,13 +208,13 @@ async fn create_api(
     println!("Creating api {}", name.green());
     let auth_type = AuthenticationType::AwsLambda;
     let lambda_auth_config = make_lambda_authorizer(authorizer_arn);
-    let additional_auth_type = make_auth_type();
+    let additional_auth_types = vec![make_key_auth_type(), make_iam_auth_type()];
     let r = client
         .create_graphql_api()
         .name(s!(name))
         .set_tags(Some(tags))
         .authentication_type(auth_type)
-        .additional_authentication_providers(additional_auth_type)
+        .set_additional_authentication_providers(Some(additional_auth_types))
         .lambda_authorizer_config(lambda_auth_config)
         .send()
         .await;
@@ -231,13 +237,13 @@ async fn update_api(
     println!("Updating api {}", name.blue());
     let auth_type = AuthenticationType::AwsLambda;
     let lambda_auth_config = make_lambda_authorizer(authorizer_arn);
-    let additional_auth_type = make_auth_type();
+    let additional_auth_types = vec![make_key_auth_type(), make_iam_auth_type()];
     let r = client
         .update_graphql_api()
         .name(s!(name))
         .api_id(s!(api_id))
         .authentication_type(auth_type)
-        .additional_authentication_providers(additional_auth_type)
+        .set_additional_authentication_providers(Some(additional_auth_types))
         .lambda_authorizer_config(lambda_auth_config)
         .send()
         .await;
@@ -561,14 +567,6 @@ pub async fn delete_by_id(client: &Client, api_id: &str) {
     println!("{:?}", &res);
 }
 
-pub async fn list_api_keys(client: &Client, api_id: &str) -> Vec<String> {
-    let res = client.list_api_keys().api_id(api_id).send().await.unwrap();
-    match res.api_keys {
-        Some(xs) => xs.into_iter().map(|x| x.id.unwrap()).collect(),
-        None => vec![],
-    }
-}
-
 pub async fn get_api_endpoint(client: &Client, api_id: &str) -> Option<String> {
     let r = client.get_graphql_api().api_id(s!(api_id)).send().await;
     match r {
@@ -598,5 +596,63 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
         Err(_) => Ok(HashMap::new()),
     }
 }
+
+// api key
+
+pub async fn find_api_key(client: &Client, api_id: &str) -> Option<String> {
+    let res = client.list_api_keys().api_id(api_id).send().await.unwrap();
+    match res.api_keys {
+        Some(xs) => {
+            for key in xs {
+                if let Some(desc) = key.description {
+                    if desc == "default" {
+                        return key.id
+                    }
+                }
+            }
+        },
+        None => (),
+    }
+    None
+}
+
+async fn create_api_key(client: &Client, api_id: &str) -> String {
+    let res = client
+        .create_api_key()
+        .api_id(api_id)
+        .description("default")
+        .send()
+        .await;
+    res.unwrap().api_key.unwrap().id.unwrap()
+}
+
+async fn update_api_key(client: &Client, api_id: &str, id: &str) -> String {
+    let res = client
+        .update_api_key()
+        .api_id(api_id)
+        .id(id)
+        .description("default")
+        .send()
+        .await;
+    res.unwrap().api_key.unwrap().id.unwrap()
+}
+
+pub async fn create_or_update_api_key(client: &Client, api_id: &str) -> String {
+    let maybe_api_key_id = find_api_key(client, api_id).await;
+    match maybe_api_key_id {
+        Some(id) =>  update_api_key(client, api_id, &id).await,
+        None => create_api_key(client, api_id).await
+    }
+}
+
+pub async fn list_api_keys(client: &Client, api_id: &str) -> Vec<String> {
+    let res = client.list_api_keys().api_id(api_id).send().await.unwrap();
+    match res.api_keys {
+        Some(xs) => xs.into_iter().map(|x| x.id.unwrap()).collect(),
+        None => vec![],
+    }
+}
+
+
 
 pub type AppsyncClient = Client;

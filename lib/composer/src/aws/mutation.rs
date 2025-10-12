@@ -76,7 +76,7 @@ fn make_type(type_name: &str, mappings: HashMap<String, String>) -> String {
         s.push_str(&format!("{}: {} ", k, v));
     }
     format!(
-        r##"type {type_name} @aws_lambda @aws_iam {{
+        r##"type {type_name} @aws_lambda @aws_iam @aws_api_key {{
   {s}
   createdAt: AWSDateTime
   updatedAt: AWSDateTime
@@ -125,7 +125,7 @@ fn make_mut_fields(type_name: &str, input: HashMap<String, String>, output: Stri
     format!(
         r#"
 {type_name}({s}): {output}
-@aws_lambda @aws_iam
+@aws_lambda @aws_iam @aws_api_key
 "#
     )
 }
@@ -201,7 +201,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
             let types = augment_types(ms.types.to_owned());
             let m = Mutation {
                 api_name: format!("{}_{{{{sandbox}}}}", namespace),
-                authorizer: ms.authorizer.to_owned(),
+                authorizer: template::maybe_namespace(&ms.authorizer),
                 types: make_types(types.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),
                 role_arn: Role::entity_role_arn(Entity::Mutation),
