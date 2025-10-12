@@ -127,6 +127,7 @@ pub struct Page {
     pub domains: HashMap<String, HashMap<String, String>>,
     pub config_template: Option<String>,
     pub functions: HashMap<String, String>,
+    pub skip_deploy: bool
 }
 
 fn make_functions(kind: &str) -> HashMap<String, String> {
@@ -251,6 +252,11 @@ fn make(
 
     let paths = make_paths(namespace, name);
 
+    let should_skip = match ps.skip_deploy {
+        Some(p) => p,
+        None => false
+    };
+
     Page {
         fqn: fqn,
         namespace: namespace.to_string(),
@@ -268,6 +274,7 @@ fn make(
         domains: find_domains(&ps.domains, infra),
         config_template: ps.config_template.clone(),
         functions: make_functions(kind),
+        skip_deploy: should_skip
     }
 }
 

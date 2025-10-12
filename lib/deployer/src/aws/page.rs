@@ -194,6 +194,23 @@ async fn update_dns_record(auth: &Auth, domain: &str, dist_id: &str, cname: &str
     route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
 }
 
+
+async fn build(auth: &Auth, name:&str, page: &Page, config: &HashMap<String, String>) {
+    let Page {
+        dir,
+        build,
+        config_template,
+        ..
+    } = page;
+    if let Some(path) = config_template {
+        println!("Rendering config: {}", &path);
+        render_config_template(auth, dir, &path, config).await;
+    }
+    println!("Building page {} ({})", name, dir);
+    build_page(dir, name, build, config_template);
+
+}
+
 async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
     let Page {
         bucket,
@@ -337,7 +354,12 @@ pub async fn create(
     sandbox: &str,
 ) {
     for (name, page) in pages {
-        create_page(auth, &name, &page, config, sandbox).await;
+        if page.skip_deploy {
+            println!("Skipping page deploy {}", &name);
+            build(auth, &name, &page, config).await;
+        } else {
+            create_page(auth, &name, &page, config, sandbox).await;
+        }
     }
 }
 

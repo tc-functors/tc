@@ -18,6 +18,8 @@
 	  appsync_realtime_host: '{{GRAPHQL_REALTIME_HOST}}',
 	  appsync_api_key: '{{GRAPHQL_API_KEY}}',
 
+	  job_id: '',
+
 	  messages: [],
 	  conj(m) {
 	    this.messages.push(m)
@@ -42,65 +44,49 @@
 	  startJob:
 	    `mutation StartJob($id: String!) {
                startJob(id: $id) {
-               id
-               status
-               message
-               createdAt
-               updatedAt
-               __typename
-           }
+                 id
+                 status
+                 message
+                 createdAt
+                 updatedAt
+                 __typename
+              }
+            }`,
+
+	  subscribeStartJob:
+	     `subscription SubscribeStartJob($id: String!) {
+               subscribeStartJob(id: $id) {
+                 id
+                 status
+                 message
+                 createdAt
+                 updatedAt
+                __typename
+             }
           }`,
 
+	  subscribeCompleteJob:
+            `subscription SubscribeCompleteJob($id: String!) {
+               subscribeCompleteJob(id: $id) {
+                 id
+                 status
+                 message
+                 createdAt
+                 updatedAt
+                 __typename
+           }
+         }`,
 
-
-	  export const subscribeStartJob = /* GraphQL */ `
-  subscription SubscribeStartJob($id: String!) {
-    subscribeStartJob(id: $id) {
-      id
-      status
-      message
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-
-	  export const subscribeCompleteJob = /* GraphQL */ `
-  subscription SubscribeCompleteJob($id: String!) {
-    subscribeCompleteJob(id: $id) {
-      id
-      status
-      message
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-
-
-	  subscribeProcessMessage:
-	  `subscription SubscribeProcessMessage($id: String!) {
-            subscribeProcessMessage(id: $id) {
-              id
-              text
-              createdAt
-              updatedAt
-	      __typename
-	    }
-	  }
-	  `,
-
-	  startSubscription(websocket) {
-	    const subscribeMessage = {
+	  sendQuery(websocket, query) {
+            console.log("subscribing ", this.job_id);
+	    const payload = {
 	      id: window.crypto.randomUUID(),
 	      type: "start",
 	      payload: {
 		data: JSON.stringify({
-		  query: this.subscribeProcessMessage,
+		  query: query,
 		  variables: {
-		    id: 'abc'
+		    id: job_id
 		  }
 		}),
 		extensions: {
@@ -111,7 +97,7 @@
 		},
 	      },
 	    };
-	    websocket.send(JSON.stringify(subscribeMessage));
+	    websocket.send(JSON.stringify(payload));
 	  },
 
 	  init() {
@@ -131,7 +117,9 @@
 	      console.log(message);
 	      switch (message.type) {
 	      case "connection_ack":
-		this.startSubscription(socket);
+		this.sendQuery(socket, this.startJob);
+		this.sendQuery(socket, this.subscribeStartJob);
+		this.sendQuery(socket, this.subscribeCompleteJob);
 		break;
 	      case "start_ack":
 		console.log("start_ack");
@@ -151,6 +139,7 @@
       }
 
     </script>
+
 
     <div x-data="init_subscription()">
 

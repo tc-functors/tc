@@ -13,5 +13,6 @@ pub struct PageSpec {
     pub domains: Option<HashMap<String, String>>,
     pub paths: Option<Vec<String>>,
     pub bucket: Option<String>,
+    pub skip_deploy: Option<bool>,
     pub config_template: Option<String>,
 }

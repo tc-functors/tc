@@ -33,3 +33,4 @@ pages:
     dir: .
     dist: dist
     config_template: index.html
+    skip_deploy: true
