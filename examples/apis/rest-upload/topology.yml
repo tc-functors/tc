@@ -1,4 +1,4 @@
-name: file-uploader
+name: example-rest-upload
 
 routes:
   /api/file:

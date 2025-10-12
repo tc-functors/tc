@@ -1,0 +1,38 @@
+name: example-rest-progress
+
+routes:
+  /api/message:
+    method: POST
+    event: ProcessStart
+    cors:
+      methods: ['POST', 'HEAD', 'OPTIONS']
+      origins: ['*']
+      allowed_headers: ['Content-Type', 'Accepts']
+
+events:
+  ProcessStart:
+    function: f1
+  ProcessComplete:
+    channel: my-channel
+  ProcessStatus:
+    channel: my-channel
+
+functions:
+  f1:
+    function: f2
+    event: ProcessStatus
+  f2:
+    function: f3
+    event: ProcessStatus
+  f3:
+    event: ProcessComplete
+
+channels:
+  my-channel:
+    handler: default
+
+pages:
+  app:
+    dir: .
+    dist: dist
+    config_template: index.html

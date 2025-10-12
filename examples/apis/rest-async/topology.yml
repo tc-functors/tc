@@ -1,4 +1,4 @@
-name: example-api-async
+name: example-rest-async
 
 routes:
   /api/message:

@@ -1,4 +1,4 @@
-name: progress-tracker
+name: example-gql-progress
 
 events:
   CompleteTask:
@@ -6,7 +6,7 @@ events:
     mutation: completeJob
 
 mutations:
-  authorizer: "{{namespace}}_authorizer_{{sandbox}}"
+  authorizer: authorizer
   types:
     JobInput:
       id: String!
@@ -30,8 +30,6 @@ mutations:
 
 pages:
   app:
-    dir: app
-    config_template: src/config.json
-    build:
-       - npm install --quiet --no-audit
-       - npm run build
+    dir: .
+    dist: dist
+    config_template: index.html

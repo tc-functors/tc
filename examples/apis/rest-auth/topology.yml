@@ -1,8 +1,11 @@
-name: api-auth
+name: example-rest-auth
 
 
 routes:
   /auth/register:
+    method: POST
+    function: registrar
+  /auth/token:
     method: POST
     function: registrar
   /auth/login:
@@ -15,5 +18,6 @@ routes:
 
 pages:
   webapp:
-    dist: .
-    dir: webapp
+    dir: .
+    dist: dist
+    config_template: index.html

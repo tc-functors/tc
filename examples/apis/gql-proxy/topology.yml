@@ -1,4 +1,4 @@
-name: apps-gql-proxy
+name: example-gql-proxy
 
 # This uses pure websockets to subscribe to graphql mutations
 # without any external library

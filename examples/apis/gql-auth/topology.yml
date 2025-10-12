@@ -1,4 +1,4 @@
-name: gql-tracker
+name: example-gql-auth
 
 events:
   CompleteTask:
@@ -6,7 +6,7 @@ events:
     mutation: completeJob
 
 mutations:
-  authorizer: authorizer
+  authorizer: "{{namespace}}_authorizer_{{sandbox}}"
   types:
     JobInput:
       id: String!
@@ -30,6 +30,8 @@ mutations:
 
 pages:
   app:
-    dir: .
-    dist: dist
-    config_template: index.html
+    dir: app
+    config_template: src/config.json
+    build:
+       - npm install --quiet --no-audit
+       - npm run build

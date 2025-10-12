@@ -1,0 +1,12 @@
+name: example-htmx
+
+routes:
+  catch-all-get:
+    path: /{:catch_all}
+    method: GET
+    function: handler
+
+  catch-all-post:
+    path: /{:catch_all}
+    method: POST
+    function: handler

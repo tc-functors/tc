@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script defer src="https://unpkg.com/alpinejs@3.13.2/dist/cdn.min.js"></script>
+    <title>API Auth</title>
+  </head>
+
+  <body>
+    <div class="container">
+
+	<script>
+	  function init_rest() {
+
+	    return {
+	      token: '',
+	      username: '',
+	      password: '',
+
+	      login() {
+		fetch('{{REST_ENDPOINT}}/auth/login', {
+		    method: 'POST',
+		    header: {
+		      'Access-Control-Allow-Origin':'*',
+		    },
+		  body: JSON.stringify({'username': this.username, 'password': this.password})
+		})
+	      }
+
+	      getToken() {
+		fetch('{{REST_ENDPOINT}}/auth/token', {
+		    method: 'POST',
+		    header: {
+		      'Access-Control-Allow-Origin':'*',
+		    },
+		  body: JSON.stringify({'username': this.username, 'password': this.password})
+		})
+	      },
+
+	    }
+
+	  }
+
+	</script>
+
+	<br/>
+
+	API Auth
+	<br/>
+
+	<div class="grid" x-data="init_users()">
+	  <div>
+	      <h4>Register</h4>
+	      <label>Username</label>
+	      <input type="text">
+	      <label>Password</label>
+	      <input type="text">
+	      <button>Register</button>
+	  </div>
+
+	  <div>
+	      <h4>Login</h4>
+	      <label>Username</label>
+	      <input type="text">
+	      <label>Password</label>
+	      <input type="text">
+	      <button>Login</button>
+	  </div>
+
+
+	  <div>
+	      <h4>Forgot Password</h4>
+	      <label>Username</label>
+	      <input type="text">
+	      <button>Forgot Password</button>
+	  </div>
+
+	</div>
+
+	<br/> <hr/>
+	<div class="grid">
+
+	  <div>
+	    <textarea rows=5 x-model="message"> </textarea>
+	    <button @click="postMessage()">Post Message</button>
+	  </div>
+
+	  <div>
+	  </div>
+
+	  <div>
+	  </div>
+	</div>
+
+    </div>
+
+  </body>
+</html>

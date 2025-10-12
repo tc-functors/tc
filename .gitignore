@@ -28,3 +28,5 @@ node_modules
 doc/dist
 .DS_Store
 .cursorrules
+dist
+examples/apps/*/dist
