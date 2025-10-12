@@ -1,2 +1,21 @@
+These examples are still work in progress and it's here for reference only.
 
 * api-async
+
+* api-auth
+
+WIP
+
+* chat
+
+A simple chat using channels.
+
+* etl
+
+* gql-proxy
+
+* gql-tracker
+
+* htmx
+
+* csv-processor

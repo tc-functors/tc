@@ -1,4 +1,4 @@
-name: job-tracker
+name: gql-tracker
 
 events:
   CompleteTask:
@@ -30,7 +30,6 @@ mutations:
 
 pages:
   app:
-    bucket: tc-functors-dev
     dir: .
     dist: dist
     config_template: index.html

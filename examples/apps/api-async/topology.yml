@@ -31,7 +31,6 @@ channels:
 
 pages:
   app:
-    bucket: tc-functors-dev
     dir: .
     dist: dist
     config_template: index.html
