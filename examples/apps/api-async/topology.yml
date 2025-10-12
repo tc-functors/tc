@@ -1,0 +1,37 @@
+name: example-api-async
+
+routes:
+  /api/message:
+    method: POST
+    event: ProcessStart
+    cors:
+      methods: ['POST', 'HEAD', 'OPTIONS']
+      origins: ['*']
+      allowed_headers: ['Content-Type', 'Accepts']
+
+events:
+  ProcessStart:
+    producer: default
+    function: f1
+  ProcessComplete:
+    producer: default
+    channel: my-channel
+
+functions:
+  f1:
+    function: f2
+  f2:
+    function: f3
+  f3:
+    event: ProcessComplete
+
+channels:
+  my-channel:
+    handler: default
+
+pages:
+  app:
+    bucket: tc-functors-dev
+    dir: .
+    dist: dist
+    config_template: index.html

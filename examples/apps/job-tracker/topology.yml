@@ -1,0 +1,36 @@
+name: job-tracker
+
+events:
+  CompleteTask:
+    producer: adHoc
+    mutation: completeJob
+
+mutations:
+  authorizer: authorizer
+  types:
+    JobInput:
+      id: String!
+    Job:
+      id: String!
+      status: String
+      message: String
+
+  resolvers:
+    startJob:
+      function: starter
+      input: JobInput
+      output: Job
+      subscribe: true
+
+    completeJob:
+      function: completer
+      input: EventData
+      output: Job
+      subscribe: true
+
+pages:
+  app:
+    bucket: tc-functors-dev
+    dir: .
+    dist: dist
+    config_template: index.html

@@ -1,4 +1,4 @@
-name: auth-jwt
+name: api-auth
 
 
 routes:

@@ -1,86 +1,39 @@
-name: etl
+name: example-etl
 
 routes:
-  /api/messages:
-    method: GET
-    authorizer: authorizer
-    queue: MessagesQueue
-
-queues:
-  MessagesQueue:
-    function: initializer
+  /api/message:
+    method: POST
+    event: Start
+    cors:
+      methods: ['POST', 'HEAD', 'OPTIONS']
+      origins: ['*']
+      allowed_headers: ['Content-Type', 'Accepts']
 
 events:
-  InitializationComplete:
-    producer: adHoc
-    mutation: enhance
-
-  EnhancerComplete:
-    producer: adHoc
-    mutation: transform
-
-  TransformerComplete:
-    producer: adHoc
-    mutation: load
-
-  LoaderComplete:
-    producer: adHoc
-    mutation: complete
-
-mutations:
-  authorizer: authorizer
-  types:
-    Input:
-      id: String!
-    Status:
-      id: String!
-      status: String
-      message: String
-      percentage: Int
-
-  resolvers:
-    initialize:
-      function: initializer
-      input: Input
-      output: Status
-      subscribe: true
-
-    enhance:
-      function: enhancer
-      input: Event
-      output: Status
-      subscribe: true
-
-    transform:
-      function: transformer
-      input: Event
-      output: Status
-      subscribe: true
-
-    load:
-      function: loader
-      input: Event
-      output: Status
-      subscribe: true
-
-    complete:
-      function: completer
-      input: Event
-      output: Status
-      subscribe: true
-
+  Start:
+    function: enhancer
+    channel: status-chan
+  Transform:
+    function: transformer
+    channel: notification
 
 functions:
   enhancer:
-    root: true
-    function: transformer
+    event: Transform
+    channel: notification
   transformer:
-    uri: github.com/tc-functors/functions/generic-transformer
-    function: loader
-  loader:
-    end: true
+    event: Loader
+    channel: notification
+  Loader:
+    channel: notification
+
+channels:
+  notification:
+    handler: default
 
 pages:
-  my-app:
-    kind: SPA
-    dir: webapp
+  app:
+    dir: .
+    dist: dist
+    bucket: tc-functors-dev
+    config_template: index.html

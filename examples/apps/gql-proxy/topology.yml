@@ -1,5 +1,9 @@
 name: apps-gql-proxy
 
+# This uses pure websockets to subscribe to graphql mutations
+# without any external library
+# invoker triggers a mutationd directly
+
 routes:
   /api/trigger:
     method: POST
