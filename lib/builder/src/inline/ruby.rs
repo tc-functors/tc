@@ -124,7 +124,7 @@ RUN mkdir -p /build/ruby/lib /build/lib
 RUN {pre}
 
 ENV BUNDLE_WITHOUT "test:development"
-RUN --mount=type=ssh --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install --without development test
+RUN --mount=type=cache,target=/.root/cache BUNDLE_WITHOUT="test:development" bundle config set --local without development test && bundle config set path vendor/bundle && bundle config set cache_all true && bundle cache --no-install && bundle lock && bundle install --without development test
 
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
