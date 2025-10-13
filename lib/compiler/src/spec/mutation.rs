@@ -32,7 +32,7 @@ pub struct ResolverSpec {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationSpec {
     #[serde(default)]
-    pub authorizer: String,
+    pub authorizer: Option<String>,
 
     #[serde(default)]
     pub types: HashMap<String, HashMap<String, String>>,
