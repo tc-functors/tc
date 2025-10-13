@@ -27,15 +27,18 @@ pub struct RouteSpec {
     pub path: Option<String>,
     pub gateway: Option<String>,
     pub authorizer: Option<String>,
-    #[serde(default, alias = "proxy")]
+    #[serde(default)]
     pub function: Option<String>,
+    #[serde(default)]
+    pub proxy: Option<String>,
     pub state: Option<String>,
     pub event: Option<String>,
     pub queue: Option<String>,
 
     pub request_template: Option<String>,
     pub response_template: Option<String>,
-    pub sync: Option<bool>,
+    #[serde(alias = "async")]
+    pub is_async: Option<bool>,
 
     pub stage: Option<String>,
     pub stage_variables: Option<HashMap<String, String>>,

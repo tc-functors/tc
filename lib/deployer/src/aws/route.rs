@@ -59,7 +59,7 @@ async fn make_api(
         role: route.role_arn.to_string(),
         path: route.to_owned().path,
         method: route.method.to_owned(),
-        sync: route.sync.to_owned(),
+        is_async: route.is_async.to_owned(),
         cors: cors,
         tags: tags.clone(),
     }

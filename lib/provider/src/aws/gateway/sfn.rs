@@ -44,12 +44,12 @@ async fn create(
     api_id: &str,
     role_arn: &str,
     request_params: HashMap<String, String>,
-    sync: bool,
+    is_async: bool,
 ) -> Result<String, Error> {
-    let subtype = if sync {
-        s!("StepFunctions-StartSyncExecution")
-    } else {
+    let subtype = if is_async {
         s!("StepFunctions-StartExecution")
+    } else {
+        s!("StepFunctions-StartSyncExecution")
     };
 
     let res = client

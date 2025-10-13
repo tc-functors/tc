@@ -31,7 +31,7 @@ pub struct Route {
     pub role_arn: String,
     pub stage: String,
     pub stage_variables: HashMap<String, String>,
-    pub sync: bool,
+    pub is_async: bool,
     pub cors: Option<CorsSpec>,
     pub target: Target,
 }
@@ -171,7 +171,7 @@ impl Route {
             None => s!("POST"),
         };
 
-        let sync = match rspec.sync {
+        let is_async = match rspec.is_async {
             Some(s) => s,
             None => false,
         };
@@ -207,7 +207,7 @@ impl Route {
             role_arn: Role::entity_role_arn(Entity::Route),
             stage: stage,
             stage_variables: HashMap::new(),
-            sync: sync,
+            is_async: is_async,
             cors: rspec.cors.clone(),
             skip: skip,
         }

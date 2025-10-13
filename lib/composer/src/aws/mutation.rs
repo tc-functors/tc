@@ -199,9 +199,13 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
     match some_mutatations {
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());
+            let authorizer = match &ms.authorizer {
+                Some(ath) => ath,
+                None => "default"
+            };
             let m = Mutation {
                 api_name: format!("{}_{{{{sandbox}}}}", namespace),
-                authorizer: template::maybe_namespace(&ms.authorizer),
+                authorizer: template::maybe_namespace(authorizer),
                 types: make_types(types.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),
                 role_arn: Role::entity_role_arn(Entity::Mutation),

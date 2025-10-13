@@ -33,7 +33,7 @@ pub struct Api {
     pub role: String,
     pub path: String,
     pub method: String,
-    pub sync: bool,
+    pub is_async: bool,
     pub cors: Option<Cors>,
     pub tags: HashMap<String, String>,
 }
@@ -386,7 +386,7 @@ impl Api {
     }
 
     pub async fn create_lambda_integration(&self, api_id: &str, target_arn: &str) -> String {
-        lambda::find_or_create(&self.client, api_id, target_arn, &self.role).await
+        lambda::create_or_update(&self.client, api_id, target_arn, &self.role, self.is_async).await
     }
 
     pub async fn create_sfn_integration(
@@ -400,7 +400,7 @@ impl Api {
             api_id,
             &self.role,
             request_params,
-            self.sync,
+            self.is_async,
             name,
         )
         .await
