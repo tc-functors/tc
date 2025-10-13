@@ -1,0 +1,145 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script defer src="https://unpkg.com/alpinejs@3.13.2/dist/cdn.min.js"></script>
+    <title>Minimal Appsync Subscription</title>
+
+  </head
+  <body>
+
+    <div class="container">
+
+    <script>
+      function init_subscription() {
+	return {
+	  appsync_host: '{{GRAPHQL_HOST}}',
+	  appsync_realtime_host: '{{GRAPHQL_REALTIME_HOST}}',
+	  appsync_api_key: '{{GRAPHQL_API_KEY}}',
+
+	  messages: [],
+	  conj(m) {
+	    this.messages.push(m)
+	  },
+
+	  job_id: '',
+
+	  encodeAppSyncCredentials() {
+	    const creds = {
+	      host: this.appsync_host,
+	      "x-api-key": this.appsync_api_key,
+	    };
+	    const b64Creds = window.btoa(JSON.stringify(creds));
+	    return b64Creds;
+	  },
+
+	  getWebsocketUrl() {
+	    const header = this.encodeAppSyncCredentials();
+	    const payload = window.btoa(JSON.stringify({}));
+	    const url = `wss://${this.appsync_realtime_host}/graphql?header=${header}&payload=${payload}`;
+	    return url;
+	  },
+
+	  subscribeProcessMessage:
+	  `subscription SubscribeProcessMessage($id: String!) {
+            subscribeProcessMessage(id: $id) {
+              id
+              text
+              createdAt
+              updatedAt
+	      __typename
+	    }
+	  }
+	  `,
+
+	  startSubscription(websocket) {
+	    const subscribeMessage = {
+	      id: window.crypto.randomUUID(),
+	      type: "start",
+	      payload: {
+		data: JSON.stringify({
+		  query: this.subscribeProcessMessage,
+		  variables: {
+		    id: this.job_id
+		  }
+		}),
+		extensions: {
+		  authorization: {
+		    "x-api-key": this.appsync_api_key,
+		    host: this.appsync_host,
+		  },
+		},
+	      },
+	    };
+	    websocket.send(JSON.stringify(subscribeMessage));
+	  },
+
+	  start() {
+	    const url = this.getWebsocketUrl();
+	    const socket = new WebSocket(url, ["graphql-ws"]);
+	    socket.onopen = () => {
+	      socket.send(
+		JSON.stringify({
+		  type: "connection_init",
+		})
+	      );
+	    }
+	    socket.onclose = (event) => reject(new Error(event.reason))
+
+	    socket.onmessage = (event) => {
+	      message = JSON.parse(event.data);
+	      console.log(message);
+	      switch (message.type) {
+	      case "connection_ack":
+		this.startSubscription(socket);
+		break;
+	      case "start_ack":
+		console.log("start_ack");
+		break;
+	      case "error":
+		console.error(message);
+		break;
+	      case "data":
+		const text = message.payload.data.subscribeProcessMessage.text;
+		console.log(text)
+		this.conj(text)
+		break;
+	      }
+	    }
+	  } // eof init
+	}
+      }
+
+    </script>
+
+    <div x-data="init_subscription()">
+
+      <br/>
+
+      <div class="grid">
+	<fieldset role="group">
+	  <input type="text" x-model="job_id"/>
+	  <input type="submit" @click="start()" value="Subscribe">
+	</fieldset>
+	<div></div>
+      </div>
+
+
+	 <article class="secondary" style="height: 80dvh;" class="overflow-auto">
+	   <template x-for="msg in messages">
+             <div>
+	       <div x-html="msg"></div>
+	       <hr/>
+             </div>
+	    </template>
+
+	  </article>
+
+    </div>
+
+    </div>
+
+  </body>
+
+</html>

@@ -1,0 +1,31 @@
+name: example-orchestrator
+
+events:
+  MyEvent:
+    function: foo
+
+functions:
+  foo:
+    function: bar
+    mutation: processMessage
+
+mutations:
+  authorizer: authorizer
+  types:
+    Message:
+      id: String!
+      text: String
+  resolvers:
+    processMessage:
+      function: tester
+      input: Message
+      output: Message
+      subscribe: true
+
+pages:
+  app:
+    dir: .
+    dist: dist
+    bucket: tc-functors-dev
+    config_template: index.html
+    skip_deploy: true
