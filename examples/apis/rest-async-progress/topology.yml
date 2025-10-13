@@ -12,20 +12,16 @@ routes:
 events:
   ProcessStart:
     function: f1
-  ProcessComplete:
-    channel: my-channel
-  ProcessStatus:
-    channel: my-channel
 
 functions:
   f1:
     function: f2
-    event: ProcessStatus
+    channel: my-channel
   f2:
     function: f3
-    event: ProcessStatus
+    channel: my-channel
   f3:
-    event: ProcessComplete
+    channel: my-channel
 
 channels:
   my-channel:
@@ -36,3 +32,4 @@ pages:
     dir: .
     dist: dist
     config_template: index.html
+    skip_deploy: true

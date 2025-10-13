@@ -11,11 +11,7 @@ routes:
 
 events:
   ProcessStart:
-    producer: default
     function: f1
-  ProcessComplete:
-    producer: default
-    channel: my-channel
 
 functions:
   f1:
@@ -23,7 +19,7 @@ functions:
   f2:
     function: f3
   f3:
-    event: ProcessComplete
+    channel: my-channel
 
 channels:
   my-channel:
@@ -34,3 +30,4 @@ pages:
     dir: .
     dist: dist
     config_template: index.html
+    skip_deploy: true

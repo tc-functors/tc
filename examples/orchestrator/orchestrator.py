@@ -45,7 +45,6 @@ def trigger_mutation(mutation_metadata, variables):
         'host': host
     }
   rest_payload = make_mutation_payload(mutation_name, input, output, variables)
-  print(rest_payload)
   conn.request('POST', '/graphql', rest_payload, headers)
   response = conn.getresponse()
   response_string = response.read().decode('utf-8')
@@ -76,10 +75,29 @@ def trigger_function(function_arn, payload):
   print(response)
   return response
 
+def trigger_channel(channel_metadata, payload):
+  host = channel_metadata.get('http_domain')
+  api_key = channel_metadata.get('api_key')
+  conn = http.client.HTTPSConnection(host, 443)
+  headers = {
+    'Content-type': 'application/json',
+    'x-api-key': api_key,
+  }
+  body = {
+    'channel': channel_metadata.get('name'),
+    'events': [json.dumps(payload)]
+  }
+  conn.request('POST', '/event', json.dumps(body), headers)
+  response = conn.getresponse()
+  response_string = response.read().decode('utf-8')
+  print(response_string)
+  return response_string
+
 def trigger_targets(targets, payload):
   event_metadata = targets.get("event")
   mutation_metadata = targets.get("mutation")
   function_arn = targets.get("function")
+  channel_metadata = targets.get("channel")
   if event_metadata is not None:
     trigger_event(event_metadata, payload)
 
@@ -89,14 +107,14 @@ def trigger_targets(targets, payload):
   if mutation_metadata is not None:
     trigger_mutation(mutation_metadata, payload)
 
+  if channel_metadata is not None:
+    trigger_channel(channel_metadata, payload)
   return True
-
 
 def load_metadata(source_arn):
   with open('orchestrator.json') as json_data:
     d = json.load(json_data)
     targets = d.get('targets').get(source_arn)
-    print(targets)
     json_data.close()
     return targets
 

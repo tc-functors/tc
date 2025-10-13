@@ -17,7 +17,6 @@
 	    function init_rest() {
 	      return {
 		message: '',
-		status: '',
 		postMessage() {
 		  fetch('{{REST_ENDPOINT}}/api/message', {
 		    method: 'POST',
@@ -39,8 +38,6 @@
 	    <textarea rows=10 x-model="message"> </textarea>
 	    <button @click="postMessage()">Post Message</button>
 
-
-	    <progress/>
 	  </div>
 
 	</div>
@@ -52,12 +49,14 @@
 	      channel: '{{CHANNEL}}',
 	      message: '',
 	      messages: [],
+	      status: 1,
 	      conj(m) {
 		const data = JSON.parse(m.data)
 		console.log(data);
 		if ( data.type == "data" ) {
 		  const event =  JSON.parse(data.event)
-		  this.messages.push(event.message)
+		  this.messages.push(event.message);
+		  this.status = event.status
 		}
 	      },
 	      auth: { 'x-api-key': '{{API_KEY}}', host: '{{HTTP_DOMAIN}}' },
@@ -87,21 +86,6 @@
 		  "authorization": this.auth
 		}
 		socket.send(JSON.stringify(event))
-	      },
-
-	      async send_msg() {
-		const event = {
-		  "channel": this.channel,
-		  "events": [
-		    JSON.stringify({message: this.message})
-		  ]
-		}
-		const response = await fetch(`https://{{HTTP_DOMAIN}}/event`, {
-		  method: 'POST',
-		  headers: this.auth,
-		  body: JSON.stringify(event)
-		})
-		this.message = ''
 	      }
 
 	    }
@@ -109,14 +93,19 @@
 	  </script>
 
 	<div x-data="init_subscription()" x-init="subscribe()">
-	  <h4>Response (Websocket)</h4>
+	  <h4>Response (Websocket) with progress</h4>
 
-	  <template x-for="message in messages">
+	  <br/>
+	  <template x-for="msg in messages">
             <div>
-              <div x-html="message"></div>
+              <div x-html="msg"></div>
               <hr/>
             </div>
 	  </template>
+	  </br/>
+	  <span x-text="status"></span>
+	  <progress x-bind:value="status" max="100"/>
+
       </div>
     </div>
 
