@@ -378,7 +378,7 @@ pub struct FunctionSpec {
     //deprecated
     pub assets: Option<AssetsSpec>,
 
-    pub target: Option<TargetSpec>,
+    pub targets: Option<Vec<TargetSpec>>,
 }
 
 fn find_revision(dir: &str) -> String {
@@ -469,7 +469,7 @@ impl FunctionSpec {
                 assets: None,
                 test: None,
                 tasks: HashMap::new(),
-                target: None,
+                targets: None,
             },
         }
     }
@@ -492,7 +492,7 @@ pub struct InlineFunctionSpec {
 
 impl InlineFunctionSpec {
     pub fn intern(&self, namespace: &str, dir: &str, infra_dir: &str, name: &str) -> FunctionSpec {
-        let target = self.make_target_spec();
+        let targets = self.make_targets();
 
         FunctionSpec {
             name: s!(name),
@@ -510,29 +510,35 @@ impl InlineFunctionSpec {
             infra_dir: Some(s!(infra_dir)),
             test: None,
             tasks: HashMap::new(),
-            target: target,
+            targets: targets,
         }
     }
 
-    fn make_target_spec(&self) -> Option<TargetSpec> {
+    fn make_targets(&self) -> Option<Vec<TargetSpec>> {
+        let mut xs: Vec<TargetSpec> = vec![];
+
         if let Some(f) = &self.function {
-            Some(TargetSpec {
+            let t = TargetSpec {
                 entity: Entity::Function,
                 name: f.to_string(),
-            })
-        } else if let Some(m) = &self.mutation {
-            Some(TargetSpec {
+            };
+            xs.push(t);
+        }
+        if let Some(m) = &self.mutation {
+            let t = TargetSpec {
                 entity: Entity::Mutation,
                 name: m.to_string(),
-            })
-        } else if let Some(e) = &self.event {
-            Some(TargetSpec {
+            };
+            xs.push(t);
+        }
+        if let Some(e) = &self.event {
+            let t = TargetSpec {
                 entity: Entity::Event,
                 name: e.to_string(),
-            })
-        } else {
-            None
+            };
+            xs.push(t);
         }
+        Some(xs)
     }
 }
 

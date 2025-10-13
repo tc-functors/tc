@@ -3,7 +3,7 @@ use compiler::spec::function::{
     Lang,
     Provider,
 };
-use composer::Function;
+use composer::{Function, Orchestrator};
 use kit as u;
 use provider::{
     Auth,
@@ -105,13 +105,12 @@ pub async fn create_lambda(auth: &Auth, f: &Function, tags: &HashMap<String, Str
     if f.runtime.snapstart {
         lambda.publish_version().await;
     }
-    for target in &f.targets {
-        println!("Creating target {}", &target.entity.to_str());
-        lambda::update_destination(&lambda.client, &f.fqn, &target.arn).await;
-    }
 
     id
 }
+
+
+
 
 async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String>) -> String {
     maybe_build(auth, &f).await;
@@ -352,4 +351,24 @@ pub async fn create_dry_run(fns: &HashMap<String, Function>) {
     for (_, function) in fns {
         println!("Creating function: {}", &function.fqn);
     }
+}
+
+pub async fn create_orchestrator(auth: &Auth, fns: &HashMap<String, Function>, orchestrator: &Orchestrator, config: &HashMap<String, String>) {
+    println!("Creating orchestrator");
+    orchestrator.dump(config);
+
+    create_function(auth, orchestrator.function.clone(), &HashMap::new()).await;
+    let client = lambda::make_client(auth).await;
+    for (name, f) in fns {
+        if f.targets.len() > 0 {
+            println!("Creating orchestrator destination for {}", name);
+            lambda::update_destination(&client, &f.fqn, &orchestrator.arn).await;
+        }
+    }
+    orchestrator.clean();
+}
+
+pub async fn delete_orchestrator(auth: &Auth, orchestrator: &Orchestrator) {
+    let function = make_lambda(auth, orchestrator.function.clone(), &HashMap::new()).await;
+    function.clone().delete().await.unwrap();
 }

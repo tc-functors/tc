@@ -300,6 +300,13 @@ impl Event {
             ..
         } = espec;
 
+
+        let producer = if producer.is_empty() {
+            vec![s!("default")]
+        } else {
+            producer.to_vec()
+        };
+
         let pattern = match pattern {
             Some(p) => {
                 let pp: EventPattern = serde_json::from_str(&p).unwrap();

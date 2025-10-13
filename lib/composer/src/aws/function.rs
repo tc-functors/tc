@@ -118,7 +118,7 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
-        let targets = Target::make_all(&namespace, &fspec, &config);
+        let targets = Target::make_all(&fspec);
 
         Function {
             name: fspec.name.to_string(),
@@ -157,7 +157,7 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
 
-        let targets = Target::make_all(&namespace, &fspec, &config);
+        let targets = Target::make_all(&fspec);
 
         Function {
             name: fspec.name.to_string(),

@@ -324,16 +324,18 @@ impl Function {
     }
 
     pub async fn update_tags(self, arn: &str) {
-        let res = self
-            .client
-            .tag_resource()
-            .resource(arn)
-            .set_tags(Some(self.tags))
-            .send()
-            .await;
-        match res {
-            Ok(_) => (),
-            Err(_) => println!("error updating tags"),
+        if !&self.tags.is_empty() {
+            let res = self
+                .client
+                .tag_resource()
+                .resource(arn)
+                .set_tags(Some(self.tags))
+                .send()
+                .await;
+            match res {
+                Ok(_) => (),
+                Err(_) => println!("error updating tags"),
+            }
         }
     }
 

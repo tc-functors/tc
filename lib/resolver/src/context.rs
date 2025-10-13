@@ -44,6 +44,8 @@ impl Context {
         table.insert("repo", repo);
         table.insert("lazy_id", &lazy_id);
         table.insert("API_GATEWAY_URL", "{{API_GATEWAY_URL}}");
+        table.insert("GRAPHQL_ENDPOINT", "{{GRAPHQL_ENDPOINT}}");
+        table.insert("GRAPHQL_API_KEY", "{{GRAPHQL_API_KEY}}");
         u::stencil(s, table)
     }
 }

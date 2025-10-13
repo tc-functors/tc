@@ -32,6 +32,7 @@ pub use aws::{
     },
     route::Route,
     schedule::Schedule,
+    orchestrator::Orchestrator
 };
 use compiler::{
     entity::Entity,
@@ -231,6 +232,11 @@ pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
         "stats" => {
             let topologies = compose_root(dir, true);
             display::topology::print_stats(topologies)
+        }
+
+        "orchestrator" => {
+            let topology = compose(dir, false);
+            u::pp_json(&topology.orchestrator);
         }
 
         "roles" => {
