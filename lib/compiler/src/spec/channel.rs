@@ -5,14 +5,11 @@ use serde_derive::{
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HandlerSpec {
-    #[serde(default)]
+    #[serde(default, alias = "function")]
     pub handler: Option<String>,
 
     #[serde(default)]
     pub event: Option<String>,
-
-    #[serde(default)]
-    pub function: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

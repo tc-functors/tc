@@ -46,6 +46,8 @@ impl Context {
         table.insert("API_GATEWAY_URL", "{{API_GATEWAY_URL}}");
         table.insert("GRAPHQL_ENDPOINT", "{{GRAPHQL_ENDPOINT}}");
         table.insert("GRAPHQL_API_KEY", "{{GRAPHQL_API_KEY}}");
+        table.insert("HTTP_DOMAIN", "{{HTTP_DOMAIN}}");
+        table.insert("API_KEY", "{{API_KEY}}");
         u::stencil(s, table)
     }
 }

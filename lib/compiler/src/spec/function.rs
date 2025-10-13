@@ -484,6 +484,7 @@ pub struct InlineFunctionSpec {
     pub event: Option<String>,
     pub queue: Option<String>,
     pub mutation: Option<String>,
+    pub channel: Option<String>,
     pub fqn: Option<String>,
     pub runtime: Option<RuntimeSpec>,
     pub build: Option<BuildSpec>,
@@ -535,6 +536,13 @@ impl InlineFunctionSpec {
             let t = TargetSpec {
                 entity: Entity::Event,
                 name: e.to_string(),
+            };
+            xs.push(t);
+        }
+        if let Some(c) = &self.channel {
+            let t = TargetSpec {
+                entity: Entity::Channel,
+                name: c.to_string(),
             };
             xs.push(t);
         }

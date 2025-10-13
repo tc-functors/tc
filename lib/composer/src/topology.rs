@@ -603,8 +603,9 @@ fn make(
     let events = make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers);
     let queues = make_queues(&spec, &config);
     let routes = make_routes(&spec, &fqn, &functions, &events, &queues);
+    let channels = make_channels(&spec, &config);
 
-    let maybe_orchestrator = Orchestrator::new(&namespace, &functions, &events, &mutations);
+    let maybe_orchestrator = Orchestrator::new(&namespace, &functions, &events, &mutations, &channels);
 
     Topology {
         namespace: namespace.clone(),
@@ -631,7 +632,7 @@ fn make(
         schedules: schedule::make_all(&namespace, &infra_dir),
         queues: queues,
         mutations: mutations,
-        channels: make_channels(&spec, &config),
+        channels: channels,
         pools: make_pools(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
         pages: page::make_all(&spec, &infra_dir, &config),
