@@ -143,12 +143,12 @@ We aim to review all contributions promptly and look forward to collaborating wi
 
 Thanks to the following engineers for contributing ideas and testing.
 
+- [Abhijith Gopal](https://github.com/abhijith)
 - [Eric Harvey](https://github.com/EricHarvey)
 - [Rachel Chung](https://github.com/rachel-yujin-chung)
 - [Rahul Salla](https://github.com/raaahulss)
 - [Alper Vural](https://github.com/alperinformed)
 - [Alexander Ngyuen](https://github.com/GalexyN)
 - [Sanjeev](https://github.com/sanjeev247)
-- [Abhijith Gopal](https://github.com/abhijith)
 
 Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.

@@ -65,7 +65,7 @@ module.exports = {{
     )
 }
 
-fn write_handler(fdir: &str, langr: &LangRuntime) {
+pub fn write_handler(fdir: &str, langr: &LangRuntime) {
     let data = match langr.to_lang() {
         Lang::Python => gen_py_handler(),
         Lang::Ruby => gen_ruby_handler(),
