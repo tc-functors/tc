@@ -544,10 +544,12 @@ pub struct UnFreezeArgs {
 
 #[derive(Debug, Args)]
 pub struct ScaffoldArgs {
-    #[arg(long, short = 'k')]
-    kind: Option<String>,
     #[arg(long, short = 'd')]
     dir: Option<String>,
+    #[arg(long, action, short = 'f')]
+    functions: bool,
+    #[arg(long, action, short = 'l')]
+    llm: bool,
 }
 
 #[derive(Debug, Args)]
@@ -1028,7 +1030,13 @@ async fn emulate(args: EmulateArgs) {
 }
 
 async fn scaffold(args: ScaffoldArgs) {
-    tc::scaffold(args.kind);
+    let ScaffoldArgs {
+        dir,
+        functions,
+        llm,
+        ..
+    } = args;
+    tc::scaffold(dir, functions, llm).await;
 }
 
 async fn list(args: ListArgs) {

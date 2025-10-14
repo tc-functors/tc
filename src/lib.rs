@@ -700,9 +700,9 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<Strin
     deployer::list_all(auth, &sandbox, &format).await;
 }
 
-pub fn scaffold(kind: Option<String>) {
-    let kind = u::maybe_string(kind, "function");
-    scaffolder::scaffold(&kind)
+pub async fn scaffold(dir: Option<String>, functions: bool, llm: bool) {
+    let dir = u::maybe_string(dir, &u::pwd());
+    scaffolder::scaffold(&dir, functions, llm).await;
 }
 
 pub async fn emulate(

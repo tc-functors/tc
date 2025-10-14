@@ -10,6 +10,7 @@ serde_derive = "1.0"
 serde_yaml = "0.9.25"
 question = "0.2.2"
 inquire = "0.7.5"
+llm-toolkit = "0.21.0"
 kit = { path = "../kit" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }
