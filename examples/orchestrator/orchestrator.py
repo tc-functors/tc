@@ -112,7 +112,7 @@ def trigger_targets(targets, payload):
   return True
 
 def load_metadata(source_arn):
-  with open('orchestrator.json') as json_data:
+  with open('transducer.json') as json_data:
     d = json.load(json_data)
     targets = d.get('targets').get(source_arn)
     json_data.close()

@@ -73,7 +73,7 @@ impl Default for Targets {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Orchestrator {
+pub struct Transducer {
     pub namespace: String,
     pub name: String,
     pub arn: String,
@@ -219,7 +219,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
     }
 }
 
-impl Orchestrator {
+impl Transducer {
     pub fn new(
         namespace: &str,
         fns: &HashMap<String, Function>,
@@ -227,7 +227,7 @@ impl Orchestrator {
         mutations: &HashMap<String, Mutation>,
         channels: &HashMap<String, Channel>
 
-    ) -> Option<Orchestrator> {
+    ) -> Option<Transducer> {
 
         let mut txs: HashMap<String, Targets> = HashMap::new();
 
@@ -246,18 +246,18 @@ impl Orchestrator {
             txs.insert(arn, targets);
         }
 
-        let orch_name = format!("{}_tc-orchestrator_{{{{sandbox}}}}", namespace);
-        let arn = template::lambda_arn(&orch_name);
-        let function = make_function(namespace, &orch_name, &orch_name);
+        let tname = format!("{}_transducer_{{{{sandbox}}}}", namespace);
+        let arn = template::lambda_arn(&tname);
+        let function = make_function(namespace, &tname, &tname);
 
-        let orch = Orchestrator {
+        let transducer = Transducer {
             namespace: namespace.to_string(),
-            name: orch_name.clone(),
+            name: tname.clone(),
             arn: arn,
             function: function,
             targets: txs
         };
-        Some(orch)
+        Some(transducer)
     }
 
     pub fn dump(&self, config: &HashMap<String, String>) {
@@ -270,15 +270,15 @@ impl Orchestrator {
         }
         let rs = u::stencil(&json, table);
 
-        let orch_path = format!("{}/orchestrator.json", &dir);
+        let t_path = format!("{}/transducer.json", &dir);
         let code_path = format!("{}/handler.py", &dir);
 
-        let b64_code = code::make_orchestrator_code();
+        let b64_code = code::make_transducer_code();
         let bytes = general_purpose::STANDARD.decode(&b64_code).unwrap();
         let code = String::from_utf8_lossy(&bytes);
 
         u::sh(&format!("mkdir -p {}", &dir), &u::pwd());
-        u::write_str(&orch_path, &rs);
+        u::write_str(&t_path, &rs);
         u::write_str(&code_path, &code);
     }
 

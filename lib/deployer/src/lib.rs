@@ -47,7 +47,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
         pages,
         flow,
         roles,
-        orchestrator,
+        transducer,
         ..
     } = topology;
 
@@ -72,9 +72,9 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
-    if let Some(orch) = orchestrator {
+    if let Some(trn) = transducer {
         let cfg = make_config(&auth, topology).await;
-        function::create_orchestrator(auth, functions, &orch, &cfg).await;
+        function::create_transducer(auth, functions, &trn, &cfg).await;
     }
 }
 
@@ -113,7 +113,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
         routes,
         pages,
         roles,
-        orchestrator,
+        transducer,
         ..
     } = topology;
 
@@ -138,9 +138,9 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     if let Some(f) = flow {
         state::create(&auth, &f, tags).await;
     }
-    if let Some(orch) = orchestrator {
+    if let Some(trns) = transducer {
         let cfg = make_config(&auth, topology).await;
-        function::create_orchestrator(auth, functions, &orch, &cfg).await;
+        function::create_transducer(auth, functions, &trns, &cfg).await;
     }
 }
 
@@ -253,7 +253,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
         roles,
         queues,
         pages,
-        orchestrator,
+        transducer,
         ..
     } = topology;
 
@@ -274,8 +274,8 @@ async fn delete(auth: &Auth, topology: &Topology) {
     mutation::delete(&auth, mutations).await;
     queue::delete(&auth, queues).await;
     page::delete(&auth, pages).await;
-    if let Some(orch) = orchestrator {
-        function::delete_orchestrator(auth, &orch).await;
+    if let Some(trns) = transducer {
+        function::delete_transducer(auth, &trns).await;
     }
 }
 

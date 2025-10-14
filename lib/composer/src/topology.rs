@@ -17,7 +17,7 @@ pub use crate::aws::{
     role::Role,
     route::Route,
     schedule::Schedule,
-    orchestrator::Orchestrator
+    transducer::Transducer
 };
 use crate::{
     aws::{
@@ -79,7 +79,7 @@ pub struct Topology {
     pub config: Config,
     pub roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
-    pub orchestrator: Option<Orchestrator>
+    pub transducer: Option<Transducer>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -605,7 +605,7 @@ fn make(
     let routes = make_routes(&spec, &fqn, &functions, &events, &queues);
     let channels = make_channels(&spec, &config);
 
-    let maybe_orchestrator = Orchestrator::new(&namespace, &functions, &events, &mutations, &channels);
+    let maybe_transducer = Transducer::new(&namespace, &functions, &events, &mutations, &channels);
 
     Topology {
         namespace: namespace.clone(),
@@ -638,7 +638,7 @@ fn make(
         pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
         config: Config::new(),
-        orchestrator: maybe_orchestrator
+        transducer: maybe_transducer
     }
 }
 
@@ -687,7 +687,7 @@ fn make_standalone(dir: &str) -> Topology {
         pages: HashMap::new(),
         tests: HashMap::new(),
         config: Config::new(),
-        orchestrator: None,
+        transducer: None,
     }
 }
 

@@ -3,7 +3,7 @@ use compiler::spec::function::{
     Lang,
     Provider,
 };
-use composer::{Function, Orchestrator};
+use composer::{Function, Transducer};
 use kit as u;
 use provider::{
     Auth,
@@ -353,22 +353,22 @@ pub async fn create_dry_run(fns: &HashMap<String, Function>) {
     }
 }
 
-pub async fn create_orchestrator(auth: &Auth, fns: &HashMap<String, Function>, orchestrator: &Orchestrator, config: &HashMap<String, String>) {
-    println!("Creating orchestrator");
-    orchestrator.dump(config);
+pub async fn create_transducer(auth: &Auth, fns: &HashMap<String, Function>, transducer: &Transducer, config: &HashMap<String, String>) {
+    println!("Creating transducer");
+    transducer.dump(config);
 
-    create_function(auth, orchestrator.function.clone(), &HashMap::new()).await;
+    create_function(auth, transducer.function.clone(), &HashMap::new()).await;
     let client = lambda::make_client(auth).await;
     for (name, f) in fns {
         if f.targets.len() > 0 {
-            println!("Creating orchestrator destination for {}", name);
-            lambda::update_destination(&client, &f.fqn, &orchestrator.arn).await;
+            println!("Creating transducer destination for {}", name);
+            lambda::update_destination(&client, &f.fqn, &transducer.arn).await;
         }
     }
-    orchestrator.clean();
+    transducer.clean();
 }
 
-pub async fn delete_orchestrator(auth: &Auth, orchestrator: &Orchestrator) {
-    let function = make_lambda(auth, orchestrator.function.clone(), &HashMap::new()).await;
+pub async fn delete_transducer(auth: &Auth, transducer: &Transducer) {
+    let function = make_lambda(auth, transducer.function.clone(), &HashMap::new()).await;
     function.clone().delete().await.unwrap();
 }
