@@ -237,6 +237,10 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
 
     s3::find_or_create_bucket(&s3_client, bucket).await;
 
+    if bucket.is_empty() {
+        panic!("Bucket not configured. Set TC_PAGES_BUCKET, in config or in topology")
+    }
+
     println!(
         "Uploading code from {} to s3://{}/{}",
         dist, bucket, bucket_prefix

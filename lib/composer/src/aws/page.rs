@@ -165,7 +165,7 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
                         Some(c) => c.to_string(),
                         None => match std::env::var("TC_PAGES_BUCKET") {
                             Ok(e) => e,
-                            Err(_) => panic!("No bucket configured"),
+                            Err(_) => String::from(""),
                         },
                     }
                 }
@@ -174,7 +174,7 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
                 Some(c) => c.to_string(),
                 None => match std::env::var("TC_PAGES_BUCKET") {
                     Ok(e) => e,
-                    Err(_) => panic!("No bucket configured"),
+                    Err(_) => String::from(""),
                 },
             },
         },

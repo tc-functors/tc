@@ -1805,8 +1805,10 @@ dependencies = [
  "daggy",
  "derivative",
  "kit",
+ "layout-rs",
  "lazy_static 1.5.0",
  "nom 7.1.3",
+ "open",
  "ptree",
  "rand",
  "regex",
@@ -3355,6 +3357,12 @@ checksum = "0de8b303297635ad57c9f5059fd9cee7a47f8e8daa09df0fcd07dd39fb22977f"
 dependencies = [
  "log",
 ]
+
+[[package]]
+name = "layout-rs"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b8b38bc67665e362eb770c6b6ae88b48d040d94a0a10c4904c37bc79d263b95"
 
 [[package]]
 name = "lazy_static"

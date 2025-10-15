@@ -1,11 +1,4 @@
 use super::Topology;
-use colored::Colorize;
-use kit as u;
-use kit::*;
-use ptree::{
-    builder::TreeBuilder,
-    item::StringItem,
-};
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use tabled::{
@@ -114,48 +107,6 @@ pub fn print_stats_json(topologies: HashMap<String, Topology>) {
     xs.sort_by(|a, b| b.name.cmp(&a.name));
     xs.reverse();
     kit::pp_json(&xs);
-}
-
-pub fn build_tree(topology: &Topology) -> StringItem {
-    let mut t = TreeBuilder::new(s!(topology.namespace.blue()));
-    t.begin_child(s!("functions"));
-    for (_, f) in &topology.functions {
-        t.add_empty_child(f.name.clone());
-    }
-    t.end_child();
-    t.begin_child(s!("events"));
-    for (_, f) in &topology.events {
-        t.add_empty_child(f.name.clone());
-    }
-    t.end_child();
-    t.build()
-}
-
-#[derive(Tabled, Clone, Debug, Serialize)]
-struct Version {
-    namespace: String,
-    version: String,
-}
-
-pub fn print_versions(versions: HashMap<String, String>, format: &str) {
-    let mut xs: Vec<Version> = vec![];
-    for (namespace, version) in versions {
-        let v = Version {
-            namespace: s!(namespace),
-            version: s!(version),
-        };
-        xs.sort_by(|a, b| b.namespace.cmp(&a.namespace));
-        xs.reverse();
-        xs.push(v)
-    }
-    match format {
-        "table" => {
-            let table = Table::new(xs).with(Style::psql()).to_string();
-            println!("{}", table);
-        }
-        "json" => u::pp_json(&xs),
-        &_ => todo!(),
-    }
 }
 
 pub fn count_str(topology: &Topology) -> String {

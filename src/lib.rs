@@ -1,4 +1,3 @@
-use compiler::Entity;
 use composer::Topology;
 use configurator::Config;
 use itertools::Itertools;
@@ -164,27 +163,8 @@ pub async fn compose(opts: ComposeOpts) {
 
     let dir = u::pwd();
     let fmt = u::maybe_string(format.clone(), "json");
-
-    match entity {
-        Some(e) => composer::display_entity(&dir, &e, &fmt, recursive),
-        None => match format {
-            Some(fmt) => composer::display_topology(&dir, &fmt, recursive),
-            None => {
-                if composer::is_root_dir(&dir) {
-                    composer::display_root();
-                } else {
-                    let topology = composer::compose(&dir, recursive);
-                    match std::env::var("TC_DUMP_TOPOLOGY") {
-                        Ok(_) => {
-                            kit::write_str("topology.json", &topology.to_str());
-                            tracing::debug!("Wrote topology.json");
-                        }
-                        Err(_) => u::pp_json(topology),
-                    }
-                }
-            }
-        },
-    }
+    let topology = composer::compose(&dir, recursive);
+    composer::pprint(&topology, entity, &fmt);
 }
 
 pub async fn resolve(
@@ -199,8 +179,7 @@ pub async fn resolve(
     let sandbox = resolver::maybe_sandbox(sandbox);
     let rt = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, true).await;
     if !trace {
-        let entity = Entity::as_entity(maybe_entity);
-        composer::pprint(&rt, entity)
+        composer::pprint(&rt, maybe_entity, "json")
     }
 }
 

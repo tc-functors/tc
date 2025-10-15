@@ -1,5 +1,6 @@
 pub mod aws;
 mod display;
+mod graph;
 
 mod tag;
 pub mod topology;
@@ -52,6 +53,7 @@ use std::{
 };
 pub use topology::Topology;
 use walkdir::WalkDir;
+
 
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
@@ -203,60 +205,6 @@ pub fn display_root() {
     display::topology::print_stats(topologies)
 }
 
-pub fn display_topology(dir: &str, format: &str, recursive: bool) {
-    let topology = compose(&dir, recursive);
-    match format {
-        "tree" => {
-            let tree = display::topology::build_tree(&topology);
-            kit::print_tree(tree);
-        }
-        _ => (),
-    }
-}
-
-pub fn display_entity(dir: &str, e: &str, f: &str, recursive: bool) {
-    let format = Format::from_str(f).unwrap();
-
-    match e {
-        "." => {
-            let topology = compose(&dir, recursive);
-            if let Some(f) = topology.current_function(dir) {
-                u::pp_json(&f)
-            }
-        }
-        "versions" => {
-            let versions = lookup_versions(dir);
-            display::topology::print_versions(versions, f);
-        }
-
-        "stats" => {
-            let topologies = compose_root(dir, true);
-            display::topology::print_stats(topologies)
-        }
-
-        "transducer" => {
-            let topology = compose(dir, false);
-            u::pp_json(&topology.transducer);
-        }
-
-        "roles" => {
-            let topology = compose(&dir, recursive);
-            u::pp_json(&topology.roles);
-        }
-        _ => {
-            let topology = compose(&dir, recursive);
-            display::try_display(&topology, e, format)
-        }
-    }
-}
-
-pub fn pprint(topology: &Topology, entity: Option<Entity>) {
-    let fmt = Format::JSON;
-    match entity {
-        Some(e) => display::display_entity(e, fmt, topology),
-        None => u::pp_json(topology),
-    }
-}
 
 pub fn topology_name(dir: &str) -> String {
     let f = format!("{}/topology.yml", dir);
@@ -342,4 +290,40 @@ pub fn entities_of(topology: &Topology) -> Vec<Entity> {
     }
 
     xs
+}
+
+pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
+    let format = Format::from_str(fmt).unwrap();
+    let dir = u::pwd();
+    match entity {
+        Some(e) => {
+            let maybe_entity = Entity::from_str(&e);
+            match maybe_entity {
+                Ok(ent) => display::display_entity(ent, format, topology),
+                Err(_) =>  match e.as_ref() {
+                    "versions" => display::print_versions(lookup_versions(&dir), format),
+                    "transducer" => u::pp_json(&topology.transducer),
+                    "roles" => u::pp_json(&topology.roles),
+                    _ => display::try_display(&topology, &e, format)
+                }
+            }
+
+        }
+        None => {
+            match format {
+                Format::Dot => display::print_dot(topology),
+                Format::Graph => display::print_graph(topology),
+                Format::Tree => display::print_tree(topology),
+                Format::JSON => {
+                },
+                _ => {
+                    if let Some(f) = topology.current_function(&dir) {
+                        u::pp_json(&f)
+                    } else {
+                        u::pp_json(topology)
+                    }
+                }
+            }
+        }
+     }
 }
