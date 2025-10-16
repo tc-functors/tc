@@ -371,6 +371,7 @@ end
 }
 
 pub fn generate(topology: &Topology) {
+    println!("Generating SVG...");
     let flow_str = build(topology);
     let mermaid_str = format!(r#"
 flowchart LR
@@ -381,5 +382,6 @@ flowchart LR
     let dir = u::pwd();
     let path = format!("{}/flow.html", &dir);
     u::write_str(&path, &html);
+    println!("Opening {}", &path);
     open::that(path).unwrap();
 }
