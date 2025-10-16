@@ -1,5 +1,5 @@
 pub mod aws;
-mod display;
+pub mod display;
 mod graph;
 
 mod tag;
@@ -314,8 +314,6 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
                 Format::Dot => display::print_dot(topology),
                 Format::Graph => display::print_graph(topology),
                 Format::Tree => display::print_tree(topology),
-                Format::JSON => {
-                },
                 _ => {
                     if let Some(f) = topology.current_function(&dir) {
                         u::pp_json(&f)

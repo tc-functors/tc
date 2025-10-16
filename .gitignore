@@ -30,3 +30,4 @@ doc/dist
 .cursorrules
 dist
 examples/apps/*/dist
+flow.html

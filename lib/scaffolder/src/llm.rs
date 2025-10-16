@@ -78,13 +78,6 @@ format!("{text}"),
 "    function: handler-function",
 "```",
 "",
-"### Mutations (Optional)",
-"GraphQL mutations:",
-"```yaml",
-"mutations:",
-"  mutationName:",
-"    function: handler-function",
-"```",
 "",
 "## Design Process",
 "",
@@ -181,10 +174,6 @@ format!("{text}"),
 "channels:",
 "  # Real-time WebSocket channels",
 "",
-"mutations:",
-"  # GraphQL mutations (if needed)",
-"```",
-"",
 "Remember: Focus on business logic and relationships, not infrastructure details. Create a topology that is composable, maintainable, and follows tc best practices"];
     lines.join("\n")
 
@@ -276,7 +265,7 @@ pub async fn scaffold(dir: &str) {
     let response = send(text).await;
     println!("Generating topology.yml...");
     let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
-    println!("{}", &code);
+    //println!("{}", &code);
     let topo_file = format!("{}/topology.yml", dir);
     u::write_str(&topo_file, &code);
 }
