@@ -318,17 +318,17 @@ async fn update_distribution(
     e_tag: &str,
     dc: DistributionConfig,
 ) -> String {
-    let _ = client
+    let res = client
         .update_distribution()
         .id(id)
         .distribution_config(dc)
         .if_match(e_tag)
         .send()
-        .await
-        .unwrap();
-
-    //res.e_tag.unwrap();
-    id.to_string()
+        .await;
+    match res {
+        Ok(_) => id.to_string(),
+        Err(_) => id.to_string()
+    }
 }
 
 async fn get_status(client: &Client, dist_id: &str) -> String {
@@ -579,11 +579,14 @@ pub async fn find_function(client: &Client, name: &str) -> Option<String> {
 
 pub async fn create_or_update_function(client: &Client, name: &str, handler: &str) {
     let maybe_fn = find_function(client, name).await;
-    let etag = match maybe_fn {
-        Some(t) => update_function(client, name, handler, &t).await,
-        None => create_function(client, name, handler).await,
+    match maybe_fn {
+        Some(_) => (),
+        None => {
+            let etag = create_function(client, name, handler).await;
+            publish_function(client, name, &etag).await;
+        }
     };
-    publish_function(client, name, &etag).await;
+
 }
 
 pub async fn delete_distribution(client: &Client, name: &str) {
