@@ -8,8 +8,7 @@ pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
     if llm {
         llm::scaffold(dir).await;
         let topology = composer::compose(dir, false);
-        composer::display::print_graph(&topology);
-        println!("Rendering SVG in browser...");
+        visualizer::visualize(&topology);
     } else if functions {
         let topology = composer::compose(dir, false);
         for (_, f) in topology.functions {

@@ -1,6 +1,7 @@
-use super::Topology;
+use composer::Topology;
 use daggy::Dag;
 use daggy::petgraph::dot::{Dot, Config};
+
 //use serde_derive::Serialize;
 //use std::fmt;
 

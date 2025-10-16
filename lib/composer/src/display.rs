@@ -13,14 +13,7 @@ use serde_derive::Serialize;
 mod event;
 mod function;
 mod state;
-mod diagram;
 pub mod topology;
-use crate::graph;
-use layout::backends::svg::SVGWriter;
-use layout::core::utils::save_to_file;
-use layout::gv;
-use gv::parser::DotParser;
-use gv::GraphBuilder;
 use colored::Colorize;
 
 use tabled::{
@@ -205,45 +198,4 @@ pub fn print_versions(versions: HashMap<String, String>, format: Format) {
         Format::JSON => u::pp_json(&xs),
         _ => todo!(),
     }
-}
-
-//graph
-
-pub fn print_dot(topology: &Topology) {
-    let dir = u::pwd();
-    let path = format!("{}/output.svg", &dir);
-
-    let dot_str = graph::build(topology);
-    let mut parser = DotParser::new(&dot_str);
-
-    let tree = parser.process();
-
-    match tree {
-        Result::Err(err) => {
-            parser.print_error();
-            println!("Error: {}", err);
-        }
-
-        Result::Ok(g) => {
-            gv::dump_ast(&g);
-
-            let mut gb = GraphBuilder::new();
-            gb.visit_graph(&g);
-            let mut vg = gb.get();
-            let mut svg = SVGWriter::new();
-            vg.do_it(false, false, false, &mut svg);
-            let content = svg.finalize();
-            let res = save_to_file(&path, &content);
-            if let Result::Err(err) = res {
-                println!("Could not write the file {}", &path);
-                println!("Error {}", err);
-                return;
-            }
-        }
-    }
-    open::that(path).unwrap();
-}
-
-pub fn print_graph(topology: &Topology) {
-    diagram::generate(topology);
 }

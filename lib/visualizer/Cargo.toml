@@ -1,0 +1,11 @@
+[package]
+name = "visualizer"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+daggy = { version = "0.8.1", features = ["serde-1"] }
+layout-rs = "0.1.2"
+open = "5.0.0"
+kit = { path = "../kit" }
+composer = { path = "../composer" }

@@ -696,3 +696,9 @@ pub async fn emulate(
     let entity_component = u::maybe_string(maybe_entity, "function");
     emulator::emulate(auth, &rt, &entity_component, shell).await;
 }
+
+pub async fn visualize(dir: Option<String>, recursive: bool) {
+    let dir = u::maybe_string(dir, &u::pwd());
+    let topology = composer::compose(&dir, recursive);
+    visualizer::visualize(&topology);
+}

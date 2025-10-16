@@ -1802,13 +1802,10 @@ dependencies = [
  "colored",
  "compiler",
  "configurator",
- "daggy",
  "derivative",
  "kit",
- "layout-rs",
  "lazy_static 1.5.0",
  "nom 7.1.3",
- "open",
  "ptree",
  "rand",
  "regex",
@@ -4759,6 +4756,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_yaml",
+ "visualizer",
 ]
 
 [[package]]
@@ -5418,6 +5416,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "visualizer",
 ]
 
 [[package]]
@@ -5909,6 +5908,17 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "visualizer"
+version = "0.9.35"
+dependencies = [
+ "composer",
+ "daggy",
+ "kit",
+ "layout-rs",
+ "open",
+]
 
 [[package]]
 name = "vsimd"

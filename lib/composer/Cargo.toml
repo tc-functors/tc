@@ -22,11 +22,8 @@ derivative = "2.2.0"
 lazy_static = "1.4"
 bincode = "1.2.1"
 base64 = "0.21.0"
-daggy = { version = "0.8.1", features = ["serde-1"] }
 anyhow = "1.0.71"
 serde_with = "3.14.0"
-layout-rs = "0.1.2"
-open = "5.0.0"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
 compiler = { path = "../compiler" }

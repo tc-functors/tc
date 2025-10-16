@@ -14,3 +14,4 @@ llm-toolkit = "0.21.0"
 kit = { path = "../kit" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }
+visualizer = { path = "../visualizer" }

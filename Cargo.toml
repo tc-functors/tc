@@ -43,6 +43,7 @@ kit = { path = "lib/kit" }
 executor = { path = "lib/executor" }
 emulator = { path = "lib/emulator" }
 provider = { path = "lib/provider" }
+visualizer = { path = "lib/visualizer" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -71,6 +72,7 @@ members = [
    "lib/provider",
    "lib/configurator",
    "lib/differ",
+   "lib/visualizer",
 ]
 
 [profile.release]

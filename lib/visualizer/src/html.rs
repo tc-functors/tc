@@ -1,14 +1,12 @@
-use crate::Topology;
-use kit as u;
 
-pub fn html(definition: &str, data: &str, topology_str: &str) -> String {
+pub fn generate(name: &str, definition: &str, mermaid_str: &str, dot_str: &str, aws_str: &str, topology_str: &str) -> String {
     format!(r#"
 
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8">
-    <title>tc</title>
+    <title>tc-{name}</title>
     <meta name="robots" content="noindex">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
@@ -86,7 +84,7 @@ div:has(> .mermaid):hover {{
 
       ul {{ overflow: auto; }}
 
-      div.content {{ clear: both;  height: 94vh; }}
+      div.content {{ clear: both;  height: 90vh; }}
       .spaced {{
 	margin-left: 1rem;
 	margin-right: 1rem;
@@ -98,11 +96,19 @@ div:has(> .mermaid):hover {{
 </head>
 <body>
 <script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.12.0/dist/mermaid.esm.min.mjs';
   mermaid.initialize({{
   startOnLoad: true,
   theme: 'default',
   sequence: {{ showSequenceNumbers: true }} }});
+
+mermaid.registerIconPacks([
+  {{
+    name: 'logos',
+    loader: () =>
+      fetch('https://unpkg.com/@iconify-json/logos@1/icons.json').then((res) => res.json()),
+  }},
+]);
   await mermaid.run({{
   querySelector: '.mermaid',
   postRenderCallback: (id) => {{
@@ -168,13 +174,19 @@ function init_tabs() {{
     <div align="left">
 	<ul class="tabs">
 		<li @click="currentTab = 1">
-			<button href="r#">Flow Diagram</button>
+			<button href="r#">Mermaid</button>
 		</li>
 		<li @click="currentTab = 2">
-			<button href="r#">JSON</a>
+			<button href="r#">Dot</button>
 		</li>
 		<li @click="currentTab = 3">
-			<button href="r#">Table</a>
+			<button href="r#">JSON</a>
+		</li>
+		<li @click="currentTab = 4">
+			<button href="r#">AWS Arch</a>
+		</li>
+		<li @click="currentTab = 5">
+			<button href="r#">S-exp</a>
 		</li>
 
 	</ul>
@@ -187,11 +199,19 @@ function init_tabs() {{
 </div>
 <div class="diagram-container spaced" id="diagram-container">
   <div class="mermaid">
-    {data}
+    {mermaid_str}
   </div>
 </div>
                 </div>
+
 		<div x-show="currentTab === 2">
+<div class="spaced">
+{dot_str}
+</div>
+</div>
+
+
+		<div x-show="currentTab === 3">
 <div class="spaced">
 <json-viewer id="json"></json-viewer>
 <script>
@@ -199,8 +219,28 @@ function init_tabs() {{
 </script>
 </div>
 </div>
-		<div x-show="currentTab === 3">
-Tables
+		<div x-show="currentTab === 4">
+<div align="center">
+<br/>
+</br>
+<div class="diagram-container spaced" id="diagram-container">
+  <div class="mermaid">
+    {aws_str}
+  </div>
+</div>
+</div>
+
+		<div x-show="currentTab === 5">
+<pre><code>
+(compose
+  (route "/api/todo" :method 'POST)
+  (event 'MyEvent)
+  (table 'MyTable))
+
+(compose
+  (table 'MyTable :listen {{:key 'foo}})
+  (channel my-channel))
+</code></pre>
 </div>
 
 
@@ -215,173 +255,4 @@ Tables
 </html>
 
 "#)
-}
-
-struct Target {
-    from: String,
-    to: String
-}
-
-fn name_only(s: &str) -> String {
-    if s.starts_with("{{") {
-        u::second(&s, "_")
-    } else {
-        s.to_string()
-    }
-}
-
-fn build(topology: &Topology) -> String {
-    let mut targets: Vec<Target> = vec![];
-    let mut s: String =  String::from("");
-
-    let Topology { routes, events, channels, mutations,
-                   functions, queues, namespace, flow, .. } = topology;
-
-    if routes.len() > 0 {
-        let mut rs = format!("subgraph routes");
-        for (name, route) in routes {
-            let name = if name.starts_with("/") {
-                format!("route_{}{{{}}}",
-                        &u::split_last(name, "/"),
-                        route.path
-                )
-            } else {
-                name.to_string()
-            };
-            targets.push(Target {
-                from: name.clone(), to: name_only(&route.target.name)
-            });
-            rs.push_str(&format!(r#"
-{name}
-"#));
-        }
-        rs.push_str(&format!(r#"end
-"#));
-        s.push_str(&rs);
-    }
-
-    if events.len() > 0 {
-        let mut es = format!("subgraph events");
-        for (name, event) in events {
-     es.push_str(&format!(r#"
-{name}"#));
-            for target in &event.targets {
-                targets.push(Target {
-                    from: name.to_string(),
-                    to: name_only(&target.name)
-                });
-            }
-        }
-        es.push_str(&format!(r#"
-end
-"#));
-        s.push_str(&es);
-    }
-
-    if functions.len() > 0 {
-        let mut fs = format!("subgraph functions");
-        for (name, function) in functions {
-     fs.push_str(&format!(r#"
-{name}"#));
-            for target in &function.targets {
-                targets.push(Target {
-                    from: name.to_string(),
-                    to: name_only(&target.name)
-                });
-            }
-        }
-        fs.push_str(&format!(r#"
-end
-"#));
-        s.push_str(&fs);
-    }
-
-    if channels.len() > 0 {
-        let mut cs = format!("subgraph channels");
-        for (name, _) in channels {
-     cs.push_str(&format!(r#"
-{name}"#));
-        }
-        cs.push_str(&format!(r#"
-end
-"#));
-        s.push_str(&cs);
-    }
-
-    if queues.len() > 0 {
-        let mut qs = format!("subgraph queues");
-        for (name, _) in queues {
-     qs.push_str(&format!(r#"
-{name}
-"#));
-        }
-        qs.push_str(&format!(r#"
-end
-"#));
-
-        s.push_str(&qs);
-    }
-
-    for target in &targets {
-        let t = format!(r#"
-{}-->{}
-"#, target.from, target.to);
-        s.push_str(&t);
-    }
-
-    if let Some(m) = mutations.get("default") {
-        let mut ms = format!("subgraph mutations");
-        for (name, res) in &m.resolvers {
-     ms.push_str(&format!(r#"
-{name}"#));
-            targets.push(Target {
-                from: name.to_string(),
-                to: res.target_name.to_string()
-            });
-        }
-        ms.push_str(&format!(r#"
-end
-"#));
-        s.push_str(&ms);
-    }
-
-    if let Some(_f) = flow {
-        let mut ss = format!("subgraph states");
-        ss.push_str(&format!(r#"
-{namespace}
-end
-"#));
-        s.push_str(&ss);
-    }
-
-    let style = format!(r#"
-    classDef red fill:#ffefdf,color:#000,stroke:#333;
-    classDef blue fill:#e4fbfc,color:#000,stroke:#333;
-    classDef bing fill:#f1edff,color:#000,stroke:#333;
-    classDef chan fill:#deffe5,color:#000,stroke:#333;
-    class events blue
-    class routes red
-    class states bing
-    class channels chan
-"#
-);
-    s.push_str(&style);
-
-    s
-}
-
-pub fn generate(topology: &Topology) {
-    println!("Generating SVG...");
-    let flow_str = build(topology);
-    let mermaid_str = format!(r#"
-flowchart LR
-{flow_str}
-"#);
-    let definition = u::slurp(&format!("{}/topology.yml", &topology.dir));
-    let html = html(&definition, &mermaid_str, &topology.to_str());
-    let dir = u::pwd();
-    let path = format!("{}/flow.html", &dir);
-    u::write_str(&path, &html);
-    println!("Opening {}", &path);
-    open::that(path).unwrap();
 }

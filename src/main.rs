@@ -86,6 +86,8 @@ enum Cmd {
     Upgrade(UpgradeArgs),
     /// display current tc version
     Version(DefaultArgs),
+    /// Visualize topology using HTML
+    Visualize(VisualizeArgs),
     /// Generate documentation
     #[clap(hide = true)]
     Doc(DefaultArgs),
@@ -352,6 +354,14 @@ pub struct UpgradeArgs {
     version: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct VisualizeArgs {
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
 }
 
 #[derive(Debug, Args)]
@@ -1039,6 +1049,15 @@ async fn scaffold(args: ScaffoldArgs) {
     tc::scaffold(dir, functions, llm).await;
 }
 
+async fn visualize(args: VisualizeArgs) {
+    let VisualizeArgs {
+        dir,
+        recursive,
+        ..
+    } = args;
+    tc::visualize(dir, recursive).await;
+}
+
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
@@ -1086,6 +1105,7 @@ async fn run() {
         Cmd::Upgrade(args) => upgrade(args).await,
         Cmd::Changelog(args) => changelog(args).await,
         Cmd::Version(..) => version().await,
+        Cmd::Visualize(args) => visualize(args).await,
         Cmd::Scaffold(args) => scaffold(args).await,
         Cmd::Release(args) => ci_release(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,

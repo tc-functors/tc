@@ -1,6 +1,5 @@
 pub mod aws;
 pub mod display;
-mod graph;
 
 mod tag;
 pub mod topology;
@@ -311,8 +310,6 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
         }
         None => {
             match format {
-                Format::Dot => display::print_dot(topology),
-                Format::Graph => display::print_graph(topology),
                 Format::Tree => display::print_tree(topology),
                 _ => {
                     if let Some(f) = topology.current_function(&dir) {
