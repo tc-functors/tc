@@ -20,6 +20,7 @@ fn files_modified_in_branch() -> Vec<String> {
             ),
             &dir,
         );
+        tracing::debug!("{}", &out);
         u::split_lines(&out).iter().map(|v| v.to_string()).collect()
     }
 }
@@ -52,6 +53,7 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
         r#"git diff {}...{} --name-only . | xargs dirname | sort | uniq"#,
         &from_tag, &to_tag
     );
+    tracing::debug!("{}", &cmd);
     let out = sh(&cmd, &dir);
 
     let lines = kit::split_lines(&out);
@@ -82,7 +84,6 @@ pub fn diff_fns(
 
     for (name, f) in fns {
         let maybe_rdir = &f.dir.strip_prefix(&format!("{}/", &u::root()));
-
         if let Some(rdir) = maybe_rdir {
             for line in &lines {
                 if line.starts_with(rdir) {
@@ -98,6 +99,12 @@ pub fn diff_fns(
             }
             if fmod_2.contains(&rdir.to_string()) {
                 changed_fns.insert(name.to_string(), f.clone());
+            }
+        } else {
+            for line in &lines {
+                if line.ends_with(name) {
+                    changed_fns.insert(name.to_string(), f.clone());
+                }
             }
         }
     }
