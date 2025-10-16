@@ -232,13 +232,16 @@ fn build(topology: &Topology) -> String {
     let mut s: String =  String::from("");
 
     let Topology { routes, events, channels, mutations,
-                   functions, queues, .. } = topology;
+                   functions, queues, namespace, flow, .. } = topology;
 
     if routes.len() > 0 {
         let mut rs = format!("subgraph routes");
         for (name, route) in routes {
             let name = if name.starts_with("/") {
-                format!("route_{}", &u::split_last(name, "/"))
+                format!("route_{}{{{}}}",
+                        &u::split_last(name, "/"),
+                        route.path
+                )
             } else {
                 name.to_string()
             };
@@ -312,6 +315,7 @@ end
         qs.push_str(&format!(r#"
 end
 "#));
+
         s.push_str(&qs);
     }
 
@@ -338,11 +342,24 @@ end
         s.push_str(&ms);
     }
 
+    if let Some(_f) = flow {
+        let mut ss = format!("subgraph states");
+        ss.push_str(&format!(r#"
+{namespace}
+end
+"#));
+        s.push_str(&ss);
+    }
+
     let style = format!(r#"
     classDef red fill:#E2A16F,color:#fff,stroke:#333;
     classDef blue fill:#86B0BD,color:#fff,stroke:#333;
+    classDef bing fill:#CBDCEB,color:#fff,stroke:#333;
+    classDef chan fill:#B6CEB4,color:#fff,stroke:#333;
     class events blue
     class routes red
+    class states bing
+    class channels chan
 "#
 );
     s.push_str(&style);
