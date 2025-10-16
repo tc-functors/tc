@@ -86,7 +86,7 @@ div:has(> .mermaid):hover {{
 
       ul {{ overflow: auto; }}
 
-      div.content {{ clear: both;  height: 100vh; }}
+      div.content {{ clear: both;  height: 94vh; }}
       .spaced {{
 	margin-left: 1rem;
 	margin-right: 1rem;
@@ -171,11 +171,12 @@ function init_tabs() {{
 			<button href="r#">Flow Diagram</button>
 		</li>
 		<li @click="currentTab = 2">
-			<button href="r#">Dot</a>
-		</li>
-		<li @click="currentTab = 3">
 			<button href="r#">JSON</a>
 		</li>
+		<li @click="currentTab = 3">
+			<button href="r#">Table</a>
+		</li>
+
 	</ul>
    </div>
 	<div class="content">
@@ -191,9 +192,6 @@ function init_tabs() {{
 </div>
                 </div>
 		<div x-show="currentTab === 2">
-C4
-</div>
-		<div x-show="currentTab === 3">
 <div class="spaced">
 <json-viewer id="json"></json-viewer>
 <script>
@@ -201,6 +199,11 @@ C4
 </script>
 </div>
 </div>
+		<div x-show="currentTab === 3">
+Tables
+</div>
+
+
 	</div>
 </div>
 </div>
@@ -352,10 +355,10 @@ end
     }
 
     let style = format!(r#"
-    classDef red fill:#E2A16F,color:#fff,stroke:#333;
-    classDef blue fill:#86B0BD,color:#fff,stroke:#333;
-    classDef bing fill:#CBDCEB,color:#fff,stroke:#333;
-    classDef chan fill:#B6CEB4,color:#fff,stroke:#333;
+    classDef red fill:#ffefdf,color:#000,stroke:#333;
+    classDef blue fill:#e4fbfc,color:#000,stroke:#333;
+    classDef bing fill:#f1edff,color:#000,stroke:#333;
+    classDef chan fill:#deffe5,color:#000,stroke:#333;
     class events blue
     class routes red
     class states bing
