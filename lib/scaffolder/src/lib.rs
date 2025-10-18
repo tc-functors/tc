@@ -7,8 +7,7 @@ use kit as u;
 pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
     if llm {
         llm::scaffold(dir).await;
-        let topology = composer::compose(dir, false);
-        visualizer::visualize(&topology);
+        visualizer::visualize(&dir, false, "light", vec![]);
     } else if functions {
         let topology = composer::compose(dir, false);
         for (_, f) in topology.functions {

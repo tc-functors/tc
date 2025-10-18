@@ -78,24 +78,18 @@ pub fn compose(dir: &str, recursive: bool) -> Topology {
     Topology::new(dir, recurse, false)
 }
 
-pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
-    let f = format!("{}/topology.yml", dir);
-    let spec = TopologySpec::new(&f);
-    let given_root_dirs = match &spec.nodes.dirs {
-        Some(dirs) => dirs,
-        None => &list_dirs(dir),
-    };
-    let mut h: HashMap<String, String> = HashMap::new();
-    for d in given_root_dirs {
-        let f = format!("{}/{}/topology.yml", dir, &d);
-        let spec = TopologySpec::new(&f);
-        if &spec.name != "tc" {
-            let version = version::current_semver(&spec.name);
-            h.insert(spec.name, version);
-        }
+pub fn compose_dirs(dirs: Vec<String>) -> HashMap<String, Topology> {
+    let mut h: HashMap<String, Topology> = HashMap::new();
+    for dir in dirs {
+
+        let abs = u::absolutize(&u::pwd(), &dir);
+        println!("{}", &abs);
+        let topology = compose(&abs, false);
+        h.insert(topology.namespace.to_string(), topology);
     }
     h
 }
+
 
 pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
@@ -131,6 +125,25 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
         }
         h
     }
+}
+
+pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
+    let f = format!("{}/topology.yml", dir);
+    let spec = TopologySpec::new(&f);
+    let given_root_dirs = match &spec.nodes.dirs {
+        Some(dirs) => dirs,
+        None => &list_dirs(dir),
+    };
+    let mut h: HashMap<String, String> = HashMap::new();
+    for d in given_root_dirs {
+        let f = format!("{}/{}/topology.yml", dir, &d);
+        let spec = TopologySpec::new(&f);
+        if &spec.name != "tc" {
+            let version = version::current_semver(&spec.name);
+            h.insert(spec.name, version);
+        }
+    }
+    h
 }
 
 pub fn root_namespaces(dir: &str) -> HashMap<String, String> {

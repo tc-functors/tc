@@ -83,6 +83,11 @@ pub fn second(s: &str, delimiter: &str) -> String {
     parts.into_iter().nth(1).unwrap_or_default().to_string()
 }
 
+pub fn first(s: &str, delimiter: &str) -> String {
+    let parts: Vec<&str> = s.split(delimiter).collect();
+    parts.into_iter().nth(0).unwrap_or_default().to_string()
+}
+
 pub fn split_lines(s: &str) -> Vec<&str> {
     let parts: Vec<&str> = s.split("\n").collect();
     parts

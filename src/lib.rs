@@ -697,8 +697,13 @@ pub async fn emulate(
     emulator::emulate(auth, &rt, &entity_component, shell).await;
 }
 
-pub async fn visualize(dir: Option<String>, recursive: bool) {
+pub async fn visualize(dir: Option<String>, recursive: bool, theme: Option<String>, dirs: Option<String>) {
     let dir = u::maybe_string(dir, &u::pwd());
-    let topology = composer::compose(&dir, recursive);
-    visualizer::visualize(&topology);
+    let dirs = match dirs {
+        Some(d) => d.split(",").map(|x| x.to_string()).collect(),
+        None => vec![]
+    };
+
+    let theme = u::maybe_string(theme, "light");
+    visualizer::visualize(&dir, recursive, &theme, dirs);
 }

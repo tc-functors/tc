@@ -360,6 +360,10 @@ pub struct UpgradeArgs {
 pub struct VisualizeArgs {
     #[arg(long, short = 'd')]
     dir: Option<String>,
+    #[arg(long, short = 't')]
+    theme: Option<String>,
+    #[arg(long, alias = "dirs")]
+    topologies: Option<String>,
     #[arg(long, action, short = 'r')]
     recursive: bool,
 }
@@ -1053,9 +1057,11 @@ async fn visualize(args: VisualizeArgs) {
     let VisualizeArgs {
         dir,
         recursive,
+        theme,
+        topologies,
         ..
     } = args;
-    tc::visualize(dir, recursive).await;
+    tc::visualize(dir, recursive, theme, topologies).await;
 }
 
 async fn list(args: ListArgs) {

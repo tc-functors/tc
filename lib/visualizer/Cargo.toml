@@ -7,5 +7,7 @@ edition = "2024"
 daggy = { version = "0.8.1", features = ["serde-1"] }
 layout-rs = "0.1.2"
 open = "5.0.0"
+maud = "*"
+rand = "0.9.2"
 kit = { path = "../kit" }
 composer = { path = "../composer" }
