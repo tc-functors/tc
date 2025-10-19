@@ -234,7 +234,7 @@ fn is_inferred_dir(dir: &str) -> bool {
 }
 
 fn function_dirs(dir: &str) -> Vec<String> {
-    let known_roots = vec!["resolvers", "functions", "backend", "transformers"];
+    let known_roots = vec!["resolvers", "functions", "transformers"];
     let mut xs: Vec<String> = vec![];
     let dirs = u::list_dirs(dir);
     for root in known_roots {
