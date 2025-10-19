@@ -172,10 +172,10 @@ end
 
     if theme != "dark" {
         let style = format!(r#"
-    classDef red fill:#ffefdf,color:#000,stroke:#333;
-    classDef blue fill:#e4fbfc,color:#000,stroke:#333;
+    classDef red fill:#bfdbfe,color:#000,stroke:#333;
+    classDef blue fill:#fcd34,color:#000,stroke:#333;
     classDef bing fill:#f1edff,color:#000,stroke:#333;
-    classDef chan fill:#deffe5,color:#000,stroke:#333;
+    classDef chan fill:#bbf7d0,color:#000,stroke:#333;
     class events blue
     class routes red
     class states bing
@@ -327,9 +327,15 @@ div:has(> .mermaid):hover {{
 }}
 
  button {{
-  background: #838383;
+  background: #3b3b3b;
   color: #d3d3d3;
+  opacity: 0.6;
+  border: 1px solid #636363;
  }}
+
+button:hover {{
+  background: #828282;
+}}
 
   ul.tabs {{
           display: table;
@@ -341,14 +347,6 @@ div:has(> .mermaid):hover {{
       ul.tabs>li {{
           float: left;
           padding: 10px;
-      }}
-
-      ul.tabs>li:hover {{
-          background-color: lightgray;
-      }}
-
-      ul.tabs>li.selected {{
-          background-color: lightgray;
       }}
 
       div.content {{
@@ -436,6 +434,7 @@ pub fn render(name: &str, definition: &str, diagram_content: &str) -> String {
 <script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
 <script src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js" defer></script>
 <script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+
 <style>
 
 json-viewer {{

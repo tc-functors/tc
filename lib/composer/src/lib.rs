@@ -83,7 +83,6 @@ pub fn compose_dirs(dirs: Vec<String>) -> HashMap<String, Topology> {
     for dir in dirs {
 
         let abs = u::absolutize(&u::pwd(), &dir);
-        println!("{}", &abs);
         let topology = compose(&abs, false);
         h.insert(topology.namespace.to_string(), topology);
     }
