@@ -8,7 +8,9 @@ FROM ghcr.io/cargo-lambda/cargo-lambda:latest
 WORKDIR /build
 COPY . .
 
-RUN cargo lambda build --release
+ENV RUST_TARGET_DIR=/root/.cargo/target
+
+RUN  --mount=type=cache,target=/root/.cargo cargo lambda build --release
 "#
     );
     let dockerfile = format!("{}/Dockerfile", dir);

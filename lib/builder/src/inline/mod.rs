@@ -122,7 +122,7 @@ async fn build_with_docker(
         )
     } else {
         format!(
-            "docker buildx build --platform=linux/amd64 -t {} .",
+            "docker buildx build --platform=linux/amd64 --load -t {} .",
             u::basedir(dir)
         )
     };
