@@ -1,23 +1,17 @@
 name: example-rest-auth
 
-
 routes:
-  /auth/register:
-    method: POST
-    function: registrar
-  /auth/token:
-    method: POST
-    function: registrar
-  /auth/login:
-    method: POST
-    function: authenticator
   /api/ping:
+    authorizer: cognito
+    function: pinger
     method: GET
-    authorizer: authorizer
-    function: ponger
 
 pages:
-  webapp:
-    dir: .
-    dist: dist
-    config_template: index.html
+  app:
+    dir: app
+    bucket: test
+    config_template: src/config.js
+    skip_deploy: true
+    build:
+      - npm install --quiet --no-audit
+      - npm run build

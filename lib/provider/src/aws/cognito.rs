@@ -139,7 +139,6 @@ async fn list_app_clients(client: &Client, pool_id: &str) -> HashMap<String, Str
 
 async fn find_app_client(client: &Client, pool_id: &str, client_name: &str) -> Option<String> {
     let clients = list_app_clients(client, pool_id).await;
-    println!("Clients {:?}", &clients);
     clients.get(client_name).cloned()
 }
 
