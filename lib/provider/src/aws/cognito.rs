@@ -117,3 +117,100 @@ pub async fn _delete_pool(client: &Client, name: &str) {
         None => println!("{} not found", name),
     }
 }
+
+
+// generic jwt pool
+
+async fn list_app_clients(client: &Client, pool_id: &str) -> HashMap<String, String> {
+   let res = client
+        .list_user_pool_clients()
+        .user_pool_id(pool_id)
+        .send()
+        .await
+        .unwrap();
+    let clients = res.user_pool_clients.unwrap();
+    let mut h: HashMap<String, String> = HashMap::new();
+    for c in clients {
+        h.insert(c.client_name.unwrap(), c.client_id.unwrap());
+    }
+    h
+
+}
+
+async fn find_app_client(client: &Client, pool_id: &str, client_name: &str) -> Option<String> {
+    let clients = list_app_clients(client, pool_id).await;
+    println!("Clients {:?}", &clients);
+    clients.get(client_name).cloned()
+}
+
+async fn create_app_client(client: &Client, pool_id: &str, client_name: &str) -> String {
+   let res = client
+        .create_user_pool_client()
+        .user_pool_id(pool_id)
+        .client_name(client_name)
+        .send()
+        .await
+        .unwrap();
+
+    res.user_pool_client.unwrap().client_id.unwrap()
+}
+
+pub async fn find_or_create_app_client(client: &Client, pool_id: &str, client_name: &str) -> String {
+    let maybe_client_app_id = find_app_client(client, pool_id, client_name).await;
+    match maybe_client_app_id  {
+        Some(id) => id,
+        None => create_app_client(client, pool_id, client_name).await
+    }
+}
+
+async fn update_auth_pool(client: &Client, id: &str) -> String {
+    println!("Updating pool ({})", id);
+    let res = client
+        .update_user_pool()
+        .user_pool_id(s!(id))
+        .auto_verified_attributes(VerifiedAttributeType::Email)
+        .send()
+        .await;
+    match res {
+        Ok(_) => id.to_string(),
+        Err(e) => panic!("{:?}", e),
+    }
+}
+
+async fn create_auth_pool(client: &Client, name: &str) -> String {
+    println!("Creating pool {}", name);
+    let res = client
+        .create_user_pool()
+        .pool_name(s!(name))
+        .auto_verified_attributes(VerifiedAttributeType::Email)
+        .send()
+        .await;
+    res.unwrap().user_pool.unwrap().id.expect("Not found")
+}
+
+pub async fn create_or_update_auth_pool(
+    client: &Client,
+    name: &str,
+) -> (String, String) {
+    let maybe_pool_id = find_pool(client, name).await;
+    let id = match maybe_pool_id {
+        Some(id) => update_auth_pool(client, &id).await,
+        None => create_auth_pool(client, name).await
+    };
+    let client_name = format!("client_{}", &name);
+    let client_id = find_or_create_app_client(client, &id, &client_name).await;
+    (id, client_id)
+}
+
+
+pub async fn get_config(client: &Client, pool_name: &str) -> (Option<String>, Option<String>) {
+    let maybe_pool_id = find_pool(client, pool_name).await;
+    match maybe_pool_id {
+        Some(pool_id) => {
+            let client_name = format!("client_{}", &pool_name);
+            let client_id = find_app_client(client, &pool_id, &client_name).await;
+            (Some(pool_id), client_id)
+        },
+        None => (None, None)
+    }
+}

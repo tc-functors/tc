@@ -21,18 +21,32 @@ use serde_derive::{
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Cors {
+    pub methods: Vec<String>,
+    pub origins: Vec<String>,
+    #[serde(alias = "headers", alias = "allowed_headers")]
+    pub headers: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Authorizer {
+    pub create: bool,
+    pub name: String,
+    pub kind: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Route {
     pub skip: bool,
     pub method: String,
     pub path: String,
     pub gateway: String,
-    pub create_authorizer: bool,
-    pub authorizer: Option<String>,
+    pub authorizer: Option<Authorizer>,
     pub role_arn: String,
     pub stage: String,
     pub stage_variables: HashMap<String, String>,
     pub is_async: bool,
-    pub cors: Option<CorsSpec>,
+    pub cors: Cors,
     pub target: Target,
 }
 
@@ -145,11 +159,82 @@ fn make_target(
     }
 }
 
+fn make_cors(maybe_cors: &Option<CorsSpec>) -> Cors {
+    match maybe_cors {
+        Some(c) => Cors {
+            methods: {
+                if c.methods.is_empty() {
+                    v!["*"]
+                } else {
+                    c.methods.clone()
+                }
+            },
+            origins: {
+                if c.origins.is_empty() {
+                    v!["*"]
+                } else {
+                    c.origins.clone()
+                }
+            },
+            headers: c.headers.clone().unwrap_or(v!["*"])
+        },
+        None => Cors {
+            methods: v!["*"],
+            origins: v!["*"],
+            headers: v!["*"]
+        }
+    }
+}
+
+fn make_authorizer(
+    fqn: &str,
+    rspec: &RouteSpec,
+    fns: &HashMap<String, Function>,
+) -> Option<Authorizer> {
+    if let Some(azer) = &rspec.authorizer {
+        match fns.get(azer) {
+            Some(_) => {
+                if azer.contains("{{") {
+                    Some(Authorizer {
+                        create: false,
+                        name: azer.to_string(),
+                        kind: s!("lambda"),
+                    })
+                } else {
+                    Some(Authorizer {
+                        create: true,
+                        name: template::maybe_namespace(&azer),
+                        kind: s!("lambda"),
+                    })
+                }
+            },
+            None => {
+                if azer == "cognito" {
+                    Some(Authorizer {
+                        create: true,
+                        name: fqn.to_string(),
+                        kind: s!("cognito")
+                    })
+                } else {
+                    Some(Authorizer {
+                        create: false,
+                        name: azer.to_string(),
+                        kind: s!("lambda")
+                    })
+                }
+            }
+        }
+    } else {
+        None
+    }
+}
+
+
 impl Route {
     pub fn new(
         fqn: &str,
         name: &str,
-        spec: &TopologySpec,
+        _spec: &TopologySpec,
         rspec: &RouteSpec,
         fns: &HashMap<String, Function>,
         events: &HashMap<String, Event>,
@@ -183,32 +268,21 @@ impl Route {
 
         let target = make_target(fqn, rspec, &method, fns, events, queues);
 
-        let (create_authorizer, authorizer) = match &spec.functions {
-            Some(fns) => {
-                if let Some(authorizer) = &rspec.authorizer {
-                    match fns.get(authorizer) {
-                        Some(_) => (true, Some(template::maybe_namespace(&authorizer))),
-                        None => (false, None),
-                    }
-                } else {
-                    (false, None)
-                }
-            }
-            None => (false, None),
-        };
+        let authorizer = make_authorizer(fqn, rspec, fns);
+
+        let cors = make_cors(&rspec.cors);
 
         Route {
             method: method.clone(),
             path: path,
             gateway: gateway,
-            create_authorizer: create_authorizer,
             authorizer: authorizer,
             target: target,
             role_arn: Role::entity_role_arn(Entity::Route),
             stage: stage,
             stage_variables: HashMap::new(),
             is_async: is_async,
-            cors: rspec.cors.clone(),
+            cors: cors,
             skip: skip,
         }
     }
