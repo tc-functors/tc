@@ -1,0 +1,22 @@
+name: example-evented
+
+routes:
+  /api/start:
+    function: f1
+    method: POST
+
+events:
+  e1:
+    function: f2
+  e2:
+    function: f3
+  e3:
+    function: f4
+
+functions:
+  f1:
+    event: e1
+  f2:
+    event: e2
+  f3:
+    event: e3

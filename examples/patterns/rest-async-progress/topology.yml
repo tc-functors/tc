@@ -4,10 +4,6 @@ routes:
   /api/message:
     method: POST
     event: ProcessStart
-    cors:
-      methods: ['POST', 'HEAD', 'OPTIONS']
-      origins: ['*']
-      allowed_headers: ['Content-Type', 'Accepts']
 
 events:
   ProcessStart:
@@ -16,15 +12,15 @@ events:
 functions:
   f1:
     function: f2
-    channel: my-channel
+    channel: c1
   f2:
     function: f3
-    channel: my-channel
+    channel: c1
   f3:
-    channel: my-channel
+    channel: c1
 
 channels:
-  my-channel:
+  c1:
     handler: default
 
 pages:

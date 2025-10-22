@@ -19,10 +19,10 @@ functions:
   f2:
     function: f3
   f3:
-    channel: my-channel
+    channel: c1
 
 channels:
-  my-channel:
+  c1:
     handler: default
 
 pages:

@@ -211,7 +211,7 @@ pub fn make_targets(
     }
 
     //fallback
-    if mutation.is_none() && function.is_none() && state.is_none() && channel.is_none() {
+    if mutation.is_none() && functions.is_empty() && function.is_none() && state.is_none() && channel.is_none() {
         let id = format!("{}_target", event_name);
         let arn = template::sfn_arn(fallback_fqn);
         let t = Target::new(
