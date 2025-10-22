@@ -219,11 +219,11 @@ end
             r#"
     classDef red fill:#bfdbfe,color:#000,stroke:#333;
     classDef blue fill:#fcd34,color:#000,stroke:#333;
-    classDef bing fill:#f1edff,color:#000,stroke:#333;
+    classDef bing fill:#FFC3A0,color:#000,stroke:#333;
     classDef chan fill:#bbf7d0,color:#000,stroke:#333;
-    class events blue
+    class events bing
     class routes red
-    class states bing
+    class states blue
     class channels chan
 "#
         );
