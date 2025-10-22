@@ -17,7 +17,7 @@ pub use crate::aws::{
     role::Role,
     route::Route,
     schedule::Schedule,
-    transducer::Transducer
+    transducer::Transducer,
 };
 use crate::{
     aws::{
@@ -79,7 +79,7 @@ pub struct Topology {
     pub config: Config,
     pub roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
-    pub transducer: Option<Transducer>
+    pub transducer: Option<Transducer>,
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -638,7 +638,7 @@ fn make(
         pages: page::make_all(&spec, &infra_dir, &config),
         flow: flow,
         config: Config::new(),
-        transducer: maybe_transducer
+        transducer: maybe_transducer,
     }
 }
 

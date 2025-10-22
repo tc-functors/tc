@@ -3,7 +3,10 @@ use compiler::spec::function::{
     Lang,
     Provider,
 };
-use composer::{Function, Transducer};
+use composer::{
+    Function,
+    Transducer,
+};
 use kit as u;
 use provider::{
     Auth,
@@ -108,9 +111,6 @@ pub async fn create_lambda(auth: &Auth, f: &Function, tags: &HashMap<String, Str
 
     id
 }
-
-
-
 
 async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String>) -> String {
     maybe_build(auth, &f).await;
@@ -353,7 +353,12 @@ pub async fn create_dry_run(fns: &HashMap<String, Function>) {
     }
 }
 
-pub async fn create_transducer(auth: &Auth, fns: &HashMap<String, Function>, transducer: &Transducer, config: &HashMap<String, String>) {
+pub async fn create_transducer(
+    auth: &Auth,
+    fns: &HashMap<String, Function>,
+    transducer: &Transducer,
+    config: &HashMap<String, String>,
+) {
     println!("Creating transducer");
     transducer.dump(config);
 

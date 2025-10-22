@@ -1,8 +1,8 @@
 pub mod build;
+pub mod code;
 pub mod layer;
 pub mod runtime;
 pub mod target;
-pub mod code;
 
 use super::template;
 pub use build::Build;

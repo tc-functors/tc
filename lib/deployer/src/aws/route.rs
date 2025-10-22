@@ -1,20 +1,23 @@
 use compiler::Entity;
 use composer::{
     Route,
-    aws::route::{Target, Authorizer},
+    aws::route::{
+        Authorizer,
+        Target,
+    },
 };
 use itertools::Itertools;
 use kit::*;
 use provider::{
     Auth,
     aws::{
+        cognito,
         gateway,
         gateway::{
             Client,
             GatewayCors as Cors,
         },
         lambda,
-        cognito
     },
 };
 use std::collections::HashMap;
@@ -32,7 +35,12 @@ async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
     }
 }
 
-async fn create_integration(client: &Client, api_id: &str, route: &Route, target: &Target) -> String {
+async fn create_integration(
+    client: &Client,
+    api_id: &str,
+    route: &Route,
+    target: &Target,
+) -> String {
     let Target {
         entity,
         arn,
@@ -40,28 +48,53 @@ async fn create_integration(client: &Client, api_id: &str, route: &Route, target
         ..
     } = target;
 
-    let Route { role_arn, method, is_async, .. } = route;
+    let Route {
+        role_arn,
+        method,
+        is_async,
+        ..
+    } = route;
 
     let int_name = format!("{}-{}", entity.to_str(), method);
 
     match entity {
-        Entity::Function => gateway::create_lambda_integration(client, api_id, arn, role_arn, *is_async).await,
+        Entity::Function => {
+            gateway::create_lambda_integration(client, api_id, arn, role_arn, *is_async).await
+        }
         Entity::State => {
-            gateway::create_sfn_integration(client, api_id, &int_name, role_arn, *is_async, request_params.clone())
-                .await
+            gateway::create_sfn_integration(
+                client,
+                api_id,
+                &int_name,
+                role_arn,
+                *is_async,
+                request_params.clone(),
+            )
+            .await
         }
         Entity::Event => {
-            gateway::create_event_integration(client, api_id, &int_name, role_arn, request_params.clone())
-                .await
+            gateway::create_event_integration(
+                client,
+                api_id,
+                &int_name,
+                role_arn,
+                request_params.clone(),
+            )
+            .await
         }
         Entity::Queue => {
-            gateway::create_sqs_integration(client, api_id, &int_name, role_arn, request_params.clone())
-                .await
+            gateway::create_sqs_integration(
+                client,
+                api_id,
+                &int_name,
+                role_arn,
+                request_params.clone(),
+            )
+            .await
         }
         _ => todo!(),
     }
 }
-
 
 async fn create_route(
     auth: &Auth,
@@ -70,11 +103,19 @@ async fn create_route(
     auth_id: Option<String>,
     auth_kind: &str,
 ) {
-
     add_target_permission(auth, &api_id, &route.target).await;
     let client = gateway::make_client(auth).await;
     let integration_id = create_integration(&client, &api_id, route, &route.target).await;
-    gateway::create_or_update_route(&client, &api_id, &route.method, &route.path, &integration_id, auth_id, auth_kind).await;
+    gateway::create_or_update_route(
+        &client,
+        &api_id,
+        &route.method,
+        &route.path,
+        &integration_id,
+        auth_id,
+        auth_kind,
+    )
+    .await;
 }
 
 // api
@@ -84,7 +125,6 @@ struct Api {
     authorizer: Option<Authorizer>,
     stage: String,
     cors: Option<Cors>,
-
 }
 
 fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
@@ -109,11 +149,10 @@ fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
     }
 }
 
-
 fn find_authorizer(routes: &HashMap<String, Route>) -> Option<Authorizer> {
     for (_, route) in routes {
         if let Some(authorizer) = &route.authorizer {
-            return Some(authorizer.clone())
+            return Some(authorizer.clone());
         }
     }
     None
@@ -122,7 +161,7 @@ fn find_authorizer(routes: &HashMap<String, Route>) -> Option<Authorizer> {
 fn find_gateway(routes: &HashMap<String, Route>) -> String {
     for (_, route) in routes {
         if !route.gateway.is_empty() {
-            return route.gateway.clone()
+            return route.gateway.clone();
         }
     }
     panic!("No gateway found")
@@ -134,7 +173,7 @@ impl Api {
         let gateway = find_gateway(&routes);
 
         Api {
-            name:  gateway,
+            name: gateway,
             authorizer: maybe_authorizer,
             stage: String::from("$default"),
             cors: cors,
@@ -146,8 +185,7 @@ async fn create_cognito_pool(auth: &Auth, pool_name: &str) -> (String, String) {
     let client = cognito::make_client(auth).await;
 
     let (id, client_id) = cognito::create_or_update_auth_pool(&client, pool_name).await;
-    let issuer = format!("https://cognito-idp.{}.amazonaws.com/{}",
-                         &auth.region, &id);
+    let issuer = format!("https://cognito-idp.{}.amazonaws.com/{}", &auth.region, &id);
     (issuer, client_id)
 }
 
@@ -158,7 +196,11 @@ async fn add_auth_permission(auth: &Auth, lambda_arn: &str, api_id: &str, auth_n
     let _ = lambda::add_permission(client, lambda_arn, principal, &source_arn, api_id).await;
 }
 
-async fn create_authorizer(auth: &Auth, api_id: &str, maybe_authorizer: Option<Authorizer>) -> (Option<String>, String) {
+async fn create_authorizer(
+    auth: &Auth,
+    api_id: &str,
+    maybe_authorizer: Option<Authorizer>,
+) -> (Option<String>, String) {
     if let Some(authorizer) = maybe_authorizer {
         let client = gateway::make_client(auth).await;
         match authorizer.kind.as_ref() {
@@ -167,17 +209,28 @@ async fn create_authorizer(auth: &Auth, api_id: &str, maybe_authorizer: Option<A
                 let lambda_arn = auth.lambda_arn(&authorizer.name);
 
                 add_auth_permission(auth, &lambda_arn, &api_id, &authorizer.name).await;
-                let id = gateway::create_or_update_lambda_authorizer(&client, &api_id, &authorizer.name, &uri)
-                    .await;
+                let id = gateway::create_or_update_lambda_authorizer(
+                    &client,
+                    &api_id,
+                    &authorizer.name,
+                    &uri,
+                )
+                .await;
                 (Some(id), authorizer.kind)
-            },
+            }
             "cognito" => {
                 let (issuer, client_id) = create_cognito_pool(auth, &authorizer.name).await;
-                let id = gateway::create_or_update_cognito_authorizer(&client, &api_id, &authorizer.name, &issuer, &client_id)
-                    .await;
+                let id = gateway::create_or_update_cognito_authorizer(
+                    &client,
+                    &api_id,
+                    &authorizer.name,
+                    &issuer,
+                    &client_id,
+                )
+                .await;
                 (Some(id), authorizer.kind)
-            },
-            _ => (None, String::from(""))
+            }
+            _ => (None, String::from("")),
         }
     } else {
         (None, String::from(""))
@@ -188,8 +241,9 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap
     if routes.len() > 0 {
         let client = gateway::make_client(auth).await;
         let api = Api::new(routes);
-        let api_id = gateway::create_or_update_api(&client, &api.name, api.cors, tags.clone()).await;
-        let (auth_id, auth_kind) =  create_authorizer(auth, &api_id, api.authorizer).await;
+        let api_id =
+            gateway::create_or_update_api(&client, &api.name, api.cors, tags.clone()).await;
+        let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
 
         for (_, route) in routes {
             tracing::debug!("Creating route {} {}", &route.method, &route.path);
@@ -208,18 +262,10 @@ async fn delete_integration(client: &Client, api_id: &str, method: &str, target:
     let Target { entity, arn, .. } = target;
     let int_name = format!("{}-{}", entity.to_str(), method);
     match entity {
-        Entity::Function => {
-            gateway::delete_lambda_integration(client, api_id, arn).await
-        }
-        Entity::State => {
-            gateway::delete_sfn_integration(client, api_id, &int_name).await
-        }
-        Entity::Event => {
-            gateway::delete_event_integration(client, api_id, &int_name).await
-        }
-        Entity::Queue => {
-            gateway::delete_sqs_integration(client, api_id, &int_name).await
-        }
+        Entity::Function => gateway::delete_lambda_integration(client, api_id, arn).await,
+        Entity::State => gateway::delete_sfn_integration(client, api_id, &int_name).await,
+        Entity::Event => gateway::delete_event_integration(client, api_id, &int_name).await,
+        Entity::Queue => gateway::delete_sqs_integration(client, api_id, &int_name).await,
         _ => (),
     }
 }
@@ -232,12 +278,10 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
             println!("Deleting route: {}", &route_key);
             gateway::delete_route(client, &api_id, &rid).await.unwrap();
         }
-                _ => (),
+        _ => (),
     }
     delete_integration(client, &api_id, &route.method, &route.target).await;
-
 }
-
 
 pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
     let client = gateway::make_client(auth).await;
@@ -282,8 +326,10 @@ pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
             let cognito_client = cognito::make_client(auth).await;
             let (maybe_pool_id, maybe_client_id) = cognito::get_config(&cognito_client, name).await;
             if let Some(pool_id) = maybe_pool_id {
-                let issuer = format!("https://cognito-idp.{}.amazonaws.com/{}",
-                                     &auth.region, &pool_id);
+                let issuer = format!(
+                    "https://cognito-idp.{}.amazonaws.com/{}",
+                    &auth.region, &pool_id
+                );
                 h.insert(s!("OIDC_AUTHORITY"), issuer);
             }
             if let Some(client_id) = maybe_client_id {

@@ -1,9 +1,9 @@
-mod node;
 mod graph;
+mod node;
 mod overview;
 
-use kit as u;
 use composer::Topology;
+use kit as u;
 use std::collections::HashMap;
 
 pub fn visualize_node(topology: &Topology, theme: &str) {

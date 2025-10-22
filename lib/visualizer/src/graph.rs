@@ -1,6 +1,11 @@
 use composer::Topology;
-use daggy::Dag;
-use daggy::petgraph::dot::{Dot, Config};
+use daggy::{
+    Dag,
+    petgraph::dot::{
+        Config,
+        Dot,
+    },
+};
 
 //use serde_derive::Serialize;
 //use std::fmt;
@@ -27,7 +32,6 @@ pub fn build(_t: &Topology) -> String {
 
     format!("{}", Dot::with_config(&dag, &[Config::EdgeNoLabel]))
 }
-
 
 // pub fn digraph(dag: &Graph) -> String {
 //     format!("{}", Dot::with_config(dag, &[Config::EdgeNoLabel]))

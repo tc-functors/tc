@@ -176,13 +176,13 @@ fn make_cors(maybe_cors: &Option<CorsSpec>) -> Cors {
                     c.origins.clone()
                 }
             },
-            headers: c.headers.clone().unwrap_or(v!["*"])
+            headers: c.headers.clone().unwrap_or(v!["*"]),
         },
         None => Cors {
             methods: v!["*"],
             origins: v!["*"],
-            headers: v!["*"]
-        }
+            headers: v!["*"],
+        },
     }
 }
 
@@ -207,19 +207,19 @@ fn make_authorizer(
                         kind: s!("lambda"),
                     })
                 }
-            },
+            }
             None => {
                 if azer == "cognito" {
                     Some(Authorizer {
                         create: true,
                         name: fqn.to_string(),
-                        kind: s!("cognito")
+                        kind: s!("cognito"),
                     })
                 } else {
                     Some(Authorizer {
                         create: false,
                         name: azer.to_string(),
-                        kind: s!("lambda")
+                        kind: s!("lambda"),
                     })
                 }
             }
@@ -228,7 +228,6 @@ fn make_authorizer(
         None
     }
 }
-
 
 impl Route {
     pub fn new(

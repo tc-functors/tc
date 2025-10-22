@@ -194,8 +194,7 @@ async fn update_dns_record(auth: &Auth, domain: &str, dist_id: &str, cname: &str
     route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
 }
 
-
-async fn build(auth: &Auth, name:&str, page: &Page, config: &HashMap<String, String>) {
+async fn build(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
     let Page {
         dir,
         build,
@@ -208,7 +207,6 @@ async fn build(auth: &Auth, name:&str, page: &Page, config: &HashMap<String, Str
     }
     println!("Building page {} ({})", name, dir);
     build_page(dir, name, build, config_template);
-
 }
 
 async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {

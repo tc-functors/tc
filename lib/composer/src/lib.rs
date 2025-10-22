@@ -32,7 +32,7 @@ pub use aws::{
     },
     route::Route,
     schedule::Schedule,
-    transducer::Transducer
+    transducer::Transducer,
 };
 use compiler::{
     entity::Entity,
@@ -52,7 +52,6 @@ use std::{
 };
 pub use topology::Topology;
 use walkdir::WalkDir;
-
 
 pub fn is_root_dir(dir: &str) -> bool {
     let f = format!("{}/topology.yml", dir);
@@ -81,14 +80,12 @@ pub fn compose(dir: &str, recursive: bool) -> Topology {
 pub fn compose_dirs(dirs: Vec<String>) -> HashMap<String, Topology> {
     let mut h: HashMap<String, Topology> = HashMap::new();
     for dir in dirs {
-
         let abs = u::absolutize(&u::pwd(), &dir);
         let topology = compose(&abs, false);
         h.insert(topology.namespace.to_string(), topology);
     }
     h
 }
-
 
 pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
@@ -216,7 +213,6 @@ pub fn display_root() {
     display::topology::print_stats(topologies)
 }
 
-
 pub fn topology_name(dir: &str) -> String {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
@@ -311,26 +307,23 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
             let maybe_entity = Entity::from_str(&e);
             match maybe_entity {
                 Ok(ent) => display::display_entity(ent, format, topology),
-                Err(_) =>  match e.as_ref() {
+                Err(_) => match e.as_ref() {
                     "versions" => display::print_versions(lookup_versions(&dir), format),
                     "transducer" => u::pp_json(&topology.transducer),
                     "roles" => u::pp_json(&topology.roles),
-                    _ => display::try_display(&topology, &e, format)
-                }
-            }
-
-        }
-        None => {
-            match format {
-                Format::Tree => display::print_tree(topology),
-                _ => {
-                    if let Some(f) = topology.current_function(&dir) {
-                        u::pp_json(&f)
-                    } else {
-                        u::pp_json(topology)
-                    }
-                }
+                    _ => display::try_display(&topology, &e, format),
+                },
             }
         }
-     }
+        None => match format {
+            Format::Tree => display::print_tree(topology),
+            _ => {
+                if let Some(f) = topology.current_function(&dir) {
+                    u::pp_json(&f)
+                } else {
+                    u::pp_json(topology)
+                }
+            }
+        },
+    }
 }

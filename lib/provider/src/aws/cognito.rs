@@ -118,11 +118,10 @@ pub async fn _delete_pool(client: &Client, name: &str) {
     }
 }
 
-
 // generic jwt pool
 
 async fn list_app_clients(client: &Client, pool_id: &str) -> HashMap<String, String> {
-   let res = client
+    let res = client
         .list_user_pool_clients()
         .user_pool_id(pool_id)
         .send()
@@ -134,7 +133,6 @@ async fn list_app_clients(client: &Client, pool_id: &str) -> HashMap<String, Str
         h.insert(c.client_name.unwrap(), c.client_id.unwrap());
     }
     h
-
 }
 
 async fn find_app_client(client: &Client, pool_id: &str, client_name: &str) -> Option<String> {
@@ -143,7 +141,7 @@ async fn find_app_client(client: &Client, pool_id: &str, client_name: &str) -> O
 }
 
 async fn create_app_client(client: &Client, pool_id: &str, client_name: &str) -> String {
-   let res = client
+    let res = client
         .create_user_pool_client()
         .user_pool_id(pool_id)
         .client_name(client_name)
@@ -154,11 +152,15 @@ async fn create_app_client(client: &Client, pool_id: &str, client_name: &str) ->
     res.user_pool_client.unwrap().client_id.unwrap()
 }
 
-pub async fn find_or_create_app_client(client: &Client, pool_id: &str, client_name: &str) -> String {
+pub async fn find_or_create_app_client(
+    client: &Client,
+    pool_id: &str,
+    client_name: &str,
+) -> String {
     let maybe_client_app_id = find_app_client(client, pool_id, client_name).await;
-    match maybe_client_app_id  {
+    match maybe_client_app_id {
         Some(id) => id,
-        None => create_app_client(client, pool_id, client_name).await
+        None => create_app_client(client, pool_id, client_name).await,
     }
 }
 
@@ -187,20 +189,16 @@ async fn create_auth_pool(client: &Client, name: &str) -> String {
     res.unwrap().user_pool.unwrap().id.expect("Not found")
 }
 
-pub async fn create_or_update_auth_pool(
-    client: &Client,
-    name: &str,
-) -> (String, String) {
+pub async fn create_or_update_auth_pool(client: &Client, name: &str) -> (String, String) {
     let maybe_pool_id = find_pool(client, name).await;
     let id = match maybe_pool_id {
         Some(id) => update_auth_pool(client, &id).await,
-        None => create_auth_pool(client, name).await
+        None => create_auth_pool(client, name).await,
     };
     let client_name = format!("client_{}", &name);
     let client_id = find_or_create_app_client(client, &id, &client_name).await;
     (id, client_id)
 }
-
 
 pub async fn get_config(client: &Client, pool_name: &str) -> (Option<String>, Option<String>) {
     let maybe_pool_id = find_pool(client, pool_name).await;
@@ -209,7 +207,7 @@ pub async fn get_config(client: &Client, pool_name: &str) -> (Option<String>, Op
             let client_name = format!("client_{}", &pool_name);
             let client_id = find_app_client(client, &pool_id, &client_name).await;
             (Some(pool_id), client_id)
-        },
-        None => (None, None)
+        }
+        None => (None, None),
     }
 }

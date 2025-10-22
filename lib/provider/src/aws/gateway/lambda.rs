@@ -39,7 +39,10 @@ async fn find(client: &Client, api_id: &str, lambda_arn: &str) -> Option<String>
 fn make_request_params(is_async: bool) -> Option<HashMap<String, String>> {
     if is_async {
         let mut h: HashMap<String, String> = HashMap::new();
-        h.insert(s!("integration.request.header.X-Amz-Invocation-Type"), s!("'Event'"));
+        h.insert(
+            s!("integration.request.header.X-Amz-Invocation-Type"),
+            s!("'Event'"),
+        );
         Some(h)
     } else {
         None
@@ -98,13 +101,12 @@ async fn update(
     }
 }
 
-
 pub async fn create_or_update(
     client: &Client,
     api_id: &str,
     lambda_arn: &str,
     role_arn: &str,
-    is_async: bool
+    is_async: bool,
 ) -> String {
     let maybe_int = find(client, api_id, lambda_arn).await;
     match maybe_int {
@@ -114,7 +116,9 @@ pub async fn create_or_update(
             id
         }
         _ => {
-            let id = create(client, api_id, lambda_arn, role_arn, is_async).await.unwrap();
+            let id = create(client, api_id, lambda_arn, role_arn, is_async)
+                .await
+                .unwrap();
             tracing::debug!("Created Lambda Integration {}", id);
             id
         }

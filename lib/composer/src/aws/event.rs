@@ -300,7 +300,6 @@ impl Event {
             ..
         } = espec;
 
-
         let producer = if producer.is_empty() {
             vec![s!("default")]
         } else {

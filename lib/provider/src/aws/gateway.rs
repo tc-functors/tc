@@ -8,8 +8,10 @@ use aws_sdk_apigatewayv2::{
         Cors,
         JwtConfiguration,
         ProtocolType,
-        builders::CorsBuilder,
-        builders::JwtConfigurationBuilder
+        builders::{
+            CorsBuilder,
+            JwtConfigurationBuilder,
+        },
     },
 };
 use colored::Colorize;
@@ -34,7 +36,12 @@ pub fn make_cors(methods: Vec<String>, origins: Vec<String>, headers: Option<Vec
         .build()
 }
 
-pub async fn create_api(client: &Client, name: &str, cors: Option<Cors>, tags: HashMap<String, String>) -> String {
+pub async fn create_api(
+    client: &Client,
+    name: &str,
+    cors: Option<Cors>,
+    tags: HashMap<String, String>,
+) -> String {
     let r = client
         .create_api()
         .name(name)
@@ -48,12 +55,7 @@ pub async fn create_api(client: &Client, name: &str, cors: Option<Cors>, tags: H
 }
 
 pub async fn delete_api(client: &Client, api_id: &str) {
-    client
-        .delete_api()
-        .api_id(api_id)
-        .send()
-        .await
-        .unwrap();
+    client.delete_api().api_id(api_id).send().await.unwrap();
 }
 
 pub async fn find_api(client: &Client, name: &str) -> Option<String> {
@@ -82,8 +84,13 @@ pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     }
 }
 
-
-pub async fn update_api(client: &Client, name: &str, api_id: &str, cors: Option<Cors>, _tags: HashMap<String, String>) -> String {
+pub async fn update_api(
+    client: &Client,
+    name: &str,
+    api_id: &str,
+    cors: Option<Cors>,
+    _tags: HashMap<String, String>,
+) -> String {
     println!("Updating route {} (cors)", name);
     let _ = client
         .update_api()
@@ -95,7 +102,12 @@ pub async fn update_api(client: &Client, name: &str, api_id: &str, cors: Option<
     s!(api_id)
 }
 
-pub async fn create_or_update_api(client: &Client, name: &str, cors: Option<Cors>, tags: HashMap<String, String>) -> String {
+pub async fn create_or_update_api(
+    client: &Client,
+    name: &str,
+    cors: Option<Cors>,
+    tags: HashMap<String, String>,
+) -> String {
     let api_id = find_api(client, name).await;
     match api_id {
         Some(id) => {
@@ -108,7 +120,6 @@ pub async fn create_or_update_api(client: &Client, name: &str, cors: Option<Cors
         }
     }
 }
-
 
 pub async fn find_route(client: &Client, api_id: &str, route_key: &str) -> Option<String> {
     let r = client
@@ -143,9 +154,8 @@ async fn create_route(
     route_key: &str,
     target: &str,
     authorizer: Option<String>,
-    auth_kind: AuthorizationType
+    auth_kind: AuthorizationType,
 ) -> String {
-
     match authorizer {
         Some(auth) => {
             let res = client
@@ -180,7 +190,7 @@ pub async fn update_route(
     route_id: &str,
     target: &str,
     authorizer: Option<String>,
-    auth_kind: AuthorizationType
+    auth_kind: AuthorizationType,
 ) -> String {
     match authorizer {
         Some(auth) => {
@@ -217,7 +227,7 @@ pub async fn create_or_update_route(
     path: &str,
     integration_id: &str,
     authorizer_id: Option<String>,
-    authorizer_kind: &str
+    authorizer_kind: &str,
 ) {
     let route_key = strip(&format!("{} {}", method, path), "/");
     let target = format!("integrations/{}", integration_id);
@@ -225,19 +235,25 @@ pub async fn create_or_update_route(
 
     let auth_kind = match authorizer_kind {
         "cognito" => AuthorizationType::Jwt,
-        _ => AuthorizationType::Custom
+        _ => AuthorizationType::Custom,
     };
 
     match maybe_route {
         Some(route_id) => {
             println!("Updating route {} ({})", &route_key.green(), &route_id);
-            update_route(client, api_id, &route_id, &target, authorizer_id, auth_kind)
-                .await;
+            update_route(client, api_id, &route_id, &target, authorizer_id, auth_kind).await;
         }
         None => {
             println!("Creating route {}", &route_key.blue());
-            create_route(client, api_id, &route_key, &target, authorizer_id, auth_kind)
-                .await;
+            create_route(
+                client,
+                api_id,
+                &route_key,
+                &target,
+                authorizer_id,
+                auth_kind,
+            )
+            .await;
         }
     }
 }
@@ -266,7 +282,11 @@ pub async fn delete_route(client: &Client, api_id: &str, route_id: &str) -> Resu
     }
 }
 
-pub async fn find_authorizer(client: &Client, api_id: &str, authorizer_name: &str) -> Option<String> {
+pub async fn find_authorizer(
+    client: &Client,
+    api_id: &str,
+    authorizer_name: &str,
+) -> Option<String> {
     let r = client
         .get_authorizers()
         .api_id(s!(api_id))
@@ -292,7 +312,12 @@ pub async fn find_authorizer(client: &Client, api_id: &str, authorizer_name: &st
     }
 }
 
-pub async fn create_lambda_authorizer(client: &Client, api_id: &str, name: &str, uri: &str) -> String {
+pub async fn create_lambda_authorizer(
+    client: &Client,
+    api_id: &str,
+    name: &str,
+    uri: &str,
+) -> String {
     println!("Creating authorizer: {}", name.blue());
     let res = client
         .create_authorizer()
@@ -308,7 +333,12 @@ pub async fn create_lambda_authorizer(client: &Client, api_id: &str, name: &str,
     res.unwrap().authorizer_id.unwrap()
 }
 
-pub async fn update_lambda_authorizer(client: &Client, id: &str, api_id: &str, uri: &str) -> String {
+pub async fn update_lambda_authorizer(
+    client: &Client,
+    id: &str,
+    api_id: &str,
+    uri: &str,
+) -> String {
     let res = client
         .update_authorizer()
         .authorizer_id(s!(id))
@@ -323,8 +353,12 @@ pub async fn update_lambda_authorizer(client: &Client, id: &str, api_id: &str, u
     res.unwrap().authorizer_id.unwrap()
 }
 
-
-pub async fn create_or_update_lambda_authorizer(client: &Client, api_id: &str, name: &str, uri: &str) -> String {
+pub async fn create_or_update_lambda_authorizer(
+    client: &Client,
+    api_id: &str,
+    name: &str,
+    uri: &str,
+) -> String {
     let maybe_authorizer_id = find_authorizer(client, api_id, name).await;
     match maybe_authorizer_id {
         Some(id) => {
@@ -335,16 +369,18 @@ pub async fn create_or_update_lambda_authorizer(client: &Client, api_id: &str, n
     }
 }
 
-    // jwt
+// jwt
 fn make_jwt_config(issuer: &str, client_id: &str) -> JwtConfiguration {
     let f = JwtConfigurationBuilder::default();
-    f.audience(client_id)
-        .issuer(issuer)
-        .build()
+    f.audience(client_id).issuer(issuer).build()
 }
 
-
-pub async fn create_cognito_authorizer(client: &Client, api_id: &str, name: &str, jwt_config: JwtConfiguration) -> String {
+pub async fn create_cognito_authorizer(
+    client: &Client,
+    api_id: &str,
+    name: &str,
+    jwt_config: JwtConfiguration,
+) -> String {
     println!("Creating authorizer: {}", name.blue());
     let res = client
         .create_authorizer()
@@ -359,8 +395,12 @@ pub async fn create_cognito_authorizer(client: &Client, api_id: &str, name: &str
     res.unwrap().authorizer_id.unwrap()
 }
 
-
-pub async fn update_cognito_authorizer(client: &Client, id: &str, api_id: &str, jwt_config: JwtConfiguration) -> String {
+pub async fn update_cognito_authorizer(
+    client: &Client,
+    id: &str,
+    api_id: &str,
+    jwt_config: JwtConfiguration,
+) -> String {
     let res = client
         .update_authorizer()
         .authorizer_id(s!(id))
@@ -374,8 +414,13 @@ pub async fn update_cognito_authorizer(client: &Client, id: &str, api_id: &str, 
     res.unwrap().authorizer_id.unwrap()
 }
 
-pub async fn create_or_update_cognito_authorizer(client: &Client, api_id: &str, name: &str, issuer: &str, client_id: &str) -> String {
-
+pub async fn create_or_update_cognito_authorizer(
+    client: &Client,
+    api_id: &str,
+    name: &str,
+    issuer: &str,
+    client_id: &str,
+) -> String {
     let jwt_config = make_jwt_config(issuer, client_id);
     let maybe_authorizer_id = find_authorizer(client, api_id, name).await;
     match maybe_authorizer_id {
@@ -404,8 +449,12 @@ pub async fn delete_authorizer(client: &Client, api_id: &str, name: &str) {
     }
 }
 
-
-pub async fn create_stage(client: &Client, api_id: &str, stage: &str, stage_variables: HashMap<String, String>) {
+pub async fn create_stage(
+    client: &Client,
+    api_id: &str,
+    stage: &str,
+    stage_variables: HashMap<String, String>,
+) {
     let stage_variables = stage_variables.to_owned();
     tracing::debug!("Creating stage {}", &stage.green());
     let _ = client
@@ -418,7 +467,13 @@ pub async fn create_stage(client: &Client, api_id: &str, stage: &str, stage_vari
         .await;
 }
 
-pub async fn create_lambda_integration(client: &Client, api_id: &str, target_arn: &str, role: &str, is_async: bool) -> String {
+pub async fn create_lambda_integration(
+    client: &Client,
+    api_id: &str,
+    target_arn: &str,
+    role: &str,
+    is_async: bool,
+) -> String {
     lambda::create_or_update(client, api_id, target_arn, role, is_async).await
 }
 
@@ -430,15 +485,7 @@ pub async fn create_sfn_integration(
     is_async: bool,
     request_params: HashMap<String, String>,
 ) -> String {
-    sfn::find_or_create(
-        client,
-        api_id,
-        role,
-        request_params,
-        is_async,
-        name,
-    )
-        .await
+    sfn::find_or_create(client, api_id, role, request_params, is_async, name).await
 }
 
 pub async fn create_event_integration(

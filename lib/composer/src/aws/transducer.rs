@@ -1,30 +1,34 @@
-use super::event::Event;
-use super::function::Function;
-use super::mutation::Mutation;
-use super::channel::Channel;
-use super::role::Role;
-use super::function::Runtime;
-use super::function::code;
-use super::function::Build;
-use compiler::Entity;
-use compiler::{LangRuntime, BuildKind};
-use compiler::spec::function::Provider;
-use super::template;
+use super::{
+    channel::Channel,
+    event::Event,
+    function::{
+        Build,
+        Function,
+        Runtime,
+        code,
+    },
+    mutation::Mutation,
+    role::Role,
+    template,
+};
 use crate::tag;
-
 use base64::{
     Engine as _,
     engine::general_purpose,
 };
-
-use std::collections::HashMap;
-
+use compiler::{
+    BuildKind,
+    Entity,
+    LangRuntime,
+    spec::function::Provider,
+};
+use kit as u;
+use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use kit::*;
-use kit as u;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationTarget {
@@ -32,14 +36,14 @@ pub struct MutationTarget {
     pub input: Option<HashMap<String, String>>,
     pub output: Option<HashMap<String, String>>,
     pub endpoint: String,
-    pub api_key: String
+    pub api_key: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventTarget {
     pub name: String,
     pub source: String,
-    pub bus: String
+    pub bus: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -57,7 +61,7 @@ pub struct Targets {
     pub mutation: Option<MutationTarget>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub function: Option<String>,
-   #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub channel: Option<ChannelTarget>,
 }
 
@@ -67,7 +71,7 @@ impl Default for Targets {
             event: None,
             mutation: None,
             function: None,
-            channel: None
+            channel: None,
         }
     }
 }
@@ -78,40 +82,36 @@ pub struct Transducer {
     pub name: String,
     pub arn: String,
     pub function: Function,
-    pub targets: HashMap<String, Targets>
+    pub targets: HashMap<String, Targets>,
 }
-
 
 fn make_targets(
     namespace: &str,
     f: &Function,
     events: &HashMap<String, Event>,
     mutations: &HashMap<String, Mutation>,
-    channels: &HashMap<String, Channel>
+    channels: &HashMap<String, Channel>,
 ) -> Targets {
-
     let mut tx: Targets = Targets::default();
 
     for target in &f.targets {
-
         match target.entity {
             Entity::Event => {
                 if let Some(event) = events.get(&target.name) {
                     let source = match event.pattern.source.first() {
                         Some(s) => s,
-                        None => "default"
+                        None => "default",
                     };
                     let t = EventTarget {
                         name: target.name.clone(),
                         source: source.to_string(),
-                        bus: event.bus.clone()
+                        bus: event.bus.clone(),
                     };
                     tx.event = Some(t);
                 } else {
                     tx.event = None;
                 }
-
-            },
+            }
             Entity::Mutation => {
                 let maybe_mut = mutations.get("default");
                 match maybe_mut {
@@ -131,35 +131,33 @@ fn make_targets(
                             };
                             tx.mutation = Some(t);
                         }
-
-                    },
+                    }
                     None => {
                         tx.mutation = None;
                     }
                 }
-            },
+            }
             Entity::Function => {
                 let fqn = template::lambda_fqn(namespace, &target.name);
                 tx.function = Some(template::lambda_arn(&fqn))
-            },
+            }
             Entity::Channel => {
                 if let Some(channel) = channels.get(&target.name) {
                     let t = ChannelTarget {
                         name: channel.name.clone(),
                         http_domain: format!("{{{{HTTP_DOMAIN}}}}"),
-                        api_key: format!("{{{{API_KEY}}}}")
+                        api_key: format!("{{{{API_KEY}}}}"),
                     };
                     tx.channel = Some(t);
                 }
             }
-            _ => ()
+            _ => (),
         }
     }
     tx
 }
 
 fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
-
     let dir = format!("/tmp/tc/{}", namespace);
 
     let uri = format!("{}/lambda.zip", &dir);
@@ -174,7 +172,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         command: s!("zip -9 -q lambda.zip *.py *.json"),
         shared_context: false,
         skip_dev_deps: false,
-        environment: HashMap::new()
+        environment: HashMap::new(),
     };
 
     let tags = tag::make(namespace, "");
@@ -199,7 +197,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         network: None,
         fs: None,
         infra_spec: HashMap::new(),
-        cluster: String::from("")
+        cluster: String::from(""),
     };
 
     Function {
@@ -215,7 +213,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         build: build,
         layer_name: None,
         targets: vec![],
-        test: HashMap::new()
+        test: HashMap::new(),
     }
 }
 
@@ -225,10 +223,8 @@ impl Transducer {
         fns: &HashMap<String, Function>,
         events: &HashMap<String, Event>,
         mutations: &HashMap<String, Mutation>,
-        channels: &HashMap<String, Channel>
-
+        channels: &HashMap<String, Channel>,
     ) -> Option<Transducer> {
-
         let mut txs: HashMap<String, Targets> = HashMap::new();
 
         let mut target_count = 0;
@@ -237,7 +233,7 @@ impl Transducer {
         }
 
         if target_count == 0 {
-            return None
+            return None;
         }
 
         for (_, f) in fns {
@@ -255,7 +251,7 @@ impl Transducer {
             name: tname.clone(),
             arn: arn,
             function: function,
-            targets: txs
+            targets: txs,
         };
         Some(transducer)
     }
@@ -286,5 +282,4 @@ impl Transducer {
         let dir = format!("/tmp/tc/{}", self.namespace);
         u::sh(&format!("rm -rf {}", &dir), &u::pwd());
     }
-
 }

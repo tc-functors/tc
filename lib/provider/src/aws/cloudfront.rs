@@ -327,7 +327,7 @@ async fn update_distribution(
         .await;
     match res {
         Ok(_) => id.to_string(),
-        Err(_) => id.to_string()
+        Err(_) => id.to_string(),
     }
 }
 
@@ -586,7 +586,6 @@ pub async fn create_or_update_function(client: &Client, name: &str, handler: &st
             publish_function(client, name, &etag).await;
         }
     };
-
 }
 
 pub async fn delete_distribution(client: &Client, name: &str) {
@@ -600,7 +599,7 @@ pub async fn delete_distribution(client: &Client, name: &str) {
                 .send()
                 .await
                 .unwrap();
-        },
-        None => println!("CF distribution not found, skipping")
+        }
+        None => println!("CF distribution not found, skipping"),
     }
 }

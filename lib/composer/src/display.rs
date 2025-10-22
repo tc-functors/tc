@@ -4,18 +4,17 @@ use crate::{
 };
 use kit as u;
 use kit::*;
+use ptree::TreeBuilder;
+use serde_derive::Serialize;
 use std::{
     collections::HashMap,
     str::FromStr,
 };
-use ptree::TreeBuilder;
-use serde_derive::Serialize;
 mod event;
 mod function;
 mod state;
 pub mod topology;
 use colored::Colorize;
-
 use tabled::{
     Style,
     Table,
@@ -44,7 +43,7 @@ impl FromStr for Format {
             "tree" => Ok(Format::Tree),
             "table" => Ok(Format::Table),
             "yaml" => Ok(Format::YAML),
-            "dot"=> Ok(Format::Dot),
+            "dot" => Ok(Format::Dot),
             "graph" => Ok(Format::Graph),
             "graphql" | "gql" => Ok(Format::Graphql),
             _ => Ok(Format::JSON),
@@ -137,7 +136,13 @@ fn as_uri(s: &str) -> String {
 }
 
 pub fn print_tree(topology: &Topology) {
-    let Topology { namespace, functions, events, routes, .. } = topology;
+    let Topology {
+        namespace,
+        functions,
+        events,
+        routes,
+        ..
+    } = topology;
     let mut t = TreeBuilder::new(s!(namespace.blue()));
 
     t.begin_child(s!("functions".cyan()));

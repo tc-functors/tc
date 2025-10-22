@@ -1,13 +1,14 @@
 use composer::Topology;
+use kit as u;
+use rand::Rng;
 use std::collections::{
     HashMap,
     hash_map::Entry,
 };
-use kit as u;
-use rand::Rng;
 
 pub fn render_dark(mermaid_str: &str) -> String {
-    format!(r#"
+    format!(
+        r#"
 
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -159,11 +160,13 @@ function init_tabs() {{
   </body>
 </html>
 
-"#)
+"#
+    )
 }
 
 pub fn render(mermaid_str: &str) -> String {
-    format!(r#"
+    format!(
+        r#"
 
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -299,7 +302,8 @@ div:has(> .mermaid):hover {{
   </body>
 </html>
 
-"#)
+"#
+    )
 }
 
 fn name_only(s: &str) -> String {
@@ -317,12 +321,15 @@ fn group_targets(topologies: &HashMap<String, Topology>) -> HashMap<String, Vec<
     for (name, topology) in topologies {
         for (ename, event) in &topology.events {
             for target in &event.targets {
-
                 let gname = name_only(&target.name);
-                let tname = format!("{},{},{}_{}[{}]",
-                                    &target.producer_ns,
-                                    ename,
-                                    target.entity.to_str(), &gname, &gname);
+                let tname = format!(
+                    "{},{},{}_{}[{}]",
+                    &target.producer_ns,
+                    ename,
+                    target.entity.to_str(),
+                    &gname,
+                    &gname
+                );
 
                 match h.entry(name.to_string()) {
                     Entry::Vacant(e) => {
@@ -346,19 +353,24 @@ pub fn generate_mermaid(topologies: &HashMap<String, Topology>, theme: &str) -> 
     let grouped = group_targets(topologies);
 
     for (name, targets) in &grouped {
-        let begin = format!(r#"
+        let begin = format!(
+            r#"
 subgraph {name}
-"#);
+"#
+        );
         s.push_str(&begin);
-        let end = format!(r#"
+        let end = format!(
+            r#"
 end
-"#);
+"#
+        );
         for target in targets {
             let tname = u::split_last(&target, ",");
-            let f = format!(r#"{tname}
-"#);
+            let f = format!(
+                r#"{tname}
+"#
+            );
             s.push_str(&f);
-
         }
         s.push_str(&end);
     }
@@ -369,16 +381,19 @@ end
             let event = parts.clone().into_iter().nth(1).unwrap();
             let tname = parts.clone().into_iter().nth(2).unwrap();
             if producer != "sandbox" {
-                let f = format!(r#"
+                let f = format!(
+                    r#"
 {producer}--{event}-->{tname}
-"#);
+"#
+                );
                 s.push_str(&f);
             }
         }
     }
 
     if theme != "dark" {
-        let mut style = format!(r#"
+        let mut style = format!(
+            r#"
     classDef red fill:#ffefdf,color:#000,stroke:#333;
     classDef blue fill:#e4fbfc,color:#000,stroke:#333;
     classDef bing fill:#f1edff,color:#000,stroke:#333;
@@ -387,13 +402,16 @@ end
     classDef c2 fill:#FFB26F,color:#000,stroke:#333;
     classDef c3 fill:#F1C27B,color:#000,stroke:#333;
     classDef c4 fill:#FFD966,color:#000,stroke:#333;
-"#);
+"#
+        );
         let strings = vec!["red", "blue", "bing", "chan", "c1", "c2", "c3", "c4"];
         for (name, _) in grouped {
             let random_class = &strings[rand::rng().random_range(0..strings.len())];
-            let p = format!(r#"
+            let p = format!(
+                r#"
 class {name} {random_class}
-"#);
+"#
+            );
             style.push_str(&p);
         }
         s.push_str(&style);
@@ -403,10 +421,12 @@ class {name} {random_class}
 
 pub fn generate(topologies: &HashMap<String, Topology>, theme: &str) -> String {
     let flow_str = generate_mermaid(topologies, theme);
-    let mermaid_str = format!(r#"
+    let mermaid_str = format!(
+        r#"
 flowchart LR
 {flow_str}
-"#);
+"#
+    );
     if theme == "dark" {
         render_dark(&mermaid_str)
     } else {

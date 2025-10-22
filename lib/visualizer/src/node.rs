@@ -1,10 +1,14 @@
 use crate::graph;
 use composer::Topology;
+use gv::{
+    GraphBuilder,
+    parser::DotParser,
+};
 use kit as u;
-use layout::gv;
-use gv::parser::DotParser;
-use gv::GraphBuilder;
-use layout::backends::svg::SVGWriter;
+use layout::{
+    backends::svg::SVGWriter,
+    gv,
+};
 
 fn name_only(s: &str) -> String {
     if s.starts_with("{{") {
@@ -42,136 +46,177 @@ pub fn generate_dot(topology: &Topology) -> String {
 
 struct Target {
     from: String,
-    to: String
+    to: String,
 }
 
 pub fn generate_mermaid(topology: &Topology, theme: &str) -> String {
     let mut targets: Vec<Target> = vec![];
-    let mut s: String =  String::from("");
+    let mut s: String = String::from("");
 
-    let Topology { routes, events, channels, mutations,
-                   functions, queues, namespace, flow, .. } = topology;
+    let Topology {
+        routes,
+        events,
+        channels,
+        mutations,
+        functions,
+        queues,
+        namespace,
+        flow,
+        ..
+    } = topology;
 
     if routes.len() > 0 {
         let mut rs = format!("subgraph routes");
         for (name, route) in routes {
             let name = if name.starts_with("/") {
                 let gname = name.replace("{", "").replace("}", "").replace("/", "_");
-                format!("route_{}{{{}}}",
-                        gname,
-                        route.path.replace("{", "").replace("}", "")
+                format!(
+                    "route_{}{{{}}}",
+                    gname,
+                    route.path.replace("{", "").replace("}", "")
                 )
             } else {
                 name.to_string()
             };
             targets.push(Target {
-                from: name.clone(), to: name_only(&route.target.name)
+                from: name.clone(),
+                to: name_only(&route.target.name),
             });
-            rs.push_str(&format!(r#"
+            rs.push_str(&format!(
+                r#"
 {name}
-"#));
+"#
+            ));
         }
-        rs.push_str(&format!(r#"end
-"#));
+        rs.push_str(&format!(
+            r#"end
+"#
+        ));
         s.push_str(&rs);
     }
 
     if events.len() > 0 {
         let mut es = format!("subgraph events");
         for (name, event) in events {
-     es.push_str(&format!(r#"
-{name}"#));
+            es.push_str(&format!(
+                r#"
+{name}"#
+            ));
             for target in &event.targets {
                 targets.push(Target {
                     from: name.to_string(),
-                    to: name_only(&target.name)
+                    to: name_only(&target.name),
                 });
             }
         }
-        es.push_str(&format!(r#"
+        es.push_str(&format!(
+            r#"
 end
-"#));
+"#
+        ));
         s.push_str(&es);
     }
 
     if functions.len() > 0 {
         let mut fs = format!("subgraph functions");
         for (name, function) in functions {
-     fs.push_str(&format!(r#"
-{name}"#));
+            fs.push_str(&format!(
+                r#"
+{name}"#
+            ));
             for target in &function.targets {
                 targets.push(Target {
                     from: name.to_string(),
-                    to: name_only(&target.name)
+                    to: name_only(&target.name),
                 });
             }
         }
-        fs.push_str(&format!(r#"
+        fs.push_str(&format!(
+            r#"
 end
-"#));
+"#
+        ));
         s.push_str(&fs);
     }
 
     if channels.len() > 0 {
         let mut cs = format!("subgraph channels");
         for (name, _) in channels {
-     cs.push_str(&format!(r#"
-{name}"#));
+            cs.push_str(&format!(
+                r#"
+{name}"#
+            ));
         }
-        cs.push_str(&format!(r#"
+        cs.push_str(&format!(
+            r#"
 end
-"#));
+"#
+        ));
         s.push_str(&cs);
     }
 
     if queues.len() > 0 {
         let mut qs = format!("subgraph queues");
         for (name, _) in queues {
-     qs.push_str(&format!(r#"
+            qs.push_str(&format!(
+                r#"
 {name}
-"#));
+"#
+            ));
         }
-        qs.push_str(&format!(r#"
+        qs.push_str(&format!(
+            r#"
 end
-"#));
+"#
+        ));
 
         s.push_str(&qs);
     }
 
     for target in &targets {
-        let t = format!(r#"
+        let t = format!(
+            r#"
 {}-->{}
-"#, target.from, target.to);
+"#,
+            target.from, target.to
+        );
         s.push_str(&t);
     }
 
     if let Some(m) = mutations.get("default") {
         let mut ms = format!("subgraph mutations");
         for (name, res) in &m.resolvers {
-     ms.push_str(&format!(r#"
-{name}"#));
+            ms.push_str(&format!(
+                r#"
+{name}"#
+            ));
             targets.push(Target {
                 from: name.to_string(),
-                to: res.target_name.to_string()
+                to: res.target_name.to_string(),
             });
         }
-        ms.push_str(&format!(r#"
+        ms.push_str(&format!(
+            r#"
 end
-"#));
+"#
+        ));
         s.push_str(&ms);
     }
 
     if let Some(_f) = flow {
         let mut ss = format!("subgraph states");
-        ss.push_str(&format!(r#"
+        ss.push_str(&format!(
+            r#"
 {namespace}
 end
-"#));
+"#
+        ));
         s.push_str(&ss);
     }
 
     if theme != "dark" {
-        let style = format!(r#"
+        let style = format!(
+            r#"
     classDef red fill:#bfdbfe,color:#000,stroke:#333;
     classDef blue fill:#fcd34,color:#000,stroke:#333;
     classDef bing fill:#f1edff,color:#000,stroke:#333;
@@ -189,7 +234,8 @@ end
 }
 
 pub fn make_diagrams(mermaid_str: &str, dot_str: &str, topology_str: &str) -> String {
-format!(r#"
+    format!(
+        r#"
 <script>
 function init_tabs() {{
   return {{
@@ -259,12 +305,13 @@ function init_tabs() {{
 </div>
 </div>
 </div>
-"#)
+"#
+    )
 }
 
-
 pub fn render_dark(name: &str, definition: &str, diagram_content: &str) -> String {
-    format!(r#"
+    format!(
+        r#"
 
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -414,12 +461,14 @@ button:hover {{
   </body>
 </html>
 
-"#)
+"#
+    )
 }
 
 // light
 pub fn render(name: &str, definition: &str, diagram_content: &str) -> String {
-    format!(r#"
+    format!(
+        r#"
 
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -562,37 +611,29 @@ div:has(> .mermaid):hover {{
   </body>
 </html>
 
-"#)
+"#
+    )
 }
-
 
 pub fn inner_html(topology: &Topology, theme: &str) -> String {
     let flow_str = generate_mermaid(topology, theme);
-    let mermaid_str = format!(r#"
+    let mermaid_str = format!(
+        r#"
 flowchart TB
 
 {flow_str}
-"#);
+"#
+    );
     let dot_str = generate_dot(topology);
-     make_diagrams(&mermaid_str, &dot_str, &topology.to_str())
+    make_diagrams(&mermaid_str, &dot_str, &topology.to_str())
 }
-
 
 pub fn generate(topology: &Topology, theme: &str) -> String {
     let definition = u::slurp(&format!("{}/topology.yml", &topology.dir));
     let diagram_content = inner_html(topology, theme);
     if theme == "dark" {
-        render_dark(
-            &topology.namespace,
-            &definition,
-            &diagram_content
-        )
-
+        render_dark(&topology.namespace, &definition, &diagram_content)
     } else {
-        render(
-            &topology.namespace,
-            &definition,
-            &diagram_content
-        )
+        render(&topology.namespace, &definition, &diagram_content)
     }
 }

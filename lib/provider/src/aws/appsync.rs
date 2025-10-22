@@ -606,11 +606,11 @@ pub async fn find_api_key(client: &Client, api_id: &str) -> Option<String> {
             for key in xs {
                 if let Some(desc) = key.description {
                     if desc == "default" {
-                        return key.id
+                        return key.id;
                     }
                 }
             }
-        },
+        }
         None => (),
     }
     None
@@ -640,8 +640,8 @@ async fn update_api_key(client: &Client, api_id: &str, id: &str) -> String {
 pub async fn create_or_update_api_key(client: &Client, api_id: &str) -> String {
     let maybe_api_key_id = find_api_key(client, api_id).await;
     match maybe_api_key_id {
-        Some(id) =>  update_api_key(client, api_id, &id).await,
-        None => create_api_key(client, api_id).await
+        Some(id) => update_api_key(client, api_id, &id).await,
+        None => create_api_key(client, api_id).await,
     }
 }
 
@@ -652,7 +652,5 @@ pub async fn list_api_keys(client: &Client, api_id: &str) -> Vec<String> {
         None => vec![],
     }
 }
-
-
 
 pub type AppsyncClient = Client;
