@@ -1,5 +1,0 @@
-name: example-ws-handler
-
-channels:
-  bichan:
-    function: processor

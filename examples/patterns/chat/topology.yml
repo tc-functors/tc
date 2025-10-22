@@ -8,4 +8,5 @@ pages:
   app:
     dir: .
     dist: dist
+    skip_deploy: true
     config_template: index.html
