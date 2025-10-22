@@ -284,26 +284,28 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
 }
 
 pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
-    let client = gateway::make_client(auth).await;
-    let api = Api::new(routes);
-    let maybe_api_id = gateway::find_api(&client, &api.name).await;
+   if routes.len() > 0 {
+       let client = gateway::make_client(auth).await;
+       let api = Api::new(routes);
+       let maybe_api_id = gateway::find_api(&client, &api.name).await;
 
-    if let Some(api_id) = maybe_api_id {
-        for (name, route) in routes {
-            println!("Deleting route {}", &name);
-            if !&route.skip {
-                delete_route(&client, &api_id, &route).await;
-            }
-        }
-        if let Some(authorizer) = api.authorizer {
-            gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
-        }
+       if let Some(api_id) = maybe_api_id {
+           for (name, route) in routes {
+               println!("Deleting route {}", &name);
+               if !&route.skip {
+                   delete_route(&client, &api_id, &route).await;
+               }
+           }
+           if let Some(authorizer) = api.authorizer {
+               gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
+           }
 
-        match std::env::var("TC_DELETE_ROOT") {
-            Ok(_) => gateway::delete_api(&client, &api_id).await,
-            Err(_) => (),
-        }
-    }
+           match std::env::var("TC_DELETE_ROOT") {
+               Ok(_) => gateway::delete_api(&client, &api_id).await,
+               Err(_) => (),
+           }
+       }
+   }
 }
 
 pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str) {}

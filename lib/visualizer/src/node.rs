@@ -619,7 +619,7 @@ pub fn inner_html(topology: &Topology, theme: &str) -> String {
     let flow_str = generate_mermaid(topology, theme);
     let mermaid_str = format!(
         r#"
-flowchart TB
+flowchart LR
 
 {flow_str}
 "#

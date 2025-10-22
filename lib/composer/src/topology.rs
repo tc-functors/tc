@@ -262,6 +262,8 @@ fn ignore_function(dir: &str, root_dir: &str) -> bool {
         || dir.contains("node_modules")
         || dir.ends_with("states")
         || dir.ends_with("topology")
+        || dir.ends_with("roles")
+        || dir.ends_with("extensions")
     {
         return true;
     }
