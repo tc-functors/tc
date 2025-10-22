@@ -185,21 +185,23 @@ async fn create_authorizer(auth: &Auth, api_id: &str, maybe_authorizer: Option<A
 }
 
 pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>) {
-    let client = gateway::make_client(auth).await;
-    let api = Api::new(routes);
-    let api_id = gateway::create_or_update_api(&client, &api.name, api.cors, tags.clone()).await;
-    let (auth_id, auth_kind) =  create_authorizer(auth, &api_id, api.authorizer).await;
+    if routes.len() > 0 {
+        let client = gateway::make_client(auth).await;
+        let api = Api::new(routes);
+        let api_id = gateway::create_or_update_api(&client, &api.name, api.cors, tags.clone()).await;
+        let (auth_id, auth_kind) =  create_authorizer(auth, &api_id, api.authorizer).await;
 
-    for (_, route) in routes {
-        tracing::debug!("Creating route {} {}", &route.method, &route.path);
-        if !&route.skip {
-            create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
+        for (_, route) in routes {
+            tracing::debug!("Creating route {} {}", &route.method, &route.path);
+            if !&route.skip {
+                create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
+            }
         }
+        gateway::create_stage(&client, &api_id, &api.stage, HashMap::new()).await;
+        gateway::create_deployment(&client, &api_id, &api.stage).await;
+        let endpoint = auth.api_endpoint(&api_id, &api.stage);
+        println!("Endpoint {}", &endpoint);
     }
-    gateway::create_stage(&client, &api_id, &api.stage, HashMap::new()).await;
-    gateway::create_deployment(&client, &api_id, &api.stage).await;
-    let endpoint = auth.api_endpoint(&api_id, &api.stage);
-    println!("Endpoint {}", &endpoint);
 }
 
 async fn delete_integration(client: &Client, api_id: &str, method: &str, target: &Target) {
