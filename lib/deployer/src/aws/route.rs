@@ -132,10 +132,11 @@ fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
     let mut origins: Vec<String> = vec![];
     let mut headers: Vec<String> = vec![];
     for (_, route) in routes {
-        let c = &route.cors;
-        methods.extend(c.methods.clone());
-        origins.extend(c.origins.clone());
-        headers.extend(c.headers.clone());
+        if let Some(c) = &route.cors {
+            methods.extend(c.methods.clone());
+            origins.extend(c.origins.clone());
+            headers.extend(c.headers.clone());
+        }
     }
 
     if origins.is_empty() {

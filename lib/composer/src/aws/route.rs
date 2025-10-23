@@ -46,7 +46,7 @@ pub struct Route {
     pub stage: String,
     pub stage_variables: HashMap<String, String>,
     pub is_async: bool,
-    pub cors: Cors,
+    pub cors: Option<Cors>,
     pub target: Target,
 }
 
@@ -159,9 +159,9 @@ fn make_target(
     }
 }
 
-fn make_cors(maybe_cors: &Option<CorsSpec>) -> Cors {
+fn make_cors(maybe_cors: &Option<CorsSpec>) -> Option<Cors> {
     match maybe_cors {
-        Some(c) => Cors {
+        Some(c) => Some(Cors {
             methods: {
                 if c.methods.is_empty() {
                     v!["*"]
@@ -177,12 +177,8 @@ fn make_cors(maybe_cors: &Option<CorsSpec>) -> Cors {
                 }
             },
             headers: c.headers.clone().unwrap_or(v!["*"]),
-        },
-        None => Cors {
-            methods: v!["*"],
-            origins: v!["*"],
-            headers: v!["*"],
-        },
+        }),
+        None => None
     }
 }
 
