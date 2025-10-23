@@ -16,10 +16,10 @@ use provider::{
 };
 use std::collections::HashMap;
 
-fn build_page(dir: &str, name: &str, command: &Option<String>, config_template: &Option<String>) {
+async fn build_page(auth: &Auth, dir: &str, name: &str, command: &Option<String>, config_template: &Option<String>) {
     match command {
         Some(c) => {
-            builder::page::build(dir, name, &c, config_template);
+            builder::page::build(auth, dir, name, &c, config_template).await;
         }
         None => (),
     }
@@ -206,7 +206,7 @@ async fn build(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, St
         render_config_template(auth, dir, &path, config).await;
     }
     println!("Building page {} ({})", name, dir);
-    build_page(dir, name, build, config_template);
+    build_page(auth, dir, name, build, config_template).await;
 }
 
 async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
@@ -225,7 +225,7 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
         render_config_template(auth, dir, &path, config).await;
     }
     println!("Building page {} ({})", name, dir);
-    build_page(dir, name, build, config_template);
+    build_page(auth, dir, name, build, config_template).await;
 
     if !u::path_exists(&u::pwd(), dist) {
         tracing::debug!("Dist directory not found, aborting");
@@ -450,7 +450,7 @@ pub async fn update(
         "functions" => update_functions(auth, pages).await,
         "build" => {
             for (name, page) in pages {
-                build_page(&page.dir, name, &page.build, &page.config_template);
+                build_page(auth, &page.dir, name, &page.build, &page.config_template).await;
             }
         }
         _ => {

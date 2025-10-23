@@ -2,6 +2,22 @@ mod node;
 
 use kit as u;
 use kit::sh;
+use provider::{
+    Auth,
+    aws,
+};
+
+
+async fn get_token(auth: &Auth) -> String {
+    match std::env::var("TC_USE_CODEARTIFACT") {
+        Ok(_) => {
+            let auth = provider::init_centralized_auth(auth).await;
+            let client = aws::codeartifact::make_client(&auth).await;
+            aws::codeartifact::get_auth_token(&client, &auth.name, &auth.account).await
+        },
+        Err(_) => String::from("")
+    }
+}
 
 fn gen_dockerignore(dir: &str) {
     let f = format!(
@@ -27,17 +43,21 @@ npm-debug.log
     u::write_str(&file, &f);
 }
 
-fn build_with_docker(dir: &str) -> (bool, String, String) {
+async fn build_with_docker(auth: &Auth, dir: &str) -> (bool, String, String) {
     let root = &u::root();
+
+    let token = get_token(auth).await;
 
     let cmd_str = match std::env::var("DOCKER_SSH") {
         Ok(e) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default={} -t {} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default={} --build-arg AUTH_TOKEN={} -t {} --build-context shared={root} .",
             &e,
+            &token,
             u::basedir(dir)
         ),
         Err(_) => format!(
-            "docker buildx build --platform=linux/amd64 --ssh default  --load -t {} --build-context shared={root} .",
+            "docker buildx build --platform=linux/amd64 --ssh default --build-arg AUTH_TOKEN={} --load -t {} --build-context shared={root} .",
+            &token,
             u::basedir(dir)
         ),
     };
@@ -72,7 +92,7 @@ fn clean_tmp(dir: &str, ct: &Option<String>) {
     }
 }
 
-pub fn build(dir: &str, name: &str, command: &str, config_template: &Option<String>) {
+pub async fn build(auth: &Auth, dir: &str, name: &str, command: &str, config_template: &Option<String>) {
     let bar = u::progress(5);
 
     let prefix = format!("Building {} (node/page)", name);
@@ -83,7 +103,7 @@ pub fn build(dir: &str, name: &str, command: &str, config_template: &Option<Stri
     gen_dockerignore(dir);
     bar.inc(2);
 
-    let (status, out, err) = build_with_docker(dir);
+    let (status, out, err) = build_with_docker(auth, dir).await;
     if !status {
         println!("{}", &out);
         println!("{}", &err);

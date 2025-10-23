@@ -15,10 +15,19 @@ pub fn gen_dockerfile(dir: &str, command: &str, config_template: &Option<String>
 
     let copy_config_cmd = find_copy_command(dir, config_template);
 
+    let token = match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
+        Ok(t) => t,
+        Err(_) => String::from(""),
+    };
+
+
     let f = format!(
         r#"
 
 FROM {image} AS intermediate
+
+ARG AUTH_TOKEN {token}
+ENV CODEARTIFACT_AUTH_TOKEN $AUTH_TOKEN
 
 WORKDIR /build
 
