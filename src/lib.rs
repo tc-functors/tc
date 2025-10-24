@@ -634,7 +634,8 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
 
 pub async fn changelog(between: Option<String>, search: Option<String>, verbose: bool) {
     let dir = u::pwd();
-    let namespace = composer::topology_name(&dir);
+    let topology = composer::compose(&dir, false);
+    let namespace = topology.namespace;
     match search {
         Some(s) => {
             let is_root = composer::is_root_dir(&dir);
