@@ -153,6 +153,16 @@ pub async fn compose_root(dir: Option<String>, format: Option<String>) {
     composer::print_topologies(&fmt, tps);
 }
 
+pub async fn compose_compact(dir: Option<String>) {
+    let root_dir = match dir {
+        Some(d) => d,
+        None => u::root(),
+    };
+    let tps = composer::compose_root(&root_dir, true);
+    let cts = composer::compact(&tps);
+    u::pp_json(&cts);
+}
+
 pub async fn compose(opts: ComposeOpts) {
     let ComposeOpts {
         recursive,

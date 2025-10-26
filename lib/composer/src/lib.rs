@@ -44,6 +44,7 @@ use compiler::{
 use configurator::Config;
 use display::Format;
 pub use display::topology::TopologyCount;
+pub use display::compact::CompactTopology;
 use kit as u;
 use kit::*;
 use std::{
@@ -253,6 +254,10 @@ pub fn count_of(topology: &Topology) -> String {
     display::topology::count_str(topology)
 }
 
+pub fn count(topologies: &HashMap<String, Topology>) -> Vec<TopologyCount> {
+    display::topology::get_count(topologies)
+}
+
 pub fn entities_of(topology: &Topology) -> Vec<Entity> {
     let Topology {
         routes,
@@ -326,4 +331,10 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
             }
         },
     }
+}
+
+
+pub fn compact(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
+    display::compact::build(topologies)
+
 }

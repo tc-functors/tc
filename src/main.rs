@@ -282,6 +282,8 @@ pub struct ComposeArgs {
     format: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action)]
+    compact: bool,
 }
 
 #[derive(Debug, Args)]
@@ -735,6 +737,7 @@ async fn compose(args: ComposeArgs) {
         trace,
         root,
         dir,
+        compact,
         ..
     } = args;
 
@@ -748,6 +751,8 @@ async fn compose(args: ComposeArgs) {
     };
     if root {
         tc::compose_root(dir, format).await;
+    } else if compact {
+        tc::compose_compact(dir).await;
     } else {
         tc::compose(opts).await;
     }

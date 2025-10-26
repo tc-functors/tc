@@ -109,6 +109,18 @@ pub fn print_stats_json(topologies: HashMap<String, Topology>) {
     kit::pp_json(&xs);
 }
 
+
+pub fn get_count(topologies: &HashMap<String, Topology>) -> Vec<TopologyCount> {
+    let mut xs: Vec<TopologyCount> = vec![];
+    for (_, t) in topologies {
+        let c = TopologyCount::new(&t);
+        xs.push(c)
+    }
+    xs.sort_by(|a, b| b.name.cmp(&a.name));
+    xs.reverse();
+    xs
+}
+
 pub fn count_str(topology: &Topology) -> String {
     let Topology {
         functions,
