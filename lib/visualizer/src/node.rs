@@ -615,6 +615,20 @@ div:has(> .mermaid):hover {{
     )
 }
 
+
+pub fn generate_diagram(topology: &Topology, theme: &str) -> String {
+    let flow_str = generate_mermaid(topology, theme);
+    let mermaid_str = format!(
+        r#"
+flowchart LR
+
+{flow_str}
+"#
+    );
+    mermaid_str
+}
+
+
 pub fn inner_html(topology: &Topology, theme: &str) -> String {
     let flow_str = generate_mermaid(topology, theme);
     let mermaid_str = format!(

@@ -38,3 +38,7 @@ pub fn visualize(dir: &str, recursive: bool, theme: &str, dirs: Vec<String>) {
         visualize_node(&topology, theme);
     }
 }
+
+pub fn gen_mermaid(topology: &Topology) -> String {
+    node::generate_diagram(topology, "light")
+}
