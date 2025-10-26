@@ -1,7 +1,7 @@
 use crate::Auth;
 use aws_sdk_lambda::primitives::SdkBody;
+pub use aws_sdk_s3::Client;
 use aws_sdk_s3::{
-    Client,
     Error,
     primitives::ByteStream,
     types::{
