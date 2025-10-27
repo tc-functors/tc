@@ -4827,6 +4827,7 @@ dependencies = [
 name = "scaffolder"
 version = "0.9.39"
 dependencies = [
+ "base64 0.21.7",
  "compiler",
  "composer",
  "inquire",

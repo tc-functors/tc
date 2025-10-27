@@ -240,7 +240,7 @@ struct Response {
     content: Vec<Content>,
 }
 
-async fn send(text: &str) -> String {
+pub async fn send(text: &str) -> String {
     let payload = Payload::new(text);
     let p = serde_json::to_string(&payload).unwrap();
     let url = "https://api.anthropic.com/v1/messages";
@@ -248,6 +248,11 @@ async fn send(text: &str) -> String {
     let response: Response = serde_json::from_value(res).unwrap();
     let res = response.content.into_iter().nth(0).unwrap().text;
     res
+}
+
+pub fn extract_code(response: &str) -> String {
+    let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
+    code
 }
 
 pub async fn scaffold(dir: &str) {
