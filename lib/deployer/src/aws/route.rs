@@ -204,34 +204,38 @@ async fn create_authorizer(
 ) -> (Option<String>, String) {
     if let Some(authorizer) = maybe_authorizer {
         let client = gateway::make_client(auth).await;
-        match authorizer.kind.as_ref() {
-            "lambda" => {
-                let uri = auth.lambda_uri(&authorizer.name);
-                let lambda_arn = auth.lambda_arn(&authorizer.name);
+        if authorizer.create {
+            match authorizer.kind.as_ref() {
+                "lambda" => {
+                    let uri = auth.lambda_uri(&authorizer.name);
+                    let lambda_arn = auth.lambda_arn(&authorizer.name);
 
-                add_auth_permission(auth, &lambda_arn, &api_id, &authorizer.name).await;
-                let id = gateway::create_or_update_lambda_authorizer(
-                    &client,
-                    &api_id,
-                    &authorizer.name,
-                    &uri,
-                )
-                .await;
-                (Some(id), authorizer.kind)
+                    add_auth_permission(auth, &lambda_arn, &api_id, &authorizer.name).await;
+                    let id = gateway::create_or_update_lambda_authorizer(
+                        &client,
+                        &api_id,
+                        &authorizer.name,
+                        &uri,
+                    )
+                        .await;
+                    (Some(id), authorizer.kind)
+                }
+                "cognito" => {
+                    let (issuer, client_id) = create_cognito_pool(auth, &authorizer.name).await;
+                    let id = gateway::create_or_update_cognito_authorizer(
+                        &client,
+                        &api_id,
+                        &authorizer.name,
+                        &issuer,
+                        &client_id,
+                    )
+                        .await;
+                    (Some(id), authorizer.kind)
+                }
+                _ => (None, String::from("")),
             }
-            "cognito" => {
-                let (issuer, client_id) = create_cognito_pool(auth, &authorizer.name).await;
-                let id = gateway::create_or_update_cognito_authorizer(
-                    &client,
-                    &api_id,
-                    &authorizer.name,
-                    &issuer,
-                    &client_id,
-                )
-                .await;
-                (Some(id), authorizer.kind)
-            }
-            _ => (None, String::from("")),
+        } else {
+                (None, String::from(""))
         }
     } else {
         (None, String::from(""))

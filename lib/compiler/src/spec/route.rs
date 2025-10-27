@@ -12,15 +12,6 @@ pub struct CorsSpec {
     pub headers: Option<Vec<String>>,
 }
 
-fn default_cors() -> Option<CorsSpec> {
-    let c = CorsSpec {
-        methods: vec![],
-        origins: vec![],
-        headers: None,
-    };
-    Some(c)
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RouteSpec {
     pub method: Option<String>,
@@ -42,7 +33,6 @@ pub struct RouteSpec {
 
     pub stage: Option<String>,
     pub stage_variables: Option<HashMap<String, String>>,
-    #[serde(default = "default_cors")]
     pub cors: Option<CorsSpec>,
     #[serde(default, alias = "doc-only")]
     pub doc_only: bool,
