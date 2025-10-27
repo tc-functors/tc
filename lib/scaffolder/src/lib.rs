@@ -6,6 +6,7 @@ use base64::{
     Engine as _,
     engine::general_purpose,
 };
+use serde::{Deserialize,Serialize};
 
 pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
     if llm {
@@ -22,6 +23,7 @@ pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Response {
     pub desc: String,
     pub code: String,
@@ -33,6 +35,7 @@ pub async fn gen_code_and_diagram(text: &str) -> Response {
     let code = llm::extract_code(&desc);
 
     let dir = "/tmp/tc-gentopo";
+    u::sh(&format!("mkdir -p {}", dir), &u::pwd());
     let topo_file = format!("{}/topology.yml", dir);
     u::write_str(&topo_file, &code);
 
