@@ -297,5 +297,7 @@ pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
         };
         tops.push(ct);
     }
+    tops.sort_by(|a, b| b.namespace.cmp(&a.namespace));
+    tops.reverse();
     tops
 }
