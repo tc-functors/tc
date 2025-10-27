@@ -620,7 +620,7 @@ pub fn generate_diagram(topology: &Topology, theme: &str) -> String {
     let flow_str = generate_mermaid(topology, theme);
     let mermaid_str = format!(
         r#"
-flowchart LR
+flowchart TB
 
 {flow_str}
 "#
