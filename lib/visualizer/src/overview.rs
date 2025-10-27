@@ -433,3 +433,15 @@ flowchart LR
         render(&mermaid_str)
     }
 }
+
+
+pub fn generate_diagram(topologies: &HashMap<String, Topology>, theme: &str) -> String {
+    let flow_str = generate_mermaid(topologies, theme);
+    let mermaid_str = format!(
+        r#"
+flowchart LR
+{flow_str}
+"#
+    );
+    mermaid_str
+}

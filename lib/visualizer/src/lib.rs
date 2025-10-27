@@ -42,3 +42,8 @@ pub fn visualize(dir: &str, recursive: bool, theme: &str, dirs: Vec<String>) {
 pub fn gen_mermaid(topology: &Topology) -> String {
     node::generate_diagram(topology, "light")
 }
+
+
+pub fn gen_root_mermaid(topologies: &HashMap<String, Topology>) -> String {
+    overview::generate_diagram(topologies, "light")
+}
