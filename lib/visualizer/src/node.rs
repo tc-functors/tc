@@ -1,4 +1,4 @@
-use crate::graph;
+use crate::digraph;
 use composer::Topology;
 use gv::{
     GraphBuilder,
@@ -19,27 +19,31 @@ fn name_only(s: &str) -> String {
 }
 
 pub fn generate_dot(topology: &Topology) -> String {
-    let dot_str = graph::build(topology);
-    let mut parser = DotParser::new(&dot_str);
+    let dot_str = digraph::build(topology);
+    if dot_str.is_empty() {
+        String::from("")
+    } else {
+        let mut parser = DotParser::new(&dot_str);
 
-    let tree = parser.process();
+        let tree = parser.process();
 
-    match tree {
-        Result::Err(err) => {
-            parser.print_error();
-            println!("Error: {}", err);
-            String::from("")
-        }
+        match tree {
+            Result::Err(err) => {
+                parser.print_error();
+                println!("Error: {}", err);
+                String::from("")
+            }
 
-        Result::Ok(g) => {
-            gv::dump_ast(&g);
+            Result::Ok(g) => {
+                gv::dump_ast(&g);
 
-            let mut gb = GraphBuilder::new();
-            gb.visit_graph(&g);
-            let mut vg = gb.get();
-            let mut svg = SVGWriter::new();
-            vg.do_it(false, false, false, &mut svg);
-            svg.finalize()
+                let mut gb = GraphBuilder::new();
+                gb.visit_graph(&g);
+                let mut vg = gb.get();
+                let mut svg = SVGWriter::new();
+                vg.do_it(false, false, false, &mut svg);
+                svg.finalize()
+            }
         }
     }
 }
@@ -620,7 +624,7 @@ pub fn generate_diagram(topology: &Topology, theme: &str) -> String {
     let flow_str = generate_mermaid(topology, theme);
     let mermaid_str = format!(
         r#"
-flowchart TB
+flowchart LR
 
 {flow_str}
 "#

@@ -10,4 +10,5 @@ open = "5.0.0"
 maud = "*"
 rand = "0.9.2"
 kit = { path = "../kit" }
+compiler = { path = "../compiler" }
 composer = { path = "../composer" }

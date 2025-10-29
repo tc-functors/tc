@@ -1,6 +1,6 @@
-mod graph;
 mod node;
 mod overview;
+mod digraph;
 
 use composer::Topology;
 use kit as u;
