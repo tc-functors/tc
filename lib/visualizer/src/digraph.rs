@@ -6,11 +6,11 @@ use kit::*;
 
 fn attr_of(entity: &Entity) -> String {
     match entity {
-        Entity::Function => s!("shape=box, fillcolor= 	palegoldenrod, style=filled"),
+        Entity::Function => s!("shape=box, fillcolor=lightyellow, style=filled"),
         Entity::Event => s!("shape=ellipse, fillcolor=palegreen, style=filled"),
-        Entity::Route => s!("shape=box, fillcolor=powderblue, style=filled"),
+        Entity::Route => s!("shape=box, fillcolor=aquamarine, style=filled"),
         Entity::Channel => s!("shape=box, fillcolor=lightpink, style=filled"),
-        Entity::Mutation => s!("shape=box, fillcolor=darkorange, style=filled"),
+        Entity::Mutation => s!("shape=box, fillcolor=navajowhite, style=filled"),
         Entity::Queue => s!("shape=box, fillcolor=powderblue, style=filled"),
         Entity::State => s!("shape=box, fillcolor=lightskyblue, style=filled"),
         Entity::Page => s!("shape=box, fillcolor=mintcream, style=filled"),
@@ -157,9 +157,15 @@ pub fn build(topology: &Topology) -> String {
     let nodes = make_nodes(&mappings);
     let edges = make_edges(&mappings);
 
+
+    let orientation = if mappings.len() > 10 {
+        "LR"
+    } else {
+        "TB"
+    };
     if !nodes.is_empty() && !edges.is_empty() {
         let s = format!(r#"digraph {{
-rankdir="TB"
+rankdir="{orientation}"
 {nodes} {edges}  }}"#);
         s
     } else {

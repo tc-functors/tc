@@ -2,7 +2,7 @@ use kit as u;
 use kit::*;
 use provider::Auth;
 mod manifest;
-mod pipeline;
+pub mod pipeline;
 
 use compiler::TopologyKind;
 use composer::Topology;
