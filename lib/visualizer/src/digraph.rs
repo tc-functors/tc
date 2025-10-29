@@ -6,13 +6,16 @@ use kit::*;
 
 fn attr_of(entity: &Entity) -> String {
     match entity {
-        Entity::Function => s!("shape=box, fillcolor=lightyellow, style=filled"),
-        Entity::Event => s!("shape=ellipse, fillcolor=lightgreen, style=filled"),
+        Entity::Function => s!("shape=box, fillcolor= 	palegoldenrod, style=filled"),
+        Entity::Event => s!("shape=ellipse, fillcolor=palegreen, style=filled"),
         Entity::Route => s!("shape=box, fillcolor=powderblue, style=filled"),
-        Entity::Channel => s!("shape=box, fillcolor=lightsalmon, style=filled"),
-        Entity::Mutation => s!("shape=box, fillcolor=linen, style=filled"),
+        Entity::Channel => s!("shape=box, fillcolor=lightpink, style=filled"),
+        Entity::Mutation => s!("shape=box, fillcolor=darkorange, style=filled"),
         Entity::Queue => s!("shape=box, fillcolor=powderblue, style=filled"),
-        _ => String::from("square")
+        Entity::State => s!("shape=box, fillcolor=lightskyblue, style=filled"),
+        Entity::Page => s!("shape=box, fillcolor=mintcream, style=filled"),
+        Entity::Trigger => s!("shape=box, fillcolor=mintcream, style=filled"),
+        Entity::Schedule => s!("shape=box, fillcolor=mintcream, style=filled"),
     }
 }
 
@@ -156,7 +159,7 @@ pub fn build(topology: &Topology) -> String {
 
     if !nodes.is_empty() && !edges.is_empty() {
         let s = format!(r#"digraph {{
-rankdir="LR"
+rankdir="TB"
 {nodes} {edges}  }}"#);
         s
     } else {

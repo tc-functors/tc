@@ -27,7 +27,8 @@ pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
 pub struct Response {
     pub desc: String,
     pub code: String,
-    pub diagram: String
+    pub mermaid: String,
+    pub dot: String
 }
 
 pub async fn gen_code_and_diagram(text: &str) -> Response {
@@ -41,11 +42,15 @@ pub async fn gen_code_and_diagram(text: &str) -> Response {
 
     let topology = composer::compose(dir, false);
     let mermaid_str = visualizer::gen_mermaid(&topology);
-    let diagram = general_purpose::STANDARD.encode(&mermaid_str);
+    let mermaid = general_purpose::STANDARD.encode(&mermaid_str);
+
+    let dot_str = visualizer::gen_dot(&topology);
+    let dot = general_purpose::STANDARD.encode(&dot_str);
 
     Response {
         desc: desc,
         code: code,
-        diagram: diagram
+        mermaid: mermaid,
+        dot: dot
     }
 }
