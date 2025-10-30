@@ -93,11 +93,12 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     if u::file_exists(&f) {
         let spec = TopologySpec::new(&f);
         let given_root_dirs = match &spec.nodes.dirs {
-            Some(dirs) => dirs,
-            None => &list_dirs(dir),
+            Some(dirs) => dirs.clone(),
+            None => vec![]
         };
         let mut h: HashMap<String, Topology> = HashMap::new();
         if given_root_dirs.is_empty() {
+
             let dirs = u::list_dirs(dir);
             let mut h: HashMap<String, Topology> = HashMap::new();
             let root = compose(dir, false);

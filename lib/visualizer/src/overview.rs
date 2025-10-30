@@ -316,26 +316,39 @@ fn name_only(s: &str) -> String {
     }
 }
 
+fn name_of(s: &str) -> String {
+    if s.contains("{{namespace") && s.contains("{{sandbox") {
+        let parts: Vec<&str>= s.split("_").collect();
+        parts.clone().into_iter().nth(1).unwrap().to_string()
+    } else if s.contains("{{sandbox") {
+        let parts: Vec<&str> = s.split("_").collect();
+        parts.clone().into_iter().nth(0).unwrap().to_string()
+    } else {
+        s.to_string()
+    }
+}
+
 fn group_targets(topologies: &HashMap<String, Topology>) -> HashMap<String, Vec<String>> {
     let mut h: HashMap<String, Vec<String>> = HashMap::new();
     for (name, topology) in topologies {
         for (ename, event) in &topology.events {
             for target in &event.targets {
                 let gname = name_only(&target.name);
-                let tname = format!(
-                    "{},{},{}",
-                    &target.producer_ns,
-                    ename,
-                    &topology.namespace
-                );
+                let from = name_of(&target.producer_ns);
+                let to = name_of(&topology.namespace);
 
-                match h.entry(name.to_string()) {
-                    Entry::Vacant(e) => {
-                        e.insert(vec![tname]);
-                    }
-                    Entry::Occupied(mut e) => {
-                        if !e.get_mut().contains(&tname) {
-                            e.get_mut().push(tname);
+
+                if let Some(_) = topologies.get(&from) {
+                    let tname = format!("{},{},{}", &from, name_of(ename), &to);
+
+                    match h.entry(name.to_string()) {
+                        Entry::Vacant(e) => {
+                            e.insert(vec![tname]);
+                        }
+                        Entry::Occupied(mut e) => {
+                            if !e.get_mut().contains(&tname) {
+                                e.get_mut().push(tname);
+                            }
                         }
                     }
                 }
@@ -350,20 +363,40 @@ pub fn generate_mermaid(topologies: &HashMap<String, Topology>, theme: &str) -> 
 
     let grouped = group_targets(topologies);
 
-    for (name, targets) in &grouped {
-        let begin = format!(
-            r#"
-subgraph {name}
-"#
-        );
-        s.push_str(&begin);
-        let end = format!(
-            r#"
-end
-"#
-        );
-        s.push_str(&end);
-    }
+//     for (name, targets) in &grouped {
+//         let begin = format!(
+//             r#"
+// subgraph {name}
+// "#
+//         );
+//         s.push_str(&begin);
+//         let end = format!(
+//             r#"
+// end
+// "#
+//         );
+//         s.push_str(&end);
+
+//         for target in targets {
+//             let parts: Vec<&str> = target.split(",").collect();
+//             let fname = parts.clone().into_iter().nth(0).unwrap();
+//         let begin = format!(
+//             r#"
+// subgraph {fname}
+// "#
+//         );
+//         s.push_str(&begin);
+//         let end = format!(
+//             r#"
+// end
+// "#
+//         );
+//         s.push_str(&end);
+
+//         }
+
+//     }
+
     for (_, targets) in &grouped {
         for target in targets {
             let parts: Vec<&str> = target.split(",").collect();
