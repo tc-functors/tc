@@ -46,7 +46,7 @@ fn augment_policy(
 }
 
 async fn resolve_vars(auth: &Auth, keys: Vec<String>) -> HashMap<String, String> {
-    let auth = provider::init_centralized_auth(auth).await;
+    //let auth = provider::init_centralized_auth(auth).await;
     let client = ssm::make_client(&auth).await;
 
     let mut h: HashMap<String, String> = HashMap::new();
