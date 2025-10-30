@@ -98,8 +98,17 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
         };
         let mut h: HashMap<String, Topology> = HashMap::new();
         if given_root_dirs.is_empty() {
-            let topology = compose(&u::pwd(), false);
-            h.insert(topology.namespace.clone(), topology);
+            let dirs = u::list_dirs(dir);
+            let mut h: HashMap<String, Topology> = HashMap::new();
+            let root = compose(dir, false);
+            h.insert(root.namespace.clone(), root);
+            for d in dirs {
+                let f = format!("{}/topology.yml", d);
+                if u::file_exists(&f) {
+                    let topology = compose(&d, recursive);
+                    h.insert(topology.namespace.clone(), topology);
+                }
+            }
         } else {
             for d in given_root_dirs {
                 tracing::debug!("Given root: {}", &d);

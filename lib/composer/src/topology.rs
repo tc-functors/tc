@@ -123,7 +123,11 @@ pub fn is_root_topology(spec_file: &str) -> bool {
     if let Some(given_root_dirs) = &spec.nodes.dirs {
         !given_root_dirs.is_empty()
     } else {
-        spec.nodes.root.is_some()
+        if let Some(root) = spec.root {
+            root
+        } else {
+            false
+        }
     }
 }
 
@@ -329,15 +333,17 @@ fn should_ignore_node(
         }
         return false;
     } else {
-        for node in ignore_nodes.unwrap() {
-            let abs_path = format!("{root_dir}/{node}");
-            if &abs_path == topology_dir {
-                return true;
+        if let Some(ignodes) = ignore_nodes {
+            for node in ignodes {
+                let abs_path = format!("{root_dir}/{node}");
+                if &abs_path == topology_dir {
+                    return true;
+                }
+                if topology_dir.starts_with(&abs_path) {
+                    return true;
+                }
+                return false;
             }
-            if topology_dir.starts_with(&abs_path) {
-                return true;
-            }
-            return false;
         }
         return false;
     }

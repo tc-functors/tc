@@ -120,8 +120,6 @@ fn make_target(
             req.insert(s!("DetailType"), detail_type.clone());
             req.insert(s!("Source"), source);
             req.insert(s!("EventBusName"), event.bus.clone());
-        } else {
-            panic!("No event defined {}", &ev)
         }
         return Target {
             entity: Entity::Event,

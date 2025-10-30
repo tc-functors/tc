@@ -323,12 +323,10 @@ fn group_targets(topologies: &HashMap<String, Topology>) -> HashMap<String, Vec<
             for target in &event.targets {
                 let gname = name_only(&target.name);
                 let tname = format!(
-                    "{},{},{}_{}[{}]",
+                    "{},{},{}",
                     &target.producer_ns,
                     ename,
-                    target.entity.to_str(),
-                    &gname,
-                    &gname
+                    &topology.namespace
                 );
 
                 match h.entry(name.to_string()) {
@@ -364,14 +362,6 @@ subgraph {name}
 end
 "#
         );
-        for target in targets {
-            let tname = u::split_last(&target, ",");
-            let f = format!(
-                r#"{tname}
-"#
-            );
-            s.push_str(&f);
-        }
         s.push_str(&end);
     }
     for (_, targets) in &grouped {

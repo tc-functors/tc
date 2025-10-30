@@ -40,8 +40,8 @@ use yaml::Transformer;
 fn default_nodes() -> Nodes {
     Nodes {
         root: Some(false),
-        ignore: Some(vec![]),
-        dirs: Some(vec![]),
+        ignore: None,
+        dirs: None,
     }
 }
 
@@ -104,6 +104,7 @@ pub struct TopologySpec {
     #[serde(default)]
     pub name: String,
 
+    pub root: Option<bool>,
     pub recursive: Option<bool>,
     pub auto: Option<bool>,
 
@@ -170,6 +171,7 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
+                root: Some(false),
                 recursive: Some(false),
                 auto: Some(false),
                 kind: Some(TopologyKind::Function),
