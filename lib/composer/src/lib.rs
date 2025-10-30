@@ -90,17 +90,15 @@ pub fn compose_dirs(dirs: Vec<String>) -> HashMap<String, Topology> {
 
 pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
     let f = format!("{}/topology.yml", dir);
+    let mut h: HashMap<String, Topology> = HashMap::new();
     if u::file_exists(&f) {
         let spec = TopologySpec::new(&f);
         let given_root_dirs = match &spec.nodes.dirs {
             Some(dirs) => dirs.clone(),
             None => vec![]
         };
-        let mut h: HashMap<String, Topology> = HashMap::new();
         if given_root_dirs.is_empty() {
-
             let dirs = u::list_dirs(dir);
-            let mut h: HashMap<String, Topology> = HashMap::new();
             let root = compose(dir, false);
             h.insert(root.namespace.clone(), root);
             for d in dirs {
@@ -119,10 +117,8 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
             }
         }
         tracing::debug!("Compilation completed");
-        h
     } else {
         let dirs = u::list_dirs(dir);
-        let mut h: HashMap<String, Topology> = HashMap::new();
         for d in dirs {
             let f = format!("{}/topology.yml", d);
             if u::file_exists(&f) {
@@ -130,8 +126,8 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
                 h.insert(topology.namespace.clone(), topology);
             }
         }
-        h
     }
+    h
 }
 
 pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
