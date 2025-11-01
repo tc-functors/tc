@@ -1,6 +1,7 @@
 mod node;
-mod overview;
 mod digraph;
+mod evented;
+mod root;
 
 use composer::Topology;
 use kit as u;
@@ -17,7 +18,7 @@ pub fn visualize_node(topology: &Topology, theme: &str) {
 }
 
 pub fn visualize_root(topologies: HashMap<String, Topology>, theme: &str) {
-    let html = overview::generate(&topologies, theme);
+    let html = evented::generate(&topologies, theme);
     let dir = u::pwd();
     let path = format!("{}/root.html", &dir);
     u::write_str(&path, &html);
@@ -47,6 +48,10 @@ pub fn gen_dot(topology: &Topology) -> String {
     node::generate_dot(topology)
 }
 
-pub fn gen_root_mermaid(topologies: &HashMap<String, Topology>) -> String {
-    overview::generate_diagram(topologies, "light")
+pub fn gen_root_evented(topologies: &HashMap<String, Topology>) -> String {
+    evented::generate_diagram(topologies, "light")
+}
+
+pub fn gen_root_detailed(topologies: &HashMap<String, Topology>) -> String {
+    root::generate_diagram(topologies, "light")
 }

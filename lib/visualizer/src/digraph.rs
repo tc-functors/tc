@@ -6,13 +6,13 @@ use kit::*;
 
 fn attr_of(entity: &Entity) -> String {
     match entity {
-        Entity::Function => s!("shape=box, fillcolor=lightyellow, style=filled"),
-        Entity::Event => s!("shape=ellipse, fillcolor=palegreen, style=filled"),
-        Entity::Route => s!("shape=box, fillcolor=aquamarine, style=filled"),
-        Entity::Channel => s!("shape=box, fillcolor=lightpink, style=filled"),
-        Entity::Mutation => s!("shape=box, fillcolor=navajowhite, style=filled"),
+        Entity::Function => s!("shape=box, fillcolor=\"#e0e7ff\", style=filled"),
+        Entity::Event => s!("shape=ellipse, fillcolor=\"#ecfccb\", style=filled"),
+        Entity::Route => s!("shape=box, fillcolor=\"#bbf7d0\" style=filled"),
+        Entity::Channel => s!("shape=box, fillcolor=\"#e4e4e7\", style=filled"),
+        Entity::Mutation => s!("shape=box, fillcolor=\"#fed7aa\", style=filled"),
         Entity::Queue => s!("shape=box, fillcolor=powderblue, style=filled"),
-        Entity::State => s!("shape=box, fillcolor=lightskyblue, style=filled"),
+        Entity::State => s!("shape=box, fillcolor=\"#ffe4e6\", style=filled"),
         Entity::Page => s!("shape=box, fillcolor=mintcream, style=filled"),
         Entity::Trigger => s!("shape=box, fillcolor=mintcream, style=filled"),
         Entity::Schedule => s!("shape=box, fillcolor=mintcream, style=filled"),
@@ -158,11 +158,12 @@ pub fn build(topology: &Topology) -> String {
     let edges = make_edges(&mappings);
 
 
-    let orientation = if mappings.len() > 10 {
-        "LR"
-    } else {
-        "TB"
-    };
+    // let orientation = if mappings.len() > 4 {
+    //     "LR"
+    // } else {
+    //     "TB"
+    // };
+    let orientation = "TB";
     if !nodes.is_empty() && !edges.is_empty() {
         let s = format!(r#"digraph {{
 rankdir="{orientation}"
