@@ -1,7 +1,6 @@
 mod node;
 mod digraph;
-mod evented;
-mod root;
+mod system;
 
 use composer::Topology;
 use kit as u;
@@ -18,12 +17,13 @@ pub fn visualize_node(topology: &Topology, theme: &str) {
 }
 
 pub fn visualize_root(topologies: HashMap<String, Topology>, theme: &str) {
-    let html = evented::generate(&topologies, theme);
-    let dir = u::pwd();
-    let path = format!("{}/root.html", &dir);
-    u::write_str(&path, &html);
-    println!("Opening {}", &path);
-    open::that(path).unwrap();
+    // let html = evented::generate(&topologies, theme);
+    // let dir = u::pwd();
+    // let path = format!("{}/root.html", &dir);
+    // u::write_str(&path, &html);
+    // println!("Opening {}", &path);
+    // open::that(path).unwrap();
+    println!("Not implemented")
 }
 
 pub fn visualize(dir: &str, recursive: bool, theme: &str, dirs: Vec<String>) {
@@ -48,10 +48,13 @@ pub fn gen_dot(topology: &Topology) -> String {
     node::generate_dot(topology)
 }
 
-pub fn gen_root_evented(topologies: &HashMap<String, Topology>) -> String {
-    evented::generate_diagram(topologies, "light")
+// actual
+
+pub fn gen_system_sequence(topology: &Topology) -> String {
+    system::gen_sequence(&topology.sequence)
 }
 
-pub fn gen_root_detailed(topologies: &HashMap<String, Topology>) -> String {
-    root::generate_diagram(topologies, "light")
+
+pub fn gen_system_flow(topology: &Topology) -> String {
+    system::gen_flow(&topology.sequence)
 }

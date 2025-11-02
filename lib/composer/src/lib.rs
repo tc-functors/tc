@@ -2,6 +2,7 @@ pub mod aws;
 pub mod display;
 
 mod tag;
+pub mod sequence;
 pub mod topology;
 pub mod version;
 

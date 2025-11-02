@@ -363,40 +363,6 @@ pub fn generate_mermaid(topologies: &HashMap<String, Topology>, theme: &str) -> 
 
     let grouped = group_targets(topologies);
 
-//     for (name, targets) in &grouped {
-//         let begin = format!(
-//             r#"
-// subgraph {name}
-// "#
-//         );
-//         s.push_str(&begin);
-//         let end = format!(
-//             r#"
-// end
-// "#
-//         );
-//         s.push_str(&end);
-
-//         for target in targets {
-//             let parts: Vec<&str> = target.split(",").collect();
-//             let fname = parts.clone().into_iter().nth(0).unwrap();
-//         let begin = format!(
-//             r#"
-// subgraph {fname}
-// "#
-//         );
-//         s.push_str(&begin);
-//         let end = format!(
-//             r#"
-// end
-// "#
-//         );
-//         s.push_str(&end);
-
-//         }
-
-//     }
-
     for (_, targets) in &grouped {
         for target in targets {
             let parts: Vec<&str> = target.split(",").collect();

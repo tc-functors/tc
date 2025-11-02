@@ -19,6 +19,7 @@ pub use crate::aws::{
     schedule::Schedule,
     transducer::Transducer,
 };
+pub use sequence::Connector;
 use crate::{
     aws::{
         channel,
@@ -30,6 +31,7 @@ use crate::{
         template,
     },
     tag,
+    sequence,
 };
 use compiler::{
     Entity,
@@ -80,6 +82,7 @@ pub struct Topology {
     pub roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
+    pub sequence: Vec<Connector>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -647,6 +650,7 @@ fn make(
         flow: flow,
         config: Config::new(),
         transducer: maybe_transducer,
+        sequence: sequence::make_all(&spec.sequence)
     }
 }
 
@@ -696,6 +700,7 @@ fn make_standalone(dir: &str) -> Topology {
         tests: HashMap::new(),
         config: Config::new(),
         transducer: None,
+        sequence: vec![],
     }
 }
 
