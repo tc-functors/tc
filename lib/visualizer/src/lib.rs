@@ -3,6 +3,8 @@ mod digraph;
 mod system;
 
 use composer::Topology;
+use composer::sequence;
+use composer::sequence::Connector;
 use kit as u;
 use std::collections::HashMap;
 
@@ -50,11 +52,28 @@ pub fn gen_dot(topology: &Topology) -> String {
 
 // actual
 
-pub fn gen_system_sequence(topology: &Topology) -> String {
-    system::gen_sequence(&topology.sequence)
+pub fn gen_topology(topology: &Topology) -> (String, String) {
+    let mermaid_dia = node::generate_diagram(topology, "light");
+    let dot_dia = node::generate_dot(topology);
+    (mermaid_dia, dot_dia)
 }
 
+pub fn gen_system(cspec: Vec<String>) -> (String, String, Vec<String>) {
+    let mut st = cspec;
+    st.retain(|s| !s.is_empty());
+    let sequence = sequence::make_seq(&st);
+    let seq_dia = system::gen_sequence(&sequence);
+    let flow_dia = system::gen_flow(&sequence);
+    (seq_dia, flow_dia, st)
+}
 
-pub fn gen_system_flow(topology: &Topology) -> String {
-    system::gen_flow(&topology.sequence)
+pub fn gen_system_from_connectors(connectors: &Vec<Connector>) -> (String, String, Vec<String>) {
+    let seq_dia = system::gen_sequence(connectors);
+    let flow_dia = system::gen_flow(connectors);
+    let mut xs: Vec<String> = vec![];
+    for c in connectors {
+        let p = format!(r#"{} -> {} -> {}"#, &c.source, &c.message, &c.target);
+        xs.push(p);
+    }
+    (seq_dia, flow_dia, xs)
 }

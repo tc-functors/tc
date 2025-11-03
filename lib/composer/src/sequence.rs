@@ -2,7 +2,6 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
-use kit as u;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Connector {
@@ -11,10 +10,8 @@ pub struct Connector {
     pub target: String
 }
 
-pub fn make_all(maybe_seq: &Option<Vec<String>>) -> Vec<Connector> {
-
-    if let Some(cspecs) = maybe_seq {
-        let mut cs: Vec<Connector> = vec![];
+pub fn make_seq(cspecs: &Vec<String>) -> Vec<Connector> {
+       let mut cs: Vec<Connector> = vec![];
         for x in cspecs {
             let s = x.replace(" ", "");
             let parts: Vec<&str> = s.split("->").collect();
@@ -29,6 +26,11 @@ pub fn make_all(maybe_seq: &Option<Vec<String>>) -> Vec<Connector> {
             cs.push(c);
         }
         cs
+}
+
+pub fn make_all(maybe_seq: &Option<Vec<String>>) -> Vec<Connector> {
+    if let Some(cspecs) = maybe_seq {
+        make_seq(&cspecs)
     } else {
         vec![]
     }
