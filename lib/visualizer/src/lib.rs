@@ -77,3 +77,8 @@ pub fn gen_system_from_connectors(connectors: &Vec<Connector>) -> (String, Strin
     }
     (seq_dia, flow_dia, xs)
 }
+
+pub fn gen_system_tree(topologies: &HashMap<String, Topology>) -> String {
+    let tree = system::build_tree(topologies);
+    serde_json::to_string(&tree).unwrap()
+}

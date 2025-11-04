@@ -163,7 +163,7 @@ pub fn build(topology: &Topology) -> String {
     // } else {
     //     "TB"
     // };
-    let orientation = "TB";
+    let orientation = "LR";
     if !nodes.is_empty() && !edges.is_empty() {
         let s = format!(r#"digraph {{
 rankdir="{orientation}"

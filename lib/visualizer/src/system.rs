@@ -1,5 +1,15 @@
 use composer::sequence::Connector;
+use composer::Topology;
 use rand::Rng;
+use kit::*;
+
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+
+use std::collections::HashMap;
+
 
 fn names_of(connectors: &Vec<Connector>) -> Vec<String> {
     let mut xs: Vec<String> = vec![];
@@ -94,4 +104,72 @@ flowchart LR
 "#
     );
     mermaid_str
+}
+
+
+// tree
+
+#[derive(Serialize, Deserialize)]
+pub struct Node {
+    pub path: String,
+    pub name: String,
+
+}
+
+pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
+    let mut xs: Vec<Node> = vec![];
+    let mut pindex: u8 = 1;
+    for (name, topology) in topologies {
+        let node = Node {
+            path: format!("{}", pindex),
+            name: name.to_string()
+        };
+        xs.push(node);
+
+        if topology.events.len() > 0 {
+
+            xs.push(Node { path: format!("{}.1", pindex), name: s!("events")});
+            for (n, _) in &topology.events {
+                let mut index: u8 = 1;
+                let node = Node {
+                    path: format!("{}.1.{}", pindex, index),
+                    name: n.to_string()
+                };
+                xs.push(node);
+                index += 1;
+            }
+        }
+
+        if topology.routes.len() > 0 {
+
+            xs.push(Node { path: format!("{}.2", pindex), name: s!("routes")});
+            for (n, r) in &topology.routes {
+                let mut index: u8 = 1;
+                let node = Node {
+                    path: format!("{}.2.{}", pindex, index),
+                    name: format!("{} {}", r.method, r.path)
+                };
+                xs.push(node);
+                index += 1;
+            }
+        }
+
+        if topology.functions.len() > 0 {
+
+            xs.push(Node { path: format!("{}.3", pindex), name: s!("functions")});
+            for (n, f) in &topology.functions {
+                let mut index: u8 = 1;
+                let node = Node {
+                    path: format!("{}.3.{}", pindex, index),
+                    name: n.to_string()
+                };
+                xs.push(node);
+                index += 1;
+            }
+        }
+
+
+        pindex += 1;
+    }
+    xs
 }

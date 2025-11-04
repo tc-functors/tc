@@ -4,7 +4,9 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
-daggy = { version = "0.8.1", features = ["serde-1"] }
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
 layout-rs = "0.1.2"
 open = "5.0.0"
 maud = "*"
