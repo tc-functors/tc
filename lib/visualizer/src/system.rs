@@ -112,7 +112,9 @@ flowchart LR
 #[derive(Serialize, Deserialize)]
 pub struct Node {
     pub path: String,
+    pub group: String,
     pub name: String,
+    pub detail: String
 
 }
 
@@ -122,18 +124,23 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
     for (name, topology) in topologies {
         let node = Node {
             path: format!("{}", pindex),
-            name: name.to_string()
+            group: s!("node"),
+            name: name.to_string(),
+            detail: serde_json::to_string_pretty(&topology).unwrap()
         };
         xs.push(node);
 
         if topology.events.len() > 0 {
 
-            xs.push(Node { path: format!("{}.1", pindex), name: s!("events")});
-            for (n, _) in &topology.events {
+            xs.push(Node { path: format!("{}.1", pindex), group: s!("events"),
+                           name: s!("events"), detail: s!("{}")});
+            for (n, e) in &topology.events {
                 let mut index: u8 = 1;
                 let node = Node {
                     path: format!("{}.1.{}", pindex, index),
-                    name: n.to_string()
+                    group: s!("events"),
+                    name: n.to_string(),
+                    detail: serde_json::to_string_pretty(&e).unwrap()
                 };
                 xs.push(node);
                 index += 1;
@@ -142,12 +149,14 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
 
         if topology.routes.len() > 0 {
 
-            xs.push(Node { path: format!("{}.2", pindex), name: s!("routes")});
+            xs.push(Node { path: format!("{}.2", pindex), group: s!("routes"), name: s!("routes"), detail: s!("")});
             for (n, r) in &topology.routes {
                 let mut index: u8 = 1;
                 let node = Node {
                     path: format!("{}.2.{}", pindex, index),
-                    name: format!("{} {}", r.method, r.path)
+                    group: s!("routes"),
+                    name: format!("{} {}", r.method, r.path),
+                    detail: serde_json::to_string_pretty(&r).unwrap()
                 };
                 xs.push(node);
                 index += 1;
@@ -156,12 +165,14 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
 
         if topology.functions.len() > 0 {
 
-            xs.push(Node { path: format!("{}.3", pindex), name: s!("functions")});
+            xs.push(Node { path: format!("{}.3", pindex), group: s!("functions"), name: s!("functions"), detail: s!("")});
             for (n, f) in &topology.functions {
                 let mut index: u8 = 1;
                 let node = Node {
                     path: format!("{}.3.{}", pindex, index),
-                    name: n.to_string()
+                    group: s!("functions"),
+                    name: n.to_string(),
+                    detail: serde_json::to_string_pretty(&f).unwrap()
                 };
                 xs.push(node);
                 index += 1;
