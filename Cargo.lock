@@ -1803,6 +1803,7 @@ dependencies = [
  "compiler",
  "configurator",
  "derivative",
+ "itertools 0.10.5",
  "kit",
  "lazy_static 1.5.0",
  "nom 7.1.3",

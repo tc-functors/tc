@@ -24,6 +24,7 @@ bincode = "1.2.1"
 base64 = "0.21.0"
 anyhow = "1.0.71"
 serde_with = "3.14.0"
+itertools = "0.10.5"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
 compiler = { path = "../compiler" }
