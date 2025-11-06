@@ -11,6 +11,7 @@ layout-rs = "0.1.2"
 open = "5.0.0"
 maud = "*"
 rand = "0.9.2"
+base64 = "0.21.0"
 kit = { path = "../kit" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }

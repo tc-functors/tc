@@ -5968,6 +5968,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 name = "visualizer"
 version = "0.9.41"
 dependencies = [
+ "base64 0.21.7",
  "compiler",
  "composer",
  "kit",

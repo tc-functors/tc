@@ -4,6 +4,7 @@ use serde_derive::{
 };
 
 use itertools::Itertools;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Connector {
@@ -14,9 +15,13 @@ pub struct Connector {
     pub target: String
 }
 
-pub fn make_seq(cspecs: &Vec<String>) -> Vec<Connector> {
-       let mut cs: Vec<Connector> = vec![];
-        for x in cspecs {
+pub fn make_seq(cspecs: &HashMap<String, Vec<String>>) -> HashMap<String, Vec<Connector>> {
+    let mut h: HashMap<String, Vec<Connector>> = HashMap::new();
+
+    for (group, xs) in cspecs {
+
+        let mut cs: Vec<Connector> = vec![];
+        for x in xs {
             let s = x.replace(" ", "");
             let parts: Vec<&str> = s.split("->").collect();
             let source_raw = parts.clone().into_iter().nth(0).unwrap_or_default();
@@ -33,13 +38,15 @@ pub fn make_seq(cspecs: &Vec<String>) -> Vec<Connector> {
             };
             cs.push(c);
         }
-        cs
+        h.insert(group.to_string(), cs);
+    }
+    h
 }
 
-pub fn make_all(maybe_seq: &Option<Vec<String>>) -> Vec<Connector> {
+pub fn make_all(maybe_seq: &Option<HashMap<String, Vec<String>>>) -> HashMap<String, Vec<Connector>> {
     if let Some(cspecs) = maybe_seq {
         make_seq(&cspecs)
     } else {
-        vec![]
+        HashMap::new()
     }
 }

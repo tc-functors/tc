@@ -8,6 +8,16 @@ use composer::sequence::Connector;
 use kit as u;
 use std::collections::HashMap;
 
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+
+use base64::{
+    Engine as _,
+    engine::general_purpose,
+};
+
 pub fn visualize_node(topology: &Topology, theme: &str) {
     println!("Generating SVG...");
     let html = node::generate(topology, theme);
@@ -18,7 +28,7 @@ pub fn visualize_node(topology: &Topology, theme: &str) {
     open::that(path).unwrap();
 }
 
-pub fn visualize_root(topologies: HashMap<String, Topology>, theme: &str) {
+pub fn visualize_root(_topologies: HashMap<String, Topology>, _theme: &str) {
     // let html = evented::generate(&topologies, theme);
     // let dir = u::pwd();
     // let path = format!("{}/root.html", &dir);
@@ -58,27 +68,53 @@ pub fn gen_topology(topology: &Topology) -> (String, String) {
     (mermaid_dia, dot_dia)
 }
 
-pub fn gen_system(cspec: Vec<String>) -> (String, String, Vec<String>) {
-    let mut st = cspec;
-    st.retain(|s| !s.is_empty());
-    let sequence = sequence::make_seq(&st);
-    let seq_dia = system::gen_sequence(&sequence);
-    let flow_dia = system::gen_flow(&sequence);
-    (seq_dia, flow_dia, st)
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct System {
+    pub sequence: String,
+    pub flow: String,
+    pub definition: Vec<String>,
 }
 
-pub fn gen_system_from_connectors(connectors: &Vec<Connector>) -> (String, String, Vec<String>) {
-    let seq_dia = system::gen_sequence(connectors);
-    let flow_dia = system::gen_flow(connectors);
-    let mut xs: Vec<String> = vec![];
-    for c in connectors {
-        let p = format!(r#"{} -> {} -> {}"#, &c.source, &c.message, &c.target);
-        xs.push(p);
+pub fn gen_system(cspecs: HashMap<String, Vec<String>>) -> HashMap<String, System> {
+    let sequence = sequence::make_seq(&cspecs);
+    let mut h: HashMap<String, System> = HashMap::new();
+    for (name, connectors) in sequence {
+        let st = cspecs.get(&name).unwrap();
+        //st.retain(|s| !s.is_empty());
+        let seq_dia = system::gen_sequence(&connectors);
+        let flow_dia = system::gen_flow(&connectors);
+        let system = System {
+            sequence: general_purpose::STANDARD.encode(&seq_dia),
+            flow: general_purpose::STANDARD.encode(&flow_dia),
+            definition: st.to_vec()
+        };
+        h.insert(name, system);
     }
-    (seq_dia, flow_dia, xs)
+    h
+}
+
+pub fn gen_system_from_connectors(cxs_map: &HashMap<String, Vec<Connector>>) -> HashMap<String, System> {
+    let mut h: HashMap<String, System> = HashMap::new();
+    for (name, connectors) in cxs_map {
+        let seq_dia = system::gen_sequence(connectors);
+        let flow_dia = system::gen_flow(connectors);
+        let mut xs: Vec<String> = vec![];
+        for c in connectors {
+            let p = format!(r#"{} -> {} -> {}"#, &c.source, &c.message, &c.target);
+            xs.push(p);
+        }
+        let system = System {
+            sequence: general_purpose::STANDARD.encode(&seq_dia),
+            flow: general_purpose::STANDARD.encode(&flow_dia),
+            definition: xs
+        };
+        h.insert(name.to_string(), system);
+    }
+    h
 }
 
 pub fn gen_system_tree(topologies: &HashMap<String, Topology>) -> String {
     let tree = system::build_tree(topologies);
-    serde_json::to_string(&tree).unwrap()
+    let data = serde_json::to_string(&tree).unwrap();
+    data.replace(&u::pwd(), "{{root}}")
 }

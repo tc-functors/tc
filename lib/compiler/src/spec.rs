@@ -142,7 +142,7 @@ pub struct TopologySpec {
     pub tests: Option<HashMap<String, TestSpec>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
-    pub sequence: Option<Vec<String>>
+    pub sequences: Option<HashMap<String, Vec<String>>>
 }
 
 impl TopologySpec {
@@ -195,7 +195,7 @@ impl TopologySpec {
                 triggers: None,
                 pages: None,
                 tests: None,
-                sequence: None
+                sequences: Some(HashMap::new())
             }
         }
     }

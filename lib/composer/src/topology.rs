@@ -82,7 +82,7 @@ pub struct Topology {
     pub roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
-    pub sequence: Vec<Connector>
+    pub sequences: HashMap<String, Vec<Connector>>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -650,7 +650,7 @@ fn make(
         flow: flow,
         config: Config::new(),
         transducer: maybe_transducer,
-        sequence: sequence::make_all(&spec.sequence)
+        sequences: sequence::make_all(&spec.sequences)
     }
 }
 
@@ -700,7 +700,7 @@ fn make_standalone(dir: &str) -> Topology {
         tests: HashMap::new(),
         config: Config::new(),
         transducer: None,
-        sequence: vec![],
+        sequences: HashMap::new(),
     }
 }
 

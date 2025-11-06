@@ -134,8 +134,8 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
 
             xs.push(Node { path: format!("{}.1", pindex), group: s!("events"),
                            name: s!("events"), detail: s!("{}")});
+            let mut index: u8 = 1;
             for (n, e) in &topology.events {
-                let mut index: u8 = 1;
                 let node = Node {
                     path: format!("{}.1.{}", pindex, index),
                     group: s!("events"),
@@ -148,10 +148,9 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
         }
 
         if topology.routes.len() > 0 {
-
+            let mut index: u8 = 1;
             xs.push(Node { path: format!("{}.2", pindex), group: s!("routes"), name: s!("routes"), detail: s!("")});
-            for (n, r) in &topology.routes {
-                let mut index: u8 = 1;
+            for (_n, r) in &topology.routes {
                 let node = Node {
                     path: format!("{}.2.{}", pindex, index),
                     group: s!("routes"),
@@ -164,10 +163,9 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
         }
 
         if topology.functions.len() > 0 {
-
+            let mut index: u8 = 1;
             xs.push(Node { path: format!("{}.3", pindex), group: s!("functions"), name: s!("functions"), detail: s!("")});
             for (n, f) in &topology.functions {
-                let mut index: u8 = 1;
                 let node = Node {
                     path: format!("{}.3.{}", pindex, index),
                     group: s!("functions"),
