@@ -44,6 +44,42 @@ pub fn gen_sequence(connectors: &Vec<Connector>) -> String {
 }
 
 
+pub fn gen_sequence_detailed(connectors: &Vec<Connector>) -> String {
+    let mut s: String = String::from("");
+    let names = names_of(connectors);
+    let p = format!(r#"sequenceDiagram
+"#);
+    s.push_str(&p);
+
+    for name in &names {
+        let p = format!(r#"participant {name}
+"#);
+        s.push_str(&p);
+    }
+
+    for c in connectors {
+        let p = format!(r#"{}->>{}: {}
+"#, c.source, c.target, c.message);
+        if !c.source_entity.is_empty() {
+            let note = format!(r#"Note left of {}: {}
+"#, c.source, c.source_entity);
+            s.push_str(&note);
+
+        }
+        if !c.target_entity.is_empty() {
+            let note = format!(r#"Note right of {}: {}
+"#, c.target, c.target_entity);
+            s.push_str(&note);
+        }
+
+        s.push_str(&p);
+    }
+
+    s
+}
+
+
+
 pub fn gen_flow(connectors: &Vec<Connector>) -> String {
     let mut s: String = String::from("");
 

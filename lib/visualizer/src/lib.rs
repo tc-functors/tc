@@ -71,6 +71,7 @@ pub fn gen_topology(topology: &Topology) -> (String, String) {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct System {
     pub sequence: String,
+    pub sequence_detailed: String,
     pub flow: String,
     pub definition: Vec<String>,
 }
@@ -82,9 +83,11 @@ pub fn gen_system(cspecs: HashMap<String, Vec<String>>) -> HashMap<String, Syste
         let st = cspecs.get(&name).unwrap();
         //st.retain(|s| !s.is_empty());
         let seq_dia = system::gen_sequence(&connectors);
+        let seq_detail = system::gen_sequence_detailed(&connectors);
         let flow_dia = system::gen_flow(&connectors);
         let system = System {
             sequence: general_purpose::STANDARD.encode(&seq_dia),
+            sequence_detailed: general_purpose::STANDARD.encode(&seq_detail),
             flow: general_purpose::STANDARD.encode(&flow_dia),
             definition: st.to_vec()
         };
@@ -97,6 +100,7 @@ pub fn gen_system_from_connectors(cxs_map: &HashMap<String, Vec<Connector>>) -> 
     let mut h: HashMap<String, System> = HashMap::new();
     for (name, connectors) in cxs_map {
         let seq_dia = system::gen_sequence(connectors);
+        let seq_detail = system::gen_sequence_detailed(connectors);
         let flow_dia = system::gen_flow(connectors);
         let mut xs: Vec<String> = vec![];
         for c in connectors {
@@ -105,6 +109,7 @@ pub fn gen_system_from_connectors(cxs_map: &HashMap<String, Vec<Connector>>) -> 
         }
         let system = System {
             sequence: general_purpose::STANDARD.encode(&seq_dia),
+            sequence_detailed: general_purpose::STANDARD.encode(&seq_detail),
             flow: general_purpose::STANDARD.encode(&flow_dia),
             definition: xs
         };
