@@ -1,5 +1,6 @@
+use compiler::TopologySpec;
 use composer::sequence::Connector;
-use composer::Topology;
+use composer::{Topology, Event, Route, Function};
 use rand::Rng;
 use kit::*;
 
@@ -11,12 +12,13 @@ use serde_derive::{
 use std::collections::HashMap;
 
 
-fn names_of(connectors: &Vec<Connector>) -> Vec<String> {
+pub fn names_of(connectors: &Vec<Connector>) -> Vec<String> {
     let mut xs: Vec<String> = vec![];
     for c in connectors {
         xs.push(c.source.clone());
         xs.push(c.target.clone());
     }
+    xs.sort();
     xs.dedup();
     xs
 }
@@ -44,61 +46,10 @@ pub fn gen_sequence(connectors: &Vec<Connector>) -> String {
 }
 
 
-pub fn gen_sequence_detailed(connectors: &Vec<Connector>) -> String {
-    let mut s: String = String::from("");
-    let names = names_of(connectors);
-    let p = format!(r#"sequenceDiagram
-"#);
-    s.push_str(&p);
-
-    for name in &names {
-        let p = format!(r#"participant {name}
-"#);
-        s.push_str(&p);
-    }
-
-    for c in connectors {
-        let p = format!(r#"{}->>{}: {}
-"#, c.source, c.target, c.message);
-        if !c.source_entity.is_empty() {
-            let note = format!(r#"Note left of {}: {}
-"#, c.source, c.source_entity);
-            s.push_str(&note);
-
-        }
-        if !c.target_entity.is_empty() {
-            let note = format!(r#"Note right of {}: {}
-"#, c.target, c.target_entity);
-            s.push_str(&note);
-        }
-
-        s.push_str(&p);
-    }
-
-    s
-}
-
-
-
 pub fn gen_flow(connectors: &Vec<Connector>) -> String {
     let mut s: String = String::from("");
 
     let names = names_of(connectors);
-
-    for name in &names {
-        let begin = format!(
-            r#"
-subgraph {name}
-"#
-        );
-        s.push_str(&begin);
-        let end = format!(
-            r#"
-end
-"#
-        );
-        s.push_str(&end);
-    }
 
     for c in connectors {
         let f = format!(
@@ -109,6 +60,13 @@ end
         s.push_str(&f);
     }
 
+
+    for name in &names {
+        let clicky = format!(
+            r#"click {name} callback
+"#);
+        s.push_str(&clicky);
+    }
 
     let mut style = format!(
             r#"
@@ -145,7 +103,7 @@ flowchart LR
 
 // tree
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Node {
     pub path: String,
     pub group: String,
@@ -213,6 +171,83 @@ pub fn build_tree(topologies: &HashMap<String, Topology>) -> Vec<Node> {
             }
         }
 
+
+        pindex += 1;
+    }
+    xs
+}
+
+pub fn build_shallow_tree(tspecs: &HashMap<String, TopologySpec>) -> Vec<Node> {
+    let mut xs: Vec<Node> = vec![];
+    let mut pindex: u8 = 1;
+    let events: HashMap<String, Event> = HashMap::new();
+    let routes: HashMap<String, Route> = HashMap::new();
+    let functions: HashMap<String, Function> = HashMap::new();
+
+    for (name, ts) in tspecs {
+        let node = Node {
+            path: format!("{}", pindex),
+            group: s!(name),
+            name: name.to_string(),
+            detail: String::from("")
+        };
+        xs.push(node);
+
+        xs.push(
+            Node {
+                path: format!("{}.1", pindex),
+                group: s!(name),
+                name: s!("topology.yml"),
+                detail: s!("{}")
+            });
+
+        let functions = match &ts.functions {
+            Some(f) => f,
+            None => &HashMap::new()
+        };
+
+
+        println!("----- {:?}", &functions);
+
+        for (fname, fspec) in functions {
+            let mut findex: u8 = 2;
+
+            xs.push(
+                Node {
+                    path: format!("{}.{}", pindex, findex),
+                    group: s!(name),
+                    name: s!(fname),
+                    detail: s!("{}")
+                });
+
+            xs.push(
+                Node {
+                    path: format!("{}.{}.1", pindex, findex),
+                    group: s!(fname),
+                    name: s!("handler.py"),
+                    detail: format!(r#"
+def handler(input, context):
+  return {{'status': 'ok'}}
+"#)});
+
+            xs.push(
+                Node {
+                    path: format!("{}.{}.2", pindex, findex),
+                    group: s!(fname),
+                    name: s!("function.yml"),
+                    detail: format!(r#"
+name: {fname}
+runtime:
+  lang: python3.11
+  package_type: zip
+  handler: handler.handler
+build:
+  kind: Code
+  build: zip -9 -q lambda.zip *.py
+"#)
+                });
+            findex += 1;
+        }
 
         pindex += 1;
     }

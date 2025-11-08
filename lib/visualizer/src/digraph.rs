@@ -6,16 +6,16 @@ use kit::*;
 
 fn attr_of(entity: &Entity) -> String {
     match entity {
-        Entity::Function => s!("shape=box, fillcolor=\"#e0e7ff\", style=filled"),
-        Entity::Event => s!("shape=ellipse, fillcolor=\"#ecfccb\", style=filled"),
-        Entity::Route => s!("shape=box, fillcolor=\"#bbf7d0\" style=filled"),
-        Entity::Channel => s!("shape=box, fillcolor=\"#e4e4e7\", style=filled"),
-        Entity::Mutation => s!("shape=box, fillcolor=\"#fed7aa\", style=filled"),
-        Entity::Queue => s!("shape=box, fillcolor=powderblue, style=filled"),
-        Entity::State => s!("shape=box, fillcolor=\"#ffe4e6\", style=filled"),
-        Entity::Page => s!("shape=box, fillcolor=mintcream, style=filled"),
-        Entity::Trigger => s!("shape=box, fillcolor=mintcream, style=filled"),
-        Entity::Schedule => s!("shape=box, fillcolor=mintcream, style=filled"),
+        Entity::Function => s!("shape=box"),
+        Entity::Event => s!("shape=box"),
+        Entity::Route => s!("shape=box"),
+        Entity::Channel => s!("shape=box"),
+        Entity::Mutation => s!("shape=box"),
+        Entity::Queue => s!("shape=box"),
+        Entity::State => s!("shape=box"),
+        Entity::Page => s!("shape=box"),
+        Entity::Trigger => s!("shape=box"),
+        Entity::Schedule => s!("shape=box"),
     }
 }
 
@@ -163,7 +163,7 @@ pub fn build(topology: &Topology) -> String {
     // } else {
     //     "TB"
     // };
-    let orientation = "LR";
+    let orientation = "TB";
     if !nodes.is_empty() && !edges.is_empty() {
         let s = format!(r#"digraph {{
 rankdir="{orientation}"

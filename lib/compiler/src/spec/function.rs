@@ -442,13 +442,34 @@ fn load_fspec_file(version: &str, dir: &str) -> Option<FunctionSpec> {
             Err(e) => panic!("{:?}", e),
         }
     } else {
-        None
+        Some(FunctionSpec {
+                name: u::basedir(dir).to_string(),
+                dir: Some(dir.to_string()),
+                description: None,
+                namespace: None,
+                fqn: None,
+                layer_name: None,
+                version: None,
+                revision: None,
+                runtime: None,
+                build: None,
+                infra: None,
+                infra_dir: None,
+                assets: None,
+                test: None,
+                tasks: HashMap::new(),
+                targets: None,
+            })
     }
 }
 
 impl FunctionSpec {
     pub fn new(dir: &str) -> FunctionSpec {
-        let version = find_revision(dir);
+        let version = if u::file_exists(dir) {
+            find_revision(dir)
+        } else {
+            String::from("")
+        };
         let maybe_spec = load_fspec_file(&version, dir);
 
         match maybe_spec {
