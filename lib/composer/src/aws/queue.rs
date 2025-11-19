@@ -17,6 +17,7 @@ pub struct Target {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Queue {
     pub name: String,
+    pub should_create: bool,
     pub arn: String,
     pub targets: Vec<Target>,
 }
@@ -32,10 +33,20 @@ impl Queue {
             targets.push(t);
         }
 
-        Queue {
-            name: String::from(name),
-            arn: template::sqs_arn(&name),
-            targets: targets,
+
+        match &qspec.name {
+            Some(n) => Queue {
+                name: String::from(n),
+                should_create: false,
+                arn: template::sqs_arn(&n),
+                targets: targets,
+            },
+            None => Queue {
+                name: String::from(name),
+                should_create: true,
+                arn: template::sqs_arn(&name),
+                targets: targets,
+            }
         }
     }
 }
