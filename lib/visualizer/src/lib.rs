@@ -1,126 +1,131 @@
-mod node;
 mod digraph;
-mod system;
 
-use system::Node;
-use compiler::TopologySpec;
 use composer::Topology;
-use composer::sequence;
-use composer::sequence::Connector;
 use kit as u;
-use std::collections::HashMap;
 
-use serde_derive::{
-    Deserialize,
-    Serialize,
+use gv::{
+    GraphBuilder,
+    parser::DotParser,
+};
+use layout::{
+    backends::svg::SVGWriter,
+    gv,
 };
 
-use base64::{
-    Engine as _,
-    engine::general_purpose,
-};
+pub fn render(name: &str, definition: &str, diagram_content: &str) -> String {
+    format!(
+        r#"
 
-pub fn visualize_node(topology: &Topology, theme: &str) {
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8">
+    <title>tc-{name}</title>
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/yaml.min.js"></script>
+<script defer src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
+<script src="https://unpkg.com/@alenaksu/json-viewer@2.1.0/dist/json-viewer.bundle.js"></script>
+
+<style>
+
+json-viewer {{
+    /* Background, font and indentation */
+    --background-color: #ffffff;
+    --color: #000000;
+     --font-family: Nimbus Mono PS, Courier New, monospace;
+    --font-size: 0.9rem;
+    --line-height: 1.2rem;
+    --indent-size: 0.9em;
+    --indentguide-size: 0px;
+    --string-color: green;
+    --property-color: blue;
+}}
+
+
+      div.content {{ clear: both;  height: 90vh; }}
+      .spaced {{
+	margin-left: 1rem;
+	margin-right: 1rem;
+      }}
+      .x10p {{ flex: 0 0 10% }}
+      .xg {{ flex: 1 0 auto }}
+      @media (min-width: 992px) {{ .x {{ display: flex; }} .x > * + * {{margin-left: 0rem}}}}
+</style>
+</head>
+<body>
+
+<div class="spaced">
+<div class="x">
+<div class="x15p">
+	  <script>hljs.highlightAll();</script>
+	  <pre><code class="language-yaml">
+{definition}
+	  </code></pre>
+
+</div>
+
+
+<div class="xg">
+<div class="diagram-container spaced" id="diagram-container">
+  <div class="spaced">{diagram_content}</div>
+</div>
+</div>
+</div>
+</div>
+
+  </body>
+</html>
+
+"#
+    )
+}
+
+pub fn generate_dot(topology: &Topology) -> String {
+    let dot_str = digraph::build(topology);
+    if dot_str.is_empty() {
+        String::from("")
+    } else {
+        let mut parser = DotParser::new(&dot_str);
+
+        let tree = parser.process();
+
+        match tree {
+            Result::Err(err) => {
+                parser.print_error();
+                println!("Error: {}", err);
+                String::from("")
+            }
+
+            Result::Ok(g) => {
+                gv::dump_ast(&g);
+
+                let mut gb = GraphBuilder::new();
+                gb.visit_graph(&g);
+                let mut vg = gb.get();
+                let mut svg = SVGWriter::new();
+                vg.do_it(false, false, false, &mut svg);
+                svg.finalize()
+            }
+        }
+    }
+}
+
+pub fn generate(topology: &Topology) -> String {
+    let definition = u::slurp(&format!("{}/topology.yml", &topology.dir));
+    let dot_str = generate_dot(topology);
+    render(&topology.namespace, &definition, &dot_str)
+}
+
+pub fn visualize(dir: &str) {
+    let topology = composer::compose(dir, false);
     println!("Generating SVG...");
-    let html = node::generate(topology, theme);
+    let html = generate(&topology);
     let dir = u::pwd();
     let path = format!("{}/flow.html", &dir);
     u::write_str(&path, &html);
     println!("Opening {}", &path);
     open::that(path).unwrap();
-}
-
-pub fn visualize_root(_topologies: HashMap<String, Topology>, _theme: &str) {
-    // let html = evented::generate(&topologies, theme);
-    // let dir = u::pwd();
-    // let path = format!("{}/root.html", &dir);
-    // u::write_str(&path, &html);
-    // println!("Opening {}", &path);
-    // open::that(path).unwrap();
-    println!("Not implemented")
-}
-
-pub fn visualize(dir: &str, recursive: bool, theme: &str, dirs: Vec<String>) {
-    let is_root = composer::is_root_dir(&dir);
-    if !dirs.is_empty() {
-        let tps = composer::compose_dirs(dirs);
-        visualize_root(tps, theme)
-    } else if is_root || recursive {
-        let tps = composer::compose_root(&dir, recursive);
-        visualize_root(tps, theme)
-    } else {
-        let topology = composer::compose(&dir, false);
-        visualize_node(&topology, theme);
-    }
-}
-
-pub fn gen_mermaid(topology: &Topology) -> String {
-    node::generate_diagram(topology, "light")
-}
-
-pub fn gen_dot(topology: &Topology) -> String {
-    node::generate_dot(topology)
-}
-
-// actual
-
-pub fn gen_topology(topology: &Topology) -> (String, String) {
-    let mermaid_dia = node::generate_diagram(topology, "light");
-    let dot_dia = node::generate_dot(topology);
-    (mermaid_dia, dot_dia)
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct System {
-    pub sequence: String,
-    pub flow: String,
-    pub namespaces: Vec<String>,
-    pub definition: Vec<String>,
-}
-
-pub fn gen_system(cspecs: HashMap<String, Vec<String>>) -> HashMap<String, System> {
-    let sequence = sequence::make_seq(&cspecs);
-    let mut h: HashMap<String, System> = HashMap::new();
-    for (name, connectors) in sequence {
-        let st = cspecs.get(&name).unwrap();
-        //st.retain(|s| !s.is_empty());
-        let seq_dia = system::gen_sequence(&connectors);
-        let flow_dia = system::gen_flow(&connectors);
-        let namespaces = system::names_of(&connectors);
-        let system = System {
-            sequence: general_purpose::STANDARD.encode(&seq_dia),
-            namespaces: system::names_of(&connectors),
-            flow: general_purpose::STANDARD.encode(&flow_dia),
-            definition: st.to_vec()
-        };
-        h.insert(name, system);
-    }
-    h
-}
-
-pub fn gen_system_from_connectors(cxs_map: &HashMap<String, Vec<Connector>>) -> HashMap<String, System> {
-    let mut h: HashMap<String, System> = HashMap::new();
-    for (name, connectors) in cxs_map {
-        let seq_dia = system::gen_sequence(connectors);
-        let flow_dia = system::gen_flow(connectors);
-        let mut xs: Vec<String> = vec![];
-        for c in connectors {
-            let p = format!(r#"{} -> {} -> {}"#, &c.source, &c.message, &c.target);
-            xs.push(p);
-        }
-        let namespaces = system::names_of(&connectors);
-        let system = System {
-            sequence: general_purpose::STANDARD.encode(&seq_dia),
-            namespaces: namespaces,
-            flow: general_purpose::STANDARD.encode(&flow_dia),
-            definition: xs
-        };
-        h.insert(name.to_string(), system);
-    }
-    h
-}
-
-pub fn gen_system_tree(tspecs: &HashMap<String, TopologySpec>) -> String {
-    let tree = system::build_shallow_tree(tspecs);
-    serde_json::to_string(&tree).unwrap()
 }

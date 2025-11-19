@@ -11,7 +11,7 @@ use serde::{Deserialize,Serialize};
 pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
     if llm {
         llm::scaffold(dir).await;
-        visualizer::visualize(&dir, false, "light", vec![]);
+        visualizer::visualize(&dir);
     } else if functions {
         let topology = composer::compose(dir, false);
         for (_, f) in topology.functions {
@@ -27,7 +27,6 @@ pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
 pub struct Response {
     pub desc: String,
     pub code: String,
-    pub mermaid: String,
     pub dot: String
 }
 
@@ -41,16 +40,12 @@ pub async fn gen_code_and_diagram(text: &str) -> Response {
     u::write_str(&topo_file, &code);
 
     let topology = composer::compose(dir, false);
-    let mermaid_str = visualizer::gen_mermaid(&topology);
-    let mermaid = general_purpose::STANDARD.encode(&mermaid_str);
-
-    let dot_str = visualizer::gen_dot(&topology);
+    let dot_str = visualizer::generate_dot(&topology);
     let dot = general_purpose::STANDARD.encode(&dot_str);
 
     Response {
         desc: desc,
         code: code,
-        mermaid: mermaid,
         dot: dot
     }
 }
