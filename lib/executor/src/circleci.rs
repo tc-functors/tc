@@ -115,7 +115,7 @@ pub async fn trigger_tag(
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
-              "tc-deploy-opts": "--notify --force",
+              "tc-deploy-opts": "--notify --force --recursive",
               "api_call": true
            }}}}"#
         )
@@ -129,7 +129,7 @@ pub async fn trigger_tag(
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
-              "tc-deploy-opts": "--notify --force",
+              "tc-deploy-opts": "--notify --recursive",
               "api_call": true
            }}}}"#
         )
