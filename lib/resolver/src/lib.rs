@@ -49,7 +49,7 @@ pub async fn resolve(
     sandbox: &str,
     topology: &Topology,
     cache: bool,
-    diff: bool,
+    force: bool,
 ) -> Topology {
     let maybe_topology = if cache {
         read_cached_topology(&auth.name, &topology.namespace, sandbox).await
@@ -60,12 +60,12 @@ pub async fn resolve(
     match maybe_topology {
         Some(t) => t,
         None => {
-            let mut root = topology::resolve(topology, topology, auth, sandbox, diff).await;
+            let mut root = topology::resolve(topology, topology, auth, sandbox, force).await;
             let nodes = &topology.nodes;
             let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
             // FIXME: recurse
             for (name, node) in nodes {
-                let node_t = topology::resolve(&root, &node, auth, sandbox, diff).await;
+                let node_t = topology::resolve(&root, &node, auth, sandbox, force).await;
                 resolved_nodes.insert(name.to_string(), node_t);
             }
             root.nodes = resolved_nodes;

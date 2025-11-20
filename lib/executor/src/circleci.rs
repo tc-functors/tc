@@ -100,10 +100,14 @@ pub async fn trigger_tag(
     sandbox: &str,
     prefix: &str,
     version: &str,
+    force: bool
 ) -> String {
     let ci = Circle::init(repo);
-    let payload = format!(
-        r#"
+
+    let payload = if force {
+
+        format!(
+            r#"
            {{
              "branch": "main",
              "parameters": {{
@@ -111,9 +115,25 @@ pub async fn trigger_tag(
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "--notify --force",
               "api_call": true
            }}}}"#
-    );
+        )
+    } else {
+        format!(
+            r#"
+           {{
+             "branch": "main",
+             "parameters": {{
+              "tc-deploy-service": "{prefix}",
+              "tc-deploy-version": "{version}",
+              "tc-deploy-sandbox": "{sandbox}",
+              "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "--notify --force",
+              "api_call": true
+           }}}}"#
+        )
+    };
     println!(
         "Triggering tag deploy {}:{}:{}/{}",
         env, sandbox, prefix, version

@@ -74,7 +74,7 @@ pub async fn deploy_interactive() {
     u::sh("git fetch --tags", &dir);
     let versions = composer::lookup_versions(&dir);
     let (namespace, version, env, sandbox) = prompt_versions(&versions);
-    let url = executor::deploy(&env, &namespace, &sandbox, &version).await;
+    let url = executor::deploy(&env, &namespace, &sandbox, &version, false).await;
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
@@ -155,6 +155,7 @@ pub async fn deploy_version(
     env: Option<String>,
     sandbox: Option<String>,
     version: &str,
+    force: bool
 ) {
     let dir = u::pwd();
     let env = match env {
@@ -169,7 +170,7 @@ pub async fn deploy_version(
     } else {
         version.to_string()
     };
-    let url = executor::deploy(&env, &name, &sandbox, &version).await;
+    let url = executor::deploy(&env, &name, &sandbox, &version, force).await;
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }

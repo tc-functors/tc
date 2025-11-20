@@ -301,16 +301,24 @@ async fn read_topology(path: Option<String>) -> Option<Topology> {
     }
 }
 
+pub struct CreateOpts {
+    pub notify: bool,
+    pub recursive: bool,
+    pub cache: bool,
+    pub sync: bool,
+    pub force: bool
+}
+
 pub async fn create(
     profile: Option<String>,
     sandbox: Option<String>,
-    notify: bool,
-    recursive: bool,
-    cache: bool,
     topology_path: Option<String>,
-    sync: bool,
+    opts: CreateOpts
+
 ) {
     let start = Instant::now();
+
+    let CreateOpts { notify, recursive, cache, sync, force, .. } = opts;
 
     let maybe_topology = read_topology(topology_path).await;
 
@@ -327,7 +335,7 @@ pub async fn create(
             println!("C: {}", msg);
 
             println!("Resolving topology {} ...", &ct.namespace);
-            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, true).await;
+            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, force).await;
             let msg = composer::count_of(&rt);
             println!("R: {}", msg);
             rt
