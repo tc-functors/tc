@@ -327,7 +327,7 @@ pub async fn create(
         None => {
             let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
-            deployer::guard::prevent_stable_updates(&sandbox);
+            deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
             let dir = u::pwd();
             println!("Composing topology {} ...", &composer::topology_name(&dir));
             let ct = composer::compose(&dir, recursive);
@@ -406,7 +406,7 @@ pub async fn update(
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
 
-    deployer::guard::prevent_stable_updates(&sandbox);
+    deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
 
     println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
@@ -431,7 +431,7 @@ pub async fn delete(
     cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    deployer::guard::prevent_stable_updates(&sandbox);
+    deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
 
     let start = Instant::now();
     println!("Composing topology...");
@@ -677,7 +677,7 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
             if dry_run {
                 deployer::list_all(auth, &sbox, "default").await;
             } else {
-                deployer::guard::prevent_stable_updates(&sbox);
+                deployer::guard::prevent_stable_updates(&auth.name, &sbox);
                 deployer::prune(auth, &sbox, filter).await;
             }
         }
