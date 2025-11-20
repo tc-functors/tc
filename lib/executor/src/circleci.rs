@@ -44,10 +44,16 @@ impl Circle {
     }
 
     fn url(&self) -> String {
-        //FIXME: parameterize repo
         format!(
             "https://circleci.com/api/v2/project/github/{}/{}/pipeline",
             self.org, self.repo
+        )
+    }
+
+    fn context_url(&self, context_id: &str, key: &str) -> String {
+        format!(
+            "https://circleci.com/api/v2/context/{}/environment-variable/{}",
+            context_id, key
         )
     }
 
@@ -258,4 +264,21 @@ pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str, snapshot: &s
     );
     println!("Triggering snapshot pipeline");
     ci.trigger_workflow(payload).await
+}
+
+pub async fn set_var(repo: &str, key: &str, value: &str) {
+    let ci = Circle::init(repo);
+    let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
+        Ok(c) => c,
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+    };
+    let url = ci.context_url(&context_id, key);
+    let payload = format!(
+        r#"
+           {{
+             "value": "{value}",
+           }}"#
+    );
+    let res = u::http_put(&url, ci.headers(), payload).await.unwrap();
+    println!("{:?}", &res);
 }

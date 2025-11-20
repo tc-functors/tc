@@ -56,3 +56,8 @@ pub async fn build(service: &str, function: &str, branch: &str) -> String {
     let repo = current_repo();
     circleci::trigger_build(&repo, service, function, branch).await
 }
+
+pub async fn set_var(key: &str, val: &str) {
+    let repo = current_repo();
+    circleci::set_var(&repo, key, val).await;
+}
