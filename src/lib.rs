@@ -260,8 +260,8 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     } = root;
     let tag = format!("{}-{}", namespace, version);
     let user = match std::env::var("CIRCLE_USERNAME") {
-        OK(x) => x,
-        Err(_) => "ci"
+        Ok(x) => x,
+        Err(_) => "ci".to_string()
     };
     let msg = format!(
         "Deployed `{}` to *{}*::{}_{} by {}",
