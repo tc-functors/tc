@@ -327,9 +327,14 @@ pub async fn create(
         None => {
             let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
-            deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
             let dir = u::pwd();
-            println!("Composing topology {} ...", &composer::topology_name(&dir));
+            let topology_name = &composer::topology_name(&dir);
+            if deployer::guard::is_frozen(&auth.name) && notify {
+                let msg = format!("*{}*::{} is frozen", &auth.name, sandbox);
+                notifier::notify(topology_name, &msg).await;
+            }
+            deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
+            println!("Composing topology {} ...", topology_name);
             let ct = composer::compose(&dir, recursive);
             let msg = composer::count_of(&ct);
             println!("C: {}", msg);

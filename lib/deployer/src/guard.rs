@@ -3,7 +3,7 @@ use question::{
     Question,
 };
 
-fn is_frozen(env: &str) -> bool {
+pub fn is_frozen(env: &str) -> bool {
     match std::env::var("TC_FREEZE") {
         Ok(e) => env == &e,
         Err(_) => false
@@ -22,6 +22,12 @@ pub fn should_abort(env: &str, sandbox: &str) -> bool {
 }
 
 pub fn prevent_stable_updates(env: &str, sandbox: &str) {
+    if is_frozen(env) {
+        std::panic::set_hook(Box::new(|_| {
+            println!("QA is frozen. Aborting sandbox update");
+        }));
+        panic!("QA is frozen. Aborting sandbox update")
+    }
     if should_abort(env, sandbox) {
         std::panic::set_hook(Box::new(|_| {
             println!("Cannot create stable sandbox outside CI");
