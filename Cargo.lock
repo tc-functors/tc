@@ -2350,6 +2350,9 @@ name = "executor"
 version = "0.9.43"
 dependencies = [
  "kit",
+ "serde 1.0.228",
+ "serde_derive",
+ "serde_json",
 ]
 
 [[package]]

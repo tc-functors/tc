@@ -61,3 +61,13 @@ pub async fn set_var(key: &str, val: &str) {
     let repo = current_repo();
     circleci::set_var(&repo, key, val).await;
 }
+
+pub async fn unset_var(key: &str) {
+    let repo = current_repo();
+    circleci::unset_var(&repo, key).await;
+}
+
+pub async fn list_vars() -> Vec<String> {
+    let repo = current_repo();
+    circleci::list_vars(&repo).await
+}

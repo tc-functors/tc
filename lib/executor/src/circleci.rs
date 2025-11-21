@@ -5,6 +5,7 @@ use std::{
     env,
     panic,
 };
+use serde::{Deserialize};
 
 #[derive(Clone, Debug)]
 pub struct Circle {
@@ -51,10 +52,17 @@ impl Circle {
     }
 
     fn context_url(&self, context_id: &str, key: &str) -> String {
+        if key == "" {
         format!(
-            "https://circleci.com/api/v2/context/{}/environment-variable/{}",
-            context_id, key
+            "https://circleci.com/api/v2/context/{}/environment-variable",
+            context_id
         )
+        } else {
+            format!(
+                "https://circleci.com/api/v2/context/{}/environment-variable/{}",
+                context_id, key
+            )
+        }
     }
 
     fn headers(&self) -> HashMap<String, String> {
@@ -276,9 +284,41 @@ pub async fn set_var(repo: &str, key: &str, value: &str) {
     let payload = format!(
         r#"
            {{
-             "value": "{value}",
+             "value": "{value}"
            }}"#
     );
     let res = u::http_put(&url, ci.headers(), payload).await.unwrap();
     println!("{:?}", &res);
+}
+
+pub async fn unset_var(repo: &str, key: &str) {
+    let ci = Circle::init(repo);
+    let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
+        Ok(c) => c,
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+    };
+    let url = ci.context_url(&context_id, key);
+    let res = u::http_delete(&url, ci.headers()).await.unwrap();
+    println!("{:?}", &res);
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct Item {
+    variable: String
+}
+
+pub async fn list_vars(repo: &str) -> Vec<String> {
+    let ci = Circle::init(repo);
+    let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
+        Ok(c) => c,
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+    };
+    let url = ci.context_url(&context_id, "");
+    let res = u::http_get(&url, ci.headers()).await;
+    let items: Vec<Item> = serde_json::from_value(res["items"].clone()).unwrap();
+    let mut xs: Vec<String> = vec![];
+    for item in items {
+        xs.push(item.variable);
+    }
+    xs
 }
