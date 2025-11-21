@@ -259,9 +259,13 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
         ..
     } = root;
     let tag = format!("{}-{}", namespace, version);
+    let user = match std::env::var("CIRCLE_USERNAME") {
+        OK(x) => x,
+        Err(_) => "ci"
+    };
     let msg = format!(
-        "Deployed `{}` to *{}*::{}_{}",
-        tag, &auth.name, namespace, &sandbox
+        "Deployed `{}` to *{}*::{}_{} by {}",
+        tag, &auth.name, namespace, &sandbox, &user
     );
     notifier::notify(&namespace, &msg).await;
 }
