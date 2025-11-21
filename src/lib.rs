@@ -330,7 +330,7 @@ pub async fn create(
             let dir = u::pwd();
             let topology_name = &composer::topology_name(&dir);
             if deployer::guard::is_frozen(&auth.name) && notify {
-                let msg = format!("*{}*::{} is frozen", &auth.name, sandbox);
+                let msg = format!("*{}*::{} is frozen. Aborting deploy: {}", &auth.name, sandbox, topology_name);
                 notifier::notify(topology_name, &msg).await;
             }
             deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
