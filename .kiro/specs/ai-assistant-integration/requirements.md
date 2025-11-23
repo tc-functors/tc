@@ -137,3 +137,27 @@ This specification defines the requirements for making Topology Composer (TC) ac
 3. THE Example Repository SHALL use standard markdown and YAML formats accessible to all AI tools
 4. THE Steering Files SHALL have equivalent documentation available as standalone markdown for non-Kiro tools
 5. THE AI Integration System SHALL provide a single source of truth that all AI tools can reference
+
+### Requirement 11
+
+**User Story:** As a TC contributor or maintainer, I want to easily add new usage pattern examples to the AI-accessible knowledge base, so that AI assistants can learn from new patterns without requiring complex integration work.
+
+#### Acceptance Criteria
+
+1. WHEN a contributor adds a new example to the examples directory, THE AI Integration System SHALL automatically make it discoverable to AI assistants
+2. THE Example Structure SHALL follow a consistent template that requires minimal documentation overhead
+3. THE AI Integration System SHALL support inline annotations in topology.yml files that AI assistants can parse
+4. WHEN a new pattern is added, THE AI Integration System SHALL require only standard markdown and YAML files without custom tooling
+5. THE Documentation System SHALL provide a contributor guide for adding AI-friendly examples with clear formatting conventions
+
+### Requirement 12
+
+**User Story:** As an AI assistant, I want to stay synchronized with TC codebase changes, so that I can provide accurate guidance based on the latest TC capabilities, examples, and documentation.
+
+#### Acceptance Criteria
+
+1. WHEN TC code changes introduce new features, THE AI Integration System SHALL detect and surface these changes through updated documentation
+2. WHEN examples are modified or added, THE AI Integration System SHALL make updated examples available to AI assistants without manual intervention
+3. WHEN documentation is updated, THE AI Integration System SHALL reflect changes in steering files and MCP resources automatically
+4. THE MCP Server SHALL provide tools to query recent changes in TC examples and documentation
+5. THE AI Integration System SHALL include references to source code locations so AI assistants can examine implementation details when needed
