@@ -5,6 +5,7 @@ use std::{
     env,
     panic,
 };
+use serde::{Deserialize};
 
 #[derive(Clone, Debug)]
 pub struct Circle {
@@ -44,11 +45,24 @@ impl Circle {
     }
 
     fn url(&self) -> String {
-        //FIXME: parameterize repo
         format!(
             "https://circleci.com/api/v2/project/github/{}/{}/pipeline",
             self.org, self.repo
         )
+    }
+
+    fn context_url(&self, context_id: &str, key: &str) -> String {
+        if key == "" {
+        format!(
+            "https://circleci.com/api/v2/context/{}/environment-variable",
+            context_id
+        )
+        } else {
+            format!(
+                "https://circleci.com/api/v2/context/{}/environment-variable/{}",
+                context_id, key
+            )
+        }
     }
 
     fn headers(&self) -> HashMap<String, String> {
@@ -100,10 +114,14 @@ pub async fn trigger_tag(
     sandbox: &str,
     prefix: &str,
     version: &str,
+    force: bool
 ) -> String {
     let ci = Circle::init(repo);
-    let payload = format!(
-        r#"
+
+    let payload = if force {
+
+        format!(
+            r#"
            {{
              "branch": "main",
              "parameters": {{
@@ -111,9 +129,25 @@ pub async fn trigger_tag(
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "--notify --force --recursive",
               "api_call": true
            }}}}"#
-    );
+        )
+    } else {
+        format!(
+            r#"
+           {{
+             "branch": "main",
+             "parameters": {{
+              "tc-deploy-service": "{prefix}",
+              "tc-deploy-version": "{version}",
+              "tc-deploy-sandbox": "{sandbox}",
+              "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "--notify --recursive",
+              "api_call": true
+           }}}}"#
+        )
+    };
     println!(
         "Triggering tag deploy {}:{}:{}/{}",
         env, sandbox, prefix, version
@@ -238,4 +272,53 @@ pub async fn trigger_pipeline(repo: &str, env: &str, sandbox: &str, snapshot: &s
     );
     println!("Triggering snapshot pipeline");
     ci.trigger_workflow(payload).await
+}
+
+pub async fn set_var(repo: &str, key: &str, value: &str) {
+    let ci = Circle::init(repo);
+    let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
+        Ok(c) => c,
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+    };
+    let url = ci.context_url(&context_id, key);
+    let payload = format!(
+        r#"
+           {{
+             "value": "{value}"
+           }}"#
+    );
+    let res = u::http_put(&url, ci.headers(), payload).await.unwrap();
+    println!("{:?}", &res);
+}
+
+pub async fn unset_var(repo: &str, key: &str) {
+    let ci = Circle::init(repo);
+    let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
+        Ok(c) => c,
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+    };
+    let url = ci.context_url(&context_id, key);
+    let res = u::http_delete(&url, ci.headers()).await.unwrap();
+    println!("{:?}", &res);
+}
+
+#[derive(Clone, Debug, Deserialize)]
+struct Item {
+    variable: String
+}
+
+pub async fn list_vars(repo: &str) -> Vec<String> {
+    let ci = Circle::init(repo);
+    let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
+        Ok(c) => c,
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+    };
+    let url = ci.context_url(&context_id, "");
+    let res = u::http_get(&url, ci.headers()).await;
+    let items: Vec<Item> = serde_json::from_value(res["items"].clone()).unwrap();
+    let mut xs: Vec<String> = vec![];
+    for item in items {
+        xs.push(item.variable);
+    }
+    xs
 }

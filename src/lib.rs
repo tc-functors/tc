@@ -259,9 +259,13 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
         ..
     } = root;
     let tag = format!("{}-{}", namespace, version);
+    let user = match std::env::var("CIRCLE_USERNAME") {
+        Ok(x) => x,
+        Err(_) => "ci".to_string()
+    };
     let msg = format!(
-        "Deployed `{}` to *{}*::{}_{}",
-        tag, &auth.name, namespace, &sandbox
+        "Deployed `{}` to *{}*::{}_{} by {}",
+        tag, &auth.name, namespace, &sandbox, &user
     );
     notifier::notify(&namespace, &msg).await;
 }
@@ -301,16 +305,24 @@ async fn read_topology(path: Option<String>) -> Option<Topology> {
     }
 }
 
+pub struct CreateOpts {
+    pub notify: bool,
+    pub recursive: bool,
+    pub cache: bool,
+    pub sync: bool,
+    pub force: bool
+}
+
 pub async fn create(
     profile: Option<String>,
     sandbox: Option<String>,
-    notify: bool,
-    recursive: bool,
-    cache: bool,
     topology_path: Option<String>,
-    sync: bool,
+    opts: CreateOpts
+
 ) {
     let start = Instant::now();
+
+    let CreateOpts { notify, recursive, cache, sync, force, .. } = opts;
 
     let maybe_topology = read_topology(topology_path).await;
 
@@ -319,15 +331,20 @@ pub async fn create(
         None => {
             let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
-            deployer::guard::prevent_stable_updates(&sandbox);
             let dir = u::pwd();
-            println!("Composing topology {} ...", &composer::topology_name(&dir));
+            let topology_name = &composer::topology_name(&dir);
+            if deployer::guard::is_frozen(&auth.name) && notify {
+                let msg = format!("*{}*::{} is frozen. Aborting deploy: {}", &auth.name, sandbox, topology_name);
+                notifier::notify(topology_name, &msg).await;
+            }
+            deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
+            println!("Composing topology {} ...", topology_name);
             let ct = composer::compose(&dir, recursive);
             let msg = composer::count_of(&ct);
             println!("C: {}", msg);
 
             println!("Resolving topology {} ...", &ct.namespace);
-            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, true).await;
+            let rt = resolver::resolve(&auth, &sandbox, &ct, cache, force).await;
             let msg = composer::count_of(&rt);
             println!("R: {}", msg);
             rt
@@ -398,7 +415,7 @@ pub async fn update(
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
 
-    deployer::guard::prevent_stable_updates(&sandbox);
+    deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
 
     println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
@@ -423,7 +440,7 @@ pub async fn delete(
     cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    deployer::guard::prevent_stable_updates(&sandbox);
+    deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
 
     let start = Instant::now();
     println!("Composing topology...");
@@ -669,7 +686,7 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
             if dry_run {
                 deployer::list_all(auth, &sbox, "default").await;
             } else {
-                deployer::guard::prevent_stable_updates(&sbox);
+                deployer::guard::prevent_stable_updates(&auth.name, &sbox);
                 deployer::prune(auth, &sbox, filter).await;
             }
         }
@@ -708,13 +725,7 @@ pub async fn emulate(
     emulator::emulate(auth, &rt, &entity_component, shell).await;
 }
 
-pub async fn visualize(dir: Option<String>, recursive: bool, theme: Option<String>, dirs: Option<String>) {
+pub async fn visualize(dir: Option<String>) {
     let dir = u::maybe_string(dir, &u::pwd());
-    let dirs = match dirs {
-        Some(d) => d.split(",").map(|x| x.to_string()).collect(),
-        None => vec![]
-    };
-
-    let theme = u::maybe_string(theme, "light");
-    visualizer::visualize(&dir, recursive, &theme, dirs);
+    visualizer::visualize(&dir);
 }

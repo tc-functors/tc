@@ -130,6 +130,8 @@ pub struct DeployArgs {
     dir: Option<String>,
     #[arg(long, action, short = 'i')]
     interactive: bool,
+    #[arg(long, action, short = 'f')]
+    force: bool,
 }
 
 #[derive(Debug, Args)]
@@ -348,6 +350,8 @@ pub struct CreateArgs {
     sync: bool,
     #[arg(long, action)]
     remote: bool,
+    #[arg(long, action, short = 'f')]
+    force: bool,
 }
 
 #[derive(Debug, Args)]
@@ -362,12 +366,6 @@ pub struct UpgradeArgs {
 pub struct VisualizeArgs {
     #[arg(long, short = 'd')]
     dir: Option<String>,
-    #[arg(long, short = 't')]
-    theme: Option<String>,
-    #[arg(long, alias = "dirs")]
-    topologies: Option<String>,
-    #[arg(long, action, short = 'r')]
-    recursive: bool,
 }
 
 #[derive(Debug, Args)]
@@ -653,6 +651,7 @@ async fn create(args: CreateArgs) {
         sync,
         dry_run,
         remote,
+        force,
         ..
     } = args;
 
@@ -662,7 +661,14 @@ async fn create(args: CreateArgs) {
     } else if dry_run {
         tc::dry_run_create(profile, sandbox, recursive).await;
     } else {
-        tc::create(profile, sandbox, notify, recursive, cache, topology, sync).await;
+        let opts = tc::CreateOpts {
+            notify: notify,
+            recursive: recursive,
+            cache: cache,
+            sync: sync,
+            force: force
+        };
+        tc::create(profile, sandbox, topology, opts).await;
     }
 }
 
@@ -891,13 +897,14 @@ async fn ci_deploy(args: DeployArgs) {
         branch,
         snapshot,
         interactive,
+        force,
         ..
     } = args;
 
     if interactive {
         remote::deploy_interactive().await;
     } else if let Some(ver) = version {
-        remote::deploy_version(topology, env, sandbox, &ver).await;
+        remote::deploy_version(topology, env, sandbox, &ver, force).await;
     } else if let Some(br) = branch {
         remote::deploy_branch(topology, env, sandbox, &br).await;
     } else if let Some(snap) = snapshot {
@@ -1061,12 +1068,9 @@ async fn scaffold(args: ScaffoldArgs) {
 async fn visualize(args: VisualizeArgs) {
     let VisualizeArgs {
         dir,
-        recursive,
-        theme,
-        topologies,
         ..
     } = args;
-    tc::visualize(dir, recursive, theme, topologies).await;
+    tc::visualize(dir).await;
 }
 
 async fn list(args: ListArgs) {

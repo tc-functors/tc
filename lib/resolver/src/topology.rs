@@ -14,7 +14,7 @@ pub async fn resolve(
     topology: &Topology,
     auth: &Auth,
     sandbox: &str,
-    diff: bool,
+    force: bool,
 ) -> Topology {
     let ctx = Context {
         auth: auth.clone(),
@@ -49,7 +49,7 @@ pub async fn resolve(
     partial_t.pools = pool::resolve(&ctx, &partial_t).await;
     tracing::debug!("Resolving functions {}", topology.namespace);
 
-    partial_t.functions = function::resolve(&ctx, &rt, &partial_t, diff).await;
+    partial_t.functions = function::resolve(&ctx, &rt, &partial_t, force).await;
     partial_t
 }
 
@@ -58,7 +58,7 @@ pub async fn resolve_entity(
     auth: &Auth,
     sandbox: &str,
     entity: &Entity,
-    diff: bool,
+    force: bool,
 ) -> Topology {
     let ctx = Context {
         auth: auth.clone(),
@@ -92,7 +92,7 @@ pub async fn resolve_entity(
             partial_t.events = event::resolve(&ctx, &partial_t).await;
         }
         Entity::Function => {
-            partial_t.functions = function::resolve(&ctx, &rt, &partial_t, diff).await;
+            partial_t.functions = function::resolve(&ctx, &rt, &partial_t, force).await;
         }
         Entity::Trigger => {
             partial_t.pools = pool::resolve(&ctx, &partial_t).await;

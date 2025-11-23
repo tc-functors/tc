@@ -73,6 +73,64 @@ pub async fn http_get(url: &str, headers: HashMap<String, String>) -> Value {
     json_value(&response)
 }
 
+
+pub async fn http_put(
+    url: &str,
+    headers: HashMap<String, String>,
+    body: String,
+) -> Result<Value, Error> {
+    let client = reqwest::Client::new();
+    let headers = as_headers(headers);
+    let response = client
+        .put(url)
+        .headers(headers)
+        .body(body)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await;
+
+    match response {
+        Ok(res) => {
+            if res == "ok" {
+                Ok(serde_json::json!(res))
+            } else {
+                Ok(json_value_safe(&res))
+            }
+        }
+        Err(_) => Ok(serde_json::json!("error")),
+    }
+}
+
+pub async fn http_delete(
+    url: &str,
+    headers: HashMap<String, String>,
+) -> Result<Value, Error> {
+    let client = reqwest::Client::new();
+    let headers = as_headers(headers);
+    let response = client
+        .delete(url)
+        .headers(headers)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await;
+
+    match response {
+        Ok(res) => {
+            if res == "ok" {
+                Ok(serde_json::json!(res))
+            } else {
+                Ok(json_value_safe(&res))
+            }
+        }
+        Err(_) => Ok(serde_json::json!("error")),
+    }
+}
+
+
 pub async fn download(url: &str, headers: HashMap<String, String>, outfile: &str) {
     let client = reqwest::Client::new();
     let headers = as_headers(headers);

@@ -35,7 +35,9 @@ async fn create_lambda_consumer(auth: &Auth, name: &str, sqs_arn: &str) {
 pub async fn create(auth: &Auth, queues: &HashMap<String, Queue>) {
     let client = sqs::make_client(&auth).await;
     for (_, queue) in queues {
-        sqs::create_queue(&client, &queue.name).await;
+        if queue.should_create {
+            sqs::create_queue(&client, &queue.name).await;
+        }
         for target in &queue.targets {
             println!("Creating queue: {}", &queue.name);
             match target.entity {
@@ -60,8 +62,10 @@ pub async fn delete(auth: &Auth, queues: &HashMap<String, Queue>) {
                 _ => (),
             }
         }
-        println!("Deleting queue: {}", &queue.name);
-        sqs::delete_queue(&client, &auth.sqs_url(&queue.name)).await;
+        if queue.should_create {
+            println!("Deleting queue: {}", &queue.name);
+            sqs::delete_queue(&client, &auth.sqs_url(&queue.name)).await;
+        }
     }
 }
 

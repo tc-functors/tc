@@ -27,9 +27,9 @@ pub async fn release(service: &str, suffix: &str, tag: &str) -> String {
     url
 }
 
-pub async fn deploy(env: &str, service: &str, sandbox: &str, version: &str) -> String {
+pub async fn deploy(env: &str, service: &str, sandbox: &str, version: &str, force: bool) -> String {
     let repo = current_repo();
-    circleci::trigger_tag(&repo, &env, &sandbox, &service, &version).await
+    circleci::trigger_tag(&repo, &env, &sandbox, &service, &version, force).await
 }
 
 pub async fn deploy_branch(env: &str, service: &str, sandbox: &str, branch: &str) -> String {
@@ -55,4 +55,19 @@ pub async fn update(env: &str, sandbox: &str, dir: &str, branch: &str) -> String
 pub async fn build(service: &str, function: &str, branch: &str) -> String {
     let repo = current_repo();
     circleci::trigger_build(&repo, service, function, branch).await
+}
+
+pub async fn set_var(key: &str, val: &str) {
+    let repo = current_repo();
+    circleci::set_var(&repo, key, val).await;
+}
+
+pub async fn unset_var(key: &str) {
+    let repo = current_repo();
+    circleci::unset_var(&repo, key).await;
+}
+
+pub async fn list_vars() -> Vec<String> {
+    let repo = current_repo();
+    circleci::list_vars(&repo).await
 }
