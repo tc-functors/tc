@@ -564,6 +564,18 @@ pub struct ScaffoldArgs {
     functions: bool,
     #[arg(long, action, short = 'l')]
     llm: bool,
+    /// LLM provider to use (bedrock or anthropic)
+    #[arg(long)]
+    llm_provider: Option<String>,
+    /// Model identifier
+    #[arg(long)]
+    llm_model: Option<String>,
+    /// AWS region for Bedrock
+    #[arg(long)]
+    aws_region: Option<String>,
+    /// AWS profile for Bedrock
+    #[arg(long)]
+    aws_profile: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1060,9 +1072,13 @@ async fn scaffold(args: ScaffoldArgs) {
         dir,
         functions,
         llm,
+        llm_provider,
+        llm_model,
+        aws_region,
+        aws_profile,
         ..
     } = args;
-    tc::scaffold(dir, functions, llm).await;
+    tc::scaffold(dir, functions, llm, llm_provider, llm_model, aws_region, aws_profile).await;
 }
 
 async fn visualize(args: VisualizeArgs) {

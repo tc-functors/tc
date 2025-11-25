@@ -1,5 +1,7 @@
 mod function;
 pub mod llm;
+pub mod config;
+pub mod provider;
 use compiler::LangRuntime;
 use kit as u;
 use base64::{
@@ -8,9 +10,17 @@ use base64::{
 };
 use serde::{Deserialize,Serialize};
 
-pub async fn scaffold(dir: &str, functions: bool, llm: bool) {
+pub async fn scaffold(
+    dir: &str,
+    functions: bool,
+    llm: bool,
+    llm_provider: Option<String>,
+    llm_model: Option<String>,
+    aws_region: Option<String>,
+    aws_profile: Option<String>,
+) {
     if llm {
-        llm::scaffold(dir).await;
+        llm::scaffold(dir, llm_provider, llm_model, aws_region, aws_profile).await;
         visualizer::visualize(&dir);
     } else if functions {
         let topology = composer::compose(dir, false);

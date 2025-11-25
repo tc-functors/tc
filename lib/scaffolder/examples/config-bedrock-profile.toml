@@ -1,0 +1,51 @@
+# Example TC Configuration: AWS Bedrock with Named Profile
+#
+# This configuration uses AWS Bedrock with a named profile from ~/.aws/credentials
+# Recommended for users with multiple AWS accounts or long-lived credentials.
+#
+# Prerequisites:
+# 1. Configure AWS credentials in ~/.aws/credentials:
+#    [production]
+#    aws_access_key_id = YOUR_ACCESS_KEY
+#    aws_secret_access_key = YOUR_SECRET_KEY
+#
+# 2. Configure region in ~/.aws/config:
+#    [profile production]
+#    region = us-west-2
+#
+# 3. Ensure you have bedrock:InvokeModel permission
+# 4. Enable Claude model access in AWS Bedrock console
+#
+# Usage:
+#   Copy this file to your project root as config.toml
+#   Run: tc scaffold my-app
+
+[llm]
+# Provider: bedrock or anthropic
+provider = "bedrock"
+
+# Model identifier for Bedrock
+# Available models:
+#   - anthropic.claude-3-5-sonnet-20241022-v2:0 (recommended, default)
+#   - anthropic.claude-3-5-sonnet-20240620-v1:0
+#   - anthropic.claude-3-opus-20240229-v1:0 (most capable)
+#   - anthropic.claude-3-sonnet-20240229-v1:0
+#   - anthropic.claude-3-haiku-20240307-v1:0 (fastest, cheapest)
+model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+[llm.aws]
+# AWS region where Bedrock is available
+# Common regions with Bedrock: us-east-1, us-west-2, eu-west-1
+region = "us-west-2"
+
+# AWS profile name (from ~/.aws/credentials)
+# This should match a profile section in your credentials file
+profile = "production"
+
+# Notes:
+# - Verify credentials: aws sts get-caller-identity --profile production
+# - Check model access: aws bedrock list-foundation-models --region us-west-2
+# - For multiple environments, create separate config files or use CLI overrides
+#
+# Example CLI override for development:
+#   tc scaffold my-app --aws-profile development --llm-model anthropic.claude-3-haiku-20240307-v1:0

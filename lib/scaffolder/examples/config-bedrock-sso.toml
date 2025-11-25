@@ -1,0 +1,42 @@
+# Example TC Configuration: AWS Bedrock with SSO
+#
+# This configuration uses AWS Bedrock with SSO authentication.
+# Recommended for organizations using AWS IAM Identity Center.
+#
+# Prerequisites:
+# 1. Configure AWS SSO: aws configure sso
+# 2. Login to SSO: aws sso login --profile my-company-sso
+# 3. Ensure you have bedrock:InvokeModel permission
+# 4. Enable Claude model access in AWS Bedrock console
+#
+# Usage:
+#   Copy this file to your project root as config.toml
+#   Run: tc scaffold my-app
+
+[llm]
+# Provider: bedrock or anthropic
+provider = "bedrock"
+
+# Model identifier for Bedrock
+# Available models:
+#   - anthropic.claude-3-5-sonnet-20241022-v2:0 (recommended, default)
+#   - anthropic.claude-3-5-sonnet-20240620-v1:0
+#   - anthropic.claude-3-opus-20240229-v1:0 (most capable)
+#   - anthropic.claude-3-sonnet-20240229-v1:0
+#   - anthropic.claude-3-haiku-20240307-v1:0 (fastest, cheapest)
+model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+[llm.aws]
+# AWS region where Bedrock is available
+# Common regions with Bedrock: us-east-1, us-west-2, eu-west-1
+region = "us-east-1"
+
+# AWS SSO profile name (from ~/.aws/config)
+# This should match the profile you configured with 'aws configure sso'
+profile = "my-company-sso"
+
+# Notes:
+# - SSO sessions expire after 8-12 hours
+# - Re-authenticate with: aws sso login --profile my-company-sso
+# - Verify credentials: aws sts get-caller-identity --profile my-company-sso
+# - Check model access: aws bedrock list-foundation-models --region us-east-1

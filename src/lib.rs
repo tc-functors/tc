@@ -707,9 +707,17 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<Strin
     deployer::list_all(auth, &sandbox, &format).await;
 }
 
-pub async fn scaffold(dir: Option<String>, functions: bool, llm: bool) {
+pub async fn scaffold(
+    dir: Option<String>,
+    functions: bool,
+    llm: bool,
+    llm_provider: Option<String>,
+    llm_model: Option<String>,
+    aws_region: Option<String>,
+    aws_profile: Option<String>,
+) {
     let dir = u::maybe_string(dir, &u::pwd());
-    scaffolder::scaffold(&dir, functions, llm).await;
+    scaffolder::scaffold(&dir, functions, llm, llm_provider, llm_model, aws_region, aws_profile).await;
 }
 
 pub async fn emulate(

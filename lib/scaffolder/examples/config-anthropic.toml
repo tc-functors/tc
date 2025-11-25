@@ -1,0 +1,52 @@
+# Example TC Configuration: Anthropic Direct API
+#
+# This configuration uses Anthropic's direct API instead of AWS Bedrock.
+# Recommended for users who prefer simpler setup without AWS infrastructure.
+#
+# Prerequisites:
+# 1. Sign up for Anthropic API: https://console.anthropic.com
+# 2. Generate an API key from the Anthropic console
+# 3. Set CLAUDE_API_KEY environment variable or create .env file
+#
+# Usage:
+#   1. Copy this file to your project root as config.toml
+#   2. Set your API key:
+#      export CLAUDE_API_KEY=sk-ant-your-api-key-here
+#      OR create a .env file with:
+#      CLAUDE_API_KEY=sk-ant-your-api-key-here
+#   3. Run: tc scaffold my-app
+
+[llm]
+# Provider: bedrock or anthropic
+provider = "anthropic"
+
+# Model identifier for Anthropic API
+# Available models:
+#   - claude-sonnet-4-5-20250929 (latest, recommended, default)
+#   - claude-3-5-sonnet-20241022
+#   - claude-3-opus-20240229 (most capable)
+#   - claude-3-sonnet-20240229
+#   - claude-3-haiku-20240307 (fastest, cheapest)
+model = "claude-sonnet-4-5-20250929"
+
+# Note: AWS configuration is ignored when using Anthropic provider
+# [llm.aws] section is not needed
+
+# Security Best Practices:
+# - NEVER commit your API key to version control
+# - Add .env to your .gitignore file
+# - Use environment variables for API keys
+# - Rotate API keys regularly
+#
+# Example .env file:
+#   CLAUDE_API_KEY=sk-ant-your-api-key-here
+#   TC_LLM_PROVIDER=anthropic
+#   TC_LLM_MODEL=claude-sonnet-4-5-20250929
+#
+# Example .gitignore:
+#   .env
+#   config.toml  # If you store sensitive data here
+#
+# Verify your setup:
+#   echo $CLAUDE_API_KEY  # Should show your key
+#   tc scaffold test-app  # Should work without errors

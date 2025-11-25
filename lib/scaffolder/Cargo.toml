@@ -16,3 +16,21 @@ kit = { path = "../kit" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }
 visualizer = { path = "../visualizer" }
+
+# AWS SDK dependencies for Bedrock integration
+aws-config = "1.5"
+aws-sdk-bedrockruntime = "1.50"
+async-trait = "0.1"
+
+# Configuration dependencies
+dotenv = "0.15"
+toml = "0.8"
+
+# HTTP client (for Anthropic provider)
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+proptest = "1.4"
+aws-smithy-runtime-api = "1.7"
+aws-smithy-types = "1.2"

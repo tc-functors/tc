@@ -91,6 +91,52 @@ Commands:
   upgrade  upgrade tc version
   version  display current tc version
 ```
+
+## AI-Assisted Topology Generation
+
+TC includes an AI-powered scaffolder that helps you generate topology YAML files using natural language descriptions. The scaffolder supports both AWS Bedrock and Anthropic's Claude API.
+
+### Quick Start
+
+```sh
+# Generate a topology using AWS Bedrock (default)
+tc scaffold my-app
+
+# Or use Anthropic API
+tc scaffold my-app --llm-provider anthropic
+```
+
+### Configuration
+
+The scaffolder can be configured via:
+- **CLI parameters**: `--llm-provider`, `--llm-model`, `--aws-region`, `--aws-profile`
+- **Environment variables**: `TC_LLM_PROVIDER`, `TC_LLM_MODEL`, `AWS_REGION`, `AWS_PROFILE`, `CLAUDE_API_KEY`
+- **Config file**: Create a `config.toml` in your project directory
+
+For detailed configuration instructions, AWS Bedrock setup, and examples, see the [Scaffolder Documentation](lib/scaffolder/README.md).
+
+### Example Configurations
+
+```toml
+# AWS Bedrock with SSO
+[llm]
+provider = "bedrock"
+model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
+[llm.aws]
+region = "us-east-1"
+profile = "my-sso-profile"
+```
+
+```toml
+# Anthropic API
+[llm]
+provider = "anthropic"
+model = "claude-sonnet-4-5-20250929"
+```
+
+See [example configurations](lib/scaffolder/examples/) for more options including multi-environment setups.
+
 ## Contributing
 
 We welcome contributions from the community! Whether you're just giving feedback, fixing bugs, improving documentation, or proposing new features, your efforts are appreciated.
