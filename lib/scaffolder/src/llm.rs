@@ -6,12 +6,15 @@ use crate::config::{LlmConfig, LlmProvider as LlmProviderEnum};
 use crate::provider::{LlmProvider, LlmError, anthropic::AnthropicProvider, bedrock::BedrockProvider};
 
 /// Default model ID for AWS Bedrock provider
-/// Uses Claude Opus 4.5 which provides the highest capability
-pub const DEFAULT_BEDROCK_MODEL: &str = "anthropic.claude-opus-4-5-20251101-v1:0";
+/// Uses Claude Opus 4.5 via global cross-region inference profile
+/// pub const DEFAULT_BEDROCK_MODEL: &str = "global.anthropic.claude-opus-4-5-20251101-v1:0";
+pub const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
+
 
 /// Default model ID for Anthropic provider
 /// Uses the latest Claude Sonnet model from the direct API
 pub const DEFAULT_ANTHROPIC_MODEL: &str = "claude-sonnet-4-5-20250929";
+
 
 fn prompt(text: &str) -> String {
     let lines = v![
@@ -400,8 +403,8 @@ mod tests {
         // Test that the Bedrock default model constant has the expected value
         assert_eq!(
             DEFAULT_BEDROCK_MODEL,
-            "anthropic.claude-opus-4-5-20251101-v1:0",
-            "Bedrock default model should be Claude Opus 4.5"
+            "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "Bedrock default model should be Claude Sonnet 4.5 via US inference profile"
         );
     }
 
