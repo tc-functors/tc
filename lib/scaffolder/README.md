@@ -56,7 +56,7 @@ Set these environment variables to configure the LLM provider:
 
 ```bash
 export TC_LLM_PROVIDER=bedrock
-export TC_LLM_MODEL=anthropic.claude-3-5-sonnet-20241022-v2:0
+export TC_LLM_MODEL=anthropic.claude-opus-4-5-20251101-v1:0
 export AWS_REGION=us-west-2
 export AWS_PROFILE=my-sso-profile
 
@@ -70,7 +70,7 @@ Create a `config.toml` file in your project directory:
 ```toml
 [llm]
 provider = "bedrock"  # or "anthropic"
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+model = "anthropic.claude-opus-4-5-20251101-v1:0"
 
 [llm.aws]
 region = "us-east-1"
@@ -86,7 +86,7 @@ Override any configuration using command-line parameters:
 ```bash
 tc scaffold my-app \
   --llm-provider bedrock \
-  --llm-model anthropic.claude-3-5-sonnet-20241022-v2:0 \
+  --llm-model anthropic.claude-opus-4-5-20251101-v1:0 \
   --aws-region us-west-2 \
   --aws-profile my-sso-profile
 ```
@@ -360,7 +360,7 @@ tc scaffold my-app
 ```toml
 [llm]
 provider = "bedrock"
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+model = "anthropic.claude-opus-4-5-20251101-v1:0"
 
 [llm.aws]
 region = "us-east-1"
@@ -431,12 +431,27 @@ provider = "anthropic"
 
 Bedrock uses a specific model ID format: `anthropic.claude-{version}-v{api-version}:{variant}`
 
+#### Claude 4 Series (Latest)
+
 | Model | Model ID | Description |
 |-------|----------|-------------|
-| Claude 3.5 Sonnet (Default) | `anthropic.claude-3-5-sonnet-20241022-v2:0` | Latest Claude 3.5, best balance of capability and cost |
+| **Claude Opus 4.5 (Default)** | `anthropic.claude-opus-4-5-20251101-v1:0` | Most capable model, highest quality output |
+| Claude Sonnet 4.5 | `anthropic.claude-sonnet-4-5-20250929-v1:0` | Excellent balance of speed and capability |
+| Claude Haiku 4.5 | `anthropic.claude-haiku-4-5-20250929-v1:0` | Fastest Claude 4, optimized for speed |
+
+#### Claude 3.5 Series
+
+| Model | Model ID | Description |
+|-------|----------|-------------|
+| Claude 3.5 Sonnet v2 | `anthropic.claude-3-5-sonnet-20241022-v2:0` | Latest Claude 3.5, excellent balance |
 | Claude 3.5 Sonnet v1 | `anthropic.claude-3-5-sonnet-20240620-v1:0` | Previous version of Claude 3.5 |
-| Claude 3 Opus | `anthropic.claude-3-opus-20240229-v1:0` | Most capable, highest cost |
-| Claude 3 Sonnet | `anthropic.claude-3-sonnet-20240229-v1:0` | Balanced performance |
+
+#### Claude 3 Series
+
+| Model | Model ID | Description |
+|-------|----------|-------------|
+| Claude 3 Opus | `anthropic.claude-3-opus-20240229-v1:0` | Most capable Claude 3 |
+| Claude 3 Sonnet | `anthropic.claude-3-sonnet-20240229-v1:0` | Balanced Claude 3 |
 | Claude 3 Haiku | `anthropic.claude-3-haiku-20240307-v1:0` | Fastest, lowest cost |
 
 **Note:** Model availability varies by AWS region. Check the [AWS Bedrock documentation](https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html) for your region.
@@ -445,10 +460,25 @@ Bedrock uses a specific model ID format: `anthropic.claude-{version}-v{api-versi
 
 Anthropic uses a simpler model ID format: `claude-{version}-{date}`
 
+#### Claude 4 Series (Latest)
+
 | Model | Model ID | Description |
 |-------|----------|-------------|
-| Claude Sonnet 4.5 (Default) | `claude-sonnet-4-5-20250929` | Latest Claude model |
-| Claude 3.5 Sonnet | `claude-3-5-sonnet-20241022` | Previous generation |
+| **Claude Sonnet 4.5 (Default)** | `claude-sonnet-4-5-20250929` | Latest Claude model, excellent performance |
+| Claude Opus 4.5 | `claude-opus-4-5-20251101` | Highest capability Claude 4 |
+| Claude Haiku 4.5 | `claude-haiku-4-5-20250929` | Fastest Claude 4, optimized for speed |
+
+#### Claude 3.5 Series
+
+| Model | Model ID | Description |
+|-------|----------|-------------|
+| Claude 3.5 Sonnet v2 | `claude-3-5-sonnet-20241022` | Latest Claude 3.5 |
+| Claude 3.5 Sonnet v1 | `claude-3-5-sonnet-20240620` | Previous Claude 3.5 |
+
+#### Claude 3 Series
+
+| Model | Model ID | Description |
+|-------|----------|-------------|
 | Claude 3 Opus | `claude-3-opus-20240229` | Most capable Claude 3 |
 | Claude 3 Sonnet | `claude-3-sonnet-20240229` | Balanced Claude 3 |
 | Claude 3 Haiku | `claude-3-haiku-20240307` | Fastest Claude 3 |
@@ -456,16 +486,82 @@ Anthropic uses a simpler model ID format: `claude-{version}-{date}`
 ### Specifying a Model
 
 ```bash
-# Bedrock
+# Bedrock - Use Claude Opus 4.5 (default)
+tc scaffold my-app --llm-provider bedrock
+
+# Bedrock - Use a different model
 tc scaffold my-app \
   --llm-provider bedrock \
-  --llm-model anthropic.claude-3-opus-20240229-v1:0
+  --llm-model anthropic.claude-3-5-sonnet-20241022-v2:0
 
-# Anthropic
+# Anthropic - Use Claude Sonnet 4.5 (default)
+tc scaffold my-app --llm-provider anthropic
+
+# Anthropic - Use a different model
 tc scaffold my-app \
   --llm-provider anthropic \
-  --llm-model claude-3-opus-20240229
+  --llm-model claude-opus-4-5-20251101
 ```
+
+### Adding New Models
+
+When new Claude models are released, you can use them immediately without updating TC:
+
+#### For AWS Bedrock
+
+1. **Check model availability** in your AWS region:
+   ```bash
+   aws bedrock list-foundation-models --region us-east-1 \
+     --by-provider anthropic
+   ```
+
+2. **Enable model access** in the AWS Bedrock console:
+   - Navigate to AWS Bedrock → Model access
+   - Request access to the new model
+
+3. **Use the new model** with TC:
+   ```bash
+   tc scaffold my-app \
+     --llm-provider bedrock \
+     --llm-model anthropic.claude-{new-model-id}
+   ```
+
+4. **Set as default** (optional) in your config.toml:
+   ```toml
+   [llm]
+   provider = "bedrock"
+   model = "anthropic.claude-{new-model-id}"
+   ```
+
+#### For Anthropic API
+
+1. **Check model availability** in the [Anthropic documentation](https://docs.anthropic.com/en/docs/models-overview)
+
+2. **Use the new model** with TC:
+   ```bash
+   tc scaffold my-app \
+     --llm-provider anthropic \
+     --llm-model claude-{new-model-id}
+   ```
+
+3. **Set as default** (optional) in your config.toml:
+   ```toml
+   [llm]
+   provider = "anthropic"
+   model = "claude-{new-model-id}"
+   ```
+
+#### Model ID Format Reference
+
+- **Bedrock format**: `anthropic.claude-{version}-{date}-v{api-version}:{variant}`
+  - Example: `anthropic.claude-opus-4-5-20251101-v1:0`
+  - The `v{api-version}:{variant}` suffix is required by Bedrock
+
+- **Anthropic format**: `claude-{version}-{date}`
+  - Example: `claude-opus-4-5-20251101`
+  - Simpler format without API version suffix
+
+**Tip:** When a new model is released, check both the Anthropic and AWS Bedrock documentation, as there may be a delay before new models are available in Bedrock.
 
 ## Examples
 
@@ -476,7 +572,7 @@ tc scaffold my-app \
 ```toml
 [llm]
 provider = "bedrock"
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+model = "anthropic.claude-opus-4-5-20251101-v1:0"
 
 [llm.aws]
 region = "us-east-1"
@@ -500,7 +596,7 @@ tc scaffold my-app
 ```toml
 [llm]
 provider = "bedrock"
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+model = "anthropic.claude-opus-4-5-20251101-v1:0"
 
 [llm.aws]
 region = "us-west-2"
@@ -567,7 +663,7 @@ profile = "dev-profile"
 
 ```bash
 tc scaffold my-app \
-  --llm-model anthropic.claude-3-5-sonnet-20241022-v2:0 \
+  --llm-model anthropic.claude-opus-4-5-20251101-v1:0 \
   --aws-profile prod-profile
 ```
 
