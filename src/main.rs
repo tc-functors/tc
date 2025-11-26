@@ -70,7 +70,7 @@ enum Cmd {
     Resolve(ResolveArgs),
     /// Route traffic to the given sandbox
     Route(RouteArgs),
-    /// Scaffold functions
+    /// Scaffold functions and topology using LLM
     Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
     Snapshot(SnapshotArgs),
@@ -558,12 +558,20 @@ pub struct UnFreezeArgs {
 
 #[derive(Debug, Args)]
 pub struct ScaffoldArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
     #[arg(long, short = 'd')]
     dir: Option<String>,
     #[arg(long, action, short = 'f')]
     functions: bool,
     #[arg(long, action, short = 'l')]
-    llm: bool,
+    llm: Option<MaybeStdin<String>>,
+    /// LLM provider to use (bedrock or anthropic)
+    #[arg(long)]
+    provider: Option<String>,
+    /// Model identifier
+    #[arg(long)]
+    model: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1057,12 +1065,22 @@ async fn emulate(args: EmulateArgs) {
 
 async fn scaffold(args: ScaffoldArgs) {
     let ScaffoldArgs {
+        profile,
         dir,
         functions,
         llm,
+        provider,
+        model,
         ..
     } = args;
-    tc::scaffold(dir, functions, llm).await;
+
+    let text = if let Some(p) = llm {
+        Some(p.to_string())
+    } else {
+        None
+    };
+
+    tc::scaffold(profile, dir, text, provider, model, functions).await
 }
 
 async fn visualize(args: VisualizeArgs) {

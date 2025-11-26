@@ -707,9 +707,40 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<Strin
     deployer::list_all(auth, &sandbox, &format).await;
 }
 
-pub async fn scaffold(dir: Option<String>, functions: bool, llm: bool) {
+pub async fn scaffold(
+    profile: Option<String>,
+    dir: Option<String>,
+    llm: Option<String>,
+    provider: Option<String>,
+    model: Option<String>,
+    functions: bool
+) {
     let dir = u::maybe_string(dir, &u::pwd());
-    scaffolder::scaffold(&dir, functions, llm).await;
+
+    if functions {
+        scaffolder::scaffold_functions(&dir)
+    } else if llm.is_some() {
+
+        let provider = u::maybe_string(provider, "anthropic");
+        let text = u::maybe_string(llm, "default");
+
+        match provider.as_ref() {
+            "anthropic" => {
+                scaffolder::scaffold_llm_anthropic(&dir, &text, model).await;
+            },
+            "bedrock" => {
+                if profile.is_some() {
+                    let auth = init(profile, None).await;
+                    scaffolder::scaffold_llm_bedrock(&auth, &dir, &text, model).await;
+                } else {
+                    println!("Please specify profile: tc scaffold --provider --bedrock -e <PROFILE>");
+                }
+            }
+            _ => todo!()
+        }
+    }  else {
+        scaffolder::scaffold_function();
+    }
 }
 
 pub async fn emulate(
