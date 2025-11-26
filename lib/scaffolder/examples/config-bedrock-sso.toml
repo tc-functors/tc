@@ -18,13 +18,16 @@
 provider = "bedrock"
 
 # Model identifier for Bedrock
+# Claude 4.x models require inference profiles (global. or us. prefix)
 # Available models:
-#   - anthropic.claude-3-5-sonnet-20241022-v2:0 (recommended, default)
-#   - anthropic.claude-3-5-sonnet-20240620-v1:0
-#   - anthropic.claude-3-opus-20240229-v1:0 (most capable)
-#   - anthropic.claude-3-sonnet-20240229-v1:0
-#   - anthropic.claude-3-haiku-20240307-v1:0 (fastest, cheapest)
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+#   - global.anthropic.claude-opus-4-5-20251101-v1:0 (most capable, default)
+#   - global.anthropic.claude-sonnet-4-5-20250929-v1:0 (excellent balance)
+#   - global.anthropic.claude-haiku-4-5-20251001-v1:0 (fastest)
+#   - us.anthropic.claude-3-5-sonnet-20241022-v2:0 (Claude 3.5, US only)
+#   - anthropic.claude-3-5-sonnet-20240620-v1:0 (Claude 3.5 v1)
+#   - anthropic.claude-3-opus-20240229-v1:0 (Claude 3 Opus)
+#   - anthropic.claude-3-haiku-20240307-v1:0 (Claude 3 Haiku)
+model = "global.anthropic.claude-opus-4-5-20251101-v1:0"
 
 [llm.aws]
 # AWS region where Bedrock is available

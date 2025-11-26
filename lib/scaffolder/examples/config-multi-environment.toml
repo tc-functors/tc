@@ -7,22 +7,22 @@
 # Usage Patterns:
 #
 # Development (fast, cheap model):
-#   tc scaffold my-app --llm-model anthropic.claude-3-haiku-20240307-v1:0
+#   tc scaffold my-app --llm-model global.anthropic.claude-haiku-4-5-20251001-v1:0
 #
 # Staging (balanced):
-#   tc scaffold my-app --aws-profile staging
+#   tc scaffold my-app --aws-profile staging --llm-model global.anthropic.claude-sonnet-4-5-20250929-v1:0
 #
 # Production (most capable):
-#   tc scaffold my-app --aws-profile production --llm-model anthropic.claude-3-opus-20240229-v1:0
+#   tc scaffold my-app --aws-profile production --llm-model global.anthropic.claude-opus-4-5-20251101-v1:0
 #
 # Or use environment-specific config files:
 #   tc scaffold my-app --config config-dev.toml
 #   tc scaffold my-app --config config-prod.toml
 
 [llm]
-# Base configuration - use Bedrock with balanced model
+# Base configuration - use Bedrock with Claude Opus 4.5
 provider = "bedrock"
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+model = "global.anthropic.claude-opus-4-5-20251101-v1:0"
 
 [llm.aws]
 # Default to development environment
@@ -32,17 +32,17 @@ profile = "development"
 # Environment-Specific Recommendations:
 #
 # Development:
-#   - Model: anthropic.claude-3-haiku-20240307-v1:0 (fastest, cheapest)
+#   - Model: global.anthropic.claude-haiku-4-5-20251001-v1:0 (fastest, cheapest)
 #   - Profile: development
 #   - Focus: Speed and cost optimization
 #
 # Staging:
-#   - Model: anthropic.claude-3-5-sonnet-20241022-v2:0 (balanced)
+#   - Model: global.anthropic.claude-sonnet-4-5-20250929-v1:0 (balanced)
 #   - Profile: staging
 #   - Focus: Production-like testing
 #
 # Production:
-#   - Model: anthropic.claude-3-opus-20240229-v1:0 (most capable)
+#   - Model: global.anthropic.claude-opus-4-5-20251101-v1:0 (most capable)
 #   - Profile: production
 #   - Focus: Quality and reliability
 #
@@ -55,8 +55,8 @@ profile = "development"
 #
 # Development:
 #   export AWS_PROFILE=development
-#   export TC_LLM_MODEL=anthropic.claude-3-haiku-20240307-v1:0
+#   export TC_LLM_MODEL=global.anthropic.claude-haiku-4-5-20251001-v1:0
 #
 # Production:
 #   export AWS_PROFILE=production
-#   export TC_LLM_MODEL=anthropic.claude-3-opus-20240229-v1:0
+#   export TC_LLM_MODEL=global.anthropic.claude-opus-4-5-20251101-v1:0

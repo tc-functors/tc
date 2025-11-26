@@ -23,8 +23,9 @@
 provider = "bedrock"
 
 # Model identifier for Bedrock
-# If omitted, defaults to: anthropic.claude-3-5-sonnet-20241022-v2:0
-model = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+# If omitted, defaults to: global.anthropic.claude-opus-4-5-20251101-v1:0
+# Claude 4.x models require inference profiles (global. or us. prefix)
+model = "global.anthropic.claude-opus-4-5-20251101-v1:0"
 
 # AWS configuration is optional - SDK will use defaults
 # Uncomment and customize if needed:

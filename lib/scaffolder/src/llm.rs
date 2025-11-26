@@ -6,8 +6,6 @@ use crate::config::{LlmConfig, LlmProvider as LlmProviderEnum};
 use crate::provider::{LlmProvider, LlmError, anthropic::AnthropicProvider, bedrock::BedrockProvider};
 
 /// Default model ID for AWS Bedrock provider
-/// Uses Claude Opus 4.5 via global cross-region inference profile
-/// pub const DEFAULT_BEDROCK_MODEL: &str = "global.anthropic.claude-opus-4-5-20251101-v1:0";
 pub const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
 
 
