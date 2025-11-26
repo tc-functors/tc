@@ -1,0 +1,42 @@
+name: notes
+
+routes:
+  /api/note:
+    method: POST
+    function: handler
+    cors:
+      methods: ['POST', 'HEAD', 'OPTIONS']
+      origins: ['*']
+      allowed_headers: ['Content-Type', 'Accepts', "Access-Control-Allow-Origin", "Access-Control-Allow-Headers"]
+
+  /api/notes:
+    method: GET
+    function: handler
+    cors:
+      methods: ['GET', 'HEAD', 'OPTIONS']
+      origins: ['*']
+      allowed_headers: ['Content-Type', 'Accepts', "Access-Control-Allow-Origin", "Access-Control-Allow-Headers"]
+
+functions:
+  handler:
+    mutation: addNote
+
+mutations:
+  authorizer: authorizer
+  types:
+    Note:
+      id: String!
+      text: String
+  resolvers:
+    addNote:
+      input: Note
+      output: Note
+      function: processor
+      subscribe: true
+
+pages:
+  app:
+    dir: app
+    dist: dist
+    config_template: src/config.js
+    skip_deploy: true

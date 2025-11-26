@@ -1,0 +1,19 @@
+{
+  "name": "job-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "oidc-client-ts": "3.3.0",
+    "svelte": "4.2.12",
+    "vite": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "3.0.2",
+    "aws-amplify": "6.15.8",
+    "@aws-amplify/auth": "6.17.0"
+  },
+  "type": "module"
+}
