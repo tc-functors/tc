@@ -1,13 +1,6 @@
-use inquire::Text;
-use kit as u;
 use kit::*;
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use std::collections::HashMap;
 
-fn prompt(text: &str) -> String {
+pub fn default(text: &str) -> String {
     let lines = v![
         "You are an expert at creating tc topologies. tc is a graph-based, serverless application composer that uses high-level abstractions called Cloud Functors to define application architecture without infrastructure details.",
         "",
@@ -177,97 +170,4 @@ fn prompt(text: &str) -> String {
         "Remember: Focus on business logic and relationships, not infrastructure details. Create a topology that is composable, maintainable, and follows tc best practices"
     ];
     lines.join("\n")
-}
-
-fn headers() -> HashMap<String, String> {
-    let api_key = match std::env::var("CLAUDE_API_KEY") {
-        Ok(p) => p,
-        Err(_) => String::from(""),
-    };
-    let mut h = HashMap::new();
-    h.insert(s!("content-type"), s!("application/json"));
-    h.insert(s!("anthropic-version"), s!("2023-06-01"));
-    h.insert(s!("x-api-key"), api_key);
-    h.insert(s!("accept"), s!("application/json"));
-    h.insert(
-        s!("user-agent"),
-        s!("libcurl/7.64.1 r-curl/4.3.2 httr/1.4.2"),
-    );
-    h
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct Content {
-    r#type: String,
-    text: String,
-}
-
-#[derive(Serialize, Debug)]
-struct Message {
-    role: String,
-    content: Vec<Content>,
-}
-
-#[derive(Serialize, Debug)]
-struct Payload {
-    model: String,
-    max_tokens: u16,
-    messages: Vec<Message>,
-}
-
-impl Payload {
-    fn new(text: &str) -> Payload {
-        let content = Content {
-            r#type: s!("text"),
-            text: prompt(text),
-        };
-
-        let message = Message {
-            role: s!("user"),
-            content: vec![content],
-        };
-
-        Payload {
-            model: s!("claude-sonnet-4-5-20250929"),
-            max_tokens: 20000,
-            messages: vec![message],
-        }
-    }
-}
-
-#[derive(Deserialize)]
-struct Response {
-    content: Vec<Content>,
-}
-
-pub async fn send(text: &str) -> String {
-    let payload = Payload::new(text);
-    let p = serde_json::to_string(&payload).unwrap();
-    let url = "https://api.anthropic.com/v1/messages";
-    let res = u::http_post(url, headers(), p).await.unwrap();
-    let response: Response = serde_json::from_value(res).unwrap();
-    let res = response.content.into_iter().nth(0).unwrap().text;
-    res
-}
-
-pub fn extract_code(response: &str) -> String {
-    let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
-    code
-}
-
-pub async fn scaffold(dir: &str) {
-    match std::env::var("CLAUDE_API_KEY") {
-        Ok(_) => (),
-        Err(_) => panic!("Please set CLAUDE_API_KEY env var"),
-    }
-
-    let desc = Text::new("Architecture Description:").prompt();
-    let text = &desc.unwrap();
-    println!("Asking Claude...");
-    let response = send(text).await;
-    println!("Generating topology.yml...");
-    let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
-    //println!("{}", &code);
-    let topo_file = format!("{}/topology.yml", dir);
-    u::write_str(&topo_file, &code);
 }

@@ -16,3 +16,4 @@ kit = { path = "../kit" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }
 visualizer = { path = "../visualizer" }
+provider = { path = "../provider" }
