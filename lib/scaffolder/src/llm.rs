@@ -33,6 +33,7 @@ fn prompt(text: &str) -> String {
         "- **Namespaced**: All entities are isolated within their topology",
         "- **Stateless**: No external state management required",
         "- **Business-focused**: Abstract away infrastructure complexity",
+        "- **Make sure not to create duplicate exact match YAML Keys",
         "",
         "## Available Entities",
         "",
