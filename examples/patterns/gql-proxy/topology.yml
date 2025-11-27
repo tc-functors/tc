@@ -1,13 +1,17 @@
 name: example-gql-proxy
 
-# This uses pure websockets to subscribe to graphql mutations
-# without any external library
-# invoker triggers a mutationd directly
-
 routes:
   /api/trigger:
     method: POST
-    function: gql-invoker
+    event: TriggerMessage
+
+events:
+  TriggerMessage:
+    function: handler
+
+functions:
+  handler:
+    mutation: processMessage
 
 mutations:
   authorizer: authorizer
@@ -26,5 +30,5 @@ pages:
   app:
     dir: .
     dist: dist
-    bucket: tc-functors-dev
     config_template: index.html
+    skip_deploy: true

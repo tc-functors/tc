@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script defer src="https://unpkg.com/alpinejs@3.13.2/dist/cdn.min.js"></script>
+    <title>API Async</title>
+  </head>
+  <body>
+
+    <script>
+      function login_handler() {
+	return {
+	  status: '',
+	  username: '',
+	  password: '',
+	  is_authenticated: false,
+	  async signin (email, password) {
+	    const response = await fetch(`https://cognito-idp.us-west-2.amazonaws.com/`, {
+              method: 'POST',
+              headers: {
+		'Content-Type': 'application/json',
+		'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
+		'X-Amz-Date': new Date().toISOString(),
+              },
+              body: JSON.stringify({
+		AuthFlow: 'USER_PASSWORD_AUTH',
+		ClientId: '{{CLIENT_ID}}',
+		AuthParameters: {
+		  USERNAME: username,
+		  PASSWORD: password,
+		},
+              }),
+	    });
+	    console.log(response)
+	    return response.json();
+	  }
+	}
+      }
+
+      </script>
+
+    <main class="container">
+    <div class="grid">
+      <div x-data="login_handler()">
+	    <h4>Login</h4>
+
+	    <input type="text" x-model="username"/>
+	    <br/>
+	    <input type="password" x-model="password"/>
+	    <button @click="signin()">Login</button>
+
+	    <br/>
+	    <span x-text="status"></span>
+	  </div>
+    <div></div>
+    </div>
+
+    </main>
+
+  </body>
+
+</html>

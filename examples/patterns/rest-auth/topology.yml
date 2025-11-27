@@ -8,10 +8,7 @@ routes:
 
 pages:
   app:
-    dir: app
-    bucket: test
-    config_template: src/config.js
+    dir: .
+    dist: dist
+    config_template: index.html
     skip_deploy: true
-    build:
-      - npm install --quiet --no-audit
-      - npm run build
