@@ -123,11 +123,6 @@ pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> Str
         };
         let job = make_job(&namespace, &dir, &tag, tver);
         jobs.push_str(&job);
-        for node in nodes {
-            let parent = &tag;
-            let node_job = make_node_job(parent, &node.name, &node.dir, &tag, tver);
-            jobs.push_str(&node_job)
-        }
     }
 
     let workflow_name = format!("{}-{}-{}-deploy", env, sandbox, u::simple_date());
