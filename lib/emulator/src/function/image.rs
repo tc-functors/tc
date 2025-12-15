@@ -2,53 +2,11 @@ use colored::Colorize;
 use composer::Function;
 use configurator::Config;
 use kit as u;
-use kit::*;
 use provider::{
     Auth,
     aws,
 };
 use std::collections::HashMap;
-
-fn gen_entry_point(lang: &str) -> String {
-    match lang {
-        "python3.12" | "python3.11" | "python3.10" | "python3.9" => format!(
-            r"#!/bin/sh
-exec /usr/local/bin/aws-lambda-rie /var/lang/bin/{lang} -m awslambdaric $@
-"
-        ),
-        _ => s!(""),
-    }
-}
-
-fn docker_build_cmd(name: &str, uri: &str) -> String {
-    format!(
-        r#"docker build -t build_{name} -f- . <<EOF
-FROM {uri}
-COPY ./entry_script.sh /entry_script.sh
-RUN chmod +x /entry_script.sh
-ENTRYPOINT [ "/entry_script.sh", "handler.handler" ]
-EOF
-"#,
-    )
-}
-
-fn as_env_str(kvs: HashMap<String, String>) -> String {
-    let mut s: String = String::from("");
-    for (k, v) in kvs {
-        let m = format!("-e {}={} ", &k, &v);
-        s.push_str(&m);
-    }
-    s
-}
-
-async fn docker_run_cmd(auth: &Auth, name: &str, vars: &HashMap<String, String>) -> String {
-    let env_str = as_env_str(vars.clone());
-    let (key, secret, token) = auth.get_keys().await;
-    format!(
-        "docker run -p 9000:8080 -w /var/task -v $(pwd):/var/task {} -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_ACCESS_KEY_ID={} -e AWS_SECRET_ACCESS_KEY={} -e AWS_SESSION_TOKEN={} -e AWS_DEFAULT_REGION={} -e AWS_REGION={} -e PYTHONPATH=/opt/python:/var/runtime:/python:/python -e POWERTOOLS_METRICS_NAMESPACE=dev build_{name}",
-        &env_str, &key, &secret, &token, &auth.region, &auth.region
-    )
-}
 
 pub fn render_uri(uri: &str, repo: &str) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
@@ -56,24 +14,9 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
     u::stencil(uri, table)
 }
 
-pub fn docker_shell_cmd(
-    name: &str,
-    region: &str,
-    profile: &str,
-    vars: &HashMap<String, String>,
-) -> String {
-    let env_str = as_env_str(vars.clone());
-    format!(
-        "docker run -p 8888:8888 -w /var/task -v $(pwd):/var/task {} -e LD_LIBRARY_PATH=/usr/lib64:/opt/lib -e AWS_REGION={} -e AWS_PROFILE={} -v $HOME/.aws:/root/aws:ro -it --entrypoint /bin/bash build_{name}",
-        &env_str, region, profile
-    )
-}
+pub async fn run(auth: &Auth, dir: &str, function: &Function, _shell: bool) {
 
-pub async fn run(auth: &Auth, dir: &str, function: &Function, shell: bool) {
-    aws::ecr::login(auth, &dir).await;
-
-    let Function { runtime, name, .. } = function;
-    let lang = runtime.lang.to_str();
+    let Function { name, .. } = function;
 
     let config = Config::new();
 
@@ -82,11 +25,20 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, shell: bool) {
         Err(_) => &config.aws.ecr.repo,
     };
 
-    let uri = &function.runtime.uri;
-    let code_image_uri = render_uri(uri, repo);
+    let uri =  match std::env::var("CODE_IMAGE_URI") {
+        Ok(p) => p,
+        Err(_) => function.runtime.uri.clone()
+    };
+    let code_image_uri = render_uri(&uri, repo);
 
-    let entry = gen_entry_point(&lang);
-    u::write_str("entry_script.sh", &entry);
+    let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
+    let auth = match maybe_cfg_profile {
+        Some(p) => auth.assume(Some(p.clone()), config.role_to_assume(Some(p))).await,
+        None => auth.clone()
+    };
+
+    println!("ecr login {}", &auth.name);
+    aws::ecr::login(&auth, &dir).await;
 
     println!(
         "Building emulator: {} from {}",
@@ -94,18 +46,6 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, shell: bool) {
         &code_image_uri
     );
 
-    let b_cmd = docker_build_cmd(&name, &code_image_uri);
-    u::sh(&b_cmd, dir);
-
-    let vars = &function.runtime.environment;
-
-    let cmd = if shell {
-        docker_shell_cmd(&name, &auth.region, &auth.name, vars)
-    } else {
-        docker_run_cmd(&auth, &name, vars).await
-    };
-    u::runcmd_stream(&cmd, dir);
-    u::sh("rm -f entry_script.sh", dir);
+    let b_cmd = format!("docker run --rm -it --entrypoint bash {}", &code_image_uri);
+    u::runcmd_stream(&b_cmd, dir);
 }
-
-// shell
