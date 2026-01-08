@@ -1,0 +1,180 @@
+# Implementation Plan
+
+- [ ] 1. Set up project structure and DynamoDB table
+  - [ ] 1.1 Update topology.yml with DynamoDB table definition
+    - Add `tables.notes` with `userId` hash key and `noteId` range key
+    - Add GSI for `userId-updatedAt-index` for sorted listing
+    - _Requirements: 2.3, 3.1_
+  - [ ] 1.2 Create shared utilities module for common operations
+    - Create `lib/` directory with `db.py` for DynamoDB operations
+    - Create `lib/validation.py` for input validation
+    - Create `lib/response.py` for standardized API responses
+    - _Requirements: 2.2, 4.2, 5.2, 6.2_
+
+- [ ] 2. Implement note creation functionality
+  - [ ] 2.1 Create `create-note` function handler
+    - Extract userId from Cognito authorizer context
+    - Generate UUID for noteId
+    - Set timestamps and default priority
+    - Write to DynamoDB
+    - _Requirements: 2.1, 2.3_
+  - [ ] 2.2 Add input validation for note creation
+    - Validate title is non-empty (1-200 chars)
+    - Validate text length (max 10000 chars)
+    - Validate tags array (max 10 items, each max 50 chars)
+    - Validate priority enum (low, medium, high)
+    - _Requirements: 2.2_
+  - [ ]* 2.3 Write property test for note creation field population
+    - **Property 2: Note creation populates all required fields**
+    - **Validates: Requirements 2.1, 8.2**
+  - [ ]* 2.4 Write property test for empty title validation
+    - **Property 3: Empty title validation**
+    - **Validates: Requirements 2.2**
+
+- [ ] 3. Implement note listing functionality
+  - [ ] 3.1 Create `list-notes` function handler
+    - Query DynamoDB by userId partition key
+    - Use GSI for updatedAt descending sort
+    - Support optional tag filter
+    - _Requirements: 3.1, 3.2, 7.2_
+  - [ ]* 3.2 Write property test for list ordering
+    - **Property 5: Notes list ordering**
+    - **Validates: Requirements 3.1**
+  - [ ]* 3.3 Write property test for tag filter correctness
+    - **Property 9: Tag filter correctness**
+    - **Validates: Requirements 7.2**
+
+- [ ] 4. Implement get single note functionality
+  - [ ] 4.1 Create `get-note` function handler
+    - Extract noteId from path parameters
+    - Query DynamoDB by userId and noteId
+    - Return 404 if not found
+    - Return 403 if userId doesn't match
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ]* 4.2 Write property test for note persistence round-trip
+    - **Property 4: Note persistence round-trip**
+    - **Validates: Requirements 2.3, 4.1**
+  - [ ]* 4.3 Write property test for cross-user access denied
+    - **Property 6: Cross-user access denied**
+    - **Validates: Requirements 4.3, 5.3, 6.3**
+
+- [ ] 5. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 6. Implement note update functionality
+  - [ ] 6.1 Create `update-note` function handler
+    - Extract noteId from path parameters
+    - Verify note exists and belongs to user
+    - Update only provided fields
+    - Set new updatedAt timestamp
+    - _Requirements: 5.1, 5.2, 5.3_
+  - [ ]* 6.2 Write property test for update preserves unmodified fields
+    - **Property 7: Update preserves unmodified fields**
+    - **Validates: Requirements 5.1**
+
+- [ ] 7. Implement note deletion functionality
+  - [ ] 7.1 Create `delete-note` function handler
+    - Extract noteId from path parameters
+    - Verify note exists and belongs to user
+    - Delete from DynamoDB
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [ ]* 7.2 Write property test for delete removes note
+    - **Property 8: Delete removes note**
+    - **Validates: Requirements 6.1**
+
+- [ ] 8. Implement authentication and authorization
+  - [ ] 8.1 Update topology.yml with Cognito authorizer for all routes
+    - Add `authorizer: cognito` to each route
+    - Configure CORS settings
+    - _Requirements: 1.5_
+  - [ ] 8.2 Create Lambda authorizer for GraphQL mutations
+    - Validate authorization token
+    - Extract userId from token claims
+    - Return resolver context with userId
+    - _Requirements: 9.3_
+  - [ ]* 8.3 Write property test for protected routes reject unauthenticated requests
+    - **Property 1: Protected routes reject unauthenticated requests**
+    - **Validates: Requirements 1.5**
+
+- [ ] 9. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [ ] 10. Implement GraphQL mutations and subscriptions
+  - [ ] 10.1 Update topology.yml with mutation types and resolvers
+    - Define NoteInput, Note, DeletedNote types
+    - Add createNote, updateNote, deleteNote resolvers with subscribe: true
+    - _Requirements: 2.4, 5.4, 6.4, 9.1_
+  - [ ] 10.2 Create mutation handler functions
+    - `create-note-mutation` to broadcast created note
+    - `update-note-mutation` to broadcast updated note
+    - `delete-note-mutation` to broadcast deletion event
+    - _Requirements: 9.1_
+  - [ ]* 10.3 Write property test for subscription user isolation
+    - **Property 10: Subscription user isolation**
+    - **Validates: Requirements 9.2**
+
+- [ ] 11. Implement frontend authentication
+  - [ ] 11.1 Update auth.js with Cognito OIDC configuration
+    - Configure UserManager with Cognito endpoints
+    - Implement signin, signout, callback handlers
+    - Store user session in localStorage
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [ ] 11.2 Update App.svelte with authentication flow
+    - Show sign-in button when unauthenticated
+    - Display user info when authenticated
+    - Handle sign-out
+    - _Requirements: 1.1, 1.2, 1.3_
+
+- [ ] 12. Implement frontend note management UI
+  - [ ] 12.1 Create NoteList.svelte component
+    - Display notes in responsive grid/list layout
+    - Show title, text preview, tags, priority, timestamp
+    - Support tag filtering
+    - _Requirements: 3.3, 7.3, 10.1, 10.2_
+  - [ ] 12.2 Create NoteForm.svelte component
+    - Form for creating and editing notes
+    - Input validation with error messages
+    - Priority selector
+    - Tag input with add/remove
+    - _Requirements: 2.1, 5.1, 8.1_
+  - [ ] 12.3 Create NoteDetail.svelte component
+    - Display full note content
+    - Edit and delete buttons
+    - _Requirements: 4.1_
+  - [ ] 12.4 Create api.js module for REST API calls
+    - Functions for create, list, get, update, delete
+    - Include auth token in headers
+    - Handle error responses
+    - _Requirements: 1.5, 2.1, 3.1, 4.1, 5.1, 6.1_
+
+- [ ] 13. Implement responsive design
+  - [ ] 13.1 Update styles for mobile-first responsive layout
+    - Single column layout for viewport < 768px
+    - Multi-column layout for viewport >= 768px
+    - Touch-friendly targets (min 44x44px)
+    - _Requirements: 10.1, 10.2, 10.3_
+
+- [ ] 14. Implement accessibility features
+  - [ ] 14.1 Add ARIA attributes to interactive elements
+    - Labels for buttons and inputs
+    - Roles for custom components
+    - aria-live regions for error messages
+    - _Requirements: 11.1, 11.4_
+  - [ ] 14.2 Implement keyboard navigation
+    - Tab order for all interactive elements
+    - Enter/Escape key handlers
+    - Visible focus indicators
+    - _Requirements: 11.2_
+  - [ ]* 14.3 Write property test for accessibility attributes present
+    - **Property 11: Accessibility attributes present**
+    - **Validates: Requirements 11.1, 11.4**
+
+- [ ] 15. Implement real-time subscription handling
+  - [ ] 15.1 Update Subscriber.svelte for note subscriptions
+    - Subscribe to createNote, updateNote, deleteNote events
+    - Update local state on received events
+    - Handle subscription errors
+    - _Requirements: 9.1, 9.2_
+
+- [ ] 16. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
