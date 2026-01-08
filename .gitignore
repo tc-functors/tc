@@ -32,3 +32,4 @@ dist
 examples/apps/*/dist
 flow.html
 *.svg
+dist

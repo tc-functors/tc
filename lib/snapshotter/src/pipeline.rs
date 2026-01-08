@@ -70,26 +70,21 @@ fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
           workdir: {dir}
           tag:  {tag}
           tc_version:  {tc_version}
+          requires:
+            - hold
           context:
             - tc
             - cicd-aws-user-creds"#
     )
 }
 
-fn make_node_job(parent: &str, name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
-    format!(
+fn approval_job() -> String {
+   format!(
         r#"
-      - tc-deploy-topology:
-          name: {name}
-          namespace: {name}
-          workdir: {dir}
-          tag:  {tag}
-          tc_version:  {tc_version}
-          requires:
-            - {parent}
+      - hold:
+          type: approval
           context:
-            - tc
-            - cicd-aws-user-creds"#
+            - restricted-context"#
     )
 }
 
@@ -103,7 +98,6 @@ pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> Str
     for record in records {
         let Manifest {
             namespace,
-            nodes,
             dir,
             version,
             tc_version,
@@ -123,12 +117,8 @@ pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> Str
         };
         let job = make_job(&namespace, &dir, &tag, tver);
         jobs.push_str(&job);
-        for node in nodes {
-            let parent = &tag;
-            let node_job = make_node_job(parent, &node.name, &node.dir, &tag, tver);
-            jobs.push_str(&node_job)
-        }
     }
+    let approval = approval_job();
 
     let workflow_name = format!("{}-{}-{}-deploy", env, sandbox, u::simple_date());
 
@@ -168,6 +158,7 @@ jobs:
 workflows:
   {workflow_name}:
     jobs:
+{approval}
 {jobs}
 
 "#

@@ -1,4 +1,4 @@
-mod circleci;
+pub mod circleci;
 
 // this is a module that abstracts remote execution of tc commands in a remote executor
 

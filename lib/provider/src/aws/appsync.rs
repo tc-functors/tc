@@ -165,11 +165,42 @@ pub struct Api {
     pub wss: String,
 }
 
+async fn list_graphql_apis_by_token(
+    client: &Client,
+    token: &str,
+) -> (HashMap<String, Api>, Option<String>) {
+    let res = client
+        .list_graphql_apis()
+        .next_token(token.to_string())
+        .max_results(20)
+        .send()
+        .await
+        .unwrap();
+    let mut h: HashMap<String, Api> = HashMap::new();
+    let apis = res.graphql_apis.unwrap();
+    for api in apis {
+        let uris = api.uris.unwrap();
+        let https = uris.get("GRAPHQL");
+        let wss = uris.get("REALTIME");
+        let a = Api {
+            id: api.api_id.unwrap().to_string(),
+            https: https.unwrap().to_string(),
+            wss: wss.unwrap().to_string(),
+        };
+
+        h.insert(api.name.unwrap(), a);
+    }
+    (h, res.next_token)
+}
+
+
 async fn list_graphql_apis(client: &Client) -> HashMap<String, Api> {
     let mut h: HashMap<String, Api> = HashMap::new();
-    let r = client.list_graphql_apis().send().await;
+    let r = client.list_graphql_apis().max_results(20).send().await;
     match r {
         Ok(res) => {
+            let mut token: Option<String> = res.next_token;
+
             let apis = res.graphql_apis.unwrap();
             for api in apis {
                 let uris = api.uris.unwrap();
@@ -182,6 +213,23 @@ async fn list_graphql_apis(client: &Client) -> HashMap<String, Api> {
                 };
 
                 h.insert(api.name.unwrap(), a);
+            }
+
+            match token {
+                Some(tk) => {
+                    token = Some(tk);
+                    while token.is_some() {
+                        let (xs, t) = list_graphql_apis_by_token(client, &token.unwrap()).await;
+                        h.extend(xs.clone());
+                        token = t.clone();
+                        if let Some(x) = t {
+                            if x.is_empty() {
+                                break;
+                            }
+                        }
+                    }
+                }
+                None => (),
             }
         }
         Err(e) => panic!("{}", e),

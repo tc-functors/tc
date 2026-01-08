@@ -6,12 +6,31 @@
     <script defer src="https://unpkg.com/alpinejs@3.13.2/dist/cdn.min.js"></script>
     <title>Minimal Appsync Subscription</title>
 
-  </head
+  </head>
   <body>
 
-    <div class="container">
 
     <script>
+      function init_rest() {
+	return {
+	  message: '',
+	  postMessage() {
+	    fetch('{{REST_ENDPOINT}}/api/trigger', {
+	      method: 'POST',
+	      header: {
+		'Access-Control-Allow-Origin':'*',
+	      },
+	      body: JSON.stringify({'message': this.message})
+	    })
+	      .then(res => console.log(res))
+	      .then(data => {
+		this.status = data;
+	      });
+	  },
+	}
+      }
+
+
       function init_subscription() {
 	return {
 	  appsync_host: '{{GRAPHQL_HOST}}',
@@ -50,7 +69,6 @@
 	    }
 	  }
 	  `,
-
 	  startSubscription(websocket) {
 	    const subscribeMessage = {
 	      id: window.crypto.randomUUID(),
@@ -96,6 +114,7 @@
 		console.log("start_ack");
 		break;
 	      case "error":
+		console.log(message);
 		console.error(message);
 		break;
 	      case "data":
@@ -111,20 +130,34 @@
 
     </script>
 
-    <div x-data="init_subscription()">
 
-	 <article class="secondary" style="height: 80dvh;" class="overflow-auto">
-	   <template x-for="msg in messages">
-             <div>
-	       <div x-html="msg"></div>
-	       <hr/>
-             </div>
-	    </template>
 
-	  </article>
+    <div class="container grid">
 
-    </div>
+      <div x-data="init_rest()">
+	<br/>
+	<h4>Post Message</h4>
+	<textarea rows=10 x-model="message"> </textarea>
+	<button @click="postMessage()">Post Message</button>
 
+      </div>
+
+
+      <div x-data="init_subscription()">
+	<br/>
+	<br/>
+
+	<div style="height: 80dvh;" class="overflow-auto">
+	  <template x-for="msg in messages">
+	    <div>
+	      <div x-html="msg"></div>
+	      <hr/>
+	    </div>
+	  </template>
+
+	</div>
+
+      </div>
     </div>
 
   </body>

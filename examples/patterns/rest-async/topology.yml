@@ -7,7 +7,7 @@ routes:
     cors:
       methods: ['POST', 'HEAD', 'OPTIONS']
       origins: ['*']
-      allowed_headers: ['Content-Type', 'Accepts']
+      allowed_headers: ['Content-Type', 'Accepts', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Headers']
 
 events:
   ProcessStart:

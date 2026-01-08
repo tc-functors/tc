@@ -1,4 +1,4 @@
-name: example-orchestrator
+name: example-efm
 
 events:
   MyEvent:
@@ -26,6 +26,5 @@ pages:
   app:
     dir: .
     dist: dist
-    bucket: tc-functors-dev
     config_template: index.html
     skip_deploy: true
