@@ -434,6 +434,7 @@ fn make_routes(
     fns: &HashMap<String, Function>,
     events: &HashMap<String, Event>,
     queues: &HashMap<String, Queue>,
+    infra_dir: &str
 ) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
@@ -442,7 +443,7 @@ fn make_routes(
             for (name, rspec) in xs {
                 tracing::debug!("route {}", &name);
                 let skip = rspec.doc_only;
-                let route = Route::new(fqn, &name, spec, rspec, fns, events, queues, skip);
+                let route = Route::new(fqn, &name, spec, rspec, fns, events, queues, infra_dir, skip);
                 h.insert(name.to_string(), route);
             }
             h
@@ -613,7 +614,7 @@ fn make(
     };
     let events = make_events(&namespace, &spec, &fqn, &config, &functions, &resolvers);
     let queues = make_queues(&spec, &config);
-    let routes = make_routes(&spec, &fqn, &functions, &events, &queues);
+    let routes = make_routes(&spec, &fqn, &functions, &events, &queues, &infra_dir);
     let channels = make_channels(&spec, &config);
 
     let maybe_transducer = Transducer::new(&namespace, &functions, &events, &mutations, &channels);

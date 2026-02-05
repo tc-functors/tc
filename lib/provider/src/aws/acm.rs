@@ -15,6 +15,11 @@ pub async fn make_client(auth: &Auth) -> Client {
     Client::new(shared_config)
 }
 
+pub async fn make_region_client(auth: &Auth) -> Client {
+    let shared_config = &auth.aws_config;
+    Client::new(shared_config)
+}
+
 async fn list_certs_by_token(
     client: &Client,
     token: &str,

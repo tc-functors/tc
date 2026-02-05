@@ -8,9 +8,12 @@ use composer::{
 };
 use itertools::Itertools;
 use kit::*;
+use kit as u;
 use provider::{
     Auth,
     aws::{
+        route53,
+        acm,
         cognito,
         gateway,
         gateway::{
@@ -242,7 +245,78 @@ async fn create_authorizer(
     }
 }
 
-pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>) {
+
+// domain stuff
+
+fn find_domain(
+    domains: &HashMap<String, HashMap<String, String>>,
+    env: &str,
+    sandbox: &str,
+) -> Option<String> {
+    match domains.get(env) {
+        Some(e) => e.get(sandbox).cloned(),
+        None => match domains.get("default") {
+            Some(d) => d.get(sandbox).cloned(),
+            None => None,
+        },
+    }
+}
+
+async fn update_dns_record(auth: &Auth, domain: &str, cname: &str) {
+    tracing::debug!("Associating domain {}", domain);
+    let rclient = route53::make_client(auth).await;
+    route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
+}
+
+async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
+    let client = acm::make_region_client(auth).await;
+
+    let maybe_cert = acm::find_cert(&client, domain).await;
+    let cert_arn = if let Some(arn) = maybe_cert {
+        tracing::debug!("Cert already exists {}", &arn);
+        arn
+    } else {
+        println!("Creating cert {}", domain);
+        acm::request_cert(&client, domain, token).await
+    };
+    u::sleep(1000);
+    if !acm::is_cert_issued(&client, &cert_arn).await {
+        u::sleep(10000);
+        let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
+        let route53_client = route53::make_client(auth).await;
+        for rec in validation_records {
+            route53::create_record_set(
+                &route53_client,
+                domain,
+                &rec.name,
+                &rec.r#type.as_str(),
+                &rec.value,
+            )
+            .await;
+        }
+        acm::wait_until_validated(&client, &cert_arn).await;
+    } else {
+        println!("Checking cert status: Issued");
+    }
+    cert_arn
+}
+
+pub async fn create_domain(auth: &Auth, api_id: &str, route: &Route, env: &str, sandbox: &str) -> Option<String> {
+    let maybe_domain = find_domain(&route.domains, env, sandbox);
+
+    if let Some(domain) = &maybe_domain {
+        println!("Creating domain: {}", domain);
+        let idempotency_token = sandbox;
+        let cert_arn = find_or_create_cert(auth, domain, idempotency_token).await;
+        let client = gateway::make_client(auth).await;
+        let gateway_domain = gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "").await;
+        println!("Updating dns record {}", &gateway_domain);
+        update_dns_record(auth, domain, &gateway_domain).await;
+    }
+    maybe_domain
+}
+
+pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>, sandbox: &str) {
     if routes.len() > 0 {
         let client = gateway::make_client(auth).await;
         let api = Api::new(routes);
@@ -258,8 +332,20 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap
         }
         gateway::create_stage(&client, &api_id, &api.stage, HashMap::new()).await;
         gateway::create_deployment(&client, &api_id, &api.stage).await;
-        let endpoint = auth.api_endpoint(&api_id, &api.stage);
-        println!("Endpoint {}", &endpoint);
+
+        // domains
+        if let Some((_key, route)) = routes.iter().next() {
+            let maybe_domain = create_domain(auth, &api_id, route, &auth.name, sandbox).await;
+            if let Some(domain) = maybe_domain {
+                println!("Endpoint {}", &domain);
+            } else {
+                let endpoint = auth.api_endpoint(&api_id, &api.stage);
+                println!("Endpoint {}", &endpoint);
+            }
+        } else {
+            let endpoint = auth.api_endpoint(&api_id, &api.stage);
+            println!("Endpoint {}", &endpoint);
+        }
     }
 }
 

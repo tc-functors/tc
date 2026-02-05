@@ -14,6 +14,7 @@ use compiler::{
     },
 };
 use kit::*;
+use kit as u;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -48,6 +49,7 @@ pub struct Route {
     pub is_async: bool,
     pub cors: Option<Cors>,
     pub target: Target,
+    pub domains: HashMap<String, HashMap<String, String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -232,8 +234,10 @@ impl Route {
         fns: &HashMap<String, Function>,
         events: &HashMap<String, Event>,
         queues: &HashMap<String, Queue>,
+        infra_dir: &str,
         skip: bool,
     ) -> Route {
+
         let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
             None => s!(fqn),
@@ -275,8 +279,41 @@ impl Route {
             stage: stage,
             stage_variables: HashMap::new(),
             is_async: is_async,
+            domains: find_domains(infra_dir),
             cors: cors,
             skip: skip,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Infra {
+    pub domains: Option<HashMap<String, HashMap<String, String>>>,
+}
+
+impl Infra {
+    pub fn new(infra_dir: &str) -> Option<Infra> {
+        let f = format!("{}/routes.json", infra_dir);
+        if u::file_exists(&f) {
+            let data: String = u::slurp(&f);
+            let inf: Infra = serde_json::from_str(&data).unwrap();
+            Some(inf)
+        } else {
+            None
+        }
+    }
+}
+
+fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, String>> {
+    let maybe_infra = Infra::new(infra_dir);
+    if let Some(inf) = maybe_infra {
+        if let Some(domains) = &inf.domains {
+            domains.clone()
+        } else {
+            HashMap::new()
+        }
+    } else {
+        HashMap::new()
+    }
+
 }

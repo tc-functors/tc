@@ -8,9 +8,12 @@ use aws_sdk_apigatewayv2::{
         Cors,
         JwtConfiguration,
         ProtocolType,
+        EndpointType,
+        DomainNameConfiguration,
         builders::{
             CorsBuilder,
             JwtConfigurationBuilder,
+            DomainNameConfigurationBuilder
         },
     },
 };
@@ -608,6 +611,87 @@ pub async fn find_tags(client: &Client, name: &str) -> HashMap<String, String> {
     match maybe_h {
         Some(p) => p.clone(),
         None => HashMap::new(),
+    }
+}
+
+// domain
+
+async fn find_domain(client: &Client, domain_name: &str) -> Option<String> {
+    let res = client
+        .get_domain_name()
+        .domain_name(domain_name)
+        .send()
+        .await;
+    match res {
+        Ok(r) => {
+            let cfgs = r.domain_name_configurations.unwrap();
+            let cfg = cfgs.first();
+            cfg.unwrap().api_gateway_domain_name.clone()
+        },
+        Err(_) => None
+    }
+}
+
+async fn _update_domain(client: &Client, domain_name: &str, cfg: DomainNameConfiguration) {
+    let _ = client
+        .update_domain_name()
+        .domain_name(domain_name)
+        .domain_name_configurations(cfg)
+        .send()
+        .await;
+}
+
+async fn create_domain(client: &Client, domain_name: &str, cfg: DomainNameConfiguration) -> String {
+    let res = client
+        .create_domain_name()
+        .domain_name(domain_name)
+        .domain_name_configurations(cfg)
+        .send()
+        .await;
+    let cfgs = res.unwrap().domain_name_configurations.unwrap();
+    let cfg = cfgs.first();
+    cfg.unwrap().api_gateway_domain_name.clone().unwrap()
+}
+
+fn make_domain_config(name: &str, cert_arn: &str) -> DomainNameConfiguration  {
+    let f = DomainNameConfigurationBuilder::default();
+    f.api_gateway_domain_name(name)
+        .certificate_arn(cert_arn)
+        .endpoint_type(EndpointType::Regional)
+        .build()
+}
+
+pub async fn create_or_update_domain(
+    client: &Client,
+    api_id: &str,
+    domain_name: &str,
+    stage: &str,
+    cert_arn: &str,
+    _hosted_zone_id: &str
+) -> String {
+    let cfg = make_domain_config(domain_name, cert_arn);
+
+    let maybe_domain = find_domain(client, domain_name).await;
+
+    if let Some(d) = maybe_domain {
+        let _ = client
+            .create_api_mapping()
+            .api_id(api_id)
+            .domain_name(domain_name)
+            .stage(stage)
+            .send()
+            .await;
+        d
+    } else {
+        let d = create_domain(client, domain_name, cfg).await;
+        let _ = client
+            .create_api_mapping()
+            .api_id(api_id)
+            .domain_name(domain_name)
+            .stage(stage)
+            .send()
+            .await;
+        d
     }
 }
 
