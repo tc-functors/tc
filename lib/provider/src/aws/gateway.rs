@@ -10,10 +10,12 @@ use aws_sdk_apigatewayv2::{
         ProtocolType,
         EndpointType,
         DomainNameConfiguration,
+        RouteSettings,
         builders::{
             CorsBuilder,
             JwtConfigurationBuilder,
-            DomainNameConfigurationBuilder
+            DomainNameConfigurationBuilder,
+            RouteSettingsBuilder
         },
     },
 };
@@ -452,22 +454,59 @@ pub async fn delete_authorizer(client: &Client, api_id: &str, name: &str) {
     }
 }
 
-pub async fn create_stage(
+fn make_route_settings(burst_limit: Option<i32>, rate_limit: Option<f64>) -> RouteSettings {
+    let f = RouteSettingsBuilder::default();
+    f.set_throttling_burst_limit(burst_limit)
+        .set_throttling_rate_limit(rate_limit)
+        .build()
+}
+
+async fn _create_stage(
     client: &Client,
     api_id: &str,
     stage: &str,
-    stage_variables: HashMap<String, String>,
+    burst_limit: Option<i32>,
+    rate_limit: Option<f64>
 ) {
-    let stage_variables = stage_variables.to_owned();
+    let route_settings = make_route_settings(burst_limit, rate_limit);
     tracing::debug!("Creating stage {}", &stage.green());
     let _ = client
         .create_stage()
         .api_id(s!(api_id))
         .auto_deploy(true)
         .stage_name(stage)
-        .set_stage_variables(Some(stage_variables))
+        .default_route_settings(route_settings)
         .send()
         .await;
+}
+
+async fn update_stage(
+    client: &Client,
+    api_id: &str,
+    stage: &str,
+    burst_limit: Option<i32>,
+    rate_limit: Option<f64>
+) {
+    let route_settings = make_route_settings(burst_limit, rate_limit);
+        let _ = client
+        .update_stage()
+        .api_id(s!(api_id))
+        .auto_deploy(true)
+        .stage_name(stage)
+        .default_route_settings(route_settings)
+        .send()
+        .await;
+
+}
+
+pub async fn create_or_update_stage(
+    client: &Client,
+    api_id: &str,
+    stage: &str,
+    burst_limit: Option<i32>,
+    rate_limit: Option<f64>
+) {
+    update_stage(client, api_id, stage, burst_limit, rate_limit).await;
 }
 
 pub async fn create_lambda_integration(
@@ -694,5 +733,6 @@ pub async fn create_or_update_domain(
         d
     }
 }
+
 
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;

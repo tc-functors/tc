@@ -1,6 +1,7 @@
 use compiler::Entity;
 use composer::{
     Route,
+    Throttling,
     aws::route::{
         Authorizer,
         Target,
@@ -262,6 +263,35 @@ fn find_domain(
     }
 }
 
+fn find_throttling(
+    throttling: &HashMap<String, HashMap<String, Throttling>>,
+    env: &str,
+    sandbox: &str,
+) -> (Option<i32>, Option<f64>)  {
+    match throttling.get(env) {
+        Some(e) => {
+            let maybe_t = e.get(sandbox);
+            if let Some(t) = maybe_t {
+                (t.burst_limit, t.rate_limit)
+            } else {
+                (None, None)
+            }
+        }
+        None => match throttling.get("default") {
+            Some(d) => {
+                let maybe_t = d.get(sandbox);
+                if let Some(t) = maybe_t {
+                    (t.burst_limit, t.rate_limit)
+                } else {
+                    (None, None)
+                }
+            },
+            None => (None, None),
+        },
+    }
+}
+
+
 async fn update_dns_record(auth: &Auth, domain: &str, cname: &str) {
     tracing::debug!("Associating domain {}", domain);
     let rclient = route53::make_client(auth).await;
@@ -330,11 +360,15 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap
                 create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
             }
         }
-        gateway::create_stage(&client, &api_id, &api.stage, HashMap::new()).await;
-        gateway::create_deployment(&client, &api_id, &api.stage).await;
 
-        // domains
+        // domains, stages and deployment
         if let Some((_key, route)) = routes.iter().next() {
+
+            let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
+            gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit).await;
+            gateway::create_deployment(&client, &api_id, &api.stage).await;
+
+
             let maybe_domain = create_domain(auth, &api_id, route, &auth.name, sandbox).await;
             if let Some(domain) = maybe_domain {
                 println!("Endpoint {}", &domain);

@@ -32,6 +32,7 @@ pub use aws::{
         policy::Policy,
     },
     route::Route,
+    route::Throttling,
     schedule::Schedule,
     transducer::Transducer,
 };

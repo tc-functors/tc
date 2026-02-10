@@ -37,6 +37,12 @@ pub struct Authorizer {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Throttling {
+    pub burst_limit:  Option<i32>,
+    pub rate_limit: Option<f64>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Route {
     pub skip: bool,
     pub method: String,
@@ -50,6 +56,7 @@ pub struct Route {
     pub cors: Option<Cors>,
     pub target: Target,
     pub domains: HashMap<String, HashMap<String, String>>,
+    pub throttling: HashMap<String, HashMap<String, Throttling>>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -280,6 +287,7 @@ impl Route {
             stage_variables: HashMap::new(),
             is_async: is_async,
             domains: find_domains(infra_dir),
+            throttling: find_throttling(infra_dir),
             cors: cors,
             skip: skip,
         }
@@ -288,6 +296,7 @@ impl Route {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Infra {
+    pub throttling: Option<HashMap<String, HashMap<String, Throttling>>>,
     pub domains: Option<HashMap<String, HashMap<String, String>>>,
 }
 
@@ -309,6 +318,20 @@ fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, String>> {
     if let Some(inf) = maybe_infra {
         if let Some(domains) = &inf.domains {
             domains.clone()
+        } else {
+            HashMap::new()
+        }
+    } else {
+        HashMap::new()
+    }
+
+}
+
+fn find_throttling(infra_dir: &str) -> HashMap<String, HashMap<String, Throttling>> {
+    let maybe_infra = Infra::new(infra_dir);
+    if let Some(inf) = maybe_infra {
+        if let Some(throttling) = &inf.throttling {
+            throttling.clone()
         } else {
             HashMap::new()
         }
