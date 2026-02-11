@@ -7,6 +7,7 @@ use provider::{
     },
 };
 use std::collections::HashMap;
+use serde_json::Value;
 
 fn should_delete() -> bool {
     match std::env::var("TC_FORCE_DELETE") {
@@ -63,8 +64,37 @@ pub async fn create_aux(
             }
         },
         _ => {
-            let _ = r.create_or_update().await;
-            ()
+
+            let maybe_policy = iam::find_policy_doc(&client, &role.name, &role.policy_arn).await;
+
+            let should_update = match maybe_policy {
+                Some(doc) => {
+                    let v1: Value = serde_json::from_str(&doc).unwrap();
+                    let v2: Value = serde_json::from_str(&role.policy.to_string()).unwrap();
+                    let diff = sjdiff::DiffBuilder::default()
+                        .source(v1)
+                        .target(v2)
+                        .build()
+                        .unwrap();
+                    let diff = diff.compare();
+
+                    let res = match diff {
+                        Some(_) => true,
+                        None => false
+                    };
+                    println!("Diffing role: {} changed: {}", &role.name, &res);
+                    res
+                }
+                None => true
+            };
+
+
+            if should_update {
+                let _ = r.create_or_update().await;
+                ()
+            } else {
+                ()
+            }
         }
     };
 }

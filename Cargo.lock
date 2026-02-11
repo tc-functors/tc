@@ -24,6 +24,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e89da841a80418a9b391ebaea17f5c112ffaaa96f621d2c285b5174da76b9011"
 dependencies = [
  "cfg-if 1.0.0",
+ "const-random",
+ "getrandom 0.2.15",
  "once_cell",
  "version_check",
  "zerocopy 0.7.35",
@@ -128,6 +130,15 @@ name = "anyhow"
 version = "1.0.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
+
+[[package]]
+name = "approx"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
+dependencies = [
+ "num-traits 0.2.19",
+]
 
 [[package]]
 name = "arrayvec"
@@ -1355,7 +1366,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -1796,7 +1807,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "colored",
@@ -1819,7 +1830,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -1874,7 +1885,7 @@ dependencies = [
 
 [[package]]
 name = "configurator"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "derivative",
  "kit",
@@ -1903,6 +1914,26 @@ name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
+
+[[package]]
+name = "const-random"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87e00182fe74b066627d63b85fd550ac2998d4b0bd86bfed477a0ae4c7c71359"
+dependencies = [
+ "const-random-macro",
+]
+
+[[package]]
+name = "const-random-macro"
+version = "0.1.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9d839f2a20b0aee515dc581a6172f2321f96cab76c1a38a4c584a194955390e"
+dependencies = [
+ "getrandom 0.2.15",
+ "once_cell",
+ "tiny-keccak",
+]
 
 [[package]]
 name = "convert_case"
@@ -2022,6 +2053,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "crunchy"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "460fbee9c2c2f33933d720630a6a0bac33ba7053db5344fac858d4b8952d77d5"
+
+[[package]]
 name = "crypto-bigint"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2090,7 +2127,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "builder",
@@ -2106,6 +2143,7 @@ dependencies = [
  "serde 1.0.228",
  "serde_derive",
  "serde_json",
+ "sjdiff",
  "tabled 0.10.0",
  "tokio",
  "tracing",
@@ -2144,8 +2182,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_builder"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "507dfb09ea8b7fa618fcf76e953f4f5e192547945816d5358edffe39f6f94947"
+dependencies = [
+ "derive_builder_macro",
+]
+
+[[package]]
+name = "derive_builder_core"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d5bcf7b024d6835cfb3d473887cd966994907effbe9227e8c8219824d06c4e8"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
+name = "derive_builder_macro"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab63b0e2bf4d5928aff72e83a7dace85d7bba5fe12dcc3c5a572d78caffd3f3c"
+dependencies = [
+ "derive_builder_core",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "differ"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "cacache",
  "composer",
@@ -2269,7 +2338,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2372,7 +2441,7 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "kit",
  "serde 1.0.228",
@@ -3221,7 +3290,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "colored",
  "compiler",
@@ -3338,7 +3407,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -3744,7 +3813,7 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "colored",
  "configurator",
@@ -3819,6 +3888,9 @@ name = "once_cell"
 version = "1.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1261fe7e33c73b354eab43b1273a57c8f967d0391e80353e51f764ac02cf6775"
+dependencies = [
+ "portable-atomic",
+]
 
 [[package]]
 name = "open"
@@ -4232,7 +4304,7 @@ dependencies = [
 
 [[package]]
 name = "provider"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -4267,6 +4339,7 @@ dependencies = [
  "s3uri",
  "tracing",
  "tracing-subscriber",
+ "urlencoding",
  "walkdir",
 ]
 
@@ -4569,7 +4642,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "cacache",
  "compiler",
@@ -4599,6 +4672,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "rhai"
+version = "1.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f9ef5dabe4c0b43d8f1187dc6beb67b53fe607fff7e30c5eb7f71b814b8c2c1"
+dependencies = [
+ "ahash",
+ "bitflags 2.7.0",
+ "num-traits 0.2.19",
+ "once_cell",
+ "rhai_codegen",
+ "smallvec",
+ "smartstring",
+ "thin-vec",
+ "web-time",
+]
+
+[[package]]
+name = "rhai_codegen"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4322a2a4e8cf30771dd9f27f7f37ca9ac8fe812dddd811096a98483080dabe6"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
+]
+
+[[package]]
 name = "ring"
 version = "0.17.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4615,7 +4716,7 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "anyhow",
  "colored",
@@ -4827,7 +4928,7 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "base64 0.21.7",
  "compiler",
@@ -5209,6 +5310,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sjdiff"
+version = "0.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dcd08eb7321e018a612ac34931ef6b1e2e6792566fc48ab9bdc4a262f4b59136"
+dependencies = [
+ "approx",
+ "chrono",
+ "derive_builder",
+ "rhai",
+ "serde 1.0.228",
+ "serde_json",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5224,8 +5339,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
+name = "smartstring"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fb72c633efbaa2dd666986505016c32c3044395ceaf881518399d2f4127ee29"
+dependencies = [
+ "autocfg",
+ "static_assertions",
+ "version_check",
+]
+
+[[package]]
 name = "snapshotter"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "colored",
  "compiler",
@@ -5449,7 +5575,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "colored",
  "kit",
@@ -5463,7 +5589,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "builder",
  "clap",
@@ -5535,7 +5661,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "assert-json-diff",
  "colored",
@@ -5568,6 +5694,12 @@ checksum = "dd5008f74a09742486ef0047596cf35df2b914e2a8dca5727fcb6ba6842a766b"
 dependencies = [
  "hashbrown 0.13.2",
 ]
+
+[[package]]
+name = "thin-vec"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "144f754d318415ac792f9d69fc87abbbfc043ce2ef041c60f16ad828f638717d"
 
 [[package]]
 name = "thiserror"
@@ -5657,6 +5789,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7af24570664a3074673dbbf69a65bdae0ae0b72f2949b1adfbacb736ee4d6896"
 dependencies = [
  "lazy_static 0.2.11",
+]
+
+[[package]]
+name = "tiny-keccak"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
+dependencies = [
+ "crunchy",
 ]
 
 [[package]]
@@ -5996,7 +6137,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "visualizer"
-version = "0.9.50"
+version = "0.9.51"
 dependencies = [
  "base64 0.21.7",
  "compiler",

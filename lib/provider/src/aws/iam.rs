@@ -286,3 +286,35 @@ impl Role {
         }
     }
 }
+
+
+pub async fn find_policy_doc(client: &Client, _role_name: &str, policy_arn: &str) -> Option<String> {
+    let res = client
+        .get_policy()
+        .policy_arn(policy_arn)
+        .send()
+        .await;
+
+    match res {
+        Ok(r) => {
+            if let Some(version) = r.policy.unwrap().default_version_id {
+                let dres = client
+                    .get_policy_version()
+                    .policy_arn(policy_arn)
+                    .version_id(version)
+                    .send()
+                    .await;
+                match dres {
+                    Ok(r) => {
+                        let doc = r.policy_version.unwrap().document.unwrap();
+                        Some(urlencoding::decode(&doc).expect("UTF-8").to_string())
+                    }
+                    Err(_) => None
+                }
+            } else {
+                None
+            }
+        },
+        Err(_) => None
+    }
+}
