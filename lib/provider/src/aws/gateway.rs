@@ -461,7 +461,22 @@ fn make_route_settings(burst_limit: Option<i32>, rate_limit: Option<f64>) -> Rou
         .build()
 }
 
-async fn _create_stage(
+async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
+    let res = client
+        .get_stage()
+        .api_id(s!(api_id))
+        .stage_name(stage)
+        .send()
+        .await;
+
+    println!("{:?}", &res);
+    match res {
+        Ok(_) => true,
+        Err(_) => false
+    }
+}
+
+async fn create_stage(
     client: &Client,
     api_id: &str,
     stage: &str,
@@ -506,7 +521,11 @@ pub async fn create_or_update_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>
 ) {
-    update_stage(client, api_id, stage, burst_limit, rate_limit).await;
+    if stage_exists(client, api_id, stage).await {
+        update_stage(client, api_id, stage, burst_limit, rate_limit).await;
+    } else {
+        create_stage(client, api_id, stage, burst_limit, rate_limit).await;
+    }
 }
 
 pub async fn create_lambda_integration(
@@ -516,6 +535,7 @@ pub async fn create_lambda_integration(
     role: &str,
     is_async: bool,
 ) -> String {
+
     lambda::create_or_update(client, api_id, target_arn, role, is_async).await
 }
 
