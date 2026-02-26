@@ -72,6 +72,7 @@ impl Role {
         println!("Deleting role {}", self.name);
         self.detach_policy().await?;
         self.wait_until_detached().await;
+        self.delete_non_default_versions().await?;
         self.delete_policy().await?;
         self.delete_role().await?;
         Ok(())
@@ -83,26 +84,31 @@ impl Role {
         let _ = log_update.render(&format!(
             "Updating role {} ({})",
             self.name,
-            "detaching policy".blue()
+            "pruning old versions".blue()
         ));
-        self.detach_policy().await?;
+        self.delete_non_default_versions().await?;
 
-        self.wait_until_detached().await;
+        let _ = log_update.render(&format!(
+            "Updating role {} ({})",
+            self.name,
+            "creating policy version".blue()
+        ));
+        self.client
+            .create_policy_version()
+            .policy_arn(&self.policy_arn)
+            .policy_document(&self.policy_doc)
+            .set_as_default(true)
+            .send()
+            .await
+            .unwrap();
 
-        let _ = log_update.render(&format!("Updating role {} (deleting policy)", self.name));
-        self.delete_policy().await?;
-
-        u::sleep(2000);
-
-        let _ = log_update.render(&format!("Updating role {} (creating policy)", self.name));
-        self.find_or_create_policy().await;
-        self.wait_until_attachable().await;
-
-        let _ = log_update.render(&format!("Updating role {} (attaching policy)", self.name));
-        self.attach_policy().await;
         self.find_or_create_role().await;
-        self.wait_until_attached().await;
-        let _ = log_update.render(&format!("Updating role {} (attached)", self.name));
+
+        let _ = log_update.render(&format!(
+            "Updating role {} ({})",
+            self.name,
+            "updated".green()
+        ));
         Ok(())
     }
 
@@ -233,6 +239,42 @@ impl Role {
             Ok(_) => Ok(()),
             Err(_) => Ok(()),
         }
+    }
+
+    async fn list_policy_versions(&self) -> Vec<(String, bool)> {
+        let res = self
+            .client
+            .list_policy_versions()
+            .policy_arn(&self.policy_arn)
+            .send()
+            .await;
+        match res {
+            Ok(r) => r
+                .versions()
+                .iter()
+                .filter_map(|v| {
+                    v.version_id()
+                        .map(|id| (id.to_string(), v.is_default_version()))
+                })
+                .collect(),
+            Err(_) => vec![],
+        }
+    }
+
+    async fn delete_non_default_versions(&self) -> Result<(), Error> {
+        let versions = self.list_policy_versions().await;
+        for (version_id, is_default) in versions {
+            if !is_default {
+                let _ = self
+                    .client
+                    .delete_policy_version()
+                    .policy_arn(&self.policy_arn)
+                    .version_id(version_id)
+                    .send()
+                    .await;
+            }
+        }
+        Ok(())
     }
 
     pub async fn is_policy_attachable(&self) -> bool {
