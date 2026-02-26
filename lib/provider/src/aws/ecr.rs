@@ -49,8 +49,7 @@ pub async fn login(auth: &Auth, dir: &str) {
                 &token,
                 get_host(auth)
             );
-            let (status, out, err) = u::runc(&cmd, dir);
-            tracing::debug!("Docker login: {} {} {}", status, out, err);
+            u::runcmd_quiet(&cmd, dir);
         }
         None => panic!("Failed to get ECR auth token"),
     }
