@@ -1,6 +1,9 @@
 use kit as u;
 use kit::*;
-use serde::{Deserialize,Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Debug)]

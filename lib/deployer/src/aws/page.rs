@@ -16,7 +16,13 @@ use provider::{
 };
 use std::collections::HashMap;
 
-async fn build_page(auth: &Auth, dir: &str, name: &str, command: &Option<String>, config_template: &Option<String>) {
+async fn build_page(
+    auth: &Auth,
+    dir: &str,
+    name: &str,
+    command: &Option<String>,
+    config_template: &Option<String>,
+) {
     match command {
         Some(c) => {
             builder::page::build(auth, dir, name, &c, config_template).await;

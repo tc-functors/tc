@@ -6,8 +6,8 @@ use provider::{
         iam::Role,
     },
 };
-use std::collections::HashMap;
 use serde_json::Value;
+use std::collections::HashMap;
 
 fn should_delete() -> bool {
     match std::env::var("TC_FORCE_DELETE") {
@@ -64,7 +64,6 @@ pub async fn create_aux(
             }
         },
         _ => {
-
             let maybe_policy = iam::find_policy_doc(&client, &role.name, &role.policy_arn).await;
 
             let should_update = match maybe_policy {
@@ -80,14 +79,13 @@ pub async fn create_aux(
 
                     let res = match diff {
                         Some(_) => true,
-                        None => false
+                        None => false,
                     };
                     println!("Diffing role: {} changed: {}", &role.name, &res);
                     res
                 }
-                None => true
+                None => true,
             };
-
 
             if should_update {
                 let _ = r.create_or_update().await;

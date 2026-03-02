@@ -13,8 +13,8 @@ use compiler::{
         route::CorsSpec,
     },
 };
-use kit::*;
 use kit as u;
+use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -38,7 +38,7 @@ pub struct Authorizer {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Throttling {
-    pub burst_limit:  Option<i32>,
+    pub burst_limit: Option<i32>,
     pub rate_limit: Option<f64>,
 }
 
@@ -56,7 +56,7 @@ pub struct Route {
     pub cors: Option<Cors>,
     pub target: Target,
     pub domains: HashMap<String, HashMap<String, String>>,
-    pub throttling: HashMap<String, HashMap<String, Throttling>>
+    pub throttling: HashMap<String, HashMap<String, Throttling>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -185,7 +185,7 @@ fn make_cors(maybe_cors: &Option<CorsSpec>) -> Option<Cors> {
             },
             headers: c.headers.clone().unwrap_or(v!["*"]),
         }),
-        None => None
+        None => None,
     }
 }
 
@@ -244,7 +244,6 @@ impl Route {
         infra_dir: &str,
         skip: bool,
     ) -> Route {
-
         let gateway = match &rspec.gateway {
             Some(gw) => gw.clone(),
             None => s!(fqn),
@@ -324,7 +323,6 @@ fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, String>> {
     } else {
         HashMap::new()
     }
-
 }
 
 fn find_throttling(infra_dir: &str) -> HashMap<String, HashMap<String, Throttling>> {
@@ -338,5 +336,4 @@ fn find_throttling(infra_dir: &str) -> HashMap<String, HashMap<String, Throttlin
     } else {
         HashMap::new()
     }
-
 }

@@ -6,16 +6,16 @@ use aws_sdk_apigatewayv2::{
         AuthorizationType,
         AuthorizerType,
         Cors,
+        DomainNameConfiguration,
+        EndpointType,
         JwtConfiguration,
         ProtocolType,
-        EndpointType,
-        DomainNameConfiguration,
         RouteSettings,
         builders::{
             CorsBuilder,
-            JwtConfigurationBuilder,
             DomainNameConfigurationBuilder,
-            RouteSettingsBuilder
+            JwtConfigurationBuilder,
+            RouteSettingsBuilder,
         },
     },
 };
@@ -472,7 +472,7 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
     println!("{:?}", &res);
     match res {
         Ok(_) => true,
-        Err(_) => false
+        Err(_) => false,
     }
 }
 
@@ -481,7 +481,7 @@ async fn create_stage(
     api_id: &str,
     stage: &str,
     burst_limit: Option<i32>,
-    rate_limit: Option<f64>
+    rate_limit: Option<f64>,
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     tracing::debug!("Creating stage {}", &stage.green());
@@ -500,10 +500,10 @@ async fn update_stage(
     api_id: &str,
     stage: &str,
     burst_limit: Option<i32>,
-    rate_limit: Option<f64>
+    rate_limit: Option<f64>,
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
-        let _ = client
+    let _ = client
         .update_stage()
         .api_id(s!(api_id))
         .auto_deploy(true)
@@ -511,7 +511,6 @@ async fn update_stage(
         .default_route_settings(route_settings)
         .send()
         .await;
-
 }
 
 pub async fn create_or_update_stage(
@@ -519,7 +518,7 @@ pub async fn create_or_update_stage(
     api_id: &str,
     stage: &str,
     burst_limit: Option<i32>,
-    rate_limit: Option<f64>
+    rate_limit: Option<f64>,
 ) {
     if stage_exists(client, api_id, stage).await {
         update_stage(client, api_id, stage, burst_limit, rate_limit).await;
@@ -535,7 +534,6 @@ pub async fn create_lambda_integration(
     role: &str,
     is_async: bool,
 ) -> String {
-
     lambda::create_or_update(client, api_id, target_arn, role, is_async).await
 }
 
@@ -686,8 +684,8 @@ async fn find_domain(client: &Client, domain_name: &str) -> Option<String> {
             let cfgs = r.domain_name_configurations.unwrap();
             let cfg = cfgs.first();
             cfg.unwrap().api_gateway_domain_name.clone()
-        },
-        Err(_) => None
+        }
+        Err(_) => None,
     }
 }
 
@@ -712,7 +710,7 @@ async fn create_domain(client: &Client, domain_name: &str, cfg: DomainNameConfig
     cfg.unwrap().api_gateway_domain_name.clone().unwrap()
 }
 
-fn make_domain_config(name: &str, cert_arn: &str) -> DomainNameConfiguration  {
+fn make_domain_config(name: &str, cert_arn: &str) -> DomainNameConfiguration {
     let f = DomainNameConfigurationBuilder::default();
     f.api_gateway_domain_name(name)
         .certificate_arn(cert_arn)
@@ -726,7 +724,7 @@ pub async fn create_or_update_domain(
     domain_name: &str,
     stage: &str,
     cert_arn: &str,
-    _hosted_zone_id: &str
+    _hosted_zone_id: &str,
 ) -> String {
     let cfg = make_domain_config(domain_name, cert_arn);
 
@@ -753,6 +751,5 @@ pub async fn create_or_update_domain(
         d
     }
 }
-
 
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;

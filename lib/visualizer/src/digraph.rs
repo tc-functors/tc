@@ -1,8 +1,7 @@
 use compiler::Entity;
 use composer::Topology;
-
-use std::collections::HashMap;
 use kit::*;
+use std::collections::HashMap;
 
 fn attr_of(entity: &Entity) -> String {
     match entity {
@@ -22,17 +21,17 @@ fn attr_of(entity: &Entity) -> String {
 #[derive(Eq, Hash, PartialEq)]
 struct Source {
     entity: Entity,
-    name: String
+    name: String,
 }
 
 struct Target {
     entity: Entity,
-    name: String
+    name: String,
 }
 
 fn name_of(s: &str) -> String {
     if s.contains("{{namespace") && s.contains("{{sandbox") {
-        let parts: Vec<&str>= s.split("_").collect();
+        let parts: Vec<&str> = s.split("_").collect();
         parts.clone().into_iter().nth(1).unwrap().to_string()
     } else if s.contains("{{sandbox") {
         let parts: Vec<&str> = s.split("_").collect();
@@ -47,11 +46,11 @@ fn find_mappings(topology: &Topology) -> HashMap<Source, Vec<Target>> {
     for (_, route) in &topology.routes {
         let s = Source {
             entity: Entity::Route,
-            name: route.path.clone()
+            name: route.path.clone(),
         };
         let t = Target {
             entity: route.target.entity.clone(),
-            name: name_of(&route.target.name)
+            name: name_of(&route.target.name),
         };
         h.insert(s, vec![t]);
     }
@@ -59,14 +58,14 @@ fn find_mappings(topology: &Topology) -> HashMap<Source, Vec<Target>> {
     for (name, event) in &topology.events {
         let s = Source {
             entity: Entity::Event,
-            name: name.to_string()
+            name: name.to_string(),
         };
 
         let mut xs: Vec<Target> = vec![];
         for target in &event.targets {
             let t = Target {
                 entity: target.entity.clone(),
-                name: name_of(&target.name)
+                name: name_of(&target.name),
             };
             xs.push(t);
         }
@@ -74,16 +73,15 @@ fn find_mappings(topology: &Topology) -> HashMap<Source, Vec<Target>> {
     }
 
     for (name, f) in &topology.functions {
-
         let s = Source {
             entity: Entity::Function,
-            name: name.to_string()
+            name: name.to_string(),
         };
         let mut xs: Vec<Target> = vec![];
         for target in &f.targets {
             let t = Target {
                 entity: target.entity.clone(),
-                name: name_of(&target.name)
+                name: name_of(&target.name),
             };
             xs.push(t);
         }
@@ -99,7 +97,7 @@ fn find_mappings(topology: &Topology) -> HashMap<Source, Vec<Target>> {
             };
             let t = Target {
                 entity: resolver.entity.clone(),
-                name: name_of(&resolver.target_name)
+                name: name_of(&resolver.target_name),
             };
             h.insert(s, vec![t]);
         }
@@ -108,13 +106,13 @@ fn find_mappings(topology: &Topology) -> HashMap<Source, Vec<Target>> {
     for (name, queue) in &topology.queues {
         let s = Source {
             entity: Entity::Queue,
-            name: name_of(&name)
+            name: name_of(&name),
         };
         let mut xs: Vec<Target> = vec![];
         for target in &queue.targets {
             let t = Target {
                 entity: target.entity.clone(),
-                name: name_of(&target.name)
+                name: name_of(&target.name),
             };
             xs.push(t);
         }
@@ -127,14 +125,20 @@ fn make_nodes(mappings: &HashMap<Source, Vec<Target>>) -> String {
     let mut s: String = String::from("");
     for (source, targets) in mappings {
         let attr = attr_of(&source.entity);
-        let m = format!(r#""{}"[{}]
-"#, &source.name, attr);
+        let m = format!(
+            r#""{}"[{}]
+"#,
+            &source.name, attr
+        );
         s.push_str(&m);
         for target in targets {
             let attr = attr_of(&target.entity);
-            let t = format!(r#""{}"[{}]
-"#, &target.name, attr);
-        s.push_str(&t);
+            let t = format!(
+                r#""{}"[{}]
+"#,
+                &target.name, attr
+            );
+            s.push_str(&t);
         }
     }
     s
@@ -144,8 +148,11 @@ fn make_edges(mappings: &HashMap<Source, Vec<Target>>) -> String {
     let mut s: String = String::from("");
     for (source, targets) in mappings {
         for target in targets {
-            let m = format!(r#""{}" -> "{}"
-"#, &source.name, &target.name);
+            let m = format!(
+                r#""{}" -> "{}"
+"#,
+                &source.name, &target.name
+            );
             s.push_str(&m);
         }
     }
@@ -157,7 +164,6 @@ pub fn build(topology: &Topology) -> String {
     let nodes = make_nodes(&mappings);
     let edges = make_edges(&mappings);
 
-
     // let orientation = if mappings.len() > 4 {
     //     "LR"
     // } else {
@@ -165,9 +171,11 @@ pub fn build(topology: &Topology) -> String {
     // };
     let orientation = "TB";
     if !nodes.is_empty() && !edges.is_empty() {
-        let s = format!(r#"digraph {{
+        let s = format!(
+            r#"digraph {{
 rankdir="{orientation}"
-{nodes} {edges}  }}"#);
+{nodes} {edges}  }}"#
+        );
         s
     } else {
         String::from("")

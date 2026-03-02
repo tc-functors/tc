@@ -78,7 +78,6 @@ pub fn changelogs_in_dir(from_sha: &str, to_sha: &str, dir: &str) -> String {
     }
 }
 
-
 pub fn fetch_tags() {
     sh("git fetch --tags", &pwd());
 }

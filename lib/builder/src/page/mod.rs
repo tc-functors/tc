@@ -7,15 +7,14 @@ use provider::{
     aws,
 };
 
-
 async fn get_token(auth: &Auth) -> String {
     match std::env::var("TC_USE_CODEARTIFACT") {
         Ok(_) => {
             let auth = provider::init_centralized_auth(auth).await;
             let client = aws::codeartifact::make_client(&auth).await;
             aws::codeartifact::get_auth_token(&client, &auth.name, &auth.account).await
-        },
-        Err(_) => String::from("")
+        }
+        Err(_) => String::from(""),
     }
 }
 
@@ -92,7 +91,13 @@ fn clean_tmp(dir: &str, ct: &Option<String>) {
     }
 }
 
-pub async fn build(auth: &Auth, dir: &str, name: &str, command: &str, config_template: &Option<String>) {
+pub async fn build(
+    auth: &Auth,
+    dir: &str,
+    name: &str,
+    command: &str,
+    config_template: &Option<String>,
+) {
     let bar = u::progress(5);
 
     let prefix = format!("Building {} (node/page)", name);

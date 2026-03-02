@@ -8,12 +8,11 @@ use composer::{
     },
 };
 use itertools::Itertools;
-use kit::*;
 use kit as u;
+use kit::*;
 use provider::{
     Auth,
     aws::{
-        route53,
         acm,
         cognito,
         gateway,
@@ -22,6 +21,7 @@ use provider::{
             GatewayCors as Cors,
         },
         lambda,
+        route53,
     },
 };
 use std::collections::HashMap;
@@ -221,7 +221,7 @@ async fn create_authorizer(
                         &authorizer.name,
                         &uri,
                     )
-                        .await;
+                    .await;
                     (Some(id), authorizer.kind)
                 }
                 "cognito" => {
@@ -233,19 +233,18 @@ async fn create_authorizer(
                         &issuer,
                         &client_id,
                     )
-                        .await;
+                    .await;
                     (Some(id), authorizer.kind)
                 }
                 _ => (None, String::from("")),
             }
         } else {
-                (None, String::from(""))
+            (None, String::from(""))
         }
     } else {
         (None, String::from(""))
     }
 }
-
 
 // domain stuff
 
@@ -267,7 +266,7 @@ fn find_throttling(
     throttling: &HashMap<String, HashMap<String, Throttling>>,
     env: &str,
     sandbox: &str,
-) -> (Option<i32>, Option<f64>)  {
+) -> (Option<i32>, Option<f64>) {
     match throttling.get(env) {
         Some(e) => {
             let maybe_t = e.get(sandbox);
@@ -285,12 +284,11 @@ fn find_throttling(
                 } else {
                     (None, None)
                 }
-            },
+            }
             None => (None, None),
         },
     }
 }
-
 
 async fn update_dns_record(auth: &Auth, domain: &str, cname: &str) {
     tracing::debug!("Associating domain {}", domain);
@@ -331,7 +329,13 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
     cert_arn
 }
 
-pub async fn create_domain(auth: &Auth, api_id: &str, route: &Route, env: &str, sandbox: &str) -> Option<String> {
+pub async fn create_domain(
+    auth: &Auth,
+    api_id: &str,
+    route: &Route,
+    env: &str,
+    sandbox: &str,
+) -> Option<String> {
     let maybe_domain = find_domain(&route.domains, env, sandbox);
 
     if let Some(domain) = &maybe_domain {
@@ -339,14 +343,21 @@ pub async fn create_domain(auth: &Auth, api_id: &str, route: &Route, env: &str, 
         let idempotency_token = sandbox;
         let cert_arn = find_or_create_cert(auth, domain, idempotency_token).await;
         let client = gateway::make_client(auth).await;
-        let gateway_domain = gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "").await;
+        let gateway_domain =
+            gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "")
+                .await;
         println!("Updating dns record {}", &gateway_domain);
         update_dns_record(auth, domain, &gateway_domain).await;
     }
     maybe_domain
 }
 
-pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap<String, String>, sandbox: &str) {
+pub async fn create(
+    auth: &Auth,
+    routes: &HashMap<String, Route>,
+    tags: &HashMap<String, String>,
+    sandbox: &str,
+) {
     if routes.len() > 0 {
         let client = gateway::make_client(auth).await;
         let api = Api::new(routes);
@@ -363,11 +374,10 @@ pub async fn create(auth: &Auth, routes: &HashMap<String, Route>, tags: &HashMap
 
         // domains, stages and deployment
         if let Some((_key, route)) = routes.iter().next() {
-
             let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
-            gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit).await;
+            gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
+                .await;
             gateway::create_deployment(&client, &api_id, &api.stage).await;
-
 
             let maybe_domain = create_domain(auth, &api_id, route, &auth.name, sandbox).await;
             if let Some(domain) = maybe_domain {
@@ -409,28 +419,28 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
 }
 
 pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
-   if routes.len() > 0 {
-       let client = gateway::make_client(auth).await;
-       let api = Api::new(routes);
-       let maybe_api_id = gateway::find_api(&client, &api.name).await;
+    if routes.len() > 0 {
+        let client = gateway::make_client(auth).await;
+        let api = Api::new(routes);
+        let maybe_api_id = gateway::find_api(&client, &api.name).await;
 
-       if let Some(api_id) = maybe_api_id {
-           for (name, route) in routes {
-               println!("Deleting route {}", &name);
-               if !&route.skip {
-                   delete_route(&client, &api_id, &route).await;
-               }
-           }
-           if let Some(authorizer) = api.authorizer {
-               gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
-           }
+        if let Some(api_id) = maybe_api_id {
+            for (name, route) in routes {
+                println!("Deleting route {}", &name);
+                if !&route.skip {
+                    delete_route(&client, &api_id, &route).await;
+                }
+            }
+            if let Some(authorizer) = api.authorizer {
+                gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
+            }
 
-           match std::env::var("TC_DELETE_ROOT") {
-               Ok(_) => gateway::delete_api(&client, &api_id).await,
-               Err(_) => (),
-           }
-       }
-   }
+            match std::env::var("TC_DELETE_ROOT") {
+                Ok(_) => gateway::delete_api(&client, &api_id).await,
+                Err(_) => (),
+            }
+        }
+    }
 }
 
 pub async fn update(_auth: &Auth, _mutations: &HashMap<String, Route>, _c: &str) {}

@@ -261,7 +261,7 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
     let tag = format!("{}-{}", namespace, version);
     let user = match std::env::var("CIRCLE_USERNAME") {
         Ok(x) => x,
-        Err(_) => "ci".to_string()
+        Err(_) => "ci".to_string(),
     };
     let msg = format!(
         "Deployed `{}` to *{}*::{}_{} by {}",
@@ -310,19 +310,25 @@ pub struct CreateOpts {
     pub recursive: bool,
     pub cache: bool,
     pub sync: bool,
-    pub force: bool
+    pub force: bool,
 }
 
 pub async fn create(
     profile: Option<String>,
     sandbox: Option<String>,
     topology_path: Option<String>,
-    opts: CreateOpts
-
+    opts: CreateOpts,
 ) {
     let start = Instant::now();
 
-    let CreateOpts { notify, recursive, cache, sync, force, .. } = opts;
+    let CreateOpts {
+        notify,
+        recursive,
+        cache,
+        sync,
+        force,
+        ..
+    } = opts;
 
     let maybe_topology = read_topology(topology_path).await;
 
@@ -334,7 +340,10 @@ pub async fn create(
             let dir = u::pwd();
             let topology_name = &composer::topology_name(&dir);
             if deployer::guard::is_frozen(&auth.name) && notify {
-                let msg = format!("*{}*::{} is frozen. Aborting deploy: {}", &auth.name, sandbox, topology_name);
+                let msg = format!(
+                    "*{}*::{} is frozen. Aborting deploy: {}",
+                    &auth.name, sandbox, topology_name
+                );
                 notifier::notify(topology_name, &msg).await;
             }
             deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
@@ -713,32 +722,33 @@ pub async fn scaffold(
     llm: Option<String>,
     provider: Option<String>,
     model: Option<String>,
-    functions: bool
+    functions: bool,
 ) {
     let dir = u::maybe_string(dir, &u::pwd());
 
     if functions {
         scaffolder::scaffold_functions(&dir)
     } else if llm.is_some() {
-
         let provider = u::maybe_string(provider, "anthropic");
         let text = u::maybe_string(llm, "default");
 
         match provider.as_ref() {
             "anthropic" => {
                 scaffolder::scaffold_llm_anthropic(&dir, &text, model).await;
-            },
+            }
             "bedrock" => {
                 if profile.is_some() {
                     let auth = init(profile, None).await;
                     scaffolder::scaffold_llm_bedrock(&auth, &dir, &text, model).await;
                 } else {
-                    println!("Please specify profile: tc scaffold --provider --bedrock -e <PROFILE>");
+                    println!(
+                        "Please specify profile: tc scaffold --provider --bedrock -e <PROFILE>"
+                    );
                 }
             }
-            _ => todo!()
+            _ => todo!(),
         }
-    }  else {
+    } else {
         scaffolder::scaffold_function();
     }
 }

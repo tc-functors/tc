@@ -155,7 +155,7 @@ pub async fn deploy_version(
     env: Option<String>,
     sandbox: Option<String>,
     version: &str,
-    force: bool
+    force: bool,
 ) {
     let dir = u::pwd();
     let env = match env {

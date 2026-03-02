@@ -193,7 +193,6 @@ async fn list_graphql_apis_by_token(
     (h, res.next_token)
 }
 
-
 async fn list_graphql_apis(client: &Client) -> HashMap<String, Api> {
     let mut h: HashMap<String, Api> = HashMap::new();
     let r = client.list_graphql_apis().max_results(20).send().await;

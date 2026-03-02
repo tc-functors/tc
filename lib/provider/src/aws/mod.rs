@@ -1,5 +1,6 @@
 pub mod acm;
 pub mod appsync;
+pub mod bedrock;
 pub mod cloudfront;
 pub mod cloudwatch;
 pub mod codeartifact;
@@ -19,7 +20,6 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
-pub mod bedrock;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;

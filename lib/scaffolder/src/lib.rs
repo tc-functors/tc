@@ -1,11 +1,13 @@
+mod anthropic;
 mod function;
 mod prompt;
-mod anthropic;
 use compiler::LangRuntime;
-use kit as u;
-use provider::Auth;
-use provider::aws::bedrock;
 use inquire::Text;
+use kit as u;
+use provider::{
+    Auth,
+    aws::bedrock,
+};
 
 pub const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
 pub const DEFAULT_ANTHROPIC_MODEL: &str = "claude-sonnet-4-5-20250929";
@@ -43,7 +45,6 @@ pub async fn scaffold_llm_anthropic(dir: &str, given_text: &str, model: Option<S
     let response = anthropic::send(&prompt, &model).await;
     process_response(dir, &response);
 }
-
 
 pub fn scaffold_functions(dir: &str) {
     let topology = composer::compose(dir, false);

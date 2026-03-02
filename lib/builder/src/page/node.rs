@@ -20,7 +20,6 @@ pub fn gen_dockerfile(dir: &str, command: &str, config_template: &Option<String>
         Err(_) => String::from(""),
     };
 
-
     let f = format!(
         r#"
 

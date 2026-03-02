@@ -443,23 +443,23 @@ fn load_fspec_file(version: &str, dir: &str) -> Option<FunctionSpec> {
         }
     } else {
         Some(FunctionSpec {
-                name: u::basedir(dir).to_string(),
-                dir: Some(dir.to_string()),
-                description: None,
-                namespace: None,
-                fqn: None,
-                layer_name: None,
-                version: None,
-                revision: None,
-                runtime: None,
-                build: None,
-                infra: None,
-                infra_dir: None,
-                assets: None,
-                test: None,
-                tasks: HashMap::new(),
-                targets: None,
-            })
+            name: u::basedir(dir).to_string(),
+            dir: Some(dir.to_string()),
+            description: None,
+            namespace: None,
+            fqn: None,
+            layer_name: None,
+            version: None,
+            revision: None,
+            runtime: None,
+            build: None,
+            infra: None,
+            infra_dir: None,
+            assets: None,
+            test: None,
+            tasks: HashMap::new(),
+            targets: None,
+        })
     }
 }
 

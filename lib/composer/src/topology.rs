@@ -19,7 +19,6 @@ pub use crate::aws::{
     schedule::Schedule,
     transducer::Transducer,
 };
-pub use sequence::Connector;
 use crate::{
     aws::{
         channel,
@@ -30,8 +29,8 @@ use crate::{
         schedule,
         template,
     },
-    tag,
     sequence,
+    tag,
 };
 use compiler::{
     Entity,
@@ -44,6 +43,7 @@ use compiler::{
 use configurator::Config;
 use kit as u;
 use kit::*;
+pub use sequence::Connector;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -82,7 +82,7 @@ pub struct Topology {
     pub roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
-    pub sequences: HashMap<String, Vec<Connector>>
+    pub sequences: HashMap<String, Vec<Connector>>,
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -434,7 +434,7 @@ fn make_routes(
     fns: &HashMap<String, Function>,
     events: &HashMap<String, Event>,
     queues: &HashMap<String, Queue>,
-    infra_dir: &str
+    infra_dir: &str,
 ) -> HashMap<String, Route> {
     let routes = &spec.routes;
     match routes {
@@ -443,7 +443,9 @@ fn make_routes(
             for (name, rspec) in xs {
                 tracing::debug!("route {}", &name);
                 let skip = rspec.doc_only;
-                let route = Route::new(fqn, &name, spec, rspec, fns, events, queues, infra_dir, skip);
+                let route = Route::new(
+                    fqn, &name, spec, rspec, fns, events, queues, infra_dir, skip,
+                );
                 h.insert(name.to_string(), route);
             }
             h
@@ -651,7 +653,7 @@ fn make(
         flow: flow,
         config: Config::new(),
         transducer: maybe_transducer,
-        sequences: sequence::make_all(&spec.sequences)
+        sequences: sequence::make_all(&spec.sequences),
     }
 }
 

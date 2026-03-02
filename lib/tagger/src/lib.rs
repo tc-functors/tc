@@ -1,6 +1,9 @@
 pub mod changelog;
 pub mod git;
-pub use changelog::{commits, between};
+pub use changelog::{
+    between,
+    commits,
+};
 use kit as u;
 use kit::*;
 use notifier::RichText;

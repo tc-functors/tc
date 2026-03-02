@@ -6,24 +6,31 @@ pub mod pipeline;
 
 use compiler::TopologyKind;
 use composer::Topology;
-use std::collections::HashMap;
 use configurator::Config;
 pub use manifest::Manifest;
 use provider::aws;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::collections::HashMap;
 use tabled::{
     Table,
     builder::Builder,
     settings::Style,
 };
-use serde_derive::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Record {
     pub namespace: String,
-    pub versions: HashMap<String, String>
+    pub versions: HashMap<String, String>,
 }
 
-pub async fn snapshot_profiles_json(topologies: &HashMap<String, Topology>, sandbox: &str, profiles: Vec<String>) -> Vec<Record> {
+pub async fn snapshot_profiles_json(
+    topologies: &HashMap<String, Topology>,
+    sandbox: &str,
+    profiles: Vec<String>,
+) -> Vec<Record> {
     let mut xs: Vec<Record> = vec![];
     for (_, node) in topologies {
         let name = manifest::render(&node.fqn, sandbox);
@@ -36,11 +43,13 @@ pub async fn snapshot_profiles_json(topologies: &HashMap<String, Topology>, sand
             let version = u::safe_unwrap(tags.get("version"));
             h.insert(profile.to_string(), version);
         }
-        xs.push(Record { namespace: node.namespace.clone(), versions: h })
+        xs.push(Record {
+            namespace: node.namespace.clone(),
+            versions: h,
+        })
     }
     xs
 }
-
 
 pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) {
     let topologies = composer::compose_root(dir, false);
@@ -86,7 +95,12 @@ pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option
     }
 }
 
-pub async fn snapshot_topologies(auth: &Auth, topologies: &HashMap<String, Topology>, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
+pub async fn snapshot_topologies(
+    auth: &Auth,
+    topologies: &HashMap<String, Topology>,
+    sandbox: &str,
+    gen_changelog: bool,
+) -> Vec<Manifest> {
     let mut rows: Vec<Manifest> = vec![];
     for (_, node) in topologies {
         let row = Manifest::new(auth, sandbox, &node, gen_changelog).await;
@@ -96,7 +110,6 @@ pub async fn snapshot_topologies(auth: &Auth, topologies: &HashMap<String, Topol
     rows.reverse();
     rows
 }
-
 
 pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
     let topologies = match std::env::var("TC_SNAPSHOT_BREAKOUT") {

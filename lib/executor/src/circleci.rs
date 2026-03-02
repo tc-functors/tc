@@ -1,11 +1,11 @@
 use kit as u;
 use kit::*;
+use serde::Deserialize;
 use std::{
     collections::HashMap,
     env,
     panic,
 };
-use serde::{Deserialize};
 
 #[derive(Clone, Debug)]
 pub struct Circle {
@@ -53,10 +53,10 @@ impl Circle {
 
     fn context_url(&self, context_id: &str, key: &str) -> String {
         if key == "" {
-        format!(
-            "https://circleci.com/api/v2/context/{}/environment-variable",
-            context_id
-        )
+            format!(
+                "https://circleci.com/api/v2/context/{}/environment-variable",
+                context_id
+            )
         } else {
             format!(
                 "https://circleci.com/api/v2/context/{}/environment-variable/{}",
@@ -114,12 +114,11 @@ pub async fn trigger_tag(
     sandbox: &str,
     prefix: &str,
     version: &str,
-    force: bool
+    force: bool,
 ) -> String {
     let ci = Circle::init(repo);
 
     let payload = if force {
-
         format!(
             r#"
            {{
@@ -278,7 +277,7 @@ pub async fn set_var(repo: &str, key: &str, value: &str) {
     let ci = Circle::init(repo);
     let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
         Ok(c) => c,
-        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set"),
     };
     let url = ci.context_url(&context_id, key);
     let payload = format!(
@@ -295,7 +294,7 @@ pub async fn unset_var(repo: &str, key: &str) {
     let ci = Circle::init(repo);
     let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
         Ok(c) => c,
-        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set"),
     };
     let url = ci.context_url(&context_id, key);
     let res = u::http_delete(&url, ci.headers()).await.unwrap();
@@ -304,14 +303,14 @@ pub async fn unset_var(repo: &str, key: &str) {
 
 #[derive(Clone, Debug, Deserialize)]
 struct Item {
-    variable: String
+    variable: String,
 }
 
 pub async fn list_vars(repo: &str) -> Vec<String> {
     let ci = Circle::init(repo);
     let context_id = match std::env::var("CIRCLE_CI_CONTEXT") {
         Ok(c) => c,
-        Err(_) => panic!("CIRCLE_CI_CONTEXT not set")
+        Err(_) => panic!("CIRCLE_CI_CONTEXT not set"),
     };
     let url = ci.context_url(&context_id, "");
     let res = u::http_get(&url, ci.headers()).await;

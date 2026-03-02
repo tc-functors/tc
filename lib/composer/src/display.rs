@@ -10,10 +10,10 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
+pub mod compact;
 mod event;
 mod function;
 mod state;
-pub mod compact;
 pub mod topology;
 use colored::Colorize;
 use tabled::{

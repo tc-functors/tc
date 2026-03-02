@@ -1,8 +1,8 @@
 pub mod aws;
 pub mod display;
 
-mod tag;
 pub mod sequence;
+mod tag;
 pub mod topology;
 pub mod version;
 
@@ -31,8 +31,10 @@ pub use aws::{
         Role,
         policy::Policy,
     },
-    route::Route,
-    route::Throttling,
+    route::{
+        Route,
+        Throttling,
+    },
     schedule::Schedule,
     transducer::Transducer,
 };
@@ -45,8 +47,10 @@ use compiler::{
 };
 use configurator::Config;
 use display::Format;
-pub use display::topology::TopologyCount;
-pub use display::compact::CompactTopology;
+pub use display::{
+    compact::CompactTopology,
+    topology::TopologyCount,
+};
 use kit as u;
 use kit::*;
 use std::{
@@ -97,7 +101,7 @@ pub fn compose_root(dir: &str, recursive: bool) -> HashMap<String, Topology> {
         let spec = TopologySpec::new(&f);
         let given_root_dirs = match &spec.nodes.dirs {
             Some(dirs) => dirs.clone(),
-            None => vec![]
+            None => vec![],
         };
         if given_root_dirs.is_empty() {
             let dirs = u::list_dirs(dir);
@@ -339,8 +343,6 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
     }
 }
 
-
 pub fn compact(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
     display::compact::build(topologies)
-
 }

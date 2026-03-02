@@ -6,7 +6,7 @@ use question::{
 pub fn is_frozen(env: &str) -> bool {
     match std::env::var("TC_FREEZE") {
         Ok(e) => env == &e,
-        Err(_) => false
+        Err(_) => false,
     }
 }
 

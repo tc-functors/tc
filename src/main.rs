@@ -674,7 +674,7 @@ async fn create(args: CreateArgs) {
             recursive: recursive,
             cache: cache,
             sync: sync,
-            force: force
+            force: force,
         };
         tc::create(profile, sandbox, topology, opts).await;
     }
@@ -1084,10 +1084,7 @@ async fn scaffold(args: ScaffoldArgs) {
 }
 
 async fn visualize(args: VisualizeArgs) {
-    let VisualizeArgs {
-        dir,
-        ..
-    } = args;
+    let VisualizeArgs { dir, .. } = args;
     tc::visualize(dir).await;
 }
 

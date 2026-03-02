@@ -1,12 +1,11 @@
 mod digraph;
 
 use composer::Topology;
-use kit as u;
-
 use gv::{
     GraphBuilder,
     parser::DotParser,
 };
+use kit as u;
 use layout::{
     backends::svg::SVGWriter,
     gv,

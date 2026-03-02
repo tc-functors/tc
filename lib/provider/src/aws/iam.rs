@@ -329,13 +329,12 @@ impl Role {
     }
 }
 
-
-pub async fn find_policy_doc(client: &Client, _role_name: &str, policy_arn: &str) -> Option<String> {
-    let res = client
-        .get_policy()
-        .policy_arn(policy_arn)
-        .send()
-        .await;
+pub async fn find_policy_doc(
+    client: &Client,
+    _role_name: &str,
+    policy_arn: &str,
+) -> Option<String> {
+    let res = client.get_policy().policy_arn(policy_arn).send().await;
 
     match res {
         Ok(r) => {
@@ -351,12 +350,12 @@ pub async fn find_policy_doc(client: &Client, _role_name: &str, policy_arn: &str
                         let doc = r.policy_version.unwrap().document.unwrap();
                         Some(urlencoding::decode(&doc).expect("UTF-8").to_string())
                     }
-                    Err(_) => None
+                    Err(_) => None,
                 }
             } else {
                 None
             }
-        },
-        Err(_) => None
+        }
+        Err(_) => None,
     }
 }

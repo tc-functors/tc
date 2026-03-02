@@ -1,9 +1,12 @@
 use crate::Auth;
-
 use aws_sdk_bedrockruntime::{
-    types::{ContentBlock, ConversationRole, Message},
-    types::InferenceConfiguration,
     Client,
+    types::{
+        ContentBlock,
+        ConversationRole,
+        InferenceConfiguration,
+        Message,
+    },
 };
 
 pub async fn make_client(auth: &Auth) -> Client {
@@ -26,7 +29,7 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
             InferenceConfiguration::builder()
                 .max_tokens(20000)
                 .temperature(0.7)
-                .build()
+                .build(),
         )
         .send()
         .await

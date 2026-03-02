@@ -33,7 +33,6 @@ impl Queue {
             targets.push(t);
         }
 
-
         match &qspec.name {
             Some(n) => Queue {
                 name: String::from(n),
@@ -46,7 +45,7 @@ impl Queue {
                 should_create: true,
                 arn: template::sqs_arn(&name),
                 targets: targets,
-            }
+            },
         }
     }
 }

@@ -15,7 +15,6 @@ pub fn render_uri(uri: &str, repo: &str) -> String {
 }
 
 pub async fn run(auth: &Auth, dir: &str, function: &Function, _shell: bool) {
-
     let Function { name, .. } = function;
 
     let config = Config::new();
@@ -25,16 +24,19 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, _shell: bool) {
         Err(_) => &config.aws.ecr.repo,
     };
 
-    let uri =  match std::env::var("CODE_IMAGE_URI") {
+    let uri = match std::env::var("CODE_IMAGE_URI") {
         Ok(p) => p,
-        Err(_) => function.runtime.uri.clone()
+        Err(_) => function.runtime.uri.clone(),
     };
     let code_image_uri = render_uri(&uri, repo);
 
     let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
     let auth = match maybe_cfg_profile {
-        Some(p) => auth.assume(Some(p.clone()), config.role_to_assume(Some(p))).await,
-        None => auth.clone()
+        Some(p) => {
+            auth.assume(Some(p.clone()), config.role_to_assume(Some(p)))
+                .await
+        }
+        None => auth.clone(),
     };
 
     println!("ecr login {}", &auth.name);

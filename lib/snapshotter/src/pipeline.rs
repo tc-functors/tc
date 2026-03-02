@@ -79,7 +79,7 @@ fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
 }
 
 fn approval_job() -> String {
-   format!(
+    format!(
         r#"
       - hold:
           type: approval

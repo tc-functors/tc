@@ -1,18 +1,17 @@
+use crate::{
+    Channel,
+    Event,
+    Function,
+    Page,
+    Queue,
+    Route,
+    Topology,
+};
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-
 use std::collections::HashMap;
-use crate::{
-    Route,
-    Event,
-    Page,
-    Function,
-    Queue,
-    Channel,
-    Topology,
-};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct QueueItem {
@@ -28,7 +27,7 @@ pub struct ChannelItem {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PageItem  {
+pub struct PageItem {
     pub namespace: String,
     pub name: String,
     pub bucket: String,
@@ -94,13 +93,12 @@ fn build_queues(_namespace: &str, queues: &HashMap<String, Queue>) -> Vec<QueueI
         }
         let e = QueueItem {
             name: queue.name.to_string(),
-            targets: targets
+            targets: targets,
         };
         xs.push(e);
     }
     xs
 }
-
 
 fn build_pages(namespace: &str, rs: &HashMap<String, Page>) -> Vec<PageItem> {
     let mut xs: Vec<PageItem> = vec![];
@@ -115,7 +113,6 @@ fn build_pages(namespace: &str, rs: &HashMap<String, Page>) -> Vec<PageItem> {
     }
     xs
 }
-
 
 fn build_channels(namespace: &str, channels: &HashMap<String, Channel>) -> Vec<ChannelItem> {
     let mut xs: Vec<ChannelItem> = vec![];
@@ -134,7 +131,6 @@ fn build_channels(namespace: &str, channels: &HashMap<String, Channel>) -> Vec<C
     xs
 }
 
-
 fn build_states(topology: &Topology) -> Vec<StateItem> {
     let mut xs: Vec<StateItem> = vec![];
 
@@ -148,7 +144,6 @@ fn build_states(topology: &Topology) -> Vec<StateItem> {
     }
     xs
 }
-
 
 fn build_mutations(topology: &Topology) -> Vec<MutationItem> {
     let mut xs: Vec<MutationItem> = vec![];
@@ -188,7 +183,6 @@ fn build_functions(namespace: &str, fns: &HashMap<String, Function>) -> Vec<Func
     }
     xs
 }
-
 
 fn build_events(namespace: &str, evs: &HashMap<String, Event>) -> Vec<EventItem> {
     let mut xs: Vec<EventItem> = vec![];
@@ -240,13 +234,12 @@ pub struct CompactTopology {
     pub pages: Vec<PageItem>,
     pub states: Vec<StateItem>,
     pub functions: Vec<FunctionItem>,
-    pub mutations: Vec<MutationItem>
+    pub mutations: Vec<MutationItem>,
 }
 
 pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
     let mut tops: Vec<CompactTopology> = vec![];
     for (_, topology) in topologies {
-
         let mut routes = build_routes(&topology.namespace, &topology.routes);
         let mut events = build_events(&topology.namespace, &topology.events);
         let mut functions = build_functions(&topology.namespace, &topology.functions);
@@ -257,7 +250,6 @@ pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
         let mut queues = build_queues(&topology.namespace, &topology.queues);
 
         for (_, node) in &topology.nodes {
-
             let rs = build_routes(&node.namespace, &node.routes);
             routes.extend(rs);
 
@@ -283,7 +275,6 @@ pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
             queues.extend(qs);
         }
 
-
         let ct = CompactTopology {
             namespace: topology.namespace.clone(),
             routes: routes,
@@ -293,7 +284,7 @@ pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
             states: states,
             channels: channels,
             pages: pages,
-            queues: queues
+            queues: queues,
         };
         tops.push(ct);
     }

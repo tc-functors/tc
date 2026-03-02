@@ -73,7 +73,6 @@ pub async fn http_get(url: &str, headers: HashMap<String, String>) -> Value {
     json_value(&response)
 }
 
-
 pub async fn http_put(
     url: &str,
     headers: HashMap<String, String>,
@@ -103,10 +102,7 @@ pub async fn http_put(
     }
 }
 
-pub async fn http_delete(
-    url: &str,
-    headers: HashMap<String, String>,
-) -> Result<Value, Error> {
+pub async fn http_delete(url: &str, headers: HashMap<String, String>) -> Result<Value, Error> {
     let client = reqwest::Client::new();
     let headers = as_headers(headers);
     let response = client
@@ -129,7 +125,6 @@ pub async fn http_delete(
         Err(_) => Ok(serde_json::json!("error")),
     }
 }
-
 
 pub async fn download(url: &str, headers: HashMap<String, String>, outfile: &str) {
     let client = reqwest::Client::new();
