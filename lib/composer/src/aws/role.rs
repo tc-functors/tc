@@ -41,7 +41,7 @@ fn find_legacy_role_name(entity: Entity) -> String {
         Entity::Event => s!("tc-base-event-role"),
         Entity::Route => s!("tc-base-api-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
-        Entity::State => s!("tc-base-sfn-role"),
+        Entity::State => s!("tc-base-state-role"),
         _ => s!("tc-base-lambda-role"),
     }
 }
@@ -62,8 +62,18 @@ fn legacy_name_of(entity: Entity) -> String {
         Entity::Route => s!("tc-base-api-role"),
         Entity::Event => s!("tc-base-event-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
-        Entity::State => s!("tc-base-sfn-role"),
+        Entity::State => s!("tc-base-state-role"),
         _ => s!("tc-base-lambda-role"),
+    }
+}
+
+fn name_of(entity: Entity) -> String {
+    match entity {
+        Entity::Route => s!("tc-base-api-{{sandbox}}"),
+        Entity::Event => s!("tc-base-event-{{sandbox}}"),
+        Entity::Mutation => s!("tc-base-appsync-{{sandbox}}"),
+        Entity::State => s!("tc-base-state-{{sandbox}}"),
+        _ => s!("tc-base-lambda-{{sandbox}}"),
     }
 }
 
@@ -180,7 +190,10 @@ impl Role {
     }
 
     pub fn provided_by_entity(entity: Entity) -> Role {
-        let name = legacy_name_of(entity);
+        let name = match std::env::var("TC_LEGACY_ROLES") {
+            Ok(_) => legacy_name_of(entity),
+            Err(_) => name_of(entity)
+        };
         Role {
             name: s!(name),
             kind: Kind::Provided,
