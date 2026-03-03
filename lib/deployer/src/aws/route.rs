@@ -361,8 +361,12 @@ pub async fn create(
     if routes.len() > 0 {
         let client = gateway::make_client(auth).await;
         let api = Api::new(routes);
+
         let api_id =
             gateway::create_or_update_api(&client, &api.name, api.cors, tags.clone()).await;
+        let gateway_arn = auth.api_gateway_arn(&api_id);
+        gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+
         let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
 
         for (_, route) in routes {

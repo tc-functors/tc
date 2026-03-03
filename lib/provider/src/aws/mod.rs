@@ -189,6 +189,13 @@ impl Auth {
         )
     }
 
+    pub fn api_gateway_arn(&self, api_id: &str) -> String {
+        format!(
+            "arn:aws:apigateway:{}::/apis/{}",
+            &self.region, api_id
+        )
+    }
+
     pub fn pool_arn(&self, pool_id: &str) -> String {
         format!(
             "arn:aws:cognito-idp:{}:{}:userpool/{}",

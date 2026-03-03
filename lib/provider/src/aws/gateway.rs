@@ -94,7 +94,6 @@ pub async fn update_api(
     name: &str,
     api_id: &str,
     cors: Option<Cors>,
-    _tags: HashMap<String, String>,
 ) -> String {
     println!("Updating route {} (cors)", name);
     let _ = client
@@ -104,7 +103,22 @@ pub async fn update_api(
         .send()
         .await
         .unwrap();
+
     s!(api_id)
+}
+
+pub async fn update_tags(
+    client: &Client,
+    resource_arn: &str,
+    tags: HashMap<String, String>,
+) {
+    let _ = client
+        .tag_resource()
+        .resource_arn(resource_arn)
+        .set_tags(Some(tags))
+        .send()
+        .await
+        .unwrap();
 }
 
 pub async fn create_or_update_api(
@@ -117,7 +131,7 @@ pub async fn create_or_update_api(
     match api_id {
         Some(id) => {
             tracing::debug!("Found API {} ({})", name.green(), &id);
-            update_api(client, name, &id, cors, tags).await
+            update_api(client, name, &id, cors).await
         }
         _ => {
             println!("Creating route {} (gateway)", name.blue());
@@ -469,7 +483,6 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
         .send()
         .await;
 
-    println!("{:?}", &res);
     match res {
         Ok(_) => true,
         Err(_) => false,
