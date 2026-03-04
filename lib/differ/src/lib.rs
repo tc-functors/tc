@@ -55,7 +55,6 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
     );
     tracing::debug!("{}", &cmd);
     let out = sh(&cmd, &dir);
-
     let lines = kit::split_lines(&out);
     lines.iter().map(|s| s.to_string()).collect()
 }
@@ -89,7 +88,13 @@ pub fn diff_fns(
                 if line.starts_with(rdir) {
                     changed_fns.insert(name.to_string(), f.clone());
                 }
+
+                // This is really a hack. If there are shared libs or functions changed, assume fn has changed
+                if line.contains("shared") {
+                    changed_fns.insert(name.to_string(), f.clone());
+                }
             }
+
 
             let maybe_pdir = &f.dir.strip_prefix(&format!("{}/", u::pwd()));
             if let Some(pdir) = maybe_pdir {
@@ -105,6 +110,8 @@ pub fn diff_fns(
                 if line.ends_with(name) {
                     changed_fns.insert(name.to_string(), f.clone());
                 }
+
+
             }
         }
     }
