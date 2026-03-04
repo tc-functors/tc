@@ -29,7 +29,7 @@ impl FromStr for Lang {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "python3.10" | "python3.11" | "python3.9" | "python3.12 | python" => Ok(Lang::Python),
-            "ruby3.2" | "ruby" | "ruby32 | ruby" => Ok(Lang::Ruby),
+            "ruby3.2" | "ruby" | "ruby32 | ruby3.4 | ruby34 | ruby" => Ok(Lang::Ruby),
             "node22" | "node20" | "node18 | node" | "Node" => Ok(Lang::Node),
             "rust" => Ok(Lang::Rust),
             _ => Ok(Lang::Python),
@@ -63,6 +63,8 @@ pub enum LangRuntime {
     Python313,
     #[serde(alias = "ruby3.2")]
     Ruby32,
+    #[serde(alias = "ruby3.4")]
+    Ruby34,
     #[serde(alias = "java21")]
     Java21,
     #[serde(alias = "rust")]
@@ -84,6 +86,7 @@ impl FromStr for LangRuntime {
             "python3.10" => Ok(LangRuntime::Python310),
             "python3.9" => Ok(LangRuntime::Python39),
             "ruby3.2" | "ruby" | "ruby32" => Ok(LangRuntime::Ruby32),
+            "ruby3.4" | "ruby34" => Ok(LangRuntime::Ruby34),
             "clojure" | "java21" => Ok(LangRuntime::Java21),
             "rust" => Ok(LangRuntime::Rust),
             "node22" | "Node" => Ok(LangRuntime::Node22),
@@ -102,6 +105,7 @@ impl LangRuntime {
             LangRuntime::Python310 => String::from("python3.10"),
             LangRuntime::Python39 => String::from("python3.9"),
             LangRuntime::Ruby32 => String::from("ruby3.2"),
+            LangRuntime::Ruby34 => String::from("ruby3.4"),
             LangRuntime::Java21 => String::from("java21"),
             LangRuntime::Node22 => String::from("node22"),
             LangRuntime::Node20 => String::from("node20"),
@@ -117,6 +121,7 @@ impl LangRuntime {
             LangRuntime::Python310 => Lang::Python,
             LangRuntime::Python39 => Lang::Python,
             LangRuntime::Ruby32 => Lang::Ruby,
+            LangRuntime::Ruby34 => Lang::Ruby,
             LangRuntime::Java21 => Lang::Clojure,
             LangRuntime::Rust => Lang::Rust,
             LangRuntime::Node20 => Lang::Node,

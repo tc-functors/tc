@@ -28,9 +28,9 @@ fn gen_dockerfile(
         Lang::Python => python::gen_dockerfile(dir, langr, pre, post),
         Lang::Ruby => {
             if skip_dev_deps {
-                ruby::gen_dockerfile(dir, pre, post);
+                ruby::gen_dockerfile(dir, langr, pre, post);
             } else {
-                ruby::gen_dockerfile_no_wrap(dir, pre, post);
+                ruby::gen_dockerfile_no_wrap(dir, langr, pre, post);
             }
         }
         Lang::Rust => rust::gen_dockerfile(dir),
@@ -48,7 +48,7 @@ fn gen_dockerfile_unshared(
 ) {
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
-        Lang::Ruby => ruby::gen_dockerfile_unshared(dir, pre, post),
+        Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),

@@ -1,5 +1,4 @@
- # tc (Topology Composer)
-
+# tc (Topology Composer)
 
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/tc-functors/tc)
 [![Build](https://github.com/tc-functors/tc/actions/workflows/ci.yml/badge.svg)](https://github.com/tc-functors/tc/actions/workflows/ci.yml)
@@ -137,8 +136,8 @@ We aim to review all contributions promptly and look forward to collaborating wi
 
 ## Core Authors
 
-- Rob Berger (Mentor)
 - Isaac Praveen
+- Rob Berger (Mentor)
 
 ## Thanks & Credits
 

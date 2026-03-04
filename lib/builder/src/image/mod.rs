@@ -1,4 +1,5 @@
 mod python;
+mod ruby;
 
 use crate::types::{
     BuildOutput,
@@ -51,6 +52,7 @@ npm-debug.log
 fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     match runtime.to_lang() {
         Lang::Python => python::gen_base_dockerfile(dir, runtime, pre, post),
+        Lang::Ruby => ruby::gen_base_dockerfile(dir, runtime, pre, post),
         _ => todo!(),
     }
 }
@@ -58,6 +60,7 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post
 fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str) {
     match runtime.to_lang() {
         Lang::Python => python::gen_code_dockerfile(dir, base_image_uri),
+        Lang::Ruby => ruby::gen_code_dockerfile(dir, base_image_uri),
         _ => todo!(),
     }
 }
