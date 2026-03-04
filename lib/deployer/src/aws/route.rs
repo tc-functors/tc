@@ -363,9 +363,15 @@ pub async fn create(
         let api = Api::new(routes);
 
         let api_id =
-            gateway::create_or_update_api(&client, &api.name, api.cors, tags.clone()).await;
+            gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone()).await;
         let gateway_arn = auth.api_gateway_arn(&api_id);
+
         gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+
+        if api.cors.is_none() {
+            println!("Clearing CORS");
+            gateway::clear_cors(&client, &api_id).await;
+        }
 
         let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
 

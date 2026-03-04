@@ -765,4 +765,13 @@ pub async fn create_or_update_domain(
     }
 }
 
+pub async fn clear_cors(client: &Client, api_id: &str) {
+    client
+        .delete_cors_configuration()
+        .api_id(api_id)
+        .send()
+        .await
+        .unwrap();
+}
+
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;
