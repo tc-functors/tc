@@ -319,7 +319,10 @@ impl Event {
             None => EventPattern::new(event_name, producer.to_vec(), filter.clone()),
         };
 
-        let bus = &config.aws.eventbridge.bus;
+        let bus = match std::env::var("TC_SANDBOXED_EVENTS") {
+            Ok(_) => &format!("tc-{{{{sandbox}}}}"),
+            Err(_) => &config.aws.eventbridge.bus
+        };
         let rule_prefix = &config.aws.eventbridge.rule_prefix;
         let rule_name = match rule_name {
             Some(r) => s!(r),

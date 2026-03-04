@@ -61,6 +61,13 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
 
     let client = eventbridge::make_client(&auth).await;
 
+    match std::env::var("TC_SANDBOXED_EVENTS") {
+        Ok(_) => {
+            eventbridge::find_or_create_bus(&client, &bus).await;
+        }
+        Err(_) => ()
+    }
+
     let pattern = serde_json::to_string(&pattern).unwrap();
     let _rule_arn = eventbridge::create_rule(&client, &bus, &rule_name, &pattern, tags).await;
 

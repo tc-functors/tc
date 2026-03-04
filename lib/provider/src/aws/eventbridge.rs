@@ -337,3 +337,35 @@ pub async fn put_event(
         .clone()
         .unwrap()
 }
+
+async fn create_bus(client: &Client, name: &str) {
+    let res = client
+        .create_event_bus()
+        .name(name)
+        .send()
+        .await
+        .unwrap();
+    println!("{:?}", &res);
+}
+
+async fn find_bus(client: &Client, name: &str) -> Option<String> {
+    let res = client
+        .describe_event_bus()
+        .name(name)
+        .send()
+        .await;
+    match res {
+        Ok(_) => res.unwrap().arn,
+        Err(_) => None
+    }
+}
+
+pub async fn find_or_create_bus(client: &Client, name: &str) {
+    match find_bus(client, name).await {
+        Some(_) => (),
+        None => {
+            println!("Creating event bus: {}", name);
+            create_bus(client, name).await
+        }
+    }
+}
