@@ -711,9 +711,15 @@ pub async fn list(auth: &Auth, sandbox: Option<String>, entity: Option<String>) 
 }
 
 pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<String>) {
-    let sandbox = resolver::maybe_sandbox(sandbox);
     let format = u::maybe_string(format, "default");
-    deployer::list_all(auth, &sandbox, &format).await;
+    if let Some(s) = sandbox {
+        deployer::list_all(auth, &s, &format).await;
+    } else {
+        deployer::list_all_resources(auth, &format).await;
+    }
+
+
+
 }
 
 pub async fn scaffold(
