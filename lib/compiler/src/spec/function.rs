@@ -28,7 +28,7 @@ impl FromStr for Lang {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "python3.10" | "python3.11" | "python3.9" | "python3.12 | python" => Ok(Lang::Python),
+            "python3.10" | "python3.11" | "python3.9" | "python3.12 | python3.13 | python 3.14 | python" => Ok(Lang::Python),
             "ruby3.2" | "ruby" | "ruby32 | ruby3.4 | ruby34 | ruby" => Ok(Lang::Ruby),
             "node22" | "node20" | "node18 | node" | "Node" => Ok(Lang::Node),
             "rust" => Ok(Lang::Rust),
@@ -61,6 +61,8 @@ pub enum LangRuntime {
     Python312,
     #[serde(alias = "python3.13")]
     Python313,
+    #[serde(alias = "python3.14")]
+    Python314,
     #[serde(alias = "ruby3.2")]
     Ruby32,
     #[serde(alias = "ruby3.4")]
@@ -80,6 +82,7 @@ impl FromStr for LangRuntime {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "python3.14" => Ok(LangRuntime::Python314),
             "python3.13" => Ok(LangRuntime::Python313),
             "python3.12" => Ok(LangRuntime::Python312),
             "python3.11" => Ok(LangRuntime::Python311),
@@ -99,6 +102,7 @@ impl FromStr for LangRuntime {
 impl LangRuntime {
     pub fn to_str(&self) -> String {
         match self {
+            LangRuntime::Python314 => String::from("python3.14"),
             LangRuntime::Python313 => String::from("python3.13"),
             LangRuntime::Python312 => String::from("python3.12"),
             LangRuntime::Python311 => String::from("python3.11"),
@@ -115,6 +119,7 @@ impl LangRuntime {
 
     pub fn to_lang(&self) -> Lang {
         match self {
+            LangRuntime::Python314 => Lang::Python,
             LangRuntime::Python313 => Lang::Python,
             LangRuntime::Python312 => Lang::Python,
             LangRuntime::Python311 => Lang::Python,

@@ -16,6 +16,7 @@ fn find_build_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python311 => "python3.11:latest",
         LangRuntime::Python312 => "python3.12:latest",
         LangRuntime::Python313 => "python3.13:latest",
+        LangRuntime::Python314 => "python3.14:latest",
         LangRuntime::Ruby32 => "ruby3.2:1.103.0-2023111622473",
         LangRuntime::Ruby34 => "ruby3.4:latest",
         _ => todo!(),

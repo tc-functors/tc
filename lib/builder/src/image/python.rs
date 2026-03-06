@@ -6,6 +6,8 @@ fn find_build_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python310 => "python3.10:latest",
         LangRuntime::Python311 => "python3.11:latest",
         LangRuntime::Python312 => "python3.12:latest",
+        LangRuntime::Python313 => "python3.13:latest",
+        LangRuntime::Python314 => "python3.14:latest",
         _ => todo!(),
     };
     format!("public.ecr.aws/sam/build-{}", &tag)
@@ -16,6 +18,8 @@ fn find_runtime_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python310 => "python:3.10",
         LangRuntime::Python311 => "python:3.11",
         LangRuntime::Python312 => "python:3.12",
+        LangRuntime::Python313 => "python:3.13",
+        LangRuntime::Python314 => "python:3.14",
         _ => todo!(),
     };
     format!("public.ecr.aws/lambda/{}", &tag)
