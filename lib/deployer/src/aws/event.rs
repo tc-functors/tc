@@ -118,6 +118,8 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
             &target.entity.to_str(),
             input_transformer,
             Some(appsync),
+            target.retry_attempts,
+            target.dead_letter_arn.clone(),
         );
         xs.push(t)
     }
