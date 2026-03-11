@@ -41,7 +41,7 @@ fn find_legacy_role_name(entity: Entity) -> String {
         Entity::Event => s!("tc-base-event-role"),
         Entity::Route => s!("tc-base-api-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
-        Entity::State => s!("tc-base-state-role"),
+        Entity::State => s!("tc-base-sfn-role"),
         _ => s!("tc-base-lambda-role"),
     }
 }
@@ -62,7 +62,7 @@ fn legacy_name_of(entity: Entity) -> String {
         Entity::Route => s!("tc-base-api-role"),
         Entity::Event => s!("tc-base-event-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
-        Entity::State => s!("tc-base-state-role"),
+        Entity::State => s!("tc-base-sfn-role"),
         _ => s!("tc-base-lambda-role"),
     }
 }
