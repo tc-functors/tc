@@ -18,6 +18,7 @@ use aws_sdk_eventbridge::{
             AppSyncParametersBuilder,
             CreateConnectionApiKeyAuthRequestParametersBuilder,
             CreateConnectionAuthRequestParametersBuilder,
+            DeadLetterConfigBuilder,
             InputTransformerBuilder,
             PutEventsRequestEntryBuilder,
             RetryPolicyBuilder,
@@ -64,9 +65,9 @@ pub fn make_appsync_params(op: &str) -> AppSyncParameters {
     params.graph_ql_operation(op).build()
 }
 
-pub fn make_retry_policy() -> RetryPolicy {
+pub fn make_retry_policy(max_retries: i32) -> RetryPolicy {
     let ret = RetryPolicyBuilder::default();
-    ret.maximum_retry_attempts(1).build()
+    ret.maximum_retry_attempts(max_retries).build()
 }
 
 pub fn make_target(
@@ -76,49 +77,48 @@ pub fn make_target(
     kind: &str,
     input_transformer: Option<InputTransformer>,
     appsync: Option<AppSyncParameters>,
+    max_retries: Option<i32>,
+    dead_letter_arn: Option<String>,
 ) -> Target {
-    let target = TargetBuilder::default();
-    let retry_policy = make_retry_policy();
+    let retry_policy = make_retry_policy(max_retries.unwrap_or(1));
 
-    match kind {
-        "sfn" | "stepfunction" => target
+    let mut builder = match kind {
+        "sfn" | "stepfunction" => TargetBuilder::default()
             .id(id)
             .arn(arn)
             .role_arn(role_arn)
-            .retry_policy(retry_policy)
-            .build()
-            .unwrap(),
-        "lambda" | "function" => target
+            .retry_policy(retry_policy),
+        "lambda" | "function" => TargetBuilder::default()
             .id(id)
             .arn(arn)
-            .retry_policy(retry_policy)
-            .build()
-            .unwrap(),
-        "appsync" | "mutation" => target
+            .retry_policy(retry_policy),
+        "appsync" | "mutation" => TargetBuilder::default()
             .id(id)
             .arn(String::from(arn))
             .role_arn(role_arn)
             .set_input_transformer(input_transformer)
             .set_app_sync_parameters(appsync)
-            .retry_policy(retry_policy)
-            .build()
-            .unwrap(),
-        "channel" => target
+            .retry_policy(retry_policy),
+        "channel" => TargetBuilder::default()
             .id(id)
             .arn(String::from(arn))
             .role_arn(role_arn)
             .set_input_transformer(input_transformer)
-            .retry_policy(retry_policy)
-            .build()
-            .unwrap(),
-        _ => target
+            .retry_policy(retry_policy),
+        _ => TargetBuilder::default()
             .id(id)
             .arn(arn)
             .role_arn(role_arn)
-            .retry_policy(retry_policy)
-            .build()
-            .unwrap(),
+            .retry_policy(retry_policy),
+    };
+
+    if let Some(dlq_arn) = dead_letter_arn {
+        builder = builder.dead_letter_config(
+            DeadLetterConfigBuilder::default().arn(dlq_arn).build()
+        );
     }
+
+    builder.build().unwrap()
 }
 
 pub async fn create_rule(

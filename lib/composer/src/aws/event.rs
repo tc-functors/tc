@@ -27,6 +27,8 @@ pub struct Target {
     pub role_arn: String,
     pub input_paths_map: Option<HashMap<String, String>>,
     pub input_template: Option<String>,
+    pub retry_attempts: Option<i32>,
+    pub dead_letter_arn: Option<String>,
 }
 
 impl Target {
@@ -39,6 +41,8 @@ impl Target {
         consumer_ns: &str,
         input_paths_map: Option<HashMap<String, String>>,
         input_template: Option<String>,
+        retry_attempts: Option<i32>,
+        dead_letter_arn: Option<String>,
     ) -> Target {
         let abbr_id = if id.chars().count() >= 64 {
             format!("{}-{}", entity.to_str(), &kit::abbreviate(id, "-"))
@@ -56,6 +60,8 @@ impl Target {
             role_arn: Role::entity_role_arn(Entity::Event),
             input_paths_map: input_paths_map,
             input_template: input_template,
+            retry_attempts: retry_attempts,
+            dead_letter_arn: dead_letter_arn,
         }
     }
 }
@@ -104,6 +110,9 @@ pub fn make_targets(
         ..
     } = espec;
 
+    let dead_letter_arn = espec.dead_letter_queue.as_ref().filter(|q| !q.is_empty()).map(|q| template::sqs_arn(q));
+    let retry_attempts = espec.retries;
+
     let mut xs: Vec<Target> = vec![];
 
     let producer_ns = as_ns(producer_ns, producer);
@@ -122,6 +131,8 @@ pub fn make_targets(
             &consumer_ns,
             None,
             None,
+            retry_attempts,
+            dead_letter_arn.clone(),
         );
         xs.push(t);
     }
@@ -140,6 +151,8 @@ pub fn make_targets(
                 &consumer_ns,
                 None,
                 None,
+                retry_attempts,
+                dead_letter_arn.clone(),
             );
             xs.push(t);
         }
@@ -172,6 +185,8 @@ pub fn make_targets(
             &consumer_ns,
             input_paths_map,
             input_template,
+            retry_attempts,
+            dead_letter_arn.clone(),
         );
         xs.push(t);
     }
@@ -187,6 +202,8 @@ pub fn make_targets(
             &consumer_ns,
             None,
             None,
+            retry_attempts,
+            dead_letter_arn.clone(),
         );
         xs.push(t)
     }
@@ -206,6 +223,8 @@ pub fn make_targets(
             &consumer_ns,
             input_paths_map,
             None,
+            retry_attempts,
+            dead_letter_arn.clone(),
         );
         xs.push(t)
     }
@@ -228,6 +247,8 @@ pub fn make_targets(
             &consumer_ns,
             None,
             None,
+            retry_attempts,
+            dead_letter_arn.clone(),
         );
         xs.push(t)
     }

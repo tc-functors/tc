@@ -56,4 +56,10 @@ pub struct EventSpec {
 
     #[serde(default)]
     pub sandboxes: Vec<String>,
+
+    #[serde(default)]
+    pub retries: Option<i32>,
+
+    #[serde(default)]
+    pub dead_letter_queue: Option<String>,
 }
