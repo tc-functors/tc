@@ -33,6 +33,7 @@ use tabled::{
 
 pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     let Topology {
+        concurrent,
         namespace,
         version,
         sandbox,
@@ -59,8 +60,10 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
         &version
     );
 
+    let is_sync = *concurrent || sync;
+
     role::create_or_update(auth, roles, tags).await;
-    function::create(auth, functions, &tags, sync).await;
+    function::create(auth, functions, &tags, is_sync).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
     queue::create(&auth, queues).await;

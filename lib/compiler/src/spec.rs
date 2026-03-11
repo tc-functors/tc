@@ -107,6 +107,7 @@ pub struct TopologySpec {
     pub root: Option<bool>,
     pub recursive: Option<bool>,
     pub auto: Option<bool>,
+    pub concurrent: Option<bool>,
 
     pub dir: Option<String>,
 
@@ -173,6 +174,7 @@ impl TopologySpec {
             TopologySpec {
                 name: s!("tc"),
                 root: Some(false),
+                concurrent: Some(false),
                 recursive: Some(false),
                 auto: Some(false),
                 kind: Some(TopologyKind::Function),
