@@ -110,7 +110,7 @@ pub fn make_targets(
         ..
     } = espec;
 
-    let dead_letter_arn = espec.dead_letter_queue.as_ref().map(|q| template::sqs_arn(q));
+    let dead_letter_arn = espec.dead_letter_queue.as_ref().filter(|q| !q.is_empty()).map(|q| template::sqs_arn(q));
     let retry_attempts = espec.retries;
 
     let mut xs: Vec<Target> = vec![];
