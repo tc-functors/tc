@@ -172,6 +172,7 @@ pub async fn trigger_branch(
               "tc-deploy-only-branch": true,
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "--notify --force --recursive",
               "api_call": true
            }}}}"#
     );
