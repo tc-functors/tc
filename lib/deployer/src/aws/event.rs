@@ -120,6 +120,7 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
             Some(appsync),
             target.retry_attempts,
             target.dead_letter_arn.clone(),
+            target.maximum_event_age_in_seconds,
         );
         xs.push(t)
     }

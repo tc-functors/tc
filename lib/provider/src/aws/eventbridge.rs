@@ -65,9 +65,13 @@ pub fn make_appsync_params(op: &str) -> AppSyncParameters {
     params.graph_ql_operation(op).build()
 }
 
-pub fn make_retry_policy(max_retries: i32) -> RetryPolicy {
-    let ret = RetryPolicyBuilder::default();
-    ret.maximum_retry_attempts(max_retries).build()
+pub fn make_retry_policy(max_retries: i32, max_event_age_secs: Option<i32>) -> RetryPolicy {
+    let mut builder = RetryPolicyBuilder::default()
+        .maximum_retry_attempts(max_retries);
+    if let Some(age) = max_event_age_secs {
+        builder = builder.maximum_event_age_in_seconds(age);
+    }
+    builder.build()
 }
 
 pub fn make_target(
@@ -79,8 +83,9 @@ pub fn make_target(
     appsync: Option<AppSyncParameters>,
     max_retries: Option<i32>,
     dead_letter_arn: Option<String>,
+    max_event_age_secs: Option<i32>,
 ) -> Target {
-    let retry_policy = make_retry_policy(max_retries.unwrap_or(1));
+    let retry_policy = make_retry_policy(max_retries.unwrap_or(1), max_event_age_secs);
 
     let mut builder = match kind {
         "sfn" | "stepfunction" => TargetBuilder::default()
