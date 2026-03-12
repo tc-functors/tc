@@ -53,15 +53,9 @@ pub async fn create_aux(
 
     let _ = match role.kind.to_str().as_ref() {
         "provided" => (),
-        "base" => match std::env::var("TC_UPDATE_BASE_ROLES") {
-            Ok(_) => {
-                let _ = r.create_or_update().await;
-                ()
-            }
-            Err(_) => {
-                r.find_or_create().await;
-                ()
-            }
+        "base" => {
+            let _ = r.create_or_update().await;
+            ()
         },
         _ => {
             let maybe_policy = iam::find_policy_doc(&client, &role.name, &role.policy_arn).await;
@@ -112,6 +106,30 @@ pub async fn create_or_update(
             create_aux(p, role_arn, role.clone(), tags.clone()).await;
         });
         tasks.push(h);
+    }
+    for task in tasks {
+        let _ = task.await;
+    }
+}
+
+
+pub async fn update_base_roles(
+    auth: &Auth,
+    roles: &HashMap<String, composer::Role>,
+    tags: &HashMap<String, String>,
+) {
+    let mut tasks = vec![];
+    println!("Updating base roles...");
+    for (_, role) in roles.clone() {
+        if role.kind.to_str() == "base" {
+            let tags = tags.clone();
+            let p = auth.name.to_string();
+            let role_arn = auth.assume_role.to_owned();
+            let h = tokio::spawn(async move {
+                create_aux(p, role_arn, role.clone(), tags.clone()).await;
+            });
+            tasks.push(h);
+        }
     }
     for task in tasks {
         let _ = task.await;

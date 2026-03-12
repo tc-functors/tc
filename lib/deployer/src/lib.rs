@@ -62,6 +62,8 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
 
     let is_sync = !*concurrent || sync;
 
+    role::update_base_roles(auth, roles, tags).await;
+
     role::create_or_update(auth, roles, tags).await;
     function::create(auth, functions, &tags, is_sync).await;
     channel::create(&auth, channels).await;
