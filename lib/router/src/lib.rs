@@ -23,7 +23,7 @@ pub async fn route(auth: &Auth, event_id: &str, service: &str, sandbox: &str, ru
     let target_id = target_id(event_id);
     let target_arn = auth.sfn_arn(&target_name);
     let role = role_arn(&auth.account, service, sandbox, "event");
-    let target = eventbridge::make_target(&target_id, event_id, &target_arn, &role, None, None, None, None);
+    let target = eventbridge::make_target(&target_id, event_id, &target_arn, &role, None, None, None, None, None);
     println!("Routing {} to {}", event_id, target_name);
     eventbridge::put_target(client, bus.to_string(), rule.to_string(), target).await;
 }

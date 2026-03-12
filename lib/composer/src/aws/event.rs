@@ -29,6 +29,7 @@ pub struct Target {
     pub input_template: Option<String>,
     pub retry_attempts: Option<i32>,
     pub dead_letter_arn: Option<String>,
+    pub maximum_event_age_in_seconds: Option<i32>,
 }
 
 impl Target {
@@ -43,6 +44,7 @@ impl Target {
         input_template: Option<String>,
         retry_attempts: Option<i32>,
         dead_letter_arn: Option<String>,
+        maximum_event_age_in_seconds: Option<i32>,
     ) -> Target {
         let abbr_id = if id.chars().count() >= 64 {
             format!("{}-{}", entity.to_str(), &kit::abbreviate(id, "-"))
@@ -62,6 +64,7 @@ impl Target {
             input_template: input_template,
             retry_attempts: retry_attempts,
             dead_letter_arn: dead_letter_arn,
+            maximum_event_age_in_seconds: maximum_event_age_in_seconds,
         }
     }
 }
@@ -112,6 +115,7 @@ pub fn make_targets(
 
     let dead_letter_arn = espec.dead_letter_queue.as_ref().filter(|q| !q.is_empty()).map(|q| template::sqs_arn(q));
     let retry_attempts = espec.retries;
+    let maximum_event_age_in_seconds = espec.maximum_event_age_in_seconds;
 
     let mut xs: Vec<Target> = vec![];
 
@@ -133,6 +137,7 @@ pub fn make_targets(
             None,
             retry_attempts,
             dead_letter_arn.clone(),
+            maximum_event_age_in_seconds,
         );
         xs.push(t);
     }
@@ -153,6 +158,7 @@ pub fn make_targets(
                 None,
                 retry_attempts,
                 dead_letter_arn.clone(),
+                maximum_event_age_in_seconds,
             );
             xs.push(t);
         }
@@ -187,6 +193,7 @@ pub fn make_targets(
             input_template,
             retry_attempts,
             dead_letter_arn.clone(),
+            maximum_event_age_in_seconds,
         );
         xs.push(t);
     }
@@ -204,6 +211,7 @@ pub fn make_targets(
             None,
             retry_attempts,
             dead_letter_arn.clone(),
+            maximum_event_age_in_seconds,
         );
         xs.push(t)
     }
@@ -225,6 +233,7 @@ pub fn make_targets(
             None,
             retry_attempts,
             dead_letter_arn.clone(),
+            maximum_event_age_in_seconds,
         );
         xs.push(t)
     }
@@ -249,6 +258,7 @@ pub fn make_targets(
             None,
             retry_attempts,
             dead_letter_arn.clone(),
+            maximum_event_age_in_seconds,
         );
         xs.push(t)
     }

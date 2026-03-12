@@ -62,4 +62,7 @@ pub struct EventSpec {
 
     #[serde(default)]
     pub dead_letter_queue: Option<String>,
+
+    #[serde(default)]
+    pub maximum_event_age_in_seconds: Option<i32>,
 }
