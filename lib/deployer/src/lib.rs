@@ -60,7 +60,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
         &version
     );
 
-    let is_sync = *concurrent || sync;
+    let is_sync = !*concurrent || sync;
 
     role::create_or_update(auth, roles, tags).await;
     function::create(auth, functions, &tags, is_sync).await;
