@@ -326,6 +326,7 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
                     "versions" => display::print_versions(lookup_versions(&dir), format),
                     "transducer" => u::pp_json(&topology.transducer),
                     "roles" => u::pp_json(&topology.roles),
+                    "base" => u::pp_json(&topology.base_roles),
                     _ => display::try_display(&topology, &e, format),
                 },
             }

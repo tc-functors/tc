@@ -47,7 +47,7 @@ impl FromStr for Entity {
             "trigger" | "triggers" => Ok(Entity::Trigger),
             "schedule" | "schedules" => Ok(Entity::Schedule),
             "page" | "pages" => Ok(Entity::Page),
-            _ => Ok(Entity::Function),
+            _ => Err(ParseError),
         }
     }
 }

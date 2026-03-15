@@ -81,6 +81,7 @@ pub struct Topology {
     pub flow: Option<Flow>,
     pub config: Config,
     pub roles: HashMap<String, Role>,
+    pub base_roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
     pub sequences: HashMap<String, Vec<Connector>>,
@@ -496,9 +497,9 @@ fn make_pools(spec: &TopologySpec, config: &Config) -> HashMap<String, Pool> {
 
 fn make_roles(
     functions: &HashMap<String, Function>,
-    mutations: &usize,
-    routes: &usize,
-    events: &usize,
+    _mutations: &usize,
+    _routes: &usize,
+    _events: &usize,
     states: &Option<Flow>,
 ) -> HashMap<String, Role> {
     let mut h: HashMap<String, Role> = HashMap::new();
@@ -513,34 +514,20 @@ fn make_roles(
         let role = &f.role;
         h.insert(role.name.clone(), role.clone());
     }
-
-    let mut entities: Vec<Entity> = vec![];
-
-    if *mutations > 0 {
-        entities.push(Entity::Mutation);
-    }
-
-    if *routes > 0 {
-        entities.push(Entity::Route);
-    }
-
-    if *events > 0 {
-        entities.push(Entity::Event);
-    }
-
-    if let Some(_f) = states {
-        entities.push(Entity::State);
-    }
-
-    for b in entities {
-        let r = match std::env::var("TC_LEGACY_ROLES") {
-            Ok(_) => Role::provided_by_entity(b),
-            Err(_) => Role::default(b),
-        };
-        h.insert(r.name.clone(), r);
-    }
     h
 }
+
+fn make_base_roles() -> HashMap<String, Role> {
+    let mut h: HashMap<String, Role> = HashMap::new();
+
+    h.insert("mutation".to_string(), Role::default(Entity::Mutation));
+    h.insert("route".to_string(), Role::default(Entity::Route));
+    h.insert("event".to_string(), Role::default(Entity::Event));
+    h.insert("state".to_string(), Role::default(Entity::State));
+    h.insert("function".to_string(), Role::default(Entity::Function));
+    h
+}
+
 
 fn make_test(
     t: Option<HashMap<String, TestSpec>>,
@@ -648,6 +635,7 @@ fn make(
             &events.len(),
             &flow,
         ),
+        base_roles: make_base_roles(),
         events: events,
         routes: routes,
         tests: make_test(spec.tests.clone(), &functions),
@@ -702,6 +690,7 @@ fn make_standalone(dir: &str) -> Topology {
         flow: None,
         pools: HashMap::new(),
         roles: make_roles(&functions, &0, &0, &0, &None),
+        base_roles: make_base_roles(),
         functions: functions,
         nodes: HashMap::new(),
         mutations: HashMap::new(),
