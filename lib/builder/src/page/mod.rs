@@ -18,28 +18,8 @@ async fn get_token(auth: &Auth) -> String {
     }
 }
 
-fn gen_dockerignore(dir: &str) {
-    let f = format!(
-        r#"
-**/node_modules/
-**/dist
-**/logs
-**/target
-**/vendor
-**/build
-.git
-npm-debug.log
-.coverage
-.coverage.*
-.venv
-.pyenv
-**/.venv/
-**/site-packages/
-*.zip
-"#
-    );
-    let file = format!("{}/.dockerignore", dir);
-    u::write_str(&file, &f);
+fn gen_dockerignore(dir: &str) -> bool {
+    crate::gen_dockerignore(dir)
 }
 
 async fn build_with_docker(auth: &Auth, dir: &str) -> (bool, String, String) {
@@ -105,7 +85,7 @@ pub async fn build(
     node::gen_dockerfile(dir, command, config_template);
 
     bar.inc(1);
-    gen_dockerignore(dir);
+    let created_root_dockerignore = gen_dockerignore(dir);
     bar.inc(2);
 
     let (status, out, err) = build_with_docker(auth, dir).await;
@@ -120,6 +100,9 @@ pub async fn build(
     copy_from_docker(dir);
     bar.inc(4);
     sh("rm -f Dockerfile wrapper .dockerignore", dir);
+    if created_root_dockerignore {
+        crate::cleanup_root_dockerignore(dir);
+    }
     clean_tmp(dir, config_template);
     bar.inc(5);
 }

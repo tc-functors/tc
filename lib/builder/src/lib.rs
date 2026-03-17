@@ -20,6 +20,48 @@ use std::{
     str::FromStr,
 };
 
+/// Writes a `.dockerignore` to `dir` and, if no user-managed `.dockerignore`
+/// exists at the repo root, also writes one there so that named build contexts
+/// (`--build-context shared={root}`) are filtered. Returns `true` if a root
+/// `.dockerignore` was created (caller is responsible for cleaning it up).
+pub(crate) fn gen_dockerignore(dir: &str) -> bool {
+    let f = format!(
+        r#"
+**/node_modules/
+**/dist
+**/logs
+**/target
+**/vendor
+**/build
+.git
+npm-debug.log
+.coverage
+.coverage.*
+.env
+.venv
+.pyenv
+**/.venv/
+**/site-packages/
+*.zip
+"#
+    );
+    let file = format!("{}/.dockerignore", dir);
+    u::write_str(&file, &f);
+
+    let root = u::root();
+    let root_file = format!("{}/.dockerignore", root);
+    if !u::file_exists(&root_file) {
+        u::write_str(&root_file, &f);
+        return true;
+    }
+    false
+}
+
+pub(crate) fn cleanup_root_dockerignore(dir: &str) {
+    let root = u::root();
+    sh(&format!("rm -f {}/.dockerignore", root), dir);
+}
+
 pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
     let config = Config::new();
