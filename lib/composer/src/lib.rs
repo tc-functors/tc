@@ -208,22 +208,9 @@ pub fn is_topology_dir(dir: &str) -> bool {
 
 // display
 
-pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
-    match format {
-        "table" => display::topology::print_stats(topologies),
-        "json" => display::topology::print_stats_json(topologies),
-        "tree" => {
-            println!("")
-        }
-        _ => (),
-    }
-}
-
 pub fn display_root() {
     let topologies = list_topologies();
-
-
-    display::topology::print_stats(topologies)
+    display::topology::print_stats(&topologies)
 }
 
 pub fn topology_name(dir: &str) -> String {
@@ -350,8 +337,10 @@ pub fn pprint_root(topologies: &HashMap<String, Topology>, fmt: &str)  {
     let format = Format::from_str(fmt).unwrap();
     match format {
         Format::Tree => display::print_tree_recursive(topologies),
+        Format::Table => display::topology::print_stats(topologies),
+        Format::JSON => display::topology::print_stats_json(topologies),
         Format::Icepanel => display::print_icepanel(topologies),
-        _ => println!("only -f tree|icepanel supported")
+        _ => println!("only -f tree|icepanel|table|json supported")
     }
 }
 

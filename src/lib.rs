@@ -146,11 +146,11 @@ pub async fn compile(dir: Option<String>, _recursive: bool) {
 pub async fn compose_root(dir: Option<String>, format: Option<String>) {
     let root_dir = match dir {
         Some(d) => d,
-        None => u::root(),
+        None => u::pwd(),
     };
     let fmt = u::maybe_string(format, "table");
-    let tps = composer::compose_root(&root_dir, true);
-    composer::print_topologies(&fmt, tps);
+    let topologies = composer::compose_root(&root_dir, true);
+    composer::pprint_root(&topologies, &fmt);
 }
 
 pub async fn compose_compact(dir: Option<String>) {

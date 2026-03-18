@@ -86,7 +86,7 @@ impl TopologyCount {
     }
 }
 
-pub fn print_stats(topologies: HashMap<String, Topology>) {
+pub fn print_stats(topologies: &HashMap<String, Topology>) {
     let mut xs: Vec<TopologyCount> = vec![];
     for (_, t) in topologies {
         let c = TopologyCount::new(&t);
@@ -98,7 +98,7 @@ pub fn print_stats(topologies: HashMap<String, Topology>) {
     println!("{}", table);
 }
 
-pub fn print_stats_json(topologies: HashMap<String, Topology>) {
+pub fn print_stats_json(topologies: &HashMap<String, Topology>) {
     let mut xs: Vec<TopologyCount> = vec![];
     for (_, t) in topologies {
         let c = TopologyCount::new(&t);
