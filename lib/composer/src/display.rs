@@ -14,6 +14,7 @@ pub mod compact;
 mod event;
 mod function;
 mod state;
+mod icepanel;
 pub mod topology;
 use colored::Colorize;
 use tabled::{
@@ -33,6 +34,7 @@ pub enum Format {
     Graphql,
     Dot,
     Graph,
+    Icepanel,
 }
 
 impl FromStr for Format {
@@ -46,6 +48,7 @@ impl FromStr for Format {
             "yaml" => Ok(Format::YAML),
             "dot" => Ok(Format::Dot),
             "graph" => Ok(Format::Graph),
+            "icepanel" => Ok(Format::Icepanel),
             "graphql" | "gql" => Ok(Format::Graphql),
             _ => Ok(Format::JSON),
         }
@@ -204,4 +207,28 @@ pub fn print_versions(versions: HashMap<String, String>, format: Format) {
         Format::JSON => u::pp_json(&xs),
         _ => todo!(),
     }
+}
+
+pub fn print_tree_recursive(topologies: &HashMap<String, Topology>) {
+    let mut t = TreeBuilder::new(String::from(""));
+
+
+    for (name, topology) in topologies {
+        let nt = format!("{} ({})", name.cyan(), &topology.version);
+        t.begin_child(nt);
+        for (n, node) in &topology.nodes {
+            let tt = format!("{} ({})", n.blue(), &node.version);
+            t.add_empty_child(tt);
+        }
+        t.end_child();
+    }
+
+    let tree = t.build();
+    kit::print_tree(tree);
+}
+
+
+pub fn print_icepanel(topologies: &HashMap<String, Topology>) {
+    let objs = icepanel::generate(topologies);
+    u::pp_json(&objs);
 }

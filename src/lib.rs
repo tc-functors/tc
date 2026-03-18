@@ -173,8 +173,13 @@ pub async fn compose(opts: ComposeOpts) {
 
     let dir = u::pwd();
     let fmt = u::maybe_string(format.clone(), "json");
-    let topology = composer::compose(&dir, recursive);
-    composer::pprint(&topology, entity, &fmt);
+    if composer::is_root_dir(&dir) {
+        let topologies = composer::compose_root(&dir, true);
+        composer::pprint_root(&topologies, &fmt);
+    } else {
+        let topology = composer::compose(&dir, recursive);
+        composer::pprint(&topology, entity, &fmt);
+    }
 }
 
 pub async fn resolve(

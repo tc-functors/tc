@@ -221,6 +221,8 @@ pub fn print_topologies(format: &str, topologies: HashMap<String, Topology>) {
 
 pub fn display_root() {
     let topologies = list_topologies();
+
+
     display::topology::print_stats(topologies)
 }
 
@@ -341,6 +343,15 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
                 }
             }
         },
+    }
+}
+
+pub fn pprint_root(topologies: &HashMap<String, Topology>, fmt: &str)  {
+    let format = Format::from_str(fmt).unwrap();
+    match format {
+        Format::Tree => display::print_tree_recursive(topologies),
+        Format::Icepanel => display::print_icepanel(topologies),
+        _ => println!("only -f tree|icepanel supported")
     }
 }
 
