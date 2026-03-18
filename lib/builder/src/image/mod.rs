@@ -24,29 +24,8 @@ use provider::{
 };
 use std::collections::HashMap;
 
-fn gen_dockerignore(dir: &str) {
-    let f = format!(
-        r#"
-**/node_modules/
-**/dist
-**/logs
-**/target
-**/vendor
-**/build
-.git
-npm-debug.log
-.coverage
-.coverage.*
-.env
-.venv
-.pyenv
-**/.venv/
-**/site-packages/
-*.zip
-"#
-    );
-    let file = format!("{}/.dockerignore", dir);
-    u::write_str(&file, &f);
+fn gen_dockerignore(dir: &str) -> bool {
+    crate::gen_dockerignore(dir)
 }
 
 fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
@@ -178,7 +157,7 @@ pub async fn build(
         gen_base_dockerfile(dir, langr, pre, post);
     }
 
-    gen_dockerignore(dir);
+    let created_root_dockerignore = gen_dockerignore(dir);
 
     let uri = if code_only {
         code_image_uri
@@ -192,6 +171,9 @@ pub async fn build(
 
     bar.inc(3);
     sh("rm -rf Dockerfile build build.json .dockerignore", dir);
+    if created_root_dockerignore {
+        crate::cleanup_root_dockerignore(dir);
+    }
     bar.finish();
     BuildStatus {
         path: uri.to_string(),

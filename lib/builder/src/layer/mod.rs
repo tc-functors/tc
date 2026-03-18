@@ -212,7 +212,11 @@ fn clean(dir: &str) {
 pub fn build(dir: &str, name: &str, langr: &LangRuntime, _bspec: &Build) -> BuildStatus {
     sh("rm -f deps.zip", dir);
     gen_dockerfile(dir, langr);
+    let created_root_dockerignore = crate::gen_dockerignore(dir);
     let (status, out, err) = build_with_docker(dir);
+    if created_root_dockerignore {
+        crate::cleanup_root_dockerignore(dir);
+    }
     copy_from_docker(dir);
     if !u::path_exists(dir, "function.yml") && !u::path_exists(dir, "function.json") {
         copy(dir, langr);
