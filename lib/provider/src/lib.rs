@@ -3,7 +3,6 @@ pub mod local;
 
 pub use aws::Auth;
 use configurator::Config;
-use kit as u;
 
 pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
     match std::env::var("TC_ASSUME_ROLE") {
@@ -12,8 +11,10 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
                 Some(r) => Some(r),
                 None => {
                     let config = Config::new();
-                    let p = u::maybe_string(profile.clone(), "default");
-                    config.ci.roles.get(&p).cloned()
+                    match profile.clone() {
+                        Some(p) => config.ci.roles.get(&p).cloned(),
+                        None => panic!("No profile found")
+                    }
                 }
             };
             Auth::new(profile.clone(), role).await
