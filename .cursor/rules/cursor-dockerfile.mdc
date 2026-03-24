@@ -1,0 +1,9 @@
+---
+description: "Dockerfile/Dockerignore creation rules for layer/function image building in Python, Ruby, Node. Applies to Dockerfile and .dockerignore in any function/layer dir."
+globs: "*/Dockerfile,*/.dockerignore"
+alwaysApply: true
+---
+- Must include variant of buildx/build or `docker build` with `--platform=linux/amd64`
+- Prohibit node_modules/dist/target/vendor/build in .dockerignore
+- Must mount AWS creds via --secret if using provider build
+- For Python, install requirements.txt to /build/python; for Ruby, handle vendor/bundle, for Node, expect node_modules/

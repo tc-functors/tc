@@ -1,0 +1,11 @@
+---
+description: "Enforces Rust handler/module/struct naming, file placement, and async main signatures for functions in src/, lib/, and handler.rs. Applies to .rs files."
+globs: "src/**/*.rs,lib/**/*.rs"
+alwaysApply: true
+---
+- Ensure all Lambda handlers use the pattern:
+  `use lambda_runtime::{service_fn, LambdaEvent, Error};`
+  `#[tokio::main]`
+  `async fn main() -> Result<(), Error>`
+- Require module+file name match for entities (`lib/composer/src/aws/function.rs` -> `Function` struct).
+- Prohibit duplicate struct names in a module.

@@ -33,3 +33,6 @@ examples/apps/*/dist
 flow.html
 *.svg
 dist
+logs/
+# Caliber local state
+.caliber/

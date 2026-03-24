@@ -1,0 +1,66 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(pytest *)",
+      "Bash(cargo *)",
+      "Bash(bundle *)",
+      "Bash(rake *)",
+      "Bash(make *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --yes @rely-ai/caliber learn observe",
+            "description": "Caliber: recording tool usage for session learning"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --yes @rely-ai/caliber learn observe --failure",
+            "description": "Caliber: recording tool failure for session learning"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --yes @rely-ai/caliber learn observe --prompt",
+            "description": "Caliber: recording user prompt for correction detection"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx --yes @rely-ai/caliber learn finalize --auto",
+            "description": "Caliber: finalizing session learnings"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+---
+description: "Requires canonical field order and keywords in topology.yml. Applies to any *.yml under examples/, lib/, src/."
+globs: "**/topology.yml"
+alwaysApply: true
+---
+- Field order must be: name, routes, events, functions, mutations, queues, channels, states, pages
+- Recognize trigger phrases: 'add function', 'add event', 'new mutation', 'define page', 'add channel', 'entity', 'component'
+- Warn on attributes not matching known spec.

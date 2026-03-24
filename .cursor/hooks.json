@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": "npx --yes @rely-ai/caliber learn observe"
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "command": "npx --yes @rely-ai/caliber learn observe --failure"
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "npx --yes @rely-ai/caliber learn observe --prompt"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "npx --yes @rely-ai/caliber learn finalize --auto"
+      }
+    ]
+  }
+}
