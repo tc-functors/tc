@@ -206,6 +206,20 @@ fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str)
     }
 }
 
+fn find_parent_function_role(dir: &str) -> Option<String> {
+    let paths = vec![
+        u::absolutize(dir, "../roles/function.json"),
+        u::absolutize(dir, "../../roles/function.json"),
+        u::absolutize(dir, "../../../roles/function.json"),
+        u::absolutize(dir, "../../../../roles/function.json"),
+        s!("../roles/function.json"),
+        s!("../../roles/function.json"),
+        s!("../../../roles/function.json"),
+        s!("../../../../roles/function.json"),
+    ];
+    u::any_path(paths)
+}
+
 fn lookup_role(
     infra_dir: &str,
     r: &RuntimeSpec,
@@ -213,17 +227,23 @@ fn lookup_role(
     _fqn: &str,
     function_name: &str,
 ) -> Role {
+
+
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
-                    let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                    if u::file_exists(&f) {
-                        Some(f)
+                    if let Some(p) = find_parent_function_role(infra_dir) {
+                        Some(p)
                     } else {
+                        let f = format!("{}/roles/{}.json", infra_dir, function_name);
+                        if u::file_exists(&f) {
+                            Some(f)
+                        } else {
                         u::any_path(vec![format!("{}/roles/function.json", infra_dir)])
+                        }
                     }
                 }
             };
@@ -666,7 +686,7 @@ impl Runtime {
             Some(r) => {
                 if let Some(ref provider) = r.provider {
                     match provider {
-                        Provider::Lambda => make_lambda(dir, &infra_dir, namespace, fqn, fspec, &r),
+                        Provider::Lambda => make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r),
 
                         Provider::Fargate => {
                             make_fargate(dir, &infra_dir, namespace, fqn, fspec, &r, cspec)
