@@ -217,7 +217,11 @@ fn find_parent_function_role(dir: &str) -> Option<String> {
         s!("../../../roles/function.json"),
         s!("../../../../roles/function.json"),
     ];
-    u::any_path(paths)
+
+    match std::env::var("TC_INHERIT_ROLES") {
+        Ok(_) => u::any_path(paths),
+        Err(_) => None
+    }
 }
 
 fn lookup_role(
