@@ -208,6 +208,7 @@ fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str)
 
 fn find_parent_function_role(dir: &str) -> Option<String> {
     let paths = vec![
+        format!("{}/roles/function.json", dir),
         u::absolutize(dir, "../roles/function.json"),
         u::absolutize(dir, "../../roles/function.json"),
         u::absolutize(dir, "../../../roles/function.json"),
@@ -217,11 +218,7 @@ fn find_parent_function_role(dir: &str) -> Option<String> {
         s!("../../../roles/function.json"),
         s!("../../../../roles/function.json"),
     ];
-
-    match std::env::var("TC_INHERIT_ROLES") {
-        Ok(_) => u::any_path(paths),
-        Err(_) => None
-    }
+    u::any_path(paths)
 }
 
 fn lookup_role(
@@ -246,7 +243,7 @@ fn lookup_role(
                         if u::file_exists(&f) {
                             Some(f)
                         } else {
-                        u::any_path(vec![format!("{}/roles/function.json", infra_dir)])
+                            u::any_path(vec![format!("{}/roles/function.json", infra_dir)])
                         }
                     }
                 }
