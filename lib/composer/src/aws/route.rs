@@ -121,12 +121,12 @@ fn make_target(
                 _ => s!("${request.path}"),
             };
             let source = match pattern.source.first() {
-                Some(s) => s.clone(),
+                Some(s) => s.as_str().unwrap().to_string(),
                 None => s!("default"),
             };
-            let detail_type = pattern.detail_type.first().unwrap();
+            let detail_type = pattern.detail_type.first().unwrap().as_str().unwrap();
             req.insert(s!("Detail"), detail);
-            req.insert(s!("DetailType"), detail_type.clone());
+            req.insert(s!("DetailType"), detail_type.to_string());
             req.insert(s!("Source"), source);
             req.insert(s!("EventBusName"), event.bus.clone());
         }
