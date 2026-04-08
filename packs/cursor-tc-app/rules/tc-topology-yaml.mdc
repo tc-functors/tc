@@ -1,0 +1,12 @@
+---
+description: >-
+  Canonical topology.yml field order and trigger phrases for tc application
+  repos. Applies when topology.yml files are in context (not broad monorepo-only globs).
+globs: "**/topology.yml"
+alwaysApply: false
+---
+
+- Field order should be: **name**, **routes**, **events**, **functions**, **mutations**, **queues**, **channels**, **states**, **pages** (then other keys consistent with the project).
+- Recognize trigger phrases: **add function**, **add event**, **new mutation**, **define page**, **add channel**, **entity**, **component**.
+- Prefer **`tc compose`** and **`tc compile`** to validate changes; do not reference a **`tc lint`** subcommand (it does not exist).
+- Warn on attributes that do not match the project’s known topology spec or existing file patterns.
