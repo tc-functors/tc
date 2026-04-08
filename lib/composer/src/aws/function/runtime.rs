@@ -236,19 +236,19 @@ fn lookup_role(
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
-                    if let Some(p) = find_parent_function_role(infra_dir) {
-                        Some(p)
+
+                    let f = format!("{}/roles/{}.json", infra_dir, function_name);
+                    if u::file_exists(&f) {
+                        Some(f)
                     } else {
-                        let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                        if u::file_exists(&f) {
-                            Some(f)
+                        if let Some(p) = find_parent_function_role(infra_dir) {
+                            Some(p)
                         } else {
-                            u::any_path(vec![format!("{}/roles/function.json", infra_dir)])
+                            None
                         }
                     }
                 }
             };
-
             if let Some(p) = path {
                 match &r.role_name {
                     Some(name) => Role::new_static(Entity::Function, &p, namespace, &name),
