@@ -132,8 +132,8 @@ async fn invoke(
             if let Some(c) = component {
                 if let Some(e) = &topology.events.get(&c) {
                     let client = eventbridge::make_client(auth).await;
-                    let detail_type = &e.pattern.detail_type.first().unwrap();
-                    let source = &e.pattern.source.first().unwrap();
+                    let detail_type = e.pattern.detail_type.first().unwrap().as_str().unwrap();
+                    let source = e.pattern.source.first().unwrap().as_str().unwrap();
                     eventbridge::put_event(client, &e.bus, detail_type, source, payload).await
                 } else {
                     panic!("Event not found")

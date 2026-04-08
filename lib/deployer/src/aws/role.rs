@@ -73,8 +73,12 @@ pub async fn create_aux(
 
                     let res = match diff {
                         Some(_) => true,
-                        None => false,
+                        None => match std::env::var("TC_FORCE_DEPLOY") {
+                            Ok(_) => true,
+                            Err(_) => false
+                        },
                     };
+
                     println!("Diffing role: {} changed: {}", &role.name, &res);
                     res
                 }

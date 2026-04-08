@@ -99,7 +99,7 @@ fn make_targets(
             Entity::Event => {
                 if let Some(event) = events.get(&target.name) {
                     let source = match event.pattern.source.first() {
-                        Some(s) => s,
+                        Some(s) => s.as_str().unwrap(),
                         None => "default",
                     };
                     let t = EventTarget {

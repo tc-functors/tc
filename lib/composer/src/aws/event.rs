@@ -266,43 +266,24 @@ pub fn make_targets(
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Detail {
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub metadata: HashMap<String, Vec<String>>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub data: HashMap<String, Vec<String>>,
-}
-
-impl Detail {
-    fn new(filter: Option<String>) -> Option<Detail> {
-        match filter {
-            Some(f) => {
-                let d: Detail = serde_json::from_str(&f).unwrap();
-                Some(d)
-            }
-            None => None,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventPattern {
     #[serde(rename(serialize = "detail-type", deserialize = "detail-type"))]
-    pub detail_type: Vec<String>,
+    pub detail_type: Vec<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<String>,
+    pub source: Vec<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub detail: Option<Detail>,
+    pub detail: Option<serde_json::Value>,
 }
 
 impl EventPattern {
     fn new(event_name: &str, source: Vec<String>, filter: Option<String>) -> EventPattern {
-        let detail = Detail::new(filter);
+        let detail = filter.map(|f| serde_json::from_str::<serde_json::Value>(&f).unwrap());
+        let source = source.into_iter().map(serde_json::Value::String).collect();
 
         EventPattern {
-            detail_type: vec![event_name.to_string()],
-            source: source,
-            detail: detail,
+            detail_type: vec![serde_json::Value::String(event_name.to_string())],
+            source,
+            detail,
         }
     }
 }

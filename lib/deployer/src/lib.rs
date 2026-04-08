@@ -205,7 +205,6 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         version,
         namespace,
         sandbox,
-        functions,
         events,
         routes,
         flow,
@@ -214,6 +213,7 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         queues,
         tags,
         channels,
+        nodes,
         pools,
         pages,
         ..
@@ -230,7 +230,12 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
 
     match entity {
         Entity::Event => event::update(&auth, events, tags, component).await,
-        Entity::Function => function::update(&auth, functions, tags, component).await,
+        Entity::Function => {
+            for (_, node) in nodes {
+                println!("updating {}", &node.namespace);
+                function::update(&auth, &node.functions, tags, component).await;
+            }
+        }
         Entity::Mutation => mutation::update(&auth, mutations, &component).await,
         Entity::Queue => queue::update(&auth, queues, component).await,
         Entity::Channel => channel::update(&auth, channels, component).await,
