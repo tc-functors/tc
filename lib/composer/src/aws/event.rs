@@ -265,24 +265,8 @@ pub fn make_targets(
     xs
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Detail {
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub metadata: HashMap<String, Vec<String>>,
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub data: HashMap<String, Vec<String>>,
-}
-
-impl Detail {
-    fn new(filter: Option<String>) -> Option<Detail> {
-        match filter {
-            Some(f) => {
-                let d: Detail = serde_json::from_str(&f).unwrap();
-                Some(d)
-            }
-            None => None,
-        }
-    }
+fn parse_detail(filter: Option<String>) -> Option<serde_json::Value> {
+    filter.map(|f| serde_json::from_str(&f).unwrap())
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -292,17 +276,20 @@ pub struct EventPattern {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub detail: Option<Detail>,
+    pub detail: Option<serde_json::Value>,
+    #[serde(flatten, default, skip_serializing_if = "HashMap::is_empty")]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 impl EventPattern {
     fn new(event_name: &str, source: Vec<String>, filter: Option<String>) -> EventPattern {
-        let detail = Detail::new(filter);
+        let detail = parse_detail(filter);
 
         EventPattern {
             detail_type: vec![event_name.to_string()],
             source: source,
             detail: detail,
+            extra: HashMap::new(),
         }
     }
 }
@@ -374,5 +361,91 @@ impl Event {
             targets: targets,
             sandboxes: sandboxes.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn roundtrip_simple_filter() {
+        let json = r#"{"detail-type":["OrderCreated"],"source":["myapp"],"detail":{"metadata":{"type":["foo"]}}}"#;
+        let pattern: EventPattern = serde_json::from_str(json).unwrap();
+
+        assert_eq!(pattern.detail_type, vec!["OrderCreated"]);
+        assert_eq!(pattern.source, vec!["myapp"]);
+        assert!(pattern.detail.is_some());
+
+        let out = serde_json::to_string(&pattern).unwrap();
+        let reparsed: serde_json::Value = serde_json::from_str(&out).unwrap();
+        let original: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(reparsed, original);
+    }
+
+    #[test]
+    fn roundtrip_or_with_anything_but_and_exists() {
+        let json = r#"{"detail-type":["StateChange"],"source":["myapp"],"detail":{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}}"#;
+        let pattern: EventPattern = serde_json::from_str(json).unwrap();
+
+        assert_eq!(pattern.detail_type, vec!["StateChange"]);
+        assert_eq!(pattern.source, vec!["myapp"]);
+        assert!(pattern.detail.is_some());
+
+        let detail = pattern.detail.as_ref().unwrap();
+        assert!(detail.get("$or").is_some(), "$or must be preserved in detail");
+
+        let out = serde_json::to_string(&pattern).unwrap();
+        let reparsed: serde_json::Value = serde_json::from_str(&out).unwrap();
+        let original: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(reparsed, original);
+    }
+
+    #[test]
+    fn roundtrip_prefix_and_numeric() {
+        let json = r#"{"detail-type":["Metric"],"detail":{"name":[{"prefix":"cpu."}],"value":[{"numeric":[">",0,"<=",100]}]}}"#;
+        let pattern: EventPattern = serde_json::from_str(json).unwrap();
+
+        let out = serde_json::to_string(&pattern).unwrap();
+        let reparsed: serde_json::Value = serde_json::from_str(&out).unwrap();
+        let original: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(reparsed, original);
+    }
+
+    #[test]
+    fn roundtrip_full_pattern_passthrough() {
+        let json = r#"{"detail-type":["StateChange"],"source":["myapp"],"account":["123456789012"],"region":["us-east-1"],"detail":{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}}"#;
+        let pattern: EventPattern = serde_json::from_str(json).unwrap();
+
+        assert!(pattern.extra.contains_key("account"));
+        assert!(pattern.extra.contains_key("region"));
+
+        let out = serde_json::to_string(&pattern).unwrap();
+        let reparsed: serde_json::Value = serde_json::from_str(&out).unwrap();
+        let original: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert_eq!(reparsed, original);
+    }
+
+    #[test]
+    fn filter_as_detail_value() {
+        let filter = r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
+        let detail = parse_detail(Some(filter.to_string()));
+        assert!(detail.is_some());
+        assert!(detail.as_ref().unwrap().get("$or").is_some());
+    }
+
+    #[test]
+    fn new_builds_pattern_with_complex_filter() {
+        let filter = r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
+        let pattern = EventPattern::new("MyEvent", vec!["myapp".into()], Some(filter.to_string()));
+
+        assert_eq!(pattern.detail_type, vec!["MyEvent"]);
+        assert_eq!(pattern.source, vec!["myapp"]);
+        assert!(pattern.detail.as_ref().unwrap().get("$or").is_some());
+
+        let out = serde_json::to_string(&pattern).unwrap();
+        assert!(out.contains(r#""$or""#));
+        assert!(out.contains(r#""anything-but""#));
+        assert!(out.contains(r#""exists""#));
     }
 }
