@@ -1,0 +1,138 @@
+{
+  "name": "tc-serverless",
+  "displayName": "tc Serverless (AWS)",
+  "description": "Run the tc CLI for compose, build, deploy, and emulate workflows in app repositories.",
+  "version": "0.1.0",
+  "publisher": "informed",
+  "license": "GPL-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "aws",
+    "serverless",
+    "tc",
+    "topology"
+  ],
+  "activationEvents": [
+    "onCommand:tc.serverless.compose",
+    "onCommand:tc.serverless.compile",
+    "onCommand:tc.serverless.build",
+    "onCommand:tc.serverless.deploy",
+    "onCommand:tc.serverless.resolve",
+    "onCommand:tc.serverless.emulate",
+    "onCommand:tc.serverless.test",
+    "onCommand:tc.serverless.invoke",
+    "onCommand:tc.serverless.version",
+    "onCommand:tc.serverless.visualize",
+    "onTaskType:tc"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "tc Serverless",
+      "properties": {
+        "tc.serverless.executablePath": {
+          "type": "string",
+          "default": "tc",
+          "description": "Path to the tc binary (must be on PATH or an absolute path)."
+        },
+        "tc.serverless.topologyDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Directory containing topology (passed as -d to compose, compile, test, deploy when set). Empty uses the workspace folder."
+        },
+        "tc.serverless.defaultProfile": {
+          "type": "string",
+          "default": "",
+          "description": "Default profile/env (-e) for commands that support it (build, resolve, emulate, test, invoke)."
+        },
+        "tc.serverless.defaultSandbox": {
+          "type": "string",
+          "default": "",
+          "description": "Default sandbox (-s) for commands that support it (deploy, resolve, emulate, test, invoke)."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "tc.serverless.compose",
+        "title": "tc: Compose topology"
+      },
+      {
+        "command": "tc.serverless.compile",
+        "title": "tc: Compile topology"
+      },
+      {
+        "command": "tc.serverless.build",
+        "title": "tc: Build entity"
+      },
+      {
+        "command": "tc.serverless.deploy",
+        "title": "tc: Deploy (CI)"
+      },
+      {
+        "command": "tc.serverless.resolve",
+        "title": "tc: Resolve"
+      },
+      {
+        "command": "tc.serverless.emulate",
+        "title": "tc: Emulate"
+      },
+      {
+        "command": "tc.serverless.test",
+        "title": "tc: Test topology"
+      },
+      {
+        "command": "tc.serverless.invoke",
+        "title": "tc: Invoke"
+      },
+      {
+        "command": "tc.serverless.version",
+        "title": "tc: Version"
+      },
+      {
+        "command": "tc.serverless.visualize",
+        "title": "tc: Visualize topology"
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "tc",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "tc subcommand (e.g. compose, compile, build, deploy, resolve, emulate, test, invoke, version, visualize)."
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional arguments after the subcommand."
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Working directory relative to workspace folder, or absolute path."
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}
