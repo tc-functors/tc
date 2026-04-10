@@ -10,22 +10,17 @@ use notifier::RichText;
 
 fn inc_patch(v: &str) -> String {
     let version = git::maybe_semver(v);
-    let mut next = version.clone();
-    next.increment_patch();
-    format!("{}.{}.{}", next.major, next.minor, next.patch)
+    format!("{}.{}.{}", version.major, version.minor, version.patch + 1)
 }
 
 fn inc_minor(v: &str) -> String {
     let version = git::maybe_semver(v);
-    let mut next = version.clone();
-    next.increment_minor();
-    format!("{}.{}.0", next.major, next.minor)
+    format!("{}.{}.0", version.major, version.minor + 1)
 }
 
 fn inc_major(v: &str) -> String {
-    let mut version = git::maybe_semver(v);
-    version.increment_major();
-    format!("{}.0.0", version.major)
+    let version = git::maybe_semver(v);
+    format!("{}.0.0", version.major + 1)
 }
 
 fn has_patch(v: &str) -> bool {
