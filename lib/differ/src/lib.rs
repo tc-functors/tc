@@ -116,6 +116,14 @@ pub fn diff_fns(
             }
         }
     }
+    for line in &lines {
+        if line.contains("shared") {
+            for (name, f) in fns {
+                changed_fns.insert(name.to_string(), f.clone());
+            }
+        }
+    }
+
     changed_fns
 }
 

@@ -14,6 +14,8 @@ use compiler::{
             LangRuntime,
             Provider,
             RuntimeSpec,
+            FileSystemKind,
+            FileSystemSpec,
         },
         infra::InfraSpec,
     },
@@ -35,6 +37,7 @@ pub struct Network {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FileSystem {
+    pub kind: FileSystemKind,
     pub arn: String,
     pub mount_point: String,
 }
@@ -414,7 +417,7 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h
 }
 
-fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
+fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>, fs: &Option<FileSystemSpec>) -> bool {
     if let Some(assets) = maybe_assets {
         let ax = assets.deps_path;
         match ax {
@@ -428,7 +431,10 @@ fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
             },
         }
     } else {
-        false
+        match fs {
+            Some(_) => true,
+            None => false
+        }
     }
 }
 
@@ -446,10 +452,24 @@ fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
     }
 }
 
-fn make_fs(infra_spec: &InfraSpec, enable_fs: bool) -> Option<FileSystem> {
+fn as_fs_kind(fs_spec: &Option<FileSystemSpec>) -> FileSystemKind {
+    match fs_spec {
+        Some(f) => {
+            match &f.kind {
+                Some(p) => p.clone(),
+                None => FileSystemKind::Efs
+            }
+        },
+        None => FileSystemKind::Efs
+    }
+}
+
+
+fn make_fs(infra_spec: &InfraSpec, fs_spec: &Option<FileSystemSpec>, enable_fs: bool) -> Option<FileSystem> {
     if enable_fs {
         match &infra_spec.filesystem {
             Some(fs) => Some(FileSystem {
+                kind: as_fs_kind(fs_spec),
                 arn: fs.arn.clone(),
                 mount_point: fs.mount_point.clone(),
             }),
@@ -552,7 +572,7 @@ fn make_lambda(
         },
     };
     let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
-    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
@@ -593,7 +613,7 @@ fn make_lambda(
         role: role,
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
         infra_spec: infra_spec,
         cluster: String::from(""),
     }
@@ -608,7 +628,7 @@ fn make_fargate(
     rspec: &RuntimeSpec,
     c: &Config,
 ) -> Runtime {
-    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
+    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs, &rspec.fs);
     let package_type = s!("Image");
     let uri = as_uri(
         dir,
@@ -661,7 +681,7 @@ fn make_fargate(
         role: role,
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
         infra_spec: infra_spec,
         cluster: cluster.to_string(),
     }

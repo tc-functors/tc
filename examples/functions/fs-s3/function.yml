@@ -1,0 +1,8 @@
+name: example-s3
+description: example function
+runtime:
+  lang: python3.11
+  handler: handler.handler
+  fs:
+    kind: S3
+    bucket: 'tc-test'
