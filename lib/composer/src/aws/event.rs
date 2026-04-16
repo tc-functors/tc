@@ -272,9 +272,9 @@ fn parse_detail(filter: Option<String>) -> Option<serde_json::Value> {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct EventPattern {
     #[serde(rename(serialize = "detail-type", deserialize = "detail-type"))]
-    pub detail_type: Vec<String>,
+    pub detail_type: Vec<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<String>,
+    pub source: Vec<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<serde_json::Value>,
     #[serde(flatten, default, skip_serializing_if = "HashMap::is_empty")]
@@ -284,11 +284,12 @@ pub struct EventPattern {
 impl EventPattern {
     fn new(event_name: &str, source: Vec<String>, filter: Option<String>) -> EventPattern {
         let detail = parse_detail(filter);
+        let source = source.into_iter().map(serde_json::Value::String).collect();
 
         EventPattern {
-            detail_type: vec![event_name.to_string()],
-            source: source,
-            detail: detail,
+            detail_type: vec![serde_json::Value::String(event_name.to_string())],
+            source,
+            detail,
             extra: HashMap::new(),
         }
     }
@@ -373,8 +374,11 @@ mod tests {
         let json = r#"{"detail-type":["OrderCreated"],"source":["myapp"],"detail":{"metadata":{"type":["foo"]}}}"#;
         let pattern: EventPattern = serde_json::from_str(json).unwrap();
 
-        assert_eq!(pattern.detail_type, vec!["OrderCreated"]);
-        assert_eq!(pattern.source, vec!["myapp"]);
+        assert_eq!(
+            pattern.detail_type,
+            vec![serde_json::Value::from("OrderCreated")]
+        );
+        assert_eq!(pattern.source, vec![serde_json::Value::from("myapp")]);
         assert!(pattern.detail.is_some());
 
         let out = serde_json::to_string(&pattern).unwrap();
@@ -388,8 +392,11 @@ mod tests {
         let json = r#"{"detail-type":["StateChange"],"source":["myapp"],"detail":{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}}"#;
         let pattern: EventPattern = serde_json::from_str(json).unwrap();
 
-        assert_eq!(pattern.detail_type, vec!["StateChange"]);
-        assert_eq!(pattern.source, vec!["myapp"]);
+        assert_eq!(
+            pattern.detail_type,
+            vec![serde_json::Value::from("StateChange")]
+        );
+        assert_eq!(pattern.source, vec![serde_json::Value::from("myapp")]);
         assert!(pattern.detail.is_some());
 
         let detail = pattern.detail.as_ref().unwrap();
@@ -439,8 +446,11 @@ mod tests {
         let filter = r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
         let pattern = EventPattern::new("MyEvent", vec!["myapp".into()], Some(filter.to_string()));
 
-        assert_eq!(pattern.detail_type, vec!["MyEvent"]);
-        assert_eq!(pattern.source, vec!["myapp"]);
+        assert_eq!(
+            pattern.detail_type,
+            vec![serde_json::Value::from("MyEvent")]
+        );
+        assert_eq!(pattern.source, vec![serde_json::Value::from("myapp")]);
         assert!(pattern.detail.as_ref().unwrap().get("$or").is_some());
 
         let out = serde_json::to_string(&pattern).unwrap();

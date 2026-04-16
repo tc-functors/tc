@@ -82,6 +82,7 @@ pub fn diff_fns(
     let fmod_2 = files_modified_in_branch();
 
     for (name, f) in fns {
+
         let maybe_rdir = &f.dir.strip_prefix(&format!("{}/", &u::root()));
         if let Some(rdir) = maybe_rdir {
             for line in &lines {
@@ -94,7 +95,6 @@ pub fn diff_fns(
                     changed_fns.insert(name.to_string(), f.clone());
                 }
             }
-
 
             let maybe_pdir = &f.dir.strip_prefix(&format!("{}/", u::pwd()));
             if let Some(pdir) = maybe_pdir {
@@ -110,11 +110,20 @@ pub fn diff_fns(
                 if line.ends_with(name) {
                     changed_fns.insert(name.to_string(), f.clone());
                 }
-
-
+                if line.contains(name) {
+                    changed_fns.insert(name.to_string(), f.clone());
+                }
             }
         }
     }
+    for line in &lines {
+        if line.contains("shared") {
+            for (name, f) in fns {
+                changed_fns.insert(name.to_string(), f.clone());
+            }
+        }
+    }
+
     changed_fns
 }
 

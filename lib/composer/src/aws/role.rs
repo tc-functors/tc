@@ -50,6 +50,7 @@ fn find_legacy_role_name(entity: Entity) -> String {
 pub struct Role {
     pub name: String,
     pub kind: Kind,
+    pub path: String,
     pub trust: Trust,
     pub arn: String,
     pub policy_name: String,
@@ -90,6 +91,7 @@ impl Role {
                 name: s!(&name),
                 kind: Kind::Override,
                 trust: Trust::new(),
+                path: s!(role_file),
                 arn: template::role_arn(&name),
                 policy: read_policy(&role_file),
                 policy_name: s!(&name),
@@ -100,6 +102,7 @@ impl Role {
             Role {
                 name: s!(&name),
                 kind: Kind::Base,
+                path: String::from(""),
                 trust: Trust::new(),
                 arn: template::role_arn(&name),
                 policy: Policy::new(entity),
@@ -120,6 +123,7 @@ impl Role {
             Role {
                 name: s!(&name),
                 kind: Kind::Override,
+                path: s!(role_file),
                 trust: Trust::new(),
                 arn: template::role_arn(&name),
                 policy: read_policy(&role_file),
@@ -131,6 +135,7 @@ impl Role {
             Role {
                 name: s!(&name),
                 kind: Kind::Base,
+                path: s!(role_file),
                 trust: Trust::new(),
                 arn: template::role_arn(&name),
                 policy: Policy::new(entity),
@@ -147,6 +152,7 @@ impl Role {
                 Role {
                     name: s!(&name),
                     kind: Kind::Provided,
+                    path: String::from(""),
                     trust: Trust::new(),
                     arn: template::role_arn(&name),
                     policy: Policy::new(entity),
@@ -167,6 +173,7 @@ impl Role {
                 Role {
                     name: s!(&name),
                     kind: Kind::Base,
+                    path: String::from(""),
                     trust: Trust::new(),
                     arn: template::role_arn(&name),
                     policy: policy,
@@ -182,6 +189,7 @@ impl Role {
             name: s!(name),
             kind: Kind::Provided,
             trust: Trust::new(),
+            path: String::from(""),
             arn: template::role_arn(&name),
             policy: Policy::new(Entity::Function),
             policy_name: s!(&name),
@@ -197,6 +205,7 @@ impl Role {
         Role {
             name: s!(name),
             kind: Kind::Provided,
+            path: String::from(""),
             trust: Trust::new(),
             arn: template::role_arn(&name),
             policy: Policy::new(Entity::Function),

@@ -276,6 +276,19 @@ fn default_provider() -> Option<Provider> {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum FileSystemKind {
+    Efs,
+    S3,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct FileSystemSpec {
+    pub kind: Option<FileSystemKind>,
+    pub bucket: Option<String>,
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
     #[serde(default = "default_lang")]
     pub lang: LangRuntime,
@@ -296,6 +309,7 @@ pub struct RuntimeSpec {
     pub uri: Option<String>,
 
     pub mount_fs: Option<bool>,
+    pub fs: Option<FileSystemSpec>,
 
     pub snapstart: Option<bool>,
 

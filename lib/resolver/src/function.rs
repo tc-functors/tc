@@ -2,6 +2,7 @@ use super::Context;
 use compiler::{
     TopologyKind,
     spec::InfraSpec,
+    spec::function::FileSystemKind,
 };
 use composer::{
     Function,
@@ -178,6 +179,7 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
                 Some(a) => {
                     let fs = FileSystem {
                         arn: a,
+                        kind: FileSystemKind::Efs,
                         mount_point: config.aws.lambda.fs_mountpoint.to_owned(),
                     };
                     Some(fs)

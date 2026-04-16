@@ -14,6 +14,8 @@ use compiler::{
             LangRuntime,
             Provider,
             RuntimeSpec,
+            FileSystemKind,
+            FileSystemSpec,
         },
         infra::InfraSpec,
     },
@@ -35,6 +37,7 @@ pub struct Network {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FileSystem {
+    pub kind: FileSystemKind,
     pub arn: String,
     pub mount_point: String,
 }
@@ -206,6 +209,21 @@ fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str)
     }
 }
 
+fn find_parent_function_role(dir: &str) -> Option<String> {
+    let paths = vec![
+        format!("{}/roles/function.json", dir),
+        u::absolutize(dir, "../roles/function.json"),
+        u::absolutize(dir, "../../roles/function.json"),
+        u::absolutize(dir, "../../../roles/function.json"),
+        u::absolutize(dir, "../../../../roles/function.json"),
+        s!("../roles/function.json"),
+        s!("../../roles/function.json"),
+        s!("../../../roles/function.json"),
+        s!("../../../../roles/function.json"),
+    ];
+    u::any_path(paths)
+}
+
 fn lookup_role(
     infra_dir: &str,
     r: &RuntimeSpec,
@@ -213,21 +231,27 @@ fn lookup_role(
     _fqn: &str,
     function_name: &str,
 ) -> Role {
+
+
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
+
                     let f = format!("{}/roles/{}.json", infra_dir, function_name);
                     if u::file_exists(&f) {
                         Some(f)
                     } else {
-                        u::any_path(vec![format!("{}/roles/function.json", infra_dir)])
+                        if let Some(p) = find_parent_function_role(infra_dir) {
+                            Some(p)
+                        } else {
+                            None
+                        }
                     }
                 }
             };
-
             if let Some(p) = path {
                 match &r.role_name {
                     Some(name) => Role::new_static(Entity::Function, &p, namespace, &name),
@@ -393,7 +417,7 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h
 }
 
-fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
+fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>, fs: &Option<FileSystemSpec>) -> bool {
     if let Some(assets) = maybe_assets {
         let ax = assets.deps_path;
         match ax {
@@ -407,7 +431,10 @@ fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>) -> bool {
             },
         }
     } else {
-        false
+        match fs {
+            Some(_) => true,
+            None => false
+        }
     }
 }
 
@@ -425,10 +452,24 @@ fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
     }
 }
 
-fn make_fs(infra_spec: &InfraSpec, enable_fs: bool) -> Option<FileSystem> {
+fn as_fs_kind(fs_spec: &Option<FileSystemSpec>) -> FileSystemKind {
+    match fs_spec {
+        Some(f) => {
+            match &f.kind {
+                Some(p) => p.clone(),
+                None => FileSystemKind::Efs
+            }
+        },
+        None => FileSystemKind::Efs
+    }
+}
+
+
+fn make_fs(infra_spec: &InfraSpec, fs_spec: &Option<FileSystemSpec>, enable_fs: bool) -> Option<FileSystem> {
     if enable_fs {
         match &infra_spec.filesystem {
             Some(fs) => Some(FileSystem {
+                kind: as_fs_kind(fs_spec),
                 arn: fs.arn.clone(),
                 mount_point: fs.mount_point.clone(),
             }),
@@ -531,7 +572,7 @@ fn make_lambda(
         },
     };
     let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
-    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs);
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
@@ -572,7 +613,7 @@ fn make_lambda(
         role: role,
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
         infra_spec: infra_spec,
         cluster: String::from(""),
     }
@@ -587,7 +628,7 @@ fn make_fargate(
     rspec: &RuntimeSpec,
     c: &Config,
 ) -> Runtime {
-    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs);
+    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs, &rspec.fs);
     let package_type = s!("Image");
     let uri = as_uri(
         dir,
@@ -640,7 +681,7 @@ fn make_fargate(
         role: role,
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
         infra_spec: infra_spec,
         cluster: cluster.to_string(),
     }
@@ -666,7 +707,7 @@ impl Runtime {
             Some(r) => {
                 if let Some(ref provider) = r.provider {
                     match provider {
-                        Provider::Lambda => make_lambda(dir, &infra_dir, namespace, fqn, fspec, &r),
+                        Provider::Lambda => make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r),
 
                         Provider::Fargate => {
                             make_fargate(dir, &infra_dir, namespace, fqn, fspec, &r, cspec)
