@@ -49,14 +49,23 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
         ),
         &dir,
     );
-    let cmd = format!(
-        r#"git diff {}...{} --name-only . | xargs dirname | sort | uniq"#,
-        &from_tag, &to_tag
-    );
-    tracing::debug!("{}", &cmd);
-    let out = sh(&cmd, &dir);
-    let lines = kit::split_lines(&out);
-    lines.iter().map(|s| s.to_string()).collect()
+
+    let root_lib = &format!("{}/lib", u::root());
+    let dirs = vec![".", "../shared", &root_lib];
+
+    let mut xs: Vec<String> = vec![];
+    for d in dirs {
+        let cmd = format!(
+            r#"git diff {}...{} --name-only {} | xargs dirname | sort | uniq"#,
+            &from_tag, &to_tag, &d
+        );
+        tracing::debug!("{}", &cmd);
+        let out = sh(&cmd, &dir);
+        let lines = kit::split_lines(&out);
+        let x = lines.iter().map(|s| s.to_string()).collect();
+        xs.push(x)
+    }
+    xs
 }
 
 pub fn diff_fns(
@@ -92,7 +101,7 @@ pub fn diff_fns(
 
                 // This is really a hack. If there are shared libs or functions changed, assume fn has changed
                 if line.contains("shared") {
-                    println!("Found shared function in {}", &line);
+                    tracing::debug!("Found shared function in {}", &line);
                     changed_fns.insert(name.to_string(), f.clone());
                 }
             }
@@ -114,13 +123,6 @@ pub fn diff_fns(
                 if line.contains(name) {
                     changed_fns.insert(name.to_string(), f.clone());
                 }
-            }
-        }
-    }
-    for line in &lines {
-        if line.contains("/shared") {
-            for (name, f) in fns {
-                changed_fns.insert(name.to_string(), f.clone());
             }
         }
     }

@@ -381,11 +381,17 @@ pub async fn resolve(
     ctx: &Context,
     root: &Root,
     topology: &Topology,
-    _force: bool,
+    force: bool,
 ) -> HashMap<String, Function> {
     let fns = match std::env::var("TC_FORCE_DEPLOY") {
         Ok(_) => &topology.functions,
-        Err(_) => &find_modified(&ctx.auth, root, topology).await
+        Err(_) => {
+            if force {
+                &topology.functions
+            } else {
+                &find_modified(&ctx.auth, root, topology).await
+            }
+        }
     };
 
     let resolve_urls = topology.routes.len() > 0;
