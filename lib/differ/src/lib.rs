@@ -92,6 +92,7 @@ pub fn diff_fns(
 
                 // This is really a hack. If there are shared libs or functions changed, assume fn has changed
                 if line.contains("shared") {
+                    println!("Found shared function in {}", &line);
                     changed_fns.insert(name.to_string(), f.clone());
                 }
             }
@@ -117,7 +118,7 @@ pub fn diff_fns(
         }
     }
     for line in &lines {
-        if line.contains("shared") {
+        if line.contains("/shared") {
             for (name, f) in fns {
                 changed_fns.insert(name.to_string(), f.clone());
             }
