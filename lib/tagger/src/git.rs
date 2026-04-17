@@ -93,7 +93,7 @@ pub fn create_tag(tag: &str, parent: Option<String>) {
 pub fn create_annotated_tag(tag: &str, parent: Option<String>) {
     let cmd = match parent {
         Some(p) => format!(
-            "git -c user.name=tc-releaser -c user.email=tc-releaser@informed.iq tag -a {} {} -m \"{} release\"",
+            "git -c user.name=tc-releaser -c user.email=tc-releaser@functors.org tag -a {} {} -m \"{} release\"",
             tag, p, tag
         ),
         None => format!("git tag {}", tag),
