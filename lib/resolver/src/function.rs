@@ -381,7 +381,7 @@ pub async fn resolve(
     ctx: &Context,
     root: &Root,
     topology: &Topology,
-    force: bool,
+    _force: bool,
 ) -> HashMap<String, Function> {
     let fns = match std::env::var("TC_FORCE_DEPLOY") {
         Ok(_) => &topology.functions,
