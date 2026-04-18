@@ -2,6 +2,7 @@ use super::Context;
 use compiler::{
     TopologyKind,
     spec::InfraSpec,
+    spec::function::FileSystemKind,
 };
 use composer::{
     Function,
@@ -178,6 +179,7 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
                 Some(a) => {
                     let fs = FileSystem {
                         arn: a,
+                        kind: FileSystemKind::Efs,
                         mount_point: config.aws.lambda.fs_mountpoint.to_owned(),
                     };
                     Some(fs)
@@ -364,7 +366,12 @@ pub async fn find_modified(
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
     if let Some(target_version) = maybe_version {
-        differ::diff_fns(&namespace, &target_version, &version, &topology.functions)
+        let fns = differ::diff_fns(&namespace, &target_version, &version, &topology.functions);
+        if fns.len() > 0 {
+            println!("Diff {} {}..{} ({})", &topology.namespace, &target_version, &version, fns.len());
+        }
+        fns
+
     } else {
         topology.functions.clone()
     }
@@ -386,8 +393,6 @@ pub async fn resolve(
             }
         }
     };
-
-    tracing::debug!("Modified fns: {}", &fns.len());
 
     let resolve_urls = topology.routes.len() > 0;
 
