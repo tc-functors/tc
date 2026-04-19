@@ -50,22 +50,27 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
         &dir,
     );
 
-    let root_lib = &format!("{}/lib", u::root());
-    let dirs = vec![".", "../shared", &root_lib];
+    let cmd = format!(
+        r#"git diff {}...{} --name-only {} | xargs dirname | sort | uniq"#,
+        &from_tag, &to_tag, &u::root()
+    );
+    tracing::debug!("{}", &cmd);
+    let out = sh(&cmd, &dir);
+    let lines = kit::split_lines(&out);
+    lines.iter().map(|s| s.to_string()).collect()
+}
 
-    let mut xs: Vec<String> = vec![];
-    for d in dirs {
-        let cmd = format!(
-            r#"git diff {}...{} --name-only {} | xargs dirname | sort | uniq"#,
-            &from_tag, &to_tag, &d
-        );
-        tracing::debug!("{}", &cmd);
-        let out = sh(&cmd, &dir);
-        let lines = kit::split_lines(&out);
-        let x = lines.iter().map(|s| s.to_string()).collect();
-        xs.push(x)
+fn has_changed(paths: &Vec<String>, dir: &str) -> bool {
+    for p in paths {
+        let maybe_rdir = dir.strip_prefix(&format!("{}/", &u::root()));
+        if let Some(rdir) = maybe_rdir {
+            if p.starts_with(rdir) {
+                tracing::debug!("Found {} {}", &p, &rdir);
+                return true
+            }
+        }
     }
-    xs
+    return false
 }
 
 pub fn diff_fns(
@@ -78,7 +83,7 @@ pub fn diff_fns(
 
     tracing::debug!("Diffing namespace {} from: {} to: {}", namespace, from, to);
 
-    let lines = if to == from {
+    let paths = if to == from {
         vec![]
     } else {
         find_between_versions(namespace, from, to)
@@ -90,43 +95,26 @@ pub fn diff_fns(
     };
     let fmod_2 = files_modified_in_branch();
 
+
     for (name, f) in fns {
+        if has_changed(&paths, &f.dir) {
+            changed_fns.insert(name.to_string(), f.clone());
+        }
+
+        let maybe_pdir = &f.dir.strip_prefix(&format!("{}/", u::pwd()));
+        if let Some(pdir) = maybe_pdir {
+            if fmod_1.contains(&pdir.to_string()) {
+                changed_fns.insert(name.to_string(), f.clone());
+            }
+        }
 
         let maybe_rdir = &f.dir.strip_prefix(&format!("{}/", &u::root()));
         if let Some(rdir) = maybe_rdir {
-            for line in &lines {
-                if line.starts_with(rdir) {
-                    changed_fns.insert(name.to_string(), f.clone());
-                }
-
-                // This is really a hack. If there are shared libs or functions changed, assume fn has changed
-                if line.contains("shared") {
-                    tracing::debug!("Found shared function in {}", &line);
-                    changed_fns.insert(name.to_string(), f.clone());
-                }
-            }
-
-            let maybe_pdir = &f.dir.strip_prefix(&format!("{}/", u::pwd()));
-            if let Some(pdir) = maybe_pdir {
-                if fmod_1.contains(&pdir.to_string()) {
-                    changed_fns.insert(name.to_string(), f.clone());
-                }
-            }
             if fmod_2.contains(&rdir.to_string()) {
                 changed_fns.insert(name.to_string(), f.clone());
             }
-        } else {
-            for line in &lines {
-                if line.ends_with(name) {
-                    changed_fns.insert(name.to_string(), f.clone());
-                }
-                if line.contains(name) {
-                    changed_fns.insert(name.to_string(), f.clone());
-                }
-            }
         }
     }
-
     changed_fns
 }
 
