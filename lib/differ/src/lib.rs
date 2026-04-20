@@ -61,10 +61,12 @@ pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<Strin
 }
 
 fn has_changed(paths: &Vec<String>, dir: &str) -> bool {
+    let adir = u::absolutize(&u::pwd(), dir);
     for p in paths {
-        let maybe_rdir = dir.strip_prefix(&format!("{}/", &u::root()));
+        let maybe_rdir = adir.strip_prefix(&format!("{}/", &u::root()));
+
         if let Some(rdir) = maybe_rdir {
-            if p.starts_with(rdir) {
+             if p.starts_with(rdir) {
                 tracing::debug!("Found {} {}", &p, &rdir);
                 return true
             }
@@ -75,7 +77,13 @@ fn has_changed(paths: &Vec<String>, dir: &str) -> bool {
 
 pub fn has_shared_lib(paths: &Vec<String>) -> bool {
     for path in paths {
-        if path.contains("/shared") {
+        let dir = u::pwd();
+        let ext = u::absolutize(&dir, "../shared");
+        let local = u::absolutize(&dir, "./shared");
+        let ap = u::absolutize(&dir, &path);
+
+        if ap.starts_with(&ext) || ap.starts_with(&local) {
+            println!("{} {} {}", &ap, &ext, &local);
             return true
         }
     }
@@ -130,6 +138,7 @@ pub fn diff_fns(
     } else {
         changed_fns
     }
+
 
 }
 
