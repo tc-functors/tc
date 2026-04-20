@@ -73,6 +73,15 @@ fn has_changed(paths: &Vec<String>, dir: &str) -> bool {
     return false
 }
 
+pub fn has_shared_lib(paths: &Vec<String>) -> bool {
+    for path in paths {
+        if path.contains("/shared") {
+            return true
+        }
+    }
+    false
+}
+
 pub fn diff_fns(
     namespace: &str,
     from: &str,
@@ -115,7 +124,13 @@ pub fn diff_fns(
             }
         }
     }
-    changed_fns
+
+    if has_shared_lib(&paths) && changed_fns.is_empty() {
+        fns.clone()
+    } else {
+        changed_fns
+    }
+
 }
 
 pub fn diff(topology: &Topology, from: &str, to: &str) {
