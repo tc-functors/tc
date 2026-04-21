@@ -268,9 +268,10 @@ async fn run_create_hook(auth: &Auth, root: &Topology, time: &str) {
         Ok(x) => x,
         Err(_) => "ci".to_string(),
     };
+    let url = executor::current_url();
     let msg = format!(
-        "Deployed `{}` to *{}*::{}_{} by {} ({})",
-        tag, &auth.name, namespace, &sandbox, &user, time
+        "Deployed `{}` to *{}*::{}_{} by {} ({}) [Build]({})",
+        tag, &auth.name, namespace, &sandbox, &user, time, &url
     );
     notifier::notify(&namespace, &msg).await;
 }
