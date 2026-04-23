@@ -36,9 +36,9 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post
     }
 }
 
-fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str) {
+fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str, command: &str) {
     match runtime.to_lang() {
-        Lang::Python => python::gen_code_dockerfile(dir, base_image_uri),
+        Lang::Python => python::gen_code_dockerfile(dir, base_image_uri, command),
         Lang::Ruby => ruby::gen_code_dockerfile(dir, base_image_uri),
         _ => todo!(),
     }
@@ -152,7 +152,7 @@ pub async fn build(
         // if !base_exists {
         //    println!("Base image {} does not exist", &base_image_uri);
         // }
-        gen_code_dockerfile(dir, langr, &base_image_uri);
+        gen_code_dockerfile(dir, langr, &base_image_uri, &bspec.command);
     } else {
         gen_base_dockerfile(dir, langr, pre, post);
     }
