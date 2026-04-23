@@ -204,6 +204,10 @@ fn default_command() -> String {
     s!("zip -9 -r lambda.zip .")
 }
 
+fn default_pack() -> Option<String> {
+    Some(s!("echo 0"))
+}
+
 fn default_infra_dir() -> String {
     u::empty()
 }
@@ -231,6 +235,10 @@ pub struct BuildSpec {
     /// Command to use when build kind is Code
     #[serde(default = "default_command")]
     pub command: String,
+
+    /// Command to use when build kind is Code
+    #[serde(default = "default_pack")]
+    pub pack: Option<String>,
 
     pub version: Option<String>,
 }

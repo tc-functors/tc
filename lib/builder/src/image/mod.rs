@@ -152,7 +152,7 @@ pub async fn build(
         // if !base_exists {
         //    println!("Base image {} does not exist", &base_image_uri);
         // }
-        gen_code_dockerfile(dir, langr, &base_image_uri, &bspec.command);
+        gen_code_dockerfile(dir, langr, &base_image_uri, &bspec.pack);
     } else {
         gen_base_dockerfile(dir, langr, pre, post);
     }
