@@ -256,7 +256,7 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
     }
 }
 
-async fn run_create_hook(auth: &Auth, root: &Topology, time: &str) {
+async fn run_create_hook(auth: &Auth, root: &Topology, time: &str, force: bool) {
     let Topology {
         namespace,
         sandbox,
@@ -269,9 +269,14 @@ async fn run_create_hook(auth: &Auth, root: &Topology, time: &str) {
         Err(_) => "ci".to_string(),
     };
     let url = executor::current_url();
+    let incr = if force {
+        false
+    } else {
+        true
+    };
     let msg = format!(
-        "Deployed `{}` to *{}*::{}_{} by {} ({}) [Build]({})",
-        tag, &auth.name, namespace, &sandbox, &user, time, &url
+        "Deployed `{}` to *{}*::{}_{} by {} (elapsed: {} incr: {}) [build: {}]",
+        tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
 }
@@ -378,7 +383,7 @@ pub async fn create(
     let duration = start.elapsed();
 
     if notify {
-        run_create_hook(&auth, &topology, &u::time_format(duration).to_string()).await;
+        run_create_hook(&auth, &topology, &u::time_format(duration).to_string(), force).await;
     }
 
     println!("Time elapsed: {:#}", u::time_format(duration));
