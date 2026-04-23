@@ -81,17 +81,22 @@ fn changelog_since_last(prefix: &str, version: &str, has_suffix: bool) -> String
 // git
 
 fn should_tag(tag: &str) -> bool {
-    let dir = u::pwd();
-    let c1 = format!("git rev-parse {}", tag);
-    let c2 = format!("git log -n 1 --format=%H .");
-    let c1_out = u::sh(&c1, &dir);
-    let c2_out = u::sh(&c2, &dir);
+    match std::env::var("CI") {
+        Ok(_) => true,
+        Err(_) => {
+            let dir = u::pwd();
+            let c1 = format!("git rev-parse {}", tag);
+            let c2 = format!("git log -n 1 --format=%H .");
+            let c1_out = u::sh(&c1, &dir);
+            let c2_out = u::sh(&c2, &dir);
 
-    if !c1_out.contains("fatal: ambiguous argument") {
-        println!("tag: {c1_out} ({tag})");
+            if !c1_out.contains("fatal: ambiguous argument") {
+                println!("tag: {c1_out} ({tag})");
+            }
+            println!("rev: {c2_out}");
+            c1_out != c2_out
+        }
     }
-    println!("rev: {c2_out}");
-    c1_out != c2_out
 }
 
 #[derive(Clone, Debug)]
