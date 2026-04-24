@@ -184,73 +184,35 @@ fn build_diff_set(
     DiffSet { files }
 }
 
-/// Collect every `(owning-topology-dir, function-name, Function)` tuple
-/// reachable from `topology`, recursively descending into nested nodes.
-/// The topology dir is kept alongside each function so the transducer
-/// policy can still apply per-topology.
-fn collect_functions<'a>(
-    topology: &'a Topology,
-    out: &mut Vec<(&'a Topology, &'a String, &'a Function)>,
-) {
-    for (name, f) in &topology.functions {
-        out.push((topology, name, f));
-    }
-    for (_, node) in &topology.nodes {
-        collect_functions(node, out);
-    }
-}
-
-/// Collect every subtopology (self + nested), so transducer policy can
-/// apply to each owning topology independently.
-fn collect_topologies<'a>(topology: &'a Topology, out: &mut Vec<&'a Topology>) {
-    out.push(topology);
-    for (_, node) in &topology.nodes {
-        collect_topologies(node, out);
-    }
-}
-
-/// Filter the (recursively-collected) functions of `topology` down to
-/// those whose code-dep closure intersects the git diff between `from`
-/// and `to`.
+/// Filter `topology`'s own `functions` down to those whose code-dep
+/// closure intersects the git diff between `from` and `to`.
 ///
-/// First-deploy semantics: if `from` is empty, all functions (including
-/// transducers) are returned.
+/// Shallow by design: this processes `topology.functions` and the
+/// transducer of `topology` itself — **not** nested `topology.nodes`.
+/// Callers that need to process nested topologies should iterate them
+/// and call `diff_fns` for each, matching the resolver's per-topology
+/// iteration pattern. A recursive variant would cause the root
+/// topology's `functions` map to be contaminated with node-level
+/// functions and would cause those functions to be re-resolved with the
+/// wrong context by `resolver::resolve`.
+///
+/// First-deploy semantics: if `from` is empty, all of this topology's
+/// own functions (plus its transducer, if any) are returned.
 pub fn diff_fns(
     topology: &Topology,
     from: &str,
     to: &str,
 ) -> HashMap<String, Function> {
-    let all_topologies = {
-        let mut v = Vec::new();
-        collect_topologies(topology, &mut v);
-        v
-    };
-    let all_functions = {
-        let mut v = Vec::new();
-        collect_functions(topology, &mut v);
-        v
-    };
-    tracing::debug!(
-        "differ scanning {} topology(ies), {} function(s)",
-        all_topologies.len(),
-        all_functions.len()
-    );
-
     let first_deploy = from.is_empty();
     if first_deploy {
         tracing::debug!(
-            "no prior version for {} — marking {} functions + transducers changed",
+            "no prior version for {} — marking {} function(s) + transducer changed",
             &topology.namespace,
-            all_functions.len()
+            topology.functions.len()
         );
-        let mut out: HashMap<String, Function> = all_functions
-            .iter()
-            .map(|(_, name, f)| ((*name).clone(), (*f).clone()))
-            .collect();
-        for t in &all_topologies {
-            if let Some(tx) = &t.transducer {
-                out.insert(tx.name.clone(), tx.function.clone());
-            }
+        let mut out: HashMap<String, Function> = topology.functions.clone();
+        if let Some(tx) = &topology.transducer {
+            out.insert(tx.name.clone(), tx.function.clone());
         }
         return out;
     }
@@ -277,39 +239,78 @@ pub fn diff_fns(
         }
     };
 
+    diff_fns_with(topology, &diff, &analyzer)
+}
+
+/// Internal helper: filter one topology's own functions against a
+/// pre-built diff set + analyzer. Used by both the public `diff_fns` and
+/// the CLI `diff` walker so the git diff + Analyzer cache are built once
+/// per invocation.
+fn diff_fns_with(
+    topology: &Topology,
+    diff: &DiffSet,
+    analyzer: &Analyzer,
+) -> HashMap<String, Function> {
     let mut changed: HashMap<String, Function> = HashMap::new();
-    for (_owning, name, f) in &all_functions {
+    for (name, f) in &topology.functions {
         let closure = analyzer.closure(&PathBuf::from(&f.dir));
         if diff.intersects(&closure) {
-            changed.insert((*name).clone(), (*f).clone());
+            changed.insert(name.clone(), f.clone());
         }
     }
-
-    // Transducer Policy B: per owning topology, include the transducer if
-    // any diff path is under the topology's own dir.
-    for t in &all_topologies {
-        if let Some(tx) = &t.transducer {
-            let topo_dir = match PathBuf::from(&t.dir).canonicalize() {
-                Ok(p) => p,
-                Err(_) => continue,
-            };
+    // Transducer Policy B: include the topology's transducer if any
+    // diff path is under the topology's own dir.
+    if let Some(tx) = &topology.transducer {
+        if let Ok(topo_dir) = PathBuf::from(&topology.dir).canonicalize() {
             if diff.any_under(&topo_dir) {
                 changed.insert(tx.name.clone(), tx.function.clone());
             }
         }
     }
-
     changed
 }
 
-/// CLI helper: print the functions that changed between two tags, plus a
-/// changelog from the `tagger` crate.
+/// Walk `topology` and every nested node, pushing each onto `out`.
+fn collect_topologies<'a>(topology: &'a Topology, out: &mut Vec<&'a Topology>) {
+    out.push(topology);
+    for node in topology.nodes.values() {
+        collect_topologies(node, out);
+    }
+}
+
+/// CLI helper: print the functions that changed between two tags across
+/// the root topology and all nested nodes, plus a changelog from the
+/// `tagger` crate. Computes the git diff and Analyzer cache once and
+/// reuses them across all topologies.
 pub fn diff(topology: &Topology, from: &str, to: &str) {
-    let fns = diff_fns(topology, from, to);
+    let first_deploy = from.is_empty();
+    let mut topologies: Vec<&Topology> = Vec::new();
+    collect_topologies(topology, &mut topologies);
+
+    let mut names: Vec<String> = Vec::new();
+
+    if first_deploy {
+        for t in &topologies {
+            names.extend(t.functions.keys().cloned());
+            if let Some(tx) = &t.transducer {
+                names.push(tx.name.clone());
+            }
+        }
+    } else if from != to {
+        let repo_root = repo_root_canonical();
+        let diff = build_diff_set(&topology.namespace, from, to, &repo_root);
+        if !diff.is_empty() {
+            if let Some(analyzer) = Analyzer::new(&repo_root) {
+                for t in &topologies {
+                    names.extend(diff_fns_with(t, &diff, &analyzer).into_keys());
+                }
+            }
+        }
+    }
 
     println!("Modified functions:");
-    let mut names: Vec<&String> = fns.keys().collect();
     names.sort();
+    names.dedup();
     for name in names {
         println!("  - {}", name);
     }
