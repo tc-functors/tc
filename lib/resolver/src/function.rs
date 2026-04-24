@@ -357,17 +357,17 @@ pub async fn find_modified(
     topology: &Topology,
 ) -> HashMap<String, Function> {
     let Root {
-        namespace,
         fqn,
         kind,
         version,
+        ..
     } = root;
 
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
     if let Some(target_version) = maybe_version {
-        let fns = differ::diff_fns(&namespace, &target_version, &version, &topology.functions);
-        if fns.len() > 0 {
+        let fns = differ::diff_fns(topology, &target_version, &version);
+        if !fns.is_empty() {
             println!("Diff {} {}..{} ({})", &topology.namespace, &target_version, &version, fns.len());
         }
         fns

@@ -220,14 +220,10 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
 
     let functions = resolver::function::find_modified(&auth, &rt, &topology).await;
     println!("Modified functions:");
-    for (name, _) in functions {
+    let mut names: Vec<&String> = functions.keys().collect();
+    names.sort();
+    for name in names {
         println!("{}", name);
-    }
-    for (_, node) in &topology.nodes {
-        let functions = resolver::function::find_modified(&auth, &rt, &node).await;
-        for (name, _) in functions {
-            println!("{}/{}", node.namespace, name);
-        }
     }
 }
 

@@ -429,7 +429,11 @@ pub fn runv(dir: &str, cmd: Vec<&str>) {
 }
 
 pub fn root() -> String {
-    sh("git rev-parse --show-toplevel", &pwd())
+    use std::sync::OnceLock;
+    static CACHE: OnceLock<String> = OnceLock::new();
+    CACHE
+        .get_or_init(|| sh("git rev-parse --show-toplevel", &pwd()))
+        .clone()
 }
 
 pub fn roots() -> String {
