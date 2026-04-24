@@ -296,18 +296,41 @@ fn discover_functions(
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
-    use rayon::prelude::*;
-    let dirs = function_dirs(dir);
-    let fmt = spec.fmt();
-    let name = spec.name.clone();
-    dirs.par_iter()
+    let dirs: Vec<String> = function_dirs(dir)
+        .into_iter()
         .filter(|d| u::is_dir(d) && !ignore_function(d, dir))
-        .map(|d| {
-            tracing::debug!("function {}", d);
-            let function = Function::new(d, infra_dir, &name, &fmt);
-            (function.name.clone(), function)
-        })
-        .collect()
+        .collect();
+    if dirs.is_empty() {
+        return HashMap::new();
+    }
+
+    let name = spec.name.clone();
+    let fmt = spec.fmt();
+    let threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .min(dirs.len());
+    let chunk_size = dirs.len().div_ceil(threads);
+
+    std::thread::scope(|s| {
+        dirs.chunks(chunk_size)
+            .map(|chunk| {
+                s.spawn(|| {
+                    chunk
+                        .iter()
+                        .map(|d| {
+                            tracing::debug!("function {}", d);
+                            let f = Function::new(d, infra_dir, &name, &fmt);
+                            (f.name.clone(), f)
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .flat_map(|h| h.join().unwrap())
+            .collect()
+    })
 }
 
 fn current_function(dir: &str, infra_dir: &str, spec: &TopologySpec) -> HashMap<String, Function> {
@@ -382,7 +405,6 @@ fn discover_leaf_nodes(
 // builders
 
 fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
-    use rayon::prelude::*;
     let ignore_nodes = &spec.nodes.ignore;
     let candidates: Vec<String> = WalkDir::new(root_dir)
         .follow_links(false)
@@ -393,22 +415,44 @@ fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> 
         .filter(|p| is_topology_dir(p) && root_dir != p)
         .filter(|p| !should_ignore_node(root_dir, ignore_nodes.clone(), p))
         .collect();
+    if candidates.is_empty() {
+        return HashMap::new();
+    }
 
-    candidates
-        .par_iter()
-        .map(|p| {
-            let f = format!("{}/topology.yml", &p);
-            let node_spec = TopologySpec::new(&f);
-            tracing::debug!("node {}", &node_spec.name);
-            let infra_dir = as_infra_dir(node_spec.infra.to_owned(), p);
-            let mut functions = discover_functions(p, &infra_dir, &node_spec);
-            let interned = intern_functions(p, &infra_dir, &node_spec);
-            functions.extend(interned);
-            let leaf_nodes = discover_leaf_nodes(&node_spec.name, root_dir, p, &node_spec);
-            let node = make(root_dir, p, &node_spec, functions, leaf_nodes);
-            (node_spec.name.to_string(), node)
-        })
-        .collect()
+    let threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .min(candidates.len());
+    let chunk_size = candidates.len().div_ceil(threads);
+
+    std::thread::scope(|s| {
+        candidates
+            .chunks(chunk_size)
+            .map(|chunk| {
+                s.spawn(|| {
+                    chunk
+                        .iter()
+                        .map(|p| {
+                            let f = format!("{}/topology.yml", &p);
+                            let node_spec = TopologySpec::new(&f);
+                            tracing::debug!("node {}", &node_spec.name);
+                            let infra_dir = as_infra_dir(node_spec.infra.to_owned(), p);
+                            let mut functions = discover_functions(p, &infra_dir, &node_spec);
+                            let interned = intern_functions(p, &infra_dir, &node_spec);
+                            functions.extend(interned);
+                            let leaf_nodes =
+                                discover_leaf_nodes(&node_spec.name, root_dir, p, &node_spec);
+                            let node = make(root_dir, p, &node_spec, functions, leaf_nodes);
+                            (node_spec.name.to_string(), node)
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .flat_map(|h| h.join().unwrap())
+            .collect()
+    })
 }
 
 fn make_events(
