@@ -82,8 +82,8 @@ pub fn has_shared_lib(paths: &Vec<String>) -> bool {
         let local = u::absolutize(&dir, "./shared");
         let ap = u::absolutize(&dir, &path);
 
-        if ap.starts_with(&ext) || ap.starts_with(&local) {
-            println!("{} {} {}", &ap, &ext, &local);
+        if ap.starts_with(&ext) || ap.starts_with(&local) || path.contains("shared") {
+            //println!("{} {} {} {}", &ap, &ext, &local, &path);
             return true
         }
     }
