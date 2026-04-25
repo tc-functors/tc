@@ -24,6 +24,7 @@ const MANIFEST_NAMES: &[&str] = &[
     "poetry.lock",
     "uv.lock",
     "setup.cfg",
+    "requirements.in",
     // Ruby
     "Gemfile",
     "Gemfile.lock",
@@ -35,6 +36,14 @@ const MANIFEST_NAMES: &[&str] = &[
     // Rust
     "Cargo.toml",
     "Cargo.lock",
+    // JVM (Java / Kotlin / Clojure)
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    "settings.gradle",
+    "settings.gradle.kts",
+    "project.clj",
+    "deps.edn",
 ];
 
 /// Returns true if `file_name` (basename only) is a recognized manifest.
@@ -60,7 +69,7 @@ fn rel_path_regex() -> &'static Regex {
     // We capture the path token in group 1. The leading context character is
     // intentionally non-capturing so we don't swallow it.
     RE.get_or_init(|| {
-        Regex::new(r#"(?:^|[\s"'=:,(\[])(\.{1,2}/[A-Za-z0-9_./\-]+)"#).unwrap()
+        Regex::new(r#"(?:^|[\s"'=:,(\[>])(\.{1,2}/[A-Za-z0-9_./\-]+)"#).unwrap()
     })
 }
 
@@ -99,6 +108,14 @@ mod tests {
         assert!(is_manifest("requirements.txt"));
         assert!(is_manifest("requirements-dev.txt"));
         assert!(is_manifest("requirements_prod.txt"));
+        assert!(is_manifest("requirements.in"));
+        assert!(is_manifest("pom.xml"));
+        assert!(is_manifest("build.gradle"));
+        assert!(is_manifest("build.gradle.kts"));
+        assert!(is_manifest("settings.gradle"));
+        assert!(is_manifest("settings.gradle.kts"));
+        assert!(is_manifest("project.clj"));
+        assert!(is_manifest("deps.edn"));
         assert!(!is_manifest("handler.py"));
         assert!(!is_manifest("README.md"));
         assert!(!is_manifest("requirements.md"));
@@ -179,6 +196,128 @@ gem "bar", path: '../../bar'
         // for URL-embedded tokens — downstream existence check filters them.
         // Just make sure this doesn't panic.
         let _ = paths;
+    }
+
+    #[test]
+    fn extract_pom_xml_relative_paths() {
+        let s = r#"<project>
+  <parent>
+    <groupId>com.example</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <relativePath>../parent</relativePath>
+  </parent>
+  <dependencies>
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>shared</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>../libs/shared.jar</systemPath>
+    </dependency>
+  </dependencies>
+</project>
+"#;
+        let paths = extract_relative_paths(s);
+        assert!(paths.contains(&"../parent".to_string()), "got: {:?}", paths);
+        assert!(
+            paths.contains(&"../libs/shared.jar".to_string()),
+            "got: {:?}",
+            paths
+        );
+    }
+
+    #[test]
+    fn extract_build_gradle_paths() {
+        let s = r#"dependencies {
+    implementation files('../shared/lib.jar')
+    implementation files("../../core/build/libs/core.jar")
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+}
+"#;
+        let paths = extract_relative_paths(s);
+        assert!(
+            paths.contains(&"../shared/lib.jar".to_string()),
+            "got: {:?}",
+            paths
+        );
+        assert!(
+            paths.contains(&"../../core/build/libs/core.jar".to_string()),
+            "got: {:?}",
+            paths
+        );
+    }
+
+    #[test]
+    fn extract_settings_gradle_paths() {
+        let s = r#"rootProject.name = 'my-app'
+include ':shared'
+project(':shared').projectDir = file('../shared')
+"#;
+        let paths = extract_relative_paths(s);
+        assert!(
+            paths.contains(&"../shared".to_string()),
+            "got: {:?}",
+            paths
+        );
+        // ':shared' is a Gradle project reference, not a path — must not appear.
+        assert!(!paths.iter().any(|p| p.contains(":shared")), "got: {:?}", paths);
+    }
+
+    #[test]
+    fn extract_project_clj_paths() {
+        let s = r#"(defproject my-app "0.1.0"
+  :description "Example"
+  :source-paths ["../shared/src" "../../common/src"]
+  :resource-paths ["../resources"]
+  :dependencies [[org.clojure/clojure "1.11.1"]])
+"#;
+        let paths = extract_relative_paths(s);
+        assert!(
+            paths.contains(&"../shared/src".to_string()),
+            "got: {:?}",
+            paths
+        );
+        assert!(
+            paths.contains(&"../../common/src".to_string()),
+            "got: {:?}",
+            paths
+        );
+        assert!(
+            paths.contains(&"../resources".to_string()),
+            "got: {:?}",
+            paths
+        );
+    }
+
+    #[test]
+    fn extract_deps_edn_paths() {
+        let s = r#"{:deps {com.foo/bar {:local/root "../foo"}
+                com.baz/qux {:local/root "../../shared"}}}
+"#;
+        let paths = extract_relative_paths(s);
+        assert!(paths.contains(&"../foo".to_string()), "got: {:?}", paths);
+        assert!(
+            paths.contains(&"../../shared".to_string()),
+            "got: {:?}",
+            paths
+        );
+    }
+
+    #[test]
+    fn extract_requirements_in_paths() {
+        let s = "-r ../shared/requirements.in\n-e ../local-pkg\nrequests\n";
+        let paths = extract_relative_paths(s);
+        assert!(
+            paths.contains(&"../shared/requirements.in".to_string()),
+            "got: {:?}",
+            paths
+        );
+        assert!(
+            paths.contains(&"../local-pkg".to_string()),
+            "got: {:?}",
+            paths
+        );
     }
 
     #[test]
