@@ -196,10 +196,21 @@ fn build_diff_set(
 /// functions and would cause those functions to be re-resolved with the
 /// wrong context by `resolver::resolve`.
 ///
+/// `namespace` is the **root** topology's namespace — it determines the
+/// git tag prefix used when constructing the diff range (`{namespace}-
+/// {from}..{namespace}-{to}`). It is passed explicitly rather than read
+/// from `topology.namespace` because `topology` may be a nested node
+/// whose own namespace differs from the root's, and tags in this repo
+/// are keyed by the root namespace only. Using `topology.namespace`
+/// here would silently produce an empty diff for nested nodes (lookup
+/// of nonexistent tags), causing functions to be skipped from
+/// re-deployment.
+///
 /// First-deploy semantics: if `from` is empty, all of this topology's
 /// own functions (plus its transducer, if any) are returned.
 pub fn diff_fns(
     topology: &Topology,
+    namespace: &str,
     from: &str,
     to: &str,
 ) -> HashMap<String, Function> {
@@ -207,7 +218,7 @@ pub fn diff_fns(
     if first_deploy {
         tracing::debug!(
             "no prior version for {} — marking {} function(s) + transducer changed",
-            &topology.namespace,
+            namespace,
             topology.functions.len()
         );
         let mut out: HashMap<String, Function> = topology.functions.clone();
@@ -222,9 +233,9 @@ pub fn diff_fns(
     }
 
     let repo_root = repo_root_canonical();
-    let diff = build_diff_set(&topology.namespace, from, to, &repo_root);
+    let diff = build_diff_set(namespace, from, to, &repo_root);
     if diff.is_empty() {
-        tracing::debug!("empty diff for {} {}..{}", &topology.namespace, from, to);
+        tracing::debug!("empty diff for {} {}..{}", namespace, from, to);
         return HashMap::new();
     }
 
