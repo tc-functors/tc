@@ -366,12 +366,20 @@ pub async fn find_modified(
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
     if let Some(target_version) = maybe_version {
-        let fns = differ::diff_fns(&namespace, &target_version, &version, &topology.functions);
-        if fns.len() > 0 {
-            println!("Diff {} {}..{} ({})", &topology.namespace, &target_version, &version, fns.len());
+        // Pass the *root* namespace to diff_fns so git tag construction
+        // uses the namespace where tags actually live. `topology` here may
+        // be a nested node whose own namespace doesn't match any tag.
+        let fns = differ::diff_fns(topology, namespace, &target_version, version);
+        if !fns.is_empty() {
+            println!(
+                "Diff {} {}..{} ({})",
+                namespace,
+                &target_version,
+                &version,
+                fns.len()
+            );
         }
         fns
-
     } else {
         topology.functions.clone()
     }

@@ -2225,7 +2225,9 @@ dependencies = [
  "serde_json",
  "tabled 0.10.0",
  "tagger",
+ "tempfile",
  "tracing",
+ "walkdir",
 ]
 
 [[package]]

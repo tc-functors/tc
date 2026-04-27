@@ -414,12 +414,25 @@ pub struct FunctionSpec {
 }
 
 fn find_revision(dir: &str) -> String {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+    static CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Ok(guard) = cache.lock() {
+        if let Some(v) = guard.get(dir) {
+            return v.clone();
+        }
+    }
     let cmd_str = format!("git log -n 1 --format=%h {}", dir);
-    u::sh(&cmd_str, dir)
+    let v = u::sh(&cmd_str, dir);
+    if let Ok(mut guard) = cache.lock() {
+        guard.insert(dir.to_string(), v.clone());
+    }
+    v
 }
 
 fn top_level() -> String {
-    u::sh("git rev-parse --show-toplevel", &u::pwd())
+    u::root()
 }
 
 fn render(s: &str, version: &str) -> String {
