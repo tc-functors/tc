@@ -1,6 +1,7 @@
 pub mod aws;
 pub mod display;
 
+pub mod index;
 pub mod sequence;
 mod tag;
 pub mod topology;
@@ -231,19 +232,32 @@ pub fn current_function(dir: &str) -> Option<Function> {
 pub fn list_topologies() -> HashMap<String, Topology> {
     let mut names: Vec<String> = vec![];
     let mut topologies: HashMap<String, Topology> = HashMap::new();
-    for entry in WalkDir::new(u::pwd())
-        .follow_links(false)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_dir())
-    {
-        let p = entry.path().to_string_lossy();
-        if is_topology_dir(&p) {
-            let spec = Topology::new(&p, true, true);
-            if !names.contains(&spec.namespace.to_string()) {
-                names.push(spec.namespace.to_string());
-                topologies.insert(p.to_string(), spec);
-            }
+    let pwd = u::pwd();
+    let idx = index::get();
+    let candidates: Vec<String> = if idx.covers(std::path::Path::new(&pwd)) {
+        let canonical = match std::path::Path::new(&pwd).canonicalize() {
+            Ok(p) => p,
+            Err(_) => return topologies,
+        };
+        idx.descendants_of(&canonical)
+            .filter(|(_, info)| info.filenames.iter().any(|f| f == "topology.yml"))
+            .filter_map(|(p, _)| p.to_str().map(|s| s.to_string()))
+            .collect()
+    } else {
+        WalkDir::new(&pwd)
+            .follow_links(false)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_dir())
+            .map(|e| e.path().to_string_lossy().to_string())
+            .filter(|p| is_topology_dir(p))
+            .collect()
+    };
+    for p in candidates {
+        let spec = Topology::new(&p, true, true);
+        if !names.contains(&spec.namespace.to_string()) {
+            names.push(spec.namespace.to_string());
+            topologies.insert(p, spec);
         }
     }
     topologies

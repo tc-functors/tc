@@ -312,6 +312,71 @@ pub fn any_path(paths: Vec<String>) -> Option<String> {
     None
 }
 
+/// Walk parent directories from `start_dir` up to four levels and
+/// return the first existing `<parent>/<target>`. Results are memoized
+/// per `(start_dir, target)` for the lifetime of the process.
+///
+/// For a topology with N functions sharing the same infra parent dir,
+/// each unique key costs 8 fresh `path_exists` syscalls on the first
+/// call and zero thereafter; cache hits collapse the N×8 work to a
+/// single 8.
+///
+/// Both `start_dir`-relative (resolved via `absolutize`) and
+/// pwd-relative `../target` candidates are tried, mirroring the inline
+/// parent-walk helpers this replaces. The pwd-relative candidates are
+/// almost certainly dead in practice — every known caller passes an
+/// absolute `infra_dir` — but are kept as a defensive copy of the
+/// pre-existing behaviour to avoid hidden semantic changes.
+pub fn find_parent_file(start_dir: &str, target: &str) -> Option<String> {
+    cached_parent_walk(start_dir, target, false)
+}
+
+/// Like [`find_parent_file`] but tries `<start_dir>/<target>` first
+/// before walking parents (so 9 candidate paths total instead of 8).
+/// Used by `find_parent_function_role` where the per-topology
+/// `roles/function.json` may live in the topology's own infra dir
+/// rather than higher up.
+pub fn find_self_or_parent_file(start_dir: &str, target: &str) -> Option<String> {
+    cached_parent_walk(start_dir, target, true)
+}
+
+fn cached_parent_walk(start_dir: &str, target: &str, include_self: bool) -> Option<String> {
+    use std::{
+        collections::HashMap,
+        sync::{
+            Mutex,
+            OnceLock,
+        },
+    };
+    type Key = (String, String, bool);
+    static CACHE: OnceLock<Mutex<HashMap<Key, Option<String>>>> = OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    let key: Key = (start_dir.to_string(), target.to_string(), include_self);
+    if let Ok(g) = cache.lock() {
+        if let Some(v) = g.get(&key) {
+            return v.clone();
+        }
+    }
+
+    let mut paths: Vec<String> = Vec::with_capacity(if include_self { 9 } else { 8 });
+    if include_self {
+        paths.push(format!("{}/{}", start_dir, target));
+    }
+    for ups in 1..=4 {
+        let rel = "../".repeat(ups);
+        paths.push(absolutize(start_dir, &format!("{}{}", rel, target)));
+    }
+    for ups in 1..=4 {
+        paths.push(format!("{}{}", "../".repeat(ups), target));
+    }
+
+    let result = any_path(paths);
+    if let Ok(mut g) = cache.lock() {
+        g.insert(key, result.clone());
+    }
+    result
+}
+
 pub fn basename(path: &str) -> String {
     let mut pieces = path.rsplitn(2, |c| c == '/' || c == '\\');
     match pieces.next() {

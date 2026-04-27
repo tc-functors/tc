@@ -28,3 +28,6 @@ itertools = "0.10.5"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
 compiler = { path = "../compiler" }
+
+[dev-dependencies]
+tempfile = "3"
