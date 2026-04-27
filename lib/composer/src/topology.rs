@@ -291,6 +291,22 @@ fn ignore_function(dir: &str, root_dir: &str) -> bool {
     }
 }
 
+fn discover_functions_sequential(
+    dir: &str,
+    infra_dir: &str,
+    spec: &TopologySpec,
+) -> HashMap<String, Function> {
+    function_dirs(dir)
+        .into_iter()
+        .filter(|d| u::is_dir(d) && !ignore_function(d, dir))
+        .map(|d| {
+            tracing::debug!("function {}", d);
+            let f = Function::new(&d, infra_dir, &spec.name, spec.fmt());
+            (f.name.clone(), f)
+        })
+        .collect()
+}
+
 fn discover_functions(
     dir: &str,
     infra_dir: &str,
@@ -437,7 +453,8 @@ fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> 
                             let node_spec = TopologySpec::new(&f);
                             tracing::debug!("node {}", &node_spec.name);
                             let infra_dir = as_infra_dir(node_spec.infra.to_owned(), p);
-                            let mut functions = discover_functions(p, &infra_dir, &node_spec);
+                            let mut functions =
+                                discover_functions_sequential(p, &infra_dir, &node_spec);
                             let interned = intern_functions(p, &infra_dir, &node_spec);
                             functions.extend(interned);
                             let leaf_nodes =
