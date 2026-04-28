@@ -448,9 +448,7 @@ fn nested_topology_dirs(root_dir: &str) -> Vec<String> {
         };
         let mut out: Vec<String> = idx
             .descendants_of(&canonical_root)
-            .filter(|(p, info)| {
-                **p != canonical_root && info.filenames.iter().any(|f| f == "topology.yml")
-            })
+            .filter(|(p, info)| *p != canonical_root.as_path() && info.has("topology.yml"))
             .filter_map(|(p, _)| p.to_str().map(|s| s.to_string()))
             .collect();
         out.sort();

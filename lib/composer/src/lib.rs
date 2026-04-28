@@ -240,7 +240,7 @@ pub fn list_topologies() -> HashMap<String, Topology> {
             Err(_) => return topologies,
         };
         idx.descendants_of(&canonical)
-            .filter(|(_, info)| info.filenames.iter().any(|f| f == "topology.yml"))
+            .filter(|(_, info)| info.has("topology.yml"))
             .filter_map(|(p, _)| p.to_str().map(|s| s.to_string()))
             .collect()
     } else {

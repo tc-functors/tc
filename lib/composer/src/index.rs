@@ -100,9 +100,16 @@ fn is_skipped_dir_name(name: &std::ffi::OsStr) -> bool {
 }
 
 /// Per-directory metadata captured by the single-pass walk.
+///
+/// **Always use [`DirInfo::has`] for membership checks** rather than
+/// scanning [`Self::filenames`] directly: a `topology.yml` (or any
+/// other file the composer / differ cares about) may be a symlink, and
+/// raw filename iteration misses those — silently dropping work in a
+/// way the legacy `WalkDir` + `Path::exists` codepath did not.
 #[derive(Default, Clone, Debug)]
 pub struct DirInfo {
-    /// Names (not full paths) of regular files in this dir.
+    /// Regular-file basenames in this dir. Prefer [`Self::has`] over
+    /// scanning this directly so symlinks are accounted for.
     pub filenames: Vec<String>,
     /// Absolute paths of immediate subdirectories.
     pub subdirs: Vec<PathBuf>,
@@ -472,6 +479,43 @@ mod tests {
         assert!(idx.covers(&idx.root().join("x")));
         // /tmp itself isn't under our indexed root.
         assert!(!idx.covers(Path::new("/usr/bin")));
+    }
+
+    #[test]
+    fn symlinked_topology_yml_is_visible_via_has() {
+        // Regression test: callers iterating descendants_of and asking
+        // `info.has("topology.yml")` should find topologies whose
+        // `topology.yml` is a symlink, matching the legacy
+        // `Path::exists` / `kit::path_exists` behaviour. An earlier
+        // version of `nested_topology_dirs` and `list_topologies`
+        // accidentally inlined `info.filenames.iter().any(...)`,
+        // bypassing the symlink branch of `DirInfo::has` and silently
+        // dropping symlinked topologies.
+        use std::os::unix::fs::symlink;
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mk(root, "real/topology.yml", "name: real");
+        std::fs::create_dir_all(root.join("linked")).unwrap();
+        symlink(
+            root.join("real").join("topology.yml"),
+            root.join("linked").join("topology.yml"),
+        )
+        .unwrap();
+
+        let idx = RepoIndex::build(root);
+        // Both dirs surface as topology dirs.
+        assert!(idx.is_topology_dir(idx.root().join("real").to_str().unwrap()));
+        assert!(idx.is_topology_dir(idx.root().join("linked").to_str().unwrap()));
+        // ... and a descendants_of consumer using the supported
+        // `info.has` API also picks both up.
+        let canonical_root = idx.root().to_path_buf();
+        let mut found: Vec<&Path> = idx
+            .descendants_of(&canonical_root)
+            .filter(|(p, info)| *p != canonical_root.as_path() && info.has("topology.yml"))
+            .map(|(p, _)| p)
+            .collect();
+        found.sort();
+        assert_eq!(found.len(), 2, "expected both real and linked topology dirs: {:?}", found);
     }
 
     #[test]
