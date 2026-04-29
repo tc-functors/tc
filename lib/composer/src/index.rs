@@ -64,25 +64,30 @@ use walkdir::WalkDir;
 /// dirs alone take seconds to walk). Skipping them keeps the up-front
 /// index build proportional to the topology size, not the repo size.
 ///
+/// Selection criterion: the name must be either dot-prefixed (Unix
+/// convention for hidden / cache / IDE state) or a universally-
+/// recognised non-source name (`node_modules`, `__pycache__`).
+/// Generic English words like `build`, `dist`, `target` are
+/// **deliberately not** skipped — users could legitimately name a
+/// topology or function dir any of those, and silently dropping them
+/// would be a stealth regression vs the legacy `WalkDir`-based
+/// discovery (which never pruned). If a future profiling pass shows
+/// `target/` (Rust build output) actually matters for some user, this
+/// list should become configurable rather than expanded.
+///
 /// **Side-effect on the differ:** because the differ's index path
 /// iterates the index to find symlinks and manifest files under a
 /// function dir (see `differ::deps::Analyzer::walk_and_extract`),
 /// symlinks/manifests buried inside one of these subtrees are NOT
-/// discovered. This is a deliberate behaviour change from the legacy
-/// `WalkDir` differ: in practice these dirs are gitignored or
-/// build-artifact trees, so files inside them either don't show up in
-/// `git diff` at all or aren't real source-code dependencies. If a
-/// future user has a legitimate need to track e.g. a committed
-/// `node_modules`, this list will need to become configurable.
+/// discovered. In practice these dirs are gitignored cache / IDE state
+/// trees, so files inside them either don't show up in `git diff` at
+/// all or aren't real source-code dependencies.
 const SKIP_DIR_NAMES: &[&str] = &[
     ".git",
     "node_modules",
-    "target",
+    "__pycache__",
     ".venv",
     ".vendor",
-    "build",
-    "dist",
-    "__pycache__",
     ".next",
     ".turbo",
     ".cache",
@@ -527,18 +532,60 @@ mod tests {
         // dir itself nor any descendant should appear.
         mk(root, ".git/objects/pack/pack-deadbeef", "");
         mk(root, "node_modules/foo/index.js", "");
-        mk(root, "target/debug/build/something/out", "");
         mk(root, "__pycache__/x.pyc", "");
+        mk(root, ".venv/lib/python/site-packages/foo.py", "");
 
         let idx = RepoIndex::build(root);
         assert!(idx.path_exists(idx.root().join("src").to_str().unwrap(), "handler.py"));
-        for skipped in [".git", "node_modules", "target", "__pycache__"] {
+        for skipped in [".git", "node_modules", "__pycache__", ".venv"] {
             assert!(
                 idx.get(&idx.root().join(skipped)).is_none(),
                 "{} should not be indexed",
                 skipped
             );
         }
+    }
+
+    /// Regression: `build`, `dist`, and `target` are common English
+    /// words that users might legitimately use as topology- or
+    /// function-dir names. An earlier revision of `SKIP_DIR_NAMES`
+    /// included them, and `descendants_of` / `list_subdirs` consequently
+    /// dropped them — silently breaking nested-topology discovery in
+    /// `nested_topology_dirs` and function-dir discovery in
+    /// `function_dirs`. Verify they're now indexed and surfaced through
+    /// the same APIs the composer uses.
+    #[test]
+    fn generic_named_dirs_are_not_pruned() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mk(root, "build/topology.yml", "name: build");
+        mk(root, "dist/topology.yml", "name: dist");
+        mk(root, "target/handler.py", "");
+
+        let idx = RepoIndex::build(root);
+
+        // descendants_of drives nested_topology_dirs in composer.
+        let canonical_root = idx.root().to_path_buf();
+        let mut topology_descendants: Vec<&Path> = idx
+            .descendants_of(&canonical_root)
+            .filter(|(p, info)| *p != canonical_root.as_path() && info.has("topology.yml"))
+            .map(|(p, _)| p)
+            .collect();
+        topology_descendants.sort();
+        assert_eq!(topology_descendants.len(), 2);
+        assert!(topology_descendants[0].ends_with("build"));
+        assert!(topology_descendants[1].ends_with("dist"));
+
+        // list_subdirs drives function_dirs in composer.
+        let mut subs = idx.list_subdirs(idx.root().to_str().unwrap());
+        subs.sort();
+        assert_eq!(subs.len(), 3, "expected build, dist, target — got {:?}", subs);
+        assert!(subs.iter().any(|s| s.ends_with("/build")));
+        assert!(subs.iter().any(|s| s.ends_with("/dist")));
+        assert!(subs.iter().any(|s| s.ends_with("/target")));
+
+        // is_inferred_dir on the target dir works via the index.
+        assert!(idx.is_inferred_dir(idx.root().join("target").to_str().unwrap()));
     }
 
     #[test]

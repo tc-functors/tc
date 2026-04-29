@@ -380,6 +380,28 @@ fn should_ignore_node(
     ignore_nodes: Option<Vec<String>>,
     topology_dir: &str,
 ) -> bool {
+    // `root_dir` arrives in whatever form the caller had on hand
+    // (typically `kit::pwd()`, which on macOS keeps `/tmp/...` rather
+    // than canonicalising to `/private/tmp/...`). `topology_dir` is
+    // produced by `nested_topology_dirs` via the `composer::index`,
+    // which keys on canonical paths. Without normalising both sides,
+    // the prefix-equality / `contains` / `starts_with` checks below
+    // silently miss any pwd whose path crosses a symlink — `tc`'s
+    // `nodes.ignore` and `.tcignore` rules would then fail to match.
+    // Falls back to the input strings if canonicalisation fails (e.g.
+    // path doesn't exist on disk).
+    let canonicalize = |s: &str| -> String {
+        Path::new(s)
+            .canonicalize()
+            .ok()
+            .and_then(|p| p.to_str().map(|s| s.to_string()))
+            .unwrap_or_else(|| s.to_string())
+    };
+    let root_dir_owned = canonicalize(root_dir);
+    let topology_dir_owned = canonicalize(topology_dir);
+    let root_dir = root_dir_owned.as_str();
+    let topology_dir = topology_dir_owned.as_str();
+
     let ignore_file = u::path_of(root_dir, ".tcignore");
     if u::file_exists(&ignore_file) {
         let globs = u::readlines(&ignore_file);
@@ -898,5 +920,50 @@ impl Topology {
         let data = kit::read_bytes(path);
         let t: Topology = bincode::deserialize(&data).unwrap();
         t
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tempfile::TempDir;
+
+    /// Regression: when pwd reaches the repo root via a symlink (e.g.
+    /// macOS `/tmp` → `/private/tmp`), `make_nodes` was passing the
+    /// non-canonical `root_dir` to `should_ignore_node` while
+    /// `nested_topology_dirs` returned canonical paths from the
+    /// `composer::index`. The `nodes.ignore` and `.tcignore` rules
+    /// silently failed to match because the prefix-equality /
+    /// `starts_with` checks compared `/tmp/...` against
+    /// `/private/tmp/...`. `should_ignore_node` now canonicalises both
+    /// sides before comparing.
+    #[test]
+    fn should_ignore_node_matches_when_root_reached_via_symlink() {
+        let outer = TempDir::new().unwrap();
+        let real = outer.path().join("real");
+        fs::create_dir_all(real.join("ignore_me")).unwrap();
+        fs::create_dir_all(real.join("keep_me")).unwrap();
+        let canonical_real = real.canonicalize().unwrap();
+
+        let alias = outer.path().join("link");
+        symlink(&real, &alias).unwrap();
+
+        let alias_root = alias.to_str().unwrap();
+        let canonical_target = canonical_real.join("ignore_me");
+        let canonical_target_str = canonical_target.to_str().unwrap();
+        let canonical_keep = canonical_real.join("keep_me");
+        let canonical_keep_str = canonical_keep.to_str().unwrap();
+
+        let ignore = Some(vec!["ignore_me".to_string()]);
+        assert!(
+            should_ignore_node(alias_root, ignore.clone(), canonical_target_str),
+            "ignore rule should fire even though root_dir uses an aliased path"
+        );
+        assert!(
+            !should_ignore_node(alias_root, ignore, canonical_keep_str),
+            "non-matching dir should not be ignored"
+        );
     }
 }
