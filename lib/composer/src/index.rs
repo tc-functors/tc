@@ -345,14 +345,39 @@ impl RepoIndex {
     }
 
     /// Immediate subdirs of `dir` as strings, matching `kit::list_dirs`
-    /// semantics. Empty if `dir` is unknown to the index.
+    /// semantics: real subdirectories *and* symlinks that resolve to a
+    /// directory are both returned. Empty if `dir` is unknown to the
+    /// index.
+    ///
+    /// `info.subdirs` only holds real dirs because the build walk uses
+    /// `follow_links(false)` and `entry.file_type().is_dir()` is
+    /// `lstat`-based. `kit::list_dirs`, by contrast, calls
+    /// `Path::is_dir()` which follows symlinks. Without the symlink
+    /// branch below, a function dir that is itself a symlink to a real
+    /// directory would be silently dropped from `function_dirs` —
+    /// `tc compose` would behave identically to before this PR for all
+    /// regular setups but would lose any symlinked function-dir entry
+    /// at the topology root. The cost is one `metadata` syscall per
+    /// symlink basename in `dir`, which is zero in the common case
+    /// (topology dirs typically don't contain symlinks at the level
+    /// queried by `function_dirs`).
     pub fn list_subdirs(&self, dir: &str) -> Vec<String> {
         match self.get(Path::new(dir)) {
-            Some(info) => info
-                .subdirs
-                .iter()
-                .filter_map(|p| p.to_str().map(|s| s.to_string()))
-                .collect(),
+            Some(info) => {
+                let mut out: Vec<String> = info
+                    .subdirs
+                    .iter()
+                    .filter_map(|p| p.to_str().map(|s| s.to_string()))
+                    .collect();
+                for sym in &info.symlinks {
+                    if std::fs::metadata(sym).map(|m| m.is_dir()).unwrap_or(false) {
+                        if let Some(s) = sym.to_str() {
+                            out.push(s.to_string());
+                        }
+                    }
+                }
+                out
+            }
             None => u::list_dirs(dir),
         }
     }
@@ -484,6 +509,53 @@ mod tests {
         assert!(subs[0].ends_with("/a"));
         assert!(subs[1].ends_with("/b"));
         assert!(subs[2].ends_with("/c"));
+    }
+
+    /// Regression: `list_subdirs` previously returned only real dirs
+    /// from `info.subdirs`, while the replaced `kit::list_dirs` used
+    /// `p.is_dir()` which follows symlinks. A function dir that is
+    /// itself a symlink to a real directory would have been silently
+    /// dropped by `function_dirs` -> topology discovery. Verify that
+    /// `list_subdirs` returns both real dirs and symlinks-to-dirs.
+    #[test]
+    fn list_subdirs_includes_symlinked_directories() {
+        use std::os::unix::fs::symlink;
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mk(root, "real_fn/handler.py", "");
+        mk(root, "shared/lib.py", "");
+        // Function dir that is itself a symlink to another real dir.
+        symlink(root.join("shared"), root.join("symlinked_fn")).unwrap();
+        // A dangling dir-name symlink: must NOT appear because metadata
+        // fails (matches kit::list_dirs's `p.is_dir()` semantics).
+        symlink(root.join("does_not_exist"), root.join("dangling_dir")).unwrap();
+
+        let idx = RepoIndex::build(root);
+        let mut subs = idx.list_subdirs(idx.root().to_str().unwrap());
+        subs.sort();
+        let names: Vec<String> = subs
+            .iter()
+            .map(|s| {
+                std::path::Path::new(s)
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            })
+            .collect();
+        assert!(names.contains(&"real_fn".to_string()), "missing real_fn: {:?}", names);
+        assert!(names.contains(&"shared".to_string()), "missing shared: {:?}", names);
+        assert!(
+            names.contains(&"symlinked_fn".to_string()),
+            "missing symlinked_fn (the regression): {:?}",
+            names
+        );
+        assert!(
+            !names.contains(&"dangling_dir".to_string()),
+            "dangling symlink leaked into list_subdirs: {:?}",
+            names
+        );
     }
 
     #[test]
