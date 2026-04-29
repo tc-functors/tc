@@ -170,6 +170,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         post: vec![],
         version: None,
         command: s!("zip -9 -q lambda.zip *.py *.json"),
+        pack: s!("echo 0"),
         shared_context: false,
         skip_dev_deps: false,
         environment: HashMap::new(),

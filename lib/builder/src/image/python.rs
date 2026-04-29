@@ -94,7 +94,7 @@ COPY --from=build-image /model /model
     u::write_str(&dockerfile, &f);
 }
 
-pub fn gen_code_dockerfile(dir: &str, base_image: &str) {
+pub fn gen_code_dockerfile(dir: &str, base_image: &str, command: &str) {
     let f = format!(
         r#"
 FROM {base_image}
@@ -103,6 +103,9 @@ ENV PATH=$PATH:/model/bin
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/model/lib
 
 COPY . /var/task
+
+RUN {command}
+
 
 CMD [ "handler.handler" ]
 "#

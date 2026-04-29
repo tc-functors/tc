@@ -133,23 +133,3 @@ The codebase is organized as a Rust workspace with multiple libraries:
 6. Respond to any feedback
 
 We aim to review all contributions promptly and look forward to collaborating with you!
-
-## Core Authors
-
-- Isaac Praveen
-- Rob Berger (Mentor)
-
-## Thanks & Credits
-
-Thanks to the following engineers for contributing ideas and testing.
-
-- [Abhijith Gopal](https://github.com/abhijith)
-- [Eric Harvey](https://github.com/EricHarvey)
-- [Rachel Chung](https://github.com/rachel-yujin-chung)
-- [Rahul Salla](https://github.com/raaahulss)
-- [Alper Vural](https://github.com/alperinformed)
-- [Alexander Ngyuen](https://github.com/GalexyN)
-- Henry Do
-- [Sanjeev](https://github.com/sanjeev247)
-
-Thanks to Rich Hickey (Clojure) and Joe Armstrong (Erlang) for influencing the way we think about programs and complexity.

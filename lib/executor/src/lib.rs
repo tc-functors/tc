@@ -71,3 +71,12 @@ pub async fn list_vars() -> Vec<String> {
     let repo = current_repo();
     circleci::list_vars(&repo).await
 }
+
+
+pub fn current_url() -> String {
+    let url = match std::env::var("CIRCLE_BUILD_URL") {
+        Ok(r) => r,
+        Err(_) => String::from("")
+    };
+    url
+}

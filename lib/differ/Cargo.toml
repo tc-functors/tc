@@ -11,6 +11,10 @@ regex = "1.9.1"
 tracing = "0.1"
 cacache = "13.0.0"
 tabled = "0.10.0"
+walkdir = "2"
 kit = { path = "../kit" }
 composer = { path = "../composer" }
 tagger = { path = "../tagger" }
+
+[dev-dependencies]
+tempfile = "3"

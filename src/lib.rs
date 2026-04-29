@@ -220,12 +220,16 @@ pub async fn diff(auth: Auth, sandbox: Option<String>, recursive: bool, _trace: 
 
     let functions = resolver::function::find_modified(&auth, &rt, &topology).await;
     println!("Modified functions:");
-    for (name, _) in functions {
+    let mut names: Vec<String> = functions.keys().cloned().collect();
+    names.sort();
+    for name in &names {
         println!("{}", name);
     }
-    for (_, node) in &topology.nodes {
-        let functions = resolver::function::find_modified(&auth, &rt, &node).await;
-        for (name, _) in functions {
+    for node in topology.nodes.values() {
+        let fns = resolver::function::find_modified(&auth, &rt, node).await;
+        let mut node_names: Vec<String> = fns.keys().cloned().collect();
+        node_names.sort();
+        for name in node_names {
             println!("{}/{}", node.namespace, name);
         }
     }
@@ -256,7 +260,7 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
     }
 }
 
-async fn run_create_hook(auth: &Auth, root: &Topology) {
+async fn run_create_hook(auth: &Auth, root: &Topology, time: &str, force: bool) {
     let Topology {
         namespace,
         sandbox,
@@ -268,9 +272,15 @@ async fn run_create_hook(auth: &Auth, root: &Topology) {
         Ok(x) => x,
         Err(_) => "ci".to_string(),
     };
+    let url = executor::current_url();
+    let incr = if force {
+        false
+    } else {
+        true
+    };
     let msg = format!(
-        "Deployed `{}` to *{}*::{}_{} by {}",
-        tag, &auth.name, namespace, &sandbox, &user
+        "Deployed `{}` to *{}*::{}_{} by {} (elapsed: {} incr: {}) [build: {}]",
+        tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
 }
@@ -373,11 +383,13 @@ pub async fn create(
         Err(_) => builder::clean(recursive),
     }
 
-    if notify {
-        run_create_hook(&auth, &topology).await;
-    }
 
     let duration = start.elapsed();
+
+    if notify {
+        run_create_hook(&auth, &topology, &u::time_format(duration).to_string(), force).await;
+    }
+
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
 

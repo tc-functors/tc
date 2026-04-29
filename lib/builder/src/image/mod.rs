@@ -36,9 +36,9 @@ fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post
     }
 }
 
-fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str) {
+fn gen_code_dockerfile(dir: &str, runtime: &LangRuntime, base_image_uri: &str, command: &str) {
     match runtime.to_lang() {
-        Lang::Python => python::gen_code_dockerfile(dir, base_image_uri),
+        Lang::Python => python::gen_code_dockerfile(dir, base_image_uri, command),
         Lang::Ruby => ruby::gen_code_dockerfile(dir, base_image_uri),
         _ => todo!(),
     }
@@ -152,7 +152,7 @@ pub async fn build(
         // if !base_exists {
         //    println!("Base image {} does not exist", &base_image_uri);
         // }
-        gen_code_dockerfile(dir, langr, &base_image_uri);
+        gen_code_dockerfile(dir, langr, &base_image_uri, &bspec.pack);
     } else {
         gen_base_dockerfile(dir, langr, pre, post);
     }
@@ -220,10 +220,15 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, k
     aws::ecr::login(auth, &dir).await;
     let uri = render_uri(uri, repo);
 
-    let uri = match kind {
-        BuildKind::Image => find_base_image_uri(&uri, version.clone()),
-        BuildKind::Code => uri,
-        _ => uri,
+    let uri = match std::env::var("TC_IMAGE_URI") {
+        Ok(k) => k,
+        Err(_) => {
+            match kind {
+                BuildKind::Image => find_base_image_uri(&uri, version.clone()),
+                BuildKind::Code => uri,
+                _ => uri,
+            }
+        }
     };
     let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
     tracing::debug!("{}", cmd);

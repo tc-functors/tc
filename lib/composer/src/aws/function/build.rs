@@ -18,6 +18,7 @@ pub struct Build {
     pub post: Vec<String>,
     pub version: Option<String>,
     pub command: String,
+    pub pack: String,
     pub shared_context: bool,
     pub skip_dev_deps: bool,
     pub environment: HashMap<String, String>,
@@ -49,6 +50,7 @@ impl Build {
                 pre: b.pre,
                 post: b.post,
                 command: b.command,
+                pack: b.pack.unwrap_or(String::from("echo 0")),
                 version: b.version,
                 shared_context: match b.shared_context {
                     Some(s) => s,
@@ -73,6 +75,7 @@ impl Build {
                     post: vec![],
                     version: None,
                     command: command,
+                    pack: String::from("echo 0"),
                     shared_context: false,
                     skip_dev_deps: false,
                     environment: HashMap::new(),
