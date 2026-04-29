@@ -123,17 +123,28 @@ pub struct DirInfo {
 }
 
 impl DirInfo {
-    /// True if `dir/<name>` exists as a regular file or a symlink with
-    /// matching basename. Mirrors `kit::path_exists` semantics.
+    /// True if `dir/<name>` resolves to an existing entity, matching
+    /// `Path::exists()` / `kit::path_exists` semantics.
+    ///
+    /// The regular-file path is a plain string scan with no syscalls.
+    /// On a symlink basename match the target is verified via
+    /// `Path::exists()` so a dangling symlink returns `false` — without
+    /// this, callers like `composer::aws::role::Role::new` would see
+    /// the index report the role file as present, then panic in
+    /// `kit::slurp` when `File::open` of the dangling target failed.
+    /// Costs one extra syscall per symlink-name hit; the regular-file
+    /// hot path is unchanged.
     pub fn has(&self, name: &str) -> bool {
         if self.filenames.iter().any(|f| f == name) {
             return true;
         }
         self.symlinks.iter().any(|p| {
-            p.file_name()
+            let basename_matches = p
+                .file_name()
                 .and_then(|n| n.to_str())
                 .map(|n| n == name)
-                .unwrap_or(false)
+                .unwrap_or(false);
+            basename_matches && p.exists()
         })
     }
 }
@@ -484,6 +495,36 @@ mod tests {
         assert!(idx.covers(&idx.root().join("x")));
         // /tmp itself isn't under our indexed root.
         assert!(!idx.covers(Path::new("/usr/bin")));
+    }
+
+    #[test]
+    fn dangling_symlink_does_not_report_as_existing() {
+        // Regression: `DirInfo::has` previously returned true for any
+        // symlink whose basename matched, even when the target was
+        // missing. Callers like `Role::new` would then `slurp` the
+        // dangling path and panic in `File::open`. Match
+        // `Path::exists` semantics: dangling symlinks must report as
+        // not-existing.
+        use std::os::unix::fs::symlink;
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        std::fs::create_dir_all(root.join("dir")).unwrap();
+        symlink(
+            root.join("nonexistent_target.json"),
+            root.join("dir").join("vars.json"),
+        )
+        .unwrap();
+
+        let idx = RepoIndex::build(root);
+        let dir_str = idx.root().join("dir").to_str().unwrap().to_string();
+        assert!(
+            !idx.path_exists(&dir_str, "vars.json"),
+            "dangling symlink must not report as existing"
+        );
+        assert!(
+            !idx.file_exists(&format!("{}/vars.json", dir_str)),
+            "dangling symlink must not report as existing via file_exists either"
+        );
     }
 
     #[test]
