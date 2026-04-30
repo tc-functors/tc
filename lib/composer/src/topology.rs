@@ -218,7 +218,8 @@ fn intern_functions(
                 None => root_namespace,
             };
 
-            let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            let mut function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            function.shared = true;
             fns.insert(s!(name), function);
         } else {
             let dir = format!("{}/{}", root_dir, name);
@@ -774,6 +775,153 @@ pub fn is_compilable(dir: &str) -> bool {
     is_standalone_function_dir(dir) || is_relative_topology_dir(dir) || is_topology_dir(dir)
 }
 
+// Shared-function deduplication: single-owner promotion to root.
+//
+// `intern_functions` materialises a fresh `Function` into the importing
+// node's `functions` map for every entry whose `uri:` is a relative path
+// (see `is_shared`). Without dedup, when N nested topologies import the
+// same shared function, the resulting recursive `Topology` contains N
+// copies — one per importer — and `tc create` ends up running N full
+// Docker builds + N redundant `lambda:CreateFunction`/`UpdateFunctionCode`
+// calls against the same `fqn`.
+//
+// The fix is a post-pass over the recursively-built root topology that
+// drains every `Function` with `shared = true` out of each descendant's
+// `functions` map and inserts it into `root.functions`, deduped by
+// HashMap key. After this pass:
+//
+//   - `root.functions` contains every shared function exactly once
+//   - each descendant's `functions` map contains only its own (non-shared)
+//     entries
+//   - downstream callers (`deployer::create`, `builder::build_recursive`,
+//     `function::resolve`, etc.) deploy/build/resolve each shared
+//     function exactly once.
+//
+// The promotion runs only when `Topology::new` is constructing a
+// recursive root topology. Non-recursive callers (single-leaf modes
+// like `tc compose` on one node, `current_function`, `is_compilable`)
+// don't have descendants to dedupe against.
+
+/// Recursively drains all `shared` functions out of `node` and its
+/// descendants into `target`. Conflicts (same map key) resolve to
+/// `target`'s existing entry; identical-fqn collisions are silent,
+/// fqn-mismatched collisions emit `tracing::debug!` so latent name
+/// collisions don't go unnoticed. Each topology's own (non-shared)
+/// functions are preserved in place.
+fn drain_shared_into(target: &mut HashMap<String, Function>, node: &mut Topology) {
+    for child in node.nodes.values_mut() {
+        drain_shared_into(target, child);
+    }
+    let drained = std::mem::take(&mut node.functions);
+    let mut owned: HashMap<String, Function> = HashMap::with_capacity(drained.len());
+    for (name, f) in drained {
+        if f.shared {
+            match target.entry(name.clone()) {
+                std::collections::hash_map::Entry::Occupied(existing) => {
+                    if existing.get().fqn != f.fqn {
+                        tracing::debug!(
+                            "shared-function key collision: {} ({} vs {}) — keeping existing",
+                            name,
+                            existing.get().fqn,
+                            f.fqn
+                        );
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(slot) => {
+                    slot.insert(f);
+                }
+            }
+        } else {
+            owned.insert(name, f);
+        }
+    }
+    node.functions = owned;
+}
+
+/// Counts every `shared = true` function in `t` and all its descendants.
+/// Used purely for the post-promotion log line that reports how many
+/// duplicate imports were eliminated.
+fn count_shared_recursive(t: &Topology) -> usize {
+    let here = t.functions.values().filter(|f| f.shared).count();
+    let descendants: usize = t.nodes.values().map(count_shared_recursive).sum();
+    here + descendants
+}
+
+/// Recompute every topology's `roles` map from its post-promotion
+/// `functions` map and `flow`. Necessary because `make()` calls
+/// `make_roles` *before* `promote_shared_to_root` runs, leaving the
+/// `roles` maps stale relative to the new `functions` shape:
+///
+/// - Root's `roles` is missing the shared functions' roles (root
+///   didn't own those functions when `make_roles` ran).
+/// - Each descendant's `roles` still contains the shared functions'
+///   roles (the descendant owned them at make-time but no longer
+///   does after promotion).
+///
+/// Without this pass, a fresh `tc create` deploys root first
+/// (`deployer::create` calls `role::create_or_update` then
+/// `function::create`); since root's IAM roles for the shared
+/// functions don't exist yet, AWS rejects the Lambda creation calls
+/// (the Lambdas reference role ARNs that haven't been provisioned).
+///
+/// Recomputation is fully equivalent to the original computation:
+/// `make_roles` is a pure function of `(functions, flow)`, both of
+/// which are stable through promotion (only the *placement* of
+/// functions changes, never their `runtime.role` payload).
+fn recompute_roles_recursive(t: &mut Topology) {
+    for child in t.nodes.values_mut() {
+        recompute_roles_recursive(child);
+    }
+    t.roles = make_roles(&t.functions, &0, &0, &0, &t.flow);
+}
+
+/// Single-owner invariant: after this call, every `Function` with
+/// `shared = true` lives in `root.functions`, every descendant's
+/// `functions` map contains only that descendant's own (non-shared)
+/// functions, and every topology's `roles` map matches its current
+/// `functions` map.
+///
+/// Conflict semantics (`or_insert` via `Entry::Vacant`):
+///
+/// - Two siblings declare the same shared function → first one wins,
+///   others dropped. Equivalent because they all reference the same
+///   source dir.
+/// - Root *and* a node declare the same shared function → root's entry
+///   wins. Same source dir, equivalent.
+/// - Two functions with the same map key but different `fqn`s → first
+///   one wins, others dropped. Doesn't happen in practice (keys are
+///   local function names and shared functions have a single canonical
+///   `function.yml`); emits `tracing::debug!` if it ever does.
+pub(crate) fn promote_shared_to_root(root: &mut Topology) {
+    let nodes_count = root.nodes.len();
+    let before: usize = root
+        .nodes
+        .values()
+        .map(count_shared_recursive)
+        .sum();
+    let mut promoted: HashMap<String, Function> = HashMap::new();
+    for child in root.nodes.values_mut() {
+        drain_shared_into(&mut promoted, child);
+    }
+    let promoted_count = promoted.len();
+    for (name, f) in promoted {
+        root.functions.entry(name).or_insert(f);
+    }
+    // `make_roles` ran inside each `make()` call before this pass, so
+    // every topology's `roles` map is now stale w.r.t. its current
+    // `functions` map. Restore the invariant before downstream
+    // consumers (deployer, builder, etc.) read the topology.
+    recompute_roles_recursive(root);
+    if before > 0 {
+        tracing::info!(
+            "Promoted {} unique shared function(s) from {} node(s) to root (eliminated {} duplicate import(s))",
+            promoted_count,
+            nodes_count,
+            before.saturating_sub(promoted_count),
+        );
+    }
+}
+
 impl Topology {
     pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
         if is_singular_function_dir() {
@@ -788,22 +936,24 @@ impl Topology {
             let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
             tracing::debug!("Infra dir: {}  {}", &spec.name, &infra_dir);
 
-            let nodes;
-            if recursive {
+            let nodes = if recursive {
                 tracing::debug!("Recursive {}", dir);
-                nodes = make_nodes(dir, &spec);
+                make_nodes(dir, &spec)
             } else {
-                nodes = HashMap::new();
-            }
-            if skip_functions {
+                HashMap::new()
+            };
+            let mut topology = if skip_functions {
                 tracing::debug!("Skipping functions {}", dir);
-                let functions = HashMap::new();
-                make(dir, dir, &spec, functions, nodes)
+                make(dir, dir, &spec, HashMap::new(), nodes)
             } else {
                 tracing::debug!("Discovering functions {}", dir);
                 let functions = discover_functions(dir, &infra_dir, &spec);
                 make(dir, dir, &spec, functions, nodes)
+            };
+            if recursive {
+                promote_shared_to_root(&mut topology);
             }
+            topology
         } else if is_relative_topology_dir(dir) {
             make_relative(dir)
         } else if is_standalone_function_dir(dir) {
@@ -859,5 +1009,308 @@ impl Topology {
         let data = kit::read_bytes(path);
         let t: Topology = bincode::deserialize(&data).unwrap();
         t
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    /// Minimum function.yml that satisfies `FunctionSpec::new` →
+    /// `Runtime::new` → `make_lambda` without panicking. `fqn:` is set
+    /// so all importers compute the same final fqn (`shared_foo_<sandbox>`)
+    /// regardless of which node's namespace was passed in to `make_fqn`,
+    /// which mirrors how shared functions are written in real codebases.
+    fn write_shared_function(dir: &std::path::Path, name: &str, fqn: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(
+            dir.join("function.yml"),
+            format!(
+                "name: {name}\n\
+                 fqn: {fqn}\n\
+                 runtime:\n  \
+                   lang: python3.10\n  \
+                   handler: handler.handler\n  \
+                   package_type: zip\n  \
+                   layers: []\n\
+                 build:\n  \
+                   kind: Code\n  \
+                   command: echo build\n"
+            ),
+        )
+        .unwrap();
+        // Satisfy `is_inferred_dir`. Empty file is fine — we never invoke
+        // the build pipeline, just discover/intern.
+        fs::write(dir.join("handler.py"), "").unwrap();
+    }
+
+    fn write_topology_yml(dir: &std::path::Path, contents: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(dir.join("topology.yml"), contents).unwrap();
+    }
+
+    /// Reproduces the consumer-extraction shape that triggered the
+    /// shared-function rebuild bug: a parent topology with multiple
+    /// nested topologies, each declaring the same shared function via
+    /// a relative `uri:` in its `functions:` block. After recursive
+    /// composition, the shared function must appear exactly once at
+    /// root and zero times in any descendant.
+    ///
+    /// Also covers, in the same fixture:
+    /// - A second shared function imported by a subset of nodes
+    ///   (verifies the post-pass dedupes per-key, not per-node).
+    /// - A descendant with its own non-shared function declared inline
+    ///   (verifies that owned functions are preserved in place).
+    /// - JSON round-trip of a promoted Function with the `shared` field
+    ///   stripped (regression guard for the `#[serde(default)]`
+    ///   attribute on `Function.shared`).
+    #[test]
+    fn compose_recursive_dedups_shared_functions_to_root() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+
+        // Parent topology — no inline functions, no flow.
+        write_topology_yml(
+            root,
+            "name: shared-dedup-parent\nkind: step-function\n",
+        );
+
+        // Two shared function source dirs, both imported by descendants.
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+        write_shared_function(&root.join("shared/bar"), "bar", "shared_bar");
+
+        // Three child topologies, all importing `foo`. Only `c` also
+        // imports `bar`. `c` additionally declares its own non-shared
+        // function `local`, to confirm the post-pass leaves owned
+        // entries in place.
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("b"),
+            "name: child-b\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("c"),
+            "name: child-c\n\
+             kind: step-function\n\
+             functions:\n  \
+               foo:\n    uri: ../shared/foo\n  \
+               bar:\n    uri: ../shared/bar\n",
+        );
+        // c's own non-shared function lives at c/local/. Discovered, not interned.
+        write_shared_function(&root.join("c/local"), "local", "child_c_local");
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+
+        // Root owns both shared functions exactly once each.
+        assert!(
+            topology.functions.contains_key("foo"),
+            "shared function `foo` must be promoted to root.functions; root has {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            topology.functions.contains_key("bar"),
+            "shared function `bar` must be promoted to root.functions; root has {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            topology
+                .functions
+                .get("foo")
+                .map(|f| f.shared)
+                .unwrap_or(false),
+            "promoted `foo` retains shared = true"
+        );
+        assert!(
+            topology
+                .functions
+                .get("bar")
+                .map(|f| f.shared)
+                .unwrap_or(false),
+            "promoted `bar` retains shared = true"
+        );
+
+        // No descendant retains either shared function (search the full
+        // descendant tree, not just direct children, since
+        // `discover_leaf_nodes` mirrors each node into its own
+        // `node.nodes` map and a future refactor could turn this into
+        // genuine multi-level nesting).
+        fn collect_offenders(
+            t: &Topology,
+            path: String,
+            keys: &[&'static str],
+            out: &mut Vec<(String, &'static str)>,
+        ) {
+            for k in keys {
+                if t.functions.contains_key(*k) {
+                    out.push((path.clone(), *k));
+                }
+            }
+            for (name, child) in &t.nodes {
+                collect_offenders(child, format!("{path}/{name}"), keys, out);
+            }
+        }
+
+        let mut offenders: Vec<(String, &'static str)> = Vec::new();
+        for (name, child) in &topology.nodes {
+            collect_offenders(child, name.clone(), &["foo", "bar"], &mut offenders);
+        }
+        assert!(
+            offenders.is_empty(),
+            "no descendant should retain a shared function; found: {:?}",
+            offenders
+        );
+
+        // Three nested topologies must be present at root level
+        // (`make_nodes` flattens the WalkDir result, so all three are
+        // direct children of root regardless of fs depth).
+        let child_namespaces: std::collections::BTreeSet<&String> =
+            topology.nodes.keys().collect();
+        assert!(
+            child_namespaces.contains(&s!("child-a")),
+            "child-a missing; root.nodes = {:?}",
+            child_namespaces
+        );
+        assert!(
+            child_namespaces.contains(&s!("child-b")),
+            "child-b missing; root.nodes = {:?}",
+            child_namespaces
+        );
+        assert!(
+            child_namespaces.contains(&s!("child-c")),
+            "child-c missing; root.nodes = {:?}",
+            child_namespaces
+        );
+
+        // child-c's own non-shared `local` function survives the
+        // promotion pass with shared = false.
+        let child_c = topology
+            .nodes
+            .get("child-c")
+            .expect("child-c node present");
+        let local = child_c
+            .functions
+            .get("local")
+            .expect("child-c retains its own `local` function after promotion");
+        assert!(
+            !local.shared,
+            "child-c's own `local` function must have shared = false"
+        );
+
+        // Roles invariant: every non-`provided` role referenced by
+        // `root.functions` must live in `root.roles` after promotion.
+        // Before the role-recompute fix, root.roles was computed from
+        // root.functions *before* promotion (so it didn't contain
+        // shared functions' roles), which would cause `deployer::create`
+        // to skip provisioning those roles and AWS to reject the
+        // shared Lambdas' creation. This assertion is the regression
+        // guard.
+        for (fname, f) in &topology.functions {
+            if f.runtime.role.kind.to_str() != "provided" {
+                assert!(
+                    topology.roles.contains_key(&f.runtime.role.name),
+                    "role `{}` for function `{}` must be present in root.roles \
+                     after promotion; root.roles keys = {:?}",
+                    &f.runtime.role.name,
+                    fname,
+                    topology.roles.keys().collect::<Vec<_>>()
+                );
+            }
+        }
+        // Symmetrically, no descendant's `roles` should reference a
+        // function it no longer owns. For each descendant, every entry
+        // in its `roles` map must correspond to either (a) one of its
+        // own functions, or (b) its own state-machine flow's role.
+        // Stale entries — most commonly the shared functions' roles
+        // left behind when their functions were promoted away — would
+        // cause each node deploy to redundantly create-or-update
+        // roles already provisioned by root.
+        fn assert_roles_match_functions(t: &Topology, path: &str) {
+            for (rname, _) in &t.roles {
+                let owned_by_function = t
+                    .functions
+                    .values()
+                    .any(|f| &f.runtime.role.name == rname);
+                let owned_by_flow = t
+                    .flow
+                    .as_ref()
+                    .map(|fl| &fl.role.name == rname)
+                    .unwrap_or(false);
+                assert!(
+                    owned_by_function || owned_by_flow,
+                    "stale role `{}` in {}/roles after promotion (no matching \
+                     function or flow); functions = {:?}",
+                    rname,
+                    path,
+                    t.functions.keys().collect::<Vec<_>>()
+                );
+            }
+            for (name, child) in &t.nodes {
+                assert_roles_match_functions(child, &format!("{path}/{name}"));
+            }
+        }
+        for (name, child) in &topology.nodes {
+            assert_roles_match_functions(child, name);
+        }
+
+        // Resolver-cache backwards-compat: a Function serialized to
+        // JSON with the `shared` key stripped (legacy entry) must
+        // deserialize cleanly with shared = false. Validates the
+        // `#[serde(default)]` attribute on Function.shared.
+        let foo = topology.functions.get("foo").unwrap();
+        let mut value = serde_json::to_value(foo).expect("Function serializes to JSON");
+        let removed = value
+            .as_object_mut()
+            .expect("Function JSON is an object")
+            .remove("shared");
+        assert!(
+            removed.is_some(),
+            "freshly serialized Function must include `shared` key"
+        );
+        let legacy: Function = serde_json::from_value(value)
+            .expect("Function JSON missing `shared` must deserialize via #[serde(default)]");
+        assert!(
+            !legacy.shared,
+            "missing `shared` field must default to false on legacy resolver-cache JSON"
+        );
+    }
+
+    /// `intern_functions` reads the topology spec's `functions:` block.
+    /// For inline declarations whose `uri:` starts with `.` (relative),
+    /// the produced `Function` must carry `shared = true`. For inline
+    /// declarations without a `uri:`, or with one that doesn't start
+    /// with `.`, the function is treated as a normal in-tree function
+    /// and must carry `shared = false`.
+    ///
+    /// Exercised end-to-end via the fixture above (each child's
+    /// `foo`/`bar` is shared, `child-c/local` is not). This stub
+    /// directly inspects the fixture's outputs without a separate
+    /// fixture for clarity / fewer dependencies on `TopologySpec`
+    /// internals (`TopologySpec` does not implement `Default`, so a
+    /// pure unit test would have to manually populate every field).
+    #[test]
+    fn intern_marks_relative_uri_imports_as_shared() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: parent\nkind: step-function\n");
+        write_shared_function(&root.join("shared/x"), "x", "shared_x");
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  x:\n    uri: ../shared/x\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+        let promoted = topology
+            .functions
+            .get("x")
+            .expect("relatively-imported function must end up at root");
+        assert!(
+            promoted.shared,
+            "relative-uri import must have shared = true after promotion"
+        );
     }
 }

@@ -36,6 +36,16 @@ pub struct Function {
     pub build: Build,
     pub test: HashMap<String, TestSpec>,
     pub targets: Vec<Target>,
+
+    /// True iff this `Function` was declared in a topology's `functions:`
+    /// block via a relative `uri:` (i.e. shared between topologies).
+    /// Used by `composer::topology::promote_shared_to_root` to dedupe
+    /// shared imports up to the root of a recursive composition.
+    /// `#[serde(default)]` keeps existing resolver-cache JSON entries
+    /// (which lack this field) backward-compatible: they deserialize
+    /// with `shared = false`, equivalent to "not shared".
+    #[serde(default)]
+    pub shared: bool,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -135,6 +145,7 @@ impl Function {
             test: make_test(fspec.test),
             runtime: runtime,
             targets: targets,
+            shared: false,
         }
     }
 
@@ -174,6 +185,7 @@ impl Function {
             test: make_test(fspec.test.clone()),
             runtime: runtime,
             targets: targets,
+            shared: false,
         }
     }
 
