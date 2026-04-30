@@ -847,10 +847,39 @@ fn count_shared_recursive(t: &Topology) -> usize {
     here + descendants
 }
 
+/// Recompute every topology's `roles` map from its post-promotion
+/// `functions` map and `flow`. Necessary because `make()` calls
+/// `make_roles` *before* `promote_shared_to_root` runs, leaving the
+/// `roles` maps stale relative to the new `functions` shape:
+///
+/// - Root's `roles` is missing the shared functions' roles (root
+///   didn't own those functions when `make_roles` ran).
+/// - Each descendant's `roles` still contains the shared functions'
+///   roles (the descendant owned them at make-time but no longer
+///   does after promotion).
+///
+/// Without this pass, a fresh `tc create` deploys root first
+/// (`deployer::create` calls `role::create_or_update` then
+/// `function::create`); since root's IAM roles for the shared
+/// functions don't exist yet, AWS rejects the Lambda creation calls
+/// (the Lambdas reference role ARNs that haven't been provisioned).
+///
+/// Recomputation is fully equivalent to the original computation:
+/// `make_roles` is a pure function of `(functions, flow)`, both of
+/// which are stable through promotion (only the *placement* of
+/// functions changes, never their `runtime.role` payload).
+fn recompute_roles_recursive(t: &mut Topology) {
+    for child in t.nodes.values_mut() {
+        recompute_roles_recursive(child);
+    }
+    t.roles = make_roles(&t.functions, &0, &0, &0, &t.flow);
+}
+
 /// Single-owner invariant: after this call, every `Function` with
-/// `shared = true` lives in `root.functions`, and every descendant's
+/// `shared = true` lives in `root.functions`, every descendant's
 /// `functions` map contains only that descendant's own (non-shared)
-/// functions.
+/// functions, and every topology's `roles` map matches its current
+/// `functions` map.
 ///
 /// Conflict semantics (`or_insert` via `Entry::Vacant`):
 ///
@@ -878,6 +907,11 @@ pub(crate) fn promote_shared_to_root(root: &mut Topology) {
     for (name, f) in promoted {
         root.functions.entry(name).or_insert(f);
     }
+    // `make_roles` ran inside each `make()` call before this pass, so
+    // every topology's `roles` map is now stale w.r.t. its current
+    // `functions` map. Restore the invariant before downstream
+    // consumers (deployer, builder, etc.) read the topology.
+    recompute_roles_recursive(root);
     if before > 0 {
         tracing::info!(
             "Promoted {} unique shared function(s) from {} node(s) to root (eliminated {} duplicate import(s))",
@@ -1166,6 +1200,62 @@ mod tests {
             !local.shared,
             "child-c's own `local` function must have shared = false"
         );
+
+        // Roles invariant: every non-`provided` role referenced by
+        // `root.functions` must live in `root.roles` after promotion.
+        // Before the role-recompute fix, root.roles was computed from
+        // root.functions *before* promotion (so it didn't contain
+        // shared functions' roles), which would cause `deployer::create`
+        // to skip provisioning those roles and AWS to reject the
+        // shared Lambdas' creation. This assertion is the regression
+        // guard.
+        for (fname, f) in &topology.functions {
+            if f.runtime.role.kind.to_str() != "provided" {
+                assert!(
+                    topology.roles.contains_key(&f.runtime.role.name),
+                    "role `{}` for function `{}` must be present in root.roles \
+                     after promotion; root.roles keys = {:?}",
+                    &f.runtime.role.name,
+                    fname,
+                    topology.roles.keys().collect::<Vec<_>>()
+                );
+            }
+        }
+        // Symmetrically, no descendant's `roles` should reference a
+        // function it no longer owns. For each descendant, every entry
+        // in its `roles` map must correspond to either (a) one of its
+        // own functions, or (b) its own state-machine flow's role.
+        // Stale entries — most commonly the shared functions' roles
+        // left behind when their functions were promoted away — would
+        // cause each node deploy to redundantly create-or-update
+        // roles already provisioned by root.
+        fn assert_roles_match_functions(t: &Topology, path: &str) {
+            for (rname, _) in &t.roles {
+                let owned_by_function = t
+                    .functions
+                    .values()
+                    .any(|f| &f.runtime.role.name == rname);
+                let owned_by_flow = t
+                    .flow
+                    .as_ref()
+                    .map(|fl| &fl.role.name == rname)
+                    .unwrap_or(false);
+                assert!(
+                    owned_by_function || owned_by_flow,
+                    "stale role `{}` in {}/roles after promotion (no matching \
+                     function or flow); functions = {:?}",
+                    rname,
+                    path,
+                    t.functions.keys().collect::<Vec<_>>()
+                );
+            }
+            for (name, child) in &t.nodes {
+                assert_roles_match_functions(child, &format!("{path}/{name}"));
+            }
+        }
+        for (name, child) in &topology.nodes {
+            assert_roles_match_functions(child, name);
+        }
 
         // Resolver-cache backwards-compat: a Function serialized to
         // JSON with the `shared` key stripped (legacy entry) must
