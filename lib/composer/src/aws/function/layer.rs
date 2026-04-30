@@ -1,4 +1,5 @@
 use super::Function;
+use crate::index;
 use compiler::spec::function::{
     FunctionSpec,
     LangRuntime,
@@ -15,21 +16,23 @@ pub fn guess_runtime(dir: &str) -> LangRuntime {
 }
 
 pub fn layerable(dir: &str) -> bool {
-    if u::path_exists(dir, "function.yml") || u::path_exists(dir, "function.json") {
-        u::path_exists(dir, "Gemfile")
-            || u::path_exists(dir, "pyproject.toml")
-            || u::path_exists(dir, "requirements.txt")
-            || u::path_exists(dir, "Cargo.toml")
+    let idx = index::get();
+    if idx.path_exists(dir, "function.yml") || idx.path_exists(dir, "function.json") {
+        idx.path_exists(dir, "Gemfile")
+            || idx.path_exists(dir, "pyproject.toml")
+            || idx.path_exists(dir, "requirements.txt")
+            || idx.path_exists(dir, "Cargo.toml")
     } else {
         false
     }
 }
 
 pub fn discoverable(dir: &str) -> bool {
-    u::path_exists(dir, "Gemfile")
-        || u::path_exists(dir, "pyproject.toml")
-        || u::path_exists(dir, "requirements.txt")
-        || u::path_exists(dir, "Cargo.toml")
+    let idx = index::get();
+    idx.path_exists(dir, "Gemfile")
+        || idx.path_exists(dir, "pyproject.toml")
+        || idx.path_exists(dir, "requirements.txt")
+        || idx.path_exists(dir, "Cargo.toml")
 }
 
 fn files_modified() -> Vec<String> {
@@ -143,7 +146,8 @@ pub fn discover() -> Vec<Layer> {
     {
         let p = entry.path().to_string_lossy();
         if discoverable(&p) {
-            if u::path_exists(&p, "function.yml") || u::path_exists(&p, "function.json") {
+            let idx = index::get();
+            if idx.path_exists(&p, "function.yml") || idx.path_exists(&p, "function.json") {
                 let layer = function_layer(&p);
                 layers.push(layer);
                 let mut external = external_layers(&p);

@@ -29,6 +29,7 @@ use crate::{
         schedule,
         template,
     },
+    index,
     sequence,
     tag,
 };
@@ -105,22 +106,16 @@ fn as_infra_dir(given_infra_dir: Option<String>, topology_dir: &str) -> String {
 }
 
 pub fn is_topology_dir(dir: &str) -> bool {
+    let idx = index::get();
+    if idx.covers(Path::new(dir)) {
+        return idx.is_topology_dir(dir);
+    }
     let topology_file = format!("{}/topology.yml", dir);
     Path::new(&topology_file).exists()
 }
 
 fn parent_topology_file(dir: &str) -> Option<String> {
-    let paths = vec![
-        u::absolutize(dir, "../topology.yml"),
-        u::absolutize(dir, "../../topology.yml"),
-        u::absolutize(dir, "../../../topology.yml"),
-        u::absolutize(dir, "../../../../topology.yml"),
-        s!("../topology.yml"),
-        s!("../../topology.yml"),
-        s!("../../../topology.yml"),
-        s!("../../../../topology.yml"),
-    ];
-    u::any_path(paths)
+    u::find_parent_file(dir, "topology.yml")
 }
 
 pub fn is_root_topology(spec_file: &str) -> bool {
@@ -232,6 +227,10 @@ fn intern_functions(
 }
 
 fn is_inferred_dir(dir: &str) -> bool {
+    let idx = index::get();
+    if idx.covers(Path::new(dir)) {
+        return idx.is_inferred_dir(dir);
+    }
     u::path_exists(dir, "handler.rb")
         || u::path_exists(dir, "handler.py")
         || u::path_exists(dir, "main.go")
@@ -245,16 +244,32 @@ fn is_inferred_dir(dir: &str) -> bool {
 fn function_dirs(dir: &str) -> Vec<String> {
     let known_roots = vec!["resolvers", "functions", "transformers"];
     let mut xs: Vec<String> = vec![];
-    let dirs = u::list_dirs(dir);
+    let idx = index::get();
+    let covered = idx.covers(Path::new(dir));
+    let dirs = if covered {
+        idx.list_subdirs(dir)
+    } else {
+        u::list_dirs(dir)
+    };
     for root in known_roots {
-        let mut xm = u::list_dirs(root);
+        let mut xm = if covered {
+            idx.list_subdirs(root)
+        } else {
+            u::list_dirs(root)
+        };
         xs.append(&mut xm)
     }
     for d in dirs {
-        if path_exists(&d, "function.yml")
-            || path_exists(&d, "function.json")
-            || is_inferred_dir(&d)
-        {
+        let has_marker = if covered {
+            idx.path_exists(&d, "function.yml")
+                || idx.path_exists(&d, "function.json")
+                || idx.is_inferred_dir(&d)
+        } else {
+            path_exists(&d, "function.yml")
+                || path_exists(&d, "function.json")
+                || is_inferred_dir(&d)
+        };
+        if has_marker {
             xs.push(d.to_string())
         }
     }
@@ -365,6 +380,28 @@ fn should_ignore_node(
     ignore_nodes: Option<Vec<String>>,
     topology_dir: &str,
 ) -> bool {
+    // `root_dir` arrives in whatever form the caller had on hand
+    // (typically `kit::pwd()`, which on macOS keeps `/tmp/...` rather
+    // than canonicalising to `/private/tmp/...`). `topology_dir` is
+    // produced by `nested_topology_dirs` via the `composer::index`,
+    // which keys on canonical paths. Without normalising both sides,
+    // the prefix-equality / `contains` / `starts_with` checks below
+    // silently miss any pwd whose path crosses a symlink — `tc`'s
+    // `nodes.ignore` and `.tcignore` rules would then fail to match.
+    // Falls back to the input strings if canonicalisation fails (e.g.
+    // path doesn't exist on disk).
+    let canonicalize = |s: &str| -> String {
+        Path::new(s)
+            .canonicalize()
+            .ok()
+            .and_then(|p| p.to_str().map(|s| s.to_string()))
+            .unwrap_or_else(|| s.to_string())
+    };
+    let root_dir_owned = canonicalize(root_dir);
+    let topology_dir_owned = canonicalize(topology_dir);
+    let root_dir = root_dir_owned.as_str();
+    let topology_dir = topology_dir_owned.as_str();
+
     let ignore_file = u::path_of(root_dir, ".tcignore");
     if u::file_exists(&ignore_file) {
         let globs = u::readlines(&ignore_file);
@@ -420,15 +457,39 @@ fn discover_leaf_nodes(
 
 // builders
 
-fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
-    let ignore_nodes = &spec.nodes.ignore;
-    let candidates: Vec<String> = WalkDir::new(root_dir)
+/// Find every nested topology dir under `root_dir`. Uses the
+/// process-wide [`index`] when `root_dir` is covered by it (the common
+/// case during `tc compose` / `tc diff`); falls back to a fresh
+/// `WalkDir` for callers that target a dir outside the indexed pwd.
+fn nested_topology_dirs(root_dir: &str) -> Vec<String> {
+    let idx = index::get();
+    if idx.covers(Path::new(root_dir)) {
+        let canonical_root = match Path::new(root_dir).canonicalize() {
+            Ok(p) => p,
+            Err(_) => return vec![],
+        };
+        let mut out: Vec<String> = idx
+            .descendants_of(&canonical_root)
+            .filter(|(p, info)| *p != canonical_root.as_path() && info.has("topology.yml"))
+            .filter_map(|(p, _)| p.to_str().map(|s| s.to_string()))
+            .collect();
+        out.sort();
+        return out;
+    }
+    WalkDir::new(root_dir)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_dir())
         .map(|e| e.path().to_string_lossy().to_string())
         .filter(|p| is_topology_dir(p) && root_dir != p)
+        .collect()
+}
+
+fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
+    let ignore_nodes = &spec.nodes.ignore;
+    let candidates: Vec<String> = nested_topology_dirs(root_dir)
+        .into_iter()
         .filter(|p| !should_ignore_node(root_dir, ignore_nodes.clone(), p))
         .collect();
     if candidates.is_empty() {
@@ -859,5 +920,50 @@ impl Topology {
         let data = kit::read_bytes(path);
         let t: Topology = bincode::deserialize(&data).unwrap();
         t
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::os::unix::fs::symlink;
+    use tempfile::TempDir;
+
+    /// Regression: when pwd reaches the repo root via a symlink (e.g.
+    /// macOS `/tmp` → `/private/tmp`), `make_nodes` was passing the
+    /// non-canonical `root_dir` to `should_ignore_node` while
+    /// `nested_topology_dirs` returned canonical paths from the
+    /// `composer::index`. The `nodes.ignore` and `.tcignore` rules
+    /// silently failed to match because the prefix-equality /
+    /// `starts_with` checks compared `/tmp/...` against
+    /// `/private/tmp/...`. `should_ignore_node` now canonicalises both
+    /// sides before comparing.
+    #[test]
+    fn should_ignore_node_matches_when_root_reached_via_symlink() {
+        let outer = TempDir::new().unwrap();
+        let real = outer.path().join("real");
+        fs::create_dir_all(real.join("ignore_me")).unwrap();
+        fs::create_dir_all(real.join("keep_me")).unwrap();
+        let canonical_real = real.canonicalize().unwrap();
+
+        let alias = outer.path().join("link");
+        symlink(&real, &alias).unwrap();
+
+        let alias_root = alias.to_str().unwrap();
+        let canonical_target = canonical_real.join("ignore_me");
+        let canonical_target_str = canonical_target.to_str().unwrap();
+        let canonical_keep = canonical_real.join("keep_me");
+        let canonical_keep_str = canonical_keep.to_str().unwrap();
+
+        let ignore = Some(vec!["ignore_me".to_string()]);
+        assert!(
+            should_ignore_node(alias_root, ignore.clone(), canonical_target_str),
+            "ignore rule should fire even though root_dir uses an aliased path"
+        );
+        assert!(
+            !should_ignore_node(alias_root, ignore, canonical_keep_str),
+            "non-matching dir should not be ignored"
+        );
     }
 }
