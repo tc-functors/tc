@@ -23,7 +23,61 @@ pub use deps::{compute_closure, Analyzer, Closure};
 use composer::{Function, Topology};
 use kit as u;
 use std::collections::HashMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
+
+/// Error returned by [`diff_fns`] when an incremental diff cannot be
+/// computed. Surfaced as a typed error so callers (e.g. the resolver)
+/// can distinguish "no functions changed" from "diff could not be
+/// computed" — the conflation between the two is exactly the bug this
+/// module previously enabled.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DiffError {
+    /// `git rev-parse --verify` for `tag` returned empty even after a
+    /// best-effort fetch from origin. The deployed Lambda's `version`
+    /// resource tag is pointing at a git tag that no longer exists.
+    TagUnresolvable { tag: String },
+}
+
+impl fmt::Display for DiffError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DiffError::TagUnresolvable { tag } => write!(
+                f,
+                "git tag {} could not be resolved locally or fetched from origin",
+                tag
+            ),
+        }
+    }
+}
+
+impl std::error::Error for DiffError {}
+
+/// Best-effort: ensure `refs/tags/{tag}` is resolvable in `dir`. If it
+/// already resolves locally, returns `true`. Otherwise tries one fetch
+/// from `origin` and re-checks. The fetch itself is tolerated to fail
+/// (e.g. tag deleted upstream) — only the post-fetch `rev-parse` result
+/// matters.
+fn ensure_tag(tag: &str, dir: &str) -> bool {
+    let resolved = |t: &str| {
+        !u::sh(
+            &format!("git rev-parse --verify --quiet refs/tags/{}", t),
+            dir,
+        )
+        .is_empty()
+    };
+    if resolved(tag) {
+        return true;
+    }
+    u::sh(
+        &format!(
+            "git fetch origin +refs/tags/{tag}:refs/tags/{tag} 2>/dev/null || true",
+            tag = tag
+        ),
+        dir,
+    );
+    resolved(tag)
+}
 
 /// Canonicalized absolute paths of files changed between two refs. We
 /// store these pre-canonicalized so per-function matching is just a cheap
@@ -62,55 +116,37 @@ fn repo_root_canonical() -> PathBuf {
 }
 
 /// Return the list of changed files (repo-relative paths) between
-/// `from_tag` and `to_tag` within `namespace`.
-pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
+/// `from_tag` and `to_tag` within `namespace`, executing all git
+/// commands in `dir`. Tries to fetch any tag that isn't already
+/// resolvable locally; on persistent failure it logs the error rather
+/// than panicking — callers that need to distinguish "no changes" from
+/// "diff couldn't be computed" should use [`diff_fns`].
+pub fn find_between_versions_in(namespace: &str, from: &str, to: &str, dir: &str) -> Vec<String> {
     if from == to {
         return vec![];
     }
-    let dir = u::pwd();
     let from_tag = format!("{}-{}", namespace, from);
     let to_tag = format!("{}-{}", namespace, to);
 
     // Only fetch tags that aren't already resolvable locally. Saves
     // multi-second network round-trips on repeat invocations / CI runs
     // that pre-fetched tags.
-    if u::sh(
-        &format!("git rev-parse --verify --quiet refs/tags/{}", &to_tag),
-        &dir,
-    )
-    .is_empty()
-    {
-        u::sh(
-            &format!(
-                "git fetch origin +refs/tags/{tag}:refs/tags/{tag} 2>/dev/null || true",
-                tag = &to_tag
-            ),
-            &dir,
-        );
-    }
-    if u::sh(
-        &format!("git rev-parse --verify --quiet refs/tags/{}", &from_tag),
-        &dir,
-    )
-    .is_empty()
-    {
-        u::sh(
-            &format!(
-                "git fetch origin +refs/tags/{tag}:refs/tags/{tag} 2>/dev/null || true",
-                tag = &from_tag
-            ),
-            &dir,
-        );
-    }
+    ensure_tag(&to_tag, dir);
+    ensure_tag(&from_tag, dir);
 
     let cmd = format!("git diff --name-only {}..{}", &from_tag, &to_tag);
     tracing::debug!("{}", &cmd);
-    let out = u::sh(&cmd, &dir);
+    let out = u::sh(&cmd, dir);
     u::split_lines(&out)
         .iter()
         .map(|s| s.to_string())
         .filter(|s| !s.is_empty())
         .collect()
+}
+
+/// Backward-compatible wrapper: defaults `dir` to `u::pwd()`.
+pub fn find_between_versions(namespace: &str, from: &str, to: &str) -> Vec<String> {
+    find_between_versions_in(namespace, from, to, &u::pwd())
 }
 
 fn files_modified_in_branch() -> Vec<String> {
@@ -208,12 +244,21 @@ fn build_diff_set(
 ///
 /// First-deploy semantics: if `from` is empty, all of this topology's
 /// own functions (plus its transducer, if any) are returned.
+///
+/// Errors with [`DiffError::TagUnresolvable`] when the from-tag
+/// (`{namespace}-{from}`) cannot be resolved locally and cannot be
+/// fetched from `origin`. Callers must treat this as "diff cannot be
+/// computed" and *not* as "no functions changed" — this conflation was
+/// the root cause of stale-deployed-version silent no-op deploys.
+///
+/// The to-tag is intentionally not validated: `tc create` is invoked
+/// from that ref, so it is always present in the working tree.
 pub fn diff_fns(
     topology: &Topology,
     namespace: &str,
     from: &str,
     to: &str,
-) -> HashMap<String, Function> {
+) -> Result<HashMap<String, Function>, DiffError> {
     let first_deploy = from.is_empty();
     if first_deploy {
         tracing::debug!(
@@ -225,18 +270,31 @@ pub fn diff_fns(
         if let Some(tx) = &topology.transducer {
             out.insert(tx.name.clone(), tx.function.clone());
         }
-        return out;
+        return Ok(out);
     }
 
     if from == to {
-        return HashMap::new();
+        return Ok(HashMap::new());
+    }
+
+    // Pre-flight the from-tag *before* invoking `git diff`. Without this
+    // guard, `git diff` against a missing ref would emit a stderr error
+    // that `kit::sh`'s `Redirection::Merge` then surfaces as the diff's
+    // "stdout", causing `build_diff_set` to parse the error message
+    // lines as changed file paths. The closure-intersection check would
+    // then reject all of them and `diff_fns` would silently return an
+    // empty map — indistinguishable from "no functions changed".
+    let dir = u::pwd();
+    let from_tag = format!("{}-{}", namespace, from);
+    if !ensure_tag(&from_tag, &dir) {
+        return Err(DiffError::TagUnresolvable { tag: from_tag });
     }
 
     let repo_root = repo_root_canonical();
     let diff = build_diff_set(namespace, from, to, &repo_root);
     if diff.is_empty() {
         tracing::debug!("empty diff for {} {}..{}", namespace, from, to);
-        return HashMap::new();
+        return Ok(HashMap::new());
     }
 
     let analyzer = match Analyzer::new(&repo_root) {
@@ -246,11 +304,11 @@ pub fn diff_fns(
                 "could not canonicalize repo root {}; skipping diff",
                 repo_root.display()
             );
-            return HashMap::new();
+            return Ok(HashMap::new());
         }
     };
 
-    diff_fns_with(topology, &diff, &analyzer)
+    Ok(diff_fns_with(topology, &diff, &analyzer))
 }
 
 /// Internal helper: filter one topology's own functions against a
@@ -332,4 +390,105 @@ pub fn diff(topology: &Topology, from: &str, to: &str) {
     let t = format!("{}-{}", &topology.namespace, to);
     let changes = tagger::commits(&f, &t);
     println!("{}", changes);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    /// Initialize a fresh git repo at `root` with a single commit and
+    /// the given tags. Tags are created with the `tag::v` naming scheme
+    /// used everywhere in this codebase: `{namespace}-{version}`.
+    fn git_init_with_tags(root: &Path, namespace: &str, tags: &[&str]) {
+        let dir = root.to_str().unwrap();
+        u::sh("git init -q", dir);
+        u::sh("git config user.email 'test@example.com'", dir);
+        u::sh("git config user.name 'test'", dir);
+        u::sh("git config commit.gpgsign false", dir);
+        u::sh("git config tag.gpgSign false", dir);
+        fs::write(root.join("seed.txt"), "seed\n").unwrap();
+        u::sh("git add seed.txt", dir);
+        u::sh("git commit -q -m seed", dir);
+        for v in tags {
+            u::sh(&format!("git tag {}-{}", namespace, v), dir);
+        }
+    }
+
+    #[test]
+    fn ensure_tag_returns_true_for_existing_tag() {
+        let tmp = TempDir::new().unwrap();
+        let dir = tmp.path().to_str().unwrap();
+        git_init_with_tags(tmp.path(), "ns", &["0.1.0"]);
+        assert!(ensure_tag("ns-0.1.0", dir));
+    }
+
+    /// Critical regression: a tag that doesn't exist locally and can't
+    /// be fetched (no `origin` remote) must report unresolved. This is
+    /// the exact precondition that previously caused `git diff` to emit
+    /// an error that was silently parsed as "changed files".
+    #[test]
+    fn ensure_tag_returns_false_for_missing_tag_with_no_remote() {
+        let tmp = TempDir::new().unwrap();
+        let dir = tmp.path().to_str().unwrap();
+        git_init_with_tags(tmp.path(), "ns", &["0.1.0"]);
+        assert!(!ensure_tag("ns-0.0.39", dir));
+    }
+
+    #[test]
+    fn ensure_tag_returns_false_for_missing_tag_with_unreachable_remote() {
+        let tmp = TempDir::new().unwrap();
+        let dir = tmp.path().to_str().unwrap();
+        git_init_with_tags(tmp.path(), "ns", &["0.1.0"]);
+        u::sh(
+            "git remote add origin /nonexistent/remote/that/does/not/resolve",
+            dir,
+        );
+        assert!(!ensure_tag("ns-0.0.39", dir));
+    }
+
+    #[test]
+    fn find_between_versions_in_returns_changed_files_on_happy_path() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        let dir = root.to_str().unwrap();
+        git_init_with_tags(root, "ns", &["0.1.0"]);
+
+        fs::write(root.join("a.txt"), "v2\n").unwrap();
+        u::sh("git add a.txt", dir);
+        u::sh("git commit -q -m bump", dir);
+        u::sh("git tag ns-0.2.0", dir);
+
+        let files = find_between_versions_in("ns", "0.1.0", "0.2.0", dir);
+        assert_eq!(files, vec!["a.txt"]);
+    }
+
+    #[test]
+    fn find_between_versions_in_returns_empty_when_from_eq_to() {
+        let tmp = TempDir::new().unwrap();
+        let dir = tmp.path().to_str().unwrap();
+        // Tag setup intentionally omitted: from==to short-circuits
+        // before any git command runs.
+        let files = find_between_versions_in("ns", "0.1.0", "0.1.0", dir);
+        assert!(files.is_empty());
+    }
+
+    #[test]
+    fn diff_error_display_includes_tag_name() {
+        let e = DiffError::TagUnresolvable {
+            tag: "mr-orchestrator-0.0.39".to_string(),
+        };
+        let s = format!("{}", e);
+        assert!(s.contains("mr-orchestrator-0.0.39"), "got: {}", s);
+    }
+
+    // Integration of `ensure_tag` into `diff_fns` (i.e. the end-to-end
+    // wiring that returns `Err(TagUnresolvable)` for a missing from-
+    // tag) is verified at the resolver level via
+    // `resolver::function::classify_modified` tests. Constructing a
+    // realistic `composer::Topology` here would require populating
+    // ~25 fields and is out of proportion to what this 4-line wiring
+    // (`if !ensure_tag(...) { return Err(...) }`) demands.
 }

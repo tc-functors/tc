@@ -402,7 +402,14 @@ pub async fn dry_run_create(profile: Option<String>, sandbox: Option<String>, re
     let msg = composer::count_of(&ct);
     println!("C: {}", msg);
     println!("Resolving topology {} ...", &ct.namespace);
-    let rt = resolver::resolve(&auth, &sandbox, &ct, false, true).await;
+    // Pass `force=false` so the resolver exercises `find_modified`,
+    // matching what an actual deploy would do. This is what makes a
+    // dry-run useful for catching bugs like stale-tag silent no-ops:
+    // the dry-run output now reflects the incremental decision (which
+    // functions would actually be uploaded), not "every function in
+    // the topology". Operators wanting the old behavior can set
+    // `TC_FORCE_DEPLOY=1`.
+    let rt = resolver::resolve(&auth, &sandbox, &ct, false, false).await;
     let msg = composer::count_of(&rt);
     println!("R: {}", msg);
     create_topology_dry_run(&auth, &rt).await;
