@@ -218,7 +218,8 @@ fn intern_functions(
                 None => root_namespace,
             };
 
-            let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            let mut function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            function.shared = true;
             fns.insert(s!(name), function);
         } else {
             let dir = format!("{}/{}", root_dir, name);
