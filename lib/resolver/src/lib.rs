@@ -2,14 +2,34 @@ pub mod cache;
 mod context;
 mod event;
 pub mod function;
+mod memo;
 mod pool;
 mod topology;
 use compiler::Entity;
 use composer::Topology;
 pub use context::Context;
 pub use function::Root;
+use futures::stream::{
+    self,
+    StreamExt,
+};
 use provider::Auth;
 use std::collections::HashMap;
+
+/// Bound on concurrent in-flight `topology::resolve` / `resolve_runtime`
+/// awaits. Default 16 keeps us well under per-account API throttle
+/// limits (Lambda ListLayerVersions: 15 TPS, APIGateway GetApis: 10 TPS,
+/// SSM GetParameter: 40 TPS) once the per-call caches in
+/// [`function`] are in place — those caches collapse the duplicated
+/// lookups long before they hit the wire. Override via
+/// `TC_RESOLVE_CONCURRENCY=N` for repos that outgrow the default.
+pub(crate) fn resolve_concurrency() -> usize {
+    std::env::var("TC_RESOLVE_CONCURRENCY")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(16)
+}
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
     match s {
@@ -61,15 +81,21 @@ pub async fn resolve(
         Some(t) => t,
         None => {
             let mut root = topology::resolve(topology, topology, auth, sandbox, force).await;
-            let nodes = &topology.nodes;
-            let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
-            // FIXME: recurse
-            for (name, node) in nodes {
-                let node_t = topology::resolve(&root, &node, auth, sandbox, force).await;
-                resolved_nodes.insert(name.to_string(), node_t);
-            }
+
+            let concurrency = resolve_concurrency();
+            let nodes = topology.nodes.clone();
+            let root_ref = &root;
+
+            let resolved_nodes: HashMap<String, Topology> = stream::iter(nodes.into_iter())
+                .map(|(name, node)| async move {
+                    let node_t = topology::resolve(root_ref, &node, auth, sandbox, force).await;
+                    (name, node_t)
+                })
+                .buffer_unordered(concurrency)
+                .collect()
+                .await;
+
             root.nodes = resolved_nodes;
-            // write it to cache
             let key = cache::make_key(&root.namespace, &auth.name, sandbox);
             cache::write_topology(&key, &root).await;
             root
@@ -85,13 +111,19 @@ async fn resolve_entity(
     diff: bool,
 ) -> Topology {
     let mut root = topology::resolve_entity(topology, auth, sandbox, entity, diff).await;
-    let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
-    let nodes = &topology.nodes;
 
-    for (name, node) in nodes {
-        let node_t = topology::resolve_entity(&node, auth, sandbox, entity, diff).await;
-        resolved_nodes.insert(name.to_string(), node_t);
-    }
+    let concurrency = resolve_concurrency();
+    let nodes = topology.nodes.clone();
+
+    let resolved_nodes: HashMap<String, Topology> = stream::iter(nodes.into_iter())
+        .map(|(name, node)| async move {
+            let node_t = topology::resolve_entity(&node, auth, sandbox, entity, diff).await;
+            (name, node_t)
+        })
+        .buffer_unordered(concurrency)
+        .collect()
+        .await;
+
     root.nodes = resolved_nodes;
     root
 }
@@ -105,14 +137,20 @@ async fn resolve_entity_component(
 ) -> Topology {
     let mut root =
         topology::resolve_entity_component(topology, auth, sandbox, entity, component).await;
-    let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
-    let nodes = &topology.nodes;
 
-    for (name, node) in nodes {
-        let node_t =
-            topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
-        resolved_nodes.insert(name.to_string(), node_t);
-    }
+    let concurrency = resolve_concurrency();
+    let nodes = topology.nodes.clone();
+
+    let resolved_nodes: HashMap<String, Topology> = stream::iter(nodes.into_iter())
+        .map(|(name, node)| async move {
+            let node_t =
+                topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
+            (name, node_t)
+        })
+        .buffer_unordered(concurrency)
+        .collect()
+        .await;
+
     root.nodes = resolved_nodes;
     root
 }
