@@ -902,22 +902,24 @@ impl Topology {
             let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
             tracing::debug!("Infra dir: {}  {}", &spec.name, &infra_dir);
 
-            let nodes;
-            if recursive {
+            let nodes = if recursive {
                 tracing::debug!("Recursive {}", dir);
-                nodes = make_nodes(dir, &spec);
+                make_nodes(dir, &spec)
             } else {
-                nodes = HashMap::new();
-            }
-            if skip_functions {
+                HashMap::new()
+            };
+            let mut topology = if skip_functions {
                 tracing::debug!("Skipping functions {}", dir);
-                let functions = HashMap::new();
-                make(dir, dir, &spec, functions, nodes)
+                make(dir, dir, &spec, HashMap::new(), nodes)
             } else {
                 tracing::debug!("Discovering functions {}", dir);
                 let functions = discover_functions(dir, &infra_dir, &spec);
                 make(dir, dir, &spec, functions, nodes)
+            };
+            if recursive {
+                promote_shared_to_root(&mut topology);
             }
+            topology
         } else if is_relative_topology_dir(dir) {
             make_relative(dir)
         } else if is_standalone_function_dir(dir) {
