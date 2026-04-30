@@ -977,3 +977,250 @@ impl Topology {
         t
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    /// Minimum function.yml that satisfies `FunctionSpec::new` →
+    /// `Runtime::new` → `make_lambda` without panicking. `fqn:` is set
+    /// so all importers compute the same final fqn (`shared_foo_<sandbox>`)
+    /// regardless of which node's namespace was passed in to `make_fqn`,
+    /// which mirrors how shared functions are written in real codebases.
+    fn write_shared_function(dir: &std::path::Path, name: &str, fqn: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(
+            dir.join("function.yml"),
+            format!(
+                "name: {name}\n\
+                 fqn: {fqn}\n\
+                 runtime:\n  \
+                   lang: python3.10\n  \
+                   handler: handler.handler\n  \
+                   package_type: zip\n  \
+                   layers: []\n\
+                 build:\n  \
+                   kind: Code\n  \
+                   command: echo build\n"
+            ),
+        )
+        .unwrap();
+        // Satisfy `is_inferred_dir`. Empty file is fine — we never invoke
+        // the build pipeline, just discover/intern.
+        fs::write(dir.join("handler.py"), "").unwrap();
+    }
+
+    fn write_topology_yml(dir: &std::path::Path, contents: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(dir.join("topology.yml"), contents).unwrap();
+    }
+
+    /// Reproduces the consumer-extraction shape that triggered the
+    /// shared-function rebuild bug: a parent topology with multiple
+    /// nested topologies, each declaring the same shared function via
+    /// a relative `uri:` in its `functions:` block. After recursive
+    /// composition, the shared function must appear exactly once at
+    /// root and zero times in any descendant.
+    ///
+    /// Also covers, in the same fixture:
+    /// - A second shared function imported by a subset of nodes
+    ///   (verifies the post-pass dedupes per-key, not per-node).
+    /// - A descendant with its own non-shared function declared inline
+    ///   (verifies that owned functions are preserved in place).
+    /// - JSON round-trip of a promoted Function with the `shared` field
+    ///   stripped (regression guard for the `#[serde(default)]`
+    ///   attribute on `Function.shared`).
+    #[test]
+    fn compose_recursive_dedups_shared_functions_to_root() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+
+        // Parent topology — no inline functions, no flow.
+        write_topology_yml(
+            root,
+            "name: shared-dedup-parent\nkind: step-function\n",
+        );
+
+        // Two shared function source dirs, both imported by descendants.
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+        write_shared_function(&root.join("shared/bar"), "bar", "shared_bar");
+
+        // Three child topologies, all importing `foo`. Only `c` also
+        // imports `bar`. `c` additionally declares its own non-shared
+        // function `local`, to confirm the post-pass leaves owned
+        // entries in place.
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("b"),
+            "name: child-b\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("c"),
+            "name: child-c\n\
+             kind: step-function\n\
+             functions:\n  \
+               foo:\n    uri: ../shared/foo\n  \
+               bar:\n    uri: ../shared/bar\n",
+        );
+        // c's own non-shared function lives at c/local/. Discovered, not interned.
+        write_shared_function(&root.join("c/local"), "local", "child_c_local");
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+
+        // Root owns both shared functions exactly once each.
+        assert!(
+            topology.functions.contains_key("foo"),
+            "shared function `foo` must be promoted to root.functions; root has {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            topology.functions.contains_key("bar"),
+            "shared function `bar` must be promoted to root.functions; root has {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            topology
+                .functions
+                .get("foo")
+                .map(|f| f.shared)
+                .unwrap_or(false),
+            "promoted `foo` retains shared = true"
+        );
+        assert!(
+            topology
+                .functions
+                .get("bar")
+                .map(|f| f.shared)
+                .unwrap_or(false),
+            "promoted `bar` retains shared = true"
+        );
+
+        // No descendant retains either shared function (search the full
+        // descendant tree, not just direct children, since
+        // `discover_leaf_nodes` mirrors each node into its own
+        // `node.nodes` map and a future refactor could turn this into
+        // genuine multi-level nesting).
+        fn collect_offenders(
+            t: &Topology,
+            path: String,
+            keys: &[&'static str],
+            out: &mut Vec<(String, &'static str)>,
+        ) {
+            for k in keys {
+                if t.functions.contains_key(*k) {
+                    out.push((path.clone(), *k));
+                }
+            }
+            for (name, child) in &t.nodes {
+                collect_offenders(child, format!("{path}/{name}"), keys, out);
+            }
+        }
+
+        let mut offenders: Vec<(String, &'static str)> = Vec::new();
+        for (name, child) in &topology.nodes {
+            collect_offenders(child, name.clone(), &["foo", "bar"], &mut offenders);
+        }
+        assert!(
+            offenders.is_empty(),
+            "no descendant should retain a shared function; found: {:?}",
+            offenders
+        );
+
+        // Three nested topologies must be present at root level
+        // (`make_nodes` flattens the WalkDir result, so all three are
+        // direct children of root regardless of fs depth).
+        let child_namespaces: std::collections::BTreeSet<&String> =
+            topology.nodes.keys().collect();
+        assert!(
+            child_namespaces.contains(&s!("child-a")),
+            "child-a missing; root.nodes = {:?}",
+            child_namespaces
+        );
+        assert!(
+            child_namespaces.contains(&s!("child-b")),
+            "child-b missing; root.nodes = {:?}",
+            child_namespaces
+        );
+        assert!(
+            child_namespaces.contains(&s!("child-c")),
+            "child-c missing; root.nodes = {:?}",
+            child_namespaces
+        );
+
+        // child-c's own non-shared `local` function survives the
+        // promotion pass with shared = false.
+        let child_c = topology
+            .nodes
+            .get("child-c")
+            .expect("child-c node present");
+        let local = child_c
+            .functions
+            .get("local")
+            .expect("child-c retains its own `local` function after promotion");
+        assert!(
+            !local.shared,
+            "child-c's own `local` function must have shared = false"
+        );
+
+        // Resolver-cache backwards-compat: a Function serialized to
+        // JSON with the `shared` key stripped (legacy entry) must
+        // deserialize cleanly with shared = false. Validates the
+        // `#[serde(default)]` attribute on Function.shared.
+        let foo = topology.functions.get("foo").unwrap();
+        let mut value = serde_json::to_value(foo).expect("Function serializes to JSON");
+        let removed = value
+            .as_object_mut()
+            .expect("Function JSON is an object")
+            .remove("shared");
+        assert!(
+            removed.is_some(),
+            "freshly serialized Function must include `shared` key"
+        );
+        let legacy: Function = serde_json::from_value(value)
+            .expect("Function JSON missing `shared` must deserialize via #[serde(default)]");
+        assert!(
+            !legacy.shared,
+            "missing `shared` field must default to false on legacy resolver-cache JSON"
+        );
+    }
+
+    /// `intern_functions` reads the topology spec's `functions:` block.
+    /// For inline declarations whose `uri:` starts with `.` (relative),
+    /// the produced `Function` must carry `shared = true`. For inline
+    /// declarations without a `uri:`, or with one that doesn't start
+    /// with `.`, the function is treated as a normal in-tree function
+    /// and must carry `shared = false`.
+    ///
+    /// Exercised end-to-end via the fixture above (each child's
+    /// `foo`/`bar` is shared, `child-c/local` is not). This stub
+    /// directly inspects the fixture's outputs without a separate
+    /// fixture for clarity / fewer dependencies on `TopologySpec`
+    /// internals (`TopologySpec` does not implement `Default`, so a
+    /// pure unit test would have to manually populate every field).
+    #[test]
+    fn intern_marks_relative_uri_imports_as_shared() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: parent\nkind: step-function\n");
+        write_shared_function(&root.join("shared/x"), "x", "shared_x");
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  x:\n    uri: ../shared/x\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+        let promoted = topology
+            .functions
+            .get("x")
+            .expect("relatively-imported function must end up at root");
+        assert!(
+            promoted.shared,
+            "relative-uri import must have shared = true after promotion"
+        );
+    }
+}
