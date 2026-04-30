@@ -775,6 +775,119 @@ pub fn is_compilable(dir: &str) -> bool {
     is_standalone_function_dir(dir) || is_relative_topology_dir(dir) || is_topology_dir(dir)
 }
 
+// Shared-function deduplication: single-owner promotion to root.
+//
+// `intern_functions` materialises a fresh `Function` into the importing
+// node's `functions` map for every entry whose `uri:` is a relative path
+// (see `is_shared`). Without dedup, when N nested topologies import the
+// same shared function, the resulting recursive `Topology` contains N
+// copies — one per importer — and `tc create` ends up running N full
+// Docker builds + N redundant `lambda:CreateFunction`/`UpdateFunctionCode`
+// calls against the same `fqn`.
+//
+// The fix is a post-pass over the recursively-built root topology that
+// drains every `Function` with `shared = true` out of each descendant's
+// `functions` map and inserts it into `root.functions`, deduped by
+// HashMap key. After this pass:
+//
+//   - `root.functions` contains every shared function exactly once
+//   - each descendant's `functions` map contains only its own (non-shared)
+//     entries
+//   - downstream callers (`deployer::create`, `builder::build_recursive`,
+//     `function::resolve`, etc.) deploy/build/resolve each shared
+//     function exactly once.
+//
+// The promotion runs only when `Topology::new` is constructing a
+// recursive root topology. Non-recursive callers (single-leaf modes
+// like `tc compose` on one node, `current_function`, `is_compilable`)
+// don't have descendants to dedupe against.
+
+/// Recursively drains all `shared` functions out of `node` and its
+/// descendants into `target`. Conflicts (same map key) resolve to
+/// `target`'s existing entry; identical-fqn collisions are silent,
+/// fqn-mismatched collisions emit `tracing::debug!` so latent name
+/// collisions don't go unnoticed. Each topology's own (non-shared)
+/// functions are preserved in place.
+fn drain_shared_into(target: &mut HashMap<String, Function>, node: &mut Topology) {
+    for child in node.nodes.values_mut() {
+        drain_shared_into(target, child);
+    }
+    let drained = std::mem::take(&mut node.functions);
+    let mut owned: HashMap<String, Function> = HashMap::with_capacity(drained.len());
+    for (name, f) in drained {
+        if f.shared {
+            match target.entry(name.clone()) {
+                std::collections::hash_map::Entry::Occupied(existing) => {
+                    if existing.get().fqn != f.fqn {
+                        tracing::debug!(
+                            "shared-function key collision: {} ({} vs {}) — keeping existing",
+                            name,
+                            existing.get().fqn,
+                            f.fqn
+                        );
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(slot) => {
+                    slot.insert(f);
+                }
+            }
+        } else {
+            owned.insert(name, f);
+        }
+    }
+    node.functions = owned;
+}
+
+/// Counts every `shared = true` function in `t` and all its descendants.
+/// Used purely for the post-promotion log line that reports how many
+/// duplicate imports were eliminated.
+fn count_shared_recursive(t: &Topology) -> usize {
+    let here = t.functions.values().filter(|f| f.shared).count();
+    let descendants: usize = t.nodes.values().map(count_shared_recursive).sum();
+    here + descendants
+}
+
+/// Single-owner invariant: after this call, every `Function` with
+/// `shared = true` lives in `root.functions`, and every descendant's
+/// `functions` map contains only that descendant's own (non-shared)
+/// functions.
+///
+/// Conflict semantics (`or_insert` via `Entry::Vacant`):
+///
+/// - Two siblings declare the same shared function → first one wins,
+///   others dropped. Equivalent because they all reference the same
+///   source dir.
+/// - Root *and* a node declare the same shared function → root's entry
+///   wins. Same source dir, equivalent.
+/// - Two functions with the same map key but different `fqn`s → first
+///   one wins, others dropped. Doesn't happen in practice (keys are
+///   local function names and shared functions have a single canonical
+///   `function.yml`); emits `tracing::debug!` if it ever does.
+pub(crate) fn promote_shared_to_root(root: &mut Topology) {
+    let nodes_count = root.nodes.len();
+    let before: usize = root
+        .nodes
+        .values()
+        .map(count_shared_recursive)
+        .sum();
+    let mut promoted: HashMap<String, Function> = HashMap::new();
+    for child in root.nodes.values_mut() {
+        drain_shared_into(&mut promoted, child);
+    }
+    let promoted_count = promoted.len();
+    for (name, f) in promoted {
+        root.functions.entry(name).or_insert(f);
+    }
+    if before > 0 {
+        tracing::info!(
+            "Promoted {} unique shared function(s) from {} node(s) to root (eliminated {} duplicate import(s))",
+            promoted_count,
+            nodes_count,
+            before.saturating_sub(promoted_count),
+        );
+    }
+}
+
 impl Topology {
     pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
         if is_singular_function_dir() {
