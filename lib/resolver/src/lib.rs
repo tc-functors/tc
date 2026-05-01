@@ -2,14 +2,55 @@ pub mod cache;
 mod context;
 mod event;
 pub mod function;
+mod memo;
 mod pool;
 mod topology;
 use compiler::Entity;
 use composer::Topology;
 pub use context::Context;
 pub use function::Root;
+use futures::stream::{
+    self,
+    StreamExt,
+};
 use provider::Auth;
 use std::collections::HashMap;
+
+/// Per-loop-level cap on concurrent in-flight resolve futures.
+/// Override via `TC_RESOLVE_CONCURRENCY=N`; values are clamped to
+/// `[1, MAX_RESOLVE_CONCURRENCY]`.
+///
+/// **The cap applies independently at two loop levels** — the node
+/// loop in [`resolve`] / [`resolve_entity`] / [`resolve_entity_component`]
+/// and the function loop in [`function::resolve`] — so worst-case
+/// in-flight resolutions is `cap × cap`. With the default of 16
+/// that's 256 concurrent `resolve_runtime` calls. Higher caps offer
+/// diminishing returns (the AWS SDK's default HTTP connection pool is
+/// in the same ballpark) and risk tripping per-account throttles.
+///
+/// Per-call caches in [`function`] collapse `STS GetCallerIdentity`,
+/// `Lambda ListLayerVersions`, and `APIGateway GetApis` long before
+/// the wire, so the metric this cap is sized against is the
+/// per-function-unique work — primarily `SSM GetParameter` (40 TPS
+/// account limit). 256 in-flight × ~150 ms/call ≈ 1.7k requests/s,
+/// comfortably within SSM's burst budget.
+pub(crate) fn resolve_concurrency() -> usize {
+    std::env::var("TC_RESOLVE_CONCURRENCY")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .filter(|n| *n > 0)
+        .map(|n| n.min(MAX_RESOLVE_CONCURRENCY))
+        .unwrap_or(16)
+}
+
+/// Hard upper bound on `TC_RESOLVE_CONCURRENCY`. Picked to stay
+/// within the AWS SDK's typical HTTP connection-pool size and to
+/// keep `cap × cap` worst-case in-flight futures bounded
+/// (`64 × 64 = 4096`). Hitting this ceiling on a real topology
+/// suggests either a configuration problem or a topology far beyond
+/// what the resolver has been tested against — file an issue rather
+/// than raising the cap.
+pub(crate) const MAX_RESOLVE_CONCURRENCY: usize = 64;
 
 pub fn maybe_sandbox(s: Option<String>) -> String {
     match s {
@@ -61,15 +102,21 @@ pub async fn resolve(
         Some(t) => t,
         None => {
             let mut root = topology::resolve(topology, topology, auth, sandbox, force).await;
-            let nodes = &topology.nodes;
-            let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
-            // FIXME: recurse
-            for (name, node) in nodes {
-                let node_t = topology::resolve(&root, &node, auth, sandbox, force).await;
-                resolved_nodes.insert(name.to_string(), node_t);
-            }
+
+            let concurrency = resolve_concurrency();
+            let nodes = topology.nodes.clone();
+            let root_ref = &root;
+
+            let resolved_nodes: HashMap<String, Topology> = stream::iter(nodes.into_iter())
+                .map(|(name, node)| async move {
+                    let node_t = topology::resolve(root_ref, &node, auth, sandbox, force).await;
+                    (name, node_t)
+                })
+                .buffer_unordered(concurrency)
+                .collect()
+                .await;
+
             root.nodes = resolved_nodes;
-            // write it to cache
             let key = cache::make_key(&root.namespace, &auth.name, sandbox);
             cache::write_topology(&key, &root).await;
             root
@@ -85,13 +132,19 @@ async fn resolve_entity(
     diff: bool,
 ) -> Topology {
     let mut root = topology::resolve_entity(topology, auth, sandbox, entity, diff).await;
-    let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
-    let nodes = &topology.nodes;
 
-    for (name, node) in nodes {
-        let node_t = topology::resolve_entity(&node, auth, sandbox, entity, diff).await;
-        resolved_nodes.insert(name.to_string(), node_t);
-    }
+    let concurrency = resolve_concurrency();
+    let nodes = topology.nodes.clone();
+
+    let resolved_nodes: HashMap<String, Topology> = stream::iter(nodes.into_iter())
+        .map(|(name, node)| async move {
+            let node_t = topology::resolve_entity(&node, auth, sandbox, entity, diff).await;
+            (name, node_t)
+        })
+        .buffer_unordered(concurrency)
+        .collect()
+        .await;
+
     root.nodes = resolved_nodes;
     root
 }
@@ -105,14 +158,20 @@ async fn resolve_entity_component(
 ) -> Topology {
     let mut root =
         topology::resolve_entity_component(topology, auth, sandbox, entity, component).await;
-    let mut resolved_nodes: HashMap<String, Topology> = HashMap::new();
-    let nodes = &topology.nodes;
 
-    for (name, node) in nodes {
-        let node_t =
-            topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
-        resolved_nodes.insert(name.to_string(), node_t);
-    }
+    let concurrency = resolve_concurrency();
+    let nodes = topology.nodes.clone();
+
+    let resolved_nodes: HashMap<String, Topology> = stream::iter(nodes.into_iter())
+        .map(|(name, node)| async move {
+            let node_t =
+                topology::resolve_entity_component(&node, auth, sandbox, entity, component).await;
+            (name, node_t)
+        })
+        .buffer_unordered(concurrency)
+        .collect()
+        .await;
+
     root.nodes = resolved_nodes;
     root
 }

@@ -1,8 +1,11 @@
 use super::Context;
+use crate::memo::AsyncMemo;
 use compiler::{
     TopologyKind,
-    spec::InfraSpec,
-    spec::function::FileSystemKind,
+    spec::{
+        InfraSpec,
+        function::FileSystemKind,
+    },
 };
 use composer::{
     Function,
@@ -12,6 +15,10 @@ use composer::{
         FileSystem,
         Network,
     },
+};
+use futures::stream::{
+    self,
+    StreamExt,
 };
 use kit as u;
 use kit::*;
@@ -38,6 +45,22 @@ pub async fn lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
     }
 }
 
+// Process-wide cache of API gateway URL lookups, keyed by
+// `(auth.name, fqn)`. A given `(account, region, fqn)` maps to a
+// stable api id within a process; `(auth.name, fqn)` is a sufficient
+// surrogate because every call site reaches gateway through the same
+// `Auth::name` (the configured profile).
+static URL_CACHE: AsyncMemo<(String, String), HashMap<String, String>> = AsyncMemo::new();
+
+async fn cached_lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
+    URL_CACHE
+        .get_or_init((auth.name.clone(), fqn.to_string()), || async {
+            tracing::debug!("Looking up api-id for {} (cache miss)", fqn);
+            lookup_urls(auth, fqn).await
+        })
+        .await
+}
+
 fn render_config(s: &str, config: &HashMap<String, String>) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
     for (k, v) in config {
@@ -55,7 +78,15 @@ async fn resolve_vars(
     tracing::debug!("Resolving env vars");
     let client = aws::ssm::make_client(auth).await;
 
-    let config = lookup_urls(auth, fqn).await;
+    // Only do the API gateway lookup if at least one env value would
+    // actually consume it. For topologies with no routes / templated
+    // env values this avoids an entire AWS round-trip per function.
+    let needs_urls = resolve_urls && environment.values().any(|v| v.starts_with("{{"));
+    let config = if needs_urls {
+        cached_lookup_urls(auth, fqn).await
+    } else {
+        HashMap::new()
+    };
 
     let mut h: HashMap<String, String> = HashMap::new();
     for (k, v) in environment.iter() {
@@ -75,18 +106,49 @@ async fn resolve_vars(
     h
 }
 
+// One assumed `Auth` per `(profile, role)` for the lifetime of the
+// process. `auth.assume` does an `STS GetCallerIdentity`; previously
+// this fired once per `resolve_layer` call. Keep `Option<String>` in
+// the key so `None` and `Some("")` stay distinct — `Auth::assume`
+// short-circuits on `None` (returns `self.clone()` with no AWS call)
+// but actually assumes for `Some("")`.
+static LAYER_AUTH: AsyncMemo<(Option<String>, Option<String>), Auth> = AsyncMemo::new();
+
 async fn make_layer_auth(ctx: &Context) -> Auth {
     let Context { auth, config, .. } = ctx;
     let profile = config.aws.lambda.layers_profile.clone();
-    auth.assume(profile.clone(), config.role_to_assume(profile))
+    let role = config.role_to_assume(profile.clone());
+    let key = (profile.clone(), role.clone());
+    LAYER_AUTH
+        .get_or_init(key, || async {
+            tracing::debug!("Assuming layer-auth profile (cache miss)");
+            auth.assume(profile, role).await
+        })
         .await
 }
 
+// Cache resolved layer versions keyed by `(profile, role, layer_name)`.
+// `(profile, role)` uniquely identify the assumed layer-auth (and
+// therefore the account+region the layer ARN resolves against), so a
+// recursive resolve over topologies with mixed `layers_profile`
+// configurations still distinguishes a same-named layer in two
+// different accounts. Bare `layer_name` would collide.
+static LAYER_VERSION_CACHE: AsyncMemo<(Option<String>, Option<String>, String), String> =
+    AsyncMemo::new();
+
 async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
-    tracing::debug!("Resolving layer {}", layer_name);
-    let auth = make_layer_auth(ctx).await;
-    let client = aws::layer::make_client(&auth).await;
-    aws::layer::find_version(client, layer_name).await.unwrap()
+    let Context { config, .. } = ctx;
+    let profile = config.aws.lambda.layers_profile.clone();
+    let role = config.role_to_assume(profile.clone());
+    let key = (profile, role, layer_name.to_string());
+    LAYER_VERSION_CACHE
+        .get_or_init(key, || async {
+            tracing::debug!("Resolving layer {} (cache miss)", layer_name);
+            let auth = make_layer_auth(ctx).await;
+            let client = aws::layer::make_client(&auth).await;
+            aws::layer::find_version(client, layer_name).await.unwrap()
+        })
+        .await
 }
 
 async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
@@ -436,29 +498,34 @@ pub async fn resolve(
     topology: &Topology,
     force: bool,
 ) -> HashMap<String, Function> {
-    let fns = match std::env::var("TC_FORCE_DEPLOY") {
-        Ok(_) => &topology.functions,
+    let fns: HashMap<String, Function> = match std::env::var("TC_FORCE_DEPLOY") {
+        Ok(_) => topology.functions.clone(),
         Err(_) => {
             if force {
-                &topology.functions
+                topology.functions.clone()
             } else {
-                &find_modified(&ctx.auth, root, topology).await
+                find_modified(&ctx.auth, root, topology).await
             }
         }
     };
 
     let resolve_urls = topology.routes.len() > 0;
+    let concurrency = crate::resolve_concurrency();
+    let fqn = root.fqn.clone();
 
-    let mut functions: HashMap<String, Function> = HashMap::new();
-
-    for (name, f) in fns {
-        let mut fu: Function = f.clone();
-        tracing::debug!("Resolving function {}", &name);
-
-        fu.runtime = resolve_runtime(ctx, &f.runtime, &root.fqn, resolve_urls).await;
-        functions.insert(name.to_string(), fu.clone());
-    }
-    functions
+    stream::iter(fns.into_iter())
+        .map(|(name, f)| {
+            let fqn = fqn.clone();
+            async move {
+                tracing::debug!("Resolving function {}", &name);
+                let mut fu = f.clone();
+                fu.runtime = resolve_runtime(ctx, &f.runtime, &fqn, resolve_urls).await;
+                (name, fu)
+            }
+        })
+        .buffer_unordered(concurrency)
+        .collect()
+        .await
 }
 
 pub async fn resolve_given(
