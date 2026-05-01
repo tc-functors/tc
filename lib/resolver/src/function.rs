@@ -127,15 +127,22 @@ async fn make_layer_auth(ctx: &Context) -> Auth {
         .await
 }
 
-// Cache by layer name. Layer ARNs include account+region; with
-// `LAYER_AUTH` cached as a singleton per `(profile, role)`, the
-// layer-resolution context is fixed for any run, so the layer name is
-// a sufficient key.
-static LAYER_VERSION_CACHE: AsyncMemo<String, String> = AsyncMemo::new();
+// Cache resolved layer versions keyed by `(profile, role, layer_name)`.
+// `(profile, role)` uniquely identify the assumed layer-auth (and
+// therefore the account+region the layer ARN resolves against), so a
+// recursive resolve over topologies with mixed `layers_profile`
+// configurations still distinguishes a same-named layer in two
+// different accounts. Bare `layer_name` would collide.
+static LAYER_VERSION_CACHE: AsyncMemo<(Option<String>, Option<String>, String), String> =
+    AsyncMemo::new();
 
 async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
+    let Context { config, .. } = ctx;
+    let profile = config.aws.lambda.layers_profile.clone();
+    let role = config.role_to_assume(profile.clone());
+    let key = (profile, role, layer_name.to_string());
     LAYER_VERSION_CACHE
-        .get_or_init(layer_name.to_string(), || async {
+        .get_or_init(key, || async {
             tracing::debug!("Resolving layer {} (cache miss)", layer_name);
             let auth = make_layer_auth(ctx).await;
             let client = aws::layer::make_client(&auth).await;

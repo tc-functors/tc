@@ -4,24 +4,34 @@
 //! account/region/name don't change between the first call and process
 //! exit. The resolver hot path issues hundreds of identical lookups
 //! (same API name, same Lambda layer, same assumed role) inside a
-//! sequential loop. Wrapping each lookup in [`AsyncMemo::get_or_init`]
-//! collapses all duplicates onto one in-flight future and returns the
-//! cached value to subsequent callers — including concurrent ones once
-//! the parallelization changes land.
+//! parallel `buffer_unordered` loop. Wrapping each lookup in
+//! [`AsyncMemo::get_or_init`] collapses concurrent duplicates onto one
+//! in-flight future and returns the cached value to subsequent
+//! callers.
 //!
 //! ## Single-flight semantics
 //!
 //! Multiple concurrent callers passing the same key all `.await` on
-//! one shared [`tokio::sync::OnceCell`] and observe one execution of
-//! `f`. Failures inside `f` propagate to all callers; if `f` panics
-//! the cell is left empty and the next caller retries — matching the
-//! resolver's existing panic-on-AWS-error behaviour.
+//! one shared [`tokio::sync::OnceCell`]: only the first to acquire the
+//! cell's init permit runs `f`; the rest wait. On success, every
+//! waiter resumes with the cached value.
+//!
+//! On panic, [`tokio::sync::OnceCell::get_or_init`] propagates the
+//! panic only to the permit-holding caller and leaves the cell
+//! uninitialized; concurrent waiters wake up, re-race for the permit,
+//! and one of them re-runs `f`. For the resolver this means a
+//! transient AWS error during a hot lookup can produce up to N panics
+//! across N concurrent waiters before the cell resolves (or the
+//! process dies). Caller code MUST NOT add its own retry loop on top.
 //!
 //! ## Lifetime
 //!
 //! Built lazily on first `get_or_init` and cached for the rest of the
-//! process. No invalidation; matches the existing pattern used by
-//! `kit::current_semver` and `composer::index::CACHE`.
+//! process. No invalidation. Same `OnceLock<Mutex<HashMap<K, _>>>`
+//! shape as the synchronous cache in `kit::current_semver`, extended
+//! with [`tokio::sync::OnceCell`] inside each entry to provide
+//! single-flight semantics that the synchronous version lacks (kit's
+//! version is last-writer-wins under racing inserts).
 
 use std::{
     collections::HashMap,
@@ -104,6 +114,46 @@ mod tests {
         assert_eq!(memo.get_or_init("a", || async { 1 }).await, 1);
         assert_eq!(memo.get_or_init("b", || async { 2 }).await, 2);
         assert_eq!(memo.get_or_init("a", || async { 99 }).await, 1);
+    }
+
+    /// Regression: the LAYER_AUTH cache key uses `Option<String>` so
+    /// `None` and `Some("")` stay distinct — matching the asymmetric
+    /// behaviour of `Auth::assume(None, _)` (short-circuit, no AWS
+    /// call) vs `Auth::assume(Some(""), _)` (calls Auth::new). An
+    /// earlier draft used `unwrap_or_default()` on the way into the
+    /// key, collapsing both onto `""` and risking a wrong-cached-Auth
+    /// return. This test pins the option-keyed case so a future
+    /// well-meaning simplification breaks loudly here.
+    #[tokio::test]
+    async fn distinguishes_none_from_empty_string_in_option_key() {
+        let memo: AsyncMemo<(Option<String>, Option<String>), &'static str> = AsyncMemo::new();
+        assert_eq!(
+            memo.get_or_init((None, None), || async { "none-none" })
+                .await,
+            "none-none"
+        );
+        assert_eq!(
+            memo.get_or_init((Some(String::new()), None), || async { "empty-none" })
+                .await,
+            "empty-none"
+        );
+        assert_eq!(
+            memo.get_or_init((None, Some(String::new())), || async { "none-empty" })
+                .await,
+            "none-empty"
+        );
+        assert_eq!(
+            memo.get_or_init((Some(String::new()), Some(String::new())), || async {
+                "empty-empty"
+            })
+            .await,
+            "empty-empty"
+        );
+        assert_eq!(
+            memo.get_or_init((None, None), || async { "should-be-cached" })
+                .await,
+            "none-none"
+        );
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
