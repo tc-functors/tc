@@ -38,6 +38,9 @@ enum Cmd {
     /// Trigger release via CI
     #[clap(name = "ci-release", hide = true)]
     Release(ReleaseArgs),
+    /// Trigger release via CI
+    #[clap(name = "ci-upgrade", hide = true)]
+    UpgradeCi(UpgradeArgs),
     /// List or clear resolver cache
     #[clap(hide = true)]
     Cache(CacheArgs),
@@ -938,6 +941,15 @@ async fn ci_release(args: ReleaseArgs) {
     }
 }
 
+async fn ci_upgrade(args: UpgradeArgs) {
+    let UpgradeArgs {
+        version,
+        ..
+    } = args;
+
+    remote::upgrade_version(version).await;
+}
+
 async fn cache(args: CacheArgs) {
     let CacheArgs {
         clear,
@@ -1139,6 +1151,7 @@ async fn run() {
         Cmd::Scaffold(args) => scaffold(args).await,
         Cmd::Release(args) => ci_release(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,
+        Cmd::UpgradeCi(args) => ci_upgrade(args).await,
     }
 }
 
