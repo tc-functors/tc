@@ -827,6 +827,52 @@ pub struct Config {
     pub package_type: String,
 }
 
+/// Update only the IAM role on an existing lambda. Idempotent: if the
+/// configured role already matches `role_arn`, the call is skipped so
+/// we don't burn a needless `update_function_configuration` API call.
+/// Returns `Ok(false)` if the function doesn't exist (caller should
+/// rely on the create path to set the role) or already had the right
+/// role; `Ok(true)` if we issued an update.
+pub async fn update_role(client: &Client, name: &str, role_arn: &str) -> Result<bool, Error> {
+    let current = find_config(client, name).await;
+    let needs_update = match current {
+        Some(cfg) => cfg.role != role_arn,
+        None => return Ok(false),
+    };
+    if !needs_update {
+        return Ok(false);
+    }
+    // Wait for any in-flight update to complete before issuing ours —
+    // AWS returns ResourceConflictException otherwise.
+    let mut state = LastUpdateStatus::InProgress;
+    let mut tries = 0;
+    while state == LastUpdateStatus::InProgress && tries < 60 {
+        let r = client
+            .get_function_configuration()
+            .function_name(s!(name))
+            .send()
+            .await;
+        match r {
+            Ok(res) => state = res.last_update_status.unwrap_or(LastUpdateStatus::Successful),
+            Err(_) => break,
+        }
+        if state == LastUpdateStatus::InProgress {
+            sleep(800);
+        }
+        tries += 1;
+    }
+    let res = client
+        .update_function_configuration()
+        .function_name(s!(name))
+        .role(s!(role_arn))
+        .send()
+        .await;
+    match res {
+        Ok(_) => Ok(true),
+        Err(e) => Err(e.into()),
+    }
+}
+
 pub async fn find_config(client: &Client, name: &str) -> Option<Config> {
     let r = client
         .get_function_configuration()

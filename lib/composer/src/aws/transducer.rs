@@ -199,6 +199,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         fs: None,
         infra_spec: HashMap::new(),
         cluster: String::from(""),
+        aux_files: vec![],
     };
 
     Function {
