@@ -1,0 +1,12 @@
+name: example-chat
+
+channels:
+  my-channel:
+    handler: default
+
+pages:
+  app:
+    dir: .
+    dist: dist
+    skip_deploy: true
+    config_template: index.html
