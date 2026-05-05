@@ -22,3 +22,10 @@ pages:
     kind: SPA
     dir: pwa
     dist: .
+
+  headers:
+    kind: SPA
+    dir: headers
+    dist: .
+    functions:
+      response: ./headers/response.js

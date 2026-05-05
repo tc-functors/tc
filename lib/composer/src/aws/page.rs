@@ -2,6 +2,7 @@ use super::template;
 use compiler::spec::{
     PageSpec,
     TopologySpec,
+    page::Functions,
 };
 use configurator::Config;
 use kit as u;
@@ -130,7 +131,7 @@ pub struct Page {
     pub skip_deploy: bool,
 }
 
-fn make_functions(kind: &str) -> HashMap<String, String> {
+fn make_functions(kind: &str, fns: Option<Functions>) -> HashMap<String, String> {
     let mut xs: HashMap<String, String> = HashMap::new();
     let redirect = format!(
         r#"
@@ -149,6 +150,20 @@ function handler(event) {{
             xs.insert(s!("redirect"), redirect);
         }
         _ => (),
+    }
+
+    if let Some(f) = fns {
+        if let Some(req) = f.request {
+            let path = u::absolutize(&u::pwd(), &req);
+            let js = u::slurp(&path);
+            xs.insert("request".to_string(), js);
+        }
+        if let Some(res) = f.response {
+            let path = u::absolutize(&u::pwd(), &res);
+            let js = u::slurp(&path);
+            xs.insert("response".to_string(), js);
+        }
+
     }
     xs
 }
@@ -273,7 +288,7 @@ fn make(
         default_root_object: s!("index.html"),
         domains: find_domains(&ps.domains, infra),
         config_template: ps.config_template.clone(),
-        functions: make_functions(kind),
+        functions: make_functions(kind, ps.functions.clone()),
         skip_deploy: should_skip,
     }
 }
