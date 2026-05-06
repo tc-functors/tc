@@ -253,10 +253,10 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 }
 
-fn as_function_arns(auth: &Auth, functions: &HashMap<String, String>) -> Vec<String> {
-    let mut xs: Vec<String> = vec![];
+fn as_function_arns(auth: &Auth, functions: &HashMap<String, String>) -> HashMap<String, String> {
+    let mut xs: HashMap<String, String> = HashMap::new();
     for (name, _) in functions {
-        xs.push(auth.cloudfront_function_arn(&name));
+        xs.insert(name.to_string(), auth.cloudfront_function_arn(&name));
     }
     xs
 }

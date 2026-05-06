@@ -5,6 +5,12 @@ use serde_derive::{
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Functions {
+    pub request: Option<String>,
+    pub response: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PageSpec {
     pub dist: Option<String>,
     pub kind: Option<String>,
@@ -15,4 +21,5 @@ pub struct PageSpec {
     pub bucket: Option<String>,
     pub skip_deploy: Option<bool>,
     pub config_template: Option<String>,
+    pub functions: Option<Functions>,
 }

@@ -145,23 +145,28 @@ fn make_lambda_function_associations() -> LambdaFunctionAssociations {
     it.quantity(0).build().unwrap()
 }
 
-fn make_function_assoc(arn: &str) -> FunctionAssociation {
+fn make_function_assoc(kind: &str, arn: &str) -> FunctionAssociation {
     let it = FunctionAssociationBuilder::default();
+    let event_type = match kind {
+        "request" | "redirect" => EventType::ViewerRequest,
+        "response" => EventType::ViewerResponse,
+        _ => EventType::ViewerRequest
+    };
     it.function_arn(arn)
-        .event_type(EventType::ViewerRequest)
+        .event_type(event_type)
         .build()
         .unwrap()
 }
 
-fn make_function_associations(functions: Vec<String>) -> FunctionAssociations {
+fn make_function_associations(functions: HashMap<String, String>) -> FunctionAssociations {
     let it = FunctionAssociationsBuilder::default();
     let len = functions.len().try_into().unwrap();
     if len == 0 {
         it.quantity(0).build().unwrap()
     } else {
         let mut assocs: Vec<FunctionAssociation> = vec![];
-        for arn in functions {
-            assocs.push(make_function_assoc(&arn));
+        for (kind, arn) in functions {
+            assocs.push(make_function_assoc(&kind, &arn));
         }
         it.quantity(len).set_items(Some(assocs)).build().unwrap()
     }
@@ -170,7 +175,7 @@ fn make_function_associations(functions: Vec<String>) -> FunctionAssociations {
 fn make_default_cache_behavior(
     origin_id: &str,
     cache_policy_id: &str,
-    functions: Vec<String>,
+    functions: HashMap<String, String>,
 ) -> DefaultCacheBehavior {
     let allowed_methods = make_allowed_methods();
     let lambda_function_assocs = make_lambda_function_associations();
@@ -252,7 +257,7 @@ pub fn make_dist_config(
     cert_arn: Option<String>,
     oac_id: &str,
     cache_policy_id: &str,
-    functions: Vec<String>,
+    functions: HashMap<String, String>,
 ) -> DistributionConfig {
     let it = DistributionConfigBuilder::default();
     let origins = make_origins(origin_domain, origin_paths, oac_id);
