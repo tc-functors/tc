@@ -885,7 +885,7 @@ fn recompute_roles_recursive(t: &mut Topology) {
 
 /// Drain all `shared` functions from descendants into `root.functions`
 /// (first-wins on key collision) and recompute roles at every level.
-pub(crate) fn promote_shared_to_root(root: &mut Topology) {
+fn promote_shared_to_root(root: &mut Topology) {
     let mut promoted: HashMap<String, Function> = HashMap::new();
     let mut duplicates = 0usize;
     for child in root.nodes.values_mut() {
@@ -1213,6 +1213,19 @@ mod tests {
         for (name, child) in &topology.nodes {
             assert_roles_match_functions(child, name);
         }
+    }
+
+    #[test]
+    fn shared_field_defaults_to_false_on_legacy_json() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: serde-test\nkind: step-function\n");
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
 
         let foo = topology.functions.get("foo").unwrap();
         let mut value = serde_json::to_value(foo).expect("Function serializes to JSON");
