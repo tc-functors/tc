@@ -67,26 +67,6 @@ pub struct Runtime {
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
     pub cluster: String,
-    /// Absolute paths of files outside `f.dir` whose contents are baked
-    /// into the function's deployed configuration: role JSON, vars JSON,
-    /// inherited parent `roles/function.json`, etc. Used by the differ
-    /// to widen the per-function closure beyond the source-code closure.
-    /// A change to any of these files marks the function dirty even when
-    /// no source code changed.
-    ///
-    /// Conventional paths (`{infra_dir}/roles/{name}.json`,
-    /// `{infra_dir}/vars/{name}.json`) are always present, even when the
-    /// file doesn't currently exist on disk, so deletions (visible in
-    /// `git diff` as removed paths) still flip the function dirty.
-    /// Explicit overrides (`r.role_file`, `r.vars_file`) are present
-    /// only when they were actually used by the composer.
-    ///
-    /// Populated by `collect_aux_files` during compose. Defaults to an
-    /// empty `Vec` so resolver-cached topologies pre-dating this field
-    /// continue to deserialize cleanly (they degrade to today's
-    /// behavior for that one cache hit; the next compose repopulates).
-    #[serde(default)]
-    pub aux_files: Vec<String>,
 }
 
 fn find_git_sha(dir: &str) -> String {
@@ -527,7 +507,13 @@ fn lookup_infraspec_default(infra_dir: &str, function_name: &str) -> HashMap<Str
 /// currently uses that pattern. If support is needed later, enumerate
 /// the per-profile variants here — the differ side requires no
 /// changes; just lengthen this list.
-fn collect_aux_files(
+///
+/// Exposed to the parent `function` module so that `Function::new`
+/// (which lives one layer up) can attach the result to the `Function`
+/// itself rather than to `Runtime` — the paths are source-tree
+/// metadata for the differ, not anything the deployed Lambda runtime
+/// consumes.
+pub(super) fn collect_aux_files(
     infra_dir: &str,
     fspec: &FunctionSpec,
     rspec: Option<&RuntimeSpec>,
@@ -573,7 +559,6 @@ fn make_default(
 ) -> Runtime {
     let lang = infer_lang(dir);
     let role = Role::default(Entity::Function);
-    let aux_files = collect_aux_files(infra_dir, fspec, None, &role);
     let infra_spec = lookup_infraspec_default(infra_dir, &fspec.name);
     let default_infra_spec = infra_spec.get("default").unwrap();
 
@@ -615,7 +600,6 @@ fn make_default(
         fs: None,
         infra_spec: infra_spec,
         cluster: String::from(""),
-        aux_files: aux_files,
     }
 }
 
@@ -640,7 +624,6 @@ fn make_lambda(
     let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
-    let aux_files = collect_aux_files(infra_dir, fspec, Some(r), &role);
 
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
@@ -683,7 +666,6 @@ fn make_lambda(
         fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
         infra_spec: infra_spec,
         cluster: String::from(""),
-        aux_files: aux_files,
     }
 }
 
@@ -706,7 +688,6 @@ fn make_fargate(
         rspec.uri.clone(),
     );
     let role = lookup_role(&infra_dir, &rspec, namespace, fqn, &fspec.name);
-    let aux_files = collect_aux_files(infra_dir, fspec, Some(rspec), &role);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
     let default_infra_spec = infra_spec.get("default").unwrap();
 
@@ -753,7 +734,6 @@ fn make_fargate(
         fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
         infra_spec: infra_spec,
         cluster: cluster.to_string(),
-        aux_files: aux_files,
     }
 }
 

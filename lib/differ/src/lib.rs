@@ -366,15 +366,14 @@ fn diff_fns_with(
     for (name, f) in &topology.functions {
         // Aux files (role JSONs, vars JSONs, inherited parent role)
         // live outside f.dir and the source-code closure walker can't
-        // reach them. The composer enumerates them on `Runtime` so the
-        // differ can widen the per-function closure here. A change to
-        // any of these files marks the function dirty even when no
+        // reach them. The composer enumerates them on `Function` so
+        // the differ can widen the per-function closure here. A change
+        // to any of these files marks the function dirty even when no
         // source code changed; the existing deploy path
         // (`lambda::create_or_update`) then writes the full config —
         // role attachment, env block, memory, timeout — using the
         // freshly composed Runtime values.
         let aux: Vec<PathBuf> = f
-            .runtime
             .aux_files
             .iter()
             .map(PathBuf::from)
@@ -558,8 +557,7 @@ mod tests {
                                 "policy_arn": ""
                             }},
                             "infra_spec": {{}},
-                            "cluster": "",
-                            "aux_files": {aux_json}
+                            "cluster": ""
                         }},
                         "build": {{
                             "dir": "{fn_dir}",
@@ -574,7 +572,8 @@ mod tests {
                             "environment": {{}}
                         }},
                         "test": {{}},
-                        "targets": []
+                        "targets": [],
+                        "aux_files": {aux_json}
                     }}
                 }},
                 "all_functions": {{}},
