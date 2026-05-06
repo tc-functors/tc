@@ -385,8 +385,9 @@ mod tests {
 
     #[test]
     fn closure_follows_deep_nested_symlink() {
-        // Mimics the techno-core pattern: each function has a handler
-        // subdir which contains a symlink to ../../../shared_lib.
+        // Common in real-world layouts: each function has a handler
+        // subdir which contains a symlink to a sibling shared_lib at
+        // a higher level in the tree.
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkfile(root, "shared_lib/utils/a.rb", "");
