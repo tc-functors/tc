@@ -131,7 +131,7 @@ pub struct Page {
     pub skip_deploy: bool,
 }
 
-fn make_functions(_kind: &str, fns: Option<Functions>) -> HashMap<String, String> {
+fn make_functions(kind: &str, fns: Option<Functions>) -> HashMap<String, String> {
     let mut xs: HashMap<String, String> = HashMap::new();
     let redirect = format!(
         r#"
@@ -152,7 +152,9 @@ function handler(event) {{
             let js = u::slurp(&path);
             xs.insert("request".to_string(), js);
         } else {
-            xs.insert(s!("redirect"), redirect);
+            if kind == "spa" || kind == "SPA" {
+                xs.insert(s!("redirect"), redirect);
+            }
         }
 
         if let Some(res) = f.response {
@@ -162,7 +164,9 @@ function handler(event) {{
         }
 
     } else {
-        xs.insert(s!("redirect"), redirect);
+        if kind == "spa" || kind == "SPA" {
+            xs.insert(s!("redirect"), redirect);
+        }
     }
     xs
 }
