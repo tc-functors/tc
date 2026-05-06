@@ -1,7 +1,10 @@
 use super::layer;
-use crate::aws::{
-    role::Role,
-    template,
+use crate::{
+    aws::{
+        role::Role,
+        template,
+    },
+    index,
 };
 use compiler::{
     Entity,
@@ -120,15 +123,17 @@ fn consolidate_layers(
 }
 
 pub fn infer_lang(dir: &str) -> LangRuntime {
-    if u::path_exists(dir, "handler.py") || u::path_exists(dir, "pyproject.toml") {
+    let idx = index::get();
+    let pe = |name: &str| idx.path_exists(dir, name);
+    if pe("handler.py") || pe("pyproject.toml") {
         LangRuntime::Python310
-    } else if u::path_exists(dir, "Cargo.toml") {
+    } else if pe("Cargo.toml") {
         LangRuntime::Rust
-    } else if u::path_exists(dir, "handler.js") || u::path_exists(dir, "package.json") {
+    } else if pe("handler.js") || pe("package.json") {
         LangRuntime::Node22
-    } else if u::path_exists(dir, "Gemfile") || u::path_exists(dir, "handler.rb") {
+    } else if pe("Gemfile") || pe("handler.rb") {
         LangRuntime::Ruby32
-    } else if u::path_exists(dir, "deps.edn") {
+    } else if pe("deps.edn") {
         LangRuntime::Java21
     } else {
         LangRuntime::Python310
@@ -199,7 +204,7 @@ fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
 fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str) -> Option<String> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f = follow_path(&f);
-    if u::file_exists(&actual_f) {
+    if index::get().file_exists(&actual_f) {
         Some(actual_f)
     } else {
         match &rspec.vars_file {
@@ -210,18 +215,7 @@ fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str)
 }
 
 fn find_parent_function_role(dir: &str) -> Option<String> {
-    let paths = vec![
-        format!("{}/roles/function.json", dir),
-        u::absolutize(dir, "../roles/function.json"),
-        u::absolutize(dir, "../../roles/function.json"),
-        u::absolutize(dir, "../../../roles/function.json"),
-        u::absolutize(dir, "../../../../roles/function.json"),
-        s!("../roles/function.json"),
-        s!("../../roles/function.json"),
-        s!("../../../roles/function.json"),
-        s!("../../../../roles/function.json"),
-    ];
-    u::any_path(paths)
+    u::find_self_or_parent_file(dir, "roles/function.json")
 }
 
 fn lookup_role(
@@ -241,7 +235,7 @@ fn lookup_role(
                 None => {
 
                     let f = format!("{}/roles/{}.json", infra_dir, function_name);
-                    if u::file_exists(&f) {
+                    if index::get().file_exists(&f) {
                         Some(f)
                     } else {
                         if let Some(p) = find_parent_function_role(infra_dir) {
@@ -312,7 +306,7 @@ fn make_env_vars(
                 hmap.insert(s!("BUNDLE_CACHE_PATH"), s!("/opt/ruby/lib"));
                 hmap.insert(s!("RUBYLIB"), s!("$RUBYLIB:/opt/lib"));
 
-                if u::path_exists(dir, "Gemfile") {
+                if index::get().path_exists(dir, "Gemfile") {
                     hmap.insert(s!("AWS_LAMBDA_EXEC_WRAPPER"), s!("/opt/ruby/wrapper"));
                 }
             }
@@ -368,23 +362,13 @@ fn make_env_vars(
 }
 
 fn parent_tags_file(dir: &str) -> Option<String> {
-    let paths = vec![
-        u::absolutize(dir, "../tags.json"),
-        u::absolutize(dir, "../../tags.json"),
-        u::absolutize(dir, "../../../tags.json"),
-        u::absolutize(dir, "../../../../tags.json"),
-        s!("../tags.json"),
-        s!("../../tags.json"),
-        s!("../../../tags.json"),
-        s!("../../../../tags.json"),
-    ];
-    u::any_path(paths)
+    u::find_parent_file(dir, "tags.json")
 }
 
 fn load_tags(infra_dir: &str) -> HashMap<String, String> {
     let tags_file = format!("{}/tags.json", infra_dir);
     let parent_file = parent_tags_file(infra_dir);
-    if u::file_exists(&tags_file) {
+    if index::get().file_exists(&tags_file) {
         let data: String = u::slurp(&tags_file);
         let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
         tags
@@ -492,7 +476,7 @@ fn lookup_infraspec(
 fn lookup_infraspec_default(infra_dir: &str, function_name: &str) -> HashMap<String, InfraSpec> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f = follow_path(&f);
-    let infra_spec_file = if u::file_exists(&actual_f) {
+    let infra_spec_file = if index::get().file_exists(&actual_f) {
         Some(actual_f)
     } else {
         None

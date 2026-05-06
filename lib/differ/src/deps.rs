@@ -139,32 +139,73 @@ impl Analyzer {
         let mut files: Vec<PathBuf> = Vec::new();
         let mut manifests: Vec<PathBuf> = Vec::new();
 
-        for entry in WalkDir::new(dir)
-            .follow_links(false)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            let path = entry.path();
-            let ft = entry.file_type();
-
-            if ft.is_symlink() {
-                if let Some(target) = resolve_symlink_chain(path, &self.repo_root) {
-                    match fs::metadata(&target) {
-                        Ok(meta) if meta.is_dir() => dirs.push(target),
-                        Ok(meta) if meta.is_file() => files.push(target),
-                        Ok(_) => {}
-                        Err(e) => tracing::warn!(
-                            "symlink {} resolved to unreadable target {}: {}",
-                            path.display(),
-                            target.display(),
-                            e
-                        ),
+        let idx = composer::index::get();
+        if idx.covers(dir) {
+            // Fast path: composer already walked the topology subtree;
+            // filter its per-dir snapshot to the subtree under `dir`
+            // instead of re-walking. `dir` is always canonical here:
+            // `closure()` canonicalizes the seed via
+            // `canonicalize_within`, and subsequent queue entries come
+            // from `resolve_symlink_chain` / `resolve_manifest_refs`,
+            // both of which return canonical paths.
+            //
+            // Note: the index prunes well-known noisy subtrees (`.git`,
+            // `node_modules`, `target`, etc. — see
+            // [`composer::index::SKIP_DIR_NAMES`]). Symlinks and
+            // manifests inside those subtrees are NOT visible here; the
+            // legacy `WalkDir` fallback below walks everything. In
+            // practice these dirs are gitignored or build-artifact
+            // trees that wouldn't drive code-deploy decisions anyway.
+            for (dir_path, info) in idx.descendants_of(dir) {
+                for sym in &info.symlinks {
+                    if let Some(target) = resolve_symlink_chain(sym, &self.repo_root) {
+                        match fs::metadata(&target) {
+                            Ok(meta) if meta.is_dir() => dirs.push(target),
+                            Ok(meta) if meta.is_file() => files.push(target),
+                            Ok(_) => {}
+                            Err(e) => tracing::warn!(
+                                "symlink {} resolved to unreadable target {}: {}",
+                                sym.display(),
+                                target.display(),
+                                e
+                            ),
+                        }
                     }
                 }
-            } else if ft.is_file() {
-                if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-                    if manifest::is_manifest(name) {
-                        manifests.push(path.to_path_buf());
+                for fname in &info.filenames {
+                    if manifest::is_manifest(fname) {
+                        manifests.push(dir_path.join(fname));
+                    }
+                }
+            }
+        } else {
+            for entry in WalkDir::new(dir)
+                .follow_links(false)
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
+                let path = entry.path();
+                let ft = entry.file_type();
+
+                if ft.is_symlink() {
+                    if let Some(target) = resolve_symlink_chain(path, &self.repo_root) {
+                        match fs::metadata(&target) {
+                            Ok(meta) if meta.is_dir() => dirs.push(target),
+                            Ok(meta) if meta.is_file() => files.push(target),
+                            Ok(_) => {}
+                            Err(e) => tracing::warn!(
+                                "symlink {} resolved to unreadable target {}: {}",
+                                path.display(),
+                                target.display(),
+                                e
+                            ),
+                        }
+                    }
+                } else if ft.is_file() {
+                    if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
+                        if manifest::is_manifest(name) {
+                            manifests.push(path.to_path_buf());
+                        }
                     }
                 }
             }
@@ -385,7 +426,7 @@ mod tests {
 
     #[test]
     fn closure_follows_deep_nested_symlink() {
-        // Mimics the techno-core pattern: each function has a handler
+        // Mimics a common real-repo pattern: each function has a handler
         // subdir which contains a symlink to ../../../shared_lib.
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
