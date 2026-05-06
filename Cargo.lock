@@ -4653,6 +4653,7 @@ dependencies = [
  "composer",
  "configurator",
  "differ",
+ "futures",
  "kit",
  "provider",
  "regex",
@@ -4661,6 +4662,7 @@ dependencies = [
  "serde_json",
  "snapshotter",
  "tabled 0.10.0",
+ "tokio",
  "tracing",
 ]
 

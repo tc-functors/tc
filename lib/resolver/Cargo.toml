@@ -11,6 +11,8 @@ regex = "1.9.1"
 tracing = "0.1"
 cacache = "13.0.0"
 tabled = "0.10.0"
+tokio = { version = "1", features = ["sync", "macros", "rt-multi-thread", "time"] }
+futures = "0.3"
 kit = { path = "../kit" }
 provider = { path = "../provider" }
 compiler = { path = "../compiler" }
