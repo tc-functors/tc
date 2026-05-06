@@ -1853,6 +1853,7 @@ dependencies = [
  "serde_with",
  "serde_yaml",
  "tabled 0.10.0",
+ "tempfile",
  "toml 0.8.19",
  "tracing",
  "walkdir",
