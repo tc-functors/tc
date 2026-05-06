@@ -719,25 +719,24 @@ fn make(
 }
 
 /// Compose a function-only topology when `tc` is invoked from inside a
-/// function-level subdirectory of a topology (e.g.
-/// `topologies/extraction/consumer/field-extractors/ml-model-integrator/`).
+/// function-level subdirectory of a topology (e.g. a directory laid
+/// out as `<repo>/topologies/<parent>/<function>/`).
 ///
 /// The parent `topology.yml` is read **only** for the things that scope
 /// this lambda to its parent: the namespace prefix used in the
 /// function's fqn (so the lambda is named e.g.
-/// `extraction-consumer_ml-model-integrator_<sandbox>` exactly as it
-/// would be from a topology-level deploy), the infra-dir convention,
-/// and the spec format (hyphenated vs. underscored fqn). Crucially, the
-/// returned `Topology`:
+/// `<parent>_<function>_<sandbox>` exactly as it would be from a
+/// topology-level deploy), the infra-dir convention, and the spec
+/// format (hyphenated vs. underscored fqn). Crucially, the returned
+/// `Topology`:
 ///
 /// - has `flow: None` — running `tc` from a sub-function dir is a
 ///   per-function deploy and must **not** create or update the parent
 ///   state machine,
 /// - carries only the function in this directory in `functions` —
-///   inline functions declared on the parent (e.g.
-///   `extracted-data-reducer`, `supplemental-data-handler`) are
-///   deliberately **not** intern'd here, since the user's intent is to
-///   deploy this one lambda,
+///   inline functions declared on the parent are deliberately **not**
+///   intern'd here, since the user's intent is to deploy this one
+///   lambda,
 /// - has empty `events`, `routes`, `mutations`, `queues`, `channels`,
 ///   `pages`, `pools`, `nodes` — the parent's wider topology shape is
 ///   irrelevant to a single-lambda deploy.
@@ -756,14 +755,13 @@ fn make(
 /// the parent. Because `deployer::create` always creates the state
 /// machine when `flow` is `Some(_)` and writes the topology's tags onto
 /// it, a function-level deploy ended up rewriting the parent SM and
-/// tagging it with the parent's version — corrupting the topology
-/// version tag and producing the silent-no-op pattern documented in
-/// `lib/resolver/src/function.rs`. See:
-///   - techno-core CI 97061 (the function-dir deploy that wrote
-///     `version=0.12.207` onto `extraction-consumer_rc` while only
-///     deploying a subset of lambdas)
-///   - techno-core CI 97124 / 97235 (the downstream silent-no-op
-///     deploys that tripped over that corruption)
+/// tagging it with the parent's version. Subsequent topology-level
+/// deploys at that same version then hit `from == to` in the resolver
+/// and silently filtered every declared function out of the deploy
+/// set — the state machines came up with no lambdas behind them. The
+/// resolver-side half of the fix is in `lib/resolver/src/function.rs`
+/// (`deployment_lookup_target`); this is the composer-side half that
+/// prevents the corruption from being introduced in the first place.
 fn make_relative(dir: &str) -> Topology {
     let parent_yml = match parent_topology_file(dir) {
         Some(file) => file,
@@ -775,8 +773,8 @@ fn make_relative(dir: &str) -> Topology {
     let infra_dir = as_infra_dir(parent_spec.infra.to_owned(), dir);
 
     // Compose the function from its own dir, prefixed with the parent's
-    // namespace so its AWS lambda name matches what a topology-level
-    // deploy would produce.
+    // namespace so its AWS lambda name (e.g. `<parent>_<function>_<sandbox>`)
+    // matches what a topology-level deploy would produce.
     let function = Function::new(dir, &infra_dir, &parent_namespace, &parent_spec.fmt());
     let functions = Function::to_map(function.clone());
 
@@ -951,11 +949,11 @@ impl Topology {
 
 #[cfg(test)]
 mod make_relative_tests {
-    //! Regression tests for Bug 1: running `tc create` / `tc update`
-    //! from inside a function-level subdirectory of a topology must
-    //! produce a function-only `Topology`, not a synthesized full
-    //! topology that would re-deploy the parent state machine and the
-    //! parent's inline functions.
+    //! Regression tests for the function-dir deploy bug: running
+    //! `tc create` / `tc update` from inside a function-level
+    //! subdirectory of a topology must produce a function-only
+    //! `Topology`, not a synthesized full topology that would re-deploy
+    //! the parent state machine and the parent's inline functions.
     //!
     //! Each test sets up a tempdir laid out like
     //!
@@ -976,6 +974,14 @@ mod make_relative_tests {
     use std::path::Path;
     use tempfile::TempDir;
 
+    /// Generic placeholder names used across these tests. They are
+    /// intentionally abstract so the tests document the contract
+    /// without being coupled to any one repo's topology layout.
+    const PARENT: &str = "parent-topology";
+    const CHILD_FN: &str = "child-function";
+    const INLINE_FN_A: &str = "inline-fn-a";
+    const INLINE_FN_B: &str = "inline-fn-b";
+
     fn write(root: &Path, rel: &str, contents: &str) {
         let p = root.join(rel);
         if let Some(parent) = p.parent() {
@@ -984,36 +990,35 @@ mod make_relative_tests {
         fs::write(p, contents).unwrap();
     }
 
-    /// Build a tmpdir layout that mirrors the techno-core
-    /// `extraction-consumer` topology shape: a parent topology.yml that
-    /// declares both inline `functions:` AND a state-machine `flow`,
-    /// plus a child function dir under it.
+    /// Build a tmpdir layout where the parent topology declares both
+    /// inline `functions:` AND a state-machine `flow`, with a child
+    /// function dir under it. This is the shape that exercises the
+    /// historic bug: any code path that re-pulls the parent's spec
+    /// (`intern_functions`, `Flow::new`) would observe non-empty
+    /// values and write them into the function-only topology.
     ///
     /// Returns `(tempdir, child_dir_path)`.
-    fn parent_with_inline_fns_and_flow_plus_child(parent_name: &str, child_name: &str) -> (TempDir, String) {
+    fn parent_with_inline_fns_and_flow_plus_child(
+        parent_name: &str,
+        child_name: &str,
+    ) -> (TempDir, String) {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
 
         let parent_rel = format!("topologies/{}", parent_name);
         let child_rel = format!("{}/{}", parent_rel, child_name);
 
-        // Parent topology.yml: state-machine kind, inline `functions:`
-        // block, and a Standard `flow` referencing those functions.
-        // The shape mirrors `topologies/extraction/consumer/topology.yml`
-        // closely enough that any code path that pulls in the parent's
-        // shape (intern_functions, Flow::new) would observe non-empty
-        // values.
         let parent_yml = format!(
-            r#"name: {}
+            r#"name: {parent_name}
 kind: state-machine
 mode: Standard
 version: "0.0.1"
 
 functions:
-  inline-sibling-a:
-    uri: ./inline-sibling-a
-  inline-sibling-b:
-    uri: ./inline-sibling-b
+  {inline_a}:
+    uri: ./{inline_a}
+  {inline_b}:
+    uri: ./{inline_b}
 
 flow:
   Comment: parent state machine
@@ -1023,16 +1028,26 @@ flow:
       Type: Pass
       End: true
 "#,
-            parent_name
+            parent_name = parent_name,
+            inline_a = INLINE_FN_A,
+            inline_b = INLINE_FN_B,
         );
         write(root, &format!("{}/topology.yml", parent_rel), &parent_yml);
 
-        // The two inline-sibling dirs referenced by the parent. We
+        // The two inline-function dirs referenced by the parent. We
         // create them as plausible function dirs so that, if the bug
         // were re-introduced and the composer tried to intern them, it
         // could find files there.
-        write(root, &format!("{}/inline-sibling-a/handler.py", parent_rel), "");
-        write(root, &format!("{}/inline-sibling-b/handler.py", parent_rel), "");
+        write(
+            root,
+            &format!("{}/{}/handler.py", parent_rel, INLINE_FN_A),
+            "",
+        );
+        write(
+            root,
+            &format!("{}/{}/handler.py", parent_rel, INLINE_FN_B),
+            "",
+        );
 
         // The child function dir we'll run `tc` from.
         write(root, &format!("{}/handler.py", child_rel), "");
@@ -1041,15 +1056,15 @@ flow:
         (tmp, child_dir)
     }
 
-    /// THE primary regression test for Bug 1. Running tc against a
-    /// function-level subdirectory must not synthesize a state-machine
-    /// `flow`. The deployer creates a state machine when `flow` is
-    /// `Some(_)`, and that's what poisoned the parent SM's version tag
-    /// in techno-core CI 97061.
+    /// THE primary regression test for the function-dir deploy bug.
+    /// Running tc against a function-level subdirectory must not
+    /// synthesize a state-machine `flow`. The deployer creates a state
+    /// machine when `flow` is `Some(_)`, and that side effect was what
+    /// rewrote the parent SM's version tag during a function-only
+    /// deploy.
     #[test]
     fn make_relative_does_not_pull_in_parent_flow() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 
@@ -1058,7 +1073,8 @@ flow:
             "make_relative must NOT synthesize the parent's state-machine flow. \
              A function-level deploy that produces flow=Some triggers \
              deployer::state::create on the parent state machine and rewrites \
-             its version tag — the corruption that broke techno-core CI 97061."
+             its version tag — the corruption that produces the silent-no-op \
+             pattern documented in lib/resolver/src/function.rs."
         );
     }
 
@@ -1068,8 +1084,7 @@ flow:
     /// lambdas that the user did not ask for.
     #[test]
     fn make_relative_does_not_pull_in_parent_inline_functions() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 
@@ -1084,17 +1099,20 @@ flow:
             topology.functions.keys().collect::<Vec<_>>()
         );
         assert!(
-            topology.functions.contains_key("ml-model-integrator"),
-            "expected only ml-model-integrator; got: {:?}",
+            topology.functions.contains_key(CHILD_FN),
+            "expected only `{}`; got: {:?}",
+            CHILD_FN,
             topology.functions.keys().collect::<Vec<_>>()
         );
         assert!(
-            !topology.functions.contains_key("inline-sibling-a"),
-            "parent's inline `inline-sibling-a` must not be pulled in"
+            !topology.functions.contains_key(INLINE_FN_A),
+            "parent's inline `{}` must not be pulled in",
+            INLINE_FN_A
         );
         assert!(
-            !topology.functions.contains_key("inline-sibling-b"),
-            "parent's inline `inline-sibling-b` must not be pulled in"
+            !topology.functions.contains_key(INLINE_FN_B),
+            "parent's inline `{}` must not be pulled in",
+            INLINE_FN_B
         );
     }
 
@@ -1104,8 +1122,7 @@ flow:
     /// Lambda API rather than the State Machines API.
     #[test]
     fn make_relative_kind_is_function_not_step_function() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 
@@ -1119,25 +1136,26 @@ flow:
     }
 
     /// `topology.fqn` must be the *function's* fqn (e.g.
-    /// `extraction-consumer_ml-model-integrator_{{sandbox}}`), not the
-    /// parent's (`extraction-consumer_{{sandbox}}`). With Bug 2a's fix
+    /// `<parent>_<function>_{{sandbox}}`), not the parent's
+    /// (`<parent>_{{sandbox}}`). Together with the resolver-side fix
     /// in `find_modified`, this is what makes the deployment lookup
-    /// consult the right AWS resource (the lambda) when running from a
-    /// function dir.
+    /// consult the right AWS resource (the lambda) when running from
+    /// a function dir.
     #[test]
     fn make_relative_fqn_is_function_fqn_not_parent_fqn() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 
+        let expected = format!("{}_{}_{{{{sandbox}}}}", PARENT, CHILD_FN);
         assert_eq!(
-            topology.fqn, "extraction-consumer_ml-model-integrator_{{sandbox}}",
+            topology.fqn, expected,
             "topology.fqn must point at the function we're deploying, not at \
              the parent state machine. The previous implementation set this \
-             to the parent's fqn ('extraction-consumer_{{{{sandbox}}}}') which \
-             made the resolver look up the parent SM's deployed-version tag \
-             instead of the lambda's."
+             to the parent's fqn (e.g. '{}_{{{{sandbox}}}}') which made the \
+             resolver look up the parent SM's deployed-version tag instead \
+             of the lambda's.",
+            PARENT
         );
     }
 
@@ -1146,8 +1164,7 @@ flow:
     /// walk the parent's directory tree synthesizing nested nodes.
     #[test]
     fn make_relative_has_no_nested_nodes() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 
@@ -1167,8 +1184,7 @@ flow:
     /// dir must not have.
     #[test]
     fn make_relative_drops_all_topology_level_entities() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 
@@ -1187,8 +1203,7 @@ flow:
     /// degrades to topology-level update.
     #[test]
     fn make_relative_topology_dir_is_function_dir() {
-        let (_tmp, child_dir) =
-            parent_with_inline_fns_and_flow_plus_child("extraction-consumer", "ml-model-integrator");
+        let (_tmp, child_dir) = parent_with_inline_fns_and_flow_plus_child(PARENT, CHILD_FN);
 
         let topology = Topology::new(&child_dir, true, false);
 

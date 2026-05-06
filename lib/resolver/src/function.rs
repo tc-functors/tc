@@ -411,9 +411,9 @@ pub(crate) fn classify_modified<F: Clone>(
 /// 1. A newly-added nested topology whose own state machine has never
 ///    been deployed: the root's tag would still resolve to a real
 ///    version, the differ would conclude `from == to`, and the node's
-///    declared functions would be silently filtered out (deployer
-///    creates the empty-of-functions state machine but no lambdas —
-///    see techno-core CI 97124 / 97235 for the live incident).
+///    declared functions would be silently filtered out. The deployer
+///    then created the state machine with no lambdas behind it, and
+///    every execution failed with `Lambda.ResourceNotFoundException`.
 /// 2. Any flow that mixes per-node deploys with topology-level deploys
 ///    where the root tag and the node tag legitimately diverge.
 ///
@@ -581,29 +581,29 @@ mod tests {
     // use the node's own fqn/kind, not the root's.
     // ------------------------------------------------------------------
 
-    /// THE regression test for Bug 2a. When `find_modified` looks up the
-    /// currently-deployed version of a topology in the cloud, it must
-    /// consult the topology's *own* state-machine tag, not the root's.
+    /// THE regression test for the nested-node version-lookup bug.
+    /// When `find_modified` looks up the currently-deployed version of
+    /// a topology in the cloud, it must consult the topology's *own*
+    /// state-machine tag, not the root's.
     ///
     /// History: previously `find_modified` destructured `root.fqn` and
-    /// `root.kind`. Resolving a nested node (e.g. `vd-processor` under
-    /// `extraction-consumer`) read the **root's** state-machine tag for
-    /// the version. If the root SM had a real version (because the root
-    /// was once deployed) but the node SM didn't exist yet, the resolver
-    /// concluded `from == to` against the root tag and silently filtered
-    /// out every function declared on the node — the deployer then
-    /// created/updated the node's state machine with no lambdas to back
-    /// it. Live incidents: techno-core CI 97124 / 97235.
+    /// `root.kind`. Resolving a nested node read the **root's**
+    /// state-machine tag for the version. If the root SM had a real
+    /// version (because the root was once deployed) but the node SM
+    /// didn't exist yet, the resolver concluded `from == to` against
+    /// the root tag and silently filtered out every function declared
+    /// on the node — the deployer then created the node's state
+    /// machine with no lambdas to back it.
     #[test]
     fn deployment_lookup_target_uses_topology_fqn_not_root_fqn() {
-        let node = topology_fixture("vd-processor", "vd-processor_rc", "StepFunction");
+        let node = topology_fixture("child-topology", "child-topology_my-sandbox", "StepFunction");
 
         let (fqn, kind) = deployment_lookup_target(&node);
 
         assert_eq!(
-            fqn, "vd-processor_rc",
-            "must consult the node's own fqn (vd-processor_rc), \
-             never the root's (extraction-consumer_rc). Re-introducing \
+            fqn, "child-topology_my-sandbox",
+            "must consult the node's own fqn (child-topology_my-sandbox), \
+             never the root's (parent-topology_my-sandbox). Re-introducing \
              root-fqn lookup here re-introduces the silent no-op deploy."
         );
         assert!(
@@ -619,30 +619,30 @@ mod tests {
     #[test]
     fn deployment_lookup_target_picks_function_kind() {
         let lambda = topology_fixture(
-            "extraction-consumer_ml-model-integrator",
-            "extraction-consumer_ml-model-integrator_rc",
+            "parent-topology_child-function",
+            "parent-topology_child-function_my-sandbox",
             "Function",
         );
 
         let (fqn, kind) = deployment_lookup_target(&lambda);
 
-        assert_eq!(fqn, "extraction-consumer_ml-model-integrator_rc");
+        assert_eq!(fqn, "parent-topology_child-function_my-sandbox");
         assert!(matches!(kind, TopologyKind::Function));
     }
 
     /// Trivially true but worth pinning: when called on the root
     /// topology itself, the helper returns the root's identity (because
     /// `topology` and `root` are literally the same `Topology` in that
-    /// case). This documents that fixing Bug 2a is a no-op for root
+    /// case). This documents that the fix is a no-op for root
     /// topologies — the change only differs from previous behavior for
     /// nested nodes.
     #[test]
     fn deployment_lookup_target_for_root_returns_root_identity() {
-        let root = topology_fixture("extraction-consumer", "extraction-consumer_rc", "StepFunction");
+        let root = topology_fixture("parent-topology", "parent-topology_my-sandbox", "StepFunction");
 
         let (fqn, kind) = deployment_lookup_target(&root);
 
-        assert_eq!(fqn, "extraction-consumer_rc");
+        assert_eq!(fqn, "parent-topology_my-sandbox");
         assert!(matches!(kind, TopologyKind::StepFunction));
     }
 
