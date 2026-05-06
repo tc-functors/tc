@@ -36,6 +36,10 @@ pub struct Function {
     pub build: Build,
     pub test: HashMap<String, TestSpec>,
     pub targets: Vec<Target>,
+
+    /// Marks functions imported via relative `uri:` for dedup promotion to root.
+    #[serde(default)]
+    pub shared: bool,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -135,6 +139,7 @@ impl Function {
             test: make_test(fspec.test),
             runtime: runtime,
             targets: targets,
+            shared: false,
         }
     }
 
@@ -174,6 +179,7 @@ impl Function {
             test: make_test(fspec.test.clone()),
             runtime: runtime,
             targets: targets,
+            shared: false,
         }
     }
 

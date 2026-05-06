@@ -213,7 +213,8 @@ fn intern_functions(
                 None => root_namespace,
             };
 
-            let function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            let mut function = Function::new(&abs_dir, infra_dir, &namespace, spec.fmt());
+            function.shared = true;
             fns.insert(s!(name), function);
         } else {
             let dir = format!("{}/{}", root_dir, name);
@@ -835,6 +836,76 @@ pub fn is_compilable(dir: &str) -> bool {
     is_standalone_function_dir(dir) || is_relative_topology_dir(dir) || is_topology_dir(dir)
 }
 
+/// Recursively drains `shared` functions from `node` and descendants into
+/// `target`, deduped by key (first wins). Returns the number of duplicates
+/// encountered (already present in `target`).
+fn drain_shared_into(target: &mut HashMap<String, Function>, node: &mut Topology) -> usize {
+    let mut duplicates = 0usize;
+    for child in node.nodes.values_mut() {
+        duplicates += drain_shared_into(target, child);
+    }
+    let drained = std::mem::take(&mut node.functions);
+    let mut owned: HashMap<String, Function> = HashMap::with_capacity(drained.len());
+    for (name, f) in drained {
+        if f.shared {
+            match target.entry(name.clone()) {
+                std::collections::hash_map::Entry::Occupied(existing) => {
+                    duplicates += 1;
+                    if existing.get().fqn != f.fqn {
+                        tracing::debug!(
+                            "shared-function key collision: {} ({} vs {}) — keeping existing",
+                            name,
+                            existing.get().fqn,
+                            f.fqn
+                        );
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(slot) => {
+                    slot.insert(f);
+                }
+            }
+        } else {
+            owned.insert(name, f);
+        }
+    }
+    node.functions = owned;
+    duplicates
+}
+
+/// Recompute `roles` at every level from current `(functions, flow)`.
+/// Necessary because `make()` computed roles before promotion relocated
+/// shared functions, leaving root missing their roles and descendants
+/// holding stale entries.
+fn recompute_roles_recursive(t: &mut Topology) {
+    for child in t.nodes.values_mut() {
+        recompute_roles_recursive(child);
+    }
+    t.roles = make_roles(&t.functions, &0, &0, &0, &t.flow);
+}
+
+/// Drain all `shared` functions from descendants into `root.functions`
+/// (first-wins on key collision) and recompute roles at every level.
+fn promote_shared_to_root(root: &mut Topology) {
+    let mut promoted: HashMap<String, Function> = HashMap::new();
+    let mut duplicates = 0usize;
+    for child in root.nodes.values_mut() {
+        duplicates += drain_shared_into(&mut promoted, child);
+    }
+    if promoted.is_empty() {
+        return;
+    }
+    let promoted_count = promoted.len();
+    for (name, f) in promoted {
+        root.functions.entry(name).or_insert(f);
+    }
+    recompute_roles_recursive(root);
+    tracing::info!(
+        "Promoted {} shared function(s) to root (eliminated {} duplicate(s))",
+        promoted_count,
+        duplicates,
+    );
+}
+
 impl Topology {
     pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
         if is_singular_function_dir() {
@@ -849,22 +920,24 @@ impl Topology {
             let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
             tracing::debug!("Infra dir: {}  {}", &spec.name, &infra_dir);
 
-            let nodes;
-            if recursive {
+            let nodes = if recursive {
                 tracing::debug!("Recursive {}", dir);
-                nodes = make_nodes(dir, &spec);
+                make_nodes(dir, &spec)
             } else {
-                nodes = HashMap::new();
-            }
-            if skip_functions {
+                HashMap::new()
+            };
+            let mut topology = if skip_functions {
                 tracing::debug!("Skipping functions {}", dir);
-                let functions = HashMap::new();
-                make(dir, dir, &spec, functions, nodes)
+                make(dir, dir, &spec, HashMap::new(), nodes)
             } else {
                 tracing::debug!("Discovering functions {}", dir);
                 let functions = discover_functions(dir, &infra_dir, &spec);
                 make(dir, dir, &spec, functions, nodes)
+            };
+            if recursive {
+                promote_shared_to_root(&mut topology);
             }
+            topology
         } else if is_relative_topology_dir(dir) {
             make_relative(dir)
         } else if is_standalone_function_dir(dir) {
@@ -930,15 +1003,6 @@ mod tests {
     use std::os::unix::fs::symlink;
     use tempfile::TempDir;
 
-    /// Regression: when pwd reaches the repo root via a symlink (e.g.
-    /// macOS `/tmp` → `/private/tmp`), `make_nodes` was passing the
-    /// non-canonical `root_dir` to `should_ignore_node` while
-    /// `nested_topology_dirs` returned canonical paths from the
-    /// `composer::index`. The `nodes.ignore` and `.tcignore` rules
-    /// silently failed to match because the prefix-equality /
-    /// `starts_with` checks compared `/tmp/...` against
-    /// `/private/tmp/...`. `should_ignore_node` now canonicalises both
-    /// sides before comparing.
     #[test]
     fn should_ignore_node_matches_when_root_reached_via_symlink() {
         let outer = TempDir::new().unwrap();
@@ -964,6 +1028,359 @@ mod tests {
         assert!(
             !should_ignore_node(alias_root, ignore, canonical_keep_str),
             "non-matching dir should not be ignored"
+        );
+    }
+
+    fn write_shared_function(dir: &std::path::Path, name: &str, fqn: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(
+            dir.join("function.yml"),
+            format!(
+                "name: {name}\n\
+                 fqn: {fqn}\n\
+                 runtime:\n  \
+                   lang: python3.10\n  \
+                   handler: handler.handler\n  \
+                   package_type: zip\n  \
+                   layers: []\n\
+                 build:\n  \
+                   kind: Code\n  \
+                   command: echo build\n"
+            ),
+        )
+        .unwrap();
+        fs::write(dir.join("handler.py"), "").unwrap();
+    }
+
+    fn write_topology_yml(dir: &std::path::Path, contents: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(dir.join("topology.yml"), contents).unwrap();
+    }
+
+    #[test]
+    fn compose_recursive_dedups_shared_functions_to_root() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+
+        write_topology_yml(
+            root,
+            "name: shared-dedup-parent\nkind: step-function\n",
+        );
+
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+        write_shared_function(&root.join("shared/bar"), "bar", "shared_bar");
+
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("b"),
+            "name: child-b\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("c"),
+            "name: child-c\n\
+             kind: step-function\n\
+             functions:\n  \
+               foo:\n    uri: ../shared/foo\n  \
+               bar:\n    uri: ../shared/bar\n",
+        );
+        write_shared_function(&root.join("c/local"), "local", "child_c_local");
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+
+        assert!(
+            topology.functions.contains_key("foo"),
+            "shared function `foo` must be promoted to root.functions; root has {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            topology.functions.contains_key("bar"),
+            "shared function `bar` must be promoted to root.functions; root has {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            topology
+                .functions
+                .get("foo")
+                .map(|f| f.shared)
+                .unwrap_or(false),
+            "promoted `foo` retains shared = true"
+        );
+        assert!(
+            topology
+                .functions
+                .get("bar")
+                .map(|f| f.shared)
+                .unwrap_or(false),
+            "promoted `bar` retains shared = true"
+        );
+
+        fn collect_offenders(
+            t: &Topology,
+            path: String,
+            keys: &[&'static str],
+            out: &mut Vec<(String, &'static str)>,
+        ) {
+            for k in keys {
+                if t.functions.contains_key(*k) {
+                    out.push((path.clone(), *k));
+                }
+            }
+            for (name, child) in &t.nodes {
+                collect_offenders(child, format!("{path}/{name}"), keys, out);
+            }
+        }
+
+        let mut offenders: Vec<(String, &'static str)> = Vec::new();
+        for (name, child) in &topology.nodes {
+            collect_offenders(child, name.clone(), &["foo", "bar"], &mut offenders);
+        }
+        assert!(
+            offenders.is_empty(),
+            "no descendant should retain a shared function; found: {:?}",
+            offenders
+        );
+
+        let child_namespaces: std::collections::BTreeSet<&String> =
+            topology.nodes.keys().collect();
+        assert!(
+            child_namespaces.contains(&s!("child-a")),
+            "child-a missing; root.nodes = {:?}",
+            child_namespaces
+        );
+        assert!(
+            child_namespaces.contains(&s!("child-b")),
+            "child-b missing; root.nodes = {:?}",
+            child_namespaces
+        );
+        assert!(
+            child_namespaces.contains(&s!("child-c")),
+            "child-c missing; root.nodes = {:?}",
+            child_namespaces
+        );
+
+        let child_c = topology
+            .nodes
+            .get("child-c")
+            .expect("child-c node present");
+        let local = child_c
+            .functions
+            .get("local")
+            .expect("child-c retains its own `local` function after promotion");
+        assert!(
+            !local.shared,
+            "child-c's own `local` function must have shared = false"
+        );
+
+        for (fname, f) in &topology.functions {
+            if f.runtime.role.kind.to_str() != "provided" {
+                assert!(
+                    topology.roles.contains_key(&f.runtime.role.name),
+                    "role `{}` for function `{}` must be present in root.roles \
+                     after promotion; root.roles keys = {:?}",
+                    &f.runtime.role.name,
+                    fname,
+                    topology.roles.keys().collect::<Vec<_>>()
+                );
+            }
+        }
+        fn assert_roles_match_functions(t: &Topology, path: &str) {
+            for (rname, _) in &t.roles {
+                let owned_by_function = t
+                    .functions
+                    .values()
+                    .any(|f| &f.runtime.role.name == rname);
+                let owned_by_flow = t
+                    .flow
+                    .as_ref()
+                    .map(|fl| &fl.role.name == rname)
+                    .unwrap_or(false);
+                assert!(
+                    owned_by_function || owned_by_flow,
+                    "stale role `{}` in {}/roles after promotion (no matching \
+                     function or flow); functions = {:?}",
+                    rname,
+                    path,
+                    t.functions.keys().collect::<Vec<_>>()
+                );
+            }
+            for (name, child) in &t.nodes {
+                assert_roles_match_functions(child, &format!("{path}/{name}"));
+            }
+        }
+        for (name, child) in &topology.nodes {
+            assert_roles_match_functions(child, name);
+        }
+    }
+
+    #[test]
+    fn shared_field_defaults_to_false_on_legacy_json() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: serde-test\nkind: step-function\n");
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+
+        let foo = topology.functions.get("foo").unwrap();
+        let mut value = serde_json::to_value(foo).expect("Function serializes to JSON");
+        let removed = value
+            .as_object_mut()
+            .expect("Function JSON is an object")
+            .remove("shared");
+        assert!(
+            removed.is_some(),
+            "freshly serialized Function must include `shared` key"
+        );
+        let legacy: Function = serde_json::from_value(value)
+            .expect("Function JSON missing `shared` must deserialize via #[serde(default)]");
+        assert!(
+            !legacy.shared,
+            "missing `shared` field must default to false on legacy resolver-cache JSON"
+        );
+    }
+
+    #[test]
+    fn intern_marks_relative_uri_imports_as_shared() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: parent\nkind: step-function\n");
+        write_shared_function(&root.join("shared/x"), "x", "shared_x");
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  x:\n    uri: ../shared/x\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+        let promoted = topology
+            .functions
+            .get("x")
+            .expect("relatively-imported function must end up at root");
+        assert!(
+            promoted.shared,
+            "relative-uri import must have shared = true after promotion"
+        );
+    }
+
+    #[test]
+    fn root_declaring_shared_function_keeps_it_in_place() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_shared_function(&root.join("shared/x"), "x", "shared_x");
+        write_topology_yml(
+            root,
+            "name: root-shared\nkind: step-function\nfunctions:\n  x:\n    uri: ./shared/x\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+        assert!(
+            topology.functions.contains_key("x"),
+            "root's own shared function must remain in root.functions"
+        );
+        assert!(
+            topology.functions.get("x").unwrap().shared,
+            "root's own shared function retains shared = true"
+        );
+    }
+
+    #[test]
+    fn same_source_different_keys_both_promoted() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: parent\nkind: step-function\n");
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+        write_topology_yml(
+            &root.join("a"),
+            "name: child-a\nkind: step-function\nfunctions:\n  foo:\n    uri: ../shared/foo\n",
+        );
+        write_topology_yml(
+            &root.join("b"),
+            "name: child-b\nkind: step-function\nfunctions:\n  my_foo:\n    uri: ../shared/foo\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+
+        assert!(
+            topology.functions.contains_key("foo"),
+            "key `foo` must be promoted"
+        );
+        assert!(
+            topology.functions.contains_key("my_foo"),
+            "key `my_foo` must be promoted (same source, different local name)"
+        );
+        assert_eq!(
+            topology.functions.get("foo").unwrap().dir,
+            topology.functions.get("my_foo").unwrap().dir,
+            "both keys reference the same source dir"
+        );
+    }
+
+    #[test]
+    fn deep_nesting_shared_functions_promoted() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_topology_yml(root, "name: parent\nkind: step-function\n");
+        write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
+
+        // Two levels: root -> mid -> leaf, leaf imports shared function
+        write_topology_yml(
+            &root.join("mid"),
+            "name: mid\nkind: step-function\n",
+        );
+        write_topology_yml(
+            &root.join("mid/leaf"),
+            "name: leaf\nkind: step-function\nfunctions:\n  foo:\n    uri: ../../shared/foo\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), true, false);
+
+        assert!(
+            topology.functions.contains_key("foo"),
+            "shared function from deep nesting must be promoted to root"
+        );
+
+        fn has_shared_function(t: &Topology, key: &str) -> bool {
+            if t.functions.contains_key(key) {
+                return true;
+            }
+            t.nodes.values().any(|child| has_shared_function(child, key))
+        }
+        for child in topology.nodes.values() {
+            assert!(
+                !has_shared_function(child, "foo"),
+                "no descendant should retain the shared function"
+            );
+        }
+    }
+
+    #[test]
+    fn non_recursive_mode_does_not_promote() {
+        let outer = TempDir::new().unwrap();
+        let root = outer.path();
+        write_shared_function(&root.join("shared/x"), "x", "shared_x");
+        write_topology_yml(
+            root,
+            "name: non-recursive\nkind: step-function\nfunctions:\n  x:\n    uri: ./shared/x\n",
+        );
+
+        let topology = Topology::new(root.to_str().unwrap(), false, false);
+
+        assert!(
+            topology.functions.contains_key("x"),
+            "function present in non-recursive mode"
+        );
+        assert!(
+            topology.functions.get("x").unwrap().shared,
+            "shared flag is set even in non-recursive mode (marking is unconditional)"
+        );
+        assert!(
+            topology.nodes.is_empty(),
+            "non-recursive mode has no child nodes"
         );
     }
 }
