@@ -37,13 +37,7 @@ pub struct Function {
     pub test: HashMap<String, TestSpec>,
     pub targets: Vec<Target>,
 
-    /// True iff this `Function` was declared in a topology's `functions:`
-    /// block via a relative `uri:` (i.e. shared between topologies).
-    /// Used by `composer::topology::promote_shared_to_root` to dedupe
-    /// shared imports up to the root of a recursive composition.
-    /// `#[serde(default)]` keeps existing resolver-cache JSON entries
-    /// (which lack this field) backward-compatible: they deserialize
-    /// with `shared = false`, equivalent to "not shared".
+    /// Marks functions imported via relative `uri:` for dedup promotion to root.
     #[serde(default)]
     pub shared: bool,
 }
