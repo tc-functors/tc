@@ -398,19 +398,51 @@ pub(crate) fn classify_modified<F: Clone>(
     }
 }
 
+/// Returns the (fqn, kind) pair to use when looking up the
+/// currently-deployed version of `topology` in the cloud. This is
+/// always the *topology's own* identity, never the root's.
+///
+/// Why this exists as a named helper: `find_modified` historically
+/// destructured `root.fqn` / `root.kind` here, which meant that when
+/// resolving a *nested node* (sub-topology) the resolver consulted
+/// the **root's** state-machine tag instead of the node's. That broke
+/// two important cases:
+///
+/// 1. A newly-added nested topology whose own state machine has never
+///    been deployed: the root's tag would still resolve to a real
+///    version, the differ would conclude `from == to`, and the node's
+///    declared functions would be silently filtered out (deployer
+///    creates the empty-of-functions state machine but no lambdas —
+///    see techno-core CI 97124 / 97235 for the live incident).
+/// 2. Any flow that mixes per-node deploys with topology-level deploys
+///    where the root tag and the node tag legitimately diverge.
+///
+/// The fix is structural rather than a guard: every nested node is its
+/// own deployable unit and its existing-deployment lookup must be
+/// scoped to its own AWS resource. The root's identity is still used
+/// downstream for git-tag construction (`differ::diff_fns` takes the
+/// root's namespace because that's where the SemVer tags actually
+/// live), so this helper is intentionally narrow — it picks the right
+/// AWS lookup target and nothing else.
+pub(crate) fn deployment_lookup_target(topology: &Topology) -> (&str, &TopologyKind) {
+    (&topology.fqn, &topology.kind)
+}
+
 pub async fn find_modified(
     auth: &Auth,
     root: &Root,
     topology: &Topology,
 ) -> HashMap<String, Function> {
     let Root {
-        namespace,
-        fqn,
-        kind,
-        version,
+        namespace, version, ..
     } = root;
 
-    let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
+    // Look up the *node's* own state machine, not the root's. See
+    // `deployment_lookup_target` for the full reasoning. For the root
+    // topology this is identical to the previous behavior because
+    // `topology` and `root` refer to the same `Topology`.
+    let (lookup_fqn, lookup_kind) = deployment_lookup_target(topology);
+    let maybe_version = snapshotter::find_version(auth, lookup_fqn, lookup_kind).await;
 
     let target_version = match maybe_version {
         Some(v) => v,
@@ -486,6 +518,137 @@ pub async fn resolve_given(
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    // ------------------------------------------------------------------
+    // Topology fixture builder
+    // ------------------------------------------------------------------
+
+    /// Build a minimal Topology from a JSON literal. The only fields we
+    /// override per-test are name/fqn/kind; everything else is empty
+    /// HashMaps / null Options. This mirrors the fixture pattern used by
+    /// the differ's tests and avoids tying these tests to the full
+    /// constructor surface in the composer (which itself touches git
+    /// state, the filesystem, and walks for nested topologies).
+    fn topology_fixture(namespace: &str, fqn: &str, kind: &str) -> Topology {
+        let json = format!(
+            r#"{{
+                "namespace": "{namespace}",
+                "env": "test",
+                "fqn": "{fqn}",
+                "concurrent": false,
+                "kind": "{kind}",
+                "infra": "",
+                "dir": "",
+                "sandbox": "",
+                "hyphenated_names": false,
+                "version": "0.0.1",
+                "nodes": {{}},
+                "events": {{}},
+                "routes": {{}},
+                "functions": {{}},
+                "mutations": {{}},
+                "schedules": {{}},
+                "queues": {{}},
+                "channels": {{}},
+                "pools": {{}},
+                "pages": {{}},
+                "tags": {{}},
+                "flow": null,
+                "config": {{
+                    "composer": {{}},
+                    "builder": {{}},
+                    "tester": {{}},
+                    "resolver": {{}},
+                    "deployer": {{}},
+                    "aws": {{}},
+                    "notifier": {{}},
+                    "snapshotter": {{}},
+                    "ci": {{}}
+                }},
+                "roles": {{}},
+                "base_roles": {{}},
+                "tests": {{}},
+                "transducer": null,
+                "sequences": {{}}
+            }}"#
+        );
+        serde_json::from_str(&json)
+            .unwrap_or_else(|e| panic!("topology fixture failed to deserialize: {e}; json = {json}"))
+    }
+
+    // ------------------------------------------------------------------
+    // deployment_lookup_target — Bug 2a: nested-node version lookup must
+    // use the node's own fqn/kind, not the root's.
+    // ------------------------------------------------------------------
+
+    /// THE regression test for Bug 2a. When `find_modified` looks up the
+    /// currently-deployed version of a topology in the cloud, it must
+    /// consult the topology's *own* state-machine tag, not the root's.
+    ///
+    /// History: previously `find_modified` destructured `root.fqn` and
+    /// `root.kind`. Resolving a nested node (e.g. `vd-processor` under
+    /// `extraction-consumer`) read the **root's** state-machine tag for
+    /// the version. If the root SM had a real version (because the root
+    /// was once deployed) but the node SM didn't exist yet, the resolver
+    /// concluded `from == to` against the root tag and silently filtered
+    /// out every function declared on the node — the deployer then
+    /// created/updated the node's state machine with no lambdas to back
+    /// it. Live incidents: techno-core CI 97124 / 97235.
+    #[test]
+    fn deployment_lookup_target_uses_topology_fqn_not_root_fqn() {
+        let node = topology_fixture("vd-processor", "vd-processor_rc", "StepFunction");
+
+        let (fqn, kind) = deployment_lookup_target(&node);
+
+        assert_eq!(
+            fqn, "vd-processor_rc",
+            "must consult the node's own fqn (vd-processor_rc), \
+             never the root's (extraction-consumer_rc). Re-introducing \
+             root-fqn lookup here re-introduces the silent no-op deploy."
+        );
+        assert!(
+            matches!(kind, TopologyKind::StepFunction),
+            "must consult the node's own kind for the AWS lookup, \
+             not the root's"
+        );
+    }
+
+    /// Sanity: for a Function-kind topology, the helper still returns
+    /// the topology's identity. Pins the contract across all kinds we
+    /// route through `find_modified`.
+    #[test]
+    fn deployment_lookup_target_picks_function_kind() {
+        let lambda = topology_fixture(
+            "extraction-consumer_ml-model-integrator",
+            "extraction-consumer_ml-model-integrator_rc",
+            "Function",
+        );
+
+        let (fqn, kind) = deployment_lookup_target(&lambda);
+
+        assert_eq!(fqn, "extraction-consumer_ml-model-integrator_rc");
+        assert!(matches!(kind, TopologyKind::Function));
+    }
+
+    /// Trivially true but worth pinning: when called on the root
+    /// topology itself, the helper returns the root's identity (because
+    /// `topology` and `root` are literally the same `Topology` in that
+    /// case). This documents that fixing Bug 2a is a no-op for root
+    /// topologies — the change only differs from previous behavior for
+    /// nested nodes.
+    #[test]
+    fn deployment_lookup_target_for_root_returns_root_identity() {
+        let root = topology_fixture("extraction-consumer", "extraction-consumer_rc", "StepFunction");
+
+        let (fqn, kind) = deployment_lookup_target(&root);
+
+        assert_eq!(fqn, "extraction-consumer_rc");
+        assert!(matches!(kind, TopologyKind::StepFunction));
+    }
+
+    // ------------------------------------------------------------------
+    // classify_modified — pre-existing pure logic for diff classification
+    // ------------------------------------------------------------------
 
     /// `Ok(...)` is returned verbatim — the resolver trusts the differ
     /// when it has computed an answer.
