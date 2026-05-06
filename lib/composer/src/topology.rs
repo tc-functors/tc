@@ -72,6 +72,15 @@ pub struct Topology {
     pub events: HashMap<String, Event>,
     pub routes: HashMap<String, Route>,
     pub functions: HashMap<String, Function>,
+    /// Full set of this topology's own functions, populated by the
+    /// composer and **never replaced by the resolver**. The resolver
+    /// shrinks `functions` to the modified subset (for code uploads),
+    /// but role/policy reconciliation needs to operate over every
+    /// function so that adding/changing a per-function role JSON
+    /// re-attaches the new role to the lambda even when its code
+    /// hasn't changed.
+    #[serde(default)]
+    pub all_functions: HashMap<String, Function>,
     pub mutations: HashMap<String, Mutation>,
     pub schedules: HashMap<String, Schedule>,
     pub queues: HashMap<String, Queue>,
@@ -765,6 +774,7 @@ fn make(
         events: events,
         routes: routes,
         tests: make_test(spec.tests.clone(), &functions),
+        all_functions: functions.clone(),
         functions: functions,
         schedules: schedule::make_all(&namespace, &infra_dir),
         queues: queues,
@@ -817,6 +827,7 @@ fn make_standalone(dir: &str) -> Topology {
         pools: HashMap::new(),
         roles: make_roles(&functions, &0, &0, &0, &None),
         base_roles: make_base_roles(),
+        all_functions: functions.clone(),
         functions: functions,
         nodes: HashMap::new(),
         mutations: HashMap::new(),
