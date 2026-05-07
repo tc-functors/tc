@@ -224,6 +224,48 @@ async fn update_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
     role::create_or_update(auth, &roles, &HashMap::new()).await;
 }
 
+/// Reconcile the IAM role attached to each lambda with what the
+/// topology declares. Runs over the *full* function list (not the
+/// `find_modified` subset) so a role JSON added or changed under
+/// `infrastructure/.../roles/<fn>.json` is re-attached to its lambda
+/// even when the function's code closure is otherwise unchanged.
+///
+/// Idempotent: `lambda::update_role` reads the current role first and
+/// short-circuits when it already matches, so this sweeps cheaply over
+/// a large topology (one `GetFunctionConfiguration` per function, plus
+/// one `UpdateFunctionConfiguration` per drift).
+pub async fn sync_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
+    if funcs.is_empty() {
+        return;
+    }
+    let client = lambda::make_client(auth).await;
+    let mut tasks = vec![];
+    for (_, f) in funcs.clone() {
+        if !matches!(f.runtime.provider, Provider::Lambda) {
+            continue;
+        }
+        let c = client.clone();
+        let fqn = f.fqn.clone();
+        let role_arn = f.runtime.role.arn.clone();
+        let display = f.name.clone();
+        let h = tokio::spawn(async move {
+            match lambda::update_role(&c, &fqn, &role_arn).await {
+                Ok(true) => println!(
+                    "Re-attaching role {} to {}",
+                    u::split_last(&role_arn, "/"),
+                    &display
+                ),
+                Ok(false) => (),
+                Err(e) => println!("Failed to attach role for {}: {:?}", &display, e),
+            }
+        });
+        tasks.push(h);
+    }
+    for task in tasks {
+        let _ = task.await;
+    }
+}
+
 async fn update_concurrency(auth: &Auth, funcs: &HashMap<String, Function>) {
     for (_, f) in funcs {
         let function = make_lambda(auth, f.clone(), &HashMap::new()).await;

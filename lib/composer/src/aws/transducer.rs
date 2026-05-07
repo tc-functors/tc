@@ -215,6 +215,8 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         layer_name: None,
         targets: vec![],
         test: HashMap::new(),
+        shared: false,
+        aux_files: vec![],
     }
 }
 

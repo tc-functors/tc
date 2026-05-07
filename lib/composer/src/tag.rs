@@ -1,26 +1,19 @@
-use super::version;
+use super::{
+    index,
+    version,
+};
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
 
 fn parent_tags_file(dir: &str) -> Option<String> {
-    let paths = vec![
-        u::absolutize(dir, "../tags.json"),
-        u::absolutize(dir, "../../tags.json"),
-        u::absolutize(dir, "../../../tags.json"),
-        u::absolutize(dir, "../../../../tags.json"),
-        s!("../tags.json"),
-        s!("../../tags.json"),
-        s!("../../../tags.json"),
-        s!("../../../../tags.json"),
-    ];
-    u::any_path(paths)
+    u::find_parent_file(dir, "tags.json")
 }
 
 fn load_tags(infra_dir: &str) -> HashMap<String, String> {
     let tags_file = format!("{}/tags.json", infra_dir);
     let parent_file = parent_tags_file(infra_dir);
-    if u::file_exists(&tags_file) {
+    if index::get().file_exists(&tags_file) {
         let data: String = u::slurp(&tags_file);
         let tags: HashMap<String, String> = serde_json::from_str(&data).unwrap();
         tags
@@ -37,7 +30,11 @@ fn load_tags(infra_dir: &str) -> HashMap<String, String> {
 }
 
 fn git_author() -> String {
-    sh("git config user.name", &u::pwd())
+    use std::sync::OnceLock;
+    static CACHE: OnceLock<String> = OnceLock::new();
+    CACHE
+        .get_or_init(|| sh("git config user.name", &u::pwd()))
+        .clone()
 }
 
 pub fn make(namespace: &str, infra_dir: &str) -> HashMap<String, String> {

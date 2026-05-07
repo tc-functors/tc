@@ -82,6 +82,42 @@ impl Analyzer {
         &self.repo_root
     }
 
+    /// Compute the closure of `fn_dir`, then widen it with explicit
+    /// per-function aux file paths (role JSONs, vars JSONs, etc. — files
+    /// outside the source-code closure whose contents flow into the
+    /// deployed configuration).
+    ///
+    /// Each aux path is canonicalized; if it doesn't resolve on disk
+    /// (deleted between tags, or a conventional path that was never
+    /// created), we keep the logical path so a `DiffSet` entry produced
+    /// by the same `repo_root.join(rel)` fallback still byte-matches and
+    /// the function is correctly flagged. Aux paths that resolve outside
+    /// `repo_root` are dropped — a defense-in-depth measure since the
+    /// composer shouldn't produce them.
+    ///
+    /// **Why a wrapper instead of a parameter on `closure()`.**
+    /// `closure()` populates the per-dir `Refs` cache keyed by directory.
+    /// Aux paths are per-function, not per-dir, so threading them through
+    /// `closure()` would either lose caching or require a separate cache
+    /// layer. Composing `closure(fn_dir) + per-function aux insert`
+    /// keeps the dir-level cache intact.
+    pub fn closure_with_aux(&self, fn_dir: &Path, aux: &[PathBuf]) -> Closure {
+        let mut c = self.closure(fn_dir);
+        for p in aux {
+            match p.canonicalize() {
+                Ok(canon) => {
+                    if canon.starts_with(&self.repo_root) {
+                        c.files.insert(canon);
+                    }
+                }
+                Err(_) => {
+                    c.files.insert(p.clone());
+                }
+            }
+        }
+        c
+    }
+
     /// Compute the closure of `fn_dir`. If the dir doesn't exist or is
     /// outside the repo, returns an empty closure.
     pub fn closure(&self, fn_dir: &Path) -> Closure {
@@ -139,32 +175,73 @@ impl Analyzer {
         let mut files: Vec<PathBuf> = Vec::new();
         let mut manifests: Vec<PathBuf> = Vec::new();
 
-        for entry in WalkDir::new(dir)
-            .follow_links(false)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            let path = entry.path();
-            let ft = entry.file_type();
-
-            if ft.is_symlink() {
-                if let Some(target) = resolve_symlink_chain(path, &self.repo_root) {
-                    match fs::metadata(&target) {
-                        Ok(meta) if meta.is_dir() => dirs.push(target),
-                        Ok(meta) if meta.is_file() => files.push(target),
-                        Ok(_) => {}
-                        Err(e) => tracing::warn!(
-                            "symlink {} resolved to unreadable target {}: {}",
-                            path.display(),
-                            target.display(),
-                            e
-                        ),
+        let idx = composer::index::get();
+        if idx.covers(dir) {
+            // Fast path: composer already walked the topology subtree;
+            // filter its per-dir snapshot to the subtree under `dir`
+            // instead of re-walking. `dir` is always canonical here:
+            // `closure()` canonicalizes the seed via
+            // `canonicalize_within`, and subsequent queue entries come
+            // from `resolve_symlink_chain` / `resolve_manifest_refs`,
+            // both of which return canonical paths.
+            //
+            // Note: the index prunes well-known noisy subtrees (`.git`,
+            // `node_modules`, `target`, etc. — see
+            // [`composer::index::SKIP_DIR_NAMES`]). Symlinks and
+            // manifests inside those subtrees are NOT visible here; the
+            // legacy `WalkDir` fallback below walks everything. In
+            // practice these dirs are gitignored or build-artifact
+            // trees that wouldn't drive code-deploy decisions anyway.
+            for (dir_path, info) in idx.descendants_of(dir) {
+                for sym in &info.symlinks {
+                    if let Some(target) = resolve_symlink_chain(sym, &self.repo_root) {
+                        match fs::metadata(&target) {
+                            Ok(meta) if meta.is_dir() => dirs.push(target),
+                            Ok(meta) if meta.is_file() => files.push(target),
+                            Ok(_) => {}
+                            Err(e) => tracing::warn!(
+                                "symlink {} resolved to unreadable target {}: {}",
+                                sym.display(),
+                                target.display(),
+                                e
+                            ),
+                        }
                     }
                 }
-            } else if ft.is_file() {
-                if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-                    if manifest::is_manifest(name) {
-                        manifests.push(path.to_path_buf());
+                for fname in &info.filenames {
+                    if manifest::is_manifest(fname) {
+                        manifests.push(dir_path.join(fname));
+                    }
+                }
+            }
+        } else {
+            for entry in WalkDir::new(dir)
+                .follow_links(false)
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
+                let path = entry.path();
+                let ft = entry.file_type();
+
+                if ft.is_symlink() {
+                    if let Some(target) = resolve_symlink_chain(path, &self.repo_root) {
+                        match fs::metadata(&target) {
+                            Ok(meta) if meta.is_dir() => dirs.push(target),
+                            Ok(meta) if meta.is_file() => files.push(target),
+                            Ok(_) => {}
+                            Err(e) => tracing::warn!(
+                                "symlink {} resolved to unreadable target {}: {}",
+                                path.display(),
+                                target.display(),
+                                e
+                            ),
+                        }
+                    }
+                } else if ft.is_file() {
+                    if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
+                        if manifest::is_manifest(name) {
+                            manifests.push(path.to_path_buf());
+                        }
                     }
                 }
             }
@@ -385,9 +462,8 @@ mod tests {
 
     #[test]
     fn closure_follows_deep_nested_symlink() {
-        // Common in real-world layouts: each function has a handler
-        // subdir which contains a symlink to a sibling shared_lib at
-        // a higher level in the tree.
+        // Mimics a common real-repo pattern: each function has a handler
+        // subdir which contains a symlink to ../../../shared_lib.
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkfile(root, "shared_lib/utils/a.rb", "");
@@ -502,5 +578,119 @@ mod tests {
         // analyzer's cache should show exactly those entries.
         let refs = analyzer.refs.borrow();
         assert_eq!(refs.len(), 3, "cache contents: {:?}", refs.keys());
+    }
+
+    #[test]
+    fn aux_picks_up_role_file_outside_fn_dir() {
+        // A function's role JSON lives in the infrastructure tree, not
+        // under the function's source dir. closure_with_aux must include
+        // the canonical role path so role-only edits flag the function.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mkfile(root, "topologies/foo/myfn/handler.py", "def handler(): pass\n");
+        mkfile(root, "infrastructure/tc/foo/roles/myfn.json", "{}");
+
+        let analyzer = Analyzer::new(root).unwrap();
+        let aux = vec![root.join("infrastructure/tc/foo/roles/myfn.json")];
+        let c = analyzer.closure_with_aux(&root.join("topologies/foo/myfn"), &aux);
+
+        let canonical = root
+            .join("infrastructure/tc/foo/roles/myfn.json")
+            .canonicalize()
+            .unwrap();
+        assert!(c.contains(&canonical));
+    }
+
+    #[test]
+    fn aux_handles_deleted_file_path() {
+        // Conventional aux paths are always emitted by the composer,
+        // even when the file doesn't exist on disk (e.g. deleted between
+        // tags). closure_with_aux must keep the logical path so a
+        // DiffSet entry for the deletion (also a logical join) matches.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mkfile(root, "topologies/foo/myfn/handler.py", "");
+
+        let analyzer = Analyzer::new(root).unwrap();
+        let logical = root.join("infrastructure/tc/foo/roles/myfn.json");
+        assert!(!logical.exists(), "test setup: file must NOT exist");
+
+        let c = analyzer.closure_with_aux(
+            &root.join("topologies/foo/myfn"),
+            &[logical.clone()],
+        );
+
+        assert!(
+            c.files.contains(&logical),
+            "logical (non-canonical) path must be retained for deletion case; \
+             closure files = {:?}",
+            c.files
+        );
+    }
+
+    #[test]
+    fn aux_drops_paths_outside_repo() {
+        // A real-on-disk aux path that resolves outside the repo must be
+        // silently dropped. Defense in depth — composer shouldn't produce
+        // these, but if it does we don't want false matches against an
+        // unrelated tree.
+        let outer = TempDir::new().unwrap();
+        let repo = TempDir::new().unwrap();
+        let root = repo.path();
+        mkfile(root, "topologies/foo/myfn/handler.py", "");
+        mkfile(outer.path(), "stray/role.json", "{}");
+
+        let analyzer = Analyzer::new(root).unwrap();
+        let outside = outer.path().join("stray/role.json");
+        let c = analyzer.closure_with_aux(
+            &root.join("topologies/foo/myfn"),
+            &[outside.clone()],
+        );
+
+        let canonical = outside.canonicalize().unwrap();
+        assert!(!c.contains(&canonical), "outside-repo aux path leaked in");
+    }
+
+    #[test]
+    fn aux_canonicalizes_symlinks() {
+        // If the aux path itself is a symlink, the canonical target is
+        // what ends up in the closure — and it's also what the diff side
+        // produces from a `repo_root.join(rel).canonicalize()`. Match.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mkfile(root, "topologies/foo/myfn/handler.py", "");
+        mkfile(root, "real/role.json", "{}");
+        symlink(root.join("real/role.json"), root.join("link.json")).unwrap();
+
+        let analyzer = Analyzer::new(root).unwrap();
+        let c = analyzer.closure_with_aux(
+            &root.join("topologies/foo/myfn"),
+            &[root.join("link.json")],
+        );
+
+        let canonical_real = root.join("real/role.json").canonicalize().unwrap();
+        assert!(c.contains(&canonical_real));
+    }
+
+    #[test]
+    fn aux_does_not_double_count_paths_in_source_closure() {
+        // A path that's already covered by a closure root (because it
+        // sits under f.dir) and is also explicitly listed as aux must
+        // not produce inconsistent results. `Closure::contains` should
+        // still return true for that path; no duplicate-flagging hazard.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        mkfile(root, "topologies/foo/myfn/handler.py", "");
+        mkfile(root, "topologies/foo/myfn/role.json", "{}");
+
+        let analyzer = Analyzer::new(root).unwrap();
+        let aux_path = root.join("topologies/foo/myfn/role.json");
+        let c = analyzer.closure_with_aux(
+            &root.join("topologies/foo/myfn"),
+            &[aux_path.clone()],
+        );
+
+        let canonical = aux_path.canonicalize().unwrap();
+        assert!(c.contains(&canonical));
     }
 }
