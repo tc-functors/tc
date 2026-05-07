@@ -13,69 +13,43 @@ mod tier1_struct_symmetry {
     //! Fields that exist only for compilation control (filesystem discovery,
     //! recursion flags) are explicitly documented as "control-only".
 
-    /// Canonical mapping between TopologySpec fields and Topology fields.
-    /// This is the source of truth for the symmetry invariant.
-    struct FieldMapping {
-        spec_field: &'static str,
-        topology_field: Option<&'static str>,
-        relationship: FieldRelationship,
-    }
-
-    enum FieldRelationship {
-        /// Spec field maps directly to Topology field (possibly Option<T> -> T)
-        Direct,
-        /// Spec field is used during composition but does not appear on Topology
-        /// (control/discovery flags)
-        ControlOnly,
-        /// Spec field maps to a differently-named Topology field
-        Renamed(&'static str),
-        /// Spec field is transformed into a different structure on Topology
-        Transformed(&'static str),
-    }
-
-    /// The authoritative field mapping. If you add a field to TopologySpec or
-    /// Topology, you MUST update this table — the tests below will fail otherwise.
-    const SPEC_TO_TOPOLOGY: &[FieldMapping] = &[
-        // --- Direct mappings (Option<T> on spec -> T on topology) ---
-        FieldMapping { spec_field: "kind", topology_field: Some("kind"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "concurrent", topology_field: Some("concurrent"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "infra", topology_field: Some("infra"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "hyphenated_names", topology_field: Some("hyphenated_names"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "dir", topology_field: Some("dir"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "events", topology_field: Some("events"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "routes", topology_field: Some("routes"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "functions", topology_field: Some("functions"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "queues", topology_field: Some("queues"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "channels", topology_field: Some("channels"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "pages", topology_field: Some("pages"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "tests", topology_field: Some("tests"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "sequences", topology_field: Some("sequences"), relationship: FieldRelationship::Direct },
-        FieldMapping { spec_field: "flow", topology_field: Some("flow"), relationship: FieldRelationship::Direct },
-
-        // --- Renamed mappings ---
-        FieldMapping { spec_field: "name", topology_field: Some("namespace"), relationship: FieldRelationship::Renamed("name -> namespace") },
-
-        // --- Transformed mappings ---
-        FieldMapping { spec_field: "mutations", topology_field: Some("mutations"), relationship: FieldRelationship::Transformed("MutationSpec -> HashMap<String, Mutation>") },
-        FieldMapping { spec_field: "triggers", topology_field: Some("pools"), relationship: FieldRelationship::Transformed("triggers + pools vec -> HashMap<String, Pool>") },
-        FieldMapping { spec_field: "pools", topology_field: Some("pools"), relationship: FieldRelationship::Transformed("pools vec feeds into Pool map with triggers") },
-        FieldMapping { spec_field: "states", topology_field: Some("flow"), relationship: FieldRelationship::Transformed("states is alternate input to flow") },
-
-        // --- Control-only fields (used for discovery/compilation, not on Topology) ---
-        FieldMapping { spec_field: "root", topology_field: None, relationship: FieldRelationship::ControlOnly },
-        FieldMapping { spec_field: "recursive", topology_field: None, relationship: FieldRelationship::ControlOnly },
-        FieldMapping { spec_field: "auto", topology_field: None, relationship: FieldRelationship::ControlOnly },
-        FieldMapping { spec_field: "mode", topology_field: None, relationship: FieldRelationship::ControlOnly },
-        FieldMapping { spec_field: "nodes", topology_field: None, relationship: FieldRelationship::ControlOnly },
-
-        // --- Fields that exist on spec but are NOT used in topology construction ---
-        // These are potential bugs or dead code:
-        FieldMapping { spec_field: "version", topology_field: Some("version"), relationship: FieldRelationship::Transformed("UNUSED: spec.version is ignored; topology.version comes from semver lookup") },
-        FieldMapping { spec_field: "config", topology_field: Some("config"), relationship: FieldRelationship::Transformed("UNUSED: spec.config path is ignored; topology.config is always Config::new()") },
+    /// Spec fields that map directly to a Topology field (possibly Option<T> -> T).
+    /// Format: (spec_field, topology_field)
+    const DIRECT_MAPPINGS: &[(&str, &str)] = &[
+        ("kind", "kind"),
+        ("concurrent", "concurrent"),
+        ("infra", "infra"),
+        ("hyphenated_names", "hyphenated_names"),
+        ("dir", "dir"),
+        ("events", "events"),
+        ("routes", "routes"),
+        ("functions", "functions"),
+        ("queues", "queues"),
+        ("channels", "channels"),
+        ("pages", "pages"),
+        ("tests", "tests"),
+        ("sequences", "sequences"),
+        ("flow", "flow"),
     ];
 
-    /// Fields on Topology that have NO counterpart on TopologySpec.
-    /// These are derived/computed during composition.
+    /// Spec fields that map to a differently-named or transformed Topology field.
+    /// Format: (spec_field, topology_field, description)
+    const TRANSFORMED_MAPPINGS: &[(&str, &str, &str)] = &[
+        ("name", "namespace", "renamed: name -> namespace"),
+        ("mutations", "mutations", "MutationSpec -> HashMap<String, Mutation>"),
+        ("triggers", "pools", "triggers + pools vec -> HashMap<String, Pool>"),
+        ("pools", "pools", "pools vec feeds into Pool map with triggers"),
+        ("states", "flow", "states is alternate input to flow"),
+        ("version", "version", "UNUSED: spec.version ignored; topology.version from semver"),
+        ("config", "config", "UNUSED: spec.config ignored; topology.config is Config::new()"),
+    ];
+
+    /// Spec fields used only for compilation control (not on Topology).
+    const CONTROL_ONLY_FIELDS: &[&str] = &[
+        "root", "recursive", "auto", "mode", "nodes",
+    ];
+
+    /// Topology fields with NO counterpart on TopologySpec (derived during composition).
     const TOPOLOGY_ONLY_FIELDS: &[&str] = &[
         "env",           // from environment/CLI context
         "fqn",           // computed from namespace + env
@@ -90,6 +64,21 @@ mod tier1_struct_symmetry {
         "nodes",         // recursive child topologies from filesystem discovery
     ];
 
+    fn all_mapped_spec_fields() -> Vec<&'static str> {
+        let mut fields: Vec<&str> = Vec::new();
+        fields.extend(DIRECT_MAPPINGS.iter().map(|(s, _)| *s));
+        fields.extend(TRANSFORMED_MAPPINGS.iter().map(|(s, _, _)| *s));
+        fields.extend(CONTROL_ONLY_FIELDS.iter().copied());
+        fields
+    }
+
+    fn all_mapped_topology_fields() -> Vec<&'static str> {
+        let mut fields: Vec<&str> = Vec::new();
+        fields.extend(DIRECT_MAPPINGS.iter().map(|(_, t)| *t));
+        fields.extend(TRANSFORMED_MAPPINGS.iter().map(|(_, t, _)| *t));
+        fields
+    }
+
     #[test]
     fn all_spec_fields_are_mapped() {
         let spec_fields: Vec<&str> = vec![
@@ -99,22 +88,15 @@ mod tier1_struct_symmetry {
             "channels", "triggers", "pages", "tests", "states", "flow", "sequences",
         ];
 
-        let mapped_spec_fields: Vec<&str> = SPEC_TO_TOPOLOGY
-            .iter()
-            .map(|m| m.spec_field)
+        let mapped = all_mapped_spec_fields();
+        let unmapped: Vec<&&str> = spec_fields.iter()
+            .filter(|f| !mapped.contains(*f))
             .collect();
-
-        let mut unmapped = Vec::new();
-        for field in &spec_fields {
-            if !mapped_spec_fields.contains(field) {
-                unmapped.push(*field);
-            }
-        }
 
         assert!(
             unmapped.is_empty(),
-            "TopologySpec fields not accounted for in SPEC_TO_TOPOLOGY mapping: {:?}\n\
-             Every spec field must be explicitly mapped (even if ControlOnly).",
+            "TopologySpec fields not accounted for in mapping: {:?}\n\
+             Every spec field must be explicitly mapped (even if control-only).",
             unmapped
         );
     }
@@ -129,23 +111,14 @@ mod tier1_struct_symmetry {
             "transducer", "sequences",
         ];
 
-        let mapped_topology_fields: Vec<&str> = SPEC_TO_TOPOLOGY
-            .iter()
-            .filter_map(|m| m.topology_field)
+        let mapped = all_mapped_topology_fields();
+        let unaccounted: Vec<&&str> = topology_fields.iter()
+            .filter(|f| !mapped.contains(*f) && !TOPOLOGY_ONLY_FIELDS.contains(*f))
             .collect();
-
-        let mut unaccounted = Vec::new();
-        for field in &topology_fields {
-            if !mapped_topology_fields.contains(field)
-                && !TOPOLOGY_ONLY_FIELDS.contains(field)
-            {
-                unaccounted.push(*field);
-            }
-        }
 
         assert!(
             unaccounted.is_empty(),
-            "Topology fields not accounted for in either SPEC_TO_TOPOLOGY or TOPOLOGY_ONLY_FIELDS: {:?}\n\
+            "Topology fields not accounted for in either mappings or TOPOLOGY_ONLY_FIELDS: {:?}\n\
              Every topology field must be documented as either mapped-from-spec or derived.",
             unaccounted
         );
@@ -161,18 +134,15 @@ mod tier1_struct_symmetry {
             "transducer", "sequences",
         ];
 
-        let mut phantom_fields = Vec::new();
-        for field in TOPOLOGY_ONLY_FIELDS {
-            if !topology_fields.contains(field) {
-                phantom_fields.push(*field);
-            }
-        }
+        let phantom: Vec<&&str> = TOPOLOGY_ONLY_FIELDS.iter()
+            .filter(|f| !topology_fields.contains(*f))
+            .collect();
 
         assert!(
-            phantom_fields.is_empty(),
+            phantom.is_empty(),
             "TOPOLOGY_ONLY_FIELDS references fields not on Topology: {:?}\n\
              Remove stale entries.",
-            phantom_fields
+            phantom
         );
     }
 }
@@ -904,5 +874,135 @@ mod tier3_dependency_direction {
              The pipeline must flow: kit -> compiler -> composer -> resolver",
             violations.join("\n")
         );
+    }
+}
+
+mod tier2_coding_style {
+    //! Coding style invariants for tc.
+    //!
+    //! These encode team preferences that should guide contributions:
+    //!   1. Avoid explicit lifetimes unless required by the borrow checker
+    //!   2. Avoid custom error types; prefer Result with standard/simple errors
+    //!   3. Avoid trait definitions; prefer plain functions (builtins like
+    //!      Display, Debug, Serialize, etc. are fine)
+
+    use std::process::Command;
+
+    #[test]
+    fn no_custom_error_types() {
+        // Custom error enums/structs add indirection without value in this
+        // codebase. Prefer Result<T, String> or anyhow-style errors.
+        // Existing ParseError in entity.rs is grandfathered.
+        let output = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                r"(enum|struct)\s+\w*Error",
+                "lib/",
+                "--glob", "*.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let allowed = &[
+            "ParseError",  // entity.rs — simple unit struct, grandfathered
+        ];
+
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .filter(|l| !allowed.iter().any(|a| l.contains(a)))
+            .filter(|l| !l.contains("#[cfg(test)]"))
+            .collect();
+
+        assert!(
+            violations.is_empty(),
+            "Custom error types found ({} violations):\n\n{}\n\n\
+             Design preference: avoid wrapping errors in custom types.\n\
+             Use Result<T, String>, anyhow::Result, or simple error values.",
+            violations.len(),
+            violations.join("\n")
+        );
+    }
+
+    #[test]
+    fn no_custom_trait_definitions() {
+        // Prefer plain functions over custom traits. Built-in trait impls
+        // (Display, Debug, From, Serialize, etc.) are fine.
+        let output = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                r"^pub trait |^trait ",
+                "lib/",
+                "--glob", "*.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .filter(|l| !l.contains("#[cfg(test)]"))
+            .collect();
+
+        assert!(
+            violations.is_empty(),
+            "Custom trait definitions found ({} violations):\n\n{}\n\n\
+             Design preference: use plain functions instead of traits.\n\
+             Built-in trait impls (Display, From, Serialize, etc.) are fine.",
+            violations.len(),
+            violations.join("\n")
+        );
+    }
+
+    #[test]
+    fn no_unnecessary_lifetime_annotations() {
+        // Explicit lifetime annotations should be rare. If the borrow checker
+        // doesn't require them, don't use them.
+        //
+        // Known-valid uses (borrow checker requires these):
+        //   - lisp/parser.rs: nom combinator signatures require lifetime params
+        //   - differ/lib.rs: collect_topologies borrows from topology tree
+        //   - kit/core.rs: _remove_suffix ties output lifetime to input
+        let output = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                r"(struct|enum|fn)\s+\w+<'",
+                "lib/",
+                "--glob", "*.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let allowed_files = &[
+            "lisp/parser.rs",     // nom requires lifetime params
+            "differ/src/lib.rs",  // borrows from topology tree
+            "kit/src/core.rs",    // ties output lifetime to input
+        ];
+
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .filter(|l| !l.contains("#[cfg(test)]"))
+            .filter(|l| !allowed_files.iter().any(|f| l.contains(f)))
+            .collect();
+
+        if !violations.is_empty() {
+            panic!(
+                "Explicit lifetime annotations found ({} instances):\n\n{}\n\n\
+                 Design preference: avoid lifetimes unless the borrow checker requires them.\n\
+                 Prefer owned types (String over &str, Vec over &[T]) in struct fields.\n\
+                 If the borrow checker requires it, add to the allowed_files list.",
+                violations.len(),
+                violations.join("\n")
+            );
+        }
     }
 }

@@ -128,6 +128,46 @@ if [ $DUP_VIOLATIONS -eq 0 ]; then
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Check 4: Coding style (lifetimes, error types, traits)
+# ─────────────────────────────────────────────────────────────────────────────
+header "Coding style (avoid lifetimes, custom error types, custom traits)"
+
+PRE_STYLE_VIOLATIONS=$VIOLATIONS
+
+# Lifetime annotations in struct/enum/fn definitions
+# Allowed: lisp/parser.rs (nom), differ/src/lib.rs (tree borrows), kit/src/core.rs (slice output)
+lifetime_hits=$(rg -n "(struct|enum|fn)\s+\w+<'" lib/ --glob '*.rs' 2>/dev/null \
+    | grep -v "lisp/parser.rs" \
+    | grep -v "differ/src/lib.rs" \
+    | grep -v "kit/src/core.rs" || true)
+if [ -n "$lifetime_hits" ]; then
+    while IFS= read -r hit; do
+        fail "Explicit lifetime annotation: $hit"
+    done <<< "$lifetime_hits"
+fi
+
+# Custom error types (allow ParseError as grandfathered)
+error_type_hits=$(rg -n "(enum|struct)\s+\w*Error" lib/ --glob '*.rs' 2>/dev/null | grep -v "ParseError" || true)
+if [ -n "$error_type_hits" ]; then
+    while IFS= read -r hit; do
+        fail "Custom error type: $hit"
+    done <<< "$error_type_hits"
+fi
+
+# Custom trait definitions
+trait_hits=$(rg -n "^pub trait |^trait " lib/ --glob '*.rs' 2>/dev/null || true)
+if [ -n "$trait_hits" ]; then
+    while IFS= read -r hit; do
+        fail "Custom trait definition: $hit"
+    done <<< "$trait_hits"
+fi
+
+STYLE_VIOLATIONS=$((VIOLATIONS - PRE_STYLE_VIOLATIONS))
+if [ $STYLE_VIOLATIONS -eq 0 ]; then
+    pass "No coding style violations"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Summary
 # ─────────────────────────────────────────────────────────────────────────────
 echo ""
