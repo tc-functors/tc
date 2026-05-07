@@ -407,17 +407,10 @@ pub async fn find_modified(
         namespace, version, ..
     } = root;
 
-    // REGRESSION: look up the *node's* own state machine, not the
-    // root's. When `topology` is a nested node (sub-topology) the
-    // root's `fqn`/`kind` point at a different AWS resource than
-    // the node's; consulting the root's tag here was the bug that
-    // caused brand-new nested topologies to be classified as
-    // "already deployed at the root's version", `from == to` in
-    // the differ, and the deployer to create state machines with
-    // no lambdas behind them. The root's `namespace`/`version` are
-    // still used below for git-tag construction (because git tags
-    // live at the root level), but the deployment-target lookup
-    // must be scoped to this topology.
+    // REGRESSION: use `topology.fqn`/`topology.kind`, not `root.*`.
+    // For nested nodes the root's tag lives on a different AWS
+    // resource; using it here let `from == to` silently filter out
+    // brand-new nested topologies' functions.
     let maybe_version = snapshotter::find_version(auth, &topology.fqn, &topology.kind).await;
 
     let target_version = match maybe_version {
@@ -425,9 +418,8 @@ pub async fn find_modified(
         None => return topology.functions.clone(),
     };
 
-    // Pass the *root* namespace to diff_fns so git tag construction
-    // uses the namespace where tags actually live. `topology` here may
-    // be a nested node whose own namespace doesn't match any tag.
+    // Git tags live under the root namespace, so diff_fns gets the
+    // root namespace even when `topology` is a nested node.
     let diff_result = differ::diff_fns(topology, namespace, &target_version, version);
     classify_modified(
         &topology.functions,
@@ -494,16 +486,6 @@ pub async fn resolve_given(
 mod tests {
     use super::*;
     use std::collections::HashMap;
-
-    // The topology-fqn-vs-root-fqn lookup choice in `find_modified`
-    // is not unit-tested here: it is a single field-access change
-    // that would only be testable end-to-end against a stubbed
-    // `snapshotter::find_version`, and `find_modified` itself has no
-    // test seam to inject one. The composer-side regression tests in
-    // `lib/composer/src/topology.rs::make_relative_tests` exercise
-    // the full Topology shape that drives that lookup. The REGRESSION
-    // comment above the call site in `find_modified` is the deterrent
-    // against re-introduction.
 
     /// `Ok(...)` is returned verbatim — the resolver trusts the differ
     /// when it has computed an answer.
