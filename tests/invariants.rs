@@ -878,28 +878,278 @@ mod tier3_dependency_direction {
 }
 
 mod tier2_coding_style {
-    //! Coding style invariants for tc.
+    //! Coding style invariants for tc (from icy's 11 points + earlier 3).
     //!
-    //! These encode team preferences that should guide contributions:
-    //!   1. Avoid explicit lifetimes unless required by the borrow checker
-    //!   2. Avoid custom error types; prefer Result with standard/simple errors
-    //!   3. Avoid trait definitions; prefer plain functions (builtins like
-    //!      Display, Debug, Serialize, etc. are fine)
+    //! 1. Avoid unwrap()
+    //! 2. Avoid stack allocation (&str) in map/sequence fns (not easily lintable)
+    //! 3. Avoid clone()
+    //! 4. Run cargo fmt before pushing
+    //! 5. Don't over-comment; don't comment function signatures
+    //! 6. Top-level functions shouldn't return Result
+    //! 7. Generic utils belong in lib/kit
+    //! 8. Avoid Rust generics
+    //! 9. Avoid closures stored in variables (trait-bound closures in iterators OK)
+    //! 10. Use destructuring (not easily lintable)
+    //! 11. Pass &str not String in fn params (unless async/mpsc)
+    //!
+    //! Plus the earlier 3:
+    //! - Avoid explicit lifetimes unless borrow checker requires them
+    //! - Avoid custom error types
+    //! - Avoid custom trait definitions
 
     use std::process::Command;
 
+    // ── Point 1: Avoid unwrap() ──────────────────────────────────────────────
+
     #[test]
-    fn no_custom_error_types() {
-        // Custom error enums/structs add indirection without value in this
-        // codebase. Prefer Result<T, String> or anyhow-style errors.
-        // Existing ParseError in entity.rs is grandfathered.
+    fn unwrap_usage_does_not_increase() {
+        // Baseline: 609 unwrap() calls as of 2026-05-07.
+        // This should only go DOWN over time, never up.
+        let output = Command::new("rg")
+            .args(["--count", r"\.unwrap\(\)", "lib/", "--glob", "*.rs"])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let total: usize = stdout.lines()
+            .filter_map(|l| l.rsplit(':').next())
+            .filter_map(|n| n.parse::<usize>().ok())
+            .sum();
+
+        let baseline = 609;
+        assert!(
+            total <= baseline,
+            "unwrap() count increased from {} to {}.\n\
+             Design rule: avoid unwrap() like a plague. Use if-let, match, \
+             unwrap_or, or propagate with ?.",
+            baseline, total
+        );
+    }
+
+    // ── Point 3: Avoid clone() ───────────────────────────────────────────────
+
+    #[test]
+    fn clone_usage_does_not_increase() {
+        // Baseline: 624 clone() calls as of 2026-05-07.
+        // This should only go DOWN over time, never up.
+        let output = Command::new("rg")
+            .args(["--count", r"\.clone\(\)", "lib/", "--glob", "*.rs"])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let total: usize = stdout.lines()
+            .filter_map(|l| l.rsplit(':').next())
+            .filter_map(|n| n.parse::<usize>().ok())
+            .sum();
+
+        let baseline = 624;
+        assert!(
+            total <= baseline,
+            "clone() count increased from {} to {}.\n\
+             Design rule: avoid clone(). Prefer passing references or \
+             restructuring to avoid the need for cloning.",
+            baseline, total
+        );
+    }
+
+    // ── Point 4: Run cargo fmt ───────────────────────────────────────────────
+
+    #[test]
+    fn code_is_formatted() {
+        // Uses nightly fmt (cargo +nightly fmt) which matches the project's
+        // rustfmt.toml settings. Falls back to stable if nightly unavailable.
+        let output = Command::new("cargo")
+            .args(["+nightly", "fmt", "--check"])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output();
+
+        let output = match output {
+            Ok(o) => o,
+            Err(_) => {
+                // Nightly not available, try stable
+                Command::new("cargo")
+                    .args(["fmt", "--check"])
+                    .current_dir(env!("CARGO_MANIFEST_DIR"))
+                    .output()
+                    .expect("cargo fmt must be available")
+            }
+        };
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let diffs: Vec<&str> = stdout.lines()
+            .filter(|l| l.starts_with("Diff in"))
+            .collect();
+
+        assert!(
+            diffs.is_empty(),
+            "Code is not formatted ({} files have diffs). Run `make fmt`:\n\n{}",
+            diffs.len(),
+            diffs.iter().take(10).cloned().collect::<Vec<_>>().join("\n")
+        );
+    }
+
+    // ── Point 6: Top-level functions shouldn't return Result ─────────────────
+
+    #[test]
+    fn no_result_returns_in_top_level_api() {
+        // Top-level pub functions (in lib/*/src/lib.rs) should not return
+        // Result types, as it adds unnecessary unwrapping in callers.
         let output = Command::new("rg")
             .args([
-                "--no-heading",
-                "-n",
+                "--no-heading", "-n",
+                r"pub (async )?fn \w+.*-> .*Result",
+                "lib/", "--glob", "*/src/lib.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .collect();
+
+        assert!(
+            violations.is_empty(),
+            "Top-level functions return Result ({} violations):\n\n{}\n\n\
+             Design rule: top-level functions shouldn't return Result types.\n\
+             Handle errors internally or use simpler return types.",
+            violations.len(),
+            violations.join("\n")
+        );
+    }
+
+    // ── Point 8: Avoid Rust generics ─────────────────────────────────────────
+
+    #[test]
+    fn no_unnecessary_generics() {
+        // Generic type parameters should be avoided. Exceptions:
+        //   - lib/kit: utility functions (print_table<T>, json helpers) are OK
+        //   - lisp/expr.rs: serialize/deserialize wrappers
+        //   - Trait impl blocks (Hash, From, etc.)
+        let output = Command::new("rg")
+            .args([
+                "--no-heading", "-n",
+                r"(pub fn|fn) \w+<\w",
+                "lib/", "--glob", "*.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let allowed = &[
+            "kit/",           // utility crate, generics are expected
+            "lisp/parser.rs", // nom combinators require lifetime generics
+            "lisp/expr.rs",   // serialize/deserialize helpers
+        ];
+
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .filter(|l| !allowed.iter().any(|a| l.contains(a)))
+            .filter(|l| !l.contains("fn from(") && !l.contains("fn hash("))
+            .collect();
+
+        assert!(
+            violations.is_empty(),
+            "Generic type parameters found outside kit ({} violations):\n\n{}\n\n\
+             Design rule: avoid Rust generics. Simple functions are easier to read.\n\
+             If needed for utility functions, put them in lib/kit.",
+            violations.len(),
+            violations.join("\n")
+        );
+    }
+
+    // ── Point 9: Avoid closures stored in variables ──────────────────────────
+
+    #[test]
+    fn no_stored_closures() {
+        // Closures passed to iterators (.map(|x| ...), .filter(|x| ...)) are fine.
+        // Closures stored in variables (let f = |x| ...) should be avoided;
+        // use named functions instead.
+        let output = Command::new("rg")
+            .args([
+                "--no-heading", "-n",
+                r"let \w+ = \|",
+                "lib/", "--glob", "*.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let allowed = &[
+            "lisp",  // lisp interpreter uses closures as values by design
+        ];
+
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .filter(|l| !allowed.iter().any(|a| l.contains(a)))
+            .collect();
+
+        assert!(
+            violations.is_empty(),
+            "Stored closures found ({} violations):\n\n{}\n\n\
+             Design rule: avoid closures stored in variables. Use named functions \
+             instead. Closures passed inline to iterators are fine.",
+            violations.len(),
+            violations.join("\n")
+        );
+    }
+
+    // ── Point 11: Pass &str not String in fn params ──────────────────────────
+
+    #[test]
+    fn prefer_str_ref_over_owned_string_params() {
+        // Function parameters should take &str, not String, unless the function
+        // needs ownership (async tasks, mpsc channels, etc.).
+        let output = Command::new("rg")
+            .args([
+                "--no-heading", "-n",
+                r"fn \w+\(.*\w: String",
+                "lib/", "--glob", "*.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let allowed = &[
+            "async fn",      // async functions may need owned data
+            "fn from(",      // From trait impls take owned values
+            "lisp",          // lisp interpreter manipulates owned strings
+        ];
+
+        let violations: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .filter(|l| !allowed.iter().any(|a| l.contains(a)))
+            .collect();
+
+        assert!(
+            violations.is_empty(),
+            "Functions taking owned String parameters ({} violations):\n\n{}\n\n\
+             Design rule: pass &str instead of String in function parameters \
+             unless it is an async/mpsc thread that needs ownership.",
+            violations.len(),
+            violations.join("\n")
+        );
+    }
+
+    // ── Earlier point: Avoid custom error types ──────────────────────────────
+
+    #[test]
+    fn no_custom_error_types() {
+        let output = Command::new("rg")
+            .args([
+                "--no-heading", "-n",
                 r"(enum|struct)\s+\w*Error",
-                "lib/",
-                "--glob", "*.rs",
+                "lib/", "--glob", "*.rs",
             ])
             .current_dir(env!("CARGO_MANIFEST_DIR"))
             .output()
@@ -927,17 +1177,15 @@ mod tier2_coding_style {
         );
     }
 
+    // ── Earlier point: Avoid custom traits ───────────────────────────────────
+
     #[test]
     fn no_custom_trait_definitions() {
-        // Prefer plain functions over custom traits. Built-in trait impls
-        // (Display, Debug, From, Serialize, etc.) are fine.
         let output = Command::new("rg")
             .args([
-                "--no-heading",
-                "-n",
+                "--no-heading", "-n",
                 r"^pub trait |^trait ",
-                "lib/",
-                "--glob", "*.rs",
+                "lib/", "--glob", "*.rs",
             ])
             .current_dir(env!("CARGO_MANIFEST_DIR"))
             .output()
@@ -959,22 +1207,15 @@ mod tier2_coding_style {
         );
     }
 
+    // ── Earlier point: Avoid lifetimes ───────────────────────────────────────
+
     #[test]
     fn no_unnecessary_lifetime_annotations() {
-        // Explicit lifetime annotations should be rare. If the borrow checker
-        // doesn't require them, don't use them.
-        //
-        // Known-valid uses (borrow checker requires these):
-        //   - lisp/parser.rs: nom combinator signatures require lifetime params
-        //   - differ/lib.rs: collect_topologies borrows from topology tree
-        //   - kit/core.rs: _remove_suffix ties output lifetime to input
         let output = Command::new("rg")
             .args([
-                "--no-heading",
-                "-n",
+                "--no-heading", "-n",
                 r"(struct|enum|fn)\s+\w+<'",
-                "lib/",
-                "--glob", "*.rs",
+                "lib/", "--glob", "*.rs",
             ])
             .current_dir(env!("CARGO_MANIFEST_DIR"))
             .output()
