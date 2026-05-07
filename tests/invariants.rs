@@ -359,6 +359,391 @@ mod tier2_inference_boundary {
     }
 }
 
+mod tier1_composition_matrix {
+    //! Invariant: Not all entities are composable with each other.
+    //!
+    //! The Entity Composition Matrix (https://tc-functors.org/reference/composition/)
+    //! defines which entity types can target which other entity types. This is the
+    //! source of truth for valid compositions. Provider-specific extensions must be
+    //! explicitly declared.
+    //!
+    //! The matrix is encoded here and validated against the actual spec structs to
+    //! ensure they don't offer composition paths that the design forbids.
+
+    use std::collections::HashMap;
+
+    /// Entity types that participate in composition.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    enum Entity {
+        Function,
+        Event,
+        Route,
+        Queue,
+        Channel,
+        Mutation,
+        Page,
+    }
+
+    /// The canonical Entity Composition Matrix.
+    /// Key = source entity, Value = entities it is allowed to target.
+    ///
+    /// Reference: https://tc-functors.org/reference/composition/#entity-composition-matrix
+    ///
+    /// NOTE: "State" (Step Functions / Flow) is intentionally excluded from this
+    /// matrix — it is an orchestration mechanism, not a composable entity in the
+    /// same sense. Events and Routes can implicitly fall back to State targets
+    /// when no explicit target is specified; that is handled by the orchestrator
+    /// invariants separately.
+    fn composition_matrix() -> HashMap<Entity, Vec<Entity>> {
+        let mut m = HashMap::new();
+        m.insert(Entity::Function, vec![Entity::Function, Entity::Event, Entity::Queue]);
+        m.insert(Entity::Event,    vec![Entity::Function, Entity::Event, Entity::Queue]);
+        m.insert(Entity::Route,    vec![Entity::Function, Entity::Event]);
+        m.insert(Entity::Queue,    vec![Entity::Function]);
+        m.insert(Entity::Channel,  vec![Entity::Function]);
+        m.insert(Entity::Mutation, vec![Entity::Function, Entity::Event]);
+        m.insert(Entity::Page,     vec![Entity::Function]);
+        m
+    }
+
+    /// What the spec structs actually allow (based on their fields).
+    /// Each entry is (source entity, field name, target entity it references).
+    const SPEC_STRUCT_COMPOSITIONS: &[(Entity, &str, Entity)] = &[
+        // EventSpec targets
+        (Entity::Event, "function", Entity::Function),
+        (Entity::Event, "functions", Entity::Function),
+        (Entity::Event, "mutation", Entity::Mutation),
+        (Entity::Event, "channel", Entity::Channel),
+        // Event -> state is orchestration, not composition (excluded from matrix)
+
+        // RouteSpec targets
+        (Entity::Route, "function", Entity::Function),
+        (Entity::Route, "event", Entity::Event),
+        (Entity::Route, "queue", Entity::Queue),
+        // Route -> state is orchestration fallback
+
+        // QueueSpec targets
+        (Entity::Queue, "function", Entity::Function),
+
+        // ChannelSpec targets
+        (Entity::Channel, "function", Entity::Function),
+        // HandlerSpec also has function + event, but handler is Channel-internal
+
+        // MutationSpec/ResolverSpec targets
+        (Entity::Mutation, "function", Entity::Function),
+        (Entity::Mutation, "event", Entity::Event),
+
+        // InlineFunctionSpec targets (Function composing with others)
+        (Entity::Function, "function", Entity::Function),
+        (Entity::Function, "event", Entity::Event),
+        (Entity::Function, "queue", Entity::Queue),
+        (Entity::Function, "mutation", Entity::Mutation),
+        (Entity::Function, "channel", Entity::Channel),
+
+        // PageSpec targets: none (pages are static assets, no entity references)
+    ];
+
+    #[test]
+    fn spec_structs_only_allow_compositions_in_matrix() {
+        let matrix = composition_matrix();
+        let mut violations = Vec::new();
+
+        for (source, field, target) in SPEC_STRUCT_COMPOSITIONS {
+            if let Some(allowed) = matrix.get(source) {
+                if !allowed.contains(target) {
+                    violations.push(format!(
+                        "{:?} spec has field '{}' targeting {:?}, but matrix does not allow {:?} -> {:?}",
+                        source, field, target, source, target
+                    ));
+                }
+            }
+        }
+
+        if !violations.is_empty() {
+            panic!(
+                "Spec structs allow compositions not in the Entity Composition Matrix ({} violations):\n\n{}\n\n\
+                 Either update the matrix (if this is a valid new composition) or \
+                 remove the field from the spec struct.",
+                violations.len(),
+                violations.join("\n")
+            );
+        }
+    }
+
+    #[test]
+    fn matrix_is_complete_for_all_spec_compositions() {
+        let matrix = composition_matrix();
+
+        // Every entity that appears as a source in SPEC_STRUCT_COMPOSITIONS
+        // must have an entry in the matrix
+        let mut missing_sources = Vec::new();
+        for (source, _, _) in SPEC_STRUCT_COMPOSITIONS {
+            if !matrix.contains_key(source) {
+                missing_sources.push(format!("{:?}", source));
+            }
+        }
+
+        missing_sources.sort();
+        missing_sources.dedup();
+
+        assert!(
+            missing_sources.is_empty(),
+            "Entities used in spec composition but missing from matrix: {:?}",
+            missing_sources
+        );
+    }
+
+    #[test]
+    fn function_make_targets_matches_matrix() {
+        // InlineFunctionSpec::make_targets() produces TargetSpecs for:
+        // function, mutation, event, channel (but NOT queue, even though
+        // InlineFunctionSpec has a queue field).
+        //
+        // This test documents that discrepancy. The queue field on
+        // InlineFunctionSpec is used for step-function wiring, not for
+        // transducer targets.
+        let matrix = composition_matrix();
+        let function_allowed = matrix.get(&Entity::Function).unwrap();
+
+        // What make_targets actually promotes to TargetSpec
+        let make_targets_entities = vec![
+            Entity::Function,
+            Entity::Mutation,
+            Entity::Event,
+            Entity::Channel,
+        ];
+
+        let mut out_of_matrix = Vec::new();
+        for entity in &make_targets_entities {
+            if !function_allowed.contains(entity) {
+                out_of_matrix.push(format!("{:?}", entity));
+            }
+        }
+
+        if !out_of_matrix.is_empty() {
+            panic!(
+                "InlineFunctionSpec::make_targets() promotes targets not in the composition matrix:\n\
+                 Targets: {:?}\n\
+                 Matrix allows Function -> {:?}\n\n\
+                 Either the matrix needs updating or make_targets is too permissive.",
+                out_of_matrix, function_allowed
+            );
+        }
+    }
+
+    #[test]
+    fn event_spec_targets_match_matrix() {
+        // EventSpec can target: function(s), mutation, channel, state
+        // The matrix says Event -> [Function, Event, Queue]
+        //
+        // This means EventSpec allows compositions OUTSIDE the published matrix:
+        //   - Event -> Mutation (not in matrix)
+        //   - Event -> Channel (not in matrix)
+        //
+        // This test documents these extensions. If they are intentional
+        // provider-specific extensions, they should be declared as such.
+        let matrix = composition_matrix();
+        let event_allowed = matrix.get(&Entity::Event).unwrap();
+
+        let event_actual_targets = vec![
+            ("function", Entity::Function),
+            ("mutation", Entity::Mutation),
+            ("channel", Entity::Channel),
+        ];
+
+        let mut extensions = Vec::new();
+        for (field, entity) in &event_actual_targets {
+            if !event_allowed.contains(entity) {
+                extensions.push(format!("EventSpec.{} -> {:?}", field, entity));
+            }
+        }
+
+        // This test FAILS to document that these exist as known extensions.
+        // When the team decides these are valid, move them into the matrix
+        // or into a PROVIDER_EXTENSIONS list.
+        assert!(
+            extensions.is_empty(),
+            "EventSpec allows compositions outside the published matrix:\n  {}\n\n\
+             These may be valid provider-specific extensions. If so, add them to \
+             the matrix or declare them as provider extensions.",
+            extensions.join("\n  ")
+        );
+    }
+
+    #[test]
+    fn route_spec_targets_match_matrix() {
+        // RouteSpec can target: function, event, queue, state (fallback)
+        // The published matrix says Route -> [Function, Event]
+        //
+        // Route -> Queue is present in the code but NOT in the published matrix.
+        let matrix = composition_matrix();
+        let route_allowed = matrix.get(&Entity::Route).unwrap();
+
+        let route_actual_targets = vec![
+            ("function", Entity::Function),
+            ("event", Entity::Event),
+            ("queue", Entity::Queue),
+        ];
+
+        let mut extensions = Vec::new();
+        for (field, entity) in &route_actual_targets {
+            if !route_allowed.contains(entity) {
+                extensions.push(format!("RouteSpec.{} -> {:?}", field, entity));
+            }
+        }
+
+        assert!(
+            extensions.is_empty(),
+            "RouteSpec allows compositions outside the published matrix:\n  {}\n\n\
+             These may be valid extensions. If so, update the matrix at \
+             https://tc-functors.org/reference/composition/",
+            extensions.join("\n  ")
+        );
+    }
+}
+
+mod tier1_orchestrator_separation {
+    //! Invariant: tc provides two kinds of orchestrators:
+    //!   1. Flow (AWS Step Functions) — driven by TopologySpec.flow/states/auto
+    //!   2. Transducer (inbuilt) — driven by Function targets
+    //!
+    //! These are fundamentally different mechanisms and must remain cleanly
+    //! separated. Their types, construction paths, and semantics should not
+    //! leak into each other.
+
+    use std::process::Command;
+
+    #[test]
+    fn flow_and_transducer_are_separate_modules() {
+        // Flow logic should live in composer/src/aws/flow*
+        // Transducer logic should live in composer/src/aws/transducer*
+        // Neither should import from the other.
+        let output = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                r"use.*transducer",
+                "lib/composer/src/aws/flow.rs",
+                "lib/composer/src/aws/flow/",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let flow_imports_transducer: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .collect();
+
+        let output2 = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                r"use.*(flow|sfn)",
+                "lib/composer/src/aws/transducer.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout2 = String::from_utf8_lossy(&output2.stdout);
+        let transducer_imports_flow: Vec<&str> = stdout2.lines()
+            .filter(|l| !l.is_empty())
+            .collect();
+
+        let mut violations = Vec::new();
+        if !flow_imports_transducer.is_empty() {
+            violations.push(format!(
+                "Flow module imports from transducer:\n  {}",
+                flow_imports_transducer.join("\n  ")
+            ));
+        }
+        if !transducer_imports_flow.is_empty() {
+            violations.push(format!(
+                "Transducer module imports from flow:\n  {}",
+                transducer_imports_flow.join("\n  ")
+            ));
+        }
+
+        assert!(
+            violations.is_empty(),
+            "Orchestrator types must remain independent:\n\n{}\n\n\
+             Flow (Step Functions) and Transducer are separate mechanisms. \
+             Shared logic should be extracted to a common module, not cross-imported.",
+            violations.join("\n")
+        );
+    }
+
+    #[test]
+    fn topology_kind_step_function_implies_flow() {
+        // When TopologyKind is StepFunction, it should be because flow is present.
+        // The find_kind() function infers StepFunction when flow.is_some().
+        // This test verifies that relationship is documented and consistent:
+        // find_kind should not return StepFunction based on transducer presence.
+
+        let output = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                "transducer",
+                "lib/composer/src/topology.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let find_kind_section: Vec<&str> = stdout.lines()
+            .filter(|l| l.contains("find_kind") || {
+                // Check lines near find_kind (613-635 range)
+                if let Some(num_str) = l.split(':').nth(1) {
+                    if let Ok(num) = num_str.parse::<u32>() {
+                        return num >= 613 && num <= 640;
+                    }
+                }
+                false
+            })
+            .collect();
+
+        // If transducer appears in the find_kind function, that's a violation
+        assert!(
+            find_kind_section.is_empty(),
+            "find_kind() references transducer — TopologyKind should be determined \
+             by Flow presence, not Transducer:\n  {}",
+            find_kind_section.join("\n  ")
+        );
+    }
+
+    #[test]
+    fn transducer_does_not_depend_on_topology_kind() {
+        // Transducer::new() should not check or depend on TopologyKind.
+        // It is purely derived from function targets, independent of whether
+        // the topology is a step-function, evented, routed, etc.
+        let output = Command::new("rg")
+            .args([
+                "--no-heading",
+                "-n",
+                "TopologyKind",
+                "lib/composer/src/aws/transducer.rs",
+            ])
+            .current_dir(env!("CARGO_MANIFEST_DIR"))
+            .output()
+            .expect("rg must be installed");
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let references: Vec<&str> = stdout.lines()
+            .filter(|l| !l.is_empty())
+            .collect();
+
+        assert!(
+            references.is_empty(),
+            "Transducer module references TopologyKind (should be independent):\n  {}\n\n\
+             Transducer is derived from function targets only, not topology kind.",
+            references.join("\n  ")
+        );
+    }
+}
+
 mod tier3_dependency_direction {
     //! Invariant: The dependency graph must follow a strict layering:
     //!
