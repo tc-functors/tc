@@ -187,10 +187,14 @@ fn is_singular_function_dir() -> bool {
     u::file_exists(function_file) && u::file_exists(topology_file)
 }
 
-fn is_shared(uri: Option<String>) -> bool {
-    match uri {
-        Some(p) => p.starts_with("."),
-        None => false,
+fn is_shared(uri: Option<String>, given_shared: Option<bool>) -> bool {
+    if let Some(is) = given_shared {
+        is
+    } else {
+        match uri {
+            Some(p) => p.starts_with("."),
+            None => false,
+        }
     }
 }
 
@@ -215,7 +219,7 @@ fn intern_functions(
     let root_dir = &spec.dir.clone().unwrap();
 
     for (name, f) in inline_fns {
-        if is_shared(f.uri.clone()) {
+        if is_shared(f.uri.clone(), f.shared) {
             let abs_dir = abs_shared_dir(root_dir, f.uri.clone());
             let namespace = match &f.fqn {
                 Some(_) => &spec.name,
