@@ -148,12 +148,16 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
-        let aux_files = collect_aux_files(
+        let mut aux_files = collect_aux_files(
             infra_dir,
             &fspec,
             fspec.runtime.as_ref(),
             &runtime.role,
         );
+
+        if let Some(ref afiles) =  fspec.aux_files {
+            aux_files.extend(afiles.clone());
+        }
 
         let targets = Target::make_all(&fspec);
 
