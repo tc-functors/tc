@@ -156,7 +156,9 @@ impl Function {
         );
 
         if let Some(ref afiles) =  fspec.aux_files {
-            aux_files.extend(afiles.clone());
+            for file in afiles {
+                aux_files.push(u::absolutize(dir, &file));
+            }
         }
 
         let targets = Target::make_all(&fspec);
