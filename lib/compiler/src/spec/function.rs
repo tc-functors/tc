@@ -411,6 +411,7 @@ pub struct FunctionSpec {
     pub assets: Option<AssetsSpec>,
 
     pub targets: Option<Vec<TargetSpec>>,
+    pub shared: Option<bool>,
     pub aux_files: Option<Vec<String>>,
 }
 
@@ -532,6 +533,7 @@ fn load_fspec_file(dir: &str) -> Option<FunctionSpec> {
             test: None,
             tasks: HashMap::new(),
             targets: None,
+            shared: None,
             aux_files: None
         })
     }
@@ -560,6 +562,7 @@ impl FunctionSpec {
                 test: None,
                 tasks: HashMap::new(),
                 targets: None,
+                shared: None,
                 aux_files: None
             },
         }
@@ -579,6 +582,7 @@ pub struct InlineFunctionSpec {
     pub fqn: Option<String>,
     pub runtime: Option<RuntimeSpec>,
     pub build: Option<BuildSpec>,
+    pub shared: Option<bool>,
     pub test: Option<TestSpec>,
 }
 
@@ -603,6 +607,7 @@ impl InlineFunctionSpec {
             test: None,
             tasks: HashMap::new(),
             targets: targets,
+            shared: None,
             aux_files: None
         }
     }
