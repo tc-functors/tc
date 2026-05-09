@@ -20,4 +20,5 @@ rand = { version = "^0.8.4"}
 lazy_static = "1.4"
 serde_with = "3.14.0"
 tracing = "0.1"
+regex = "1.9.1"
 kit = { path = "../kit" }

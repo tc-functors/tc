@@ -410,8 +410,11 @@ impl Config {
         let config_path = match std::env::var("TC_CONFIG_PATH") {
             Ok(p) => kit::expand_path(&p),
             Err(_) => {
-                let root = kit::sh("git rev-parse --show-toplevel", &kit::pwd());
-                format!("{}/infrastructure/tc/config.yml", root)
+                // Use the cached kit::root() instead of a fresh git
+                // rev-parse subprocess; Config::new() is called once per
+                // topology AND once per function during compose, so on a
+                // 264-function topology this elides ~300 fork+execs.
+                format!("{}/infrastructure/tc/config.yml", kit::root())
             }
         };
 

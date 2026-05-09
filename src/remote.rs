@@ -223,3 +223,10 @@ pub async fn update(env: Option<String>, sandbox: Option<String>) {
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
+
+pub async fn upgrade_version(version: Option<String>) {
+    match version {
+        Some(v) => executor::set_var("TC_ASSET_VERSION", &v).await,
+        None => println!("Please specify --version")
+    }
+}

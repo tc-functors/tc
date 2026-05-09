@@ -411,6 +411,7 @@ pub struct FunctionSpec {
     pub assets: Option<AssetsSpec>,
 
     pub targets: Option<Vec<TargetSpec>>,
+    pub aux_files: Option<Vec<String>>,
 }
 
 fn find_revision(dir: &str) -> String {
@@ -448,6 +449,19 @@ fn render(s: &str, version: &str) -> String {
     u::stencil(s, table)
 }
 
+/// Return true iff `s` references the `{{version}}` template variable.
+/// Lets `load_and_render` skip a per-dir `git log -n 1` fork+exec when
+/// the spec doesn't ask for it. Matches `{{version}}` with any amount
+/// of inner whitespace; false positives are harmless (we just fall
+/// back to the original eager-render behaviour).
+fn references_version(s: &str) -> bool {
+    use regex::Regex;
+    use std::sync::OnceLock;
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r"\{\{\s*version\s*\}\}").unwrap());
+    re.is_match(s)
+}
+
 pub fn find_fspec_file(dir: &str) -> String {
     let name = match std::env::var("TC_FUNCTION_SPEC") {
         Ok(r) => r,
@@ -460,27 +474,41 @@ pub fn find_fspec_file(dir: &str) -> String {
     }
 }
 
-fn load_fspec_file(version: &str, dir: &str) -> Option<FunctionSpec> {
+/// Slurp+render a spec file, deferring `find_revision` until we know
+/// the file actually references `{{version}}`. Specs that don't use
+/// the placeholder skip the per-dir `git log -n 1` fork+exec
+/// entirely — one less subprocess per function in the topology.
+fn load_and_render(path: &str, dir: &str) -> String {
+    let raw = u::slurp(path);
+    if references_version(&raw) {
+        let version = find_revision(dir);
+        render(&raw, &version)
+    } else {
+        render(&raw, "")
+    }
+}
+
+fn load_fspec_file(dir: &str) -> Option<FunctionSpec> {
     let name = find_fspec_file(dir);
     let f1 = format!("{}/function.json", dir);
     let f2 = format!("{}/{}", dir, &name);
     let f3 = format!("{}/function.yaml", dir);
     if u::file_exists(&f1) {
-        let data = render(&u::slurp(&f1), &version);
+        let data = load_and_render(&f1, dir);
         let fspec: Result<FunctionSpec, _> = serde_json::from_str(&data);
         match fspec {
             Ok(f) => Some(f),
             Err(e) => panic!("{:?}", e),
         }
     } else if u::file_exists(&f2) {
-        let data = render(&u::slurp(&f2), &version);
+        let data = load_and_render(&f2, dir);
         let fspec: Result<FunctionSpec, _> = serde_yaml::from_str(&data);
         match fspec {
             Ok(f) => Some(f),
             Err(e) => panic!("{:?}", e),
         }
     } else if u::file_exists(&f3) {
-        let data = render(&u::slurp(&f3), &version);
+        let data = load_and_render(&f3, dir);
         let fspec: Result<FunctionSpec, _> = serde_yaml::from_str(&data);
         match fspec {
             Ok(f) => Some(f),
@@ -504,18 +532,14 @@ fn load_fspec_file(version: &str, dir: &str) -> Option<FunctionSpec> {
             test: None,
             tasks: HashMap::new(),
             targets: None,
+            aux_files: None
         })
     }
 }
 
 impl FunctionSpec {
     pub fn new(dir: &str) -> FunctionSpec {
-        let version = if u::file_exists(dir) {
-            find_revision(dir)
-        } else {
-            String::from("")
-        };
-        let maybe_spec = load_fspec_file(&version, dir);
+        let maybe_spec = load_fspec_file(dir);
 
         match maybe_spec {
             Some(f) => f,
@@ -536,6 +560,7 @@ impl FunctionSpec {
                 test: None,
                 tasks: HashMap::new(),
                 targets: None,
+                aux_files: None
             },
         }
     }
@@ -578,6 +603,7 @@ impl InlineFunctionSpec {
             test: None,
             tasks: HashMap::new(),
             targets: targets,
+            aux_files: None
         }
     }
 

@@ -13,6 +13,7 @@ use compiler::spec::{
 use configurator::Config;
 use kit as u;
 use kit::*;
+use runtime::collect_aux_files;
 pub use runtime::Runtime;
 use serde_derive::{
     Deserialize,
@@ -36,6 +37,35 @@ pub struct Function {
     pub build: Build,
     pub test: HashMap<String, TestSpec>,
     pub targets: Vec<Target>,
+    /// Marks functions imported via relative `uri:` for dedup promotion to root.
+    #[serde(default)]
+    pub shared: bool,
+    /// Absolute paths of files outside `f.dir` whose contents the
+    /// composer read while constructing this function: role JSON,
+    /// vars JSON, inherited parent `roles/function.json`, etc. Used
+    /// by the differ to widen the per-function closure beyond the
+    /// source-code closure — a change to any of these files marks the
+    /// function dirty even when no source code changed.
+    ///
+    /// Conventional paths (`{infra_dir}/roles/{name}.json`,
+    /// `{infra_dir}/vars/{name}.json`) are always present, even when
+    /// the file doesn't currently exist on disk, so deletions
+    /// (visible in `git diff` as removed paths) still flip the
+    /// function dirty. Explicit overrides (`r.role_file`,
+    /// `r.vars_file`) are present only when they were actually used
+    /// by the composer.
+    ///
+    /// Lives on `Function` rather than on `Runtime` because these are
+    /// source-tree paths on the developer's machine — the deployed
+    /// Lambda runtime never sees them. They're a sibling of `dir`,
+    /// not part of the runtime config.
+    ///
+    /// Populated by `collect_aux_files` during compose. Defaults to an
+    /// empty `Vec` so resolver-cached topologies pre-dating this field
+    /// continue to deserialize cleanly (they degrade to today's
+    /// behavior for that one cache hit; the next compose repopulates).
+    #[serde(default)]
+    pub aux_files: Vec<String>,
 }
 
 fn is_singular_function_dir() -> bool {
@@ -118,6 +148,18 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
+        let mut aux_files = collect_aux_files(
+            infra_dir,
+            &fspec,
+            fspec.runtime.as_ref(),
+            &runtime.role,
+        );
+
+        if let Some(ref afiles) =  fspec.aux_files {
+            for file in afiles {
+                aux_files.push(u::absolutize(dir, &file));
+            }
+        }
 
         let targets = Target::make_all(&fspec);
 
@@ -135,6 +177,8 @@ impl Function {
             test: make_test(fspec.test),
             runtime: runtime,
             targets: targets,
+            shared: false,
+            aux_files: aux_files,
         }
     }
 
@@ -157,6 +201,12 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
+        let aux_files = collect_aux_files(
+            infra_dir,
+            fspec,
+            fspec.runtime.as_ref(),
+            &runtime.role,
+        );
 
         let targets = Target::make_all(&fspec);
 
@@ -174,6 +224,8 @@ impl Function {
             test: make_test(fspec.test.clone()),
             runtime: runtime,
             targets: targets,
+            shared: false,
+            aux_files: aux_files,
         }
     }
 

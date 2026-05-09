@@ -1,5 +1,8 @@
 use super::template;
-use crate::Entity;
+use crate::{
+    Entity,
+    index,
+};
 use kit as u;
 use kit::*;
 pub mod policy;
@@ -80,7 +83,7 @@ fn name_of(entity: Entity) -> String {
 
 impl Role {
     pub fn new(entity: Entity, role_file: &str, namespace: &str, entity_name: &str) -> Role {
-        if u::file_exists(&role_file) {
+        if index::get().file_exists(&role_file) {
             let abbr = if entity_name.chars().count() > 10 {
                 u::abbreviate(entity_name, "-")
             } else {
@@ -118,7 +121,7 @@ impl Role {
         _namespace: &str,
         entity_name: &str,
     ) -> Role {
-        if u::file_exists(&role_file) {
+        if index::get().file_exists(&role_file) {
             let name = entity_name;
             Role {
                 name: s!(&name),
@@ -165,7 +168,7 @@ impl Role {
                 let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
                 let infra_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
                 let maybe_base_path = format!("{}/{}.json", infra_dir, &entity.to_str());
-                let policy = if u::file_exists(&maybe_base_path) {
+                let policy = if index::get().file_exists(&maybe_base_path) {
                     read_policy(&maybe_base_path)
                 } else {
                     Policy::new(entity)

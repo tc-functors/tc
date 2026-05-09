@@ -1,8 +1,11 @@
 use super::Context;
+use crate::memo::AsyncMemo;
 use compiler::{
     TopologyKind,
-    spec::InfraSpec,
-    spec::function::FileSystemKind,
+    spec::{
+        InfraSpec,
+        function::FileSystemKind,
+    },
 };
 use composer::{
     Function,
@@ -12,6 +15,10 @@ use composer::{
         FileSystem,
         Network,
     },
+};
+use futures::stream::{
+    self,
+    StreamExt,
 };
 use kit as u;
 use kit::*;
@@ -38,6 +45,22 @@ pub async fn lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
     }
 }
 
+// Process-wide cache of API gateway URL lookups, keyed by
+// `(auth.name, fqn)`. A given `(account, region, fqn)` maps to a
+// stable api id within a process; `(auth.name, fqn)` is a sufficient
+// surrogate because every call site reaches gateway through the same
+// `Auth::name` (the configured profile).
+static URL_CACHE: AsyncMemo<(String, String), HashMap<String, String>> = AsyncMemo::new();
+
+async fn cached_lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
+    URL_CACHE
+        .get_or_init((auth.name.clone(), fqn.to_string()), || async {
+            tracing::debug!("Looking up api-id for {} (cache miss)", fqn);
+            lookup_urls(auth, fqn).await
+        })
+        .await
+}
+
 fn render_config(s: &str, config: &HashMap<String, String>) -> String {
     let mut table: HashMap<&str, &str> = HashMap::new();
     for (k, v) in config {
@@ -55,7 +78,15 @@ async fn resolve_vars(
     tracing::debug!("Resolving env vars");
     let client = aws::ssm::make_client(auth).await;
 
-    let config = lookup_urls(auth, fqn).await;
+    // Only do the API gateway lookup if at least one env value would
+    // actually consume it. For topologies with no routes / templated
+    // env values this avoids an entire AWS round-trip per function.
+    let needs_urls = resolve_urls && environment.values().any(|v| v.starts_with("{{"));
+    let config = if needs_urls {
+        cached_lookup_urls(auth, fqn).await
+    } else {
+        HashMap::new()
+    };
 
     let mut h: HashMap<String, String> = HashMap::new();
     for (k, v) in environment.iter() {
@@ -75,18 +106,49 @@ async fn resolve_vars(
     h
 }
 
+// One assumed `Auth` per `(profile, role)` for the lifetime of the
+// process. `auth.assume` does an `STS GetCallerIdentity`; previously
+// this fired once per `resolve_layer` call. Keep `Option<String>` in
+// the key so `None` and `Some("")` stay distinct — `Auth::assume`
+// short-circuits on `None` (returns `self.clone()` with no AWS call)
+// but actually assumes for `Some("")`.
+static LAYER_AUTH: AsyncMemo<(Option<String>, Option<String>), Auth> = AsyncMemo::new();
+
 async fn make_layer_auth(ctx: &Context) -> Auth {
     let Context { auth, config, .. } = ctx;
     let profile = config.aws.lambda.layers_profile.clone();
-    auth.assume(profile.clone(), config.role_to_assume(profile))
+    let role = config.role_to_assume(profile.clone());
+    let key = (profile.clone(), role.clone());
+    LAYER_AUTH
+        .get_or_init(key, || async {
+            tracing::debug!("Assuming layer-auth profile (cache miss)");
+            auth.assume(profile, role).await
+        })
         .await
 }
 
+// Cache resolved layer versions keyed by `(profile, role, layer_name)`.
+// `(profile, role)` uniquely identify the assumed layer-auth (and
+// therefore the account+region the layer ARN resolves against), so a
+// recursive resolve over topologies with mixed `layers_profile`
+// configurations still distinguishes a same-named layer in two
+// different accounts. Bare `layer_name` would collide.
+static LAYER_VERSION_CACHE: AsyncMemo<(Option<String>, Option<String>, String), String> =
+    AsyncMemo::new();
+
 async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
-    tracing::debug!("Resolving layer {}", layer_name);
-    let auth = make_layer_auth(ctx).await;
-    let client = aws::layer::make_client(&auth).await;
-    aws::layer::find_version(client, layer_name).await.unwrap()
+    let Context { config, .. } = ctx;
+    let profile = config.aws.lambda.layers_profile.clone();
+    let role = config.role_to_assume(profile.clone());
+    let key = (profile, role, layer_name.to_string());
+    LAYER_VERSION_CACHE
+        .get_or_init(key, || async {
+            tracing::debug!("Resolving layer {} (cache miss)", layer_name);
+            let auth = make_layer_auth(ctx).await;
+            let client = aws::layer::make_client(&auth).await;
+            aws::layer::find_version(client, layer_name).await.unwrap()
+        })
+        .await
 }
 
 async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
@@ -351,6 +413,53 @@ pub struct Root {
     pub version: String,
 }
 
+/// Decide which functions to (re)deploy given a deployed-version lookup
+/// result and an incremental-diff result. Pure: no AWS, no git, no
+/// global state. Extracted so the resolver's behavior on
+/// [`differ::DiffError::TagUnresolvable`] is unit-testable.
+///
+/// Generic over the function value type purely so tests can substitute
+/// a cheap stand-in for [`composer::Function`] (which has no `Default`
+/// and ~12 required fields). Production callers always pass `Function`.
+///
+/// The fallback when the from-tag cannot be resolved is intentionally
+/// "redeploy every function in the topology" rather than "deploy
+/// nothing": the latter is the silent no-op that this code path was
+/// historically guilty of.
+pub(crate) fn classify_modified<F: Clone>(
+    fallback: &HashMap<String, F>,
+    namespace: &str,
+    target_version: &str,
+    version: &str,
+    diff_result: Result<HashMap<String, F>, differ::DiffError>,
+) -> HashMap<String, F> {
+    match diff_result {
+        Ok(fns) => {
+            if !fns.is_empty() {
+                println!(
+                    "Diff {} {}..{} ({})",
+                    namespace,
+                    target_version,
+                    version,
+                    fns.len()
+                );
+            }
+            fns
+        }
+        Err(differ::DiffError::TagUnresolvable { tag }) => {
+            tracing::warn!(
+                "deployed version {} for {} has no resolvable git tag ({}); \
+                 cannot compute incremental diff — redeploying all {} function(s)",
+                target_version,
+                namespace,
+                tag,
+                fallback.len()
+            );
+            fallback.clone()
+        }
+    }
+}
+
 pub async fn find_modified(
     auth: &Auth,
     root: &Root,
@@ -365,24 +474,22 @@ pub async fn find_modified(
 
     let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
 
-    if let Some(target_version) = maybe_version {
-        // Pass the *root* namespace to diff_fns so git tag construction
-        // uses the namespace where tags actually live. `topology` here may
-        // be a nested node whose own namespace doesn't match any tag.
-        let fns = differ::diff_fns(topology, namespace, &target_version, version);
-        if !fns.is_empty() {
-            println!(
-                "Diff {} {}..{} ({})",
-                namespace,
-                &target_version,
-                &version,
-                fns.len()
-            );
-        }
-        fns
-    } else {
-        topology.functions.clone()
-    }
+    let target_version = match maybe_version {
+        Some(v) => v,
+        None => return topology.functions.clone(),
+    };
+
+    // Pass the *root* namespace to diff_fns so git tag construction
+    // uses the namespace where tags actually live. `topology` here may
+    // be a nested node whose own namespace doesn't match any tag.
+    let diff_result = differ::diff_fns(topology, namespace, &target_version, version);
+    classify_modified(
+        &topology.functions,
+        namespace,
+        &target_version,
+        version,
+        diff_result,
+    )
 }
 
 pub async fn resolve(
@@ -391,29 +498,34 @@ pub async fn resolve(
     topology: &Topology,
     force: bool,
 ) -> HashMap<String, Function> {
-    let fns = match std::env::var("TC_FORCE_DEPLOY") {
-        Ok(_) => &topology.functions,
+    let fns: HashMap<String, Function> = match std::env::var("TC_FORCE_DEPLOY") {
+        Ok(_) => topology.functions.clone(),
         Err(_) => {
             if force {
-                &topology.functions
+                topology.functions.clone()
             } else {
-                &find_modified(&ctx.auth, root, topology).await
+                find_modified(&ctx.auth, root, topology).await
             }
         }
     };
 
     let resolve_urls = topology.routes.len() > 0;
+    let concurrency = crate::resolve_concurrency();
+    let fqn = root.fqn.clone();
 
-    let mut functions: HashMap<String, Function> = HashMap::new();
-
-    for (name, f) in fns {
-        let mut fu: Function = f.clone();
-        tracing::debug!("Resolving function {}", &name);
-
-        fu.runtime = resolve_runtime(ctx, &f.runtime, &root.fqn, resolve_urls).await;
-        functions.insert(name.to_string(), fu.clone());
-    }
-    functions
+    stream::iter(fns.into_iter())
+        .map(|(name, f)| {
+            let fqn = fqn.clone();
+            async move {
+                tracing::debug!("Resolving function {}", &name);
+                let mut fu = f.clone();
+                fu.runtime = resolve_runtime(ctx, &f.runtime, &fqn, resolve_urls).await;
+                (name, fu)
+            }
+        })
+        .buffer_unordered(concurrency)
+        .collect()
+        .await
 }
 
 pub async fn resolve_given(
@@ -434,5 +546,81 @@ pub async fn resolve_given(
         functions
     } else {
         resolve(ctx, root, topology, true).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    /// `Ok(...)` is returned verbatim — the resolver trusts the differ
+    /// when it has computed an answer.
+    #[test]
+    fn classify_modified_passes_through_ok() {
+        let fallback: HashMap<String, String> = HashMap::from([
+            ("a".to_string(), "FALLBACK_A".to_string()),
+            ("b".to_string(), "FALLBACK_B".to_string()),
+        ]);
+        let computed: HashMap<String, String> =
+            HashMap::from([("a".to_string(), "DIFFED_A".to_string())]);
+
+        let out = classify_modified(&fallback, "ns", "0.0.39", "0.1.2", Ok(computed.clone()));
+
+        assert_eq!(out, computed, "Ok payload must pass through unchanged");
+    }
+
+    /// `Ok(empty)` is returned as empty — meaningful "nothing changed"
+    /// signal, not conflated with the error case.
+    #[test]
+    fn classify_modified_returns_empty_for_ok_empty() {
+        let fallback: HashMap<String, String> =
+            HashMap::from([("a".to_string(), "FALLBACK_A".to_string())]);
+        let out = classify_modified(
+            &fallback,
+            "ns",
+            "0.0.39",
+            "0.1.2",
+            Ok(HashMap::<String, String>::new()),
+        );
+        assert!(
+            out.is_empty(),
+            "Ok(empty) must NOT be conflated with the fallback path"
+        );
+    }
+
+    /// THE regression test for stale-deployed-version silent no-op:
+    /// when the differ reports `TagUnresolvable`, we must redeploy
+    /// every function in the topology (the `fallback`), not return
+    /// nothing.
+    #[test]
+    fn classify_modified_falls_back_on_tag_unresolvable() {
+        let fallback: HashMap<String, String> = HashMap::from([
+            ("a".to_string(), "FALLBACK_A".to_string()),
+            ("b".to_string(), "FALLBACK_B".to_string()),
+        ]);
+        let err = differ::DiffError::TagUnresolvable {
+            tag: "ns-0.0.39".to_string(),
+        };
+
+        let out = classify_modified(&fallback, "ns", "0.0.39", "0.1.2", Err(err));
+
+        assert_eq!(
+            out, fallback,
+            "TagUnresolvable must trigger a full-topology redeploy, \
+             not return an empty map (which would be a silent no-op)"
+        );
+    }
+
+    /// The fallback path with an empty topology returns empty — a
+    /// genuine no-op rather than a panic. Edge case but worth pinning.
+    #[test]
+    fn classify_modified_falls_back_to_empty_when_topology_empty() {
+        let fallback: HashMap<String, String> = HashMap::new();
+        let err = differ::DiffError::TagUnresolvable {
+            tag: "ns-0.0.39".to_string(),
+        };
+        let out = classify_modified(&fallback, "ns", "0.0.39", "0.1.2", Err(err));
+        assert!(out.is_empty());
     }
 }
