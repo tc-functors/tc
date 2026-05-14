@@ -290,13 +290,9 @@ async fn create_or_update_distribution(
             cloudfront::find_or_create_cache_policy(&client, name).await
         }
         Err(_) => {
-            let cache_policy_name = "Managed-CachingOptimized";
-            tracing::debug!("Configuring page {} - setting cache policy ", cache_policy_name);
-            if let Some(id) = cloudfront::find_cache_policy(&client, cache_policy_name).await {
-                id
-            } else {
-                panic!("No Managed-CachingOptimized cache found")
-            }
+            //https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#managed-cache-caching-optimized
+            // ManagedCachedPolicies have fixed ids
+            String::from("658327ea-f89d-4fab-a63d-7e88639e58f6")
         }
     };
 
