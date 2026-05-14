@@ -283,8 +283,22 @@ async fn create_or_update_distribution(
     tracing::debug!("Configuring page {} - setting OAC ", name);
     let oac_id = cloudfront::find_or_create_oac(&client, origin_domain).await;
 
-    tracing::debug!("Configuring page {} - setting cache policy ", name);
-    let cache_policy_id = cloudfront::find_or_create_cache_policy(&client, caller_ref).await;
+
+    let cache_policy_id = match std::env::var("TC_CUSTOM_CACHE_POLICY") {
+        Ok(_) => {
+            tracing::debug!("Configuring page {} - setting cache policy ", name);
+            cloudfront::find_or_create_cache_policy(&client, name).await
+        }
+        Err(_) => {
+            let cache_policy_name = "Managed-CachingOptimized";
+            tracing::debug!("Configuring page {} - setting cache policy ", cache_policy_name);
+            if let Some(id) = cloudfront::find_cache_policy(&client, cache_policy_name).await {
+                id
+            } else {
+                panic!("No Managed-CachingOptimized cache found")
+            }
+        }
+    };
 
     let maybe_cert_arn = if let Some(domain) = &maybe_domain {
         let idempotency_token = sandbox;

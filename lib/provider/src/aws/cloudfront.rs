@@ -398,7 +398,7 @@ async fn list_cache_policies(client: &Client) -> HashMap<String, String> {
     h
 }
 
-async fn find_cache_policy(client: &Client, name: &str) -> Option<String> {
+pub async fn find_cache_policy(client: &Client, name: &str) -> Option<String> {
     let h = list_cache_policies(client).await;
     h.get(name).cloned()
 }
