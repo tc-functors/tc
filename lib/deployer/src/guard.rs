@@ -17,9 +17,8 @@ use super::aws::{
 use compiler::TopologyKind;
 
 pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
-    let env = &auth.name;
     match std::env::var("TC_FREEZE") {
-        Ok(e) => *env == e,
+        Ok(_) => true,
         Err(_) => {
             let Topology { fqn, kind, ..} = topology;
             match kind {
