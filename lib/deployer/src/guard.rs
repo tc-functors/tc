@@ -17,24 +17,22 @@ use super::aws::{
 use compiler::TopologyKind;
 
 pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
-    match std::env::var("TC_FREEZE") {
-        Ok(_) => true,
-        Err(_) => {
-            let Topology { fqn, kind, ..} = topology;
-            match kind {
-                TopologyKind::StepFunction => state::is_frozen(auth, fqn).await,
-                TopologyKind::Function => function::is_frozen(auth, fqn).await,
-                TopologyKind::Graphql => mutation::is_frozen(auth, fqn).await,
-                TopologyKind::Routed => route::is_frozen(auth, fqn).await,
-                TopologyKind::Evented => event::is_frozen(auth, fqn).await,
-            }
-        },
+    let Topology { fqn, kind, ..} = topology;
+    match kind {
+        TopologyKind::StepFunction => state::is_frozen(auth, fqn).await,
+        TopologyKind::Function => function::is_frozen(auth, fqn).await,
+        TopologyKind::Graphql => mutation::is_frozen(auth, fqn).await,
+        TopologyKind::Routed => route::is_frozen(auth, fqn).await,
+        TopologyKind::Evented => event::is_frozen(auth, fqn).await,
     }
 }
 
 pub async fn should_abort(auth: &Auth, sandbox: &str, topology: &Topology) -> bool {
-    let yes = match std::env::var("CIRCLECI") {
-        Ok(_) => is_frozen(auth, topology).await,
+    let yes = match std::env::var("CI") {
+        Ok(_) => match std::env::var("TC_FREEZE") {
+            Ok(_) => true,
+            Err(_) => false
+        }
         Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
             Ok(_) => false,
             Err(_) => true,
