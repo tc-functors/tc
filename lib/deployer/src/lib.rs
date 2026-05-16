@@ -15,7 +15,7 @@ use aws::{
     state,
 };
 use colored::Colorize;
-use compiler::Entity;
+use compiler::{Entity, TopologyKind};
 use composer::{
     Function,
     Topology,
@@ -412,13 +412,25 @@ pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<
 }
 
 pub async fn freeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, .. } = topology;
-    state::freeze(auth, fqn).await;
+    let Topology { fqn, kind, ..} = topology;
+    match kind {
+        TopologyKind::StepFunction => state::freeze(auth, fqn).await,
+        TopologyKind::Function => function::freeze(auth, fqn).await,
+        TopologyKind::Graphql => mutation::freeze(auth, fqn).await,
+        TopologyKind::Routed => route::freeze(auth, fqn).await,
+        TopologyKind::Evented => event::freeze(auth, fqn).await,
+    }
 }
 
 pub async fn unfreeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, .. } = topology;
-    state::unfreeze(auth, fqn).await;
+    let Topology { fqn, kind, ..} = topology;
+    match kind {
+        TopologyKind::StepFunction => state::unfreeze(auth, fqn).await,
+        TopologyKind::Function => function::unfreeze(auth, fqn).await,
+        TopologyKind::Graphql => mutation::unfreeze(auth, fqn).await,
+        TopologyKind::Routed => route::unfreeze(auth, fqn).await,
+        TopologyKind::Evented => event::unfreeze(auth, fqn).await,
+    }
 }
 
 pub async fn try_list(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {

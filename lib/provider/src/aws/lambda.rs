@@ -690,7 +690,7 @@ pub async fn add_permission_basic(
     Ok(())
 }
 
-pub async fn update_tags(client: Client, arn: &str, tags: HashMap<String, String>) {
+pub async fn update_tags(client: &Client, arn: &str, tags: HashMap<String, String>) {
     println!("Updating tags {} {:?}", arn, &tags);
     let res = client
         .tag_resource()
@@ -816,6 +816,14 @@ pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, Str
             }
         }
         Err(_) => Ok(HashMap::new()),
+    }
+}
+
+pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
+    let tags = list_tags(&client, arn).await.unwrap();
+    match tags.get(&tag) {
+        Some(v) => v.to_string(),
+        None => "".to_string(),
     }
 }
 

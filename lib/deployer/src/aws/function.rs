@@ -8,6 +8,7 @@ use composer::{
     Transducer,
 };
 use kit as u;
+use kit::s;
 use provider::{
     Auth,
     aws::lambda,
@@ -290,7 +291,7 @@ async fn update_tags(
     let client = lambda::make_client(auth).await;
     for (_, f) in funcs {
         let arn = auth.lambda_arn(&f.fqn);
-        lambda::update_tags(client.clone(), &arn, tags.clone()).await;
+        lambda::update_tags(&client, &arn, tags.clone()).await;
     }
 }
 
@@ -418,4 +419,33 @@ pub async fn create_transducer(
 pub async fn delete_transducer(auth: &Auth, transducer: &Transducer) {
     let function = make_lambda(auth, transducer.function.clone(), &HashMap::new()).await;
     function.clone().delete().await.unwrap();
+}
+
+pub async fn freeze(auth: &Auth, fqn: &str) {
+    let client = lambda::make_client(auth).await;
+    let arn = auth.lambda_arn(fqn);
+    let version = lambda::get_tag(&client, &arn, s!("version")).await;
+    if &version != "0.0.1" && !&version.is_empty() {
+        println!("Freezing function {} ({})", fqn, version);
+        let kv = u::kv("freeze", "true");
+        let _ = lambda::update_tags(&client, &arn, kv).await;
+    }
+}
+
+pub async fn unfreeze(auth: &Auth, fqn: &str) {
+    let client = lambda::make_client(auth).await;
+    let arn = auth.sfn_arn(fqn);
+    let version = lambda::get_tag(&client, &arn, s!("version")).await;
+    if &version != "0.0.1" && !&version.is_empty() {
+        println!("Unfreezing function {} ({})", fqn, version);
+        let kv = u::kv("freeze", "false");
+        let _ = lambda::update_tags(&client, &arn, kv).await;
+    }
+}
+
+pub async fn is_frozen(auth: &Auth, fqn: &str) -> bool {
+    let client = lambda::make_client(auth).await;
+    let arn = auth.lambda_arn(fqn);
+    let v = lambda::get_tag(&client, &arn, s!("freeze")).await;
+    v == "true"
 }

@@ -774,4 +774,29 @@ pub async fn clear_cors(client: &Client, api_id: &str) {
         .unwrap();
 }
 
+pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, String>, Error> {
+    let res = client
+        .get_tags()
+        .resource_arn(arn.to_string())
+        .send()
+        .await;
+
+    match res {
+        Ok(r) => match r.tags {
+            Some(xs) => Ok(xs),
+            _ => Ok(HashMap::new()),
+        },
+
+        Err(_) => Ok(HashMap::new()),
+    }
+}
+
+pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
+    let tags = list_tags(&client, arn).await.unwrap();
+    match tags.get(&tag) {
+        Some(v) => v.to_string(),
+        None => "".to_string(),
+    }
+}
+
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;
