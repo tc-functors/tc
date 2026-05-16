@@ -757,6 +757,10 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
 pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>, dry_run: bool) {
     match sandbox {
         Some(sbox) => {
+            let dir = u::pwd();
+            let ct = composer::compose(&dir, false);
+            let rt = resolver::render(&auth, &sbox, &ct).await;
+            deployer::guard::prevent_stable_updates(auth, &sbox, &rt).await;
             if dry_run {
                 deployer::list_all(auth, &sbox, "default").await;
             } else {
