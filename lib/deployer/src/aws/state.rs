@@ -154,7 +154,7 @@ pub async fn freeze(auth: &Auth, fqn: &str) {
     let arn = auth.sfn_arn(fqn);
     let version = sfn::get_tag(&client, &arn, s!("version")).await;
     if &version != "0.0.1" && !&version.is_empty() {
-        println!("Unfreezing {} ({})", fqn, version);
+        println!("Freezing state {} ({})", fqn, version);
         let kv = u::kv("freeze", "true");
         let _ = sfn::update_tags(&client, &arn, kv).await;
     }
@@ -165,10 +165,17 @@ pub async fn unfreeze(auth: &Auth, fqn: &str) {
     let arn = auth.sfn_arn(fqn);
     let version = sfn::get_tag(&client, &arn, s!("version")).await;
     if &version != "0.0.1" && !&version.is_empty() {
-        println!("Unfreezing {} ({})", fqn, version);
-        let kv = u::kv("freeze", "true");
+        println!("Unfreezing state {} ({})", fqn, version);
+        let kv = u::kv("freeze", "false");
         let _ = sfn::update_tags(&client, &arn, kv).await;
     }
+}
+
+pub async fn is_frozen(auth: &Auth, fqn: &str) -> bool {
+    let client = sfn::make_client(auth).await;
+    let arn = auth.sfn_arn(fqn);
+    let v = sfn::get_tag(&client, &arn, s!("freeze")).await;
+    v == "true"
 }
 
 pub async fn create_dry_run(flow: &Flow) {

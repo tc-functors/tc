@@ -131,7 +131,7 @@ pub struct Page {
     pub skip_deploy: bool,
 }
 
-fn make_functions(kind: &str, fns: Option<Functions>) -> HashMap<String, String> {
+fn make_functions(kind: &str, dir: &str, fns: Option<Functions>) -> HashMap<String, String> {
     let mut xs: HashMap<String, String> = HashMap::new();
     let redirect = format!(
         r#"
@@ -148,7 +148,7 @@ function handler(event) {{
 
     if let Some(f) = fns {
         if let Some(req) = f.request {
-            let path = u::absolutize(&u::pwd(), &req);
+            let path = u::absolutize(dir, &req);
             let js = u::slurp(&path);
             xs.insert("request".to_string(), js);
         } else {
@@ -158,7 +158,7 @@ function handler(event) {{
         }
 
         if let Some(res) = f.response {
-            let path = u::absolutize(&u::pwd(), &res);
+            let path = u::absolutize(dir, &res);
             let js = u::slurp(&path);
             xs.insert("response".to_string(), js);
         }
@@ -245,6 +245,7 @@ fn find_dist(dir: &str, given_dist: Option<String>) -> String {
 }
 
 fn make(
+    tdir: &str,
     name: &str,
     namespace: &str,
     ps: &PageSpec,
@@ -278,7 +279,7 @@ fn make(
     Page {
         fqn: fqn,
         namespace: namespace.to_string(),
-        dir: dir,
+        dir: dir.clone(),
         kind: kind.to_string(),
         dist: dist,
         build: build,
@@ -291,17 +292,17 @@ fn make(
         default_root_object: s!("index.html"),
         domains: find_domains(&ps.domains, infra),
         config_template: ps.config_template.clone(),
-        functions: make_functions(kind, ps.functions.clone()),
+        functions: make_functions(kind, &tdir, ps.functions.clone()),
         skip_deploy: should_skip,
     }
 }
 
-pub fn make_all(spec: &TopologySpec, infra_dir: &str, config: &Config) -> HashMap<String, Page> {
+pub fn make_all(dir: &str, spec: &TopologySpec, infra_dir: &str, config: &Config) -> HashMap<String, Page> {
     let mut h: HashMap<String, Page> = HashMap::new();
     if let Some(pspec) = &spec.pages {
         for (name, ps) in pspec {
             let maybe_infra = Infra::new(infra_dir, &spec.name, &name);
-            let page = make(&name, &spec.name, ps, &maybe_infra, config);
+            let page = make(dir, &name, &spec.name, ps, &maybe_infra, config);
             h.insert(name.to_string(), page);
         }
     }

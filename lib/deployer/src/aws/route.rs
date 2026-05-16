@@ -487,3 +487,44 @@ pub async fn config(auth: &Auth, name: &str) -> HashMap<String, String> {
         _ => HashMap::new(),
     }
 }
+
+pub async fn freeze(auth: &Auth, fqn: &str) {
+    let client = gateway::make_client(auth).await;
+    let maybe_api_id = gateway::find_api(&client, fqn).await;
+    if let Some(api_id) = maybe_api_id {
+        let arn = auth.api_gateway_arn(&api_id);
+        let version = gateway::get_tag(&client, &arn, s!("version")).await;
+        if &version != "0.0.1" && !&version.is_empty() {
+            println!("Freezing routes {} ({})", fqn, version);
+            let kv = u::kv("freeze", "true");
+            let _ = gateway::update_tags(&client, &arn, kv).await;
+        }
+    }
+}
+
+pub async fn unfreeze(auth: &Auth, fqn: &str) {
+    let client = gateway::make_client(auth).await;
+    let maybe_api_id = gateway::find_api(&client, fqn).await;
+    if let Some(api_id) = maybe_api_id {
+        let arn = auth.api_gateway_arn(&api_id);
+        let version = gateway::get_tag(&client, &arn, s!("version")).await;
+        if &version != "0.0.1" && !&version.is_empty() {
+            println!("Unfreezing routes {} ({})", fqn, version);
+            let kv = u::kv("freeze", "false");
+            let _ = gateway::update_tags(&client, &arn, kv).await;
+        }
+    }
+}
+
+pub async fn is_frozen(auth: &Auth, fqn: &str) -> bool {
+    let client = gateway::make_client(auth).await;
+    let maybe_api_id = gateway::find_api(&client, fqn).await;
+
+    if let Some(api_id) = maybe_api_id {
+        let arn = auth.api_gateway_arn(&api_id);
+        let v = gateway::get_tag(&client, &arn, s!("freeze")).await;
+        v == "true"
+    } else {
+        false
+    }
+}

@@ -154,6 +154,7 @@ pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
     h
 }
 
+
 pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);

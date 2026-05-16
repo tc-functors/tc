@@ -1,5 +1,6 @@
 use composer::Mutation;
 use kit::*;
+use kit as u;
 use provider::{
     Auth,
     aws::{
@@ -123,5 +124,47 @@ pub async fn create_dry_run(mutations: &HashMap<String, Mutation>) {
         for (name, _) in &mutation.resolvers {
             println!("Creating mutation: {}", name)
         }
+    }
+}
+
+
+
+pub async fn freeze(auth: &Auth, fqn: &str) {
+    let client = appsync::make_client(auth).await;
+    let maybe_api = appsync::find_graphql_api(&client, fqn).await;
+    if let Some(api) = maybe_api {
+        let arn = &auth.graphql_api_arn(&api.id);
+        let version = appsync::get_tag(&client, &arn, s!("version")).await;
+        if &version != "0.0.1" && !&version.is_empty() {
+            println!("Freezing mutation {} ({})", fqn, version);
+            let kv = u::kv("freeze", "true");
+            let _ = appsync::update_tags(&client, &arn, kv).await;
+        }
+    }
+}
+
+pub async fn unfreeze(auth: &Auth, fqn: &str) {
+    let client = appsync::make_client(auth).await;
+    let maybe_api = appsync::find_graphql_api(&client, fqn).await;
+    if let Some(api) = maybe_api {
+        let arn = &auth.graphql_api_arn(&api.id);
+        let version = appsync::get_tag(&client, &arn, s!("version")).await;
+        if &version != "0.0.1" && !&version.is_empty() {
+            println!("Unfreezing mutation {} ({})", fqn, version);
+            let kv = u::kv("freeze", "false");
+            let _ = appsync::update_tags(&client, &arn, kv).await;
+        }
+    }
+}
+
+pub async fn is_frozen(auth: &Auth, fqn: &str) -> bool {
+    let client = appsync::make_client(auth).await;
+    let maybe_api = appsync::find_graphql_api(&client, fqn).await;
+    if let Some(api) = maybe_api {
+        let arn = &auth.graphql_api_arn(&api.id);
+        let v = appsync::get_tag(&client, &arn, s!("freeze")).await;
+        v == "true"
+    } else {
+        false
     }
 }

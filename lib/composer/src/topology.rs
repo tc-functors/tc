@@ -782,7 +782,7 @@ fn make(
         channels: channels,
         pools: make_pools(&spec, &config),
         tags: tag::make(&spec.name, &infra_dir),
-        pages: page::make_all(&spec, &infra_dir, &config),
+        pages: page::make_all(dir, &spec, &infra_dir, &config),
         flow: flow,
         config: Config::new(),
         transducer: maybe_transducer,

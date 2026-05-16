@@ -6,6 +6,7 @@ use provider::Auth;
 use std::{
     panic,
     time::Instant,
+    collections::HashMap
 };
 use tabled::{
     Style,
@@ -353,17 +354,18 @@ pub async fn create(
             let auth = init(profile, None).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
             let dir = u::pwd();
-            let topology_name = &composer::topology_name(&dir);
-            if deployer::guard::is_frozen(&auth.name) && notify {
+            println!("Composing topology...");
+            let ct = composer::compose(&dir, recursive);
+            let rt = resolver::render(&auth, &sandbox, &ct).await;
+            let topology_name = &ct.namespace;
+            if deployer::guard::is_frozen(&auth, &rt).await && notify {
                 let msg = format!(
                     "*{}*::{} is frozen. Aborting deploy: {}",
                     &auth.name, sandbox, topology_name
                 );
                 notifier::notify(topology_name, &msg).await;
             }
-            deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
-            println!("Composing topology {} ...", topology_name);
-            let ct = composer::compose(&dir, recursive);
+            deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
             let msg = composer::count_of(&ct);
             println!("C: {}", msg);
 
@@ -447,11 +449,19 @@ pub async fn update(
     interactive: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-
-    deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
-
     println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
+    let rt = resolver::render(&auth, &sandbox, &topology).await;
+
+    if deployer::guard::is_frozen(&auth, &rt).await {
+        let msg = format!(
+            "*{}*::{} is frozen. Aborting deploy: {}",
+            &auth.name, sandbox, topology.namespace
+        );
+        notifier::notify(&topology.namespace, &msg).await;
+    }
+    deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
+
     let msg = composer::count_of(&topology);
     println!("{}", msg);
 
@@ -473,11 +483,20 @@ pub async fn delete(
     cache: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
-    deployer::guard::prevent_stable_updates(&auth.name, &sandbox);
-
     let start = Instant::now();
+
     println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
+    let rt = resolver::render(&auth, &sandbox, &topology).await;
+
+    if deployer::guard::is_frozen(&auth, &rt).await {
+        let msg = format!(
+            "*{}*::{} is frozen. Aborting deploy: {}",
+            &auth.name, sandbox, topology.namespace
+        );
+        notifier::notify(&topology.namespace, &msg).await;
+    }
+    deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
 
     composer::count_of(&topology);
     println!("Resolving topology...");
@@ -560,22 +579,44 @@ pub async fn route(
     }
 }
 
+async fn find_root_topologies(auth: &Auth, dir: &str, sandbox: &str) -> HashMap<String, Topology> {
+    let is_root = composer::is_root_dir(&dir);
+    let mut h: HashMap<String, Topology> = HashMap::new();
+    if is_root {
+        let topologies = composer::compose_root(&dir, true);
+        for (name, topology) in &topologies {
+            let rt = resolver::render(&auth, &sandbox, &topology).await;
+            h.insert(name.clone(), rt);
+        }
+
+    } else {
+        let topology = composer::compose(&dir, false);
+        let rt = resolver::render(&auth, &sandbox, &topology).await;
+        h.insert(rt.namespace.clone(), rt);
+    }
+    h
+}
+
 pub async fn freeze(auth: Auth, sandbox: Option<String>) {
-    let topology = composer::compose(&u::pwd(), true);
+    let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let topology = resolver::render(&auth, &sandbox, &topology).await;
-    deployer::freeze(&auth, &topology).await;
-    let msg = format!("*{}*::{} is frozen", &auth.name, sandbox);
-    notifier::notify(&topology.namespace, &msg).await;
+    let topologies = find_root_topologies(&auth, &dir, &sandbox).await;
+    for (name, topology)  in &topologies {
+        deployer::freeze(&auth, &topology).await;
+        let msg = format!("*{}*::{} is frozen", &auth.name, &sandbox);
+        notifier::notify(name, &msg).await;
+    }
 }
 
 pub async fn unfreeze(auth: Auth, sandbox: Option<String>) {
-    let topology = composer::compose(&u::pwd(), true);
+    let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
-    let topology = resolver::render(&auth, &sandbox, &topology).await;
-    deployer::unfreeze(&auth, &topology).await;
-    let msg = format!("*{}*::{} is unfrozen", &auth.name, sandbox);
-    notifier::notify(&topology.namespace, &msg).await
+    let topologies = find_root_topologies(&auth, &dir, &sandbox).await;
+    for (name, topology)  in topologies {
+        deployer::unfreeze(&auth, &topology).await;
+        let msg = format!("*{}*::{} is unfrozen", &auth.name, &sandbox);
+        notifier::notify(&name, &msg).await;
+    }
 }
 
 pub async fn upgrade(version: Option<String>) {
@@ -716,10 +757,13 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
 pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>, dry_run: bool) {
     match sandbox {
         Some(sbox) => {
+            let dir = u::pwd();
+            let ct = composer::compose(&dir, false);
+            let rt = resolver::render(&auth, &sbox, &ct).await;
+            deployer::guard::prevent_stable_updates(auth, &sbox, &rt).await;
             if dry_run {
                 deployer::list_all(auth, &sbox, "default").await;
             } else {
-                deployer::guard::prevent_stable_updates(&auth.name, &sbox);
                 deployer::prune(auth, &sbox, filter).await;
             }
         }

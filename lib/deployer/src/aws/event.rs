@@ -172,3 +172,15 @@ pub async fn create_dry_run(events: &HashMap<String, Event>) {
         }
     }
 }
+
+pub async fn freeze(_auth: &Auth, _fqn: &str) {
+    println!("Unimplemented")
+}
+
+pub async fn unfreeze(_auth: &Auth, _fqn: &str) {
+    println!("Unimplemented")
+}
+
+pub async fn is_frozen(_auth: &Auth, _fqn: &str) -> bool {
+    false
+}
