@@ -45,12 +45,6 @@ pub async fn should_abort(auth: &Auth, sandbox: &str, topology: &Topology) -> bo
 }
 
 pub async fn prevent_stable_updates(auth: &Auth, sandbox: &str, topology: &Topology) {
-    if is_frozen(auth, topology).await {
-        std::panic::set_hook(Box::new(|_| {
-            println!("frozen. Aborting sandbox update");
-        }));
-        panic!("{}:{} is frozen. Aborting sandbox update", &auth.name, sandbox)
-    }
     if should_abort(auth, sandbox, topology).await {
         std::panic::set_hook(Box::new(|_| {
             println!("Cannot create stable sandbox outside CI");

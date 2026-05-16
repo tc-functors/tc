@@ -358,7 +358,7 @@ pub async fn create(
             let ct = composer::compose(&dir, recursive);
             let rt = resolver::render(&auth, &sandbox, &ct).await;
             let topology_name = &ct.namespace;
-            if deployer::guard::is_frozen(&auth, &ct).await && notify {
+            if deployer::guard::is_frozen(&auth, &rt).await && notify {
                 let msg = format!(
                     "*{}*::{} is frozen. Aborting deploy: {}",
                     &auth.name, sandbox, topology_name
@@ -453,6 +453,13 @@ pub async fn update(
     let topology = composer::compose(&u::pwd(), recursive);
     let rt = resolver::render(&auth, &sandbox, &topology).await;
 
+    if deployer::guard::is_frozen(&auth, &rt).await {
+        let msg = format!(
+            "*{}*::{} is frozen. Aborting deploy: {}",
+            &auth.name, sandbox, topology.namespace
+        );
+        notifier::notify(&topology.namespace, &msg).await;
+    }
     deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
 
     let msg = composer::count_of(&topology);
@@ -480,8 +487,16 @@ pub async fn delete(
 
     println!("Composing topology...");
     let topology = composer::compose(&u::pwd(), recursive);
+    let rt = resolver::render(&auth, &sandbox, &topology).await;
 
-    deployer::guard::prevent_stable_updates(&auth, &sandbox, &topology).await;
+    if deployer::guard::is_frozen(&auth, &rt).await {
+        let msg = format!(
+            "*{}*::{} is frozen. Aborting deploy: {}",
+            &auth.name, sandbox, topology.namespace
+        );
+        notifier::notify(&topology.namespace, &msg).await;
+    }
+    deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
 
     composer::count_of(&topology);
     println!("Resolving topology...");
