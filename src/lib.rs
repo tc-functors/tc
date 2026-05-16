@@ -589,7 +589,7 @@ pub async fn freeze(auth: Auth, sandbox: Option<String>) {
     for (name, topology)  in &topologies {
         deployer::freeze(&auth, &topology).await;
         let msg = format!("*{}*::{} is frozen", &auth.name, &sandbox);
-        //notifier::notify(name, &msg).await;
+        notifier::notify(name, &msg).await;
     }
 }
 
@@ -600,7 +600,7 @@ pub async fn unfreeze(auth: Auth, sandbox: Option<String>) {
     for (name, topology)  in topologies {
         deployer::unfreeze(&auth, &topology).await;
         let msg = format!("*{}*::{} is unfrozen", &auth.name, &sandbox);
-        //notifier::notify(&name, &msg).await;
+        notifier::notify(&name, &msg).await;
     }
 }
 

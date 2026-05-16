@@ -434,7 +434,7 @@ pub async fn freeze(auth: &Auth, fqn: &str) {
 
 pub async fn unfreeze(auth: &Auth, fqn: &str) {
     let client = lambda::make_client(auth).await;
-    let arn = auth.sfn_arn(fqn);
+    let arn = auth.lambda_arn(fqn);
     let version = lambda::get_tag(&client, &arn, s!("version")).await;
     if &version != "0.0.1" && !&version.is_empty() {
         println!("Unfreezing function {} ({})", fqn, version);
