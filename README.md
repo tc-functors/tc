@@ -61,7 +61,7 @@ channels:
 
 ## Install
 
-See [installation guide](https://tc-functors.org/docs/installation.html)
+See [installation guide](https://tc-functors.org/getting-started/installation)
 
 ## Resources
 
