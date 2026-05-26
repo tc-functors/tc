@@ -27,7 +27,7 @@ pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
     }
 }
 
-pub async fn should_abort(auth: &Auth, sandbox: &str, topology: &Topology) -> bool {
+pub async fn should_abort(_auth: &Auth, sandbox: &str, _topology: &Topology) -> bool {
     let yes = match std::env::var("CI") {
         Ok(_) => match std::env::var("TC_FREEZE") {
             Ok(_) => true,
