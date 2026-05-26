@@ -57,3 +57,13 @@ pub fn scaffold_functions(dir: &str) {
 pub fn scaffold_function() {
     function::scaffold();
 }
+
+pub async fn scaffold_llm_bedrock_headless(auth: &Auth, given_text: &str) -> String {
+    let model = DEFAULT_BEDROCK_MODEL;
+    println!("Using bedrock model {}", &model);
+    let client = bedrock::make_client(auth).await;
+    let prompt = prompt::default(given_text);
+    let response = bedrock::send(&client, &prompt, &model).await;
+    let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
+    code
+}
