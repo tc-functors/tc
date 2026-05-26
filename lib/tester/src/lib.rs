@@ -43,6 +43,8 @@ fn assert_case(expected: Option<String>, response: &str, cond: Option<String>) {
     let expected = u::json_value(&expected);
     let response = u::json_value(&response);
     let cond = u::maybe_string(cond, "matches");
+    println!("expected: {}", &expected);
+    println!("response: {}", &response);
     match cond.as_ref() {
         "matches" | "=" => {
             assert_json_eq!(response, expected)
@@ -171,11 +173,13 @@ async fn test_function_unit(auth: &Auth, fname: &str, fqn: &str, t: &TestSpec) {
     let dir = u::pwd();
     let payload = invoker::read_payload(auth, &dir, payload.clone()).await;
     let response = invoke_function(auth, fqn, &payload).await;
-    assert_case(expect.clone(), &response, condition.clone());
     let name = match name {
         Some(n) => n,
         None => fname,
     };
+
+    println!("Running test: {}", &name);
+    assert_case(expect.clone(), &response, condition.clone());
     let duration = start.elapsed();
     let _ = println!(
         "Test unit {} (function/{}) ({}) {:#}",
