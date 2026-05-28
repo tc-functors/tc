@@ -233,7 +233,12 @@ pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
     }
 }
 
-pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
+pub async fn list_images(auth: &Auth) -> Vec<String> {
     let cauth = provider::init_centralized_auth(auth).await;
+    let config = Config::new();
+    let repo = match std::env::var("TC_ECR_REPO") {
+        Ok(r) => &r.to_owned(),
+        Err(_) => &config.aws.ecr.repo,
+    };
     ecr::list_images(&cauth, &repo).await
 }

@@ -87,7 +87,6 @@ pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
     let initial = res.image_ids.unwrap().to_vec();
     let mut token = res.next_token;
 
-    println!("{:?}", &initial);
     for m in initial {
         if let Some(tag) = m.image_tag {
             images.push(tag);
@@ -114,6 +113,5 @@ pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
 
 pub async fn image_exists(auth: &Auth, repo: &str, id: &str) -> bool {
     let images = list_images(auth, repo).await;
-    println!("images: {:?}", &images);
     images.contains(&id.to_string())
 }
