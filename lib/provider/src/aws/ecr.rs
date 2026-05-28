@@ -75,7 +75,7 @@ async fn list_images_by_token(
     (images, res.next_token)
 }
 
-async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
+pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
     let client = make_client(auth).await;
     let res = client
         .list_images()

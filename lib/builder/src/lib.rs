@@ -15,6 +15,7 @@ use configurator::Config;
 use kit as u;
 use kit::sh;
 use provider::Auth;
+use provider::aws::ecr;
 use std::{
     panic,
     str::FromStr,
@@ -230,4 +231,9 @@ pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
     } else {
         println!("No function found");
     }
+}
+
+pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
+    let cauth = provider::init_centralized_auth(auth).await;
+    ecr::list_images(&cauth, &repo).await
 }
