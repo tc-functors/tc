@@ -70,7 +70,10 @@ async fn list_images_by_token(
     let mut images: Vec<String> = vec![];
     let xs = res.image_ids.unwrap().to_vec();
     for x in xs {
-        images.push(x.image_tag.unwrap())
+        if let Some(tag) = x.image_tag {
+            images.push(tag);
+        }
+
     }
     (images, res.next_token)
 }

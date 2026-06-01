@@ -237,3 +237,8 @@ pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
     let cauth = provider::init_centralized_auth(auth).await;
     ecr::list_images(&cauth, repo).await
 }
+
+pub async fn list_layers(auth: &Auth) -> Vec<provider::aws::layer::Layer> {
+    let cauth = provider::init_centralized_auth(auth).await;
+    provider::aws::layer::list(&cauth).await
+}
