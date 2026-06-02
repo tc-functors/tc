@@ -130,6 +130,9 @@ pub struct TopologySpec {
     #[serde(default)]
     pub pools: Option<Vec<String>>,
 
+    #[serde(default)]
+    pub function_dirs: Option<Vec<String>>,
+
     #[serde(default = "default_nodes")]
     pub nodes: Nodes,
     pub functions: Option<HashMap<String, InlineFunctionSpec>>,
@@ -174,6 +177,7 @@ impl TopologySpec {
             TopologySpec {
                 name: s!("tc"),
                 root: Some(false),
+                function_dirs: None,
                 concurrent: Some(false),
                 recursive: Some(false),
                 auto: Some(false),

@@ -251,8 +251,12 @@ fn is_inferred_dir(dir: &str) -> bool {
         || u::path_exists(dir, "main.janet")
 }
 
-fn function_dirs(dir: &str) -> Vec<String> {
-    let known_roots = vec!["resolvers", "functions", "transformers"];
+fn function_dirs(dir: &str, function_dirs: Option<Vec<String>>) -> Vec<String> {
+    let mut known_roots = vec![s!("resolvers"), s!("functions"), s!("transformers")];
+    if let Some(dirs) = function_dirs {
+        known_roots.extend(dirs)
+    }
+
     let mut xs: Vec<String> = vec![];
     let idx = index::get();
     let covered = idx.covers(Path::new(dir));
@@ -263,9 +267,9 @@ fn function_dirs(dir: &str) -> Vec<String> {
     };
     for root in known_roots {
         let mut xm = if covered {
-            idx.list_subdirs(root)
+            idx.list_subdirs(&root)
         } else {
-            u::list_dirs(root)
+            u::list_dirs(&root)
         };
         xs.append(&mut xm)
     }
@@ -321,7 +325,7 @@ fn discover_functions_sequential(
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
-    function_dirs(dir)
+    function_dirs(dir, spec.function_dirs.clone())
         .into_iter()
         .filter(|d| u::is_dir(d) && !ignore_function(d, dir))
         .map(|d| {
@@ -337,7 +341,7 @@ fn discover_functions(
     infra_dir: &str,
     spec: &TopologySpec,
 ) -> HashMap<String, Function> {
-    let dirs: Vec<String> = function_dirs(dir)
+    let dirs: Vec<String> = function_dirs(dir, spec.function_dirs.clone())
         .into_iter()
         .filter(|d| u::is_dir(d) && !ignore_function(d, dir))
         .collect();
