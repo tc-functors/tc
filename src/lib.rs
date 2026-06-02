@@ -289,11 +289,19 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
         Ok(p) => Some(p),
         Err(_) => None
     };
-    if let Some(_) = maybe_target_profile {
-        let to_auth = init(maybe_target_profile, None).await;
-        snapshotter::snapshot_topology(auth, &to_auth, topology, sandbox, true, true).await;
+
+    let maybe_source_profile = match std::env::var("TC_SOURCE_PROFILE") {
+        Ok(p) => Some(p),
+        Err(_) => None
+    };
+    if let Some(ref p) = maybe_source_profile {
+        if &auth.name == p {
+            let from_auth = init(maybe_source_profile, None).await;
+            let to_auth = init(maybe_target_profile, None).await;
+            snapshotter::snapshot_topology(&from_auth, &to_auth, topology, sandbox, true, true).await;
+        }
     } else {
-        snapshotter::snapshot_topology(auth, auth, topology, sandbox, false, false).await;
+        println!("Skipping snapshotting");
     }
 }
 
