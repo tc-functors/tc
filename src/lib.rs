@@ -261,13 +261,14 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
     }
 }
 
-async fn run_create_hook(auth: &Auth, root: &Topology, time: &str, force: bool) {
+// FIXME: use proper hooks
+async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bool) {
     let Topology {
         namespace,
         sandbox,
         version,
         ..
-    } = root;
+    } = topology;
     let tag = format!("{}-{}", namespace, version);
     let user = match std::env::var("CIRCLE_USERNAME") {
         Ok(x) => x,
@@ -284,6 +285,16 @@ async fn run_create_hook(auth: &Auth, root: &Topology, time: &str, force: bool) 
         tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
+    let maybe_target_profile = match std::env::var("TC_TARGET_PROFILE") {
+        Ok(p) => Some(p),
+        Err(_) => None
+    };
+    if let Some(_) = maybe_target_profile {
+        let to_auth = init(maybe_target_profile, None).await;
+        snapshotter::snapshot_topology(auth, &to_auth, topology, sandbox, true, true).await;
+    } else {
+        snapshotter::snapshot_topology(auth, auth, topology, sandbox, false, false).await;
+    }
 }
 
 async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
@@ -673,9 +684,33 @@ pub struct SnapshotOpts {
     pub format: Option<String>,
     pub target_env: Option<String>,
     pub target_sandbox: Option<String>,
-    pub gen_changelog: bool,
-    pub gen_sub_versions: bool,
 }
+
+pub async fn snapshot_current(
+    profile: Option<String>,
+    target_profile: Option<String>,
+    sandbox: Option<String>,
+    save: bool
+) {
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let from_auth = init(profile, None).await;
+    let target_auth = init(target_profile, None).await;
+    let topology = composer::compose(&u::pwd(), false);
+    snapshotter::snapshot_topology(&from_auth, &target_auth, &topology, &sandbox, true, save).await;
+}
+
+pub async fn snapshot_root(
+    profile: Option<String>,
+    target_profile: Option<String>,
+    sandbox: Option<String>,
+    save: bool
+) {
+    let sandbox = u::maybe_string(sandbox, "stable");
+    let from_auth = init(profile, None).await;
+    let target_auth = init(target_profile, None).await;
+    snapshotter::snapshot_topologies(&from_auth, &target_auth, &u::root(), &sandbox, true, save).await;
+}
+
 
 pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
     let SnapshotOpts {
@@ -683,21 +718,13 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
         list,
         format,
         show,
-        gen_changelog,
-        gen_sub_versions,
         target_env,
         target_sandbox,
     } = opts;
 
     let dir = u::root();
-    let format = u::maybe_string(format, "table");
+    let format = u::maybe_string(format, "json");
     let sandbox = u::maybe_string(sandbox, "stable");
-
-    let format = if gen_changelog || gen_sub_versions {
-        "json"
-    } else {
-        &format
-    };
 
     match profile {
         Some(ref p) => {
@@ -706,9 +733,7 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
                 snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
             } else {
                 let auth = init(profile.clone(), None).await;
-
-                let records = snapshotter::snapshot(&auth, &dir, &sandbox, gen_changelog).await;
-
+                let records = snapshotter::snapshot_sandbox(&auth, &dir, &sandbox).await;
                 if save {
                     let records_str = serde_json::to_string_pretty(&records).unwrap();
                     snapshotter::save(&auth, &records_str, &p, &sandbox).await

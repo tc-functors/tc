@@ -15,7 +15,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-use tabled::Tabled;
 
 async fn get_graphql_api_arn(auth: &Auth, name: &str) -> Option<String> {
     let client = appsync::make_client(auth).await;
@@ -57,104 +56,91 @@ pub fn render(s: &str, sandbox: &str) -> String {
     u::stencil(s, table)
 }
 
-fn find_changelog(namespace: &str, version: &str) -> Vec<String> {
-    if !version.is_empty() {
-        u::split_lines(&tagger::changelogs_since_last(&namespace, &version))
-            .iter()
-            .map(|s| s.to_string())
-            .collect()
-    } else {
-        vec![]
-    }
-}
-
-#[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Node {
-    pub name: String,
-    pub dir: String,
-    pub kind: String,
-}
-
-#[derive(Tabled, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Manifest {
-    #[tabled(skip)]
-    pub dir: String,
     pub namespace: String,
     pub kind: String,
     pub sandbox: String,
+    pub dir: String,
     pub version: String,
+    pub prev_version: String,
     pub git_version: String,
-    pub frozen: String,
     pub tc_version: String,
-    #[tabled(skip)]
-    pub changelog: Option<Vec<String>>,
-    #[tabled(skip)]
-    pub nodes: Vec<Node>,
     pub updated_at: String,
     pub updated_by: String,
+    pub changed: bool,
+    pub changelog: Vec<String>
+}
+
+fn find_changelog(namespace: &str, dir: &str, from_version: &str, to_version: &str) -> Vec<String> {
+    let from_tag = format!("{}-{}", namespace, from_version);
+    let to_tag = format!("{}-{}", namespace, to_version);
+    let commits_str = tagger::git::changelogs_in_dir(&from_tag, &to_tag, &dir);
+    let mut commits: Vec<String> = u::split_lines(&commits_str)
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    commits.retain(|s| !s.is_empty());
+    commits
 }
 
 impl Manifest {
-    pub async fn new(
-        auth: &Auth,
-        sandbox: &str,
-        topology: &Topology,
-        gen_changelog: bool,
-    ) -> Manifest {
-        let Topology { kind, dir, fqn, .. } = topology;
+    pub async fn new(topology: &Topology, from_auth: &Auth, to_auth: &Auth, sandbox: &str, gen_changelog: bool) -> Manifest {
 
-        let name = render(&fqn, sandbox);
-        let tags = lookup_tags(auth, &kind, &name).await;
-        let namespace = u::safe_unwrap(tags.get("namespace"));
-        let version = u::safe_unwrap(tags.get("version"));
-        let name = if namespace.is_empty() {
-            &topology.namespace
-        } else {
-            &namespace
-        };
+        let Topology { namespace, kind, fqn, .. } = topology;
 
-        let mut nodes: Vec<Node> = vec![];
-
-        for (name, node) in &topology.nodes {
-            let maybe_rdir = node.dir.strip_prefix(&format!("{}/", u::root()));
-            let dir = match maybe_rdir {
-                Some(d) => d,
-                None => dir,
-            };
-
-            let n = Node {
-                name: name.to_string(),
-                dir: dir.to_string(),
-                kind: node.kind.to_str(),
-            };
-            nodes.push(n);
-        }
-
-        let changelog = if gen_changelog {
-            Some(find_changelog(&namespace, &version))
-        } else {
-            None
-        };
-
-        let maybe_rdir = dir.strip_prefix(&format!("{}/", u::root()));
+        let maybe_rdir = topology.dir.strip_prefix(&format!("{}/", u::root()));
         let dir = match maybe_rdir {
             Some(d) => d,
-            None => dir,
+            None => &topology.dir,
         };
 
-        Manifest {
-            dir: dir.to_string(),
-            namespace: name.to_string(),
-            sandbox: u::safe_unwrap(tags.get("sandbox")),
-            kind: kind.to_str(),
-            version: version,
-            git_version: topology.version.to_string(),
-            frozen: u::safe_unwrap(tags.get("freeze")),
-            tc_version: u::safe_unwrap(tags.get("tc_version")),
-            changelog: changelog,
-            nodes: nodes,
-            updated_at: u::safe_unwrap(tags.get("updated_at")),
-            updated_by: u::safe_unwrap(tags.get("updated_by")),
+        if gen_changelog {
+
+            let name = render(&fqn, sandbox);
+            let from_tags = lookup_tags(from_auth, &kind, &name).await;
+            let to_tags = lookup_tags(to_auth, &kind, &name).await;
+            let from_version = u::safe_unwrap(from_tags.get("version"));
+            let to_version = u::safe_unwrap(to_tags.get("version"));
+
+            let updated_at = u::safe_unwrap(from_tags.get("updated_at"));
+            let updated_by = u::safe_unwrap(from_tags.get("updated_by"));
+
+            let tc_version = u::safe_unwrap(from_tags.get("tc_version"));
+
+            let changelog = find_changelog(&namespace, ".", &from_version, &to_version);
+
+            let changed = from_version != to_version;
+
+            Manifest {
+                namespace: namespace.to_string(),
+                kind: topology.kind.to_str(),
+                dir: dir.to_string(),
+                sandbox: String::from(sandbox),
+                version: from_version,
+                prev_version: to_version,
+                git_version: String::from(""),
+                tc_version: tc_version,
+                updated_at: updated_at,
+                updated_by: updated_by,
+                changed: changed,
+                changelog: changelog
+            }
+        } else {
+            Manifest {
+                namespace: namespace.to_string(),
+                kind: topology.kind.to_str(),
+                dir: topology.dir.to_string(),
+                sandbox: String::from(sandbox),
+                version: topology.version.clone(),
+                prev_version: String::from(""),
+                git_version: String::from(""),
+                tc_version: String::from(""),
+                updated_at: String::from(""),
+                updated_by: String::from(""),
+                changed: false,
+                changelog: vec![]
+            }
         }
     }
 }

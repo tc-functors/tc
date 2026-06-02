@@ -15,7 +15,6 @@ use serde_derive::{
 };
 use std::collections::HashMap;
 use tabled::{
-    Table,
     builder::Builder,
     settings::Style,
 };
@@ -95,31 +94,12 @@ pub async fn find_version(auth: &Auth, fqn: &str, kind: &TopologyKind) -> Option
     }
 }
 
-pub async fn snapshot_topologies(
-    auth: &Auth,
-    topologies: &HashMap<String, Topology>,
-    sandbox: &str,
-    gen_changelog: bool,
-) -> Vec<Manifest> {
-    let mut rows: Vec<Manifest> = vec![];
-    for (_, node) in topologies {
-        let row = Manifest::new(auth, sandbox, &node, gen_changelog).await;
-        rows.push(row)
-    }
-    rows.sort_by(|a, b| b.namespace.cmp(&a.namespace));
-    rows.reverse();
-    rows
-}
-
-pub async fn snapshot(auth: &Auth, dir: &str, sandbox: &str, gen_changelog: bool) -> Vec<Manifest> {
-    let topologies = match std::env::var("TC_SNAPSHOT_BREAKOUT") {
-        Ok(_) => composer::compose_root(dir, true),
-        Err(_) => composer::compose_root(dir, false),
-    };
+pub async fn snapshot_sandbox(auth: &Auth, dir: &str, sandbox: &str) -> Vec<Manifest> {
+    let topologies = composer::compose_root(dir, false);
     u::sh("git fetch --tags", dir);
     let mut rows: Vec<Manifest> = vec![];
     for (_, node) in topologies {
-        let row = Manifest::new(auth, sandbox, &node, gen_changelog).await;
+        let row = Manifest::new(&node, auth, auth, sandbox, false).await;
         rows.push(row)
     }
     rows.sort_by(|a, b| b.namespace.cmp(&a.namespace));
@@ -198,6 +178,61 @@ pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
     }
 }
 
+pub async fn snapshot_topology(
+    from_auth: &Auth,
+    to_auth: &Auth,
+    topology: &Topology,
+    sandbox: &str,
+    gen_changelog: bool,
+    save: bool
+
+) {
+    let record = Manifest::new(topology, from_auth, to_auth, sandbox, gen_changelog).await;
+
+    if save {
+        let cfg = Config::new();
+        let maybe_bucket = cfg.snapshotter.bucket;
+        let maybe_prefix = cfg.snapshotter.prefix;
+        let maybe_target_profile = cfg.snapshotter.profile;
+
+
+        if let (Some(bucket), Some(prefix)) = (maybe_bucket, maybe_prefix) {
+            let auth = match maybe_target_profile {
+                Some(p) => &init_auth(&p).await,
+                None => from_auth,
+            };
+            let payload = serde_json::to_string(&record).unwrap();
+            let key = format!("{}/current/{}.json", prefix, topology.namespace);
+            let client = aws::s3::make_client(auth).await;
+            tracing::debug!("Saving manifest to s3://{}/{}", &bucket, &key);
+            let _ = aws::s3::put_str(&client, &bucket, &key, &payload).await;
+        } else {
+            println!("No bucket configured");
+            let s = u::pretty_json(record);
+            println!("{}", &s);
+        }
+    } else {
+        let s = u::pretty_json(record);
+        println!("{}", &s);
+    }
+}
+
+pub async fn snapshot_topologies(
+    from_auth: &Auth,
+    to_auth: &Auth,
+    dir: &str,
+    sandbox: &str,
+    gen_changelog: bool,
+    save: bool
+) {
+    let topologies = composer::compose_root(dir, false);
+
+    for (_, node) in topologies {
+        snapshot_topology(from_auth, to_auth, &node, sandbox, gen_changelog, save).await;
+    }
+}
+
+
 async fn init_auth(target_profile: &str) -> Auth {
     let config = composer::config(&u::pwd());
     match std::env::var("TC_ASSUME_ROLE") {
@@ -216,10 +251,6 @@ pub fn pretty_print(
     sandbox: Option<String>,
 ) {
     match format {
-        "table" => {
-            let table = Table::new(records).with(Style::psql()).to_string();
-            println!("{}", table);
-        }
         "json" => {
             let s = u::pretty_json(records);
             println!("{}", &s);

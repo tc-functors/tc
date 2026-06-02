@@ -209,16 +209,16 @@ pub struct SnapshotArgs {
     sandbox: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
-    #[arg(long, action, alias = "with-changelog")]
-    changelog: bool,
-    #[arg(long, action, alias = "with-component-versions")]
-    versions: bool,
     #[arg(long, action)]
     save: bool,
     #[arg(long, action)]
     list: bool,
     #[arg(long)]
     show: Option<String>,
+    #[arg(long, action, short = 'c')]
+    current: bool,
+    #[arg(long, action, short = 'r')]
+    root: bool,
     #[arg(long, alias = "target-profile")]
     target_profile: Option<String>,
     #[arg(long, alias = "target-env")]
@@ -978,11 +978,11 @@ async fn snapshot(args: SnapshotArgs) {
         save,
         list,
         show,
-        changelog,
-        versions,
         target_env,
         target_sandbox,
         trace,
+        root,
+        current,
         ..
     } = args;
 
@@ -991,13 +991,17 @@ async fn snapshot(args: SnapshotArgs) {
         save: save,
         show: show,
         list: list,
-        gen_changelog: changelog,
-        gen_sub_versions: versions,
-        target_env: target_env,
+        target_env: target_env.clone(),
         target_sandbox: target_sandbox,
     };
     init_tracing(trace);
-    tc::snapshot(profile, sandbox, opts).await;
+    if current {
+        tc::snapshot_current(profile, target_env, sandbox, save).await;
+    } else if root {
+        tc::snapshot_root(profile, target_env, sandbox, save).await;
+    } else {
+        tc::snapshot(profile, sandbox, opts).await;
+    }
 }
 
 async fn changelog(args: ChangelogArgs) {
