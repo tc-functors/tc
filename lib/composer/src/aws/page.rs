@@ -149,8 +149,10 @@ function handler(event) {{
     if let Some(f) = fns {
         if let Some(req) = f.request {
             let path = u::absolutize(dir, &req);
-            let js = u::slurp(&path);
-            xs.insert("request".to_string(), js);
+            if u::file_exists(&path) {
+                let js = u::slurp(&path);
+                xs.insert("request".to_string(), js);
+            }
         } else {
             if kind == "spa" || kind == "SPA" {
                 xs.insert(s!("redirect"), redirect);
@@ -159,8 +161,10 @@ function handler(event) {{
 
         if let Some(res) = f.response {
             let path = u::absolutize(dir, &res);
-            let js = u::slurp(&path);
-            xs.insert("response".to_string(), js);
+            if u::file_exists(&path) {
+                let js = u::slurp(&path);
+                xs.insert("response".to_string(), js);
+            }
         }
 
     } else {
