@@ -795,7 +795,15 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
             let rt = resolver::render(&auth, &sbox, &ct).await;
             deployer::guard::prevent_stable_updates(auth, &sbox, &rt).await;
             if dry_run {
-                deployer::list_all(auth, &sbox, "default").await;
+
+                if let Some(f) = filter {
+                    match f.as_ref() {
+                        "all" => deployer::list_all_resources(auth).await,
+                        _ => todo!()
+                    }
+                }  else {
+                    deployer::list_all(auth, &sbox, "default").await;
+                }
             } else {
                 deployer::prune(auth, &sbox, filter).await;
             }
@@ -816,11 +824,8 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<Strin
     if let Some(s) = sandbox {
         deployer::list_all(auth, &s, &format).await;
     } else {
-        deployer::list_all_resources(auth, &format).await;
+        deployer::list_all_resources(auth).await;
     }
-
-
-
 }
 
 pub async fn scaffold(

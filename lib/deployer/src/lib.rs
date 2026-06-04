@@ -484,20 +484,11 @@ pub async fn list_all(auth: &Auth, sandbox: &str, format: &str) {
 }
 
 
-
-pub async fn list_all_resources(auth: &Auth, format: &str) {
+pub async fn list_all_resources(auth: &Auth) {
     let mut arns = resource::list_all(auth).await;
     arns.sort();
-    let grouped = resource::group_entities(arns.clone());
-    match format {
-        "json" => kit::pp_json(&grouped),
-        _ => {
-            for arn in &arns {
-                println!("{}", &arn)
-            }
-            println!("");
-            println!("{}", resource::count_of(&grouped));
-        }
+    for (arn, team, deployer) in &arns {
+        println!("{},{},{}", &arn, &team, &deployer)
     }
 }
 

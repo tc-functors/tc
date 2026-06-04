@@ -14,11 +14,10 @@ pub async fn list(auth: &Auth, sandbox: &str) -> Vec<String> {
     resourcetag::get_resources(&client, "sandbox", sandbox).await
 }
 
-pub async fn list_all(auth: &Auth) -> Vec<String> {
+pub async fn list_all(auth: &Auth) -> Vec<(String, String, String)> {
     let client = resourcetag::make_client(auth).await;
-    resourcetag::get_resources(&client, "deployer", "tc").await
+    resourcetag::get_all_resources(&client).await
 }
-
 
 pub fn group_entities(arns: Vec<String>) -> HashMap<Entity, Vec<String>> {
     let mut h: HashMap<Entity, Vec<String>> = HashMap::new();
