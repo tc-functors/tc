@@ -515,6 +515,8 @@ pub struct EmulateArgs {
 pub struct ChangelogArgs {
     #[arg(long, short = 'b')]
     between: Option<String>,
+    #[arg(long, short = 'l')]
+    limit: Option<u8>,
     #[arg(long, short = 's')]
     search: Option<String>,
     #[arg(long, action, short = 'v')]
@@ -1009,10 +1011,15 @@ async fn changelog(args: ChangelogArgs) {
         search,
         between,
         verbose,
+        limit,
         ..
     } = args;
 
-    tc::changelog(between, search, verbose).await;
+    if let Some(n) = limit {
+        tc::changelog_with_limit(n).await;
+    } else {
+        tc::changelog(between, search, verbose).await;
+    }
 }
 
 fn init_tracing(trace: bool) {

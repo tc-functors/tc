@@ -766,7 +766,11 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
     }
 }
 
-pub async fn changelog(between: Option<String>, search: Option<String>, verbose: bool) {
+pub async fn changelog(
+    between: Option<String>,
+    search: Option<String>,
+    verbose: bool
+) {
     let dir = u::pwd();
     let topology = composer::compose(&dir, false);
     let namespace = topology.namespace;
@@ -785,6 +789,13 @@ pub async fn changelog(between: Option<String>, search: Option<String>, verbose:
         }
         None => tagger::changelog(&namespace, between, verbose),
     }
+}
+
+pub async fn changelog_with_limit(n: u8) {
+    let dir = u::pwd();
+    let topology = composer::compose(&dir, false);
+    let namespace = topology.namespace;
+    tagger::changelog::limit(&namespace, n)
 }
 
 pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>, dry_run: bool) {

@@ -56,6 +56,17 @@ pub fn changelog(from_sha: &str, to_sha: &str) -> String {
     }
 }
 
+
+pub fn changelog_with_limit(n: u8) -> String {
+    let cmd = format!("git log --pretty=\"- %s\" --max-count={} .", n);
+    let out = sh(&cmd, &pwd());
+    if out.contains("fatal") {
+        String::from("")
+    } else {
+        out
+    }
+}
+
 pub fn changelogs(from_sha: &str, to_sha: &str) -> String {
     let cmd = format!("git log --pretty=\"%s\" {}...{} .", from_sha, to_sha);
     println!("{}", &cmd);

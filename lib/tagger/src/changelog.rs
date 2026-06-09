@@ -71,6 +71,12 @@ pub fn between(prefix: &str, versions: Option<String>) {
     }
 }
 
+pub fn limit(_prefix: &str, n: u8) {
+    let cmts = git::changelog_with_limit(n);
+    println!("{}", cmts);
+}
+
+
 pub fn generate(from_tag: &str, to_tag: &str) -> String {
     let from_sha = git::tag_revision(from_tag);
     let to_sha = git::tag_revision(to_tag);
