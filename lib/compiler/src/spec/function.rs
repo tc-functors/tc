@@ -44,6 +44,7 @@ impl Lang {
             Lang::Ruby => s!("ruby"),
             Lang::Node => s!("node"),
             Lang::Rust => s!("rust"),
+            Lang::Go => s!("go"),
             _ => s!("python"),
         }
     }
@@ -75,6 +76,8 @@ pub enum LangRuntime {
     Node22,
     #[serde(alias = "node20")]
     Node20,
+    #[serde(alias = "go")]
+    Go,
 }
 
 impl FromStr for LangRuntime {
@@ -114,6 +117,7 @@ impl LangRuntime {
             LangRuntime::Node22 => String::from("node22"),
             LangRuntime::Node20 => String::from("node20"),
             LangRuntime::Rust => String::from("rust"),
+            LangRuntime::Go => String::from("go"),
         }
     }
 
@@ -131,6 +135,7 @@ impl LangRuntime {
             LangRuntime::Rust => Lang::Rust,
             LangRuntime::Node20 => Lang::Node,
             LangRuntime::Node22 => Lang::Node,
+            LangRuntime::Go => Lang::Go,
         }
     }
 }

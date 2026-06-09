@@ -2,6 +2,7 @@ mod node;
 mod python;
 mod ruby;
 mod rust;
+mod go;
 
 use crate::types::BuildStatus;
 use colored::Colorize;
@@ -34,6 +35,7 @@ fn gen_dockerfile(
             }
         }
         Lang::Rust => rust::gen_dockerfile(dir),
+        Lang::Go => go::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
@@ -50,6 +52,7 @@ fn gen_dockerfile_unshared(
         Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
+        Lang::Go => go::gen_dockerfile(dir),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
@@ -134,6 +137,15 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
                 ),
                 dir,
             );
+        },
+        Lang::Go => {
+            sh(
+                &format!(
+                    "docker cp {}:/build/bootstrap/bootstrap bootstrap",
+                    id
+                ),
+                dir,
+            );
         }
         _ => {
             sh(&format!("docker cp {}:/build build", id), dir);
@@ -159,6 +171,10 @@ fn zip(dir: &str, langr: &LangRuntime) {
             sh(&cmd, dir);
         }
         Lang::Rust => {
+            let command = "zip -q -r lambda.zip bootstrap";
+            sh(command, dir);
+        },
+        Lang::Go => {
             let command = "zip -q -r lambda.zip bootstrap";
             sh(command, dir);
         }

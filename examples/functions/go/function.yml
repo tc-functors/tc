@@ -1,0 +1,4 @@
+name: example-go
+
+runtime:
+  lang: go
