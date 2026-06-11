@@ -73,6 +73,8 @@ enum Cmd {
     Resolve(ResolveArgs),
     /// Route traffic to the given sandbox
     Route(RouteArgs),
+    /// Run arbitrary task in function dirs
+    Run(RunArgs),
     /// Scaffold functions and topology using LLM
     Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
@@ -268,6 +270,16 @@ pub struct PromoteArgs {
     #[arg(long, action)]
     version: Option<String>,
     #[arg(long, action, short = 't')]
+    trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct RunArgs {
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
+    #[arg(long, short = 't')]
+    task: String,
+    #[arg(long, action)]
     trace: bool,
 }
 
@@ -1111,6 +1123,11 @@ async fn visualize(args: VisualizeArgs) {
     tc::visualize(dir).await;
 }
 
+async fn run(args: RunArgs) {
+    let RunArgs { dir, trace, task, .. } = args;
+    tc::run(dir, task, trace).await;
+}
+
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
@@ -1130,7 +1147,7 @@ async fn list(args: ListArgs) {
     }
 }
 
-async fn run() {
+async fn run_command() {
     let args = Tc::parse();
 
     match args.cmd {
@@ -1150,6 +1167,7 @@ async fn run() {
         Cmd::List(args) => list(args).await,
         Cmd::Prune(args) => prune(args).await,
         Cmd::Route(args) => route(args).await,
+        Cmd::Run(args) => run(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,
         Cmd::Tag(args) => tag(args).await,
         Cmd::Test(args) => test(args).await,
@@ -1168,5 +1186,5 @@ async fn run() {
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {
-    run().await
+    run_command().await
 }

@@ -8,6 +8,7 @@ use std::{
     time::Instant,
     collections::HashMap
 };
+use colored::Colorize;
 use tabled::{
     Style,
     Table,
@@ -892,4 +893,33 @@ pub async fn emulate(
 pub async fn visualize(dir: Option<String>) {
     let dir = u::maybe_string(dir, &u::pwd());
     visualizer::visualize(&dir);
+}
+
+pub async fn run(dir: Option<String>, task: String, trace: bool) {
+    let dir = u::maybe_string(dir, &u::pwd());
+
+    let topology = composer::compose(&dir, true);
+    for (name, f) in topology.functions {
+        let maybe_cmd = if task.starts_with(":") {
+            let t = task[1..].to_string();
+            f.tasks.get(&t)
+        } else {
+            Some(&task)
+        };
+
+        if let Some(cmd) = maybe_cmd {
+            println!("Running [{}] {}", &name.green(), &cmd);
+            let (status, out, err) = u::runc(&cmd, &f.dir);
+            if !status {
+                println!("Error running {} {} {}", &name.blue(), &out, &err.red());
+                std::process::exit(1)
+            }
+            if trace {
+                println!("  => {}", &out);
+            }
+        } else {
+            println!("Skipping [{}]", &name.yellow());
+        }
+
+    }
 }

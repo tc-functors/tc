@@ -36,6 +36,7 @@ pub struct Function {
     pub runtime: Runtime,
     pub build: Build,
     pub test: HashMap<String, TestSpec>,
+    pub tasks: HashMap<String, String>,
     pub targets: Vec<Target>,
     pub shared: bool,
     pub aux_files: Vec<String>,
@@ -145,12 +146,13 @@ impl Function {
             description: None,
             dir: dir.to_string(),
             namespace: namespace.to_string(),
-            build: Build::new(dir, &runtime, fspec.build, fspec.tasks),
+            build: Build::new(dir, &runtime, fspec.build, fspec.tasks.clone()),
             layer_name: fspec.layer_name,
             test: make_test(fspec.test),
             runtime: runtime,
             targets: targets,
             shared: false,
+            tasks: fspec.tasks,
             aux_files: aux_files,
         }
     }
@@ -198,6 +200,7 @@ impl Function {
             runtime: runtime,
             targets: targets,
             shared: false,
+            tasks: fspec.tasks.clone(),
             aux_files: aux_files,
         }
     }
