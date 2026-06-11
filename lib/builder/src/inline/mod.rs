@@ -141,7 +141,7 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
         Lang::Go => {
             sh(
                 &format!(
-                    "docker cp {}:/build/bootstrap/bootstrap bootstrap",
+                    "docker cp {}:/build/bootstrap bootstrap",
                     id
                 ),
                 dir,
