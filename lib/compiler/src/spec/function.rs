@@ -307,7 +307,9 @@ pub struct FileSystemSpec {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Arch {
+    #[serde(alias = "arm_64")]
     Arm64,
+    #[serde(alias = "x86_64")]
     X8664
 }
 
