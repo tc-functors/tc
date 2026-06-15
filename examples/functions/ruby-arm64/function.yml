@@ -1,0 +1,6 @@
+name: ruby-arm64
+description: basic example
+runtime:
+  lang:ruby3.2
+  handler: handler.handler
+  arch: Arm64
