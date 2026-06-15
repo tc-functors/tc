@@ -19,6 +19,7 @@ use compiler::{
             RuntimeSpec,
             FileSystemKind,
             FileSystemSpec,
+            Arch
         },
         infra::InfraSpec,
     },
@@ -58,6 +59,7 @@ pub struct Runtime {
     pub memory_size: Option<i32>,
     pub cpu: Option<i32>,
     pub timeout: Option<i32>,
+    pub arch: Arch,
     pub snapstart: bool,
     pub provisioned_concurrency: Option<i32>,
     pub reserved_concurrency: Option<i32>,
@@ -550,6 +552,13 @@ pub(super) fn collect_aux_files(
     out
 }
 
+fn as_arch(maybe_arch: &Option<Arch>) -> Arch {
+    match maybe_arch {
+        Some(a) => a.clone(),
+        None => Arch::X8664
+    }
+}
+
 fn make_default(
     dir: &str,
     infra_dir: &str,
@@ -597,6 +606,7 @@ fn make_default(
         snapstart: false,
         enable_fs: false,
         network: None,
+        arch: as_arch(&fspec.runtime.clone().unwrap().arch),
         fs: None,
         infra_spec: infra_spec,
         cluster: String::from(""),
@@ -664,6 +674,7 @@ fn make_lambda(
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
         fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
+        arch: as_arch(&r.arch),
         infra_spec: infra_spec,
         cluster: String::from(""),
     }
@@ -733,6 +744,7 @@ fn make_fargate(
         network: make_network(&default_infra_spec, enable_fs),
         fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
         infra_spec: infra_spec,
+        arch: as_arch(&rspec.arch),
         cluster: cluster.to_string(),
     }
 }

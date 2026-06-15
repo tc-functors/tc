@@ -41,7 +41,7 @@ pub async fn make_lambda(
         _ => None,
     };
 
-    let arch = lambda::make_arch(&f.runtime.lang.to_str());
+    let arch = lambda::make_arch(&f.runtime.arch.to_str());
     let runtime = match package_type.as_ref() {
         "zip" => Some(lambda::make_runtime(&f.runtime.lang.to_str())),
         _ => None,

@@ -15,6 +15,7 @@ pub use spec::{
         FunctionSpec,
         Lang,
         LangRuntime,
+        Arch
     },
     infra::InfraSpec,
 };

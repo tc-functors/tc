@@ -150,7 +150,6 @@ pub fn make_snapstart(enable_snap: bool) -> Option<SnapStart> {
 pub fn make_runtime(lang: &str) -> Runtime {
     match lang {
         "java11" => Runtime::Java11,
-        "ruby2.7" => Runtime::Ruby27,
         "go" => "provided.al2023".into(),
         "python3.7" => Runtime::Python37,
         "python3.8" => Runtime::Python38,
@@ -165,17 +164,19 @@ pub fn make_runtime(lang: &str) -> Runtime {
         "node20" => Runtime::Nodejs20x,
         "janet" => "provided.al2023".into(),
         "rust" => "provided.al2023".into(),
+        "ruby2.7" => Runtime::Ruby27,
         "ruby3.2" => "ruby3.2".into(),
+        "ruby3.4" => "ruby3.4".into(),
+        "python3.14" => "python3.14".into(),
         _ => Runtime::Provided,
     }
 }
 
-pub fn make_arch(lang: &str) -> Architecture {
-    // hack
-    if lang == "go" {
-        Architecture::Arm64
-    } else {
-        Architecture::X8664
+pub fn make_arch(arch: &str) -> Architecture {
+    match arch {
+        "x8664" => Architecture::X8664,
+        "arm64" => Architecture::Arm64,
+        _ => Architecture::X8664
     }
 }
 

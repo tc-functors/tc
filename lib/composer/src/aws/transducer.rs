@@ -21,6 +21,7 @@ use compiler::{
     Entity,
     LangRuntime,
     spec::function::Provider,
+    Arch
 };
 use kit as u;
 use kit::*;
@@ -197,6 +198,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         enable_fs: false,
         network: None,
         fs: None,
+        arch: Arch::X8664,
         infra_spec: HashMap::new(),
         cluster: String::from(""),
     };

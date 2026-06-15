@@ -197,6 +197,10 @@ fn default_lang() -> LangRuntime {
     LangRuntime::Python310
 }
 
+fn default_arch() -> Option<Arch> {
+    Some(Arch::X8664)
+}
+
 fn default_handler() -> String {
     s!("handler.handler")
 }
@@ -301,6 +305,34 @@ pub struct FileSystemSpec {
 }
 
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub enum Arch {
+    Arm64,
+    X8664
+}
+
+impl FromStr for Arch {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "x86_64" | "x8664" => Ok(Arch::X8664),
+            "arm_64" | "arm" | "arm64" => Ok(Arch::Arm64),
+            _ => Ok(Arch::X8664),
+        }
+    }
+}
+
+impl Arch {
+    pub fn to_str(&self) -> String {
+        match self {
+            Arch::X8664 => s!("x8664"),
+            Arch::Arm64 => s!("arm64")
+        }
+    }
+}
+
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
     #[serde(default = "default_lang")]
@@ -308,6 +340,9 @@ pub struct RuntimeSpec {
 
     #[serde(default = "default_handler")]
     pub handler: String,
+
+    #[serde(default = "default_arch")]
+    pub arch: Option<Arch>,
 
     pub package_type: Option<String>,
 
