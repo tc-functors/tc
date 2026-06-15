@@ -1,0 +1,7 @@
+name: python-arm64
+description: basic example
+runtime:
+  lang: python3.14
+  package_type: zip
+  handler: handler.handler
+  arch: arm64
