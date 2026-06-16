@@ -32,6 +32,7 @@ use crate::{
     index,
     sequence,
     tag,
+    version
 };
 use compiler::{
     Entity,
@@ -743,7 +744,7 @@ fn make(
     let interned = intern_functions(&namespace, &infra_dir, &spec);
     functions.extend(interned);
 
-    let version = u::current_semver(&namespace);
+    let version = version::current_semver(&namespace);
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
     let mutations = make_mutations(&spec, &config);
