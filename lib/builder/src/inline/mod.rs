@@ -239,10 +239,10 @@ pub async fn build(
         }
         bar.inc(5);
 
-        zip(dir, langr);
+        sh(command, dir);
         bar.inc(6);
 
-        sh(command, dir);
+        zip(dir, langr);
         bar.inc(7);
         match std::env::var("TC_INSPECT_BUILD") {
             Ok(_) => (),

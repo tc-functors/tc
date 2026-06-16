@@ -95,7 +95,7 @@ RUN --mount=type=ssh BUNDLE_WITHOUT="test:development" bundle install --without 
 ENV BUNDLE_WITHOUT "test:development"
 RUN mkdir -p /build/ruby/gems
 RUN mv vendor/bundle/ruby/3.2.0 /build/ruby/gems/3.2.0
-RUN cp Gemfile.lock /build/ruby/Gemfile.lock && cp Gemfile /build/ruby/
+RUN cp Gemfile.lock /build/ruby/Gemfile.lock && cp Gemfile /build/ruby/Gemfile
 RUN mkdir -p /build/ruby/vendor
 RUN cp -r vendor/cache /build/ruby/vendor/cache
 RUN rm -rf vendor ruby /build/ruby/lib/cache/
