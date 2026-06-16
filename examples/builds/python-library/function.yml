@@ -1,0 +1,14 @@
+name: py-lib
+
+runtime:
+  lang: python3.10
+
+build:
+  kind: Library
+  dirs:
+    - foo
+    - bar
+  include_deps: true
+  post:
+    - cp -r foo/* build/python/
+    - cp -r bar/* build/python/

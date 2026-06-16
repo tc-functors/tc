@@ -250,13 +250,18 @@ pub struct BuildSpec {
     pub pack: Option<String>,
 
     pub version: Option<String>,
+
+    // required for libraries
+    pub dirs: Option<Vec<String>>,
+    #[serde(default)]
+    pub include_deps: Option<bool>,
 }
 
 impl BuildSpec {
     pub fn new(dir: &str) -> BuildSpec {
-        let path = format!("{}/build.json", dir);
+        let path = format!("{}/build.yml", dir);
         let data = u::slurp(&path);
-        let bspec: BuildSpec = serde_json::from_str(&data).unwrap();
+        let bspec: BuildSpec = serde_yaml::from_str(&data).unwrap();
         bspec
     }
 }

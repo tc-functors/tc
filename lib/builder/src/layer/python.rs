@@ -39,6 +39,16 @@ fn gen_req_cmd(dir: &str) -> String {
     }
 }
 
+fn gen_copy_cmd(dir: &str) -> String {
+   if u::path_exists(dir, "pyproject.toml") {
+       String::from("COPY pyproject.toml ./")
+   } else if  u::path_exists(dir, "requirements.txt") {
+       String::from("COPY requirements.txt ./")
+   } else {
+       String::from("RUN echo 0")
+   }
+}
+
 pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let _extra_str = u::vec_to_str(shared_objects());
 
@@ -49,6 +59,7 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
 
     let build_context = &u::root();
     let req_cmd = gen_req_cmd(dir);
+    let copy_cmd = gen_copy_cmd(dir);
     let image = find_image(&runtime);
 
     let f = format!(
@@ -57,7 +68,7 @@ FROM {image} AS intermediate
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-COPY pyproject.toml ./
+{copy_cmd}
 
 COPY --from=shared . {build_context}/
 

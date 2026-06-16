@@ -175,6 +175,9 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         shared_context: false,
         skip_dev_deps: false,
         environment: HashMap::new(),
+        dirs: vec![],
+        include_deps: false
+
     };
 
     let tags = tag::make(namespace, "");

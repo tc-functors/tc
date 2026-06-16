@@ -22,6 +22,9 @@ pub struct Build {
     pub shared_context: bool,
     pub skip_dev_deps: bool,
     pub environment: HashMap<String, String>,
+    pub dirs: Vec<String>,
+    pub include_deps: bool
+
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -61,6 +64,14 @@ impl Build {
                     None => true,
                 },
                 environment: HashMap::new(),
+                dirs: match b.dirs {
+                    Some(d) => d,
+                    None => vec![]
+                },
+                include_deps: match b.include_deps {
+                    Some(d) => d,
+                    None => false
+                }
             },
             None => {
                 let command = match tasks.get("build") {
@@ -79,6 +90,9 @@ impl Build {
                     shared_context: false,
                     skip_dev_deps: false,
                     environment: HashMap::new(),
+                    dirs: vec![],
+                    include_deps: false
+
                 }
             }
         }

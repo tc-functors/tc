@@ -1,0 +1,12 @@
+name: rb-lib
+
+runtime:
+  lang: ruby3.2
+
+build:
+  kind: Library
+  dirs:
+    - foo
+    - bar
+    - baz
+  include_deps: false

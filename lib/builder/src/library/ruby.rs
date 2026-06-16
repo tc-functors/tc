@@ -1,8 +1,17 @@
 use kit as u;
+use kit::sh;
+use crate::layer;
+use compiler::spec::LangRuntime;
 
-pub fn build(dir: &str) -> String {
+pub fn build(
+    dir: &str,
+    langr: &LangRuntime,
+    dirs: &Vec<String>,
+    include_deps: bool,
+    post: &Vec<String>
+) -> String {
+
     u::run("rm -rf deps.zip build", &dir);
-    let dirs = u::list_dir(dir);
     u::run("mkdir -p build/ruby/lib && mkdir -p build/lib", &dir);
     for d in dirs {
         if !d.ends_with("build") {
@@ -12,9 +21,24 @@ pub fn build(dir: &str) -> String {
             );
             u::run(&cmd, &dir);
         }
+
+        if include_deps {
+            layer::gen_dockerfile(&d, &langr);
+            let (_status, _out, _err) = layer::build_with_docker(&d);
+            layer::copy_from_docker(&d);
+            let cmd = format!("cp -rv . {}/build", dir);
+            println!("cmd {}", &cmd);
+            sh(&cmd, &format!("{}/build", &d));
+            sh(&format!("rm -rf {}/build", &d), dir);
+        }
+    }
+    for cmd in post {
+        u::run(&cmd, dir);
     }
     u::run("cd build && zip -q -9 -r ../deps.zip .", &dir);
+
     let size = u::path_size(dir, "deps.zip");
     println!("Merged library ({})", u::file_size_human(size));
+    u::run("rm -rf build", &dir);
     format!("{}/deps.zip", dir)
 }

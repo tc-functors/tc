@@ -606,7 +606,7 @@ fn make_default(
         snapstart: false,
         enable_fs: false,
         network: None,
-        arch: as_arch(&fspec.runtime.clone().unwrap().arch),
+        arch: as_arch(&None),
         fs: None,
         infra_spec: infra_spec,
         cluster: String::from(""),
