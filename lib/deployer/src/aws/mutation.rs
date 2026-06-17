@@ -7,6 +7,7 @@ use provider::{
         appsync,
         appsync::AppsyncClient,
         lambda,
+        lambda::LambdaClient
     },
 };
 use std::collections::HashMap;
@@ -15,6 +16,17 @@ async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
     let client = lambda::make_client(auth).await;
     let principal = "appsync.amazonaws.com";
     let _ = lambda::add_permission_basic(client, authorizer_arn, principal, statement_id).await;
+}
+
+async fn find_alias_arn(client: &LambdaClient, name: &str, arn: &str) -> String {
+    let maybe_alias_arn = lambda::find_alias_arn(&client, name).await;
+    match maybe_alias_arn {
+        Some(a) => {
+            println!("Using alias function={}", &a);
+            a
+        }
+        None => arn.to_string()
+    }
 }
 
 async fn create_mutation(
@@ -38,6 +50,8 @@ async fn create_mutation(
     add_permission(auth, &api_name, &authorizer_arn).await;
     appsync::create_types(auth, &api_id, types).await;
 
+    let lc = lambda::make_client(auth).await;
+
     let client = appsync::make_client(auth).await;
     for (field_name, resolver) in resolvers {
         println!("Creating mutation {}", &field_name);
@@ -48,7 +62,7 @@ async fn create_mutation(
             kind: kind.to_str(),
             name: String::from(datasource_name),
             role_arn: role_arn.clone(),
-            target_arn: resolver.target_arn.to_owned(),
+            target_arn: find_alias_arn(&lc, &resolver.target_name, &resolver.target_arn).await
         };
 
         appsync::find_or_create_datasource(&client, &api_id, datasource_input).await;

@@ -650,6 +650,7 @@ impl Function {
             &self.name,
             &version.unwrap()
         );
+
     }
 }
 
@@ -1016,4 +1017,17 @@ pub async fn update_destination(client: &Client, name: &str, target_arn: &str) {
         .unwrap();
 }
 
-//pub type LambdaClient = Client;
+pub async fn find_alias_arn(client: &Client, name: &str) -> Option<String> {
+    let res = client
+        .get_alias()
+        .name(name)
+        .function_name(name)
+        .send()
+        .await;
+    match res {
+        Ok(r) => r.alias_arn,
+        Err(_) => None,
+    }
+}
+
+pub type LambdaClient = Client;
