@@ -384,21 +384,23 @@ pub async fn create(
 
         // domains, stages and deployment
         if let Some((_key, route)) = routes.iter().next() {
-            let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
-            gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
-                .await;
-            gateway::create_deployment(&client, &api_id, &api.stage).await;
+            if !route.skip {
+                let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
+                gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
+                    .await;
+                gateway::create_deployment(&client, &api_id, &api.stage).await;
 
-            let maybe_domain = create_domain(auth, &api_id, route, &auth.name, sandbox).await;
-            if let Some(domain) = maybe_domain {
-                println!("Endpoint {}", &domain);
+                let maybe_domain = create_domain(auth, &api_id, route, &auth.name, sandbox).await;
+                if let Some(domain) = maybe_domain {
+                    println!("Endpoint {}", &domain);
+                } else {
+                    let endpoint = auth.api_endpoint(&api_id, &api.stage);
+                    println!("Endpoint {}", &endpoint);
+                }
             } else {
                 let endpoint = auth.api_endpoint(&api_id, &api.stage);
                 println!("Endpoint {}", &endpoint);
             }
-        } else {
-            let endpoint = auth.api_endpoint(&api_id, &api.stage);
-            println!("Endpoint {}", &endpoint);
         }
     }
 }
