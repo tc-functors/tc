@@ -161,6 +161,10 @@ pub struct Notifier {
     #[derivative(Default(value = "default_hashmap()"))]
     #[serde(default = "default_hashmap")]
     pub webhooks: HashMap<String, String>,
+
+    #[derivative(Default(value = "default_hashmap()"))]
+    #[serde(default = "default_hashmap")]
+    pub mappings: HashMap<String, String>,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
@@ -439,8 +443,15 @@ impl Config {
         kit::pretty_json(self)
     }
 
-    pub fn notification_webhook(&self, env: &str) -> Option<String> {
-        self.notifier.webhooks.get(env).cloned()
+    pub fn notification_webhook(&self, scope: &str) -> Option<String> {
+        if let Some(hook) = self.notifier.webhooks.get(scope) {
+            match self.notifier.mappings.get(scope) {
+                Some(m) => Some(m.to_string()),
+                None => Some(hook.to_string())
+            }
+        } else {
+            None
+        }
     }
 
     // FIXME: move from ci
