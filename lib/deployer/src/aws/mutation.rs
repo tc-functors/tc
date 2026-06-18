@@ -1,4 +1,5 @@
 use composer::Mutation;
+use compiler::Entity;
 use kit::*;
 use kit as u;
 use provider::{
@@ -18,14 +19,19 @@ async fn add_permission(auth: &Auth, statement_id: &str, authorizer_arn: &str) {
     let _ = lambda::add_permission_basic(client, authorizer_arn, principal, statement_id).await;
 }
 
-async fn find_alias_arn(client: &LambdaClient, name: &str, arn: &str) -> String {
-    let maybe_alias_arn = lambda::find_alias_arn(&client, name).await;
-    match maybe_alias_arn {
-        Some(a) => {
-            println!("Using alias function={}", &a);
-            a
-        }
-        None => arn.to_string()
+async fn find_alias_arn(client: &LambdaClient, kind: &Entity, name: &str, arn: &str) -> String {
+    match kind {
+        Entity::Function => {
+            let maybe_alias_arn = lambda::find_alias_arn(&client, name).await;
+            match maybe_alias_arn {
+                Some(a) => {
+                    println!("Using alias function={}", &a);
+                    a
+                }
+                None => arn.to_string()
+            }
+        },
+        _ => arn.to_string()
     }
 }
 
@@ -62,7 +68,7 @@ async fn create_mutation(
             kind: kind.to_str(),
             name: String::from(datasource_name),
             role_arn: role_arn.clone(),
-            target_arn: find_alias_arn(&lc, &resolver.target_name, &resolver.target_arn).await
+            target_arn: find_alias_arn(&lc, kind, &resolver.target_name, &resolver.target_arn).await
         };
 
         appsync::find_or_create_datasource(&client, &api_id, datasource_input).await;
