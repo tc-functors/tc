@@ -359,32 +359,32 @@ pub async fn create(
     sandbox: &str,
 ) {
     if routes.len() > 0 {
-        let client = gateway::make_client(auth).await;
-        let api = Api::new(routes);
 
-        let api_id =
-            gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone()).await;
-        let gateway_arn = auth.api_gateway_arn(&api_id);
-
-        gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
-
-        if api.cors.is_none() {
-            println!("Clearing CORS");
-            gateway::clear_cors(&client, &api_id).await;
-        }
-
-        let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
-
-        for (_, route) in routes {
-            tracing::debug!("Creating route {} {}", &route.method, &route.path);
-            if !&route.skip {
-                create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
-            }
-        }
-
-        // domains, stages and deployment
         if let Some((_key, route)) = routes.iter().next() {
             if !route.skip {
+                let client = gateway::make_client(auth).await;
+                let api = Api::new(routes);
+
+                let api_id =
+                    gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone()).await;
+                let gateway_arn = auth.api_gateway_arn(&api_id);
+
+                gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+
+                if api.cors.is_none() {
+                    println!("Clearing CORS");
+                    gateway::clear_cors(&client, &api_id).await;
+                }
+
+                let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
+
+                for (_, route) in routes {
+                    tracing::debug!("Creating route {} {}", &route.method, &route.path);
+                    if !&route.skip {
+                        create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
+                    }
+                }
+                // domains, stages and deployment
                 let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
                 gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
                     .await;
@@ -397,9 +397,6 @@ pub async fn create(
                     let endpoint = auth.api_endpoint(&api_id, &api.stage);
                     println!("Endpoint {}", &endpoint);
                 }
-            } else {
-                let endpoint = auth.api_endpoint(&api_id, &api.stage);
-                println!("Endpoint {}", &endpoint);
             }
         }
     }
