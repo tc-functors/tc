@@ -49,14 +49,15 @@ async fn create_mutation(
         role_arn,
         ..
     } = mutation;
-    let authorizer_arn = auth.lambda_arn(&authorizer);
+    let lc = lambda::make_client(auth).await;
+    let authorizer_arn = find_alias_arn(&lc, &Entity::Function, &authorizer, &auth.lambda_arn(&authorizer)).await;
     let (api_id, _) =
         appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
 
     add_permission(auth, &api_name, &authorizer_arn).await;
     appsync::create_types(auth, &api_id, types).await;
 
-    let lc = lambda::make_client(auth).await;
+
 
     let client = appsync::make_client(auth).await;
     for (field_name, resolver) in resolvers {
