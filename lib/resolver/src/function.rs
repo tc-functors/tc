@@ -274,12 +274,21 @@ async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Netw
     }
 }
 
+async fn get_extension_arn(auth: &Auth, path: &str) -> String {
+    let client = aws::ssm::make_client(auth).await;
+    let key = kit::split_last(path, ":");
+    aws::ssm::get(client.clone(), &key).await.unwrap()
+}
+
 async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
     let Context { auth, sandbox, .. } = ctx;
     let mut xs: Vec<String> = vec![];
 
     for layer in layers {
-        if layer.contains(":") {
+        if layer.starts_with("ssm:") {
+            let arn = get_extension_arn(auth, &layer).await;
+            xs.push(arn)
+        } else if layer.contains(":") {
             xs.push(as_layer_arn(&auth, &layer))
         } else if *sandbox != "stable" {
             let name = match std::env::var("TC_USE_STABLE_LAYERS") {
