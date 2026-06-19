@@ -21,6 +21,7 @@ use provider::{
             GatewayCors as Cors,
         },
         lambda,
+        lambda::LambdaClient,
         route53,
     },
 };
@@ -39,7 +40,20 @@ async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
     }
 }
 
+
+async fn find_alias_arn(client: &LambdaClient, arn: &str) -> String {
+    let maybe_alias_arn = lambda::find_alias_arn(&client, arn).await;
+    match maybe_alias_arn {
+        Some(a) => {
+            println!("Using alias function={}", &a);
+            a
+        },
+        None => arn.to_string()
+    }
+}
+
 async fn create_integration(
+    auth: &Auth,
     client: &Client,
     api_id: &str,
     route: &Route,
@@ -63,7 +77,9 @@ async fn create_integration(
 
     match entity {
         Entity::Function => {
-            gateway::create_lambda_integration(client, api_id, arn, role_arn, *is_async).await
+            let lc = lambda::make_client(auth).await;
+            let alias_arn = find_alias_arn(&lc, arn).await;
+            gateway::create_lambda_integration(client, api_id, &alias_arn, role_arn, *is_async).await
         }
         Entity::State => {
             gateway::create_sfn_integration(
@@ -109,7 +125,7 @@ async fn create_route(
 ) {
     add_target_permission(auth, &api_id, &route.target).await;
     let client = gateway::make_client(auth).await;
-    let integration_id = create_integration(&client, &api_id, route, &route.target).await;
+    let integration_id = create_integration(auth, &client, &api_id, route, &route.target).await;
     gateway::create_or_update_route(
         &client,
         &api_id,
