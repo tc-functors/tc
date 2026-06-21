@@ -33,6 +33,14 @@ docs:
 unit-test:
 	cargo test --quiet -j 2 -- --test-threads=2
 
+invariants:
+	cargo test --test invariants -- --test-threads=1
+
+lint-boundaries:
+	./scripts/lint-boundaries.sh
+
+validate: invariants lint-boundaries
+
 integration-test:
 	cargo test --test integration_test --quiet
 
