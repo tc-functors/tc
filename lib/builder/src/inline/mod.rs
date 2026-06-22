@@ -35,7 +35,7 @@ fn gen_dockerfile(
             }
         }
         Lang::Rust => rust::gen_dockerfile(dir),
-        Lang::Go => go::gen_dockerfile(dir),
+        Lang::Go => go::gen_dockerfile(dir, pre),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
@@ -52,7 +52,7 @@ fn gen_dockerfile_unshared(
         Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
-        Lang::Go => go::gen_dockerfile(dir),
+        Lang::Go => go::gen_dockerfile(dir, pre),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
