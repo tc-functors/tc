@@ -388,7 +388,7 @@ pub async fn create(
 ) {
     if routes.len() > 0 {
 
-        if skip(routes) {
+        if !skip(routes) {
 
             let client = gateway::make_client(auth).await;
             let api = Api::new(routes);
@@ -427,6 +427,8 @@ pub async fn create(
                     println!("Endpoint {}", &endpoint);
                 }
             }
+        } else {
+            println!("Skipping routes");
         }
     }
 }
