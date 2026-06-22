@@ -199,6 +199,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         timeout: Some(60),
         snapstart: false,
         enable_fs: false,
+        enable_network: false,
         network: None,
         fs: None,
         arch: Arch::X8664,

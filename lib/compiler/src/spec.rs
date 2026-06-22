@@ -28,7 +28,7 @@ pub use function::{
     LangRuntime,
     TestSpec,
 };
-pub use infra::InfraSpec;
+pub use infra::{InfraSpec, NetworkSpec};
 pub use mutation::MutationSpec;
 pub use page::PageSpec;
 pub use queue::QueueSpec;

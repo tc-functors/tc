@@ -364,6 +364,7 @@ pub struct RuntimeSpec {
     pub uri: Option<String>,
 
     pub mount_fs: Option<bool>,
+    pub network: Option<bool>,
     pub fs: Option<FileSystemSpec>,
 
     pub snapstart: Option<bool>,
@@ -622,6 +623,7 @@ pub struct InlineFunctionSpec {
     pub root: Option<bool>,
     pub functions: Option<Vec<String>>,
     pub function: Option<String>,
+    pub code: Option<String>,
     pub event: Option<String>,
     pub queue: Option<String>,
     pub mutation: Option<String>,
