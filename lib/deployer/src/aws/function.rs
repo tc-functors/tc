@@ -14,6 +14,7 @@ use provider::{
     aws::lambda,
 };
 use std::collections::HashMap;
+use futures::stream::FuturesUnordered;
 use tabled::Tabled;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
@@ -121,10 +122,10 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
     }
 }
 
-fn should_sync(sync: bool) -> bool {
-    sync || match std::env::var("TC_SYNC_CREATE") {
-        Ok(_) => true,
-        Err(_) => false,
+fn get_chunk_size() -> usize {
+    match std::env::var("TC_CREATE_CHUNK_SIZE") {
+        Ok(n) => n.parse::<usize>().unwrap(),
+        Err(_) => 4
     }
 }
 
@@ -132,26 +133,28 @@ pub async fn create(
     auth: &Auth,
     fns: &HashMap<String, Function>,
     tags: &HashMap<String, String>,
-    sync: bool,
+    _sync: bool,
 ) {
-    if should_sync(sync) {
-        for (_, function) in fns.clone() {
+
+    let names: Vec<String> = Vec::from_iter(fns.keys().cloned());
+    let csize = get_chunk_size();
+    let chunks: Vec<&[String]> = names.chunks(csize).collect();
+
+    for chunk in chunks {
+        let futs = FuturesUnordered::new();
+
+        println!("Chunking functions: {:?}", &chunk.len());
+        for name in chunk {
+            let f = fns.get(name).unwrap().clone();
             let a = auth.clone();
-            let f = function.clone();
-            create_function(&a, f, tags).await;
-        }
-    } else {
-        let mut tasks = vec![];
-        for (_, function) in fns.clone() {
-            let a = auth.clone();
-            let f = function.clone();
             let t = tags.clone();
-            let h = tokio::spawn(async move {
+            let fut = tokio::spawn(async move {
                 create_function(&a, f, &t).await;
             });
-            tasks.push(h);
+            futs.push(fut);
+
         }
-        for task in tasks {
+        for task in futs {
             let _ = task.await;
         }
     }
