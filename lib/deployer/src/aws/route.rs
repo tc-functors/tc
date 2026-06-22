@@ -90,7 +90,7 @@ async fn create_integration(
                 *is_async,
                 request_params.clone(),
             )
-            .await
+                .await
         }
         Entity::Event => {
             gateway::create_event_integration(
@@ -100,7 +100,7 @@ async fn create_integration(
                 role_arn,
                 request_params.clone(),
             )
-            .await
+                .await
         }
         Entity::Queue => {
             gateway::create_sqs_integration(
@@ -110,7 +110,7 @@ async fn create_integration(
                 role_arn,
                 request_params.clone(),
             )
-            .await
+                .await
         }
         _ => todo!(),
     }
@@ -135,7 +135,7 @@ async fn create_route(
         auth_id,
         auth_kind,
     )
-    .await;
+        .await;
 }
 
 // api
@@ -237,7 +237,7 @@ async fn create_authorizer(
                         &authorizer.name,
                         &uri,
                     )
-                    .await;
+                        .await;
                     (Some(id), authorizer.kind)
                 }
                 "cognito" => {
@@ -249,7 +249,7 @@ async fn create_authorizer(
                         &issuer,
                         &client_id,
                     )
-                    .await;
+                        .await;
                     (Some(id), authorizer.kind)
                 }
                 _ => (None, String::from("")),
@@ -336,7 +336,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
                 &rec.r#type.as_str(),
                 &rec.value,
             )
-            .await;
+                .await;
         }
         acm::wait_until_validated(&client, &cert_arn).await;
     } else {
@@ -361,11 +361,23 @@ pub async fn create_domain(
         let client = gateway::make_client(auth).await;
         let gateway_domain =
             gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "")
-                .await;
+            .await;
         println!("Updating dns record {}", &gateway_domain);
         update_dns_record(auth, domain, &gateway_domain).await;
     }
     maybe_domain
+}
+
+fn skip(routes: &HashMap<String, Route>) -> bool {
+    if let Some(default) = routes.get("default") {
+        default.skip
+    } else {
+        if let Some((_key, route)) = routes.iter().next() {
+            route.skip
+        } else {
+            false
+        }
+    }
 }
 
 pub async fn create(
@@ -376,31 +388,32 @@ pub async fn create(
 ) {
     if routes.len() > 0 {
 
-        if let Some((_key, route)) = routes.iter().next() {
-            if !route.skip {
-                let client = gateway::make_client(auth).await;
-                let api = Api::new(routes);
+        if skip(routes) {
 
-                let api_id =
-                    gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone()).await;
-                let gateway_arn = auth.api_gateway_arn(&api_id);
+            let client = gateway::make_client(auth).await;
+            let api = Api::new(routes);
 
-                gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+            let api_id =
+                gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone()).await;
+            let gateway_arn = auth.api_gateway_arn(&api_id);
 
-                if api.cors.is_none() {
-                    println!("Clearing CORS");
-                    gateway::clear_cors(&client, &api_id).await;
+            gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+
+            if api.cors.is_none() {
+                println!("Clearing CORS");
+                gateway::clear_cors(&client, &api_id).await;
+            }
+
+            let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
+
+            for (_, route) in routes {
+                tracing::debug!("Creating route {} {}", &route.method, &route.path);
+                if !&route.skip {
+                    create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
                 }
-
-                let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
-
-                for (_, route) in routes {
-                    tracing::debug!("Creating route {} {}", &route.method, &route.path);
-                    if !&route.skip {
-                        create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
-                    }
-                }
-                // domains, stages and deployment
+            }
+            // domains, stages and deployment
+            if let Some((_key, route)) = routes.iter().next() {
                 let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
                 gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
                     .await;
