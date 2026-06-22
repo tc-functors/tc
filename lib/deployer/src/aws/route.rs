@@ -380,6 +380,19 @@ fn skip(routes: &HashMap<String, Route>) -> bool {
     }
 }
 
+fn default_route(routes: &HashMap<String, Route>) -> Route {
+    match routes.get("default") {
+        Some(r) => r.clone(),
+        None => {
+            if let Some((_key, route)) = routes.iter().next() {
+                route.clone()
+            } else {
+                panic!("No routes found")
+            }
+        }
+    }
+}
+
 pub async fn create(
     auth: &Auth,
     routes: &HashMap<String, Route>,
@@ -406,26 +419,26 @@ pub async fn create(
 
             let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
 
-            for (_, route) in routes {
+            for (name, route) in routes {
                 tracing::debug!("Creating route {} {}", &route.method, &route.path);
-                if !&route.skip {
+                if !&route.skip && name != "default" {
                     create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
                 }
             }
             // domains, stages and deployment
-            if let Some((_key, route)) = routes.iter().next() {
-                let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
-                gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
-                    .await;
-                gateway::create_deployment(&client, &api_id, &api.stage).await;
 
-                let maybe_domain = create_domain(auth, &api_id, route, &auth.name, sandbox).await;
-                if let Some(domain) = maybe_domain {
-                    println!("Endpoint {}", &domain);
-                } else {
-                    let endpoint = auth.api_endpoint(&api_id, &api.stage);
-                    println!("Endpoint {}", &endpoint);
-                }
+            let route = default_route(routes);
+            let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
+            gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
+                .await;
+            gateway::create_deployment(&client, &api_id, &api.stage).await;
+
+            let maybe_domain = create_domain(auth, &api_id, &route, &auth.name, sandbox).await;
+            if let Some(domain) = maybe_domain {
+                println!("Endpoint {}", &domain);
+            } else {
+                let endpoint = auth.api_endpoint(&api_id, &api.stage);
+                println!("Endpoint {}", &endpoint);
             }
         } else {
             println!("Skipping routes");

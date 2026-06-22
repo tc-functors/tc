@@ -248,7 +248,12 @@ pub async fn create_or_update_route(
     authorizer_id: Option<String>,
     authorizer_kind: &str,
 ) {
-    let route_key = strip(&format!("{} {}", method, path), "/");
+
+    let route_key = if path == "/" {
+        format!("{} {}", method, path)
+    } else {
+        strip(&format!("{} {}", method, path), "/")
+    };
     let target = format!("integrations/{}", integration_id);
     let maybe_route = find_route(client, api_id, &route_key).await;
 
