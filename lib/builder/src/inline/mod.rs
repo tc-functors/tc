@@ -9,6 +9,7 @@ use colored::Colorize;
 use compiler::{
     Lang,
     LangRuntime,
+    Arch
 };
 use composer::Build;
 use kit as u;
@@ -20,6 +21,7 @@ use provider::{
 
 fn gen_dockerfile(
     dir: &str,
+    arch: &Arch,
     langr: &LangRuntime,
     pre: &Vec<String>,
     post: &Vec<String>,
@@ -35,7 +37,7 @@ fn gen_dockerfile(
             }
         }
         Lang::Rust => rust::gen_dockerfile(dir),
-        Lang::Go => go::gen_dockerfile(dir, pre),
+        Lang::Go => go::gen_dockerfile(dir, arch, pre),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
@@ -43,6 +45,7 @@ fn gen_dockerfile(
 
 fn gen_dockerfile_unshared(
     dir: &str,
+    arch: &Arch,
     langr: &LangRuntime,
     pre: &Vec<String>,
     post: &Vec<String>,
@@ -52,7 +55,7 @@ fn gen_dockerfile_unshared(
         Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
-        Lang::Go => go::gen_dockerfile(dir, pre),
+        Lang::Go => go::gen_dockerfile(dir, arch, pre),
         Lang::Node => node::gen_dockerfile(dir),
         _ => todo!(),
     }
@@ -188,6 +191,7 @@ pub async fn build(
     dir: &str,
     name: &str,
     langr: &LangRuntime,
+    arch: &Arch,
     bs: &Build,
 ) -> BuildStatus {
     let Build {
@@ -208,9 +212,9 @@ pub async fn build(
         bar.set_prefix(prefix);
 
         if *shared_context {
-            gen_dockerfile(dir, langr, pre, post, *skip_dev_deps)
+            gen_dockerfile(dir, arch, langr, pre, post, *skip_dev_deps)
         } else {
-            gen_dockerfile_unshared(dir, langr, pre, post, *skip_dev_deps);
+            gen_dockerfile_unshared(dir, arch, langr, pre, post, *skip_dev_deps);
         }
         bar.inc(1);
         let created_root_dockerignore = gen_dockerignore(dir);

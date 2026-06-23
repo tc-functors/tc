@@ -1,4 +1,5 @@
 use kit as u;
+use compiler::Arch;
 
 fn deps_str(deps: Vec<String>) -> String {
     if deps.len() >= 2 {
@@ -10,13 +11,19 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-pub fn gen_dockerfile(dir: &str, pre: &Vec<String>) {
+pub fn gen_dockerfile(dir: &str, arch: &Arch, pre: &Vec<String>) {
     let pre = deps_str(pre.to_vec());
+    let arch_env = match arch {
+        Arch::Arm64 => "GOARCH=arm64",
+        Arch::X8664 => "GOARCH=amd64"
+    };
+
     let f = format!(
         r#"
 FROM golang:1.25-alpine AS builder
 
 ENV GOOS=linux
+ENV {arch_env}
 ENV CGO_ENABLED=0
 ENV GIT_SSH_COMMAND="ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 

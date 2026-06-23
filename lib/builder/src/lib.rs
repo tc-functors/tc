@@ -121,11 +121,11 @@ pub async fn build(
         BuildKind::Image => {
             image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await
         }
-        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &build).await,
+        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &runtime.arch, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr, &build),
         BuildKind::Slab => todo!(),
-        BuildKind::Code => code::build(&auth, dir, &name, langr, &build).await,
+        BuildKind::Code => code::build(&auth, dir, &name, langr, &runtime.arch, &build).await,
         BuildKind::Extension => extension::build(dir, &name, langr),
         BuildKind::Runtime => todo!(),
     };
