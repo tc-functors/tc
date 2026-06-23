@@ -17,6 +17,7 @@ use clap::{
 };
 
 mod remote;
+mod mcp;
 use clap_stdin::{
     FileOrStdin,
     MaybeStdin,
@@ -67,6 +68,8 @@ enum Cmd {
     Invoke(InvokeArgs),
     /// List resources in a topology
     List(ListArgs),
+    /// Run MCP server
+    Mcp(DefaultArgs),
     /// Prune all resources in given sandbox
     Prune(PruneArgs),
     /// Resolve a topology
@@ -1128,6 +1131,10 @@ async fn run(args: RunArgs) {
     tc::run(dir, task, trace).await;
 }
 
+async fn mcp(_args: DefaultArgs) {
+    mcp::serve().await;
+}
+
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
@@ -1165,6 +1172,7 @@ async fn run_command() {
         Cmd::Freeze(args) => freeze(args).await,
         Cmd::Invoke(args) => invoke(args).await,
         Cmd::List(args) => list(args).await,
+        Cmd::Mcp(args) => mcp(args).await,
         Cmd::Prune(args) => prune(args).await,
         Cmd::Route(args) => route(args).await,
         Cmd::Run(args) => run(args).await,

@@ -15,7 +15,22 @@ colored = "2.0.0"
 log = "0.4"
 clap = { version = "4.1", features = ["derive"] }
 openssl = { version = "0.10", features = ["vendored"] }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+schemars = "1.2.1"
+rmcp = { version = "1.7.0", features = [
+          "server",
+           "macros",
+	   "transport-io",
+           "auth",
+	   "elicitation",
+	   "schemars",
+     ] }
+tokio = { version = "1", features = [
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "io-std",
+    "signal",
+] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tabled = "0.10.0"

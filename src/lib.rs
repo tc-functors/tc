@@ -27,7 +27,7 @@ pub struct BuildOpts {
     pub version: Option<String>,
 }
 
-async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
+pub async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
     let config = Config::new();
     let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
     let profile = match maybe_cfg_profile {
@@ -306,7 +306,7 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
     }
 }
 
-async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
+pub async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
     deployer::create(auth, topology, sync).await;
 
     for (_, node) in &topology.nodes {
@@ -437,7 +437,7 @@ pub async fn dry_run_create(profile: Option<String>, sandbox: Option<String>, re
     create_topology_dry_run(&auth, &rt).await;
 }
 
-async fn update_aux(auth: &Auth, sandbox: &str, topology: &Topology, maybe_entity: Option<String>) {
+pub async fn update_aux(auth: &Auth, sandbox: &str, topology: &Topology, maybe_entity: Option<String>) {
     let diff = false;
     let cache = false;
 
