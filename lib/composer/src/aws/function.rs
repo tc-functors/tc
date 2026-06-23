@@ -13,8 +13,8 @@ use compiler::spec::{
 use configurator::Config;
 use kit as u;
 use kit::*;
-use runtime::collect_aux_files;
 pub use runtime::Runtime;
+use runtime::collect_aux_files;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -122,14 +122,10 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
-        let mut aux_files = collect_aux_files(
-            infra_dir,
-            &fspec,
-            fspec.runtime.as_ref(),
-            &runtime.role,
-        );
+        let mut aux_files =
+            collect_aux_files(infra_dir, &fspec, fspec.runtime.as_ref(), &runtime.role);
 
-        if let Some(ref afiles) =  fspec.aux_files {
+        if let Some(ref afiles) = fspec.aux_files {
             for file in afiles {
                 aux_files.push(u::absolutize(dir, &file));
             }
@@ -176,12 +172,7 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
-        let aux_files = collect_aux_files(
-            infra_dir,
-            fspec,
-            fspec.runtime.as_ref(),
-            &runtime.role,
-        );
+        let aux_files = collect_aux_files(infra_dir, fspec, fspec.runtime.as_ref(), &runtime.role);
 
         let targets = Target::make_all(&fspec);
 

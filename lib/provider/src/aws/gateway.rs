@@ -89,12 +89,7 @@ pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     }
 }
 
-pub async fn update_api(
-    client: &Client,
-    name: &str,
-    api_id: &str,
-    cors: Option<Cors>,
-) -> String {
+pub async fn update_api(client: &Client, name: &str, api_id: &str, cors: Option<Cors>) -> String {
     println!("Updating route {} (cors)", name);
     let _ = client
         .update_api()
@@ -107,11 +102,7 @@ pub async fn update_api(
     s!(api_id)
 }
 
-pub async fn update_tags(
-    client: &Client,
-    resource_arn: &str,
-    tags: HashMap<String, String>,
-) {
+pub async fn update_tags(client: &Client, resource_arn: &str, tags: HashMap<String, String>) {
     let _ = client
         .tag_resource()
         .resource_arn(resource_arn)
@@ -248,7 +239,6 @@ pub async fn create_or_update_route(
     authorizer_id: Option<String>,
     authorizer_kind: &str,
 ) {
-
     let route_key = if path == "/" {
         format!("{} {}", method, path)
     } else {
@@ -780,11 +770,7 @@ pub async fn clear_cors(client: &Client, api_id: &str) {
 }
 
 pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, String>, Error> {
-    let res = client
-        .get_tags()
-        .resource_arn(arn.to_string())
-        .send()
-        .await;
+    let res = client.get_tags().resource_arn(arn.to_string()).send().await;
 
     match res {
         Ok(r) => match r.tags {

@@ -17,11 +17,11 @@ use base64::{
     engine::general_purpose,
 };
 use compiler::{
+    Arch,
     BuildKind,
     Entity,
     LangRuntime,
     spec::function::Provider,
-    Arch
 };
 use kit as u;
 use kit::*;
@@ -176,8 +176,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         skip_dev_deps: false,
         environment: HashMap::new(),
         dirs: vec![],
-        include_deps: false
-
+        include_deps: false,
     };
 
     let tags = tag::make(namespace, "");

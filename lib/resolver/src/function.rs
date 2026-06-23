@@ -253,7 +253,12 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
     }
 }
 
-async fn resolve_network(ctx: &Context, enable_network: bool, ns: Option<NetworkSpec>, network: Option<Network>) -> Option<Network> {
+async fn resolve_network(
+    ctx: &Context,
+    enable_network: bool,
+    ns: Option<NetworkSpec>,
+    network: Option<Network>,
+) -> Option<Network> {
     let Context { auth, config, .. } = ctx;
 
     match network {
@@ -269,7 +274,6 @@ async fn resolve_network(ctx: &Context, enable_network: bool, ns: Option<Network
                 } else {
                     None
                 }
-
             } else {
                 let cfg = &config.aws.efs.network;
                 let cfg_net = cfg.get(&auth.name);
@@ -426,12 +430,8 @@ async fn resolve_runtime(
         r.layers = resolve_layers(ctx, layers.clone()).await;
     }
     if *enable_fs || *enable_network {
-        r.network = resolve_network(
-            ctx,
-            r.enable_network,
-            actual_infra.network,
-            network.clone()
-        ).await;
+        r.network =
+            resolve_network(ctx, r.enable_network, actual_infra.network, network.clone()).await;
         if *enable_fs {
             r.fs = resolve_fs(ctx, fs.clone()).await;
         }

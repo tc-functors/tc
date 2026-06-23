@@ -154,7 +154,6 @@ pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
     h
 }
 
-
 pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
@@ -348,14 +347,14 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
     }
 }
 
-pub fn pprint_root(topologies: &HashMap<String, Topology>, fmt: &str)  {
+pub fn pprint_root(topologies: &HashMap<String, Topology>, fmt: &str) {
     let format = Format::from_str(fmt).unwrap();
     match format {
         Format::Tree => display::print_tree_recursive(topologies),
         Format::Table => display::topology::print_stats(topologies),
         Format::JSON => display::topology::print_stats_json(topologies),
         Format::Icepanel => display::print_icepanel(topologies),
-        _ => println!("only -f tree|icepanel|table|json supported")
+        _ => println!("only -f tree|icepanel|table|json supported"),
     }
 }
 

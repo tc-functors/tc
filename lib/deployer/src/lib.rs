@@ -15,7 +15,10 @@ use aws::{
     state,
 };
 use colored::Colorize;
-use compiler::{Entity, TopologyKind};
+use compiler::{
+    Entity,
+    TopologyKind,
+};
 use composer::{
     Function,
     Topology,
@@ -412,7 +415,7 @@ pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<
 }
 
 pub async fn freeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, kind, ..} = topology;
+    let Topology { fqn, kind, .. } = topology;
     match kind {
         TopologyKind::StepFunction => state::freeze(auth, fqn).await,
         TopologyKind::Function => function::freeze(auth, fqn).await,
@@ -423,7 +426,7 @@ pub async fn freeze(auth: &Auth, topology: &Topology) {
 }
 
 pub async fn unfreeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, kind, ..} = topology;
+    let Topology { fqn, kind, .. } = topology;
     match kind {
         TopologyKind::StepFunction => state::unfreeze(auth, fqn).await,
         TopologyKind::Function => function::unfreeze(auth, fqn).await,
@@ -482,7 +485,6 @@ pub async fn list_all(auth: &Auth, sandbox: &str, format: &str) {
         }
     }
 }
-
 
 pub async fn list_all_resources(auth: &Auth) {
     let mut arns = resource::list_all(auth).await;

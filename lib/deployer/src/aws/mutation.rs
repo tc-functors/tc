@@ -1,14 +1,14 @@
-use composer::Mutation;
 use compiler::Entity;
-use kit::*;
+use composer::Mutation;
 use kit as u;
+use kit::*;
 use provider::{
     Auth,
     aws::{
         appsync,
         appsync::AppsyncClient,
         lambda,
-        lambda::LambdaClient
+        lambda::LambdaClient,
     },
 };
 use std::collections::HashMap;
@@ -28,10 +28,10 @@ async fn find_alias_arn(client: &LambdaClient, kind: &Entity, name: &str, arn: &
                     println!("Using alias function={}", &a);
                     a
                 }
-                None => arn.to_string()
+                None => arn.to_string(),
             }
-        },
-        _ => arn.to_string()
+        }
+        _ => arn.to_string(),
     }
 }
 
@@ -50,14 +50,18 @@ async fn create_mutation(
         ..
     } = mutation;
     let lc = lambda::make_client(auth).await;
-    let authorizer_arn = find_alias_arn(&lc, &Entity::Function, &authorizer, &auth.lambda_arn(&authorizer)).await;
+    let authorizer_arn = find_alias_arn(
+        &lc,
+        &Entity::Function,
+        &authorizer,
+        &auth.lambda_arn(&authorizer),
+    )
+    .await;
     let (api_id, _) =
         appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
 
     add_permission(auth, &api_name, &authorizer_arn).await;
     appsync::create_types(auth, &api_id, types).await;
-
-
 
     let client = appsync::make_client(auth).await;
     for (field_name, resolver) in resolvers {
@@ -69,7 +73,8 @@ async fn create_mutation(
             kind: kind.to_str(),
             name: String::from(datasource_name),
             role_arn: role_arn.clone(),
-            target_arn: find_alias_arn(&lc, kind, &resolver.target_name, &resolver.target_arn).await
+            target_arn: find_alias_arn(&lc, kind, &resolver.target_name, &resolver.target_arn)
+                .await,
         };
 
         appsync::find_or_create_datasource(&client, &api_id, datasource_input).await;
@@ -147,8 +152,6 @@ pub async fn create_dry_run(mutations: &HashMap<String, Mutation>) {
         }
     }
 }
-
-
 
 pub async fn freeze(auth: &Auth, fqn: &str) {
     let client = appsync::make_client(auth).await;

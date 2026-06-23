@@ -28,7 +28,10 @@ impl FromStr for Lang {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "python3.10" | "python3.11" | "python3.9" | "python3.12 | python3.13 | python 3.14 | python" => Ok(Lang::Python),
+            "python3.10"
+            | "python3.11"
+            | "python3.9"
+            | "python3.12 | python3.13 | python 3.14 | python" => Ok(Lang::Python),
             "ruby3.2" | "ruby" | "ruby32 | ruby3.4 | ruby34 | ruby" => Ok(Lang::Ruby),
             "node22" | "node20" | "node18 | node" | "Node" => Ok(Lang::Node),
             "rust" => Ok(Lang::Rust),
@@ -309,13 +312,12 @@ pub struct FileSystemSpec {
     pub bucket: Option<String>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Arch {
     #[serde(alias = "arm_64")]
     Arm64,
     #[serde(alias = "x86_64")]
-    X8664
+    X8664,
 }
 
 impl FromStr for Arch {
@@ -334,11 +336,10 @@ impl Arch {
     pub fn to_str(&self) -> String {
         match self {
             Arch::X8664 => s!("x8664"),
-            Arch::Arm64 => s!("arm64")
+            Arch::Arm64 => s!("arm64"),
         }
     }
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
@@ -464,8 +465,13 @@ pub struct FunctionSpec {
 }
 
 fn find_revision(dir: &str) -> String {
-    use std::collections::HashMap;
-    use std::sync::{Mutex, OnceLock};
+    use std::{
+        collections::HashMap,
+        sync::{
+            Mutex,
+            OnceLock,
+        },
+    };
     static CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     if let Ok(guard) = cache.lock() {
@@ -582,7 +588,7 @@ fn load_fspec_file(dir: &str) -> Option<FunctionSpec> {
             tasks: HashMap::new(),
             targets: None,
             shared: None,
-            aux_files: None
+            aux_files: None,
         })
     }
 }
@@ -611,7 +617,7 @@ impl FunctionSpec {
                 tasks: HashMap::new(),
                 targets: None,
                 shared: None,
-                aux_files: None
+                aux_files: None,
             },
         }
     }
@@ -657,7 +663,7 @@ impl InlineFunctionSpec {
             tasks: HashMap::new(),
             targets: targets,
             shared: None,
-            aux_files: None
+            aux_files: None,
         }
     }
 

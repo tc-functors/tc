@@ -14,8 +14,10 @@ use composer::Function;
 use configurator::Config;
 use kit as u;
 use kit::sh;
-use provider::Auth;
-use provider::aws::ecr;
+use provider::{
+    Auth,
+    aws::ecr,
+};
 use std::{
     panic,
     str::FromStr,

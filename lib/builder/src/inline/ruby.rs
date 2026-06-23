@@ -32,7 +32,12 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-pub fn gen_dockerfile_no_wrap(dir: &str, _runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+pub fn gen_dockerfile_no_wrap(
+    dir: &str,
+    _runtime: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>,
+) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let build_context = &top_level();
@@ -107,7 +112,12 @@ RUN --mount=type=cache,target=/.root/cache {extra_str}
     u::write_str(&dockerfile, &f);
 }
 
-pub fn gen_dockerfile_unshared(dir: &str, _runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+pub fn gen_dockerfile_unshared(
+    dir: &str,
+    _runtime: &LangRuntime,
+    pre: &Vec<String>,
+    post: &Vec<String>,
+) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let extra_str = u::vec_to_str(shared_objects());

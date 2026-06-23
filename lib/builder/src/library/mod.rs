@@ -8,13 +8,13 @@ use compiler::spec::{
 };
 use composer::Build;
 
-pub fn build(
-    dir: &str,
-    langr: &LangRuntime,
-    bspec: &Build
-) -> BuildStatus {
-
-    let Build { dirs, include_deps, post, ..  } = bspec;
+pub fn build(dir: &str, langr: &LangRuntime, bspec: &Build) -> BuildStatus {
+    let Build {
+        dirs,
+        include_deps,
+        post,
+        ..
+    } = bspec;
 
     let path = match langr.to_lang() {
         Lang::Python => python::build(dir, langr, dirs, *include_deps, post),

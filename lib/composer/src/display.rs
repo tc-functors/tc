@@ -13,8 +13,8 @@ use std::{
 pub mod compact;
 mod event;
 mod function;
-mod state;
 mod icepanel;
+mod state;
 pub mod topology;
 use colored::Colorize;
 use tabled::{
@@ -213,13 +213,18 @@ pub fn print_tree_recursive(topologies: &HashMap<String, Topology>) {
     let mut t = TreeBuilder::new(String::from(""));
 
     for (name, topology) in topologies {
-            let v = if &topology.version == "0.0.1" {
-                ""
-            } else {
-                &topology.version.green()
-            };
-        let nt = format!("{} (v:{} f:{}, e:{})",
-                         name.cyan(), v.green(), &topology.functions.len(), &topology.events.len());
+        let v = if &topology.version == "0.0.1" {
+            ""
+        } else {
+            &topology.version.green()
+        };
+        let nt = format!(
+            "{} (v:{} f:{}, e:{})",
+            name.cyan(),
+            v.green(),
+            &topology.functions.len(),
+            &topology.events.len()
+        );
         t.begin_child(nt);
         for (n, node) in &topology.nodes {
             let v = if &node.version == "0.0.1" {
@@ -227,8 +232,13 @@ pub fn print_tree_recursive(topologies: &HashMap<String, Topology>) {
             } else {
                 &node.version.green()
             };
-            let tt = format!("{} (v:{} f:{} e:{}) ",
-                             n.blue(), &v, &node.functions.len(), &node.events.len());
+            let tt = format!(
+                "{} (v:{} f:{} e:{}) ",
+                n.blue(),
+                &v,
+                &node.functions.len(),
+                &node.events.len()
+            );
             t.add_empty_child(tt);
         }
         t.end_child();

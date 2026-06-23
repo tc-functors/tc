@@ -66,8 +66,7 @@ pub fn make_appsync_params(op: &str) -> AppSyncParameters {
 }
 
 pub fn make_retry_policy(max_retries: i32, max_event_age_secs: Option<i32>) -> RetryPolicy {
-    let mut builder = RetryPolicyBuilder::default()
-        .maximum_retry_attempts(max_retries);
+    let mut builder = RetryPolicyBuilder::default().maximum_retry_attempts(max_retries);
     if let Some(age) = max_event_age_secs {
         builder = builder.maximum_event_age_in_seconds(age);
     }
@@ -118,9 +117,8 @@ pub fn make_target(
     };
 
     if let Some(dlq_arn) = dead_letter_arn {
-        builder = builder.dead_letter_config(
-            DeadLetterConfigBuilder::default().arn(dlq_arn).build()
-        );
+        builder =
+            builder.dead_letter_config(DeadLetterConfigBuilder::default().arn(dlq_arn).build());
     }
 
     builder.build().unwrap()
@@ -344,24 +342,15 @@ pub async fn put_event(
 }
 
 async fn create_bus(client: &Client, name: &str) {
-    let res = client
-        .create_event_bus()
-        .name(name)
-        .send()
-        .await
-        .unwrap();
+    let res = client.create_event_bus().name(name).send().await.unwrap();
     println!("{:?}", &res);
 }
 
 async fn find_bus(client: &Client, name: &str) -> Option<String> {
-    let res = client
-        .describe_event_bus()
-        .name(name)
-        .send()
-        .await;
+    let res = client.describe_event_bus().name(name).send().await;
     match res {
         Ok(_) => res.unwrap().arn,
-        Err(_) => None
+        Err(_) => None,
     }
 }
 

@@ -203,7 +203,7 @@ impl Role {
     pub fn provided_by_entity(entity: Entity) -> Role {
         let name = match std::env::var("TC_LEGACY_ROLES") {
             Ok(_) => legacy_name_of(entity),
-            Err(_) => name_of(entity)
+            Err(_) => name_of(entity),
         };
         Role {
             name: s!(name),

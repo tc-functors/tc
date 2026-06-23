@@ -8,9 +8,8 @@ pub fn build(
     langr: &LangRuntime,
     dirs: &Vec<String>,
     include_deps: bool,
-    post: &Vec<String>
+    post: &Vec<String>,
 ) -> String {
-
     u::run("rm -rf deps.zip build", &dir);
     u::run("mkdir -p build/python/lib && mkdir -p build/lib", &dir);
 

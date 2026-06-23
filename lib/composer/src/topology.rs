@@ -32,7 +32,7 @@ use crate::{
     index,
     sequence,
     tag,
-    version
+    version,
 };
 use compiler::{
     Entity,
@@ -672,7 +672,6 @@ fn make_base_roles() -> HashMap<String, Role> {
     h
 }
 
-
 fn make_test(
     t: Option<HashMap<String, TestSpec>>,
     fns: &HashMap<String, Function>,
@@ -719,7 +718,7 @@ fn find_kind(
 fn is_concurrent(maybe_concurrent: &Option<bool>) -> bool {
     match maybe_concurrent {
         Some(b) => *b,
-        None => false
+        None => false,
     }
 }
 
@@ -1019,8 +1018,10 @@ impl Topology {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::os::unix::fs::symlink;
+    use std::{
+        fs,
+        os::unix::fs::symlink,
+    };
     use tempfile::TempDir;
 
     #[test]
@@ -1082,10 +1083,7 @@ mod tests {
         let outer = TempDir::new().unwrap();
         let root = outer.path();
 
-        write_topology_yml(
-            root,
-            "name: shared-dedup-parent\nkind: step-function\n",
-        );
+        write_topology_yml(root, "name: shared-dedup-parent\nkind: step-function\n");
 
         write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
         write_shared_function(&root.join("shared/bar"), "bar", "shared_bar");
@@ -1163,8 +1161,7 @@ mod tests {
             offenders
         );
 
-        let child_namespaces: std::collections::BTreeSet<&String> =
-            topology.nodes.keys().collect();
+        let child_namespaces: std::collections::BTreeSet<&String> = topology.nodes.keys().collect();
         assert!(
             child_namespaces.contains(&s!("child-a")),
             "child-a missing; root.nodes = {:?}",
@@ -1181,10 +1178,7 @@ mod tests {
             child_namespaces
         );
 
-        let child_c = topology
-            .nodes
-            .get("child-c")
-            .expect("child-c node present");
+        let child_c = topology.nodes.get("child-c").expect("child-c node present");
         let local = child_c
             .functions
             .get("local")
@@ -1208,10 +1202,7 @@ mod tests {
         }
         fn assert_roles_match_functions(t: &Topology, path: &str) {
             for (rname, _) in &t.roles {
-                let owned_by_function = t
-                    .functions
-                    .values()
-                    .any(|f| &f.runtime.role.name == rname);
+                let owned_by_function = t.functions.values().any(|f| &f.runtime.role.name == rname);
                 let owned_by_flow = t
                     .flow
                     .as_ref()
@@ -1348,10 +1339,7 @@ mod tests {
         write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
 
         // Two levels: root -> mid -> leaf, leaf imports shared function
-        write_topology_yml(
-            &root.join("mid"),
-            "name: mid\nkind: step-function\n",
-        );
+        write_topology_yml(&root.join("mid"), "name: mid\nkind: step-function\n");
         write_topology_yml(
             &root.join("mid/leaf"),
             "name: leaf\nkind: step-function\nfunctions:\n  foo:\n    uri: ../../shared/foo\n",
@@ -1368,7 +1356,9 @@ mod tests {
             if t.functions.contains_key(key) {
                 return true;
             }
-            t.nodes.values().any(|child| has_shared_function(child, key))
+            t.nodes
+                .values()
+                .any(|child| has_shared_function(child, key))
         }
         for child in topology.nodes.values() {
             assert!(

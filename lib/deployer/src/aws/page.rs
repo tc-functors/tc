@@ -283,7 +283,6 @@ async fn create_or_update_distribution(
     tracing::debug!("Configuring page {} - setting OAC ", name);
     let oac_id = cloudfront::find_or_create_oac(&client, origin_domain).await;
 
-
     let cache_policy_id = match std::env::var("TC_CUSTOM_CACHE_POLICY") {
         Ok(_) => {
             tracing::debug!("Configuring page {} - setting cache policy ", name);

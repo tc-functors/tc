@@ -1,13 +1,17 @@
-use rmcp::ServiceExt;
-use rmcp::{handler::server::wrapper::Parameters, schemars, tool, tool_router, transport::stdio};
-use std::{
-    time::Instant,
-};
 use kit as u;
+use rmcp::{
+    ServiceExt,
+    handler::server::wrapper::Parameters,
+    schemars,
+    tool,
+    tool_router,
+    transport::stdio,
+};
+use std::time::Instant;
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ComposeRequest {
-   #[schemars(description = "Path to topology dir")]
+    #[schemars(description = "Path to topology dir")]
     pub dir: String,
     #[schemars(description = "recurse through directories")]
     pub recursive: bool,
@@ -43,7 +47,9 @@ pub struct UpdateRequest {
     pub profile: String,
     #[schemars(description = "Sandbox name")]
     pub sandbox: String,
-    #[schemars(description = "Entity/Component - functions, events, routes, mutations, channels, states")]
+    #[schemars(
+        description = "Entity/Component - functions, events, routes, mutations, channels, states"
+    )]
     pub entity: Option<String>,
 }
 
@@ -57,7 +63,9 @@ pub struct DeleteRequest {
     pub profile: String,
     #[schemars(description = "Sandbox name")]
     pub sandbox: String,
-    #[schemars(description = "Entity/Component - functions, events, routes, mutations, channels, states")]
+    #[schemars(
+        description = "Entity/Component - functions, events, routes, mutations, channels, states"
+    )]
     pub entity: Option<String>,
 }
 
@@ -69,7 +77,9 @@ pub struct InvokeRequest {
     pub profile: String,
     #[schemars(description = "Sandbox name")]
     pub sandbox: String,
-    #[schemars(description = "Entity/Component - functions, events, routes, mutations, channels, states")]
+    #[schemars(
+        description = "Entity/Component - functions, events, routes, mutations, channels, states"
+    )]
     pub entity: Option<String>,
     #[schemars(description = "Payload in JSON")]
     pub payload: String,
@@ -103,7 +113,7 @@ pub struct ResolveRequest {
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct ChangelogRequest {
-   #[schemars(description = "Path to topology or function dir")]
+    #[schemars(description = "Path to topology or function dir")]
     pub dir: String,
     #[schemars(description = "diff versions of form  a.bc..x.y.z")]
     pub between: Option<String>,
@@ -118,18 +128,19 @@ pub struct Tc;
 
 #[tool_router(server_handler)]
 impl Tc {
-
     #[tool(description = "Compose a topology")]
-    fn compose(&self, Parameters(
-        ComposeRequest { dir, recursive }): Parameters<ComposeRequest>
+    fn compose(
+        &self,
+        Parameters(ComposeRequest { dir, recursive }): Parameters<ComposeRequest>,
     ) -> String {
         let topology = composer::compose(&dir, recursive);
         topology.to_str()
     }
 
     #[tool(description = "Build function")]
-    async fn build(&self, Parameters(
-        BuildRequest { dir, profile }): Parameters<BuildRequest>
+    async fn build(
+        &self,
+        Parameters(BuildRequest { dir, profile }): Parameters<BuildRequest>,
     ) -> String {
         let maybe_fn = composer::current_function(&dir);
         match maybe_fn {
@@ -138,13 +149,19 @@ impl Tc {
                 let _builds = builder::build(&auth, &f, Some(f.name.clone()), None, false).await;
                 "success".to_string()
             }
-            None => String::from("No function found")
+            None => String::from("No function found"),
         }
     }
 
     #[tool(description = "Create a topology in a sandbox")]
-    async fn create(&self, Parameters(
-        CreateRequest { dir, profile, sandbox, recursive }): Parameters<CreateRequest>
+    async fn create(
+        &self,
+        Parameters(CreateRequest {
+            dir,
+            profile,
+            sandbox,
+            recursive,
+        }): Parameters<CreateRequest>,
     ) -> String {
         let start = Instant::now();
         let auth = tc::init(Some(profile), None).await;
@@ -158,9 +175,17 @@ impl Tc {
         format!("Time elapsed: {:#}", u::time_format(duration))
     }
 
-
     #[tool(description = "Update a topology in a sandbox")]
-    async fn update(&self, Parameters(UpdateRequest { dir, profile, sandbox, recursive, entity }): Parameters<UpdateRequest>) -> String {
+    async fn update(
+        &self,
+        Parameters(UpdateRequest {
+            dir,
+            profile,
+            sandbox,
+            recursive,
+            entity,
+        }): Parameters<UpdateRequest>,
+    ) -> String {
         let auth = tc::init(Some(profile), None).await;
         let topology = composer::compose(&dir, recursive);
         let rt = resolver::render(&auth, &sandbox, &topology).await;
@@ -171,7 +196,16 @@ impl Tc {
     }
 
     #[tool(description = "Delete a topology in given sandbox")]
-    async fn delete(&self, Parameters(DeleteRequest { dir, profile, sandbox, recursive, entity }): Parameters<DeleteRequest>) -> String {
+    async fn delete(
+        &self,
+        Parameters(DeleteRequest {
+            dir,
+            profile,
+            sandbox,
+            recursive,
+            entity,
+        }): Parameters<DeleteRequest>,
+    ) -> String {
         let auth = tc::init(Some(profile), None).await;
         let topology = composer::compose(&dir, recursive);
         let rt = resolver::render(&auth, &sandbox, &topology).await;
@@ -188,7 +222,16 @@ impl Tc {
     }
 
     #[tool(description = "Invoke entity or topology in given sandbox")]
-    async fn invoke(&self, Parameters(InvokeRequest { dir, profile, sandbox, entity, payload }): Parameters<InvokeRequest>) -> String {
+    async fn invoke(
+        &self,
+        Parameters(InvokeRequest {
+            dir,
+            profile,
+            sandbox,
+            entity,
+            payload,
+        }): Parameters<InvokeRequest>,
+    ) -> String {
         let auth = tc::init(Some(profile), None).await;
         let topology = composer::compose(&dir, true);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
@@ -198,7 +241,16 @@ impl Tc {
     }
 
     #[tool(description = "Test entity or topology in given sandbox")]
-    async fn test(&self, Parameters(TestRequest { dir, recursive, profile, sandbox, unit}): Parameters<TestRequest>) -> String {
+    async fn test(
+        &self,
+        Parameters(TestRequest {
+            dir,
+            recursive,
+            profile,
+            sandbox,
+            unit,
+        }): Parameters<TestRequest>,
+    ) -> String {
         let auth = tc::init(Some(profile), None).await;
         if composer::is_topology_dir(&dir) {
             let topology = composer::compose(&dir, recursive);
@@ -214,7 +266,15 @@ impl Tc {
     }
 
     #[tool(description = "Resovle a topology")]
-    async fn resolve(&self, Parameters(ResolveRequest { dir, recursive, profile, sandbox }): Parameters<ResolveRequest>) -> String {
+    async fn resolve(
+        &self,
+        Parameters(ResolveRequest {
+            dir,
+            recursive,
+            profile,
+            sandbox,
+        }): Parameters<ResolveRequest>,
+    ) -> String {
         let auth = tc::init(Some(profile), None).await;
         let ct = composer::compose(&dir, recursive);
         let rt = resolver::resolve(&auth, &sandbox, &ct, false, false).await;
@@ -222,24 +282,32 @@ impl Tc {
     }
 
     #[tool(description = "Generate changelog for a topology")]
-    async fn changelog(&self, Parameters(ChangelogRequest { dir, between, search, verbose }): Parameters<ChangelogRequest>) -> String {
-    let topology = composer::compose(&dir, false);
-    let namespace = topology.namespace;
-    match search {
-        Some(s) => {
-            let is_root = composer::is_root_dir(&dir);
-            if is_root {
-                let namespaces = composer::root_namespaces(&dir);
-                for (_, namespace) in namespaces {
-                    let version = tagger::find_version_history(&namespace, &s).await;
-                    if let Some(v) = version {
-                        println!("{},{},{}", &s, &namespace, &v);
+    async fn changelog(
+        &self,
+        Parameters(ChangelogRequest {
+            dir,
+            between,
+            search,
+            verbose,
+        }): Parameters<ChangelogRequest>,
+    ) -> String {
+        let topology = composer::compose(&dir, false);
+        let namespace = topology.namespace;
+        match search {
+            Some(s) => {
+                let is_root = composer::is_root_dir(&dir);
+                if is_root {
+                    let namespaces = composer::root_namespaces(&dir);
+                    for (_, namespace) in namespaces {
+                        let version = tagger::find_version_history(&namespace, &s).await;
+                        if let Some(v) = version {
+                            println!("{},{},{}", &s, &namespace, &v);
+                        }
                     }
                 }
             }
+            None => tagger::changelog(&namespace, between, verbose),
         }
-        None => tagger::changelog(&namespace, between, verbose),
-    }
         //FIXME: capture output
         String::from("")
     }

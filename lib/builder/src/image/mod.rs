@@ -222,13 +222,11 @@ pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, k
 
     let uri = match std::env::var("TC_IMAGE_URI") {
         Ok(k) => k,
-        Err(_) => {
-            match kind {
-                BuildKind::Image => find_base_image_uri(&uri, version.clone()),
-                BuildKind::Code => uri,
-                _ => uri,
-            }
-        }
+        Err(_) => match kind {
+            BuildKind::Image => find_base_image_uri(&uri, version.clone()),
+            BuildKind::Code => uri,
+            _ => uri,
+        },
     };
     let cmd = format!("docker run --rm -it --entrypoint bash {}", uri);
     tracing::debug!("{}", cmd);

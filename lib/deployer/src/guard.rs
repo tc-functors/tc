@@ -1,11 +1,3 @@
-use question::{
-    Answer,
-    Question,
-};
-
-use composer::Topology;
-use provider::Auth;
-
 use super::aws::{
     event,
     function,
@@ -13,11 +5,16 @@ use super::aws::{
     route,
     state,
 };
-
 use compiler::TopologyKind;
+use composer::Topology;
+use provider::Auth;
+use question::{
+    Answer,
+    Question,
+};
 
 pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
-    let Topology { fqn, kind, ..} = topology;
+    let Topology { fqn, kind, .. } = topology;
     match kind {
         TopologyKind::StepFunction => state::is_frozen(auth, fqn).await,
         TopologyKind::Function => function::is_frozen(auth, fqn).await,
@@ -31,8 +28,8 @@ pub async fn should_abort(_auth: &Auth, sandbox: &str, _topology: &Topology) -> 
     let yes = match std::env::var("CI") {
         Ok(_) => match std::env::var("TC_FREEZE") {
             Ok(_) => true,
-            Err(_) => false
-        }
+            Err(_) => false,
+        },
         Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
             Ok(_) => false,
             Err(_) => true,

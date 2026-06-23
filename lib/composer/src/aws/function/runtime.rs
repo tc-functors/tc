@@ -10,16 +10,16 @@ use compiler::{
     Entity,
     spec::{
         function::{
+            Arch,
             AssetsSpec,
             BuildKind,
+            FileSystemKind,
+            FileSystemSpec,
             FunctionSpec,
             Lang,
             LangRuntime,
             Provider,
             RuntimeSpec,
-            FileSystemKind,
-            FileSystemSpec,
-            Arch
         },
         infra::InfraSpec,
     },
@@ -228,15 +228,12 @@ fn lookup_role(
     _fqn: &str,
     function_name: &str,
 ) -> Role {
-
-
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
-
                     let f = format!("{}/roles/{}.json", infra_dir, function_name);
                     if index::get().file_exists(&f) {
                         Some(f)
@@ -404,7 +401,11 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h
 }
 
-fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>, fs: &Option<FileSystemSpec>) -> bool {
+fn needs_fs(
+    maybe_assets: Option<AssetsSpec>,
+    mount_fs: Option<bool>,
+    fs: &Option<FileSystemSpec>,
+) -> bool {
     if let Some(assets) = maybe_assets {
         let ax = assets.deps_path;
         match ax {
@@ -420,7 +421,7 @@ fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>, fs: &Optio
     } else {
         match fs {
             Some(_) => true,
-            None => false
+            None => false,
         }
     }
 }
@@ -441,18 +442,19 @@ fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
 
 fn as_fs_kind(fs_spec: &Option<FileSystemSpec>) -> FileSystemKind {
     match fs_spec {
-        Some(f) => {
-            match &f.kind {
-                Some(p) => p.clone(),
-                None => FileSystemKind::Efs
-            }
+        Some(f) => match &f.kind {
+            Some(p) => p.clone(),
+            None => FileSystemKind::Efs,
         },
-        None => FileSystemKind::Efs
+        None => FileSystemKind::Efs,
     }
 }
 
-
-fn make_fs(infra_spec: &InfraSpec, fs_spec: &Option<FileSystemSpec>, enable_fs: bool) -> Option<FileSystem> {
+fn make_fs(
+    infra_spec: &InfraSpec,
+    fs_spec: &Option<FileSystemSpec>,
+    enable_fs: bool,
+) -> Option<FileSystem> {
     if enable_fs {
         match &infra_spec.filesystem {
             Some(fs) => Some(FileSystem {
@@ -556,7 +558,7 @@ pub(super) fn collect_aux_files(
 fn as_arch(maybe_arch: &Option<Arch>) -> Arch {
     match maybe_arch {
         Some(a) => a.clone(),
-        None => Arch::X8664
+        None => Arch::X8664,
     }
 }
 
@@ -744,7 +746,11 @@ fn make_fargate(
         snapstart: false,
         role: role,
         enable_fs: enable_fs,
-        enable_network: if let Some(n) = rspec.network { n } else { false },
+        enable_network: if let Some(n) = rspec.network {
+            n
+        } else {
+            false
+        },
         network: make_network(&default_infra_spec, enable_fs),
         fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
         infra_spec: infra_spec,
@@ -773,7 +779,9 @@ impl Runtime {
             Some(r) => {
                 if let Some(ref provider) = r.provider {
                     match provider {
-                        Provider::Lambda => make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r),
+                        Provider::Lambda => {
+                            make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r)
+                        }
 
                         Provider::Fargate => {
                             make_fargate(dir, &infra_dir, namespace, fqn, fspec, &r, cspec)
@@ -798,8 +806,13 @@ mod tests {
         Provider,
         RuntimeSpec,
     };
-    use std::fs;
-    use std::path::{Path, PathBuf};
+    use std::{
+        fs,
+        path::{
+            Path,
+            PathBuf,
+        },
+    };
     use tempfile::TempDir;
 
     fn fake_fspec(name: &str) -> FunctionSpec {
@@ -872,14 +885,13 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
-        let aux = collect_aux_files(
-            &infra_dir,
-            &fake_fspec("myfn"),
-            None,
-            &fake_role_no_path(),
-        );
+        let aux = collect_aux_files(&infra_dir, &fake_fspec("myfn"), None, &fake_role_no_path());
 
         let expected = format!("{}/roles/myfn.json", infra_dir);
         assert!(
@@ -897,14 +909,13 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
-        let aux = collect_aux_files(
-            &infra_dir,
-            &fake_fspec("myfn"),
-            None,
-            &fake_role_no_path(),
-        );
+        let aux = collect_aux_files(&infra_dir, &fake_fspec("myfn"), None, &fake_role_no_path());
 
         let expected = format!("{}/vars/myfn.json", infra_dir);
         assert!(
@@ -924,7 +935,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
         let override_path = root.join("shared/role.json").to_str().unwrap().to_string();
 
         let aux = collect_aux_files(
@@ -950,7 +965,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
         let vars_path = root.join("shared/vars.json").to_str().unwrap().to_string();
 
         let mut rspec = fake_rspec_no_overrides();
@@ -981,14 +1000,13 @@ mod tests {
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
         mkfile(root, "infrastructure/tc/roles/function.json", "{}");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
-        let aux = collect_aux_files(
-            &infra_dir,
-            &fake_fspec("myfn"),
-            None,
-            &fake_role_no_path(),
-        );
+        let aux = collect_aux_files(&infra_dir, &fake_fspec("myfn"), None, &fake_role_no_path());
 
         let parent_role = root
             .join("infrastructure/tc/roles/function.json")
@@ -1009,7 +1027,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
         // Force a duplicate by setting the override role to the same
         // path as the conventional location.

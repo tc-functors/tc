@@ -7,6 +7,7 @@ use composer::{
     Function,
     Transducer,
 };
+use futures::stream::FuturesUnordered;
 use kit as u;
 use kit::s;
 use provider::{
@@ -14,7 +15,6 @@ use provider::{
     aws::lambda,
 };
 use std::collections::HashMap;
-use futures::stream::FuturesUnordered;
 use tabled::Tabled;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
@@ -125,7 +125,7 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
 fn get_chunk_size() -> usize {
     match std::env::var("TC_CREATE_CHUNK_SIZE") {
         Ok(n) => n.parse::<usize>().unwrap(),
-        Err(_) => 4
+        Err(_) => 4,
     }
 }
 
@@ -135,7 +135,6 @@ pub async fn create(
     tags: &HashMap<String, String>,
     _sync: bool,
 ) {
-
     let names: Vec<String> = Vec::from_iter(fns.keys().cloned());
     let csize = get_chunk_size();
     let chunks: Vec<&[String]> = names.chunks(csize).collect();
@@ -152,7 +151,6 @@ pub async fn create(
                 create_function(&a, f, &t).await;
             });
             futs.push(fut);
-
         }
         for task in futs {
             let _ = task.await;

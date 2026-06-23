@@ -11,11 +11,11 @@ pub use spec::{
     TopologySpec,
     function,
     function::{
+        Arch,
         BuildKind,
         FunctionSpec,
         Lang,
         LangRuntime,
-        Arch
     },
     infra::InfraSpec,
 };

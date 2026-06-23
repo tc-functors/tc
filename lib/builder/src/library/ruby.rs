@@ -1,16 +1,15 @@
-use kit as u;
-use kit::sh;
 use crate::layer;
 use compiler::spec::LangRuntime;
+use kit as u;
+use kit::sh;
 
 pub fn build(
     dir: &str,
     langr: &LangRuntime,
     dirs: &Vec<String>,
     include_deps: bool,
-    post: &Vec<String>
+    post: &Vec<String>,
 ) -> String {
-
     u::run("rm -rf deps.zip build", &dir);
     u::run("mkdir -p build/ruby/lib && mkdir -p build/lib", &dir);
     for d in dirs {

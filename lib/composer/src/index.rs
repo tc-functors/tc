@@ -8,13 +8,10 @@
 //! sub-topologies): **~2.5 s wall-clock with ~16 s of system CPU**,
 //! dominated by `stat`/`open`/`getdents`. The hot duplicated paths:
 //!
-//! - composer's `make_nodes` walked the repo to discover `topology.yml`
-//!   files,
-//! - composer's `discover_functions` per-topology listed subdirs and
-//!   ran `path_exists` 8–10 times against each candidate to identify
-//!   function dirs (`is_inferred_dir`),
-//! - differ's `Analyzer` walked each function dir again to find
-//!   symlinks and manifest files.
+//! - composer's `make_nodes` walked the repo to discover `topology.yml` files,
+//! - composer's `discover_functions` per-topology listed subdirs and ran `path_exists` 8–10 times
+//!   against each candidate to identify function dirs (`is_inferred_dir`),
+//! - differ's `Analyzer` walked each function dir again to find symlinks and manifest files.
 //!
 //! ## What
 //!
@@ -257,10 +254,9 @@ impl RepoIndex {
     ///
     /// Strategy:
     /// 1. Direct hashmap hit.
-    /// 2. Fast path: substitute a known non-canonical prefix for the
-    ///    canonical one (no syscalls).
-    /// 3. Memoized canonicalize: first miss costs one syscall;
-    ///    subsequent lookups for the same path are O(1).
+    /// 2. Fast path: substitute a known non-canonical prefix for the canonical one (no syscalls).
+    /// 3. Memoized canonicalize: first miss costs one syscall; subsequent lookups for the same path
+    ///    are O(1).
     fn get(&self, dir: &Path) -> Option<&DirInfo> {
         if let Some(info) = self.dirs.get(dir) {
             return Some(info);
@@ -392,7 +388,10 @@ impl RepoIndex {
     /// pwd-rooted topology) this is fine; if a future change makes the
     /// index span tens of thousands of dirs, consider a sorted Vec
     /// with binary-search range queries instead.
-    pub fn descendants_of<'a>(&'a self, dir: &Path) -> impl Iterator<Item = (&'a Path, &'a DirInfo)> {
+    pub fn descendants_of<'a>(
+        &'a self,
+        dir: &Path,
+    ) -> impl Iterator<Item = (&'a Path, &'a DirInfo)> {
         let prefix = dir.to_path_buf();
         self.dirs
             .iter()
@@ -544,8 +543,16 @@ mod tests {
                     .to_string()
             })
             .collect();
-        assert!(names.contains(&"real_fn".to_string()), "missing real_fn: {:?}", names);
-        assert!(names.contains(&"shared".to_string()), "missing shared: {:?}", names);
+        assert!(
+            names.contains(&"real_fn".to_string()),
+            "missing real_fn: {:?}",
+            names
+        );
+        assert!(
+            names.contains(&"shared".to_string()),
+            "missing shared: {:?}",
+            names
+        );
         assert!(
             names.contains(&"symlinked_fn".to_string()),
             "missing symlinked_fn (the regression): {:?}",
@@ -633,7 +640,12 @@ mod tests {
             .map(|(p, _)| p)
             .collect();
         found.sort();
-        assert_eq!(found.len(), 2, "expected both real and linked topology dirs: {:?}", found);
+        assert_eq!(
+            found.len(),
+            2,
+            "expected both real and linked topology dirs: {:?}",
+            found
+        );
     }
 
     #[test]
@@ -692,7 +704,12 @@ mod tests {
         // list_subdirs drives function_dirs in composer.
         let mut subs = idx.list_subdirs(idx.root().to_str().unwrap());
         subs.sort();
-        assert_eq!(subs.len(), 3, "expected build, dist, target — got {:?}", subs);
+        assert_eq!(
+            subs.len(),
+            3,
+            "expected build, dist, target — got {:?}",
+            subs
+        );
         assert!(subs.iter().any(|s| s.ends_with("/build")));
         assert!(subs.iter().any(|s| s.ends_with("/dist")));
         assert!(subs.iter().any(|s| s.ends_with("/target")));

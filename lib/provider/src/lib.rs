@@ -13,7 +13,7 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
                     let config = Config::new();
                     match profile.clone() {
                         Some(p) => config.ci.roles.get(&p).cloned(),
-                        None => panic!("No profile found")
+                        None => panic!("No profile found"),
                     }
                 }
             };

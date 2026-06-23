@@ -1,8 +1,8 @@
+mod go;
 mod node;
 mod python;
 mod ruby;
 mod rust;
-mod go;
 
 use crate::types::BuildStatus;
 use colored::Colorize;
@@ -137,15 +137,9 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
                 ),
                 dir,
             );
-        },
+        }
         Lang::Go => {
-            sh(
-                &format!(
-                    "docker cp {}:/build/bootstrap bootstrap",
-                    id
-                ),
-                dir,
-            );
+            sh(&format!("docker cp {}:/build/bootstrap bootstrap", id), dir);
         }
         _ => {
             sh(&format!("docker cp {}:/build build", id), dir);
@@ -173,7 +167,7 @@ fn zip(dir: &str, langr: &LangRuntime) {
         Lang::Rust => {
             let command = "zip -q -r lambda.zip bootstrap";
             sh(command, dir);
-        },
+        }
         Lang::Go => {
             let command = "zip -q -r lambda.zip bootstrap";
             sh(command, dir);

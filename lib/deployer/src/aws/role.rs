@@ -56,7 +56,7 @@ pub async fn create_aux(
         "base" => {
             let _ = r.create_or_update().await;
             ()
-        },
+        }
         _ => {
             let maybe_policy = iam::find_policy_doc(&client, &role.name, &role.policy_arn).await;
 
@@ -75,7 +75,7 @@ pub async fn create_aux(
                         Some(_) => true,
                         None => match std::env::var("TC_FORCE_DEPLOY") {
                             Ok(_) => true,
-                            Err(_) => false
+                            Err(_) => false,
                         },
                     };
 
@@ -115,7 +115,6 @@ pub async fn create_or_update(
         let _ = task.await;
     }
 }
-
 
 pub async fn update_base_roles(
     auth: &Auth,

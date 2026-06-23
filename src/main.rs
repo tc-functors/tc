@@ -16,8 +16,8 @@ use clap::{
     Subcommand,
 };
 
-mod remote;
 mod mcp;
+mod remote;
 use clap_stdin::{
     FileOrStdin,
     MaybeStdin,
@@ -959,10 +959,7 @@ async fn ci_release(args: ReleaseArgs) {
 }
 
 async fn ci_upgrade(args: UpgradeArgs) {
-    let UpgradeArgs {
-        version,
-        ..
-    } = args;
+    let UpgradeArgs { version, .. } = args;
 
     remote::upgrade_version(version).await;
 }
@@ -1127,7 +1124,9 @@ async fn visualize(args: VisualizeArgs) {
 }
 
 async fn run(args: RunArgs) {
-    let RunArgs { dir, trace, task, .. } = args;
+    let RunArgs {
+        dir, trace, task, ..
+    } = args;
     tc::run(dir, task, trace).await;
 }
 

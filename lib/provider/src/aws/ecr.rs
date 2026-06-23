@@ -73,7 +73,6 @@ async fn list_images_by_token(
         if let Some(tag) = x.image_tag {
             images.push(tag);
         }
-
     }
     (images, res.next_token)
 }

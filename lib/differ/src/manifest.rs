@@ -7,8 +7,8 @@
 //! and is robust against format evolution.
 //!
 //! Limitations (documented):
-//! - We do NOT scan arbitrary source code. Relative paths embedded in e.g.
-//!   Python source (`open('../data.csv')`) are not detected.
+//! - We do NOT scan arbitrary source code. Relative paths embedded in e.g. Python source
+//!   (`open('../data.csv')`) are not detected.
 //! - We do NOT interpret shell commands in `build.pre` / `build.post` / etc.
 //! - We do NOT follow named-reference dependencies (layer names, etc.).
 
@@ -61,16 +61,14 @@ pub fn is_manifest(file_name: &str) -> bool {
 fn rel_path_regex() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     // Match tokens that:
-    //   - are preceded by start-of-line, whitespace, or a delimiter common in
-    //     config/lock formats (quotes, =, :, comma, paren, bracket)
+    //   - are preceded by start-of-line, whitespace, or a delimiter common in config/lock formats
+    //     (quotes, =, :, comma, paren, bracket)
     //   - start with `./` or `../`
     //   - continue with path-safe characters (alnum, `.`, `/`, `_`, `-`)
     //
     // We capture the path token in group 1. The leading context character is
     // intentionally non-capturing so we don't swallow it.
-    RE.get_or_init(|| {
-        Regex::new(r#"(?:^|[\s"'=:,(\[>])(\.{1,2}/[A-Za-z0-9_./\-]+)"#).unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r#"(?:^|[\s"'=:,(\[>])(\.{1,2}/[A-Za-z0-9_./\-]+)"#).unwrap())
 }
 
 /// Extract every distinct relative-path token from `contents`.
@@ -255,13 +253,13 @@ include ':shared'
 project(':shared').projectDir = file('../shared')
 "#;
         let paths = extract_relative_paths(s);
+        assert!(paths.contains(&"../shared".to_string()), "got: {:?}", paths);
+        // ':shared' is a Gradle project reference, not a path — must not appear.
         assert!(
-            paths.contains(&"../shared".to_string()),
+            !paths.iter().any(|p| p.contains(":shared")),
             "got: {:?}",
             paths
         );
-        // ':shared' is a Gradle project reference, not a path — must not appear.
-        assert!(!paths.iter().any(|p| p.contains(":shared")), "got: {:?}", paths);
     }
 
     #[test]

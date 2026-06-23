@@ -40,13 +40,13 @@ fn gen_req_cmd(dir: &str) -> String {
 }
 
 fn gen_copy_cmd(dir: &str) -> String {
-   if u::path_exists(dir, "pyproject.toml") {
-       String::from("COPY pyproject.toml ./")
-   } else if  u::path_exists(dir, "requirements.txt") {
-       String::from("COPY requirements.txt ./")
-   } else {
-       String::from("RUN echo 0")
-   }
+    if u::path_exists(dir, "pyproject.toml") {
+        String::from("COPY pyproject.toml ./")
+    } else if u::path_exists(dir, "requirements.txt") {
+        String::from("COPY requirements.txt ./")
+    } else {
+        String::from("RUN echo 0")
+    }
 }
 
 pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {

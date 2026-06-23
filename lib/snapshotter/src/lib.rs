@@ -184,8 +184,7 @@ pub async fn snapshot_topology(
     topology: &Topology,
     sandbox: &str,
     gen_changelog: bool,
-    save: bool
-
+    save: bool,
 ) {
     let record = Manifest::new(topology, from_auth, to_auth, sandbox, gen_changelog).await;
 
@@ -194,7 +193,6 @@ pub async fn snapshot_topology(
         let maybe_bucket = cfg.snapshotter.bucket;
         let maybe_prefix = cfg.snapshotter.prefix;
         let maybe_target_profile = cfg.snapshotter.profile;
-
 
         if let (Some(bucket), Some(prefix)) = (maybe_bucket, maybe_prefix) {
             let auth = match maybe_target_profile {
@@ -223,7 +221,7 @@ pub async fn snapshot_topologies(
     dir: &str,
     sandbox: &str,
     gen_changelog: bool,
-    save: bool
+    save: bool,
 ) {
     let topologies = composer::compose_root(dir, false);
 
@@ -231,7 +229,6 @@ pub async fn snapshot_topologies(
         snapshot_topology(from_auth, to_auth, &node, sandbox, gen_changelog, save).await;
     }
 }
-
 
 async fn init_auth(target_profile: &str) -> Auth {
     let config = composer::config(&u::pwd());

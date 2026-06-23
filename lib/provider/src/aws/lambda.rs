@@ -176,7 +176,7 @@ pub fn make_arch(arch: &str) -> Architecture {
     match arch {
         "x8664" => Architecture::X8664,
         "arm64" => Architecture::Arm64,
-        _ => Architecture::X8664
+        _ => Architecture::X8664,
     }
 }
 
@@ -650,7 +650,6 @@ impl Function {
             &self.name,
             &version.unwrap()
         );
-
     }
 }
 
@@ -863,7 +862,11 @@ pub async fn update_role(client: &Client, name: &str, role_arn: &str) -> Result<
             .send()
             .await;
         match r {
-            Ok(res) => state = res.last_update_status.unwrap_or(LastUpdateStatus::Successful),
+            Ok(res) => {
+                state = res
+                    .last_update_status
+                    .unwrap_or(LastUpdateStatus::Successful)
+            }
             Err(_) => break,
         }
         if state == LastUpdateStatus::InProgress {

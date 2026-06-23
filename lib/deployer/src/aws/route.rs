@@ -40,15 +40,14 @@ async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
     }
 }
 
-
 async fn find_alias_arn(client: &LambdaClient, arn: &str) -> String {
     let maybe_alias_arn = lambda::find_alias_arn(&client, arn).await;
     match maybe_alias_arn {
         Some(a) => {
             println!("Using alias function={}", &a);
             a
-        },
-        None => arn.to_string()
+        }
+        None => arn.to_string(),
     }
 }
 
@@ -79,7 +78,8 @@ async fn create_integration(
         Entity::Function => {
             let lc = lambda::make_client(auth).await;
             let alias_arn = find_alias_arn(&lc, arn).await;
-            gateway::create_lambda_integration(client, api_id, &alias_arn, role_arn, *is_async).await
+            gateway::create_lambda_integration(client, api_id, &alias_arn, role_arn, *is_async)
+                .await
         }
         Entity::State => {
             gateway::create_sfn_integration(
@@ -90,7 +90,7 @@ async fn create_integration(
                 *is_async,
                 request_params.clone(),
             )
-                .await
+            .await
         }
         Entity::Event => {
             gateway::create_event_integration(
@@ -100,7 +100,7 @@ async fn create_integration(
                 role_arn,
                 request_params.clone(),
             )
-                .await
+            .await
         }
         Entity::Queue => {
             gateway::create_sqs_integration(
@@ -110,7 +110,7 @@ async fn create_integration(
                 role_arn,
                 request_params.clone(),
             )
-                .await
+            .await
         }
         _ => todo!(),
     }
@@ -135,7 +135,7 @@ async fn create_route(
         auth_id,
         auth_kind,
     )
-        .await;
+    .await;
 }
 
 // api
@@ -237,7 +237,7 @@ async fn create_authorizer(
                         &authorizer.name,
                         &uri,
                     )
-                        .await;
+                    .await;
                     (Some(id), authorizer.kind)
                 }
                 "cognito" => {
@@ -249,7 +249,7 @@ async fn create_authorizer(
                         &issuer,
                         &client_id,
                     )
-                        .await;
+                    .await;
                     (Some(id), authorizer.kind)
                 }
                 _ => (None, String::from("")),
@@ -336,7 +336,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
                 &rec.r#type.as_str(),
                 &rec.value,
             )
-                .await;
+            .await;
         }
         acm::wait_until_validated(&client, &cert_arn).await;
     } else {
@@ -361,7 +361,7 @@ pub async fn create_domain(
         let client = gateway::make_client(auth).await;
         let gateway_domain =
             gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "")
-            .await;
+                .await;
         println!("Updating dns record {}", &gateway_domain);
         update_dns_record(auth, domain, &gateway_domain).await;
     }
@@ -400,14 +400,13 @@ pub async fn create(
     sandbox: &str,
 ) {
     if routes.len() > 0 {
-
         if !skip(routes) {
-
             let client = gateway::make_client(auth).await;
             let api = Api::new(routes);
 
             let api_id =
-                gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone()).await;
+                gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone())
+                    .await;
             let gateway_arn = auth.api_gateway_arn(&api_id);
 
             gateway::update_tags(&client, &gateway_arn, tags.clone()).await;

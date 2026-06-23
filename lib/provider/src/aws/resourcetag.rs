@@ -2,8 +2,8 @@ use crate::Auth;
 use aws_sdk_resourcegroupstagging::{
     Client,
     types::{
-        TagFilter,
         Tag,
+        TagFilter,
         builders::TagFilterBuilder,
     },
 };
@@ -94,7 +94,11 @@ async fn get_all_resources_by_token(
     let mappings = res.resource_tag_mapping_list.unwrap().to_vec();
     for m in mappings {
         if let Some(tags) = m.tags {
-            let teams: Vec<Tag> = tags.clone().into_iter().filter(|p| p.key == "team").collect();
+            let teams: Vec<Tag> = tags
+                .clone()
+                .into_iter()
+                .filter(|p| p.key == "team")
+                .collect();
             let maybe_team = &teams.first();
             let team = if let Some(t) = maybe_team {
                 t.value.clone()
@@ -129,7 +133,11 @@ pub async fn get_all_resources(client: &Client) -> Vec<(String, String, String)>
     let mappings = res.resource_tag_mapping_list.unwrap().to_vec();
     for m in mappings {
         if let Some(tags) = m.tags {
-            let teams: Vec<Tag> = tags.clone().into_iter().filter(|p| p.key == "team").collect();
+            let teams: Vec<Tag> = tags
+                .clone()
+                .into_iter()
+                .filter(|p| p.key == "team")
+                .collect();
             let maybe_team = &teams.first();
             let team = if let Some(t) = maybe_team {
                 t.value.clone()
@@ -147,15 +155,13 @@ pub async fn get_all_resources(client: &Client) -> Vec<(String, String, String)>
 
             arns.push((m.resource_arn.unwrap(), team, deployer));
         }
-
     }
 
     match token {
         Some(tk) => {
             token = Some(tk);
             while token.is_some() {
-                let (xs, t) =
-                    get_all_resources_by_token(client, &token.unwrap()).await;
+                let (xs, t) = get_all_resources_by_token(client, &token.unwrap()).await;
                 arns.extend(xs.clone());
                 token = t.clone();
                 if let Some(x) = t {
