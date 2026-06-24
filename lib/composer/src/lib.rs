@@ -4,6 +4,7 @@ pub mod display;
 pub mod index;
 pub mod sequence;
 mod tag;
+mod hooks;
 pub mod topology;
 pub mod version;
 

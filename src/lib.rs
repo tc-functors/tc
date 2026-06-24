@@ -262,6 +262,27 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
     }
 }
 
+fn run_hooks(topology: &Topology, key: &str) {
+    if let Some(post_hooks) = topology.hooks.get(key) {
+        for hook in post_hooks {
+            let dir = match &hook.dir {
+                Some(d) => d,
+                None => &u::pwd()
+            };
+            let (status, out, _err) = u::runc(&hook.command, dir);
+            println!("{}: {}", &hook.command, out);
+            if !status {
+                if let Some(on_fail) = &hook.on_failure {
+                    match on_fail.as_ref() {
+                        "exit" => std::process::exit(1),
+                        _ => println!("doing nothing")
+                    }
+                }
+            }
+        }
+    }
+}
+
 // FIXME: use proper hooks
 async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bool) {
     let Topology {
@@ -282,25 +303,6 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
         tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
-    let maybe_target_profile = match std::env::var("TC_TARGET_PROFILE") {
-        Ok(p) => Some(p),
-        Err(_) => None,
-    };
-
-    let maybe_source_profile = match std::env::var("TC_SOURCE_PROFILE") {
-        Ok(p) => Some(p),
-        Err(_) => None,
-    };
-    if let Some(ref p) = maybe_source_profile {
-        if &auth.name == p {
-            let from_auth = init(maybe_source_profile, None).await;
-            let to_auth = init(maybe_target_profile, None).await;
-            snapshotter::snapshot_topology(&from_auth, &to_auth, topology, sandbox, true, true)
-                .await;
-        }
-    } else {
-        println!("Skipping snapshotting");
-    }
 }
 
 pub async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
@@ -394,6 +396,9 @@ pub async fn create(
         }
     };
 
+    println!("Running pre hooks...");
+    run_hooks(&topology, "pre");
+
     let auth = init(Some(topology.env.to_string()), None).await;
     create_topology(&auth, &topology, sync).await;
 
@@ -413,6 +418,8 @@ pub async fn create(
         )
         .await;
     }
+    println!("Running post hooks...");
+    run_hooks(&topology, "post");
 
     println!("Time elapsed: {:#}", u::time_format(duration));
 }

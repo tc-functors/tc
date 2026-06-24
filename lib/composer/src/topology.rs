@@ -32,7 +32,9 @@ use crate::{
     index,
     sequence,
     tag,
+    hooks,
     version,
+    hooks::Hook
 };
 use compiler::{
     Entity,
@@ -73,13 +75,6 @@ pub struct Topology {
     pub events: HashMap<String, Event>,
     pub routes: HashMap<String, Route>,
     pub functions: HashMap<String, Function>,
-    /// Full set of this topology's own functions, populated by the
-    /// composer and **never replaced by the resolver**. The resolver
-    /// shrinks `functions` to the modified subset (for code uploads),
-    /// but role/policy reconciliation needs to operate over every
-    /// function so that adding/changing a per-function role JSON
-    /// re-attaches the new role to the lambda even when its code
-    /// hasn't changed.
     #[serde(default)]
     pub all_functions: HashMap<String, Function>,
     pub mutations: HashMap<String, Mutation>,
@@ -96,6 +91,7 @@ pub struct Topology {
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
     pub sequences: HashMap<String, Vec<Connector>>,
+    pub hooks: HashMap<String, Vec<Hook>>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -795,6 +791,7 @@ fn make(
         config: Config::new(),
         transducer: maybe_transducer,
         sequences: sequence::make_all(&spec.sequences),
+        hooks: hooks::load(&infra_dir),
     }
 }
 
@@ -848,6 +845,7 @@ fn make_standalone(dir: &str) -> Topology {
         config: Config::new(),
         transducer: None,
         sequences: HashMap::new(),
+        hooks: HashMap::new(),
     }
 }
 
