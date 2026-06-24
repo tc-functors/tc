@@ -1,7 +1,38 @@
 use crate::Manifest;
 use kit as u;
 
-fn make_recursive_job_def(env: &str, sandbox: &str) -> String {
+fn make_job_def(env: &str, sandbox: &str) -> String {
+    format!(
+        r#"
+  tc-deploy-topology:
+    docker:
+      - image: cimg/base:2025.08
+    resource_class: large
+    parameters:
+      tag:
+        type: string
+      namespace:
+        type: string
+      workdir:
+        type: string
+      tc_version:
+        type: string
+    steps:
+      - checkout
+      - download-tc-latest
+      - run: git fetch origin << parameters.tag >>
+      - run: git checkout << parameters.tag >>
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: tc-create-<< parameters.tag >>
+          working_directory: << parameters.workdir >>
+          command: tc create -e {env} --sandbox {sandbox} --recursive --trace --sync --notify"#
+    )
+}
+
+
+fn make_job_def_pinned(env: &str, sandbox: &str) -> String {
     format!(
         r#"
   tc-deploy-topology:
@@ -34,39 +65,6 @@ fn make_recursive_job_def(env: &str, sandbox: &str) -> String {
     )
 }
 
-fn make_job_def(env: &str, sandbox: &str) -> String {
-    format!(
-        r#"
-  tc-deploy-topology:
-    docker:
-      - image: cimg/base:2025.08
-    resource_class: large
-    parameters:
-      tag:
-        type: string
-      namespace:
-        type: string
-      workdir:
-        type: string
-      tc_version:
-        type: string
-    steps:
-      - checkout
-      - download-tc-latest
-      - run: git fetch origin << parameters.tag >>
-      - run: git checkout << parameters.tag >>
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: tc-upgrade-<< parameters.tc_version >>
-          command: sudo tc upgrade --version << parameters.tc_version >>
-      - run:
-          name: tc-create-<< parameters.tag >>
-          working_directory: << parameters.workdir >>
-          command: tc create -e {env} --sandbox {sandbox} --trace --notify"#
-    )
-}
-
 fn make_job(name: &str, dir: &str, tag: &str, tc_version: &str) -> String {
     format!(
         r#"
@@ -95,9 +93,9 @@ fn approval_job() -> String {
 }
 
 pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str) -> String {
-    let job_def = match std::env::var("TC_SNAPSHOT_BREAKOUT") {
+    let job_def = match std::env::var("TC_FORCE_LATEST_VERSION") {
         Ok(_) => make_job_def(env, sandbox),
-        Err(_) => make_recursive_job_def(env, sandbox),
+        Err(_) => make_job_def_pinned(env, sandbox),
     };
 
     let mut jobs: String = String::from("");
