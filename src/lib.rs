@@ -263,15 +263,16 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
 }
 
 fn run_hooks(topology: &Topology, key: &str) {
-    if let Some(post_hooks) = topology.hooks.get(key) {
-        for hook in post_hooks {
+    if let Some(hooks) = topology.hooks.get(key) {
+        println!("Running {} hooks...", key);
+        for hook in hooks {
             let dir = match &hook.dir {
                 Some(d) => d,
                 None => &u::pwd()
             };
             let (status, out, _err) = u::runc(&hook.command, dir);
-            println!("{}: {}", &hook.command, out);
             if !status {
+                println!("{}: {}", &hook.command, out);
                 if let Some(on_fail) = &hook.on_failure {
                     match on_fail.as_ref() {
                         "exit" => std::process::exit(1),
@@ -388,6 +389,8 @@ pub async fn create(
             let msg = composer::count_of(&ct);
             println!("C: {}", msg);
 
+            run_hooks(&ct, "pre");
+
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache, force).await;
             let msg = composer::count_of(&rt);
@@ -395,9 +398,6 @@ pub async fn create(
             rt
         }
     };
-
-    println!("Running pre hooks...");
-    run_hooks(&topology, "pre");
 
     let auth = init(Some(topology.env.to_string()), None).await;
     create_topology(&auth, &topology, sync).await;
@@ -418,7 +418,6 @@ pub async fn create(
         )
         .await;
     }
-    println!("Running post hooks...");
     run_hooks(&topology, "post");
 
     println!("Time elapsed: {:#}", u::time_format(duration));

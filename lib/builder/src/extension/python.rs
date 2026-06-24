@@ -27,9 +27,9 @@ pub fn build(dir: &str, name: &str) -> String {
     let wrapper_str = extension_wrapper(name);
     u::write_str(&format!("build/extensions/{}", name), &wrapper_str);
     sh("rm -f *.zip", dir);
-    sh("cd build && zip -r -q ../extension.zip .", dir);
+    sh("cd build && zip -r -q ../deps.zip .", dir);
     sh("rm -rf build", dir);
-    let size = size_of(dir, "extension.zip");
+    let size = size_of(dir, "deps.zip");
     println!("Size: {}", size);
-    format!("{}/extension.zip", dir)
+    format!("{}/deps.zip", dir)
 }
