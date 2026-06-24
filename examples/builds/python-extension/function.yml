@@ -1,0 +1,4 @@
+name: py-ext
+
+build:
+  kind: Extension

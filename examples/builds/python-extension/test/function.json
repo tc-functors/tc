@@ -1,0 +1,15 @@
+{
+  "name": "example-ext",
+  "description": "example-ext",
+  "runtime": {
+    "lang": "python3.10",
+    "package_type": "zip",
+    "handler": "handler.handler",
+    "layers": [],
+    "extensions": ["extension-basic"]
+  },
+  "tasks": {
+    "build": "zip lambda.zip handler.py",
+    "clean": "rm *.zip"
+  }
+}

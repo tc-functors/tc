@@ -1,4 +1,3 @@
 
 def handler(event, context):
-    return {'status': 'ok'}
-
+  return {'status': "ok"}

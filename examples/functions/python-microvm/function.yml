@@ -1,0 +1,5 @@
+name: example-mvm
+runtime:
+  provider: Microvm
+  handler: handler.handler
+  lang: python3.12

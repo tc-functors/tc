@@ -1,0 +1,11 @@
+name: example-routes
+
+routes:
+  root:
+    path: "/"
+    method: GET
+    function: foo
+
+  /bar:
+    method: GET
+    function: foo
