@@ -2,7 +2,7 @@
 
 import json
 import os
-import requests
+from urllib.request import Request, urlopen
 import signal
 import sys
 from pathlib import Path

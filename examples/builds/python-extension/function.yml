@@ -1,4 +1,4 @@
-name: py-ext
+name: extension-basic
 
 build:
   kind: Extension
