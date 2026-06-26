@@ -48,17 +48,17 @@ fn make_record_set(vr: ValidationRecord) -> ResourceRecordSet {
         .unwrap()
 }
 
-fn make_alias_target(hosted_zone_id: &str, dns_name: &str) -> AliasTarget {
+fn make_alias_target(target_zone_id: &str, dns_name: &str) -> AliasTarget {
     let b = AliasTargetBuilder::default();
-    b.hosted_zone_id(hosted_zone_id)
+    b.hosted_zone_id(target_zone_id)
         .dns_name(dns_name)
         .build().unwrap()
 }
 
-fn make_alias_record_set(vr: ValidationRecord, hosted_zone_id: &str) -> ResourceRecordSet {
+fn make_alias_record_set(vr: ValidationRecord, target_zone_id: &str) -> ResourceRecordSet {
     let ValidationRecord { value, name, .. } = vr;
     let b = ResourceRecordSetBuilder::default();
-    let alias_target = make_alias_target(hosted_zone_id, &value);
+    let alias_target = make_alias_target(target_zone_id, &value);
     b.name(name)
         .r#type(RrType::from("A"))
         .alias_target(alias_target)
@@ -66,10 +66,10 @@ fn make_alias_record_set(vr: ValidationRecord, hosted_zone_id: &str) -> Resource
         .unwrap()
 }
 
-fn make_change(vr: ValidationRecord, hosted_zone_id: &str, root: bool) -> Change {
+fn make_change(vr: ValidationRecord, target_zone_id: &str, root: bool) -> Change {
     let b = ChangeBuilder::default();
     let record_set = if root {
-        make_alias_record_set(vr, hosted_zone_id)
+        make_alias_record_set(vr, target_zone_id)
     } else {
         make_record_set(vr)
     };
@@ -81,11 +81,20 @@ fn make_change(vr: ValidationRecord, hosted_zone_id: &str, root: bool) -> Change
 
 fn make_change_batch(
     vr: ValidationRecord,
-    hosted_zone_id: &str,
+    target_zone_id: Option<String>,
     root: bool
 ) -> ChangeBatch {
     let b = ChangeBatchBuilder::default();
-    let change = make_change(vr, hosted_zone_id, root);
+    let tz_id = if root {
+        match target_zone_id {
+            Some(t) => t,
+            None => panic!("No target_zone_id specified")
+        }
+    } else {
+        // non-root does not need tz_id
+        String::from("")
+    };
+    let change = make_change(vr, &tz_id, root);
     b.set_comment(None).changes(change).build().unwrap()
 }
 
@@ -106,12 +115,16 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> (Option<String>, boo
         format!("{}.", name)
     };
 
+    let fname = format!("{}.", name);
+
     let zones = list_hosted_zones(client).await;
     let maybe_hosted_zone = zones.get(&zname);
     let (maybe_id, is_root) = match maybe_hosted_zone {
-        Some(id) => (Some(id), true),
+        Some(id) => {
+            (Some(id), &fname == &zname)
+        }
         None => {
-            if let Some(id) = zones.get(&format!("{}.", name)) {
+            if let Some(id) = zones.get(&fname) {
                 (Some(id), true)
             } else {
                 (None, false)
@@ -129,14 +142,15 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> (Option<String>, boo
 
 pub async fn create_record_set(
     client: &Client,
-    domain: &str,
+    _domain: &str,
     name: &str,
     rtype: &str,
     value: &str,
+    target_zone_id: Option<String>,
 ) {
 
-    let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
-    println!("Creating Recordset {} {} {} {} root:{}", domain, name, rtype, value, root);
+    let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, name).await;
+    println!("Creating Recordset {} {} {} root:{}", name, rtype, value, root);
 
     if let Some(hosted_zone_id) = maybe_hosted_zone_id {
         let vr = ValidationRecord {
@@ -144,7 +158,7 @@ pub async fn create_record_set(
             rtype: RrType::from(rtype),
             value: value.to_string(),
         };
-        let change_batch = make_change_batch(vr, &hosted_zone_id, root);
+        let change_batch = make_change_batch(vr, target_zone_id, root);
         let _ = client
             .change_resource_record_sets()
             .hosted_zone_id(hosted_zone_id)

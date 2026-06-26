@@ -306,10 +306,10 @@ fn find_throttling(
     }
 }
 
-async fn update_dns_record(auth: &Auth, domain: &str, cname: &str) {
+async fn update_dns_record(auth: &Auth, domain: &str, cname: &str, target_zone_id: Option<String>) {
     tracing::debug!("Associating domain {}", domain);
     let rclient = route53::make_client(auth).await;
-    route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
+    route53::create_record_set(&rclient, domain, domain, "CNAME", cname, target_zone_id).await;
 }
 
 async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
@@ -335,6 +335,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
                 &rec.name,
                 &rec.r#type.as_str(),
                 &rec.value,
+                None
             )
             .await;
         }
@@ -362,8 +363,9 @@ pub async fn create_domain(
         let gateway_domain =
             gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "")
                 .await;
+        let target_zone_id = gateway::find_hosted_zone(&client, &domain).await;
         println!("Updating dns record {}", &gateway_domain);
-        update_dns_record(auth, domain, &gateway_domain).await;
+        update_dns_record(auth, domain, &gateway_domain, target_zone_id).await;
     }
     maybe_domain
 }

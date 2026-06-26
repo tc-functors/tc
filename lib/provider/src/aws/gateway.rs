@@ -790,4 +790,24 @@ pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
     }
 }
 
+pub async fn find_hosted_zone(client: &Client, domain_name: &str) -> Option<String> {
+    let res = client
+        .get_domain_name()
+        .domain_name(domain_name)
+        .send()
+        .await;
+    match res  {
+        Ok(r) => {
+            let xs = r.domain_name_configurations.unwrap().to_vec();
+            if let Some(item) = xs.first() {
+                item.hosted_zone_id.clone()
+            } else {
+                None
+            }
+        }
+        Err(_) => None
+    }
+}
+
+
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;
