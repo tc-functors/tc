@@ -157,6 +157,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
                 &rec.name,
                 &rec.r#type.as_str(),
                 &rec.value,
+                None
             )
             .await;
         }
@@ -197,7 +198,7 @@ async fn update_bucket_policy(
 async fn update_dns_record(auth: &Auth, domain: &str, dist_id: &str, cname: &str) {
     tracing::debug!("Associating domain {} with {}", domain, &dist_id);
     let rclient = route53::make_client(auth).await;
-    route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
+    route53::create_record_set(&rclient, domain, domain, "CNAME", cname, None).await;
 }
 
 async fn build(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
