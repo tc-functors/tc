@@ -112,49 +112,70 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> (Option<String>, boo
     let zname = if let Some((_k, v)) = name.split_once(".") {
         format!("{}.", &v)
     } else {
-        format!("{}.", name)
+        String::from("")
     };
 
     let fname = format!("{}.", name);
 
     let zones = list_hosted_zones(client).await;
-    let maybe_hosted_zone = zones.get(&zname);
-    let (maybe_id, is_root) = match maybe_hosted_zone {
-        Some(id) => {
-            (Some(id), &fname == &zname)
-        }
-        None => {
-            if let Some(id) = zones.get(&fname) {
-                (Some(id), true)
-            } else {
-                (None, false)
-            }
-        }
-    };
 
-    if let Some(id) = maybe_id {
-        let parts: Vec<&str> = id.split("/").collect();
-        (parts.clone().last().cloned().map(String::from), is_root)
+    tracing::debug!("{:?} {} {}", &zones, zname, fname);
+
+    if let Some(zone_id) = zones.get(&fname) {
+        let parts: Vec<&str> = zone_id.split("/").collect();
+        (parts.clone().last().cloned().map(String::from), true)
+    } else if let Some(zone_id) = zones.get(&zname) {
+        let parts: Vec<&str> = zone_id.split("/").collect();
+        (parts.clone().last().cloned().map(String::from), &zname == &fname)
     } else {
-        (None, is_root)
+        (None, false)
     }
+}
+
+pub async fn create_validation_record_set(
+    client: &Client,
+    domain: &str,
+    name: &str,
+    rtype: &str,
+    value: &str,
+) -> (Option<String>, bool) {
+
+    let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
+    println!("Creating Validation Recordset {} {} {:?} root:{}", domain, name, maybe_hosted_zone_id, root);
+
+    if let Some(hosted_zone_id) = maybe_hosted_zone_id.clone() {
+        let vr = ValidationRecord {
+            name: name.to_string(),
+            rtype: RrType::from(rtype),
+            value: value.to_string(),
+        };
+        let change_batch = make_change_batch(vr, None, false);
+        let _ = client
+            .change_resource_record_sets()
+            .hosted_zone_id(hosted_zone_id)
+            .change_batch(change_batch)
+            .send()
+            .await
+            .unwrap();
+    } else {
+        panic!("Hosted zone id not found");
+    }
+    (maybe_hosted_zone_id, root)
 }
 
 pub async fn create_record_set(
     client: &Client,
     domain: &str,
-    name: &str,
     rtype: &str,
     value: &str,
     target_zone_id: Option<String>,
 ) {
 
     let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
-    println!("Creating Recordset {} {} {} root:{}", name, rtype, value, root);
-
+    println!("Creating Recordset {} {:?} root:{}", domain, maybe_hosted_zone_id, root);
     if let Some(hosted_zone_id) = maybe_hosted_zone_id {
         let vr = ValidationRecord {
-            name: name.to_string(),
+            name: domain.to_string(),
             rtype: RrType::from(rtype),
             value: value.to_string(),
         };

@@ -309,7 +309,7 @@ fn find_throttling(
 async fn update_dns_record(auth: &Auth, domain: &str, cname: &str, target_zone_id: Option<String>) {
     tracing::debug!("Associating domain {}", domain);
     let rclient = route53::make_client(auth).await;
-    route53::create_record_set(&rclient, domain, domain, "CNAME", cname, target_zone_id).await;
+    route53::create_record_set(&rclient, domain, "CNAME", cname, target_zone_id).await;
 }
 
 async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
@@ -329,13 +329,12 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
         let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
         let route53_client = route53::make_client(auth).await;
         for rec in validation_records {
-            route53::create_record_set(
+            route53::create_validation_record_set(
                 &route53_client,
                 domain,
                 &rec.name,
                 &rec.r#type.as_str(),
                 &rec.value,
-                None
             )
             .await;
         }
