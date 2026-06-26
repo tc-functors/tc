@@ -142,14 +142,14 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> (Option<String>, boo
 
 pub async fn create_record_set(
     client: &Client,
-    _domain: &str,
+    domain: &str,
     name: &str,
     rtype: &str,
     value: &str,
     target_zone_id: Option<String>,
 ) {
 
-    let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, name).await;
+    let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
     println!("Creating Recordset {} {} {} root:{}", name, rtype, value, root);
 
     if let Some(hosted_zone_id) = maybe_hosted_zone_id {
