@@ -1,11 +1,12 @@
 name: example-routes
+infra: ./infra
 
 routes:
-  root:
-    path: "/"
+  /v1/foo/test:
     method: GET
+    gateway: g1_{{sandbox}}
     function: foo
-
-  /bar:
+  /v1/bar/test:
     method: GET
+    gateway: g2_{{sandbox}}
     function: foo

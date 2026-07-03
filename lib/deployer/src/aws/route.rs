@@ -90,7 +90,7 @@ async fn create_integration(
                 *is_async,
                 request_params.clone(),
             )
-            .await
+                .await
         }
         Entity::Event => {
             gateway::create_event_integration(
@@ -100,7 +100,7 @@ async fn create_integration(
                 role_arn,
                 request_params.clone(),
             )
-            .await
+                .await
         }
         Entity::Queue => {
             gateway::create_sqs_integration(
@@ -110,10 +110,31 @@ async fn create_integration(
                 role_arn,
                 request_params.clone(),
             )
-            .await
+                .await
         }
         _ => todo!(),
     }
+}
+
+fn resolve_route(gateway: &Gateway, route: &Route) -> Route {
+    match std::env::var("TC_DISABLE_ROUTE_TRIM") {
+        Ok(_) => route.clone(),
+        Err(_) => {
+            let mut r: Route = route.clone();
+            for path in &gateway.paths {
+                let abs_path = format!("/{}", path);
+                if route.path.starts_with(&abs_path) {
+                    let path = r.path.replace(&abs_path, "");
+                    r.path = path;
+                    return r
+                } else {
+                    return r
+                }
+            }
+            return r
+        }
+    }
+
 }
 
 async fn create_route(
@@ -135,71 +156,7 @@ async fn create_route(
         auth_id,
         auth_kind,
     )
-    .await;
-}
-
-// api
-
-struct Api {
-    name: String,
-    authorizer: Option<Authorizer>,
-    stage: String,
-    cors: Option<Cors>,
-}
-
-fn make_cors(routes: &HashMap<String, Route>) -> Option<Cors> {
-    let mut methods: Vec<String> = vec![];
-    let mut origins: Vec<String> = vec![];
-    let mut headers: Vec<String> = vec![];
-    for (_, route) in routes {
-        if let Some(c) = &route.cors {
-            methods.extend(c.methods.clone());
-            origins.extend(c.origins.clone());
-            headers.extend(c.headers.clone());
-        }
-    }
-
-    if origins.is_empty() {
-        None
-    } else {
-        Some(gateway::make_cors(
-            methods.into_iter().unique().collect(),
-            origins.into_iter().unique().collect(),
-            Some(headers.into_iter().unique().collect()),
-        ))
-    }
-}
-
-fn find_authorizer(routes: &HashMap<String, Route>) -> Option<Authorizer> {
-    for (_, route) in routes {
-        if let Some(authorizer) = &route.authorizer {
-            return Some(authorizer.clone());
-        }
-    }
-    None
-}
-
-fn find_gateway(routes: &HashMap<String, Route>) -> String {
-    for (_, route) in routes {
-        if !route.gateway.is_empty() {
-            return route.gateway.clone();
-        }
-    }
-    panic!("No gateway found")
-}
-impl Api {
-    fn new(routes: &HashMap<String, Route>) -> Api {
-        let cors = make_cors(&routes);
-        let maybe_authorizer = find_authorizer(&routes);
-        let gateway = find_gateway(&routes);
-
-        Api {
-            name: gateway,
-            authorizer: maybe_authorizer,
-            stage: String::from("$default"),
-            cors: cors,
-        }
-    }
+        .await;
 }
 
 async fn create_cognito_pool(auth: &Auth, pool_name: &str) -> (String, String) {
@@ -237,7 +194,7 @@ async fn create_authorizer(
                         &authorizer.name,
                         &uri,
                     )
-                    .await;
+                        .await;
                     (Some(id), authorizer.kind)
                 }
                 "cognito" => {
@@ -249,7 +206,7 @@ async fn create_authorizer(
                         &issuer,
                         &client_id,
                     )
-                    .await;
+                        .await;
                     (Some(id), authorizer.kind)
                 }
                 _ => (None, String::from("")),
@@ -259,22 +216,6 @@ async fn create_authorizer(
         }
     } else {
         (None, String::from(""))
-    }
-}
-
-// domain stuff
-
-fn find_domain(
-    domains: &HashMap<String, HashMap<String, String>>,
-    env: &str,
-    sandbox: &str,
-) -> Option<String> {
-    match domains.get(env) {
-        Some(e) => e.get(sandbox).cloned(),
-        None => match domains.get("default") {
-            Some(d) => d.get(sandbox).cloned(),
-            None => None,
-        },
     }
 }
 
@@ -336,7 +277,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
                 &rec.r#type.as_str(),
                 &rec.value,
             )
-            .await;
+                .await;
         }
         acm::wait_until_validated(&client, &cert_arn).await;
     } else {
@@ -345,54 +286,204 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
     cert_arn
 }
 
-pub async fn create_domain(
-    auth: &Auth,
-    api_id: &str,
-    route: &Route,
-    env: &str,
-    sandbox: &str,
-) -> Option<String> {
-    let maybe_domain = find_domain(&route.domains, env, sandbox);
 
-    if let Some(domain) = &maybe_domain {
-        println!("Creating domain: {}", domain);
-        let idempotency_token = sandbox;
-        let cert_arn = find_or_create_cert(auth, domain, idempotency_token).await;
-        let client = gateway::make_client(auth).await;
-        let gateway_domain =
-            gateway::create_or_update_domain(&client, api_id, &domain, &route.stage, &cert_arn, "")
-                .await;
-        let target_zone_id = gateway::find_hosted_zone(&client, &domain).await;
-        println!("Updating dns record {}", &gateway_domain);
-        update_dns_record(auth, domain, &gateway_domain, target_zone_id).await;
+fn make_cors(route: &Route) -> Option<Cors> {
+    let mut methods: Vec<String> = vec![];
+    let mut origins: Vec<String> = vec![];
+    let mut headers: Vec<String> = vec![];
+    if let Some(c) = &route.cors {
+        methods.extend(c.methods.clone());
+        origins.extend(c.origins.clone());
+        headers.extend(c.headers.clone());
     }
-    maybe_domain
-}
-
-fn skip(routes: &HashMap<String, Route>) -> bool {
-    if let Some(default) = routes.get("default") {
-        default.skip
+    if origins.is_empty() {
+        None
     } else {
-        if let Some((_key, route)) = routes.iter().next() {
-            route.skip
-        } else {
-            false
-        }
+        Some(gateway::make_cors(
+            methods.into_iter().unique().collect(),
+            origins.into_iter().unique().collect(),
+            Some(headers.into_iter().unique().collect()),
+        ))
     }
 }
 
-fn default_route(routes: &HashMap<String, Route>) -> Route {
-    match routes.get("default") {
-        Some(r) => r.clone(),
-        None => {
-            if let Some((_key, route)) = routes.iter().next() {
-                route.clone()
-            } else {
-                panic!("No routes found")
+#[derive(Clone, Debug)]
+struct Gateway {
+    stage: String,
+    cors: Option<Cors>,
+    authorizer: Option<Authorizer>,
+    burst_limit: Option<i32>,
+    rate_limit: Option<f64>,
+    domain: Option<String>,
+    paths: Vec<String>,
+    manage: bool
+
+}
+
+fn collate_gateways(routes: &HashMap<String, Route>, env: &str, sandbox: &str) -> HashMap<String, Gateway> {
+    let default_route = routes.get("default");
+
+    let mut h: HashMap<String, Gateway> = HashMap::new();
+
+    if let Some(route) = default_route {
+
+        let gw = Gateway {
+            stage: route.stage.clone(),
+            cors: make_cors(&route),
+            authorizer: route.authorizer.clone(),
+            burst_limit: None,
+            rate_limit: None,
+            domain: None,
+            paths: vec![],
+            manage: false
+
+        };
+        h.insert(route.gateway.clone(), gw);
+
+    } else {
+        for (name, route) in routes {
+            if !&route.skip && name != "default" {
+
+                let Route { gateway, stage, domains, authorizer, throttling, gateway_mapping, .. } = route;
+
+                // throttling
+                let (burst_limit, rate_limit) = find_throttling(&throttling, env, sandbox);
+
+                // domains
+                let maybe_domain = match domains.get(env) {
+                    Some(e) => e.get(sandbox).cloned(),
+                    None => match domains.get("default") {
+                        Some(d) => d.get(sandbox).cloned(),
+                        None => None,
+                    },
+                };
+
+                // gateway mapping paths
+                let paths = if let Some(domain) = maybe_domain.clone() {
+                    match gateway_mapping.get(&domain) {
+                        Some(m) => match m.get(gateway) {
+                            Some(paths) => {
+                                let mut xs: Vec<String> = vec![];
+                                for p in paths {
+                                    if p.starts_with("/") {
+                                        xs.push(p[1..].to_string())
+                                    } else {
+                                        xs.push(p.clone())
+                                    };
+                                }
+                                xs
+                            },
+                            None => vec![]
+                        },
+                        None => vec![]
+                    }
+                } else {
+                    vec![]
+                };
+
+                let manage = gateway.ends_with(&format!("_{}", sandbox));
+
+                if !gateway.is_empty() {
+                    let gw = Gateway {
+                        cors: make_cors(&route),
+                        authorizer: authorizer.clone(),
+                        stage: stage.to_string(),
+                        burst_limit: burst_limit,
+                        rate_limit: rate_limit,
+                        domain: maybe_domain,
+                        paths: paths,
+                        manage: manage
+                    };
+                    h.insert(gateway.to_string(), gw);
+                }
             }
         }
     }
+    h
 }
+
+
+#[derive(Clone, Debug)]
+struct GatewayState {
+    api_id: String,
+    auth_id: Option<String>,
+    auth_kind: String,
+    stage: String,
+    endpoint: String,
+}
+
+async fn create_or_update_gateways(
+    auth: &Auth,
+    gateways: HashMap<String, Gateway>,
+    tags: &HashMap<String, String>,
+    sandbox: &str
+) -> HashMap<String, GatewayState> {
+
+    let mut h: HashMap<String, GatewayState> = HashMap::new();
+    let client = gateway::make_client(auth).await;
+
+    for (name, gateway) in gateways {
+
+        let Gateway { cors, authorizer, stage, burst_limit, rate_limit, domain, paths, manage, .. } = gateway;
+        println!("Creating route: gateway {} manage: {}", name, manage);
+        if !manage {
+            let maybe_api_id = gateway::find_api(&client, &name).await;
+            if let Some(api_id) = maybe_api_id {
+                let (auth_id, auth_kind) = create_authorizer(auth, &api_id, authorizer).await;
+
+                let gs = GatewayState {
+                    api_id: api_id,
+                    auth_id: auth_id,
+                    auth_kind: auth_kind,
+                    stage: stage,
+                    endpoint: String::from(""),
+                };
+                h.insert(name, gs);
+            } else {
+                panic!("Gateway not found {}", name);
+            }
+        } else {
+
+            let api_id =
+                gateway::create_or_update_api(&client, &name, cors.clone(), tags.clone())
+                .await;
+            if cors.is_none() {
+                gateway::clear_cors(&client, &api_id).await;
+            }
+            let (auth_id, auth_kind) = create_authorizer(auth, &api_id, authorizer).await;
+
+            gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit).await;
+
+            let endpoint = if let Some(dom) = domain {
+                println!("Creating domain: {}", dom);
+                let idempotency_token = sandbox;
+                let cert_arn = find_or_create_cert(auth, &dom, idempotency_token).await;
+                let client = gateway::make_client(auth).await;
+                let gateway_domain =
+                    gateway::create_or_update_domain(&client, &api_id, &dom, &stage, &cert_arn, paths)
+                    .await;
+                let target_zone_id = gateway::find_hosted_zone(&client, &dom).await;
+                println!("Updating dns record {}", &gateway_domain);
+                update_dns_record(auth, &dom, &gateway_domain, target_zone_id).await;
+                dom
+
+            } else {
+                auth.api_endpoint(&api_id, &stage)
+            };
+
+            let gs = GatewayState {
+                api_id: api_id,
+                auth_id: auth_id,
+                auth_kind: auth_kind,
+                stage: stage,
+                endpoint: endpoint,
+            };
+            h.insert(name, gs);
+        }
+    }
+    h
+}
+
 
 pub async fn create(
     auth: &Auth,
@@ -401,47 +492,32 @@ pub async fn create(
     sandbox: &str,
 ) {
     if routes.len() > 0 {
-        if !skip(routes) {
-            let client = gateway::make_client(auth).await;
-            let api = Api::new(routes);
+        let gateways = collate_gateways(routes, &auth.name, sandbox);
+        let client = gateway::make_client(auth).await;
 
-            let api_id =
-                gateway::create_or_update_api(&client, &api.name, api.cors.clone(), tags.clone())
-                    .await;
-            let gateway_arn = auth.api_gateway_arn(&api_id);
+        let gateway_states = create_or_update_gateways(&auth, gateways.clone(), tags, sandbox).await;
 
-            gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+        for (name, route) in routes {
+            if !&route.skip && name != "default" {
+                if let Some(gs) = gateway_states.get(&route.gateway) {
 
-            if api.cors.is_none() {
-                println!("Clearing CORS");
-                gateway::clear_cors(&client, &api_id).await;
-            }
+                    let gw = gateways.get(&route.gateway).unwrap();
 
-            let (auth_id, auth_kind) = create_authorizer(auth, &api_id, api.authorizer).await;
+                    let GatewayState { api_id, auth_id, auth_kind, endpoint, stage } = gs;
 
-            for (name, route) in routes {
-                tracing::debug!("Creating route {} {}", &route.method, &route.path);
-                if !&route.skip && name != "default" {
-                    create_route(auth, &route, &api_id, auth_id.clone(), &auth_kind).await;
+                    tracing::debug!("Creating route {} {}", &route.method, &route.path);
+                    let res_route = resolve_route(&gw, &route);
+                    create_route(auth, &res_route, &api_id, auth_id.clone(), &auth_kind).await;
+
+                    let gateway_arn = auth.api_gateway_arn(&api_id);
+
+                    gateway::create_deployment(&client, &api_id, &stage).await;
+                    gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
+                    println!("Endpoint {}", endpoint);
                 }
-            }
-            // domains, stages and deployment
-
-            let route = default_route(routes);
-            let (burst_limit, rate_limit) = find_throttling(&route.throttling, &auth.name, sandbox);
-            gateway::create_or_update_stage(&client, &api_id, &api.stage, burst_limit, rate_limit)
-                .await;
-            gateway::create_deployment(&client, &api_id, &api.stage).await;
-
-            let maybe_domain = create_domain(auth, &api_id, &route, &auth.name, sandbox).await;
-            if let Some(domain) = maybe_domain {
-                println!("Endpoint {}", &domain);
             } else {
-                let endpoint = auth.api_endpoint(&api_id, &api.stage);
-                println!("Endpoint {}", &endpoint);
+                println!("Skipping routes");
             }
-        } else {
-            println!("Skipping routes");
         }
     }
 }
@@ -471,26 +547,34 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
     delete_integration(client, &api_id, &route.method, &route.target).await;
 }
 
-pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>) {
+pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str) {
     if routes.len() > 0 {
         let client = gateway::make_client(auth).await;
-        let api = Api::new(routes);
-        let maybe_api_id = gateway::find_api(&client, &api.name).await;
 
-        if let Some(api_id) = maybe_api_id {
-            for (name, route) in routes {
-                println!("Deleting route {}", &name);
-                if !&route.skip {
-                    delete_route(&client, &api_id, &route).await;
+        let gateways = collate_gateways(routes, &auth.name, sandbox);
+
+        for (name, gateway) in gateways {
+            let maybe_api_id = gateway::find_api(&client, &name).await;
+            if let Some(api_id) = maybe_api_id {
+                for (name, route) in routes {
+                    println!("Deleting route {}", &name);
+                    if !&route.skip {
+                        delete_route(&client, &api_id, &route).await;
+                    }
                 }
-            }
-            if let Some(authorizer) = api.authorizer {
-                gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
-            }
-
-            match std::env::var("TC_DELETE_ROOT") {
-                Ok(_) => gateway::delete_api(&client, &api_id).await,
-                Err(_) => (),
+                if gateway.manage {
+                    if let Some(authorizer) = gateway.authorizer {
+                        gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
+                    }
+                    if let Some(domain) = gateway.domain {
+                        println!("Deleting api mappings {}", &api_id);
+                        gateway::delete_api_mappings(&client, &api_id, &domain, gateway.paths).await;
+                    }
+                    match std::env::var("TC_FORCE_DEPLOY") {
+                        Ok(_) => gateway::delete_api(&client, &api_id).await,
+                        Err(_) => (),
+                    }
+                }
             }
         }
     }

@@ -297,7 +297,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
     }
     function::delete(&auth, functions).await;
     role::delete(&auth, roles).await;
-    route::delete(&auth, routes).await;
+    route::delete(&auth, routes, sandbox).await;
     mutation::delete(&auth, mutations).await;
     queue::delete(&auth, queues).await;
     page::delete(&auth, pages).await;
@@ -335,7 +335,7 @@ async fn delete_entity(auth: &Auth, topology: &Topology, entity: Entity) {
 
     match entity {
         Entity::Event => event::delete(&auth, events).await,
-        Entity::Route => route::delete(&auth, routes).await,
+        Entity::Route => route::delete(&auth, routes, sandbox).await,
         Entity::Function => function::delete(&auth, functions).await,
         Entity::Mutation => mutation::delete(&auth, mutations).await,
         Entity::Schedule => schedule::delete(&auth, schedules).await,

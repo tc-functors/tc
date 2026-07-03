@@ -172,7 +172,7 @@ pub async fn create_record_set(
 ) {
 
     let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
-    println!("Creating Recordset {} {:?} root:{}", domain, maybe_hosted_zone_id, root);
+    println!("Creating Recordset {} root:{}", domain, root);
     if let Some(hosted_zone_id) = maybe_hosted_zone_id {
         let vr = ValidationRecord {
             name: domain.to_string(),

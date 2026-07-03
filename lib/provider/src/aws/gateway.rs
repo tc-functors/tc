@@ -726,36 +726,117 @@ fn make_domain_config(name: &str, cert_arn: &str) -> DomainNameConfiguration {
         .build()
 }
 
+async fn find_api_mapping(client: &Client, api_id: &str, domain_name: &str, api_mapping_key: Option<String>) -> Option<String> {
+    let key = match api_mapping_key {
+        Some(k) => Some(k),
+        None => Some(String::from(""))
+    };
+    let res = client
+        .get_api_mappings()
+        .domain_name(domain_name)
+        .send()
+        .await
+        .unwrap();
+    let items = res.items;
+    match items {
+        Some(xs) => {
+            for x in xs.to_vec() {
+                match x.api_id {
+                    Some(id) => {
+                        if id == api_id && x.api_mapping_key == key {
+                            return x.api_mapping_id
+                        }
+                    }
+                    None => (),
+                }
+            }
+            return None;
+        }
+        None => None,
+    }
+}
+
+async fn update_api_mapping(client: &Client, api_mapping_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
+    let res = client
+        .update_api_mapping()
+        .domain_name(domain_name)
+        .api_mapping_id(api_mapping_id)
+        .set_api_mapping_key(api_mapping_key)
+        .stage(stage)
+        .send()
+        .await;
+    res.unwrap();
+}
+
+async fn create_api_mapping(client: &Client, api_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
+    let res = client
+        .create_api_mapping()
+        .api_id(api_id)
+        .domain_name(domain_name)
+        .set_api_mapping_key(api_mapping_key)
+        .stage(stage)
+        .send()
+        .await;
+    res.unwrap();
+}
+
+async fn create_or_update_api_mapping(client: &Client, api_id: &str, domain_name: &str, stage: &str, path: Option<String>) {
+    let maybe_api_mapping_id = find_api_mapping(client, api_id, domain_name, path.clone()).await;
+    match maybe_api_mapping_id {
+        Some(api_mapping_id) => {
+            update_api_mapping(client, &api_mapping_id, stage, domain_name, path).await
+        },
+        None => {
+            create_api_mapping(client, api_id, stage, domain_name, path).await
+        }
+    }
+}
+
+pub async fn delete_api_mappings(client: &Client, api_id: &str, domain_name: &str, paths: Vec<String>) {
+    for path in paths {
+        let maybe_api_mapping_id = find_api_mapping(client, api_id, domain_name, Some(path)).await;
+        if let Some(api_mapping_id) = maybe_api_mapping_id {
+            let res = client
+                .delete_api_mapping()
+                .api_mapping_id(api_mapping_id)
+                .domain_name(domain_name)
+                .send()
+                .await;
+            res.unwrap();
+        }
+    }
+}
+
 pub async fn create_or_update_domain(
     client: &Client,
     api_id: &str,
     domain_name: &str,
     stage: &str,
     cert_arn: &str,
-    _hosted_zone_id: &str,
+    paths: Vec<String>
 ) -> String {
     let cfg = make_domain_config(domain_name, cert_arn);
 
     let maybe_domain = find_domain(client, domain_name).await;
 
-    if let Some(d) = maybe_domain {
-        let _ = client
-            .create_api_mapping()
-            .api_id(api_id)
-            .domain_name(domain_name)
-            .stage(stage)
-            .send()
-            .await;
-        d
+    if let Some(domain) = maybe_domain {
+        if paths.len() == 0 {
+            create_or_update_api_mapping(client, api_id, domain_name, stage, None).await;
+        } else {
+            for path in paths {
+                create_or_update_api_mapping(client, api_id, domain_name, stage, Some(path)).await;
+            }
+        }
+        domain
     } else {
         let d = create_domain(client, domain_name, cfg).await;
-        let _ = client
-            .create_api_mapping()
-            .api_id(api_id)
-            .domain_name(domain_name)
-            .stage(stage)
-            .send()
-            .await;
+        if paths.len() == 0 {
+            create_or_update_api_mapping(client, api_id, domain_name, stage, None).await;
+        } else {
+            for path in paths {
+                create_api_mapping(client, api_id, domain_name, stage, Some(path)).await;
+            }
+        }
         d
     }
 }

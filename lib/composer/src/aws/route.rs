@@ -57,6 +57,7 @@ pub struct Route {
     pub target: Target,
     pub domains: HashMap<String, HashMap<String, String>>,
     pub throttling: HashMap<String, HashMap<String, Throttling>>,
+    pub gateway_mapping: HashMap<String, HashMap<String, Vec<String>>>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -288,6 +289,7 @@ impl Route {
             domains: find_domains(infra_dir),
             throttling: find_throttling(infra_dir),
             cors: cors,
+            gateway_mapping: find_gateway_mapping(infra_dir),
             skip: skip,
         }
     }
@@ -297,6 +299,7 @@ impl Route {
 pub struct Infra {
     pub throttling: Option<HashMap<String, HashMap<String, Throttling>>>,
     pub domains: Option<HashMap<String, HashMap<String, String>>>,
+    pub gateway_mapping: Option<HashMap<String, HashMap<String, Vec<String>>>>,
 }
 
 impl Infra {
@@ -330,6 +333,19 @@ fn find_throttling(infra_dir: &str) -> HashMap<String, HashMap<String, Throttlin
     if let Some(inf) = maybe_infra {
         if let Some(throttling) = &inf.throttling {
             throttling.clone()
+        } else {
+            HashMap::new()
+        }
+    } else {
+        HashMap::new()
+    }
+}
+
+fn find_gateway_mapping(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String>>> {
+    let maybe_infra = Infra::new(infra_dir);
+    if let Some(inf) = maybe_infra {
+        if let Some(gateway_mapping) = &inf.gateway_mapping {
+            gateway_mapping.clone()
         } else {
             HashMap::new()
         }
