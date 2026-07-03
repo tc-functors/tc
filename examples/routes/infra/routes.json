@@ -1,14 +1,14 @@
 {
-  "gateway_mapping": {
-    "api.dev.functors.com": {
-      "payment_stable": ["/payment"],
-      "analytics_stable": ["/analytics"],
+  "verticals": {
+    "api.myapp.com": {
+      "payment_beta": ["/payment"],
+      "analytics_alpha": ["/analytics"],
       "profile_stable": ["/profile"]
     }
   },
   "domains": {
     "default": {
-      "stable": "api.{{env}}.functors.com"
+      "stable": "api.{{env}}.myapp.com"
     }
   }
 }

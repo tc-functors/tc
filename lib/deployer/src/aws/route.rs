@@ -344,7 +344,7 @@ fn collate_gateways(routes: &HashMap<String, Route>, env: &str, sandbox: &str) -
         for (name, route) in routes {
             if !&route.skip && name != "default" {
 
-                let Route { gateway, stage, domains, authorizer, throttling, gateway_mapping, .. } = route;
+                let Route { gateway, stage, domains, authorizer, throttling, verticals, .. } = route;
 
                 // throttling
                 let (burst_limit, rate_limit) = find_throttling(&throttling, env, sandbox);
@@ -360,7 +360,7 @@ fn collate_gateways(routes: &HashMap<String, Route>, env: &str, sandbox: &str) -
 
                 // gateway mapping paths
                 let paths = if let Some(domain) = maybe_domain.clone() {
-                    match gateway_mapping.get(&domain) {
+                    match verticals.get(&domain) {
                         Some(m) => match m.get(gateway) {
                             Some(paths) => {
                                 let mut xs: Vec<String> = vec![];
