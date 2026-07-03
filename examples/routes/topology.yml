@@ -2,11 +2,15 @@ name: example-routes
 infra: ./infra
 
 routes:
-  /v1/foo/test:
+  /analytics/timeseries:
     method: GET
-    gateway: g1_{{sandbox}}
-    function: foo
-  /v1/bar/test:
+    vertical: analytics
+    function: f1
+  /payment/process:
     method: GET
-    gateway: g2_{{sandbox}}
-    function: foo
+    vertical: payment
+    function: f2
+  /profile/contact:
+    method: GET
+    vertical: profile
+    function: f3

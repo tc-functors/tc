@@ -1,13 +1,14 @@
 {
   "gateway_mapping": {
-    "api.dev.functors.org": {
-      "g1_stable": ["/v1/foo"],
-      "g2_stable": ["/v1/bar"]
+    "api.dev.functors.com": {
+      "payment_stable": ["/payment"],
+      "analytics_stable": ["/analytics"],
+      "profile_stable": ["/profile"]
     }
   },
   "domains": {
     "default": {
-      "stable": "api.{{env}}.functors.org"
+      "stable": "api.{{env}}.functors.com"
     }
   }
 }

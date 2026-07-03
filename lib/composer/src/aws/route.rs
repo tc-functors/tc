@@ -245,9 +245,15 @@ impl Route {
         infra_dir: &str,
         skip: bool,
     ) -> Route {
-        let gateway = match &rspec.gateway {
-            Some(gw) => gw.clone(),
-            None => s!(fqn),
+
+        let gateway = match &rspec.vertical {
+            Some(v) => format!("{}_{{{{sandbox}}}}", v),
+            None => {
+                match &rspec.gateway {
+                    Some(gw) => gw.clone(),
+                    None => s!(fqn),
+                }
+            }
         };
 
         let path = match &rspec.path {

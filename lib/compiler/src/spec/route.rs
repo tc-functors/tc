@@ -17,6 +17,7 @@ pub struct RouteSpec {
     pub method: Option<String>,
     pub path: Option<String>,
     pub gateway: Option<String>,
+    pub vertical: Option<String>,
     pub authorizer: Option<String>,
     #[serde(default)]
     pub function: Option<String>,
