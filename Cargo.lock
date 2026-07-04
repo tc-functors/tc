@@ -4634,6 +4634,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
+name = "repl"
+version = "0.9.121"
+dependencies = [
+ "colored",
+ "composer",
+ "deployer",
+ "kit",
+ "provider",
+ "resolver",
+ "rustyline",
+ "serde 1.0.228",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5803,6 +5819,7 @@ dependencies = [
  "openssl",
  "openssl-sys",
  "provider",
+ "repl",
  "resolver",
  "rmcp",
  "router",

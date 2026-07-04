@@ -78,6 +78,8 @@ enum Cmd {
     Route(RouteArgs),
     /// Run arbitrary task in function dirs
     Run(RunArgs),
+    /// Run REPL
+    Repl(ReplArgs),
     /// Scaffold functions and topology using LLM
     Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
@@ -1134,6 +1136,13 @@ async fn mcp(_args: DefaultArgs) {
     mcp::serve().await;
 }
 
+async fn repl(args: ReplArgs) {
+    let ReplArgs { profile, sandbox, .. } = args;
+    let auth = tc::init(profile, None).await;
+    let sandbox = kit::maybe_string(sandbox, "dev");
+    let _ = repl::start(&auth, &sandbox).await;
+}
+
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
@@ -1175,6 +1184,7 @@ async fn run_command() {
         Cmd::Prune(args) => prune(args).await,
         Cmd::Route(args) => route(args).await,
         Cmd::Run(args) => run(args).await,
+        Cmd::Repl(args) => repl(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,
         Cmd::Tag(args) => tag(args).await,
         Cmd::Test(args) => test(args).await,

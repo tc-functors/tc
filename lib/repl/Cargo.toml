@@ -1,0 +1,16 @@
+[package]
+name = "repl"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+colored = "2.0.0"
+rustyline = "17.0.0"
+kit = { path = "../kit" }
+composer = { path = "../composer" }
+deployer = { path = "../deployer" }
+provider = { path = "../provider" }
+resolver = { path = "../resolver" }
