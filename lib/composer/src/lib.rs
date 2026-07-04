@@ -1,5 +1,5 @@
 pub mod aws;
-pub mod display;
+pub mod formatter;
 
 pub mod index;
 pub mod sequence;
@@ -7,6 +7,7 @@ mod tag;
 mod hooks;
 pub mod topology;
 pub mod version;
+mod counter;
 
 pub use aws::{
     channel::Channel,
@@ -48,11 +49,8 @@ use compiler::{
     },
 };
 use configurator::Config;
-use display::Format;
-pub use display::{
-    compact::CompactTopology,
-    topology::TopologyCount,
-};
+use formatter::compact::CompactTopology;
+use counter::TopologyCount;
 use kit as u;
 use kit::*;
 use std::{
@@ -212,7 +210,7 @@ pub fn is_topology_dir(dir: &str) -> bool {
 
 pub fn display_root() {
     let topologies = list_topologies();
-    display::topology::print_stats(&topologies)
+    formatter::pprint_stats(&topologies)
 }
 
 pub fn topology_name(dir: &str) -> String {
@@ -265,11 +263,11 @@ pub fn list_topologies() -> HashMap<String, Topology> {
 }
 
 pub fn count_of(topology: &Topology) -> String {
-    display::topology::count_str(topology)
+    counter::count_str(topology)
 }
 
 pub fn count(topologies: &HashMap<String, Topology>) -> Vec<TopologyCount> {
-    display::topology::get_count(topologies)
+    counter::get_count(topologies)
 }
 
 pub fn entities_of(topology: &Topology) -> Vec<Entity> {
@@ -319,46 +317,22 @@ pub fn entities_of(topology: &Topology) -> Vec<Entity> {
 }
 
 pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
-    let format = Format::from_str(fmt).unwrap();
-    let dir = u::pwd();
     match entity {
         Some(e) => {
             let maybe_entity = Entity::from_str(&e);
             match maybe_entity {
-                Ok(ent) => display::display_entity(ent, format, topology),
-                Err(_) => match e.as_ref() {
-                    "versions" => display::print_versions(lookup_versions(&dir), format),
-                    "transducer" => u::pp_json(&topology.transducer),
-                    "roles" => u::pp_json(&topology.roles),
-                    "base" => u::pp_json(&topology.base_roles),
-                    _ => display::try_display(&topology, &e, format),
-                },
-            }
-        }
-        None => match format {
-            Format::Tree => display::print_tree(topology),
-            _ => {
-                if let Some(f) = topology.current_function(&dir) {
-                    u::pp_json(&f)
-                } else {
-                    u::pp_json(topology)
-                }
+                Ok(ent) => formatter::pprint_entity(topology, ent),
+                Err(_) => formatter::pprint_component(topology, &e)
             }
         },
+        None => formatter::pprint(topology, fmt)
     }
 }
 
 pub fn pprint_root(topologies: &HashMap<String, Topology>, fmt: &str) {
-    let format = Format::from_str(fmt).unwrap();
-    match format {
-        Format::Tree => display::print_tree_recursive(topologies),
-        Format::Table => display::topology::print_stats(topologies),
-        Format::JSON => display::topology::print_stats_json(topologies),
-        Format::Icepanel => display::print_icepanel(topologies),
-        _ => println!("only -f tree|icepanel|table|json supported"),
-    }
+    formatter::pprint_recursive(topologies, fmt)
 }
 
 pub fn compact(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
-    display::compact::build(topologies)
+    formatter::compact::build_recursive(topologies)
 }

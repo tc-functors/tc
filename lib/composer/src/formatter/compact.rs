@@ -13,6 +13,8 @@ use serde_derive::{
 };
 use std::collections::HashMap;
 
+use kit as u;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct QueueItem {
     pub name: String,
@@ -237,10 +239,8 @@ pub struct CompactTopology {
     pub mutations: Vec<MutationItem>,
 }
 
-pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
-    let mut tops: Vec<CompactTopology> = vec![];
-    for (_, topology) in topologies {
-        let mut routes = build_routes(&topology.namespace, &topology.routes);
+fn build(topology: &Topology) -> CompactTopology {
+       let mut routes = build_routes(&topology.namespace, &topology.routes);
         let mut events = build_events(&topology.namespace, &topology.events);
         let mut functions = build_functions(&topology.namespace, &topology.functions);
         let mut mutations = build_mutations(&topology);
@@ -286,9 +286,28 @@ pub fn build(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
             pages: pages,
             queues: queues,
         };
+    ct
+}
+
+pub fn build_recursive(topologies: &HashMap<String, Topology>) -> Vec<CompactTopology> {
+    let mut tops: Vec<CompactTopology> = vec![];
+    for (_, topology) in topologies {
+        let ct = build(topology);
         tops.push(ct);
     }
     tops.sort_by(|a, b| b.namespace.cmp(&a.namespace));
     tops.reverse();
     tops
+}
+
+
+pub fn pprint(topology: &Topology) {
+    let ct = build(topology);
+    let out = serde_yaml::to_string(&ct).unwrap();
+    println!("{}", &out);
+}
+
+pub fn pprint_recursive(topologies: &HashMap<String, Topology>) {
+    let cts = build_recursive(topologies);
+    u::pp_json(cts);
 }

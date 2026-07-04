@@ -2,8 +2,6 @@ use super::Topology;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use tabled::{
-    Style,
-    Table,
     Tabled,
 };
 
@@ -86,28 +84,6 @@ impl TopologyCount {
     }
 }
 
-pub fn print_stats(topologies: &HashMap<String, Topology>) {
-    let mut xs: Vec<TopologyCount> = vec![];
-    for (_, t) in topologies {
-        let c = TopologyCount::new(&t);
-        xs.push(c)
-    }
-    xs.sort_by(|a, b| b.name.cmp(&a.name));
-    xs.reverse();
-    let table = Table::new(xs).with(Style::psql()).to_string();
-    println!("{}", table);
-}
-
-pub fn print_stats_json(topologies: &HashMap<String, Topology>) {
-    let mut xs: Vec<TopologyCount> = vec![];
-    for (_, t) in topologies {
-        let c = TopologyCount::new(&t);
-        xs.push(c)
-    }
-    xs.sort_by(|a, b| b.name.cmp(&a.name));
-    xs.reverse();
-    kit::pp_json(&xs);
-}
 
 pub fn get_count(topologies: &HashMap<String, Topology>) -> Vec<TopologyCount> {
     let mut xs: Vec<TopologyCount> = vec![];

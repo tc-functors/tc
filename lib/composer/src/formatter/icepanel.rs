@@ -4,6 +4,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use kit as u;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModelObject {
@@ -26,7 +27,7 @@ pub struct Landscape {
     pub model_objects: Vec<ModelObject>,
 }
 
-pub fn generate(topologies: &HashMap<String, Topology>) -> Landscape {
+fn generate(topologies: &HashMap<String, Topology>) -> Landscape {
     let mut mos: Vec<ModelObject> = vec![];
     for (name, topology) in topologies {
         let pmo = ModelObject {
@@ -69,4 +70,16 @@ pub fn generate(topologies: &HashMap<String, Topology>) -> Landscape {
         }
     }
     Landscape { model_objects: mos }
+}
+
+pub fn pprint(topology: &Topology) {
+    let mut t: HashMap<String, Topology> = HashMap::new();
+    t.insert(topology.namespace.clone(), topology.clone());
+    let objs = generate(&t);
+    u::pp_json(&objs);
+}
+
+pub fn pprint_recursive(topologies: &HashMap<String, Topology>) {
+    let objs = generate(topologies);
+    u::pp_json(&objs);
 }
