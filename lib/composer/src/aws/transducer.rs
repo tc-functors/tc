@@ -5,7 +5,6 @@ use super::{
         Build,
         Function,
         Runtime,
-        code,
     },
     mutation::Mutation,
     role::Role,
@@ -30,6 +29,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+mod function;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationTarget {
@@ -203,7 +203,6 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         fs: None,
         arch: Arch::X8664,
         infra_spec: HashMap::new(),
-        cluster: String::from(""),
     };
 
     Function {
@@ -278,7 +277,7 @@ impl Transducer {
         let t_path = format!("{}/transducer.json", &dir);
         let code_path = format!("{}/handler.py", &dir);
 
-        let b64_code = code::make_transducer_code();
+        let b64_code = function::make_code();
         let bytes = general_purpose::STANDARD.decode(&b64_code).unwrap();
         let code = String::from_utf8_lossy(&bytes);
 

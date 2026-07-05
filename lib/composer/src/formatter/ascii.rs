@@ -1,24 +1,29 @@
+use petgraph::graph::DiGraph;
+use ascii_petgraph::RenderedGraph;
+
 use crate::Topology;
-use ascii_dag::Graph;
 
 pub fn pprint(_topology: &Topology) {
-    let mut g = Graph::new();
-    g.add_node(1, "Web");
-    g.add_node(2, "API");
-    g.add_node(3, "DB");
-    g.add_node(4, "Cache");
+    let mut graph = DiGraph::new();
+    let a = graph.add_node("Start");
+    let b = graph.add_node("Process");
+    let c = graph.add_node("End");
 
-    g.add_edge(1, 2, None);
-    g.add_edge(2, 3, None);
-    g.add_edge(2, 4, None);
+    graph.add_edge(a, b, "begin");
+    graph.add_edge(b, c, "finish");
 
-    // Create clusters
-    let frontend = g.add_subgraph("Frontend");
-    g.put_nodes(&[1]).inside(frontend).unwrap();
+    // Render it
+    let mut rendered = RenderedGraph::from_graph(graph);
+    rendered.run_simulation();
 
-    let backend = g.add_subgraph("Backend");
-    g.put_nodes(&[2, 3, 4]).inside(backend).unwrap();
-
-    let ir = g.compute_layout();
-    println!("{}", ir.render_scanline());
+    // Print to terminal
+    let grid = rendered.render_to_grid();
+    for y in 0..grid.size().1 {
+        for x in 0..grid.size().0 {
+            if let Some(cell) = grid.get(x, y) {
+                print!("{}", cell.char);
+            }
+        }
+        println!();
+    }
 }

@@ -2,10 +2,12 @@ name: example-nano
 
 functions:
   f1:
-    code: |
-      def handler(event, context):
-        return {'data': ['a', 'b']}
+    runtime:
+      code: |
+        def handler(event, context):
+          return {'data': ['a', 'b']}
   f2:
-    code: |
-      def handler(event, context):
-        return event.get('data').join(",")
+    runtime:
+      code: |
+        def handler(event, context):
+          return event.get('data').join(",")
