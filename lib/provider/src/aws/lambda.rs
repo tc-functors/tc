@@ -190,7 +190,6 @@ pub fn make_package_type(package_type: &str) -> PackageType {
 
 #[derive(Clone, Debug)]
 pub struct Function {
-    pub client: Client,
     pub name: String,
     pub actual_name: String,
     pub description: Option<String>,
@@ -215,12 +214,10 @@ pub struct Function {
 }
 
 impl Function {
-    async fn find_arn(self) -> Option<String> {
-        let f = self.clone();
-        let r = self
-            .client
+    async fn find_arn(&self, client: &Client) -> Option<String> {
+        let r = client
             .get_function_configuration()
-            .function_name(f.name)
+            .function_name(&self.name)
             .send()
             .await;
         match r {
@@ -229,11 +226,10 @@ impl Function {
         }
     }
 
-    async fn get_state(&self, name: &str) -> State {
-        let r = self
-            .client
+    async fn get_state(&self, client: &Client, name: &str) -> State {
+        let r = client
             .get_function_configuration()
-            .function_name(s!(name))
+            .function_name(name)
             .send()
             .await;
         match r {
@@ -242,11 +238,10 @@ impl Function {
         }
     }
 
-    async fn get_update_status(&self, name: &str) -> LastUpdateStatus {
-        let r = self
-            .client
+    async fn get_update_status(&self, client: &Client, name: &str) -> LastUpdateStatus {
+        let r = client
             .get_function_configuration()
-            .function_name(s!(name))
+            .function_name(name)
             .send()
             .await;
         match r {
@@ -255,41 +250,40 @@ impl Function {
         }
     }
 
-    async fn wait(self, name: &str) {
+    async fn wait(&self, client: &Client, name: &str) {
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         while state != LastUpdateStatus::Successful {
-            state = self.clone().get_update_status(name).await;
+            state = self.get_update_status(client, name).await;
             let _ = log_update.render(&format!("{} state {}", name, pp_status(&state).blue()));
             sleep(1000)
         }
         let _ = log_update.render(&format!("{} state {}", name, pp_status(&state).green()));
     }
 
-    pub async fn create(self) -> Result<String> {
-        let f = self.clone();
+    pub async fn create(&self, client: &Client) -> Result<String> {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
 
         let name = if kit::trace() {
-            &f.name
+            &self.name
         } else {
-            &f.actual_name
+            &self.actual_name
         };
 
         let _ = log_update.render(&format!(
             "Creating function {} ({})",
             name,
-            &f.code_size.cyan()
+            &self.code_size.cyan()
         ));
         let mut state: State = State::Inactive;
 
-        let res = self
-            .client
+        let f = self.clone();
+        let res = client
             .create_function()
-            .function_name(f.name.to_owned())
-            .set_description(f.description)
-            .set_runtime(f.runtime)
-            .role(f.role)
+            .function_name(&self.name)
+            .set_description(self.description.clone())
+            .set_runtime(self.runtime.clone())
+            .role(&self.role)
             .set_handler(f.handler)
             .code(f.code)
             .environment(f.environment)
@@ -307,7 +301,7 @@ impl Function {
             .await?;
 
         while state != State::Active {
-            state = self.clone().get_state(&f.name).await;
+            state = self.get_state(client, &self.name).await;
             let _ = log_update.render(&format!(
                 "Checking function {} ({})",
                 name,
@@ -324,13 +318,12 @@ impl Function {
         Ok(res.function_arn.unwrap_or_default())
     }
 
-    pub async fn update_tags(self, arn: &str) {
+    pub async fn update_tags(&self, client: &Client, arn: &str) {
         if !&self.tags.is_empty() {
-            let res = self
-                .client
+            let res = client
                 .tag_resource()
                 .resource(arn)
-                .set_tags(Some(self.tags))
+                .set_tags(Some(self.tags.clone()))
                 .send()
                 .await;
             match res {
@@ -340,28 +333,27 @@ impl Function {
         }
     }
 
-    pub async fn update_function(self, arn: &str) -> Result<String, Error> {
-        let f = self.clone();
+    pub async fn update_function(&self, client: &Client, arn: &str) -> Result<String, Error> {
         let name = if kit::trace() {
-            &f.name
+            &self.name
         } else {
-            &f.actual_name
+            &self.actual_name
         };
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let _ = log_update.render(&format!(
             "Updating function {} ({})",
             name,
-            &f.code_size.cyan()
+            &self.code_size.cyan()
         ));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
         while state != LastUpdateStatus::Successful {
-            state = self.clone().get_update_status(&f.name).await;
+            state = self.get_update_status(client, &self.name).await;
             sleep(800)
         }
 
-        let res = self
-            .client
+        let f = self.clone();
+        let res = client
             .update_function_configuration()
             .function_name(arn)
             .set_layers(f.layers)
@@ -378,49 +370,47 @@ impl Function {
             .await;
 
         while state != LastUpdateStatus::Successful {
-            state = self.clone().get_update_status(&f.name).await;
+            state = self.get_update_status(client, &self.name).await;
             sleep(800)
         }
         let id = match res {
             Ok(r) => Ok(r.function_arn.unwrap_or_default()),
             Err(e) => panic!("{:?}", e),
         };
-        self.update_tags(arn).await;
+        self.update_tags(client, arn).await;
 
         id
     }
 
-    pub async fn update_code(self, arn: &str) -> Result<String> {
-        let f = self.clone();
-
+    pub async fn update_code(&self, client: &Client, arn: &str) -> Result<String> {
         let name = if kit::trace() {
-            &f.name
+            &self.name
         } else {
-            &f.actual_name
+            &self.actual_name
         };
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let _ = log_update.render(&format!(
             "Updating function {} ({})",
             name,
-            &f.code_size.cyan()
+            &self.code_size.cyan()
         ));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
 
-        let res = match f.package_type {
+        let res = match self.package_type {
             PackageType::Image => {
-                self.client
+                client
                     .update_function_code()
                     .function_name(arn)
-                    .image_uri(f.uri)
+                    .image_uri(self.uri.clone())
                     .send()
                     .await?
             }
             PackageType::Zip => {
-                self.client
+                client
                     .update_function_code()
                     .function_name(arn)
-                    .zip_file(f.blob)
+                    .zip_file(self.blob.clone())
                     .send()
                     .await?
             }
@@ -428,7 +418,7 @@ impl Function {
         };
 
         while state != LastUpdateStatus::Successful {
-            state = self.clone().get_update_status(&f.name).await;
+            state = self.get_update_status(client, &self.name).await;
             let _ = log_update.render(&format!(
                 "Checking function {} ({})",
                 name,
@@ -441,49 +431,45 @@ impl Function {
             name,
             pp_status(&state).green()
         ));
-        self.update_tags(arn).await;
+        self.update_tags(client, arn).await;
         Ok(res.function_arn.unwrap_or_default())
     }
 
-    pub async fn update_layers(self, arn: &str) -> Result<String> {
-        let f = self.clone();
-        println!("Updating layer {} {:?}", &f.name, &f.layers);
-        let r = self
-            .client
+    pub async fn update_layers(&self, client: &Client, arn: &str) -> Result<String> {
+        println!("Updating layer {} {:?}", &self.name, &self.layers);
+        let r = client
             .update_function_configuration()
             .function_name(arn)
-            .set_layers(f.layers)
+            .set_layers(self.layers.clone())
             .send()
             .await
             .unwrap();
-        self.wait(&f.name).await;
+        self.wait(client, &self.name).await;
         Ok(r.function_arn.unwrap_or_default())
     }
 
-    pub async fn update_vars(self) -> Result<String> {
+    pub async fn update_vars(&self, client: &Client) -> Result<String> {
+        println!("Updating vars {}", &self.name.blue());
         let f = self.clone();
-        println!("Updating vars {}", &f.name.blue());
-        let r = self
-            .client
+        let r = client
             .update_function_configuration()
-            .function_name(f.name.to_owned())
+            .function_name(&self.name)
             .memory_size(f.memory_size)
             .timeout(f.timeout)
             .environment(f.environment)
             .set_handler(f.handler)
             .send()
             .await?;
-        self.wait(&f.name).await;
+        self.wait(client, &self.name).await;
         Ok(r.function_arn.unwrap_or_default())
     }
 
-    pub async fn update_image_vars(self) -> String {
+    pub async fn update_image_vars(&self, client: &Client) -> String {
+        println!("Updating vars {}", &self.name);
         let f = self.clone();
-        println!("Updating vars {}", &f.name);
-        let r = self
-            .client
+        let r = client
             .update_function_configuration()
-            .function_name(f.name)
+            .function_name(&self.name)
             .memory_size(f.memory_size)
             .timeout(f.timeout)
             .environment(f.environment)
@@ -493,11 +479,11 @@ impl Function {
         r.function_arn.unwrap_or_default()
     }
 
-    pub async fn create_or_update(self) -> String {
-        let res = self.clone().find_arn().await;
+    pub async fn create_or_update(&self, client: &Client) -> String {
+        let res = self.find_arn(client).await;
         let arn = match res {
             Some(arn) => {
-                let r = self.clone().update_code(&arn).await;
+                let r = self.update_code(client, &arn).await;
                 match r {
                     Ok(_) => (),
                     Err(e) => {
@@ -505,37 +491,35 @@ impl Function {
                         panic!("{:?}", e);
                     }
                 }
-                self.clone().update_function(&arn).await.unwrap()
+                self.update_function(client, &arn).await.unwrap()
             }
-            None => self.create().await.unwrap(),
+            None => self.create(client).await.unwrap(),
         };
         arn
     }
 
-    pub async fn delete(self) -> Result<()> {
-        let f = self.clone();
+    pub async fn delete(&self, client: &Client) -> Result<()> {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let name = if kit::trace() {
-            &f.name
+            &self.name
         } else {
-            &f.actual_name
+            &self.actual_name
         };
         let _ = log_update.render(&format!("Deleting function {}", name));
         let mut state: State = State::Active;
 
-        let res = f.clone().find_arn().await;
+        let res = self.find_arn(client).await;
 
         match res {
             Some(_) => {
-                let _ = self
-                    .client
+                let _ = client
                     .delete_function()
-                    .function_name(f.name.to_owned())
+                    .function_name(&self.name)
                     .send()
                     .await?;
 
                 while state == State::Active || state != State::Failed {
-                    state = self.clone().get_state(&f.name).await;
+                    state = self.get_state(client, &self.name).await;
 
                     if state != State::Failed {
                         let _ = log_update.render(&format!(
@@ -566,13 +550,11 @@ impl Function {
         }
     }
 
-    pub async fn update_provisioned_concurrency(self, n: i32) {
-        let f = self.clone();
-        println!("Setting provisioned concurrency {} {}", &f.name, n);
-        let _ = self
-            .client
+    pub async fn update_provisioned_concurrency(&self, client: &Client, n: i32) {
+        println!("Setting provisioned concurrency {} {}", &self.name, n);
+        let _ = client
             .put_provisioned_concurrency_config()
-            .function_name(f.name)
+            .function_name(&self.name)
             .qualifier(s!("1"))
             .provisioned_concurrent_executions(n)
             .send()
@@ -580,25 +562,22 @@ impl Function {
             .unwrap();
     }
 
-    pub async fn update_reserved_concurrency(self, n: i32) {
-        let f = self.clone();
-        println!("Setting reserved concurrency {} {}", &f.name, n);
-        let _ = self
-            .client
+    pub async fn update_reserved_concurrency(&self, client: &Client, n: i32) {
+        println!("Setting reserved concurrency {} {}", &self.name, n);
+        let _ = client
             .put_function_concurrency()
-            .function_name(f.name)
+            .function_name(&self.name)
             .reserved_concurrent_executions(n)
             .send()
             .await
             .unwrap();
     }
 
-    async fn find_alias(&self) -> Option<String> {
-        let res = self
-            .client
+    async fn find_alias(&self, client: &Client) -> Option<String> {
+        let res = client
             .get_alias()
             .name(self.name.to_string())
-            .function_name(s!(self.name))
+            .function_name(&self.name)
             .send()
             .await;
         match res {
@@ -607,9 +586,8 @@ impl Function {
         }
     }
 
-    async fn update_alias(&self, version: &str) {
-        let _ = self
-            .client
+    async fn update_alias(&self, client: &Client, version: &str) {
+        let _ = client
             .update_alias()
             .name(self.name.to_string())
             .function_name(s!(self.name))
@@ -618,37 +596,35 @@ impl Function {
             .await;
     }
 
-    async fn create_alias(&self, version: &str) {
-        let _ = self
-            .client
+    async fn create_alias(&self, client: &Client, version: &str) {
+        let _ = client
             .create_alias()
             .name(self.name.to_string())
-            .function_name(s!(self.name))
+            .function_name(&self.name)
             .function_version(version)
             .send()
             .await;
     }
 
-    pub async fn publish_version(&self) {
-        self.clone().wait(&self.name).await;
-        let res = self
-            .client
+    pub async fn publish_version(&self, client: &Client) {
+        self.wait(client, &self.name).await;
+        let res = client
             .publish_version()
-            .function_name(s!(self.name))
+            .function_name(&self.name)
             .send()
             .await;
-        let version = res.unwrap().version;
+        let version = res.unwrap().version.unwrap();
 
-        let maybe_alias = self.find_alias().await;
+        let maybe_alias = self.find_alias(client).await;
         match maybe_alias {
-            Some(_) => self.update_alias(&version.clone().unwrap()).await,
-            None => self.create_alias(&version.clone().unwrap()).await,
+            Some(_) => self.update_alias(client, &version).await,
+            None => self.create_alias(client, &version).await,
         }
 
         println!(
             "Published alias {} with version ({})",
             &self.name,
-            &version.unwrap()
+            &version
         );
     }
 }
@@ -691,12 +667,12 @@ pub async fn add_permission_basic(
     Ok(())
 }
 
-pub async fn update_tags(client: &Client, arn: &str, tags: HashMap<String, String>) {
+pub async fn update_tags(client: &Client, arn: &str, tags: &HashMap<String, String>) {
     println!("Updating tags {} {:?}", arn, &tags);
     let res = client
         .tag_resource()
         .resource(arn)
-        .set_tags(Some(tags))
+        .set_tags(Some(tags.clone()))
         .send()
         .await;
     match res {

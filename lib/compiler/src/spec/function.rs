@@ -272,7 +272,8 @@ impl BuildSpec {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Provider {
     Lambda,
-    Fargate,
+    MicroVm,
+    AgentCore
 }
 
 impl FromStr for Provider {
@@ -281,7 +282,8 @@ impl FromStr for Provider {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "lambda" | "Lambda" => Ok(Provider::Lambda),
-            "farget" | "Fargate" => Ok(Provider::Fargate),
+            "microvm" | "Micorvm" | "MicroVm" => Ok(Provider::MicroVm),
+            "agentcore" | "AgentCore" | "Agentcore" => Ok(Provider::AgentCore),
             _ => Ok(Provider::Lambda),
         }
     }
@@ -291,7 +293,8 @@ impl Provider {
     pub fn to_str(&self) -> String {
         match self {
             Provider::Lambda => s!("lambda"),
-            Provider::Fargate => s!("fargate"),
+            Provider::MicroVm => s!("microvm"),
+            Provider::AgentCore => s!("agentcore"),
         }
     }
 }
@@ -348,6 +351,8 @@ pub struct RuntimeSpec {
 
     #[serde(default = "default_handler")]
     pub handler: String,
+
+    pub code: Option<String>,
 
     #[serde(default = "default_arch")]
     pub arch: Option<Arch>,

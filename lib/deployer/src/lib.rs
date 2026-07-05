@@ -13,6 +13,7 @@ use aws::{
     route,
     schedule,
     state,
+    transducer
 };
 use colored::Colorize;
 use compiler::{
@@ -73,13 +74,6 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
 
     role::create_or_update(auth, roles, tags).await;
     function::create(auth, functions, &tags, is_sync).await;
-    // After roles are reconciled in IAM and modified functions are
-    // (re)deployed, sweep every lambda the topology declares and make
-    // sure its `Role` attribute matches `f.runtime.role.arn`. This is
-    // what re-attaches a freshly-created override role onto an existing
-    // lambda whose code didn't change in this deploy — without this
-    // step IAM ends up with the new role but the lambda keeps pointing
-    // at `tc-base-function-...`.
     function::sync_roles(auth, all_functions).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
@@ -94,7 +88,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     }
     if let Some(trn) = transducer {
         let cfg = make_config(&auth, topology).await;
-        function::create_transducer(auth, functions, &trn, &cfg).await;
+        transducer::create(auth, functions, &trn, &cfg).await;
     }
 }
 
@@ -162,7 +156,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     }
     if let Some(trns) = transducer {
         let cfg = make_config(&auth, topology).await;
-        function::create_transducer(auth, functions, &trns, &cfg).await;
+        transducer::create(auth, functions, &trns, &cfg).await;
     }
 }
 
@@ -302,7 +296,7 @@ async fn delete(auth: &Auth, topology: &Topology) {
     queue::delete(&auth, queues).await;
     page::delete(&auth, pages).await;
     if let Some(trns) = transducer {
-        function::delete_transducer(auth, &trns).await;
+        transducer::delete(auth, &trns).await;
     }
 }
 

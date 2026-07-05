@@ -69,7 +69,6 @@ pub struct Runtime {
     pub fs: Option<FileSystem>,
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
-    pub cluster: String,
 }
 
 fn find_git_sha(dir: &str) -> String {
@@ -613,7 +612,6 @@ fn make_default(
         arch: as_arch(&None),
         fs: None,
         infra_spec: infra_spec,
-        cluster: String::from(""),
     }
 }
 
@@ -680,40 +678,37 @@ fn make_lambda(
         network: make_network(&default_infra_spec, enable_fs),
         fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
         arch: as_arch(&r.arch),
-        infra_spec: infra_spec,
-        cluster: String::from(""),
+        infra_spec: infra_spec
     }
 }
 
-fn make_fargate(
+fn make_microvm(
     dir: &str,
     infra_dir: &str,
     namespace: &str,
     fqn: &str,
     fspec: &FunctionSpec,
-    rspec: &RuntimeSpec,
-    c: &Config,
+    r: &RuntimeSpec,
 ) -> Runtime {
-    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs, &rspec.fs);
-    let package_type = s!("Image");
-    let uri = as_uri(
-        dir,
-        namespace,
-        &fspec.name,
-        &package_type,
-        rspec.uri.clone(),
-    );
-    let role = lookup_role(&infra_dir, &rspec, namespace, fqn, &fspec.name);
-    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
+    let layer_name = find_implicit_layer_name(dir, namespace, fspec);
+    let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
+    let build_kind = find_build_kind(&fspec);
+    let package_type = match &r.package_type {
+        Some(x) => x.to_string(),
+        None => match build_kind {
+            BuildKind::Image => s!("image"),
+            _ => s!("zip"),
+        },
+    };
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
+    let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
+
+    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
 
-    let lang = rspec.lang.clone();
-    let cluster = match &c.builder.cluster {
-        Some(c) => c,
-        None => &template::topology_fqn(namespace, false),
-    };
-
     let InfraSpec {
+        memory_size,
         timeout,
         environment,
         ..
@@ -722,42 +717,38 @@ fn make_fargate(
     let vars = make_env_vars(
         dir,
         namespace,
-        BuildKind::Code,
+        build_kind,
         fspec.assets.clone(),
         environment.clone(),
-        lang.to_lang(),
+        r.lang.to_lang(),
         fqn,
     );
 
     Runtime {
-        lang: lang,
-        provider: Provider::Fargate,
-        handler: rspec.handler.clone(),
-        package_type: package_type,
+        lang: r.lang.clone(),
+        provider: r.provider.clone().unwrap().clone(),
+        handler: r.handler.clone(),
+        package_type: package_type.to_string(),
         uri: uri,
-        layers: vec![],
+        layers: layers,
         tags: make_tags(namespace, &infra_dir),
         environment: vars,
-        provisioned_concurrency: None,
-        reserved_concurrency: None,
-        memory_size: Some(2048),
-        cpu: Some(1024),
+        provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
+        reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
+        memory_size: *memory_size,
         timeout: *timeout,
-        snapstart: false,
+        cpu: None,
+        snapstart: u::opt_as_bool(r.snapstart),
         role: role,
+        enable_network: if let Some(n) = r.network { n } else { false },
         enable_fs: enable_fs,
-        enable_network: if let Some(n) = rspec.network {
-            n
-        } else {
-            false
-        },
         network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
-        infra_spec: infra_spec,
-        arch: as_arch(&rspec.arch),
-        cluster: cluster.to_string(),
+        fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
+        arch: as_arch(&r.arch),
+        infra_spec: infra_spec
     }
 }
+
 
 impl Runtime {
     pub fn new(
@@ -766,7 +757,7 @@ impl Runtime {
         namespace: &str,
         fspec: &FunctionSpec,
         fqn: &str,
-        cspec: &Config,
+        _cspec: &Config,
     ) -> Runtime {
         let rspec = fspec.runtime.clone();
 
@@ -783,9 +774,11 @@ impl Runtime {
                             make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r)
                         }
 
-                        Provider::Fargate => {
-                            make_fargate(dir, &infra_dir, namespace, fqn, fspec, &r, cspec)
+                        Provider::MicroVm => {
+                            make_microvm(dir, &infra_dir, namespace, fqn, fspec, &r)
                         }
+
+                        Provider::AgentCore => todo!()
                     }
                 } else {
                     make_lambda(dir, &infra_dir, namespace, fqn, fspec, &r)
