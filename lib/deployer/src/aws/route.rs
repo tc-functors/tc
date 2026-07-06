@@ -497,6 +497,7 @@ pub async fn create(
 
         let gateway_states = create_or_update_gateways(&auth, gateways.clone(), tags, sandbox).await;
 
+        let mut url: String = String::from("");
         for (name, route) in routes {
             if !&route.skip && name != "default" {
                 if let Some(gs) = gateway_states.get(&route.gateway) {
@@ -513,12 +514,14 @@ pub async fn create(
 
                     gateway::create_deployment(&client, &api_id, &stage).await;
                     gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
-                    println!("Endpoint {}", endpoint);
+                    url = endpoint.to_string();
+
                 }
             } else {
                 println!("Skipping routes");
             }
         }
+        println!("Endpoint {}", url);
     }
 }
 
