@@ -27,13 +27,15 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
             let client = lambda::make_client(auth).await;
             lambda::create(&client, &f, tags).await
         }
-        Provider::MicroVm => todo!(),
+        Provider::MicroVm => {
+            microvm::create(auth, &f, tags).await
+        },
         Provider::AgentCore => todo!(),
     }
 }
 
 fn get_chunk_size() -> usize {
-    match std::env::var("TC_CREATE_CHUNK_SIZE") {
+    match std::env::var("TC_FUNCTION_CREATE_CONCURRENCY") {
         Ok(n) => n.parse::<usize>().unwrap(),
         Err(_) => 4,
     }
@@ -94,7 +96,7 @@ pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_name, f) in fns {
          match f.runtime.provider {
              Provider::Lambda => lambda::delete(&client, &f).await,
-             Provider::MicroVm => todo!(),
+             Provider::MicroVm => microvm::delete(auth, &f).await,
              Provider::AgentCore => todo!()
          }
     }

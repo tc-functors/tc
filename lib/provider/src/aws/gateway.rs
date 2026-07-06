@@ -769,15 +769,19 @@ async fn update_api_mapping(client: &Client, api_mapping_id: &str, stage: &str, 
 }
 
 async fn create_api_mapping(client: &Client, api_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
+    println!("Creating api mapping: api_id: {} {:?}", &api_id, &api_mapping_key);
     let res = client
         .create_api_mapping()
         .api_id(api_id)
         .domain_name(domain_name)
-        .set_api_mapping_key(api_mapping_key)
+        .set_api_mapping_key(api_mapping_key.clone())
         .stage(stage)
         .send()
         .await;
-    res.unwrap();
+    match res {
+        Ok(_) => (),
+        Err(e) => println!("Warn creating mapping {:?} {}", &api_mapping_key, &e)
+    }
 }
 
 async fn create_or_update_api_mapping(client: &Client, api_id: &str, domain_name: &str, stage: &str, path: Option<String>) {

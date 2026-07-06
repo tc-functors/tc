@@ -159,6 +159,8 @@ pub enum BuildKind {
     Extension,
     #[serde(alias = "runtime")]
     Runtime,
+    #[serde(alias = "MicroVmImage")]
+    MicroVmImage,
     #[serde(alias = "image")]
     Image,
 }
@@ -175,6 +177,7 @@ impl FromStr for BuildKind {
             "extension" => Ok(BuildKind::Extension),
             "runtime" => Ok(BuildKind::Runtime),
             "slab" => Ok(BuildKind::Slab),
+            "microvm" | "microvmimage" | "MicroVmImage" => Ok(BuildKind::MicroVmImage),
             "Image" | "image" => Ok(BuildKind::Image),
             _ => Ok(BuildKind::Code),
         }
@@ -192,6 +195,7 @@ impl BuildKind {
             BuildKind::Runtime => s!("runtime"),
             BuildKind::Image => s!("image"),
             BuildKind::Slab => s!("slab"),
+            BuildKind::MicroVmImage => s!("MicroVmImage"),
         }
     }
 }
@@ -258,6 +262,20 @@ pub struct BuildSpec {
     pub dirs: Option<Vec<String>>,
     #[serde(default)]
     pub include_deps: Option<bool>,
+
+    // below are for microvm
+
+    #[serde(default)]
+    pub image_name: Option<String>,
+
+    #[serde(default)]
+    pub base_image_arn: Option<String>,
+
+    #[serde(default)]
+    pub build_role_arn: Option<String>,
+
+    #[serde(default)]
+    pub uri: Option<String>,
 }
 
 impl BuildSpec {
@@ -345,6 +363,12 @@ impl Arch {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MicroVm {
+    pub ingress_network_connectors: Option<String>,
+    pub egress_network_connectors: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
     #[serde(default = "default_lang")]
     pub lang: LangRuntime,
@@ -380,6 +404,8 @@ pub struct RuntimeSpec {
 
     #[serde(default = "default_layers")]
     pub extensions: Vec<String>,
+
+    pub microvm: Option<MicroVm>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -20,6 +20,7 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
+pub mod microvm;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;

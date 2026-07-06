@@ -24,6 +24,10 @@ pub struct Build {
     pub environment: HashMap<String, String>,
     pub dirs: Vec<String>,
     pub include_deps: bool,
+    pub image_name: String,
+    pub base_image_arn: String,
+    pub build_role_arn: String,
+    pub uri: String
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -44,6 +48,7 @@ impl Build {
         runtime: &Runtime,
         bspec: Option<BuildSpec>,
         tasks: HashMap<String, String>,
+        fname: &str
     ) -> Build {
         match bspec {
             Some(b) => Build {
@@ -71,6 +76,30 @@ impl Build {
                     Some(d) => d,
                     None => false,
                 },
+
+                base_image_arn: match b.base_image_arn {
+                    Some(d) => d,
+                    None => format!("arn:aws:lambda:{{{{region}}}}:aws:microvm-image:al2023-1")
+                },
+
+                build_role_arn: match b.build_role_arn {
+                    Some(d) => d,
+                    None => format!("arn:aws:iam::{{{{region}}}}:role/tc-base-microvm-{{{{sandbox}}}}")
+                },
+
+                image_name: match b.image_name {
+                    Some(d) => d,
+                    None => format!("{}_image", fname)
+                },
+
+                // FIXME
+                uri: match b.uri {
+                    Some(d) => d,
+                    None => match std::env::var("TC_MICROVMS_BUCKET") {
+                        Ok(s) => format!("s3://{}/{}.zip", &s, fname),
+                        Err(_) => String::from("")
+                    }
+                }
             },
             None => {
                 let command = match tasks.get("build") {
@@ -91,6 +120,10 @@ impl Build {
                     environment: HashMap::new(),
                     dirs: vec![],
                     include_deps: false,
+                    base_image_arn: String::from(""),
+                    build_role_arn: String::from(""),
+                    uri: String::from(""),
+                    image_name: String::from("")
                 }
             }
         }
