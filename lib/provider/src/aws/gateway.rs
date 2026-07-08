@@ -541,8 +541,9 @@ pub async fn create_lambda_integration(
     target_arn: &str,
     role: &str,
     is_async: bool,
+    request_params: HashMap<String, String>,
 ) -> String {
-    lambda::create_or_update(client, api_id, target_arn, role, is_async).await
+    lambda::create_or_update(client, api_id, target_arn, role, is_async, request_params).await
 }
 
 pub async fn create_sfn_integration(

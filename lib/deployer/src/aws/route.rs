@@ -78,7 +78,14 @@ async fn create_integration(
         Entity::Function => {
             let lc = lambda::make_client(auth).await;
             let alias_arn = find_alias_arn(&lc, arn).await;
-            gateway::create_lambda_integration(client, api_id, &alias_arn, role_arn, *is_async)
+            gateway::create_lambda_integration(
+                client,
+                api_id,
+                &alias_arn,
+                role_arn,
+                *is_async,
+                request_params.clone()
+            )
                 .await
         }
         Entity::State => {
