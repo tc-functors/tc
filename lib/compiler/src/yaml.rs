@@ -16,10 +16,10 @@ use std::{
     fs::{
         File,
         canonicalize,
-        read_to_string,
     },
     path::PathBuf,
 };
+use kit as u;
 
 fn load_yaml(file_path: PathBuf) -> Result<Value> {
     let file_reader = File::open(file_path).expect("Unable to open file");
@@ -93,6 +93,19 @@ impl Transformer {
 
                     self.handle_include_extension(file_path)
                 }
+                "!read" => {
+                    let value = tagged_value.value.as_str().unwrap();
+                    let paths: Vec<&str> = value.split(" !read ").collect();
+
+                    let mut s: String = String::from("");
+                    for path in paths {
+                        let c = u::slurp(&path);
+                        s.push_str(&c);
+                    }
+                    u::write_str("/tmp/tc-read-tmp.yml", &s);
+                    let file_path = PathBuf::from("/tmp/tc-read-tmp.yml");
+                    self.handle_include_extension(file_path)
+                }
                 _ => Value::Tagged(tagged_value),
             },
             // default no transform
@@ -103,41 +116,27 @@ impl Transformer {
     fn handle_include_extension(&self, file_path: PathBuf) -> Value {
         let normalized_file_path = self.process_path(&file_path);
 
-        let result = match normalized_file_path.extension() {
-            Some(os_str) => match os_str.to_str() {
-                Some("yaml") | Some("yml") | Some("json") => {
-                    match Transformer::new_node(
-                        normalized_file_path,
-                        self.error_on_circular,
-                        Some(self.seen_paths.clone()),
-                    ) {
-                        Ok(transformer) => transformer.parse(),
-                        Err(e) => {
-                            if self.error_on_circular {
-                                // TODO: probably something better to do than panic ?
-                                panic!("{:?}", e);
-                            }
+        match Transformer::new_node(
+            normalized_file_path,
+            self.error_on_circular,
+            Some(self.seen_paths.clone()),
+        ) {
+            Ok(transformer) => transformer.parse(),
+            Err(e) => {
+                if self.error_on_circular {
+                    // TODO: probably something better to do than panic ?
+                    panic!("{:?}", e);
+                }
 
-                            return Value::Tagged(
-                                TaggedValue {
-                                    tag: Tag::new("circular"),
-                                    value: Value::String(file_path.display().to_string()),
-                                }
-                                .into(),
-                            );
-                        }
+                return Value::Tagged(
+                    TaggedValue {
+                        tag: Tag::new("circular"),
+                        value: Value::String(file_path.display().to_string()),
                     }
-                }
-                // inlining markdow and text files
-                Some("txt") | Some("markdown") | Some("md") => {
-                    Value::String(read_to_string(normalized_file_path).unwrap())
-                }
-                None | Some(&_) => todo!(),
-            },
-            _ => panic!("{:?} path missing file extension", normalized_file_path),
-        };
-
-        result
+                    .into(),
+                );
+            }
+        }
     }
 
     fn process_path(&self, file_path: &PathBuf) -> PathBuf {
