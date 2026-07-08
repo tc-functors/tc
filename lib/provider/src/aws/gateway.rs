@@ -222,6 +222,7 @@ pub async fn update_route(
                 .api_id(s!(api_id))
                 .route_id(route_id)
                 .target(target)
+                .authorization_type(auth_kind)
                 .send()
                 .await
                 .unwrap();
@@ -249,7 +250,8 @@ pub async fn create_or_update_route(
 
     let auth_kind = match authorizer_kind {
         "cognito" => AuthorizationType::Jwt,
-        _ => AuthorizationType::Custom,
+        "lambda" => AuthorizationType::Custom,
+        _ => AuthorizationType::None,
     };
 
     match maybe_route {

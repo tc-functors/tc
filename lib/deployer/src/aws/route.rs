@@ -515,7 +515,11 @@ pub async fn create(
 
                     tracing::debug!("Creating route {} {}", &route.method, &route.path);
                     let res_route = resolve_route(&gw, &route);
-                    create_route(auth, &res_route, &api_id, auth_id.clone(), &auth_kind).await;
+                    match route.authorizer {
+                        Some(_) => create_route(auth, &res_route, &api_id, auth_id.clone(), &auth_kind).await,
+                        None => create_route(auth, &res_route, &api_id, None, &auth_kind).await,
+                    };
+
 
                     let gateway_arn = auth.api_gateway_arn(&api_id);
 
