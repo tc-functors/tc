@@ -428,6 +428,8 @@ pub struct DeleteArgs {
     cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'f')]
+    force: bool,
 }
 
 #[derive(Debug, Args)]
@@ -734,13 +736,14 @@ async fn delete(args: DeleteArgs) {
         recursive,
         trace,
         cache,
+        force,
         ..
     } = args;
 
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-    tc::delete(env, sandbox, entity, recursive, cache).await;
+    tc::delete(env, sandbox, entity, recursive, cache, force).await;
 }
 
 async fn compile(args: CompileArgs) {

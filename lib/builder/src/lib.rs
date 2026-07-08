@@ -128,7 +128,7 @@ pub async fn build(
         BuildKind::Slab => todo!(),
         BuildKind::Code => code::build(&auth, dir, &name, langr, &runtime.arch, &build).await,
         BuildKind::Extension => extension::build(dir, &name, langr),
-        BuildKind::MicroVmImage => microvm::build(&auth, dir, &build).await,
+        BuildKind::MicroVmImage => microvm::build(&auth, dir, &runtime, &build).await,
         BuildKind::Runtime => todo!(),
     };
 

@@ -665,6 +665,7 @@ fn make_base_roles() -> HashMap<String, Role> {
     h.insert("event".to_string(), Role::default(Entity::Event));
     h.insert("state".to_string(), Role::default(Entity::State));
     h.insert("function".to_string(), Role::default(Entity::Function));
+    h.insert("microvm".to_string(), Role::default_microvm());
     h
 }
 

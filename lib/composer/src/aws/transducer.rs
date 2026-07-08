@@ -180,7 +180,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         base_image_arn: String::from(""),
         build_role_arn: String::from(""),
         image_name: String::from(""),
-        uri: String::from("")
+        bucket: String::from("")
     };
 
     let tags = tag::make(namespace, "");
@@ -207,7 +207,8 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         fs: None,
         arch: Arch::X8664,
         infra_spec: HashMap::new(),
-        microvm: None
+        microvm: None,
+        port: 8080
     };
 
     Function {

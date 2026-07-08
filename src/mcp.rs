@@ -213,10 +213,10 @@ impl Tc {
 
         let root = resolver::try_resolve(&auth, &sandbox, &topology, &entity, false, false).await;
 
-        deployer::try_delete(&auth, &root, &entity).await;
+        deployer::try_delete(&auth, &root, &entity, false).await;
 
         for (_, node) in root.nodes {
-            deployer::try_delete(&auth, &node, &entity).await;
+            deployer::try_delete(&auth, &node, &entity, false).await;
         }
         composer::count_of(&topology)
     }

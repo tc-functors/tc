@@ -4,6 +4,7 @@ use aws_sdk_lambdamicrovms::types::MicrovmImageState;
 use aws_sdk_lambdamicrovms::types::MicrovmState;
 use aws_sdk_lambdamicrovms::types::PortSpecification;
 use crate::Auth;
+use std::collections::HashMap;
 
 use colored::Colorize;
 use kit::{
@@ -26,6 +27,17 @@ fn pp_status(status: &MicrovmImageState) -> String {
     match status {
         MicrovmImageState::Created => s!("ok"),
         MicrovmImageState::CreateFailed => s!("failed"),
+        MicrovmImageState::Deleting => s!("deleting"),
+        MicrovmImageState::Deleted => s!("deleted"),
+        _ => s!("pending")
+    }
+}
+
+fn pp_vm_status(status: &MicrovmState) -> String {
+    match status {
+        MicrovmState::Pending => s!("ok"),
+        MicrovmState::Terminating => s!("terminating"),
+        MicrovmState::Terminated => s!("terminated"),
         _ => s!("pending")
     }
 }
@@ -35,6 +47,7 @@ pub struct MicroVmImage {
     pub base_image_arn: String,
     pub build_role_arn: String,
     pub uri: String,
+    pub env: Option<HashMap<String, String>>
 }
 
 impl MicroVmImage {
@@ -62,6 +75,7 @@ impl MicroVmImage {
             .base_image_arn(self.base_image_arn.clone())
             .build_role_arn(self.build_role_arn.clone())
             .code_artifact(CodeArtifact::Uri(self.uri.clone()))
+            .set_environment_variables(self.env.clone())
             .client_token(idempotency_token)
             .send()
             .await
@@ -111,7 +125,7 @@ impl MicroVmImage {
         while state != MicrovmImageState::Created {
             state = self.get_state(client, id).await;
             let _ = log_update.render(&format!("{} state {}", self.name, pp_status(&state).blue()));
-            sleep(5000)
+            sleep(10000)
         }
     }
 
@@ -182,6 +196,17 @@ pub async fn terminate(client: &Client, microvm_id: &str) {
         .send()
         .await
         .unwrap();
+
+    let mut state: MicrovmState = MicrovmState::Pending;
+    let mut log_update = LogUpdate::new(stdout()).unwrap();
+    while state != MicrovmState::Terminated {
+        let run = get_microvm(client, &microvm_id).await;
+        state = run.state;
+        let _ = log_update.render(&format!("microvm state {}", pp_vm_status(&state).red()));
+        sleep(10000)
+    }
+
+
 }
 
 
@@ -254,19 +279,29 @@ pub async fn find_by_image_id(client: &Client, image_id: &str) -> Option<String>
 }
 
 pub async fn get_microvm(client: &Client, microvm_id: &str) -> RunInfo {
-        let res = client
-            .get_microvm()
-            .microvm_identifier(microvm_id)
-            .send()
-            .await
-            .unwrap();
-
-        RunInfo {
-            microvm_id: res.microvm_id,
-            endpoint: res.endpoint,
-            state: res.state,
-            state_reason: res.state_reason
+    let r = client
+        .get_microvm()
+        .microvm_identifier(microvm_id)
+        .send()
+        .await;
+    match r {
+        Ok(res) => {
+            RunInfo {
+                microvm_id: res.microvm_id,
+                endpoint: res.endpoint,
+                state: res.state,
+                state_reason: res.state_reason
+            }
+        },
+        Err(_) => {
+            RunInfo {
+                microvm_id: microvm_id.to_string(),
+                endpoint: String::from(""),
+                state: MicrovmState::Terminated,
+                state_reason: None
+            }
         }
+    }
 }
 
 pub async fn is_suspended(client: &Client, microvm_id: &str) -> bool {
@@ -277,6 +312,39 @@ pub async fn is_suspended(client: &Client, microvm_id: &str) -> bool {
         .await
         .unwrap();
     res.state == MicrovmState::Suspended
+}
+
+async fn get_image_state(client: &Client, id: &str) -> MicrovmImageState {
+    let r = client
+        .get_microvm_image()
+        .image_identifier(id)
+        .send()
+        .await;
+    match r {
+        Ok(res) => res.state,
+        Err(_) => MicrovmImageState::Deleted
+    }
+}
+
+pub async fn delete_image(client: &Client, image_name: &str) {
+    let maybe_image_id = find_image(client, image_name).await;
+    if let Some(image_id) = maybe_image_id {
+        let _ = client
+            .delete_microvm_image()
+            .image_identifier(&image_id)
+            .send()
+            .await
+            .unwrap();
+        let mut state: MicrovmImageState = MicrovmImageState::Deleting;
+        let mut log_update = LogUpdate::new(stdout()).unwrap();
+        while state != MicrovmImageState::Deleted {
+            state = get_image_state(client, &image_id).await;
+        let _ = log_update.render(&format!("microvm image state {}", pp_status(&state).red()));
+        sleep(10000)
+    }
+    } else {
+        println!("No Image found {}", image_name);
+    }
 }
 
 pub type MicroVmClient = Client;

@@ -11,6 +11,7 @@ use aws_sdk_s3::{
     },
 };
 use kit::*;
+use kit as u;
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -163,4 +164,17 @@ pub async fn list_keys(client: &Client, bucket: &str, prefix: &str) -> Vec<Strin
         xs.push(x.key.unwrap());
     }
     xs
+}
+
+pub async fn upload_file(client: &Client, bucket: &str, file: &str, key: &str) {
+    let bytes = u::read_bytes(file);
+    let body = ByteStream::from(bytes);
+    let _ = client
+        .put_object()
+        .bucket(bucket)
+        .key(key)
+        .body(body)
+        .send()
+        .await
+        .unwrap();
 }

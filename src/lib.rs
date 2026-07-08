@@ -514,6 +514,7 @@ pub async fn delete(
     maybe_entity: Option<String>,
     recursive: bool,
     cache: bool,
+    force: bool
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     let start = Instant::now();
@@ -535,10 +536,10 @@ pub async fn delete(
     println!("Resolving topology...");
     let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, false).await;
 
-    deployer::try_delete(&auth, &root, &maybe_entity).await;
+    deployer::try_delete(&auth, &root, &maybe_entity, force).await;
 
     for (_, node) in root.nodes {
-        deployer::try_delete(&auth, &node, &maybe_entity).await;
+        deployer::try_delete(&auth, &node, &maybe_entity, force).await;
     }
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));

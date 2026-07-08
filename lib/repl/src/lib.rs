@@ -22,7 +22,7 @@ async fn process_cmd(line: &str, auth: &Auth, rt: &Topology) {
             deployer::try_update(auth, rt, &None).await;
         },
         "delete" => {
-            deployer::try_delete(auth, rt, &None).await;
+            deployer::try_delete(auth, rt, &None, false).await;
         },
         "list" => {
             let entity = Some(String::from("functions"));

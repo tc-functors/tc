@@ -91,12 +91,12 @@ pub async fn update_code(
 }
 
 
-pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>) {
+pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>, force: bool) {
     let client = lambda::make_client(auth).await;
     for (_name, f) in fns {
          match f.runtime.provider {
              Provider::Lambda => lambda::delete(&client, &f).await,
-             Provider::MicroVm => microvm::delete(auth, &f).await,
+             Provider::MicroVm => microvm::delete(auth, &f, force).await,
              Provider::AgentCore => todo!()
          }
     }

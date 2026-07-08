@@ -275,7 +275,7 @@ pub struct BuildSpec {
     pub build_role_arn: Option<String>,
 
     #[serde(default)]
-    pub uri: Option<String>,
+    pub bucket: Option<String>
 }
 
 impl BuildSpec {
@@ -406,6 +406,7 @@ pub struct RuntimeSpec {
     pub extensions: Vec<String>,
 
     pub microvm: Option<MicroVm>,
+    pub port: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

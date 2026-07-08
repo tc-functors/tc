@@ -550,7 +550,7 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
     delete_integration(client, &api_id, &route.method, &route.target).await;
 }
 
-pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str) {
+pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str, force: bool) {
     if routes.len() > 0 {
         let client = gateway::make_client(auth).await;
 
@@ -573,9 +573,8 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str)
                         println!("Deleting api mappings {}", &api_id);
                         gateway::delete_api_mappings(&client, &api_id, &domain, gateway.paths).await;
                     }
-                    match std::env::var("TC_FORCE_DEPLOY") {
-                        Ok(_) => gateway::delete_api(&client, &api_id).await,
-                        Err(_) => (),
+                    if force {
+                        gateway::delete_api(&client, &api_id).await;
                     }
                 }
             }

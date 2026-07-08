@@ -27,7 +27,7 @@ pub struct Build {
     pub image_name: String,
     pub base_image_arn: String,
     pub build_role_arn: String,
-    pub uri: String
+    pub bucket: String
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -84,19 +84,19 @@ impl Build {
 
                 build_role_arn: match b.build_role_arn {
                     Some(d) => d,
-                    None => format!("arn:aws:iam::{{{{region}}}}:role/tc-base-microvm-{{{{sandbox}}}}")
+                    None => format!("arn:aws:iam::{{{{account}}}}:role/tc-base-microvm-{{{{sandbox}}}}")
                 },
 
                 image_name: match b.image_name {
                     Some(d) => d,
-                    None => format!("{}_image", fname)
+                    None => format!("{}_{{{{sandbox}}}}", fname)
                 },
 
                 // FIXME
-                uri: match b.uri {
+                bucket: match b.bucket {
                     Some(d) => d,
                     None => match std::env::var("TC_MICROVMS_BUCKET") {
-                        Ok(s) => format!("s3://{}/{}.zip", &s, fname),
+                        Ok(s) => s,
                         Err(_) => String::from("")
                     }
                 }
@@ -122,7 +122,7 @@ impl Build {
                     include_deps: false,
                     base_image_arn: String::from(""),
                     build_role_arn: String::from(""),
-                    uri: String::from(""),
+                    bucket: String::from(""),
                     image_name: String::from("")
                 }
             }

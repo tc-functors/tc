@@ -303,6 +303,10 @@ pub struct Lambda {
     #[derivative(Default(value = "default()"))]
     #[serde(default = "default")]
     pub default_image_repo: String,
+
+    #[derivative(Default(value = "default()"))]
+    #[serde(default = "default")]
+    pub asset_bucket: String,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]

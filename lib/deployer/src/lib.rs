@@ -262,7 +262,7 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
     }
 }
 
-async fn delete(auth: &Auth, topology: &Topology) {
+async fn delete(auth: &Auth, topology: &Topology, force: bool) {
     let Topology {
         sandbox,
         namespace,
@@ -289,9 +289,9 @@ async fn delete(auth: &Auth, topology: &Topology) {
     if let Some(f) = flow {
         state::delete(auth, f).await;
     }
-    function::delete(&auth, functions).await;
+    function::delete(&auth, functions, force).await;
     role::delete(&auth, roles).await;
-    route::delete(&auth, routes, sandbox).await;
+    route::delete(&auth, routes, sandbox, force).await;
     mutation::delete(&auth, mutations).await;
     queue::delete(&auth, queues).await;
     page::delete(&auth, pages).await;
@@ -329,8 +329,8 @@ async fn delete_entity(auth: &Auth, topology: &Topology, entity: Entity) {
 
     match entity {
         Entity::Event => event::delete(&auth, events).await,
-        Entity::Route => route::delete(&auth, routes, sandbox).await,
-        Entity::Function => function::delete(&auth, functions).await,
+        Entity::Route => route::delete(&auth, routes, sandbox, false).await,
+        Entity::Function => function::delete(&auth, functions, false).await,
         Entity::Mutation => mutation::delete(&auth, mutations).await,
         Entity::Schedule => schedule::delete(&auth, schedules).await,
         Entity::Trigger => pool::delete(&auth, pools).await,
@@ -395,7 +395,7 @@ pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<
     }
 }
 
-pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
+pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>, force: bool) {
     match maybe_entity {
         Some(e) => {
             let (entity, component) = Entity::as_entity_component(&e);
@@ -404,7 +404,7 @@ pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<
                 None => delete_entity(auth, topology, entity).await,
             }
         }
-        None => delete(auth, topology).await,
+        None => delete(auth, topology, force).await,
     }
 }
 

@@ -50,15 +50,23 @@ pub async fn create(auth: &Auth, f: &Function, _tags: &HashMap<String, String>) 
     }
 }
 
-pub async fn delete(auth: &Auth, function: &Function) {
+pub async fn delete(auth: &Auth, function: &Function, force: bool) {
     let client = microvm::make_client(auth).await;
     let image_name = function.build.image_name.clone();
     let maybe_microvm = microvm::find(&client, &image_name).await;
     if let Some(microvm_id) = maybe_microvm {
-        println!("Found microvm {}", &microvm_id);
-        println!("Suspending function microvm: {}", &function.name);
-        microvm::suspend(&client, &microvm_id).await;
+        if force {
+            println!("Terminating function microvm: {}", &function.name);
+            microvm::terminate(&client, &microvm_id).await;
+        } else {
+            println!("Suspending function microvm: {}", &function.name);
+            microvm::suspend(&client, &microvm_id).await;
+        }
     } else {
         println!("No microvm found");
+    }
+    if force {
+        println!("Deleting microvm image {}", &image_name);
+        microvm::delete_image(&client, &image_name).await;
     }
 }

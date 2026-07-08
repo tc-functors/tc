@@ -70,7 +70,9 @@ pub struct Runtime {
     pub fs: Option<FileSystem>,
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
-    pub microvm: Option<MicroVm>
+    pub microvm: Option<MicroVm>,
+    pub port: i32
+
 }
 
 fn find_git_sha(dir: &str) -> String {
@@ -262,6 +264,19 @@ fn lookup_role(
     }
 }
 
+fn lookup_microvm_role(
+    _infra_dir: &str,
+    r: &RuntimeSpec,
+    _namespace: &str,
+    _fqn: &str,
+    _function_name: &str,
+) -> Role {
+    match &r.role {
+        Some(given) => Role::provided(&given),
+        None => Role::default_microvm()
+    }
+}
+
 fn as_str(v: Option<String>, default: &str) -> String {
     match v {
         Some(s) => s.to_string(),
@@ -441,7 +456,7 @@ fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
     }
 }
 
-fn make_microvm() -> Option<MicroVm> {
+fn make_microvm_network() -> Option<MicroVm> {
     Some(MicroVm {
         ingress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:ALL_INGRESS")),
         egress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:INTERNET_EGRESS"))
@@ -621,7 +636,8 @@ fn make_default(
         arch: as_arch(&None),
         fs: None,
         infra_spec: infra_spec,
-        microvm: make_microvm()
+        microvm: make_microvm_network(),
+        port: 8080
     }
 }
 
@@ -689,7 +705,84 @@ fn make_lambda(
         fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
         arch: as_arch(&r.arch),
         infra_spec: infra_spec,
-        microvm: make_microvm()
+        microvm: make_microvm_network(),
+        port: match r.port {
+            Some(p) => p,
+            None => 8080
+        }
+    }
+}
+
+
+fn make_microvm(
+    dir: &str,
+    infra_dir: &str,
+    namespace: &str,
+    fqn: &str,
+    fspec: &FunctionSpec,
+    r: &RuntimeSpec,
+) -> Runtime {
+    let layer_name = find_implicit_layer_name(dir, namespace, fspec);
+    let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
+    let build_kind = find_build_kind(&fspec);
+    let package_type = match &r.package_type {
+        Some(x) => x.to_string(),
+        None => match build_kind {
+            BuildKind::Image => s!("image"),
+            _ => s!("zip"),
+        },
+    };
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
+    let role = lookup_microvm_role(&infra_dir, &r, namespace, fqn, &fspec.name);
+
+    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
+    let default_infra_spec = infra_spec.get("default").unwrap();
+
+    let InfraSpec {
+        memory_size,
+        timeout,
+        environment,
+        ..
+    } = default_infra_spec;
+
+    let vars = make_env_vars(
+        dir,
+        namespace,
+        build_kind,
+        fspec.assets.clone(),
+        environment.clone(),
+        r.lang.to_lang(),
+        fqn,
+    );
+
+    Runtime {
+        lang: r.lang.clone(),
+        provider: r.provider.clone().unwrap().clone(),
+        handler: r.handler.clone(),
+        package_type: package_type.to_string(),
+        uri: uri,
+        layers: layers,
+        tags: make_tags(namespace, &infra_dir),
+        environment: vars,
+        provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
+        reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
+        memory_size: *memory_size,
+        timeout: *timeout,
+        cpu: None,
+        snapstart: u::opt_as_bool(r.snapstart),
+        role: role,
+        enable_network: if let Some(n) = r.network { n } else { false },
+        enable_fs: enable_fs,
+        network: make_network(&default_infra_spec, enable_fs),
+        fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
+        arch: as_arch(&r.arch),
+        infra_spec: infra_spec,
+        microvm: make_microvm_network(),
+        port: match r.port {
+            Some(p) => p,
+            None => 8080
+        }
     }
 }
 
@@ -712,7 +805,12 @@ impl Runtime {
 
         match rspec {
             Some(r) => {
-                make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r)
+                match r.provider {
+                    Some(Provider::Lambda) => make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r),
+                    Some(Provider::MicroVm) => make_microvm(dir, &infra_dir, &namespace, fqn, fspec, &r),
+                    _ =>  make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r)
+                }
+
             }
             None => make_default(dir, &infra_dir, namespace, fqn, fspec),
         }
