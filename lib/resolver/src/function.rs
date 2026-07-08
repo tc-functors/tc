@@ -500,22 +500,22 @@ pub async fn find_modified(
     topology: &Topology,
 ) -> HashMap<String, Function> {
     let Root {
-        namespace,
-        fqn,
-        kind,
-        version,
+        namespace, version, ..
     } = root;
 
-    let maybe_version = snapshotter::find_version(auth, fqn, kind).await;
+    // REGRESSION: use `topology.fqn`/`topology.kind`, not `root.*`.
+    // For nested nodes the root's tag lives on a different AWS
+    // resource; using it here let `from == to` silently filter out
+    // brand-new nested topologies' functions.
+    let maybe_version = snapshotter::find_version(auth, &topology.fqn, &topology.kind).await;
 
     let target_version = match maybe_version {
         Some(v) => v,
         None => return topology.functions.clone(),
     };
 
-    // Pass the *root* namespace to diff_fns so git tag construction
-    // uses the namespace where tags actually live. `topology` here may
-    // be a nested node whose own namespace doesn't match any tag.
+    // Git tags live under the root namespace, so diff_fns gets the
+    // root namespace even when `topology` is a nested node.
     let diff_result = differ::diff_fns(topology, namespace, &target_version, version);
     classify_modified(
         &topology.functions,

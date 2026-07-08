@@ -796,19 +796,63 @@ fn make(
     }
 }
 
+/// Compose a function-only `Topology` when `tc` is invoked from a
+/// function-level subdirectory. The parent `topology.yml` is read
+/// only for namespace prefix, infra dir, and fmt; the result has
+/// `flow: None`, `kind: Function`, just the local function, and
+/// empty topology-level entities. `namespace` and resource tags
+/// still come from the parent so a later topology-level deploy
+/// sees consistent tagging.
+///
+/// REGRESSION: do **not** route this through `make()`. The previous
+/// implementation did, which intern'd the parent's `functions:` and
+/// synthesized a `Flow`. `deployer::create` then rewrote the parent
+/// state machine and tagged it with the parent's version, producing
+/// the silent-no-op deploy pattern documented in
+/// `lib/resolver/src/function.rs::find_modified`.
 fn make_relative(dir: &str) -> Topology {
-    let f = match parent_topology_file(dir) {
+    let parent_yml = match parent_topology_file(dir) {
         Some(file) => file,
         None => format!("../topology.yml"),
     };
 
-    let spec = TopologySpec::new(&f);
-    let namespace = &spec.name;
-    let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
-    let function = Function::new(dir, &infra_dir, namespace, &spec.fmt());
-    let functions = Function::to_map(function);
-    let nodes = HashMap::new();
-    make(dir, dir, &spec, functions, nodes)
+    let parent_spec = TopologySpec::new(&parent_yml);
+    let parent_namespace = parent_spec.name.clone();
+    let infra_dir = as_infra_dir(parent_spec.infra.to_owned(), dir);
+    let function = Function::new(dir, &infra_dir, &parent_namespace, &parent_spec.fmt());
+    let functions = Function::to_map(function.clone());
+
+    Topology {
+        namespace: parent_namespace.clone(),
+        env: template::profile(),
+        fqn: function.fqn.clone(),
+        kind: TopologyKind::Function,
+        concurrent: false,
+        version: u::current_semver(&parent_namespace),
+        sandbox: template::sandbox(),
+        infra: u::gdir(&infra_dir),
+        dir: dir.to_string(),
+        hyphenated_names: parent_spec.hyphenated_names,
+        nodes: HashMap::new(),
+        events: HashMap::new(),
+        routes: HashMap::new(),
+        mutations: HashMap::new(),
+        schedules: HashMap::new(),
+        queues: HashMap::new(),
+        channels: HashMap::new(),
+        pools: HashMap::new(),
+        pages: HashMap::new(),
+        flow: None,
+        roles: make_roles(&functions, &0, &0, &0, &None),
+        base_roles: make_base_roles(),
+        all_functions: functions.clone(),
+        functions,
+        tags: tag::make(&parent_namespace, &infra_dir),
+        tests: HashMap::new(),
+        config: Config::new(),
+        transducer: None,
+        sequences: HashMap::new(),
+    }
 }
 
 fn make_standalone(dir: &str) -> Topology {
@@ -1011,6 +1055,144 @@ impl Topology {
         let data = kit::read_bytes(path);
         let t: Topology = bincode::deserialize(&data).unwrap();
         t
+    }
+}
+
+#[cfg(test)]
+mod make_relative_tests {
+    //! Regression tests for `make_relative`. Each test lays out a
+    //! parent topology with inline functions + flow + entities under
+    //! a tempdir, then calls the public `Topology::new` entry point
+    //! against a child function dir.
+
+    use super::*;
+    use std::fs;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    const PARENT: &str = "parent-topology";
+    const CHILD_FN: &str = "child-function";
+    const INLINE_FN_A: &str = "inline-fn-a";
+    const INLINE_FN_B: &str = "inline-fn-b";
+
+    fn write(root: &Path, rel: &str, contents: &str) {
+        let p = root.join(rel);
+        if let Some(parent) = p.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(p, contents).unwrap();
+    }
+
+    /// Returns `(tempdir, child_dir_path)`. The parent declares inline
+    /// `functions:`, a `flow`, and topology-level `events:`, `routes:`,
+    /// `queues:` so any code path that re-routes `make_relative`
+    /// through `make()` would intern them into the result and fail
+    /// the assertions below.
+    fn parent_with_child(hyphenated: bool) -> (TempDir, String) {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        let parent_rel = format!("topologies/{}", PARENT);
+        let child_rel = format!("{}/{}", parent_rel, CHILD_FN);
+
+        let parent_yml = format!(
+            r#"name: {parent}
+kind: state-machine
+mode: Standard
+version: "0.0.1"
+hyphenated_names: {hyphenated}
+
+functions:
+  {a}:
+    uri: ./{a}
+  {b}:
+    uri: ./{b}
+
+flow:
+  Comment: parent state machine
+  StartAt: do-thing
+  States:
+    do-thing:
+      Type: Pass
+      End: true
+
+events:
+  ParentEvent:
+    producer: someService
+
+routes:
+  /api/parent:
+    method: POST
+    function: {a}
+
+queues:
+  parent-queue:
+    producer: someService
+    function: {a}
+"#,
+            parent = PARENT,
+            hyphenated = hyphenated,
+            a = INLINE_FN_A,
+            b = INLINE_FN_B,
+        );
+        write(root, &format!("{}/topology.yml", parent_rel), &parent_yml);
+        write(root, &format!("{}/{}/handler.py", parent_rel, INLINE_FN_A), "");
+        write(root, &format!("{}/{}/handler.py", parent_rel, INLINE_FN_B), "");
+        write(root, &format!("{}/handler.py", child_rel), "");
+
+        let child_dir = root.join(&child_rel).to_str().unwrap().to_string();
+        (tmp, child_dir)
+    }
+
+    #[test]
+    fn make_relative_does_not_pull_in_parent_flow() {
+        let (_tmp, child_dir) = parent_with_child(false);
+        let topology = Topology::new(&child_dir, true, false);
+        assert!(topology.flow.is_none());
+    }
+
+    #[test]
+    fn make_relative_does_not_pull_in_parent_inline_functions() {
+        let (_tmp, child_dir) = parent_with_child(false);
+        let topology = Topology::new(&child_dir, true, false);
+
+        assert_eq!(
+            topology.functions.keys().collect::<Vec<_>>(),
+            vec![&CHILD_FN.to_string()],
+            "expected only the child function; got {:?}",
+            topology.functions.keys().collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn make_relative_kind_is_function_not_step_function() {
+        let (_tmp, child_dir) = parent_with_child(false);
+        let topology = Topology::new(&child_dir, true, false);
+        assert!(matches!(topology.kind, TopologyKind::Function));
+    }
+
+    #[test]
+    fn make_relative_fqn_is_function_fqn_not_parent_fqn() {
+        let (_tmp, child_dir) = parent_with_child(false);
+        let topology = Topology::new(&child_dir, true, false);
+        assert_eq!(topology.fqn, format!("{}_{}_{{{{sandbox}}}}", PARENT, CHILD_FN));
+    }
+
+    #[test]
+    fn make_relative_propagates_hyphenated_names() {
+        let (_tmp, child_dir) = parent_with_child(true);
+        let topology = Topology::new(&child_dir, true, false);
+        assert!(topology.hyphenated_names);
+        assert_eq!(topology.fqn, format!("{}-{}-{{{{sandbox}}}}", PARENT, CHILD_FN));
+    }
+
+    #[test]
+    fn make_relative_drops_all_topology_level_entities() {
+        let (_tmp, child_dir) = parent_with_child(false);
+        let topology = Topology::new(&child_dir, true, false);
+
+        assert!(topology.events.is_empty(), "events: {:?}", topology.events.keys().collect::<Vec<_>>());
+        assert!(topology.routes.is_empty(), "routes: {:?}", topology.routes.keys().collect::<Vec<_>>());
+        assert!(topology.queues.is_empty(), "queues: {:?}", topology.queues.keys().collect::<Vec<_>>());
     }
 }
 
