@@ -1,5 +1,9 @@
-name: example-mvm
+name: p6
 runtime:
-  provider: Microvm
-  handler: handler.handler
-  lang: python3.12
+  provider: MicroVm
+  handler: 'python3 main.py'
+  port: 8080
+
+build:
+  kind: MicroVmImage
+  bucket: '{{ASSET_BUCKET}}'

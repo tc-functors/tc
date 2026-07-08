@@ -1,22 +1,21 @@
-import boto3
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json, time, os
 
+class Handler(BaseHTTPRequestHandler):
+    start_time = time.time()
+    request_count = 0
 
-def main():
-    """
-    List the Lambda functions in your AWS account.
-    """
-    # Create the Lambda client
-    lambda_client = boto3.client("lambda")
+    def do_GET(self):
+        Handler.request_count += 1
+        body = json.dumps({
+            "message": "Hello from Lambda MicroVM!",
+            "uptime_seconds": round(time.time() - Handler.start_time, 2),
+            "requests_served": Handler.request_count,
+            "pid": os.getpid()
+        })
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(body.encode())
 
-    # Use the paginator to list the functions
-    paginator = lambda_client.get_paginator("list_functions")
-    response_iterator = paginator.paginate()
-
-    print("Here are the Lambda functions in your account:")
-    for page in response_iterator:
-        for function in page["Functions"]:
-            print(f"  {function['FunctionName']}")
-
-
-if __name__ == "__main__":
-    main()
+HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
