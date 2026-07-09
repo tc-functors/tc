@@ -27,8 +27,8 @@ pub async fn make_client(auth: &Auth) -> Client {
             .behavior_version(BehaviorVersion::latest())
             .timeout_config(
                 TimeoutConfig::builder()
-                    .operation_timeout(Duration::from_secs(30))
-                    .operation_attempt_timeout(Duration::from_millis(1500))
+                    .operation_timeout(Duration::from_secs(600))
+                    .operation_attempt_timeout(Duration::from_millis(9000))
                     .build()
             )
             .retry_config(RetryConfig::standard().with_max_attempts(20))
