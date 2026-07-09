@@ -30,7 +30,9 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
         Provider::MicroVm => {
             microvm::create(auth, &f, tags).await
         },
-        Provider::AgentCore => todo!(),
+        Provider::AgentCore => {
+            agentcore::create(auth, &f, tags).await
+        },
     }
 }
 
@@ -97,7 +99,7 @@ pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>, force: bool) {
          match f.runtime.provider {
              Provider::Lambda => lambda::delete(&client, &f).await,
              Provider::MicroVm => microvm::delete(auth, &f, force).await,
-             Provider::AgentCore => todo!()
+             Provider::AgentCore => agentcore::delete(auth, &f).await
          }
     }
 }
