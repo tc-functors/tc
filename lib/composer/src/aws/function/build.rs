@@ -58,7 +58,7 @@ impl Build {
                 post: b.post,
                 command: b.command,
                 pack: b.pack.unwrap_or(String::from("echo 0")),
-                version: b.version,
+                version: b.version.clone(),
                 shared_context: match b.shared_context {
                     Some(s) => s,
                     None => true,
@@ -89,15 +89,21 @@ impl Build {
 
                 image_name: match b.image_name {
                     Some(d) => d,
-                    None => format!("{}_{{{{sandbox}}}}", fname)
+                    None => {
+                        let version = match &b.version {
+                            Some(v) => v.replace(".", "-"),
+                            None => "0_1_0".to_string()
+                        };
+                        format!("{}_{}_{{{{sandbox}}}}", fname, version)
+                    }
                 },
 
                 // FIXME
                 bucket: match b.bucket {
                     Some(d) => d,
-                    None => match std::env::var("TC_MICROVMS_BUCKET") {
+                    None => match std::env::var("TC_ASSET_BUCKET") {
                         Ok(s) => s,
-                        Err(_) => String::from("")
+                        Err(_) => format!("{{{{ASSET_BUCKET}}}}")
                     }
                 }
             },

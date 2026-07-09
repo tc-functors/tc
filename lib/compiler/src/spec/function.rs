@@ -366,6 +366,8 @@ impl Arch {
 pub struct MicroVm {
     pub ingress_network_connectors: Option<String>,
     pub egress_network_connectors: Option<String>,
+    pub max_duration: Option<i32>,
+    pub log_group: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -390,6 +392,8 @@ pub struct RuntimeSpec {
     pub role_file: Option<String>,
     pub role_name: Option<String>,
     pub role: Option<String>,
+
+    pub mem: Option<i32>,
 
     pub uri: Option<String>,
 

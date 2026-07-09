@@ -12,11 +12,14 @@ use std::collections::HashMap;
 fn make_vm(auth: &Auth, f: &Function, image_id: &str) -> MicroVm {
 
     if let Some(cfg) = &f.runtime.microvm {
+
         MicroVm {
             image_id: image_id.to_string(),
             role: auth.role_arn(&f.runtime.role.name),
             ingress_network_connectors: cfg.ingress_network_connectors.clone().unwrap(),
             egress_network_connectors: cfg.egress_network_connectors.clone().unwrap(),
+            max_duration: cfg.max_duration.unwrap(),
+            log_group: None,
             idle_policy: String::from("")
         }
     } else {
@@ -68,5 +71,20 @@ pub async fn delete(auth: &Auth, function: &Function, force: bool) {
     if force {
         println!("Deleting microvm image {}", &image_name);
         microvm::delete_image(&client, &image_name).await;
+    }
+}
+
+pub async fn print_config(auth: &Auth, function: &Function) {
+    let client = microvm::make_client(auth).await;
+    let image_name = function.build.image_name.clone();
+    let maybe_microvm = microvm::find(&client, &image_name).await;
+    if let Some(microvm_id) = maybe_microvm {
+        let run_info = microvm::get_microvm(&client, &microvm_id).await;
+        println!("microvm_id: {}", run_info.microvm_id);
+        println!("endpoint: {}", run_info.endpoint);
+
+        println!("");
+        println!("To invoke: ");
+        println!("curl https://{} -X 'x-aws-proxy-auth: <token>'", run_info.endpoint);
     }
 }

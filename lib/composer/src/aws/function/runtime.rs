@@ -265,15 +265,22 @@ fn lookup_role(
 }
 
 fn lookup_microvm_role(
-    _infra_dir: &str,
+    infra_dir: &str,
     r: &RuntimeSpec,
-    _namespace: &str,
+    namespace: &str,
     _fqn: &str,
-    _function_name: &str,
+    function_name: &str,
 ) -> Role {
     match &r.role {
         Some(given) => Role::provided(&given),
-        None => Role::default_microvm()
+        None => {
+            let f = format!("{}/roles/{}.json", infra_dir, function_name);
+            if index::get().file_exists(&f) {
+                Role::new(Entity::Function, &f, namespace, function_name)
+            } else {
+                Role::default_microvm()
+            }
+        }
     }
 }
 
@@ -459,7 +466,9 @@ fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
 fn make_microvm_network() -> Option<MicroVm> {
     Some(MicroVm {
         ingress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:ALL_INGRESS")),
-        egress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:INTERNET_EGRESS"))
+        egress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:INTERNET_EGRESS")),
+        max_duration: Some(3600),
+        log_group: None
     })
 }
 
@@ -767,7 +776,10 @@ fn make_microvm(
         environment: vars,
         provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
         reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
-        memory_size: *memory_size,
+        memory_size: match r.mem {
+            Some(m) => Some(m),
+            None => *memory_size,
+        },
         timeout: *timeout,
         cpu: None,
         snapstart: u::opt_as_bool(r.snapstart),

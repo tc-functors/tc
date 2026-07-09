@@ -29,15 +29,15 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-fn gen_generic_dockerfile(dir: &str, handler: &str, port: &i32, pre: &Vec<String>) {
+fn gen_generic_dockerfile(dir: &str, handler: &str, port: &i32, post: &Vec<String>) {
     let cmd = make_cmd(handler);
-    let pre = deps_str(pre.to_vec());
+    let post = deps_str(post.to_vec());
     let f = format!(
         r#"
 FROM public.ecr.aws/lambda/microvms:al2023-minimal
-RUN {pre}
 WORKDIR /app
 COPY . .
+RUN {post}
 EXPOSE {port}
 CMD {cmd}
 "#
@@ -49,15 +49,19 @@ CMD {cmd}
 fn gen_dockerfile(dir: &str, runtime: &Runtime, bspec: &Build) -> bool {
     let Runtime { port, handler, lang, .. } = runtime;
     match lang.to_lang() {
-        Lang::Python => python::gen_dockerfile(dir, handler, port, &bspec.pre),
-        _ => gen_generic_dockerfile(dir, handler, port, &bspec.pre),
+        Lang::Python => python::gen_dockerfile(dir, handler, port, &bspec.post),
+        _ => gen_generic_dockerfile(dir, handler, port, &bspec.post),
     }
     true
 }
 
 pub async fn build(auth: &Auth, dir: &str, runtime: &Runtime, bspec: &Build) -> BuildStatus {
 
-    let Build { image_name, base_image_arn, build_role_arn, bucket, .. } = bspec;
+    let Build { image_name, base_image_arn, build_role_arn, bucket, pre, .. } = bspec;
+    for cmd in pre {
+        u::sh(&cmd, dir);
+    }
+
     let generated = gen_dockerfile(dir, runtime, bspec);
 
     u::sh(&format!("zip -r -9 {}.zip .", &image_name), dir);

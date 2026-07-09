@@ -289,6 +289,9 @@ pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
                     rows.push(row);
                 }
             },
+            Provider::MicroVm => {
+                microvm::print_config(auth, f).await;
+            },
             _ => ()
         }
     }

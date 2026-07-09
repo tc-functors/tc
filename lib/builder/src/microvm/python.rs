@@ -3,10 +3,10 @@ use kit as u;
 fn gen_req_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
         format!(
-            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt && pip install -r requirements.txt --target=/opt/python"
+            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt && pip install --no-cache-dir -r requirements.txt --target=/opt/python"
         )
     } else if u::path_exists(dir, "requirements.txt") {
-        format!("pip install -r requirements.txt --target=/opt/python")
+        format!("pip install --no-cache-dir -r requirements.txt")
     } else {
         format!("echo 0")
     }
@@ -27,19 +27,18 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-pub fn gen_dockerfile(dir: &str, handler: &str, port: &i32, pre: &Vec<String>) {
+pub fn gen_dockerfile(dir: &str, handler: &str, port: &i32, post: &Vec<String>) {
     let cmd = make_cmd(handler);
-    let pre = deps_str(pre.to_vec());
+    let post = deps_str(post.to_vec());
     let req_cmd = gen_req_cmd(dir);
     let f = format!(
         r#"
 FROM public.ecr.aws/lambda/microvms:al2023-minimal
-RUN dnf install -y python3 && dnf clean all
-ENV PYTHONPATH="${{PYTHONPATH}}:/opt/python"
+RUN dnf install -y python3.12 python3-pip && dnf clean all
 WORKDIR /app
 COPY . .
 RUN {req_cmd}
-RUN {pre}
+RUN {post}
 EXPOSE {port}
 CMD {cmd}
 "#

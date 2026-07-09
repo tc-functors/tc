@@ -812,9 +812,12 @@ fn make_relative(dir: &str) -> Topology {
 }
 
 fn make_standalone(dir: &str) -> Topology {
-    let function = Function::new(dir, dir, "", "");
+    let infra_dir = format!("{}/infra", dir);
+
+    let function = Function::new(dir, &infra_dir, "", "");
     let functions = Function::to_map(function.clone());
     let namespace = function.name.to_owned();
+
 
     Topology {
         namespace: namespace.clone(),
@@ -824,7 +827,7 @@ fn make_standalone(dir: &str) -> Topology {
         concurrent: false,
         version: u::current_semver(&namespace),
         sandbox: template::sandbox(),
-        infra: u::empty(),
+        infra: infra_dir,
         dir: s!(dir),
         hyphenated_names: false,
         events: HashMap::new(),

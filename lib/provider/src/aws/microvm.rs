@@ -145,6 +145,8 @@ pub struct MicroVm {
     pub role: String,
     pub ingress_network_connectors: String,
     pub egress_network_connectors: String,
+    pub max_duration: i32,
+    pub log_group: Option<String>,
     pub idle_policy: String
 }
 
@@ -163,6 +165,7 @@ impl MicroVm {
             .image_identifier(&self.image_id)
             .execution_role_arn(&self.role)
             .client_token(&self.image_id)
+            .maximum_duration_in_seconds(self.max_duration)
             .send()
             .await
             .unwrap();
