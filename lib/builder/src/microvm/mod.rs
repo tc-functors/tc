@@ -62,7 +62,11 @@ pub async fn build(auth: &Auth, dir: &str, runtime: &Runtime, bspec: &Build) -> 
         u::sh(&cmd, dir);
     }
 
-    let generated = gen_dockerfile(dir, runtime, bspec);
+    let generated = if u::path_exists(dir, "Dockerfile") {
+        false
+    } else {
+        gen_dockerfile(dir, runtime, bspec)
+    };
 
     u::sh(&format!("zip -r -9 {}.zip .", &image_name), dir);
 
