@@ -347,62 +347,61 @@ fn collate_gateways(routes: &HashMap<String, Route>, env: &str, sandbox: &str) -
         };
         h.insert(route.gateway.clone(), gw);
 
-    } else {
-        for (name, route) in routes {
-            if !&route.skip && name != "default" {
+    }
+    for (name, route) in routes {
+        if !&route.skip && name != "default" {
 
-                let Route { gateway, stage, domains, authorizer, throttling, verticals, .. } = route;
+            let Route { gateway, stage, domains, authorizer, throttling, verticals, .. } = route;
 
-                // throttling
-                let (burst_limit, rate_limit) = find_throttling(&throttling, env, sandbox);
+            // throttling
+            let (burst_limit, rate_limit) = find_throttling(&throttling, env, sandbox);
 
-                // domains
-                let maybe_domain = match domains.get(env) {
-                    Some(e) => e.get(sandbox).cloned(),
-                    None => match domains.get("default") {
-                        Some(d) => d.get(sandbox).cloned(),
-                        None => None,
-                    },
-                };
+            // domains
+            let maybe_domain = match domains.get(env) {
+                Some(e) => e.get(sandbox).cloned(),
+                None => match domains.get("default") {
+                    Some(d) => d.get(sandbox).cloned(),
+                    None => None,
+                },
+            };
 
-                // gateway mapping paths
-                let paths = if let Some(domain) = maybe_domain.clone() {
-                    match verticals.get(&domain) {
-                        Some(m) => match m.get(gateway) {
-                            Some(paths) => {
-                                let mut xs: Vec<String> = vec![];
-                                for p in paths {
-                                    if p.starts_with("/") {
-                                        xs.push(p[1..].to_string())
-                                    } else {
-                                        xs.push(p.clone())
-                                    };
-                                }
-                                xs
-                            },
-                            None => vec![]
+            // gateway mapping paths
+            let paths = if let Some(domain) = maybe_domain.clone() {
+                match verticals.get(&domain) {
+                    Some(m) => match m.get(gateway) {
+                        Some(paths) => {
+                            let mut xs: Vec<String> = vec![];
+                            for p in paths {
+                                if p.starts_with("/") {
+                                    xs.push(p[1..].to_string())
+                                } else {
+                                    xs.push(p.clone())
+                                };
+                            }
+                            xs
                         },
                         None => vec![]
-                    }
-                } else {
-                    vec![]
-                };
-
-                let manage = gateway.ends_with(&format!("_{}", sandbox));
-
-                if !gateway.is_empty() {
-                    let gw = Gateway {
-                        cors: make_cors(&route),
-                        authorizer: authorizer.clone(),
-                        stage: stage.to_string(),
-                        burst_limit: burst_limit,
-                        rate_limit: rate_limit,
-                        domain: maybe_domain,
-                        paths: paths,
-                        manage: manage
-                    };
-                    h.insert(gateway.to_string(), gw);
+                    },
+                    None => vec![]
                 }
+            } else {
+                vec![]
+            };
+
+            let manage = gateway.ends_with(&format!("_{}", sandbox));
+
+            if !gateway.is_empty() {
+                let gw = Gateway {
+                    cors: make_cors(&route),
+                    authorizer: authorizer.clone(),
+                    stage: stage.to_string(),
+                    burst_limit: burst_limit,
+                    rate_limit: rate_limit,
+                    domain: maybe_domain,
+                    paths: paths,
+                    manage: manage
+                };
+                h.insert(gateway.to_string(), gw);
             }
         }
     }
@@ -447,7 +446,7 @@ async fn create_or_update_gateways(
                 };
                 h.insert(name, gs);
             } else {
-                panic!("Gateway not found {}", name);
+                println!("Gateway {} not managed, ignoring.. ", name);
             }
         } else {
 
@@ -505,9 +504,12 @@ pub async fn create(
         let gateway_states = create_or_update_gateways(&auth, gateways.clone(), tags, sandbox).await;
 
         let mut url: String = String::from("");
+
         for (name, route) in routes {
             if !&route.skip && name != "default" {
+
                 if let Some(gs) = gateway_states.get(&route.gateway) {
+
 
                     let gw = gateways.get(&route.gateway).unwrap();
 
