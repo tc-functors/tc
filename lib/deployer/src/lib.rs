@@ -50,6 +50,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
         tags,
         pools,
         channels,
+        schedules,
         pages,
         flow,
         roles,
@@ -81,6 +82,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes, &tags, sandbox).await;
+    schedule::create(&auth, schedules).await;
     let cfg = make_config(&auth, topology).await;
     page::create(&auth, pages, &cfg, sandbox).await;
     if let Some(f) = flow {
