@@ -6,4 +6,3 @@ runtime:
 
 build:
   kind: MicroVmImage
-  bucket: '{{ASSET_BUCKET}}'

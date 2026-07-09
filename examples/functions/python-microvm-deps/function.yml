@@ -1,0 +1,10 @@
+name: pyvm
+infra_dir: './infra'
+runtime:
+  provider: MicroVm
+  handler: 'python app.py'
+  port: 8080
+
+build:
+  kind: MicroVmImage
+  version: 0.1.4

@@ -81,10 +81,14 @@ pub async fn print_config(auth: &Auth, function: &Function) {
     if let Some(microvm_id) = maybe_microvm {
         let run_info = microvm::get_microvm(&client, &microvm_id).await;
         println!("microvm_id: {}", run_info.microvm_id);
-        println!("endpoint: {}", run_info.endpoint);
-
         println!("");
-        println!("To invoke: ");
-        println!("curl https://{} -X 'x-aws-proxy-auth: <token>'", run_info.endpoint);
+
+        if let Some(token) = microvm::get_token(&client, &microvm_id, 30).await {
+
+            println!("To run the microvm: ");
+            println!("curl https://{} -X 'x-aws-proxy-auth: {}'", run_info.endpoint, &token);
+            println!("");
+            println!("");
+    }
     }
 }

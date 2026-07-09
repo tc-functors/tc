@@ -1,0 +1,15 @@
+{
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:PutLogEvents",
+        "logs:CreateLogStream"
+      ],
+      "Effect": "Allow",
+      "Resource": "*",
+      "Sid": "TcBaseMVLambdaLog{{sandbox}}"
+    }
+  ],
+  "Version": "2012-10-17"
+}
