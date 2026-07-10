@@ -212,6 +212,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-graphql-parser"
+version = "7.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e64ef70f77a1c689111e52076da1cd18f91834bcb847de0a9171f83624b07fbf"
+dependencies = [
+ "async-graphql-value",
+ "pest",
+ "serde 1.0.228",
+ "serde_json",
+]
+
+[[package]]
+name = "async-graphql-value"
+version = "7.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e3ef112905abea9dea592fc868a6873b10ebd3f983e83308f995d6284e9ba41"
+dependencies = [
+ "bytes",
+ "indexmap 2.7.0",
+ "serde 1.0.228",
+ "serde_json",
+]
+
+[[package]]
 name = "async-io"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1653,6 +1677,9 @@ name = "bytes"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593"
+dependencies = [
+ "serde 1.0.228",
+]
 
 [[package]]
 name = "bytes-utils"
@@ -3086,6 +3113,18 @@ dependencies = [
  "reqwest 0.12.12",
  "serde 1.0.228",
  "serde_json",
+]
+
+[[package]]
+name = "graphql-schema-validation"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b706701692e77c342cc7919c3b9c2236e0331e2c802936cf8ee68ed12abe5e7b"
+dependencies = [
+ "async-graphql-parser",
+ "async-graphql-value",
+ "bitflags 2.7.0",
+ "miette",
 ]
 
 [[package]]
@@ -6282,6 +6321,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "validator",
  "visualizer",
 ]
 
@@ -6792,6 +6832,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b913a3b5fe84142e269d63cc62b64319ccaf89b748fc31fe025177f767a756c4"
 dependencies = [
  "getrandom 0.2.15",
+]
+
+[[package]]
+name = "validator"
+version = "0.9.131"
+dependencies = [
+ "colored",
+ "compiler",
+ "composer",
+ "graphql-schema-validation",
+ "kit",
+ "serde 1.0.228",
+ "serde_derive",
+ "serde_json",
 ]
 
 [[package]]
