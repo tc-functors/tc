@@ -1,0 +1,21 @@
+name: exf
+
+mutations:
+  inputs:
+    Message:
+      id: String!
+      text: String!
+    ChannelInput:
+      messages: '[Message!]!'
+
+  types:
+    Mess:
+      id: String!
+      text: String!
+
+  resolvers:
+    getMessage:
+      function: foo
+      input: ChannelInput
+      output: AWSJSON
+      subscribe: false
