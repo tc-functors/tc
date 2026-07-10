@@ -27,8 +27,8 @@ pub async fn make_client(auth: &Auth) -> Client {
             .behavior_version(BehaviorVersion::latest())
             .timeout_config(
                 TimeoutConfig::builder()
-                    .operation_timeout(Duration::from_secs(600))
-                    .operation_attempt_timeout(Duration::from_millis(9000))
+                    .operation_timeout(Duration::from_secs(60))
+                    .operation_attempt_timeout(Duration::from_millis(10000))
                     .build()
             )
             .retry_config(RetryConfig::standard().with_max_attempts(20))
@@ -70,12 +70,13 @@ pub async fn put_str(client: &Client, bucket: &str, key: &str, payload: &str) ->
 
 pub async fn put_object(client: &Client, bucket: &str, file: &Path, key: &str) {
     let body = ByteStream::from_path(file).await;
+    let b = body.unwrap();
     let ctype = as_content_type(key);
     let _ = client
         .put_object()
         .bucket(bucket)
         .key(key)
-        .body(body.unwrap())
+        .body(b)
         .content_type(ctype)
         .send()
         .await
