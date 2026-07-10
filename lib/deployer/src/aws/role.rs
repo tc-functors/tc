@@ -124,7 +124,6 @@ pub async fn update_base_roles(
     let mut tasks = vec![];
     println!("Updating base roles...");
     for (_, role) in roles.clone() {
-        println!("Updating base role {} ...", &role.name);
         if role.kind.to_str() == "base" {
             let tags = tags.clone();
             let p = auth.name.to_string();

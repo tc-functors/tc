@@ -1,6 +1,5 @@
 use super::{
     role::Role,
-    template,
 };
 use compiler::{
     Entity,
@@ -44,7 +43,7 @@ pub fn make_all(namespace: &str, infra_dir: &str) -> HashMap<String, Schedule> {
         for (name, spec) in scheds {
             let rule_name = format!("tc-schedule-{}", &name);
             let payload = &spec.payload.to_string();
-            let role_name = Role::entity_role_arn(Entity::Event);
+            let role_arn = Role::entity_role_arn(Entity::Event);
 
             let s = Schedule {
                 group: namespace.to_string(),
@@ -52,7 +51,7 @@ pub fn make_all(namespace: &str, infra_dir: &str) -> HashMap<String, Schedule> {
                 rule_name: rule_name,
                 target_arn: spec.target,
                 expression: make_expression(&spec.cron),
-                role_arn: template::role_arn(&role_name),
+                role_arn: role_arn,
                 bus: s!("default"),
                 payload: payload.to_string(),
             };
