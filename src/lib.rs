@@ -1,8 +1,10 @@
 use colored::Colorize;
+use compiler::Entity;
 use composer::Topology;
 use configurator::Config;
 use itertools::Itertools;
 use kit as u;
+use std::str::FromStr;
 use provider::Auth;
 use std::{
     collections::HashMap,
@@ -928,5 +930,17 @@ pub async fn run(dir: Option<String>, task: String, trace: bool) {
         } else {
             println!("Skipping [{}]", &name.yellow());
         }
+    }
+}
+
+pub async fn validate(maybe_entity: Option<String>) {
+    let dir = u::pwd();
+    let topology = composer::compose(&dir, true);
+    match maybe_entity {
+        Some(e) => {
+            let entity = Entity::from_str(&e).unwrap();
+            validator::validate(&topology, entity).await;
+        },
+        None => println!("Specify entity")
     }
 }

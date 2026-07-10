@@ -94,6 +94,8 @@ enum Cmd {
     Update(UpdateArgs),
     /// upgrade tc version
     Upgrade(UpgradeArgs),
+    /// Validate Topology
+    Validate(ValidateArgs),
     /// display current tc version
     Version(DefaultArgs),
     /// Visualize topology using HTML
@@ -498,6 +500,12 @@ pub struct ReplArgs {
     sandbox: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ValidateArgs {
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1128,6 +1136,11 @@ async fn visualize(args: VisualizeArgs) {
     tc::visualize(dir).await;
 }
 
+async fn validate(args: ValidateArgs) {
+    let ValidateArgs { entity, .. } = args;
+    tc::validate(entity).await;
+}
+
 async fn run(args: RunArgs) {
     let RunArgs {
         dir, trace, task, ..
@@ -1195,6 +1208,7 @@ async fn run_command() {
         Cmd::Update(args) => update(args).await,
         Cmd::Upgrade(args) => upgrade(args).await,
         Cmd::Changelog(args) => changelog(args).await,
+        Cmd::Validate(args) => validate(args).await,
         Cmd::Version(..) => version().await,
         Cmd::Visualize(args) => visualize(args).await,
         Cmd::Scaffold(args) => scaffold(args).await,
