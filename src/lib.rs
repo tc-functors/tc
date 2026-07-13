@@ -1,14 +1,16 @@
+use colored::Colorize;
+use compiler::Entity;
 use composer::Topology;
 use configurator::Config;
 use itertools::Itertools;
 use kit as u;
+use std::str::FromStr;
 use provider::Auth;
 use std::{
+    collections::HashMap,
     panic,
     time::Instant,
-    collections::HashMap
 };
-use colored::Colorize;
 use tabled::{
     Style,
     Table,
@@ -27,7 +29,7 @@ pub struct BuildOpts {
     pub version: Option<String>,
 }
 
-async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
+pub async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
     let config = Config::new();
     let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
     let profile = match maybe_cfg_profile {
@@ -262,6 +264,28 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
     }
 }
 
+fn run_hooks(topology: &Topology, key: &str) {
+    if let Some(hooks) = topology.hooks.get(key) {
+        println!("Running {} hooks...", key);
+        for hook in hooks {
+            let dir = match &hook.dir {
+                Some(d) => d,
+                None => &u::pwd()
+            };
+            let (status, out, _err) = u::runc(&hook.command, dir);
+            if !status {
+                println!("{}: {}", &hook.command, out);
+                if let Some(on_fail) = &hook.on_failure {
+                    match on_fail.as_ref() {
+                        "exit" => std::process::exit(1),
+                        _ => println!("doing nothing")
+                    }
+                }
+            }
+        }
+    }
+}
+
 // FIXME: use proper hooks
 async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bool) {
     let Topology {
@@ -276,37 +300,15 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
         Err(_) => "ci".to_string(),
     };
     let url = executor::current_url();
-    let incr = if force {
-        false
-    } else {
-        true
-    };
+    let incr = if force { false } else { true };
     let msg = format!(
         "Deployed `{}` to *{}*::{}_{} by {} (elapsed: {} incr: {}) [build: {}]",
         tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
-    let maybe_target_profile = match std::env::var("TC_TARGET_PROFILE") {
-        Ok(p) => Some(p),
-        Err(_) => None
-    };
-
-    let maybe_source_profile = match std::env::var("TC_SOURCE_PROFILE") {
-        Ok(p) => Some(p),
-        Err(_) => None
-    };
-    if let Some(ref p) = maybe_source_profile {
-        if &auth.name == p {
-            let from_auth = init(maybe_source_profile, None).await;
-            let to_auth = init(maybe_target_profile, None).await;
-            snapshotter::snapshot_topology(&from_auth, &to_auth, topology, sandbox, true, true).await;
-        }
-    } else {
-        println!("Skipping snapshotting");
-    }
 }
 
-async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
+pub async fn create_topology(auth: &Auth, topology: &Topology, sync: bool) {
     deployer::create(auth, topology, sync).await;
 
     for (_, node) in &topology.nodes {
@@ -389,6 +391,8 @@ pub async fn create(
             let msg = composer::count_of(&ct);
             println!("C: {}", msg);
 
+            run_hooks(&ct, "pre");
+
             println!("Resolving topology {} ...", &ct.namespace);
             let rt = resolver::resolve(&auth, &sandbox, &ct, cache, force).await;
             let msg = composer::count_of(&rt);
@@ -405,12 +409,18 @@ pub async fn create(
         Err(_) => builder::clean(recursive),
     }
 
-
     let duration = start.elapsed();
 
     if notify {
-        run_create_hook(&auth, &topology, &u::time_format(duration).to_string(), force).await;
+        run_create_hook(
+            &auth,
+            &topology,
+            &u::time_format(duration).to_string(),
+            force,
+        )
+        .await;
     }
+    run_hooks(&topology, "post");
 
     println!("Time elapsed: {:#}", u::time_format(duration));
 }
@@ -437,7 +447,12 @@ pub async fn dry_run_create(profile: Option<String>, sandbox: Option<String>, re
     create_topology_dry_run(&auth, &rt).await;
 }
 
-async fn update_aux(auth: &Auth, sandbox: &str, topology: &Topology, maybe_entity: Option<String>) {
+pub async fn update_aux(
+    auth: &Auth,
+    sandbox: &str,
+    topology: &Topology,
+    maybe_entity: Option<String>,
+) {
     let diff = false;
     let cache = false;
 
@@ -501,6 +516,7 @@ pub async fn delete(
     maybe_entity: Option<String>,
     recursive: bool,
     cache: bool,
+    force: bool
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     let start = Instant::now();
@@ -522,10 +538,10 @@ pub async fn delete(
     println!("Resolving topology...");
     let root = resolver::try_resolve(&auth, &sandbox, &topology, &maybe_entity, cache, false).await;
 
-    deployer::try_delete(&auth, &root, &maybe_entity).await;
+    deployer::try_delete(&auth, &root, &maybe_entity, force).await;
 
     for (_, node) in root.nodes {
-        deployer::try_delete(&auth, &node, &maybe_entity).await;
+        deployer::try_delete(&auth, &node, &maybe_entity, force).await;
     }
     let duration = start.elapsed();
     println!("Time elapsed: {:#}", u::time_format(duration));
@@ -608,7 +624,6 @@ async fn find_root_topologies(auth: &Auth, dir: &str, sandbox: &str) -> HashMap<
             let rt = resolver::render(&auth, &sandbox, &topology).await;
             h.insert(name.clone(), rt);
         }
-
     } else {
         let topology = composer::compose(&dir, false);
         let rt = resolver::render(&auth, &sandbox, &topology).await;
@@ -621,7 +636,7 @@ pub async fn freeze(auth: Auth, sandbox: Option<String>) {
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topologies = find_root_topologies(&auth, &dir, &sandbox).await;
-    for (name, topology)  in &topologies {
+    for (name, topology) in &topologies {
         deployer::freeze(&auth, &topology).await;
         let msg = format!("*{}*::{} is frozen", &auth.name, &sandbox);
         notifier::notify(name, &msg).await;
@@ -632,7 +647,7 @@ pub async fn unfreeze(auth: Auth, sandbox: Option<String>) {
     let dir = u::pwd();
     let sandbox = resolver::maybe_sandbox(sandbox);
     let topologies = find_root_topologies(&auth, &dir, &sandbox).await;
-    for (name, topology)  in topologies {
+    for (name, topology) in topologies {
         deployer::unfreeze(&auth, &topology).await;
         let msg = format!("*{}*::{} is unfrozen", &auth.name, &sandbox);
         notifier::notify(&name, &msg).await;
@@ -699,7 +714,7 @@ pub async fn snapshot_current(
     profile: Option<String>,
     target_profile: Option<String>,
     sandbox: Option<String>,
-    save: bool
+    save: bool,
 ) {
     let sandbox = u::maybe_string(sandbox, "stable");
     let from_auth = init(profile, None).await;
@@ -712,14 +727,14 @@ pub async fn snapshot_root(
     profile: Option<String>,
     target_profile: Option<String>,
     sandbox: Option<String>,
-    save: bool
+    save: bool,
 ) {
     let sandbox = u::maybe_string(sandbox, "stable");
     let from_auth = init(profile, None).await;
     let target_auth = init(target_profile, None).await;
-    snapshotter::snapshot_topologies(&from_auth, &target_auth, &u::root(), &sandbox, true, save).await;
+    snapshotter::snapshot_topologies(&from_auth, &target_auth, &u::root(), &sandbox, true, save)
+        .await;
 }
-
 
 pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
     let SnapshotOpts {
@@ -767,11 +782,7 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
     }
 }
 
-pub async fn changelog(
-    between: Option<String>,
-    search: Option<String>,
-    verbose: bool
-) {
+pub async fn changelog(between: Option<String>, search: Option<String>, verbose: bool) {
     let dir = u::pwd();
     let topology = composer::compose(&dir, false);
     let namespace = topology.namespace;
@@ -807,13 +818,12 @@ pub async fn prune(auth: &Auth, sandbox: Option<String>, filter: Option<String>,
             let rt = resolver::render(&auth, &sbox, &ct).await;
             deployer::guard::prevent_stable_updates(auth, &sbox, &rt).await;
             if dry_run {
-
                 if let Some(f) = filter {
                     match f.as_ref() {
                         "all" => deployer::list_all_resources(auth).await,
-                        _ => todo!()
+                        _ => todo!(),
                     }
-                }  else {
+                } else {
                     deployer::list_all(auth, &sbox, "default").await;
                 }
             } else {
@@ -920,6 +930,17 @@ pub async fn run(dir: Option<String>, task: String, trace: bool) {
         } else {
             println!("Skipping [{}]", &name.yellow());
         }
+    }
+}
 
+pub async fn validate(maybe_entity: Option<String>) {
+    let dir = u::pwd();
+    let topology = composer::compose(&dir, true);
+    match maybe_entity {
+        Some(e) => {
+            let entity = Entity::from_str(&e).unwrap();
+            validator::validate(&topology, entity).await;
+        },
+        None => println!("Specify entity")
     }
 }

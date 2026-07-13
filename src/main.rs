@@ -16,6 +16,7 @@ use clap::{
     Subcommand,
 };
 
+mod mcp;
 mod remote;
 use clap_stdin::{
     FileOrStdin,
@@ -67,6 +68,8 @@ enum Cmd {
     Invoke(InvokeArgs),
     /// List resources in a topology
     List(ListArgs),
+    /// Run MCP server
+    Mcp(DefaultArgs),
     /// Prune all resources in given sandbox
     Prune(PruneArgs),
     /// Resolve a topology
@@ -75,6 +78,8 @@ enum Cmd {
     Route(RouteArgs),
     /// Run arbitrary task in function dirs
     Run(RunArgs),
+    /// Run REPL
+    Repl(ReplArgs),
     /// Scaffold functions and topology using LLM
     Scaffold(ScaffoldArgs),
     /// Snapshot of current sandbox and env
@@ -89,6 +94,8 @@ enum Cmd {
     Update(UpdateArgs),
     /// upgrade tc version
     Upgrade(UpgradeArgs),
+    /// Validate Topology
+    Validate(ValidateArgs),
     /// display current tc version
     Version(DefaultArgs),
     /// Visualize topology using HTML
@@ -423,6 +430,8 @@ pub struct DeleteArgs {
     cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+    #[arg(long, action, short = 'f')]
+    force: bool,
 }
 
 #[derive(Debug, Args)]
@@ -491,6 +500,12 @@ pub struct ReplArgs {
     sandbox: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ValidateArgs {
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -729,13 +744,14 @@ async fn delete(args: DeleteArgs) {
         recursive,
         trace,
         cache,
+        force,
         ..
     } = args;
 
     init_tracing(trace);
 
     let env = tc::init(profile, role).await;
-    tc::delete(env, sandbox, entity, recursive, cache).await;
+    tc::delete(env, sandbox, entity, recursive, cache, force).await;
 }
 
 async fn compile(args: CompileArgs) {
@@ -956,10 +972,7 @@ async fn ci_release(args: ReleaseArgs) {
 }
 
 async fn ci_upgrade(args: UpgradeArgs) {
-    let UpgradeArgs {
-        version,
-        ..
-    } = args;
+    let UpgradeArgs { version, .. } = args;
 
     remote::upgrade_version(version).await;
 }
@@ -1123,9 +1136,27 @@ async fn visualize(args: VisualizeArgs) {
     tc::visualize(dir).await;
 }
 
+async fn validate(args: ValidateArgs) {
+    let ValidateArgs { entity, .. } = args;
+    tc::validate(entity).await;
+}
+
 async fn run(args: RunArgs) {
-    let RunArgs { dir, trace, task, .. } = args;
+    let RunArgs {
+        dir, trace, task, ..
+    } = args;
     tc::run(dir, task, trace).await;
+}
+
+async fn mcp(_args: DefaultArgs) {
+    mcp::serve().await;
+}
+
+async fn repl(args: ReplArgs) {
+    let ReplArgs { profile, sandbox, .. } = args;
+    let auth = tc::init(profile, None).await;
+    let sandbox = kit::maybe_string(sandbox, "dev");
+    let _ = repl::start(&auth, &sandbox).await;
 }
 
 async fn list(args: ListArgs) {
@@ -1165,9 +1196,11 @@ async fn run_command() {
         Cmd::Freeze(args) => freeze(args).await,
         Cmd::Invoke(args) => invoke(args).await,
         Cmd::List(args) => list(args).await,
+        Cmd::Mcp(args) => mcp(args).await,
         Cmd::Prune(args) => prune(args).await,
         Cmd::Route(args) => route(args).await,
         Cmd::Run(args) => run(args).await,
+        Cmd::Repl(args) => repl(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,
         Cmd::Tag(args) => tag(args).await,
         Cmd::Test(args) => test(args).await,
@@ -1175,6 +1208,7 @@ async fn run_command() {
         Cmd::Update(args) => update(args).await,
         Cmd::Upgrade(args) => upgrade(args).await,
         Cmd::Changelog(args) => changelog(args).await,
+        Cmd::Validate(args) => validate(args).await,
         Cmd::Version(..) => version().await,
         Cmd::Visualize(args) => visualize(args).await,
         Cmd::Scaffold(args) => scaffold(args).await,

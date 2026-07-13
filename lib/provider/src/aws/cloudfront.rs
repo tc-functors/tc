@@ -150,12 +150,9 @@ fn make_function_assoc(kind: &str, arn: &str) -> FunctionAssociation {
     let event_type = match kind {
         "request" | "redirect" => EventType::ViewerRequest,
         "response" => EventType::ViewerResponse,
-        _ => EventType::ViewerRequest
+        _ => EventType::ViewerRequest,
     };
-    it.function_arn(arn)
-        .event_type(event_type)
-        .build()
-        .unwrap()
+    it.function_arn(arn).event_type(event_type).build().unwrap()
 }
 
 fn make_function_associations(functions: HashMap<String, String>) -> FunctionAssociations {

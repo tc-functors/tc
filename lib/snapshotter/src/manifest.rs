@@ -69,7 +69,7 @@ pub struct Manifest {
     pub updated_at: String,
     pub updated_by: String,
     pub changed: bool,
-    pub changelog: Vec<String>
+    pub changelog: Vec<String>,
 }
 
 fn find_changelog(namespace: &str, dir: &str, from_version: &str, to_version: &str) -> Vec<String> {
@@ -85,9 +85,19 @@ fn find_changelog(namespace: &str, dir: &str, from_version: &str, to_version: &s
 }
 
 impl Manifest {
-    pub async fn new(topology: &Topology, from_auth: &Auth, to_auth: &Auth, sandbox: &str, gen_changelog: bool) -> Manifest {
-
-        let Topology { namespace, kind, fqn, .. } = topology;
+    pub async fn new(
+        topology: &Topology,
+        from_auth: &Auth,
+        to_auth: &Auth,
+        sandbox: &str,
+        gen_changelog: bool,
+    ) -> Manifest {
+        let Topology {
+            namespace,
+            kind,
+            fqn,
+            ..
+        } = topology;
 
         let maybe_rdir = topology.dir.strip_prefix(&format!("{}/", u::root()));
         let dir = match maybe_rdir {
@@ -96,7 +106,6 @@ impl Manifest {
         };
 
         if gen_changelog {
-
             let name = render(&fqn, sandbox);
             let from_tags = lookup_tags(from_auth, &kind, &name).await;
             let to_tags = lookup_tags(to_auth, &kind, &name).await;
@@ -124,7 +133,7 @@ impl Manifest {
                 updated_at: updated_at,
                 updated_by: updated_by,
                 changed: changed,
-                changelog: changelog
+                changelog: changelog,
             }
         } else {
             Manifest {
@@ -139,7 +148,7 @@ impl Manifest {
                 updated_at: String::from(""),
                 updated_by: String::from(""),
                 changed: false,
-                changelog: vec![]
+                changelog: vec![],
             }
         }
     }

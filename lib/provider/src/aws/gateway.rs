@@ -89,12 +89,7 @@ pub async fn find_api(client: &Client, name: &str) -> Option<String> {
     }
 }
 
-pub async fn update_api(
-    client: &Client,
-    name: &str,
-    api_id: &str,
-    cors: Option<Cors>,
-) -> String {
+pub async fn update_api(client: &Client, name: &str, api_id: &str, cors: Option<Cors>) -> String {
     println!("Updating route {} (cors)", name);
     let _ = client
         .update_api()
@@ -107,11 +102,7 @@ pub async fn update_api(
     s!(api_id)
 }
 
-pub async fn update_tags(
-    client: &Client,
-    resource_arn: &str,
-    tags: HashMap<String, String>,
-) {
+pub async fn update_tags(client: &Client, resource_arn: &str, tags: HashMap<String, String>) {
     let _ = client
         .tag_resource()
         .resource_arn(resource_arn)
@@ -231,6 +222,7 @@ pub async fn update_route(
                 .api_id(s!(api_id))
                 .route_id(route_id)
                 .target(target)
+                .authorization_type(auth_kind)
                 .send()
                 .await
                 .unwrap();
@@ -248,13 +240,18 @@ pub async fn create_or_update_route(
     authorizer_id: Option<String>,
     authorizer_kind: &str,
 ) {
-    let route_key = strip(&format!("{} {}", method, path), "/");
+    let route_key = if path == "/" {
+        format!("{} {}", method, path)
+    } else {
+        strip(&format!("{} {}", method, path), "/")
+    };
     let target = format!("integrations/{}", integration_id);
     let maybe_route = find_route(client, api_id, &route_key).await;
 
     let auth_kind = match authorizer_kind {
         "cognito" => AuthorizationType::Jwt,
-        _ => AuthorizationType::Custom,
+        "lambda" => AuthorizationType::Custom,
+        _ => AuthorizationType::None,
     };
 
     match maybe_route {
@@ -546,8 +543,9 @@ pub async fn create_lambda_integration(
     target_arn: &str,
     role: &str,
     is_async: bool,
+    request_params: HashMap<String, String>,
 ) -> String {
-    lambda::create_or_update(client, api_id, target_arn, role, is_async).await
+    lambda::create_or_update(client, api_id, target_arn, role, is_async, request_params).await
 }
 
 pub async fn create_sfn_integration(
@@ -731,36 +729,121 @@ fn make_domain_config(name: &str, cert_arn: &str) -> DomainNameConfiguration {
         .build()
 }
 
+async fn find_api_mapping(client: &Client, api_id: &str, domain_name: &str, api_mapping_key: Option<String>) -> Option<String> {
+    let key = match api_mapping_key {
+        Some(k) => Some(k),
+        None => Some(String::from(""))
+    };
+    let res = client
+        .get_api_mappings()
+        .domain_name(domain_name)
+        .send()
+        .await
+        .unwrap();
+    let items = res.items;
+    match items {
+        Some(xs) => {
+            for x in xs.to_vec() {
+                match x.api_id {
+                    Some(id) => {
+                        if id == api_id && x.api_mapping_key == key {
+                            return x.api_mapping_id
+                        }
+                    }
+                    None => (),
+                }
+            }
+            return None;
+        }
+        None => None,
+    }
+}
+
+async fn update_api_mapping(client: &Client, api_mapping_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
+    let res = client
+        .update_api_mapping()
+        .domain_name(domain_name)
+        .api_mapping_id(api_mapping_id)
+        .set_api_mapping_key(api_mapping_key)
+        .stage(stage)
+        .send()
+        .await;
+    res.unwrap();
+}
+
+async fn create_api_mapping(client: &Client, api_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
+    println!("Creating api mapping: api_id: {} {:?}", &api_id, &api_mapping_key);
+    let res = client
+        .create_api_mapping()
+        .api_id(api_id)
+        .domain_name(domain_name)
+        .set_api_mapping_key(api_mapping_key.clone())
+        .stage(stage)
+        .send()
+        .await;
+    match res {
+        Ok(_) => (),
+        Err(e) => println!("Warn creating mapping {:?} {}", &api_mapping_key, &e)
+    }
+}
+
+async fn create_or_update_api_mapping(client: &Client, api_id: &str, domain_name: &str, stage: &str, path: Option<String>) {
+    let maybe_api_mapping_id = find_api_mapping(client, api_id, domain_name, path.clone()).await;
+    match maybe_api_mapping_id {
+        Some(api_mapping_id) => {
+            update_api_mapping(client, &api_mapping_id, stage, domain_name, path).await
+        },
+        None => {
+            create_api_mapping(client, api_id, stage, domain_name, path).await
+        }
+    }
+}
+
+pub async fn delete_api_mappings(client: &Client, api_id: &str, domain_name: &str, paths: Vec<String>) {
+    for path in paths {
+        let maybe_api_mapping_id = find_api_mapping(client, api_id, domain_name, Some(path)).await;
+        if let Some(api_mapping_id) = maybe_api_mapping_id {
+            let res = client
+                .delete_api_mapping()
+                .api_mapping_id(api_mapping_id)
+                .domain_name(domain_name)
+                .send()
+                .await;
+            res.unwrap();
+        }
+    }
+}
+
 pub async fn create_or_update_domain(
     client: &Client,
     api_id: &str,
     domain_name: &str,
     stage: &str,
     cert_arn: &str,
-    _hosted_zone_id: &str,
+    paths: Vec<String>
 ) -> String {
     let cfg = make_domain_config(domain_name, cert_arn);
 
     let maybe_domain = find_domain(client, domain_name).await;
 
-    if let Some(d) = maybe_domain {
-        let _ = client
-            .create_api_mapping()
-            .api_id(api_id)
-            .domain_name(domain_name)
-            .stage(stage)
-            .send()
-            .await;
-        d
+    if let Some(domain) = maybe_domain {
+        if paths.len() == 0 {
+            create_or_update_api_mapping(client, api_id, domain_name, stage, None).await;
+        } else {
+            for path in paths {
+                create_or_update_api_mapping(client, api_id, domain_name, stage, Some(path)).await;
+            }
+        }
+        domain
     } else {
         let d = create_domain(client, domain_name, cfg).await;
-        let _ = client
-            .create_api_mapping()
-            .api_id(api_id)
-            .domain_name(domain_name)
-            .stage(stage)
-            .send()
-            .await;
+        if paths.len() == 0 {
+            create_or_update_api_mapping(client, api_id, domain_name, stage, None).await;
+        } else {
+            for path in paths {
+                create_api_mapping(client, api_id, domain_name, stage, Some(path)).await;
+            }
+        }
         d
     }
 }
@@ -775,11 +858,7 @@ pub async fn clear_cors(client: &Client, api_id: &str) {
 }
 
 pub async fn list_tags(client: &Client, arn: &str) -> Result<HashMap<String, String>, Error> {
-    let res = client
-        .get_tags()
-        .resource_arn(arn.to_string())
-        .send()
-        .await;
+    let res = client.get_tags().resource_arn(arn.to_string()).send().await;
 
     match res {
         Ok(r) => match r.tags {
@@ -798,5 +877,25 @@ pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
         None => "".to_string(),
     }
 }
+
+pub async fn find_hosted_zone(client: &Client, domain_name: &str) -> Option<String> {
+    let res = client
+        .get_domain_name()
+        .domain_name(domain_name)
+        .send()
+        .await;
+    match res  {
+        Ok(r) => {
+            let xs = r.domain_name_configurations.unwrap().to_vec();
+            if let Some(item) = xs.first() {
+                item.hosted_zone_id.clone()
+            } else {
+                None
+            }
+        }
+        Err(_) => None
+    }
+}
+
 
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;

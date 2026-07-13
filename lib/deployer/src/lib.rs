@@ -13,9 +13,13 @@ use aws::{
     route,
     schedule,
     state,
+    transducer
 };
 use colored::Colorize;
-use compiler::{Entity, TopologyKind};
+use compiler::{
+    Entity,
+    TopologyKind,
+};
 use composer::{
     Function,
     Topology,
@@ -46,6 +50,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
         tags,
         pools,
         channels,
+        schedules,
         pages,
         flow,
         roles,
@@ -70,13 +75,6 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
 
     role::create_or_update(auth, roles, tags).await;
     function::create(auth, functions, &tags, is_sync).await;
-    // After roles are reconciled in IAM and modified functions are
-    // (re)deployed, sweep every lambda the topology declares and make
-    // sure its `Role` attribute matches `f.runtime.role.arn`. This is
-    // what re-attaches a freshly-created override role onto an existing
-    // lambda whose code didn't change in this deploy — without this
-    // step IAM ends up with the new role but the lambda keeps pointing
-    // at `tc-base-function-...`.
     function::sync_roles(auth, all_functions).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
@@ -84,6 +82,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     event::create(&auth, events, &tags).await;
     pool::create(&auth, pools).await;
     route::create(&auth, routes, &tags, sandbox).await;
+    schedule::create(&auth, schedules).await;
     let cfg = make_config(&auth, topology).await;
     page::create(&auth, pages, &cfg, sandbox).await;
     if let Some(f) = flow {
@@ -91,7 +90,7 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
     }
     if let Some(trn) = transducer {
         let cfg = make_config(&auth, topology).await;
-        function::create_transducer(auth, functions, &trn, &cfg).await;
+        transducer::create(auth, functions, &trn, &cfg).await;
     }
 }
 
@@ -159,7 +158,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
     }
     if let Some(trns) = transducer {
         let cfg = make_config(&auth, topology).await;
-        function::create_transducer(auth, functions, &trns, &cfg).await;
+        transducer::create(auth, functions, &trns, &cfg).await;
     }
 }
 
@@ -265,7 +264,7 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
     }
 }
 
-async fn delete(auth: &Auth, topology: &Topology) {
+async fn delete(auth: &Auth, topology: &Topology, force: bool) {
     let Topology {
         sandbox,
         namespace,
@@ -292,14 +291,14 @@ async fn delete(auth: &Auth, topology: &Topology) {
     if let Some(f) = flow {
         state::delete(auth, f).await;
     }
-    function::delete(&auth, functions).await;
+    function::delete(&auth, functions, force).await;
     role::delete(&auth, roles).await;
-    route::delete(&auth, routes).await;
+    route::delete(&auth, routes, sandbox, force).await;
     mutation::delete(&auth, mutations).await;
     queue::delete(&auth, queues).await;
     page::delete(&auth, pages).await;
     if let Some(trns) = transducer {
-        function::delete_transducer(auth, &trns).await;
+        transducer::delete(auth, &trns).await;
     }
 }
 
@@ -332,8 +331,8 @@ async fn delete_entity(auth: &Auth, topology: &Topology, entity: Entity) {
 
     match entity {
         Entity::Event => event::delete(&auth, events).await,
-        Entity::Route => route::delete(&auth, routes).await,
-        Entity::Function => function::delete(&auth, functions).await,
+        Entity::Route => route::delete(&auth, routes, sandbox, false).await,
+        Entity::Function => function::delete(&auth, functions, false).await,
         Entity::Mutation => mutation::delete(&auth, mutations).await,
         Entity::Schedule => schedule::delete(&auth, schedules).await,
         Entity::Trigger => pool::delete(&auth, pools).await,
@@ -398,7 +397,7 @@ pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<
     }
 }
 
-pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>) {
+pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>, force: bool) {
     match maybe_entity {
         Some(e) => {
             let (entity, component) = Entity::as_entity_component(&e);
@@ -407,12 +406,12 @@ pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<
                 None => delete_entity(auth, topology, entity).await,
             }
         }
-        None => delete(auth, topology).await,
+        None => delete(auth, topology, force).await,
     }
 }
 
 pub async fn freeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, kind, ..} = topology;
+    let Topology { fqn, kind, .. } = topology;
     match kind {
         TopologyKind::StepFunction => state::freeze(auth, fqn).await,
         TopologyKind::Function => function::freeze(auth, fqn).await,
@@ -423,7 +422,7 @@ pub async fn freeze(auth: &Auth, topology: &Topology) {
 }
 
 pub async fn unfreeze(auth: &Auth, topology: &Topology) {
-    let Topology { fqn, kind, ..} = topology;
+    let Topology { fqn, kind, .. } = topology;
     match kind {
         TopologyKind::StepFunction => state::unfreeze(auth, fqn).await,
         TopologyKind::Function => function::unfreeze(auth, fqn).await,
@@ -482,7 +481,6 @@ pub async fn list_all(auth: &Auth, sandbox: &str, format: &str) {
         }
     }
 }
-
 
 pub async fn list_all_resources(auth: &Auth) {
     let mut arns = resource::list_all(auth).await;

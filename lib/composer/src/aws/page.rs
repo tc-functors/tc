@@ -166,7 +166,6 @@ function handler(event) {{
                 xs.insert("response".to_string(), js);
             }
         }
-
     } else {
         if kind == "spa" || kind == "SPA" {
             xs.insert(s!("redirect"), redirect);
@@ -301,7 +300,12 @@ fn make(
     }
 }
 
-pub fn make_all(dir: &str, spec: &TopologySpec, infra_dir: &str, config: &Config) -> HashMap<String, Page> {
+pub fn make_all(
+    dir: &str,
+    spec: &TopologySpec,
+    infra_dir: &str,
+    config: &Config,
+) -> HashMap<String, Page> {
     let mut h: HashMap<String, Page> = HashMap::new();
     if let Some(pspec) = &spec.pages {
         for (name, ps) in pspec {

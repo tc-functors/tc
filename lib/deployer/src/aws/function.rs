@@ -1,19 +1,18 @@
 use crate::role;
 use compiler::spec::function::{
-    Lang,
     Provider,
 };
 use composer::{
     Function,
-    Transducer,
 };
-use kit as u;
-use kit::s;
+use futures::stream::FuturesUnordered;
 use provider::{
     Auth,
-    aws::lambda,
 };
 use std::collections::HashMap;
+pub mod lambda;
+mod microvm;
+mod agentcore;
 use tabled::Tabled;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
@@ -21,110 +20,26 @@ async fn maybe_build(auth: &Auth, function: &Function) {
     builder::publish(auth, builds).await;
 }
 
-pub async fn make_lambda(
-    auth: &Auth,
-    f: Function,
-    tags: &HashMap<String, String>,
-) -> lambda::Function {
-    let client = lambda::make_client(auth).await;
-    let package_type = &f.runtime.package_type;
-
-    let uri = f.runtime.uri;
-
-    let (size, blob, code) = lambda::make_code(package_type, &uri);
-    let vpc_config = match f.runtime.network {
-        Some(s) => Some(lambda::make_vpc_config(s.subnets, s.security_groups)),
-        _ => None,
-    };
-    let filesystem_config = match f.runtime.fs {
-        Some(s) => Some(vec![lambda::make_fs_config(&s.arn, &s.mount_point)]),
-        _ => None,
-    };
-
-    let arch = lambda::make_arch(&f.runtime.arch.to_str());
-    let runtime = match package_type.as_ref() {
-        "zip" => Some(lambda::make_runtime(&f.runtime.lang.to_str())),
-        _ => None,
-    };
-
-    let handler = match package_type.as_ref() {
-        "zip" => Some(f.runtime.handler),
-        _ => None,
-    };
-
-    let layers = match package_type.as_ref() {
-        "zip" => Some(f.runtime.layers),
-        _ => None,
-    };
-
-    let snap_start = lambda::make_snapstart(f.runtime.snapstart);
-
-    lambda::Function {
-        client: client,
-        name: f.fqn,
-        actual_name: f.actual_name,
-        description: f.description,
-        code: code,
-        code_size: size,
-        blob: blob,
-        role: f.runtime.role.arn,
-        runtime: runtime,
-        handler: handler,
-        timeout: f.runtime.timeout.expect("Timeout error"),
-        uri: uri,
-        snap_start: snap_start,
-        memory_size: f.runtime.memory_size.expect("memory error"),
-        package_type: lambda::make_package_type(package_type),
-        environment: lambda::make_environment(f.runtime.environment),
-        architecture: arch,
-        tags: tags.clone(),
-        layers: layers,
-        vpc_config: vpc_config,
-        filesystem_config: filesystem_config,
-        _logging_config: None,
-    }
-}
-
-pub async fn create_lambda(auth: &Auth, f: &Function, tags: &HashMap<String, String>) -> String {
-    let lambda = make_lambda(&auth, f.clone(), tags).await;
-    let maybe_current = lambda::find_config(&lambda.client, &f.fqn).await;
-    let id = if let Some(current) = maybe_current {
-        let package_type = f.runtime.package_type.to_lowercase();
-        let current_package_type = current.package_type.to_lowercase();
-        if current_package_type != package_type {
-            tracing::debug!(
-                "Recreating function: {} -> {}",
-                current_package_type,
-                package_type
-            );
-            lambda.clone().delete().await.unwrap();
-            lambda.clone().create_or_update().await
-        } else {
-            lambda.clone().create_or_update().await
-        }
-    } else {
-        lambda.clone().create_or_update().await
-    };
-
-    if f.runtime.snapstart {
-        lambda.publish_version().await;
-    }
-
-    id
-}
-
 async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String>) -> String {
     maybe_build(auth, &f).await;
     match f.runtime.provider {
-        Provider::Lambda => create_lambda(&auth, &f, tags).await,
-        Provider::Fargate => todo!(),
+        Provider::Lambda => {
+            let client = lambda::make_client(auth).await;
+            lambda::create(&client, &f, tags).await
+        }
+        Provider::MicroVm => {
+            microvm::create(auth, &f, tags).await
+        },
+        Provider::AgentCore => {
+            agentcore::create(auth, &f, tags).await
+        },
     }
 }
 
-fn should_sync(sync: bool) -> bool {
-    sync || match std::env::var("TC_SYNC_CREATE") {
-        Ok(_) => true,
-        Err(_) => false,
+fn get_chunk_size() -> usize {
+    match std::env::var("TC_FUNCTION_CREATE_CONCURRENCY") {
+        Ok(n) => n.parse::<usize>().unwrap(),
+        Err(_) => 4,
     }
 }
 
@@ -132,26 +47,26 @@ pub async fn create(
     auth: &Auth,
     fns: &HashMap<String, Function>,
     tags: &HashMap<String, String>,
-    sync: bool,
+    _sync: bool,
 ) {
-    if should_sync(sync) {
-        for (_, function) in fns.clone() {
+    let names: Vec<String> = Vec::from_iter(fns.keys().cloned());
+    let csize = get_chunk_size();
+    let chunks: Vec<&[String]> = names.chunks(csize).collect();
+
+    for chunk in chunks {
+        let futs = FuturesUnordered::new();
+
+        println!("Chunking functions: {:?}", &chunk.len());
+        for name in chunk {
+            let f = fns.get(name).unwrap().clone();
             let a = auth.clone();
-            let f = function.clone();
-            create_function(&a, f, tags).await;
-        }
-    } else {
-        let mut tasks = vec![];
-        for (_, function) in fns.clone() {
-            let a = auth.clone();
-            let f = function.clone();
             let t = tags.clone();
-            let h = tokio::spawn(async move {
+            let fut = tokio::spawn(async move {
                 create_function(&a, f, &t).await;
             });
-            tasks.push(h);
+            futs.push(fut);
         }
-        for task in tasks {
+        for task in futs {
             let _ = task.await;
         }
     }
@@ -177,42 +92,18 @@ pub async fn update_code(
     }
 }
 
-pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>) {
-    for (_name, function) in fns {
-        match function.runtime.package_type.as_ref() {
-            "zip" => {
-                let function = make_lambda(auth, function.clone(), &HashMap::new()).await;
-                function.clone().delete().await.unwrap();
-            }
-            _ => {
-                let function = make_lambda(auth, function.clone(), &HashMap::new()).await;
-                function.clone().delete().await.unwrap();
-            }
-        }
+
+pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>, force: bool) {
+    let client = lambda::make_client(auth).await;
+    for (_name, f) in fns {
+         match f.runtime.provider {
+             Provider::Lambda => lambda::delete(&client, &f).await,
+             Provider::MicroVm => microvm::delete(auth, &f, force).await,
+             Provider::AgentCore => agentcore::delete(auth, &f).await
+         }
     }
 }
 
-// component updates
-async fn update_layers(auth: &Auth, fns: &HashMap<String, Function>) {
-    for (_, f) in fns {
-        let function = make_lambda(auth, f.clone(), &HashMap::new()).await;
-        let arn = auth.lambda_arn(&f.fqn);
-        let _ = function.update_layers(&arn).await;
-    }
-}
-
-async fn update_vars(auth: &Auth, funcs: &HashMap<String, Function>) {
-    for (_, f) in funcs {
-        let memory_size = f.runtime.memory_size.expect("memory error");
-        println!("mem {}", memory_size);
-        let function = make_lambda(auth, f.clone(), &HashMap::new()).await;
-        if f.runtime.package_type == "zip" || f.runtime.package_type == "Zip" {
-            let _ = function.update_vars().await;
-        } else {
-            let _ = function.update_image_vars().await;
-        }
-    }
-}
 async fn update_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
     let mut roles: HashMap<String, composer::Role> = HashMap::new();
     for (_, f) in funcs {
@@ -225,40 +116,22 @@ async fn update_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
     role::create_or_update(auth, &roles, &HashMap::new()).await;
 }
 
-/// Reconcile the IAM role attached to each lambda with what the
-/// topology declares. Runs over the *full* function list (not the
-/// `find_modified` subset) so a role JSON added or changed under
-/// `infrastructure/.../roles/<fn>.json` is re-attached to its lambda
-/// even when the function's code closure is otherwise unchanged.
-///
-/// Idempotent: `lambda::update_role` reads the current role first and
-/// short-circuits when it already matches, so this sweeps cheaply over
-/// a large topology (one `GetFunctionConfiguration` per function, plus
-/// one `UpdateFunctionConfiguration` per drift).
-pub async fn sync_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
-    if funcs.is_empty() {
+pub async fn sync_roles(auth: &Auth, fns: &HashMap<String, Function>) {
+    if fns.is_empty() {
         return;
     }
     let client = lambda::make_client(auth).await;
+
     let mut tasks = vec![];
-    for (_, f) in funcs.clone() {
+
+    for (_, f) in fns.clone() {
         if !matches!(f.runtime.provider, Provider::Lambda) {
             continue;
         }
+
         let c = client.clone();
-        let fqn = f.fqn.clone();
-        let role_arn = f.runtime.role.arn.clone();
-        let display = f.name.clone();
         let h = tokio::spawn(async move {
-            match lambda::update_role(&c, &fqn, &role_arn).await {
-                Ok(true) => println!(
-                    "Re-attaching role {} to {}",
-                    u::split_last(&role_arn, "/"),
-                    &display
-                ),
-                Ok(false) => (),
-                Err(e) => println!("Failed to attach role for {}: {:?}", &display, e),
-            }
+            lambda::sync_role(&c, &f).await
         });
         tasks.push(h);
     }
@@ -267,47 +140,6 @@ pub async fn sync_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
     }
 }
 
-async fn update_concurrency(auth: &Auth, funcs: &HashMap<String, Function>) {
-    for (_, f) in funcs {
-        let function = make_lambda(auth, f.clone(), &HashMap::new()).await;
-
-        match f.runtime.provisioned_concurrency {
-            Some(n) => function.clone().update_provisioned_concurrency(n).await,
-            None => (),
-        };
-
-        match f.runtime.reserved_concurrency {
-            Some(n) => function.update_reserved_concurrency(n).await,
-            None => (),
-        };
-    }
-}
-
-async fn update_tags(
-    auth: &Auth,
-    funcs: &HashMap<String, Function>,
-    tags: &HashMap<String, String>,
-) {
-    let client = lambda::make_client(auth).await;
-    for (_, f) in funcs {
-        let arn = auth.lambda_arn(&f.fqn);
-        lambda::update_tags(&client, &arn, tags.clone()).await;
-    }
-}
-
-async fn update_runtime_version(auth: &Auth, fns: &HashMap<String, Function>) {
-    let client = lambda::make_client(auth).await;
-    match std::env::var("TC_LAMBDA_RUNTIME_VERSION") {
-        Ok(v) => {
-            for (_, f) in fns {
-                if f.runtime.lang.to_lang() == Lang::Ruby {
-                    let _ = lambda::update_runtime_management_config(&client, &f.name, &v).await;
-                }
-            }
-        }
-        Err(_) => println!("TC_LAMBDA_RUNTIME_VERSION env var is not set"),
-    }
-}
 
 pub async fn update_dir(
     auth: &Auth,
@@ -334,17 +166,94 @@ pub async fn update(
     component: &str,
 ) {
     match component {
-        "layers" => update_layers(&auth, functions).await,
-        "vars" => update_vars(&auth, functions).await,
-        "concurrency" => update_concurrency(&auth, functions).await,
-        "runtime" => update_runtime_version(&auth, functions).await,
-        "tags" => update_tags(&auth, functions, tags).await,
-        "roles" => update_roles(&auth, functions).await,
-        _ => update_dir(&auth, functions, component, tags).await,
+        "layers" => update_layers(auth, functions).await,
+        "vars" => update_vars(auth, functions).await,
+        "concurrency" => update_concurrency(auth, functions).await,
+        "runtime" => {
+            let client = lambda::make_client(auth).await;
+            lambda::update_runtime_version(&client, functions).await;
+        }
+        "tags" => update_tags(auth, functions, tags).await,
+        "roles" => update_roles(auth, functions).await,
+        _ => update_dir(auth, &functions, component, tags).await,
     }
 }
 
-// list
+pub async fn create_dry_run(fns: &HashMap<String, Function>) {
+    for (_, function) in fns {
+        println!("Creating function: {}", &function.fqn);
+    }
+}
+
+pub async fn is_frozen(auth: &Auth, fqn: &str) -> bool {
+    let client = lambda::make_client(auth).await;
+    let arn = auth.lambda_arn(fqn);
+    lambda::is_frozen(&client, &arn).await
+}
+
+pub async fn freeze(auth: &Auth, fqn: &str) {
+    let client = lambda::make_client(auth).await;
+    let arn = auth.lambda_arn(fqn);
+    lambda::freeze(&client, fqn, &arn).await
+}
+
+pub async fn unfreeze(auth: &Auth, fqn: &str) {
+    let client = lambda::make_client(auth).await;
+    let arn = auth.lambda_arn(fqn);
+    lambda::unfreeze(&client, fqn, &arn).await
+}
+
+pub async fn update_tags(
+    auth: &Auth,
+    funcs: &HashMap<String, Function>,
+    tags: &HashMap<String, String>,
+) {
+    let client = lambda::make_client(auth).await;
+    for (_, f) in funcs {
+        match f.runtime.provider {
+            Provider::Lambda => {
+                let arn = auth.lambda_arn(&f.fqn);
+                lambda::update_tags(&client, &arn, tags).await;
+            },
+            Provider::MicroVm => todo!(),
+            Provider::AgentCore => todo!()
+        }
+
+    }
+}
+
+async fn update_layers(auth: &Auth, fns: &HashMap<String, Function>) {
+    let client = lambda::make_client(auth).await;
+    for (_, f) in fns {
+        match f.runtime.provider {
+            Provider::Lambda => {
+                let arn = auth.lambda_arn(&f.fqn);
+                lambda::update_layers(&client, &f, &arn).await;
+            },
+            _ => todo!()
+        }
+    }
+}
+
+async fn update_vars(auth: &Auth, fns: &HashMap<String, Function>) {
+    let client = lambda::make_client(auth).await;
+    for (_, f) in fns {
+        match f.runtime.provider {
+            Provider::Lambda => lambda::update_vars(&client, &f).await,
+            _ => todo!()
+        }
+    }
+}
+
+async fn update_concurrency(auth: &Auth, fns: &HashMap<String, Function>) {
+    let client = lambda::make_client(auth).await;
+    for (_, f) in fns {
+        match f.runtime.provider {
+            Provider::Lambda => lambda::update_concurrency(&client, f).await,
+            _ => ()
+        }
+    }
+}
 
 #[derive(Tabled, Clone, Debug, PartialEq)]
 pub struct Record {
@@ -362,90 +271,34 @@ pub struct Record {
 pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
     let client = lambda::make_client(auth).await;
     let mut rows: Vec<Record> = vec![];
-    for (_, f) in fns {
-        let arn = auth.lambda_arn(&f.fqn);
-        let tags = lambda::list_tags(&client, &arn).await.unwrap();
-
-        let config = lambda::find_config(&client, &arn).await;
-        let maybe_uri = lambda::find_uri(&client, &arn).await;
-        let uri = u::maybe_string(maybe_uri, "");
-        match config {
-            Some(cfg) => {
-                let row = Record {
-                    name: f.name.clone(),
-                    code_size: u::file_size_human(cfg.code_size as f64),
-                    timeout: cfg.timeout,
-                    mem: cfg.mem_size,
-                    package_type: cfg.package_type,
-                    role: u::split_last(&cfg.role, "/"),
-                    updated: u::safe_unwrap(tags.get("updated_at")),
-                    version: u::safe_unwrap(tags.get("version")),
-                    uri: u::split_last(&uri, "/"),
-                };
-                rows.push(row);
-            }
-            None => (),
+    for (name, f) in fns {
+        match f.runtime.provider {
+            Provider::Lambda => {
+                let arn = auth.lambda_arn(&f.fqn);
+                let maybe_cfg = lambda::get_config(&client, &arn).await;
+                if let Some(cfg) = maybe_cfg {
+                    let row = Record {
+                        name: name.clone(),
+                        code_size: cfg.code_size,
+                        timeout: cfg.timeout,
+                        mem: cfg.mem,
+                        package_type: cfg.package_type,
+                        role: cfg.role,
+                        updated: cfg.updated,
+                        version: cfg.version,
+                        uri: cfg.uri,
+                    };
+                    rows.push(row);
+                }
+            },
+            Provider::MicroVm => {
+                microvm::print_config(auth, f).await;
+            },
+            _ => ()
         }
     }
     rows
 }
 
-pub async fn create_dry_run(fns: &HashMap<String, Function>) {
-    for (_, function) in fns {
-        println!("Creating function: {}", &function.fqn);
-    }
-}
 
-pub async fn create_transducer(
-    auth: &Auth,
-    fns: &HashMap<String, Function>,
-    transducer: &Transducer,
-    config: &HashMap<String, String>,
-) {
-    println!("Creating transducer");
-    transducer.dump(config);
-
-    create_function(auth, transducer.function.clone(), &HashMap::new()).await;
-    let client = lambda::make_client(auth).await;
-    for (name, f) in fns {
-        if f.targets.len() > 0 {
-            println!("Creating transducer destination for {}", name);
-            lambda::update_destination(&client, &f.fqn, &transducer.arn).await;
-        }
-    }
-    transducer.clean();
-}
-
-pub async fn delete_transducer(auth: &Auth, transducer: &Transducer) {
-    let function = make_lambda(auth, transducer.function.clone(), &HashMap::new()).await;
-    function.clone().delete().await.unwrap();
-}
-
-pub async fn freeze(auth: &Auth, fqn: &str) {
-    let client = lambda::make_client(auth).await;
-    let arn = auth.lambda_arn(fqn);
-    let version = lambda::get_tag(&client, &arn, s!("version")).await;
-    if &version != "0.0.1" && !&version.is_empty() {
-        println!("Freezing function {} ({})", fqn, version);
-        let kv = u::kv("freeze", "true");
-        let _ = lambda::update_tags(&client, &arn, kv).await;
-    }
-}
-
-pub async fn unfreeze(auth: &Auth, fqn: &str) {
-    let client = lambda::make_client(auth).await;
-    let arn = auth.lambda_arn(fqn);
-    let version = lambda::get_tag(&client, &arn, s!("version")).await;
-    if &version != "0.0.1" && !&version.is_empty() {
-        println!("Unfreezing function {} ({})", fqn, version);
-        let kv = u::kv("freeze", "false");
-        let _ = lambda::update_tags(&client, &arn, kv).await;
-    }
-}
-
-pub async fn is_frozen(auth: &Auth, fqn: &str) -> bool {
-    let client = lambda::make_client(auth).await;
-    let arn = auth.lambda_arn(fqn);
-    let v = lambda::get_tag(&client, &arn, s!("freeze")).await;
-    v == "true"
-}
+// transducers

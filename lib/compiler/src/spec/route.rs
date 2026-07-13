@@ -17,6 +17,7 @@ pub struct RouteSpec {
     pub method: Option<String>,
     pub path: Option<String>,
     pub gateway: Option<String>,
+    pub vertical: Option<String>,
     pub authorizer: Option<String>,
     #[serde(default)]
     pub function: Option<String>,
@@ -25,6 +26,9 @@ pub struct RouteSpec {
     pub state: Option<String>,
     pub event: Option<String>,
     pub queue: Option<String>,
+
+    pub request_params: Option<HashMap<String, String>>,
+    pub response_params: Option<HashMap<String, String>>,
 
     pub request_template: Option<String>,
     pub response_template: Option<String>,

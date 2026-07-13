@@ -4,6 +4,7 @@ use crate::{
 };
 use compiler::{
     Lang,
+    Arch,
     LangRuntime,
 };
 use composer::Build;
@@ -116,10 +117,11 @@ pub async fn build(
     dir: &str,
     name: &str,
     langr: &LangRuntime,
+    arch: &Arch,
     spec: &Build,
 ) -> BuildStatus {
     match langr.to_lang() {
-        Lang::Rust | Lang::Go => super::inline::build(auth, dir, name, langr, spec).await,
+        Lang::Rust | Lang::Go => super::inline::build(auth, dir, name, langr, arch, spec).await,
         _ => {
             let Build { command, pre, .. } = spec;
 

@@ -4,6 +4,7 @@ mod image;
 mod inline;
 mod layer;
 mod library;
+mod microvm;
 pub mod page;
 mod types;
 
@@ -14,8 +15,10 @@ use composer::Function;
 use configurator::Config;
 use kit as u;
 use kit::sh;
-use provider::Auth;
-use provider::aws::ecr;
+use provider::{
+    Auth,
+    aws::ecr,
+};
 use std::{
     panic,
     str::FromStr,
@@ -119,12 +122,13 @@ pub async fn build(
         BuildKind::Image => {
             image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await
         }
-        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &build).await,
+        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &runtime.arch, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr, &build),
         BuildKind::Slab => todo!(),
-        BuildKind::Code => code::build(&auth, dir, &name, langr, &build).await,
+        BuildKind::Code => code::build(&auth, dir, &name, langr, &runtime.arch, &build).await,
         BuildKind::Extension => extension::build(dir, &name, langr),
+        BuildKind::MicroVmImage => microvm::build(&auth, dir, &runtime, &build).await,
         BuildKind::Runtime => todo!(),
     };
 
@@ -185,7 +189,7 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
     for build in builds {
         tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
-            BuildKind::Layer | BuildKind::Library => layer::publish(&auth, &build).await,
+            BuildKind::Layer | BuildKind::Library | BuildKind::Extension => layer::publish(&auth, &build).await,
             BuildKind::Image => image::publish(&auth, &build).await,
             _ => (),
         }

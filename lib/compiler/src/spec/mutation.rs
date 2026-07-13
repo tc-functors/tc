@@ -33,7 +33,8 @@ pub struct ResolverSpec {
 pub struct MutationSpec {
     #[serde(default)]
     pub authorizer: Option<String>,
-
+    #[serde(default)]
+    pub inputs: Option<HashMap<String, HashMap<String, String>>>,
     #[serde(default)]
     pub types: HashMap<String, HashMap<String, String>>,
     pub resolvers: HashMap<String, ResolverSpec>,

@@ -29,11 +29,8 @@ pub async fn update_datasource(
         .lambda_config(lambda_config)
         .service_role_arn(s!(role_arn))
         .send()
-        .await;
-    match r {
-        Ok(_) => (),
-        Err(_) => (),
-    }
+        .await
+        .unwrap();
 }
 
 pub async fn create_datasource(
@@ -52,9 +49,6 @@ pub async fn create_datasource(
         .lambda_config(lambda_config)
         .service_role_arn(s!(role_arn))
         .send()
-        .await;
-    match r {
-        Ok(_) => (),
-        Err(_) => (),
-    }
+        .await
+        .unwrap();
 }

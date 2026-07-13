@@ -3,8 +3,13 @@ use crate::{
     sh,
 };
 use regex::Regex;
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::{
+    collections::HashMap,
+    sync::{
+        Mutex,
+        OnceLock,
+    },
+};
 
 fn extract_version(s: &str) -> String {
     let re: Regex = Regex::new(r"(?:(\d+)\.)?(?:(\d+)\.)?(?:(\d+)\.\d+)").unwrap();

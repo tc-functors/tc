@@ -1,8 +1,12 @@
 use crate::Auth;
 use aws_sdk_lambda::primitives::SdkBody;
+use aws_config::BehaviorVersion;
+use aws_config::timeout::TimeoutConfig;
 pub use aws_sdk_s3::Client;
 use aws_sdk_s3::{
     Error,
+    config as s3_config,
+    config::retry::RetryConfig,
     primitives::ByteStream,
     types::{
         BucketLocationConstraint,
@@ -10,13 +14,26 @@ use aws_sdk_s3::{
         builders::CreateBucketConfigurationBuilder,
     },
 };
+use std::time::Duration;
 use kit::*;
+use kit as u;
 use std::path::Path;
 use walkdir::WalkDir;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::new(&shared_config)
+    Client::from_conf(
+        s3_config::Builder::from(shared_config)
+            .behavior_version(BehaviorVersion::latest())
+            .timeout_config(
+                TimeoutConfig::builder()
+                    .operation_timeout(Duration::from_secs(60))
+                    .operation_attempt_timeout(Duration::from_millis(10000))
+                    .build()
+            )
+            .retry_config(RetryConfig::standard().with_max_attempts(20))
+            .build(),
+    )
 }
 
 fn as_content_type(key: &str) -> String {
@@ -53,12 +70,13 @@ pub async fn put_str(client: &Client, bucket: &str, key: &str, payload: &str) ->
 
 pub async fn put_object(client: &Client, bucket: &str, file: &Path, key: &str) {
     let body = ByteStream::from_path(file).await;
+    let b = body.unwrap();
     let ctype = as_content_type(key);
     let _ = client
         .put_object()
         .bucket(bucket)
         .key(key)
-        .body(body.unwrap())
+        .body(b)
         .content_type(ctype)
         .send()
         .await
@@ -163,4 +181,17 @@ pub async fn list_keys(client: &Client, bucket: &str, prefix: &str) -> Vec<Strin
         xs.push(x.key.unwrap());
     }
     xs
+}
+
+pub async fn upload_file(client: &Client, bucket: &str, file: &str, key: &str) {
+    let bytes = u::read_bytes(file);
+    let body = ByteStream::from(bytes);
+    let _ = client
+        .put_object()
+        .bucket(bucket)
+        .key(key)
+        .body(body)
+        .send()
+        .await
+        .unwrap();
 }

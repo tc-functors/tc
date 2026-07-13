@@ -82,7 +82,7 @@ async fn invoke_component(
         Entity::Function => {
             let functions = &topology.functions;
             if let Some(f) = functions.get(component) {
-                function::invoke(auth, &f.fqn, payload).await;
+                function::invoke(auth, &f, payload).await;
             } else {
                 println!("Function not found")
             }
@@ -143,12 +143,19 @@ pub async fn invoke(
             }
         }
         None => {
-            let mode = match flow {
-                Some(f) => &f.mode,
-                None => "Standard",
-            };
+            let dir = kit::pwd();
+            if let Some(function) = topology.current_function(&dir) {
+                function::invoke(auth, &function, &payload).await;
+            }  else {
+                let mode = match flow {
+                    Some(f) => &f.mode,
+                    None => "Standard",
+                };
 
-            state::invoke(auth, fqn, &payload, &mode, dumb).await
+                state::invoke(auth, fqn, &payload, &mode, dumb).await
+            }
+
+
         }
     }
 }

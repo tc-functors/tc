@@ -5,26 +5,33 @@
 //! changed, and therefore must be redeployed.
 //!
 //! Design invariants that matter for perf:
-//!   - The git diff runs ONCE per `diff_fns` invocation, regardless of
-//!     function count.
-//!   - The repo root is canonicalized ONCE; all downstream comparisons use
-//!     the canonical path.
-//!   - Directories are walked ONCE per unique path across all functions
-//!     (via [`deps::Analyzer`]). Shared libraries referenced by N functions
-//!     are analyzed a single time.
-//!   - Matching is pure `starts_with` on canonical paths — no per-call
-//!     canonicalization.
+//!   - The git diff runs ONCE per `diff_fns` invocation, regardless of function count.
+//!   - The repo root is canonicalized ONCE; all downstream comparisons use the canonical path.
+//!   - Directories are walked ONCE per unique path across all functions (via [`deps::Analyzer`]).
+//!     Shared libraries referenced by N functions are analyzed a single time.
+//!   - Matching is pure `starts_with` on canonical paths — no per-call canonicalization.
 
 mod deps;
 mod manifest;
 
-pub use deps::{compute_closure, Analyzer, Closure};
-
-use composer::{Function, Topology};
+use composer::{
+    Function,
+    Topology,
+};
+pub use deps::{
+    Analyzer,
+    Closure,
+    compute_closure,
+};
 use kit as u;
-use std::collections::HashMap;
-use std::fmt;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    fmt,
+    path::{
+        Path,
+        PathBuf,
+    },
+};
 
 /// Error returned by [`diff_fns`] when an incremental diff cannot be
 /// computed. Surfaced as a typed error so callers (e.g. the resolver)
@@ -215,16 +222,13 @@ fn files_untracked_in(dir: &str) -> Vec<String> {
 /// branch-vs-default, and untracked files are folded into the diff in
 /// addition to the strict `from..to` git diff.
 ///
-/// - **Deploy time** (`diff_fns`) → `true`. The deploy is going from
-///   the snapshotter-recorded version to the current local code on
-///   disk; uncommitted local edits are part of "current local code" and
-///   the deploy must see them.
-/// - **CLI inspection** (`diff`, called from `tc diff --between A..B`)
-///   → `false`. Both endpoints are explicit committed tags, so the
-///   working-tree state is irrelevant. Including it produces noisy
-///   false positives in checkouts with lots of untracked files (test
-///   payloads, scratch docs, etc.) that happen to live under a
-///   function's source dir.
+/// - **Deploy time** (`diff_fns`) → `true`. The deploy is going from the snapshotter-recorded
+///   version to the current local code on disk; uncommitted local edits are part of "current local
+///   code" and the deploy must see them.
+/// - **CLI inspection** (`diff`, called from `tc diff --between A..B`) → `false`. Both endpoints
+///   are explicit committed tags, so the working-tree state is irrelevant. Including it produces
+///   noisy false positives in checkouts with lots of untracked files (test payloads, scratch docs,
+///   etc.) that happen to live under a function's source dir.
 fn build_diff_set(
     namespace: &str,
     from: &str,
@@ -373,11 +377,7 @@ fn diff_fns_with(
         // (`lambda::create_or_update`) then writes the full config —
         // role attachment, env block, memory, timeout — using the
         // freshly composed Runtime values.
-        let aux: Vec<PathBuf> = f
-            .aux_files
-            .iter()
-            .map(PathBuf::from)
-            .collect();
+        let aux: Vec<PathBuf> = f.aux_files.iter().map(PathBuf::from).collect();
         let closure = analyzer.closure_with_aux(&PathBuf::from(&f.dir), &aux);
         if diff.intersects(&closure) {
             changed.insert(name.clone(), f.clone());
@@ -456,8 +456,10 @@ pub fn diff(topology: &Topology, from: &str, to: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::path::Path;
+    use std::{
+        fs,
+        path::Path,
+    };
     use tempfile::TempDir;
 
     // ---- Helpers ----
@@ -614,8 +616,9 @@ mod tests {
                 "sequences": {{}}
             }}"#
         );
-        serde_json::from_str(&json)
-            .unwrap_or_else(|e| panic!("topology fixture failed to deserialize: {e}; json = {json}"))
+        serde_json::from_str(&json).unwrap_or_else(|e| {
+            panic!("topology fixture failed to deserialize: {e}; json = {json}")
+        })
     }
 
     /// End-to-end through `diff_fns_with`: when a role file outside the
@@ -625,9 +628,17 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkfile(root, "topologies/foo/myfn/handler.py", "");
-        mkfile(root, "infrastructure/tc/foo/roles/myfn.json", "{\"old\": true}");
+        mkfile(
+            root,
+            "infrastructure/tc/foo/roles/myfn.json",
+            "{\"old\": true}",
+        );
 
-        let fn_dir = root.join("topologies/foo/myfn").to_str().unwrap().to_string();
+        let fn_dir = root
+            .join("topologies/foo/myfn")
+            .to_str()
+            .unwrap()
+            .to_string();
         let role_path = root
             .join("infrastructure/tc/foo/roles/myfn.json")
             .to_str()
@@ -640,7 +651,9 @@ mod tests {
         // Simulate `build_diff_set` for a modified file: canonicalize
         // the changed path. (Modification case — file exists.)
         let canonical = PathBuf::from(&role_path).canonicalize().unwrap();
-        let diff = DiffSet { files: vec![canonical] };
+        let diff = DiffSet {
+            files: vec![canonical],
+        };
 
         let changed = diff_fns_with(&topology, &diff, &analyzer);
         assert!(
@@ -666,7 +679,11 @@ mod tests {
         // NOTE: vars/myfn.json deliberately does NOT exist on disk —
         // this is the deletion-at-tag-B case.
 
-        let fn_dir = root.join("topologies/foo/myfn").to_str().unwrap().to_string();
+        let fn_dir = root
+            .join("topologies/foo/myfn")
+            .to_str()
+            .unwrap()
+            .to_string();
         // The composer would emit the conventional path even though the
         // file is gone — mirror that here.
         let canonical_root = root.canonicalize().unwrap();
@@ -675,8 +692,7 @@ mod tests {
             .to_str()
             .unwrap()
             .to_string();
-        let topology =
-            fixture_topology("myfn", &fn_dir, &[logical_vars_path.clone()]);
+        let topology = fixture_topology("myfn", &fn_dir, &[logical_vars_path.clone()]);
 
         let analyzer = Analyzer::new(root).unwrap();
 
@@ -685,7 +701,9 @@ mod tests {
         let rel = "infrastructure/tc/foo/vars/myfn.json";
         let joined = canonical_root.join(rel);
         let diff_path = joined.canonicalize().unwrap_or(joined);
-        let diff = DiffSet { files: vec![diff_path] };
+        let diff = DiffSet {
+            files: vec![diff_path],
+        };
 
         let changed = diff_fns_with(&topology, &diff, &analyzer);
         assert!(
@@ -705,7 +723,11 @@ mod tests {
         mkfile(root, "topologies/foo/myfn/handler.py", "");
         mkfile(root, "infrastructure/tc/foo/roles/myfn.json", "{}");
 
-        let fn_dir = root.join("topologies/foo/myfn").to_str().unwrap().to_string();
+        let fn_dir = root
+            .join("topologies/foo/myfn")
+            .to_str()
+            .unwrap()
+            .to_string();
         let role_path = root
             .join("infrastructure/tc/foo/roles/myfn.json")
             .to_str()
@@ -778,8 +800,8 @@ mod tests {
     /// - `0.0.3` (C): adds `otherfn/handler.py`.
     ///
     /// After the last tag, the working tree is dirtied with:
-    /// - an untracked `topologies/foo/myfn/scratch.json` (the kind of
-    ///   stray test payload that the bug was flagging).
+    /// - an untracked `topologies/foo/myfn/scratch.json` (the kind of stray test payload that the
+    ///   bug was flagging).
     /// - an uncommitted modification to `otherfn/handler.py`.
     ///
     /// The strict tag-to-tag diff between any pair of these tags
@@ -856,13 +878,17 @@ mod tests {
 
         // 0.0.2 -> 0.0.3 introduced topologies/foo/otherfn/handler.py.
         assert!(
-            paths.iter().any(|p| p.ends_with("topologies/foo/otherfn/handler.py")),
+            paths
+                .iter()
+                .any(|p| p.ends_with("topologies/foo/otherfn/handler.py")),
             "tag-to-tag diff must surface the committed change; got {:?}",
             paths
         );
         // The untracked scratch file must NOT appear.
         assert!(
-            !paths.iter().any(|p| p.ends_with("topologies/foo/myfn/scratch.json")),
+            !paths
+                .iter()
+                .any(|p| p.ends_with("topologies/foo/myfn/scratch.json")),
             "untracked working-tree file leaked into a strict tag-to-tag \
              diff (this is the regression we're guarding against); got {:?}",
             paths
@@ -907,7 +933,9 @@ mod tests {
             .collect();
 
         assert!(
-            paths.iter().any(|p| p.ends_with("topologies/foo/myfn/scratch.json")),
+            paths
+                .iter()
+                .any(|p| p.ends_with("topologies/foo/myfn/scratch.json")),
             "include_local=true must surface untracked working-tree \
              files (deploy-time semantics); got {:?}",
             paths

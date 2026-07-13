@@ -57,6 +57,7 @@ pub struct Route {
     pub target: Target,
     pub domains: HashMap<String, HashMap<String, String>>,
     pub throttling: HashMap<String, HashMap<String, Throttling>>,
+    pub verticals: HashMap<String, HashMap<String, Vec<String>>>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -65,6 +66,7 @@ pub struct Target {
     pub name: String,
     pub arn: String,
     pub request_params: HashMap<String, String>,
+    pub response_params: HashMap<String, String>,
 }
 
 fn _make_response_template() -> String {
@@ -102,6 +104,8 @@ fn make_target(
     fns: &HashMap<String, Function>,
     events: &HashMap<String, Event>,
     queues: &HashMap<String, Queue>,
+    default_rspec: Option<RouteSpec>
+
 ) -> Target {
     if let Some(f) = &rspec.function {
         let name = find_function(&f, fns);
@@ -109,7 +113,23 @@ fn make_target(
             entity: Entity::Function,
             name: name.clone(),
             arn: template::lambda_arn(&name),
-            request_params: HashMap::new(),
+            request_params: match &rspec.request_params {
+                Some(r) => r.clone(),
+                None => {
+                    if let Some(d) = default_rspec {
+                        match d.request_params {
+                            Some(x) => x,
+                            None => HashMap::new()
+                        }
+                    } else {
+                        HashMap::new()
+                    }
+                }
+            },
+            response_params: match &rspec.response_params {
+                Some(r) => r.clone(),
+                None => HashMap::new()
+            }
         };
     } else if let Some(ev) = &rspec.event {
         let mut req: HashMap<String, String> = HashMap::new();
@@ -135,6 +155,7 @@ fn make_target(
             name: s!(ev),
             arn: String::from(""),
             request_params: req,
+            response_params: HashMap::new()
         };
     } else if let Some(q) = &rspec.queue {
         let mut req: HashMap<String, String> = HashMap::new();
@@ -149,6 +170,7 @@ fn make_target(
             name: s!(q),
             arn: String::from(""),
             request_params: req,
+            response_params: HashMap::new()
         };
     } else {
         let arn = template::sfn_arn(fqn);
@@ -162,11 +184,12 @@ fn make_target(
             name: fqn.to_string(),
             arn: arn,
             request_params: req,
+            response_params: HashMap::new()
         };
     }
 }
 
-fn make_cors(maybe_cors: &Option<CorsSpec>) -> Option<Cors> {
+fn make_cors(maybe_cors: &Option<CorsSpec>, _default: Option<RouteSpec>) -> Option<Cors> {
     match maybe_cors {
         Some(c) => Some(Cors {
             methods: {
@@ -193,6 +216,7 @@ fn make_authorizer(
     fqn: &str,
     rspec: &RouteSpec,
     fns: &HashMap<String, Function>,
+    default_rspec: Option<RouteSpec>
 ) -> Option<Authorizer> {
     if let Some(azer) = &rspec.authorizer {
         match fns.get(azer) {
@@ -228,7 +252,18 @@ fn make_authorizer(
             }
         }
     } else {
-        None
+        if let Some(d) = default_rspec {
+            match d.authorizer {
+                Some(azer) => Some(Authorizer {
+                    create: true,
+                    name: template::maybe_namespace(&azer),
+                    kind: s!("lambda"),
+                }),
+                None => None
+            }
+        } else {
+            None
+        }
     }
 }
 
@@ -236,7 +271,7 @@ impl Route {
     pub fn new(
         fqn: &str,
         name: &str,
-        _spec: &TopologySpec,
+        spec: &TopologySpec,
         rspec: &RouteSpec,
         fns: &HashMap<String, Function>,
         events: &HashMap<String, Event>,
@@ -244,9 +279,15 @@ impl Route {
         infra_dir: &str,
         skip: bool,
     ) -> Route {
-        let gateway = match &rspec.gateway {
-            Some(gw) => gw.clone(),
-            None => s!(fqn),
+
+        let gateway = match &rspec.vertical {
+            Some(v) => format!("{}_{{{{sandbox}}}}", v),
+            None => {
+                match &rspec.gateway {
+                    Some(gw) => gw.clone(),
+                    None => s!(fqn),
+                }
+            }
         };
 
         let path = match &rspec.path {
@@ -269,11 +310,16 @@ impl Route {
             None => s!("$default"),
         };
 
-        let target = make_target(fqn, rspec, &method, fns, events, queues);
+        let default = match &spec.routes {
+            Some(rs) => rs.get("default").cloned(),
+            None => None
+        };
 
-        let authorizer = make_authorizer(fqn, rspec, fns);
+        let target = make_target(fqn, rspec, &method, fns, events, queues, default.clone());
 
-        let cors = make_cors(&rspec.cors);
+        let authorizer = make_authorizer(fqn, rspec, fns, default.clone());
+
+        let cors = make_cors(&rspec.cors, default);
 
         Route {
             method: method.clone(),
@@ -288,6 +334,7 @@ impl Route {
             domains: find_domains(infra_dir),
             throttling: find_throttling(infra_dir),
             cors: cors,
+            verticals: find_verticals(infra_dir),
             skip: skip,
         }
     }
@@ -297,6 +344,7 @@ impl Route {
 pub struct Infra {
     pub throttling: Option<HashMap<String, HashMap<String, Throttling>>>,
     pub domains: Option<HashMap<String, HashMap<String, String>>>,
+    pub verticals: Option<HashMap<String, HashMap<String, Vec<String>>>>,
 }
 
 impl Infra {
@@ -330,6 +378,19 @@ fn find_throttling(infra_dir: &str) -> HashMap<String, HashMap<String, Throttlin
     if let Some(inf) = maybe_infra {
         if let Some(throttling) = &inf.throttling {
             throttling.clone()
+        } else {
+            HashMap::new()
+        }
+    } else {
+        HashMap::new()
+    }
+}
+
+fn find_verticals(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String>>> {
+    let maybe_infra = Infra::new(infra_dir);
+    if let Some(inf) = maybe_infra {
+        if let Some(verticals) = &inf.verticals {
+            verticals.clone()
         } else {
             HashMap::new()
         }

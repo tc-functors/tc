@@ -32,7 +32,9 @@ use crate::{
     index,
     sequence,
     tag,
-    version
+    hooks,
+    version,
+    hooks::Hook
 };
 use compiler::{
     Entity,
@@ -73,13 +75,6 @@ pub struct Topology {
     pub events: HashMap<String, Event>,
     pub routes: HashMap<String, Route>,
     pub functions: HashMap<String, Function>,
-    /// Full set of this topology's own functions, populated by the
-    /// composer and **never replaced by the resolver**. The resolver
-    /// shrinks `functions` to the modified subset (for code uploads),
-    /// but role/policy reconciliation needs to operate over every
-    /// function so that adding/changing a per-function role JSON
-    /// re-attaches the new role to the lambda even when its code
-    /// hasn't changed.
     #[serde(default)]
     pub all_functions: HashMap<String, Function>,
     pub mutations: HashMap<String, Mutation>,
@@ -96,6 +91,7 @@ pub struct Topology {
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
     pub sequences: HashMap<String, Vec<Connector>>,
+    pub hooks: HashMap<String, Vec<Hook>>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -669,9 +665,9 @@ fn make_base_roles() -> HashMap<String, Role> {
     h.insert("event".to_string(), Role::default(Entity::Event));
     h.insert("state".to_string(), Role::default(Entity::State));
     h.insert("function".to_string(), Role::default(Entity::Function));
+    h.insert("microvm".to_string(), Role::default_microvm());
     h
 }
-
 
 fn make_test(
     t: Option<HashMap<String, TestSpec>>,
@@ -719,7 +715,7 @@ fn find_kind(
 fn is_concurrent(maybe_concurrent: &Option<bool>) -> bool {
     match maybe_concurrent {
         Some(b) => *b,
-        None => false
+        None => false,
     }
 }
 
@@ -796,6 +792,7 @@ fn make(
         config: Config::new(),
         transducer: maybe_transducer,
         sequences: sequence::make_all(&spec.sequences),
+        hooks: hooks::load(&infra_dir),
     }
 }
 
@@ -815,9 +812,12 @@ fn make_relative(dir: &str) -> Topology {
 }
 
 fn make_standalone(dir: &str) -> Topology {
-    let function = Function::new(dir, dir, "", "");
+    let infra_dir = format!("{}/infra", dir);
+
+    let function = Function::new(dir, &infra_dir, "", "");
     let functions = Function::to_map(function.clone());
     let namespace = function.name.to_owned();
+
 
     Topology {
         namespace: namespace.clone(),
@@ -827,7 +827,7 @@ fn make_standalone(dir: &str) -> Topology {
         concurrent: false,
         version: u::current_semver(&namespace),
         sandbox: template::sandbox(),
-        infra: u::empty(),
+        infra: infra_dir,
         dir: s!(dir),
         hyphenated_names: false,
         events: HashMap::new(),
@@ -849,6 +849,7 @@ fn make_standalone(dir: &str) -> Topology {
         config: Config::new(),
         transducer: None,
         sequences: HashMap::new(),
+        hooks: HashMap::new(),
     }
 }
 
@@ -1019,8 +1020,10 @@ impl Topology {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::os::unix::fs::symlink;
+    use std::{
+        fs,
+        os::unix::fs::symlink,
+    };
     use tempfile::TempDir;
 
     #[test]
@@ -1082,10 +1085,7 @@ mod tests {
         let outer = TempDir::new().unwrap();
         let root = outer.path();
 
-        write_topology_yml(
-            root,
-            "name: shared-dedup-parent\nkind: step-function\n",
-        );
+        write_topology_yml(root, "name: shared-dedup-parent\nkind: step-function\n");
 
         write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
         write_shared_function(&root.join("shared/bar"), "bar", "shared_bar");
@@ -1163,8 +1163,7 @@ mod tests {
             offenders
         );
 
-        let child_namespaces: std::collections::BTreeSet<&String> =
-            topology.nodes.keys().collect();
+        let child_namespaces: std::collections::BTreeSet<&String> = topology.nodes.keys().collect();
         assert!(
             child_namespaces.contains(&s!("child-a")),
             "child-a missing; root.nodes = {:?}",
@@ -1181,10 +1180,7 @@ mod tests {
             child_namespaces
         );
 
-        let child_c = topology
-            .nodes
-            .get("child-c")
-            .expect("child-c node present");
+        let child_c = topology.nodes.get("child-c").expect("child-c node present");
         let local = child_c
             .functions
             .get("local")
@@ -1208,10 +1204,7 @@ mod tests {
         }
         fn assert_roles_match_functions(t: &Topology, path: &str) {
             for (rname, _) in &t.roles {
-                let owned_by_function = t
-                    .functions
-                    .values()
-                    .any(|f| &f.runtime.role.name == rname);
+                let owned_by_function = t.functions.values().any(|f| &f.runtime.role.name == rname);
                 let owned_by_flow = t
                     .flow
                     .as_ref()
@@ -1348,10 +1341,7 @@ mod tests {
         write_shared_function(&root.join("shared/foo"), "foo", "shared_foo");
 
         // Two levels: root -> mid -> leaf, leaf imports shared function
-        write_topology_yml(
-            &root.join("mid"),
-            "name: mid\nkind: step-function\n",
-        );
+        write_topology_yml(&root.join("mid"), "name: mid\nkind: step-function\n");
         write_topology_yml(
             &root.join("mid/leaf"),
             "name: leaf\nkind: step-function\nfunctions:\n  foo:\n    uri: ../../shared/foo\n",
@@ -1368,7 +1358,9 @@ mod tests {
             if t.functions.contains_key(key) {
                 return true;
             }
-            t.nodes.values().any(|child| has_shared_function(child, key))
+            t.nodes
+                .values()
+                .any(|child| has_shared_function(child, key))
         }
         for child in topology.nodes.values() {
             assert!(

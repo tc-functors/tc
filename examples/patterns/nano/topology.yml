@@ -1,0 +1,13 @@
+name: example-nano
+
+functions:
+  f1:
+    runtime:
+      code: |
+        def handler(event, context):
+          return {'data': ['a', 'b']}
+  f2:
+    runtime:
+      code: |
+        def handler(event, context):
+          return event.get('data').join(",")

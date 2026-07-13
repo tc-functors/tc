@@ -1,0 +1,16 @@
+name: example-routes
+infra: ./infra
+
+routes:
+  /analytics/timeseries:
+    method: GET
+    vertical: analytics
+    function: f1
+  /payment/process:
+    method: GET
+    vertical: payment
+    function: f2
+  /profile/contact:
+    method: GET
+    vertical: profile
+    function: f3

@@ -113,6 +113,29 @@ fn make_lambda_actions() -> Vec<Action> {
     ]
 }
 
+fn make_microvm_actions() -> Vec<Action> {
+    vec![
+        Action {
+            action: v!["s3:GetObject"],
+            effect: s!("Allow"),
+            resource: v![
+                &format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")
+            ],
+            sid: make_sid("MVS3"),
+        },
+        Action {
+            action: v![
+                "logs:CreateLogGroup",
+                "logs:PutLogEvents",
+                "logs:CreateLogStream"
+            ],
+            effect: s!("Allow"),
+            resource: v!["*"],
+            sid: make_sid("MVLambdaLog"),
+        }
+    ]
+}
+
 fn make_sfn_actions() -> Vec<Action> {
     vec![
         Action {
@@ -297,6 +320,16 @@ impl Policy {
             Entity::Mutation => make_appsync_actions(),
             _ => todo!(),
         };
+
+        Policy {
+            version: s!("2012-10-17"),
+            statement: actions,
+        }
+    }
+
+
+    pub fn microvm() -> Policy {
+        let actions = make_microvm_actions();
 
         Policy {
             version: s!("2012-10-17"),

@@ -1,0 +1,8 @@
+name: p6
+runtime:
+  provider: MicroVm
+  handler: 'python3 main.py'
+  port: 8080
+
+build:
+  kind: MicroVmImage

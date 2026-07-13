@@ -5,7 +5,6 @@ use super::{
         Build,
         Function,
         Runtime,
-        code,
     },
     mutation::Mutation,
     role::Role,
@@ -17,11 +16,11 @@ use base64::{
     engine::general_purpose,
 };
 use compiler::{
+    Arch,
     BuildKind,
     Entity,
     LangRuntime,
     spec::function::Provider,
-    Arch
 };
 use kit as u;
 use kit::*;
@@ -30,6 +29,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+mod function;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MutationTarget {
@@ -176,8 +176,11 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         skip_dev_deps: false,
         environment: HashMap::new(),
         dirs: vec![],
-        include_deps: false
-
+        include_deps: false,
+        base_image_arn: String::from(""),
+        build_role_arn: String::from(""),
+        image_name: String::from(""),
+        bucket: String::from("")
     };
 
     let tags = tag::make(namespace, "");
@@ -199,11 +202,13 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         timeout: Some(60),
         snapstart: false,
         enable_fs: false,
+        enable_network: false,
         network: None,
         fs: None,
         arch: Arch::X8664,
         infra_spec: HashMap::new(),
-        cluster: String::from(""),
+        microvm: None,
+        port: 8080
     };
 
     Function {
@@ -278,7 +283,7 @@ impl Transducer {
         let t_path = format!("{}/transducer.json", &dir);
         let code_path = format!("{}/handler.py", &dir);
 
-        let b64_code = code::make_transducer_code();
+        let b64_code = function::make_code();
         let bytes = general_purpose::STANDARD.decode(&b64_code).unwrap();
         let code = String::from_utf8_lossy(&bytes);
 

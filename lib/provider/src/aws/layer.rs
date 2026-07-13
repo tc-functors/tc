@@ -64,19 +64,11 @@ pub async fn get_code_url(client: &Client, arn: &str) -> Option<String> {
 pub struct Layer {
     pub name: String,
     pub version: i64,
-    pub created: String
+    pub created: String,
 }
 
-async fn list_by_token(
-    client: &Client,
-    token: &str,
-) -> (Vec<Layer>, Option<String>) {
-    let res = client
-        .list_layers()
-        .marker(token)
-        .send()
-        .await
-        .unwrap();
+async fn list_by_token(client: &Client, token: &str) -> (Vec<Layer>, Option<String>) {
+    let res = client.list_layers().marker(token).send().await.unwrap();
     let mut layers: Vec<Layer> = vec![];
     let xs = res.layers.unwrap().to_vec();
     for x in xs {
@@ -84,7 +76,7 @@ async fn list_by_token(
         let layer = Layer {
             name: x.layer_name.unwrap(),
             version: ver.version,
-            created: ver.created_date.unwrap()
+            created: ver.created_date.unwrap(),
         };
         layers.push(layer);
     }
@@ -93,11 +85,7 @@ async fn list_by_token(
 
 pub async fn list(auth: &Auth) -> Vec<Layer> {
     let client = make_client(auth).await;
-    let res = client
-        .list_layers()
-        .send()
-        .await
-        .unwrap();
+    let res = client.list_layers().send().await.unwrap();
     let mut layers: Vec<Layer> = vec![];
     let initial = res.layers.unwrap().to_vec();
     let mut token = res.next_marker;
@@ -107,7 +95,7 @@ pub async fn list(auth: &Auth) -> Vec<Layer> {
         let layer = Layer {
             name: x.layer_name.unwrap(),
             version: ver.version,
-            created: ver.created_date.unwrap()
+            created: ver.created_date.unwrap(),
         };
         layers.push(layer);
     }

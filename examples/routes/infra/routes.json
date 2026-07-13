@@ -1,0 +1,14 @@
+{
+  "verticals": {
+    "api.myapp.com": {
+      "payment_beta": ["/payment"],
+      "analytics_alpha": ["/analytics"],
+      "profile_stable": ["/profile"]
+    }
+  },
+  "domains": {
+    "default": {
+      "stable": "api.{{env}}.myapp.com"
+    }
+  }
+}

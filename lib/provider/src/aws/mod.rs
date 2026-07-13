@@ -20,6 +20,9 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
+pub mod microvm;
+pub mod agentcorectl;
+pub mod agentcore;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
@@ -190,10 +193,7 @@ impl Auth {
     }
 
     pub fn api_gateway_arn(&self, api_id: &str) -> String {
-        format!(
-            "arn:aws:apigateway:{}::/apis/{}",
-            &self.region, api_id
-        )
+        format!("arn:aws:apigateway:{}::/apis/{}", &self.region, api_id)
     }
 
     pub fn pool_arn(&self, pool_id: &str) -> String {

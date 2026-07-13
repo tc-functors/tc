@@ -4,6 +4,7 @@ use compiler::{
     TopologyKind,
     spec::{
         InfraSpec,
+        NetworkSpec,
         function::FileSystemKind,
     },
 };
@@ -252,23 +253,40 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
     }
 }
 
-async fn resolve_network(ctx: &Context, network: Option<Network>) -> Option<Network> {
+async fn resolve_network(
+    ctx: &Context,
+    enable_network: bool,
+    ns: Option<NetworkSpec>,
+    network: Option<Network>,
+) -> Option<Network> {
     let Context { auth, config, .. } = ctx;
 
     match network {
         Some(net) => Some(net),
         None => {
-            let cfg = &config.aws.efs.network;
-            let cfg_net = cfg.get(&auth.name);
-            match cfg_net {
-                Some(netc) => {
+            if enable_network {
+                if let Some(n) = ns {
                     let net = Network {
-                        subnets: netc.subnets.clone(),
-                        security_groups: netc.security_groups.clone(),
+                        subnets: n.subnets.clone(),
+                        security_groups: n.security_groups.clone(),
                     };
                     Some(net)
+                } else {
+                    None
                 }
-                None => None,
+            } else {
+                let cfg = &config.aws.efs.network;
+                let cfg_net = cfg.get(&auth.name);
+                match cfg_net {
+                    Some(netc) => {
+                        let net = Network {
+                            subnets: netc.subnets.clone(),
+                            security_groups: netc.security_groups.clone(),
+                        };
+                        Some(net)
+                    }
+                    None => None,
+                }
             }
         }
     }
@@ -334,7 +352,10 @@ fn augment_infra_spec(default: &InfraSpec, s: &InfraSpec) -> InfraSpec {
             None => default.environment.clone(),
         },
         image_uri: None,
-        network: None,
+        network: match s.network.clone() {
+            Some(p) => Some(p),
+            None => default.network.clone(),
+        },
         filesystem: None,
         provisioned_concurrency: match s.provisioned_concurrency {
             Some(p) => Some(p),
@@ -381,6 +402,7 @@ async fn resolve_runtime(
         fs,
         infra_spec,
         enable_fs,
+        enable_network,
         ..
     } = runtime;
     let mut r: Runtime = runtime.clone();
@@ -407,9 +429,12 @@ async fn resolve_runtime(
     if !layers.is_empty() {
         r.layers = resolve_layers(ctx, layers.clone()).await;
     }
-    if *enable_fs {
-        r.network = resolve_network(ctx, network.clone()).await;
-        r.fs = resolve_fs(ctx, fs.clone()).await;
+    if *enable_fs || *enable_network {
+        r.network =
+            resolve_network(ctx, r.enable_network, actual_infra.network, network.clone()).await;
+        if *enable_fs {
+            r.fs = resolve_fs(ctx, fs.clone()).await;
+        }
     }
     r.infra_spec = HashMap::new();
     r

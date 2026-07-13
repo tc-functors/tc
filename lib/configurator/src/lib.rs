@@ -303,6 +303,10 @@ pub struct Lambda {
     #[derivative(Default(value = "default()"))]
     #[serde(default = "default")]
     pub default_image_repo: String,
+
+    #[derivative(Default(value = "default()"))]
+    #[serde(default = "default")]
+    pub asset_bucket: String,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
@@ -444,10 +448,10 @@ impl Config {
     }
 
     pub fn notification_webhook(&self, scope: &str) -> Option<String> {
-       if let Some(hook) = self.notifier.webhooks.get(scope) {
+        if let Some(hook) = self.notifier.webhooks.get(scope) {
             match self.notifier.mappings.get(hook) {
                 Some(m) => Some(m.to_string()),
-                None => Some(hook.to_string())
+                None => Some(hook.to_string()),
             }
         } else {
             None

@@ -700,7 +700,6 @@ pub async fn list_api_keys(client: &Client, api_id: &str) -> Vec<String> {
     }
 }
 
-
 pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
     let tags = list_tags(&client, arn).await.unwrap();
     match tags.get(&tag) {

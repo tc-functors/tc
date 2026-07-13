@@ -70,6 +70,19 @@ pub struct Mutation {
     pub types_map: HashMap<String, HashMap<String, String>>,
 }
 
+fn make_input(input_name: &str, mappings: HashMap<String, String>) -> String {
+    let mut s: String = s!("");
+    for (k, v) in mappings {
+        s.push_str(&format!("{}: {} ", k, v));
+    }
+    format!(
+        r##"input {input_name} {{
+  {s}
+}}
+"##
+    )
+}
+
 fn make_type(type_name: &str, mappings: HashMap<String, String>) -> String {
     let mut s: String = s!("");
     for (k, v) in mappings {
@@ -135,14 +148,19 @@ fn make_mut_type(fields: &str) -> String {
 }
 
 type Types = HashMap<String, HashMap<String, String>>;
+type Inputs = HashMap<String, HashMap<String, String>>;
 
 fn is_subscribable(type_name: &str) -> bool {
     !type_name.ends_with("Input") && type_name != "Event"
 }
 
-fn make_types(types: Types, resolvers: HashMap<String, ResolverSpec>) -> HashMap<String, String> {
+fn make_types(types: Types, inputs: Inputs, resolvers: HashMap<String, ResolverSpec>) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
     let mut query_fields: String = s!("");
+    for (input_name, mappings) in inputs.clone() {
+        h.insert(s!(&input_name), make_input(&input_name, mappings));
+    }
+
     for (type_name, mappings) in types.clone() {
         h.insert(s!(&type_name), make_type(&type_name, mappings));
         let f = make_query_fields(&type_name);
@@ -153,7 +171,15 @@ fn make_types(types: Types, resolvers: HashMap<String, ResolverSpec>) -> HashMap
 
     let mut mut_fields: String = s!("");
     for (type_name, resolver) in resolvers.clone() {
-        let input = types.get(&resolver.input);
+        let type_input = types.get(&resolver.input);
+        let input = inputs.get(&resolver.input);
+        match type_input {
+            Some(it) => {
+                let f = make_mut_fields(&type_name, it.clone(), resolver.output.clone());
+                mut_fields.push_str(&f);
+            }
+            None => (),
+        }
         match input {
             Some(it) => {
                 let f = make_mut_fields(&type_name, it.clone(), resolver.output);
@@ -199,6 +225,10 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
     match some_mutatations {
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());
+            let inputs = match ms.inputs {
+                Some(i) => i,
+                None => HashMap::new()
+            };
             let authorizer = match &ms.authorizer {
                 Some(ath) => ath,
                 None => "default",
@@ -206,7 +236,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
             let m = Mutation {
                 api_name: format!("{}_{{{{sandbox}}}}", namespace),
                 authorizer: template::maybe_namespace(authorizer),
-                types: make_types(types.to_owned(), ms.resolvers.to_owned()),
+                types: make_types(types.to_owned(), inputs.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),
                 role_arn: Role::entity_role_arn(Entity::Mutation),
                 types_map: types,

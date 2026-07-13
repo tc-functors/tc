@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.107"
+version = "0.9.132"
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.95"
 
 [workspace.package]
-version = "0.9.107"
+version = "0.9.132"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -15,7 +15,22 @@ colored = "2.0.0"
 log = "0.4"
 clap = { version = "4.1", features = ["derive"] }
 openssl = { version = "0.10", features = ["vendored"] }
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+schemars = "1.2.1"
+rmcp = { version = "1.7.0", features = [
+          "server",
+           "macros",
+	   "transport-io",
+           "auth",
+	   "elicitation",
+	   "schemars",
+     ] }
+tokio = { version = "1", features = [
+    "macros",
+    "rt",
+    "rt-multi-thread",
+    "io-std",
+    "signal",
+] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tabled = "0.10.0"
@@ -44,6 +59,8 @@ executor = { path = "lib/executor" }
 emulator = { path = "lib/emulator" }
 provider = { path = "lib/provider" }
 visualizer = { path = "lib/visualizer" }
+validator = { path = "lib/validator" }
+repl = { path = "lib/repl" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -73,6 +90,8 @@ members = [
    "lib/configurator",
    "lib/differ",
    "lib/visualizer",
+   "lib/validator",
+   "lib/repl"
 ]
 
 [profile.release]

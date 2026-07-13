@@ -113,7 +113,11 @@ pub fn make_targets(
         ..
     } = espec;
 
-    let dead_letter_arn = espec.dead_letter_queue.as_ref().filter(|q| !q.is_empty()).map(|q| template::sqs_arn(q));
+    let dead_letter_arn = espec
+        .dead_letter_queue
+        .as_ref()
+        .filter(|q| !q.is_empty())
+        .map(|q| template::sqs_arn(q));
     let retry_attempts = espec.retries;
     let maximum_event_age_in_seconds = espec.maximum_event_age_in_seconds;
 
@@ -340,7 +344,7 @@ impl Event {
 
         let bus = match std::env::var("TC_SANDBOXED_EVENTS") {
             Ok(_) => &format!("tc-{{{{sandbox}}}}"),
-            Err(_) => &config.aws.eventbridge.bus
+            Err(_) => &config.aws.eventbridge.bus,
         };
         let rule_prefix = &config.aws.eventbridge.rule_prefix;
         let rule_name = match rule_name {
@@ -400,7 +404,10 @@ mod tests {
         assert!(pattern.detail.is_some());
 
         let detail = pattern.detail.as_ref().unwrap();
-        assert!(detail.get("$or").is_some(), "$or must be preserved in detail");
+        assert!(
+            detail.get("$or").is_some(),
+            "$or must be preserved in detail"
+        );
 
         let out = serde_json::to_string(&pattern).unwrap();
         let reparsed: serde_json::Value = serde_json::from_str(&out).unwrap();
@@ -435,7 +442,8 @@ mod tests {
 
     #[test]
     fn filter_as_detail_value() {
-        let filter = r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
+        let filter =
+            r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
         let detail = parse_detail(Some(filter.to_string()));
         assert!(detail.is_some());
         assert!(detail.as_ref().unwrap().get("$or").is_some());
@@ -443,7 +451,8 @@ mod tests {
 
     #[test]
     fn new_builds_pattern_with_complex_filter() {
-        let filter = r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
+        let filter =
+            r#"{"$or":[{"state":[{"anything-but":"initializing"}]},{"state":[{"exists":false}]}]}"#;
         let pattern = EventPattern::new("MyEvent", vec!["myapp".into()], Some(filter.to_string()));
 
         assert_eq!(

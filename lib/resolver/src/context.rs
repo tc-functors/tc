@@ -31,6 +31,11 @@ impl Context {
             Err(_) => &self.config.aws.ecr.repo,
         };
 
+        let bucket = match std::env::var("TC_ASSET_BUCKET") {
+            Ok(r) => &r.to_owned(),
+            Err(_) => &self.config.aws.lambda.asset_bucket,
+        };
+
         let lazy_id = format!("{{{{lazy_id}}}}");
 
         table.insert("account", account);
@@ -48,6 +53,7 @@ impl Context {
         table.insert("GRAPHQL_API_KEY", "{{GRAPHQL_API_KEY}}");
         table.insert("HTTP_DOMAIN", "{{HTTP_DOMAIN}}");
         table.insert("API_KEY", "{{API_KEY}}");
+        table.insert("ASSET_BUCKET", &bucket);
         u::stencil(s, table)
     }
 }

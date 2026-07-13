@@ -1,0 +1,11 @@
+name: basic-store
+
+stores:
+  s1:
+    kind: dynamodb
+    hash_key: "Artist"
+    range_key: "SongTitle"
+
+  s2:
+    kind: s3
+    bucket: bucket

@@ -1,7 +1,0 @@
-name: python-agent
-description: basic example
-runtime:
-  provider: agentcore
-  lang: python3.12
-  package_type: zip
-  handler: handler.handler

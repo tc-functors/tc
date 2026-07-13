@@ -14,10 +14,19 @@
 //! symlinked-file targets).
 
 use crate::manifest;
-use std::cell::RefCell;
-use std::collections::{BTreeSet, HashMap, VecDeque};
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    cell::RefCell,
+    collections::{
+        BTreeSet,
+        HashMap,
+        VecDeque,
+    },
+    fs,
+    path::{
+        Path,
+        PathBuf,
+    },
+};
 use walkdir::WalkDir;
 
 /// Upper bound on symlink-chain depth. Defensive against pathological
@@ -322,11 +331,7 @@ fn resolve_manifest_refs(manifest_path: &Path, repo_root: &Path) -> Vec<PathBuf>
     let contents = match fs::read_to_string(manifest_path) {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!(
-                "failed to read manifest {}: {}",
-                manifest_path.display(),
-                e
-            );
+            tracing::warn!("failed to read manifest {}: {}", manifest_path.display(), e);
             return out;
         }
     };
@@ -359,8 +364,10 @@ fn resolve_manifest_refs(manifest_path: &Path, repo_root: &Path) -> Vec<PathBuf>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::os::unix::fs::symlink;
+    use std::{
+        fs,
+        os::unix::fs::symlink,
+    };
     use tempfile::TempDir;
 
     fn mkfile(root: &Path, rel: &str, contents: &str) {
@@ -379,7 +386,11 @@ mod tests {
     fn closure_is_just_fn_dir_when_isolated() {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
-        mkfile(root, "functions/foo/handler.py", "def handler(e, c): pass\n");
+        mkfile(
+            root,
+            "functions/foo/handler.py",
+            "def handler(e, c): pass\n",
+        );
         let c = compute_closure(&root.join("functions/foo"), root);
         assert_eq!(c.roots.len(), 1);
         assert!(c.files.is_empty());
@@ -419,8 +430,14 @@ mod tests {
         mkfile(root, "shared-a/src/a.py", "");
         mkfile(root, "shared-b/src/b.py", "");
         let c = compute_closure(&root.join("functions/foo"), root);
-        assert!(c.roots.contains(&root.join("shared-a").canonicalize().unwrap()));
-        assert!(c.roots.contains(&root.join("shared-b").canonicalize().unwrap()));
+        assert!(
+            c.roots
+                .contains(&root.join("shared-a").canonicalize().unwrap())
+        );
+        assert!(
+            c.roots
+                .contains(&root.join("shared-b").canonicalize().unwrap())
+        );
     }
 
     #[test]
@@ -444,8 +461,14 @@ mod tests {
             r#"a = {path = "../shared-a"}"#,
         );
         let c = compute_closure(&root.join("functions/foo"), root);
-        assert!(c.roots.contains(&root.join("shared-a").canonicalize().unwrap()));
-        assert!(c.roots.contains(&root.join("shared-b").canonicalize().unwrap()));
+        assert!(
+            c.roots
+                .contains(&root.join("shared-a").canonicalize().unwrap())
+        );
+        assert!(
+            c.roots
+                .contains(&root.join("shared-b").canonicalize().unwrap())
+        );
     }
 
     #[test]
@@ -457,7 +480,10 @@ mod tests {
         mkfile(root, "shared/util.py", "x = 1");
         symlink(root.join("shared"), root.join("functions/foo/shared")).unwrap();
         let c = compute_closure(&root.join("functions/foo"), root);
-        assert!(c.roots.contains(&root.join("shared").canonicalize().unwrap()));
+        assert!(
+            c.roots
+                .contains(&root.join("shared").canonicalize().unwrap())
+        );
     }
 
     #[test]
@@ -474,7 +500,10 @@ mod tests {
         )
         .unwrap();
         let c = compute_closure(&root.join("functions/foo"), root);
-        assert!(c.roots.contains(&root.join("shared_lib").canonicalize().unwrap()));
+        assert!(
+            c.roots
+                .contains(&root.join("shared_lib").canonicalize().unwrap())
+        );
     }
 
     #[test]
@@ -524,7 +553,10 @@ mod tests {
         let root = tmp.path();
         mkfile(root, "functions/foo/handler.py", "");
         let c = compute_closure(&root.join("functions/foo"), root);
-        let abs = root.canonicalize().unwrap().join("functions/foo/handler.py");
+        let abs = root
+            .canonicalize()
+            .unwrap()
+            .join("functions/foo/handler.py");
         assert!(c.contains(&abs));
         assert!(!c.contains(&root.canonicalize().unwrap().join("other/bar.py")));
     }
@@ -587,7 +619,11 @@ mod tests {
         // the canonical role path so role-only edits flag the function.
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
-        mkfile(root, "topologies/foo/myfn/handler.py", "def handler(): pass\n");
+        mkfile(
+            root,
+            "topologies/foo/myfn/handler.py",
+            "def handler(): pass\n",
+        );
         mkfile(root, "infrastructure/tc/foo/roles/myfn.json", "{}");
 
         let analyzer = Analyzer::new(root).unwrap();
@@ -615,10 +651,7 @@ mod tests {
         let logical = root.join("infrastructure/tc/foo/roles/myfn.json");
         assert!(!logical.exists(), "test setup: file must NOT exist");
 
-        let c = analyzer.closure_with_aux(
-            &root.join("topologies/foo/myfn"),
-            &[logical.clone()],
-        );
+        let c = analyzer.closure_with_aux(&root.join("topologies/foo/myfn"), &[logical.clone()]);
 
         assert!(
             c.files.contains(&logical),
@@ -642,10 +675,7 @@ mod tests {
 
         let analyzer = Analyzer::new(root).unwrap();
         let outside = outer.path().join("stray/role.json");
-        let c = analyzer.closure_with_aux(
-            &root.join("topologies/foo/myfn"),
-            &[outside.clone()],
-        );
+        let c = analyzer.closure_with_aux(&root.join("topologies/foo/myfn"), &[outside.clone()]);
 
         let canonical = outside.canonicalize().unwrap();
         assert!(!c.contains(&canonical), "outside-repo aux path leaked in");
@@ -663,10 +693,8 @@ mod tests {
         symlink(root.join("real/role.json"), root.join("link.json")).unwrap();
 
         let analyzer = Analyzer::new(root).unwrap();
-        let c = analyzer.closure_with_aux(
-            &root.join("topologies/foo/myfn"),
-            &[root.join("link.json")],
-        );
+        let c =
+            analyzer.closure_with_aux(&root.join("topologies/foo/myfn"), &[root.join("link.json")]);
 
         let canonical_real = root.join("real/role.json").canonicalize().unwrap();
         assert!(c.contains(&canonical_real));
@@ -685,10 +713,7 @@ mod tests {
 
         let analyzer = Analyzer::new(root).unwrap();
         let aux_path = root.join("topologies/foo/myfn/role.json");
-        let c = analyzer.closure_with_aux(
-            &root.join("topologies/foo/myfn"),
-            &[aux_path.clone()],
-        );
+        let c = analyzer.closure_with_aux(&root.join("topologies/foo/myfn"), &[aux_path.clone()]);
 
         let canonical = aux_path.canonicalize().unwrap();
         assert!(c.contains(&canonical));

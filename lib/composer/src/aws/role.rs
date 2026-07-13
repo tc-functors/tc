@@ -115,6 +115,7 @@ impl Role {
         }
     }
 
+
     pub fn new_static(
         entity: Entity,
         role_file: &str,
@@ -187,6 +188,29 @@ impl Role {
         }
     }
 
+
+    pub fn default_microvm() -> Role {
+        let name = format!("tc-base-microvm-{{{{sandbox}}}}");
+        let infra_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
+        let maybe_base_path = format!("{}/microvm.json", infra_dir);
+        let policy = if index::get().file_exists(&maybe_base_path) {
+            read_policy(&maybe_base_path)
+        } else {
+            Policy::microvm()
+        };
+        Role {
+            name: s!(&name),
+                    kind: Kind::Base,
+            path: String::from(""),
+            trust: Trust::new(),
+            arn: template::role_arn(&name),
+            policy: policy,
+            policy_name: s!(&name),
+            policy_arn: template::policy_arn(&name),
+        }
+    }
+
+
     pub fn provided(name: &str) -> Role {
         Role {
             name: s!(name),
@@ -203,7 +227,7 @@ impl Role {
     pub fn provided_by_entity(entity: Entity) -> Role {
         let name = match std::env::var("TC_LEGACY_ROLES") {
             Ok(_) => legacy_name_of(entity),
-            Err(_) => name_of(entity)
+            Err(_) => name_of(entity),
         };
         Role {
             name: s!(name),

@@ -10,16 +10,17 @@ use compiler::{
     Entity,
     spec::{
         function::{
+            Arch,
             AssetsSpec,
             BuildKind,
+            FileSystemKind,
+            FileSystemSpec,
             FunctionSpec,
             Lang,
             LangRuntime,
             Provider,
             RuntimeSpec,
-            FileSystemKind,
-            FileSystemSpec,
-            Arch
+            MicroVm
         },
         infra::InfraSpec,
     },
@@ -64,11 +65,14 @@ pub struct Runtime {
     pub provisioned_concurrency: Option<i32>,
     pub reserved_concurrency: Option<i32>,
     pub enable_fs: bool,
+    pub enable_network: bool,
     pub network: Option<Network>,
     pub fs: Option<FileSystem>,
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
-    pub cluster: String,
+    pub microvm: Option<MicroVm>,
+    pub port: i32
+
 }
 
 fn find_git_sha(dir: &str) -> String {
@@ -227,15 +231,12 @@ fn lookup_role(
     _fqn: &str,
     function_name: &str,
 ) -> Role {
-
-
     match &r.role {
         Some(given) => Role::provided(&given),
         None => {
             let path = match &r.role_file {
                 Some(f) => Some(follow_path(&f)),
                 None => {
-
                     let f = format!("{}/roles/{}.json", infra_dir, function_name);
                     if index::get().file_exists(&f) {
                         Some(f)
@@ -258,6 +259,26 @@ fn lookup_role(
                     Ok(_) => Role::provided_by_entity(Entity::Function),
                     Err(_) => Role::default(Entity::Function),
                 }
+            }
+        }
+    }
+}
+
+fn lookup_microvm_role(
+    infra_dir: &str,
+    r: &RuntimeSpec,
+    namespace: &str,
+    _fqn: &str,
+    function_name: &str,
+) -> Role {
+    match &r.role {
+        Some(given) => Role::provided(&given),
+        None => {
+            let f = format!("{}/roles/{}.json", infra_dir, function_name);
+            if index::get().file_exists(&f) {
+                Role::new(Entity::Function, &f, namespace, function_name)
+            } else {
+                Role::default_microvm()
             }
         }
     }
@@ -403,7 +424,11 @@ fn make_tags(namespace: &str, infra_dir: &str) -> HashMap<String, String> {
     h
 }
 
-fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>, fs: &Option<FileSystemSpec>) -> bool {
+fn needs_fs(
+    maybe_assets: Option<AssetsSpec>,
+    mount_fs: Option<bool>,
+    fs: &Option<FileSystemSpec>,
+) -> bool {
     if let Some(assets) = maybe_assets {
         let ax = assets.deps_path;
         match ax {
@@ -419,7 +444,7 @@ fn needs_fs(maybe_assets: Option<AssetsSpec>, mount_fs: Option<bool>, fs: &Optio
     } else {
         match fs {
             Some(_) => true,
-            None => false
+            None => false,
         }
     }
 }
@@ -438,20 +463,30 @@ fn make_network(infra_spec: &InfraSpec, enable_fs: bool) -> Option<Network> {
     }
 }
 
+fn make_microvm_network() -> Option<MicroVm> {
+    Some(MicroVm {
+        ingress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:ALL_INGRESS")),
+        egress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:INTERNET_EGRESS")),
+        max_duration: Some(3600),
+        log_group: None
+    })
+}
+
 fn as_fs_kind(fs_spec: &Option<FileSystemSpec>) -> FileSystemKind {
     match fs_spec {
-        Some(f) => {
-            match &f.kind {
-                Some(p) => p.clone(),
-                None => FileSystemKind::Efs
-            }
+        Some(f) => match &f.kind {
+            Some(p) => p.clone(),
+            None => FileSystemKind::Efs,
         },
-        None => FileSystemKind::Efs
+        None => FileSystemKind::Efs,
     }
 }
 
-
-fn make_fs(infra_spec: &InfraSpec, fs_spec: &Option<FileSystemSpec>, enable_fs: bool) -> Option<FileSystem> {
+fn make_fs(
+    infra_spec: &InfraSpec,
+    fs_spec: &Option<FileSystemSpec>,
+    enable_fs: bool,
+) -> Option<FileSystem> {
     if enable_fs {
         match &infra_spec.filesystem {
             Some(fs) => Some(FileSystem {
@@ -555,7 +590,7 @@ pub(super) fn collect_aux_files(
 fn as_arch(maybe_arch: &Option<Arch>) -> Arch {
     match maybe_arch {
         Some(a) => a.clone(),
-        None => Arch::X8664
+        None => Arch::X8664,
     }
 }
 
@@ -605,11 +640,13 @@ fn make_default(
         timeout: *timeout,
         snapstart: false,
         enable_fs: false,
+        enable_network: false,
         network: None,
         arch: as_arch(&None),
         fs: None,
         infra_spec: infra_spec,
-        cluster: String::from(""),
+        microvm: make_microvm_network(),
+        port: 8080
     }
 }
 
@@ -671,44 +708,48 @@ fn make_lambda(
         cpu: None,
         snapstart: u::opt_as_bool(r.snapstart),
         role: role,
+        enable_network: if let Some(n) = r.network { n } else { false },
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
         fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
         arch: as_arch(&r.arch),
         infra_spec: infra_spec,
-        cluster: String::from(""),
+        microvm: make_microvm_network(),
+        port: match r.port {
+            Some(p) => p,
+            None => 8080
+        }
     }
 }
 
-fn make_fargate(
+
+fn make_microvm(
     dir: &str,
     infra_dir: &str,
     namespace: &str,
     fqn: &str,
     fspec: &FunctionSpec,
-    rspec: &RuntimeSpec,
-    c: &Config,
+    r: &RuntimeSpec,
 ) -> Runtime {
-    let enable_fs = needs_fs(fspec.assets.clone(), rspec.mount_fs, &rspec.fs);
-    let package_type = s!("Image");
-    let uri = as_uri(
-        dir,
-        namespace,
-        &fspec.name,
-        &package_type,
-        rspec.uri.clone(),
-    );
-    let role = lookup_role(&infra_dir, &rspec, namespace, fqn, &fspec.name);
-    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, &rspec);
+    let layer_name = find_implicit_layer_name(dir, namespace, fspec);
+    let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
+    let build_kind = find_build_kind(&fspec);
+    let package_type = match &r.package_type {
+        Some(x) => x.to_string(),
+        None => match build_kind {
+            BuildKind::Image => s!("image"),
+            _ => s!("zip"),
+        },
+    };
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
+    let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
+    let role = lookup_microvm_role(&infra_dir, &r, namespace, fqn, &fspec.name);
+
+    let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
 
-    let lang = rspec.lang.clone();
-    let cluster = match &c.builder.cluster {
-        Some(c) => c,
-        None => &template::topology_fqn(namespace, false),
-    };
-
     let InfraSpec {
+        memory_size,
         timeout,
         environment,
         ..
@@ -717,37 +758,46 @@ fn make_fargate(
     let vars = make_env_vars(
         dir,
         namespace,
-        BuildKind::Code,
+        build_kind,
         fspec.assets.clone(),
         environment.clone(),
-        lang.to_lang(),
+        r.lang.to_lang(),
         fqn,
     );
 
     Runtime {
-        lang: lang,
-        provider: Provider::Fargate,
-        handler: rspec.handler.clone(),
-        package_type: package_type,
+        lang: r.lang.clone(),
+        provider: r.provider.clone().unwrap().clone(),
+        handler: r.handler.clone(),
+        package_type: package_type.to_string(),
         uri: uri,
-        layers: vec![],
+        layers: layers,
         tags: make_tags(namespace, &infra_dir),
         environment: vars,
-        provisioned_concurrency: None,
-        reserved_concurrency: None,
-        memory_size: Some(2048),
-        cpu: Some(1024),
+        provisioned_concurrency: default_infra_spec.provisioned_concurrency.clone(),
+        reserved_concurrency: default_infra_spec.reserved_concurrency.clone(),
+        memory_size: match r.mem {
+            Some(m) => Some(m),
+            None => *memory_size,
+        },
         timeout: *timeout,
-        snapstart: false,
+        cpu: None,
+        snapstart: u::opt_as_bool(r.snapstart),
         role: role,
+        enable_network: if let Some(n) = r.network { n } else { false },
         enable_fs: enable_fs,
         network: make_network(&default_infra_spec, enable_fs),
-        fs: make_fs(&default_infra_spec, &rspec.fs, enable_fs),
+        fs: make_fs(&default_infra_spec, &r.fs, enable_fs),
+        arch: as_arch(&r.arch),
         infra_spec: infra_spec,
-        arch: as_arch(&rspec.arch),
-        cluster: cluster.to_string(),
+        microvm: make_microvm_network(),
+        port: match r.port {
+            Some(p) => p,
+            None => 8080
+        }
     }
 }
+
 
 impl Runtime {
     pub fn new(
@@ -756,7 +806,7 @@ impl Runtime {
         namespace: &str,
         fspec: &FunctionSpec,
         fqn: &str,
-        cspec: &Config,
+        _cspec: &Config,
     ) -> Runtime {
         let rspec = fspec.runtime.clone();
 
@@ -767,17 +817,12 @@ impl Runtime {
 
         match rspec {
             Some(r) => {
-                if let Some(ref provider) = r.provider {
-                    match provider {
-                        Provider::Lambda => make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r),
-
-                        Provider::Fargate => {
-                            make_fargate(dir, &infra_dir, namespace, fqn, fspec, &r, cspec)
-                        }
-                    }
-                } else {
-                    make_lambda(dir, &infra_dir, namespace, fqn, fspec, &r)
+                match r.provider {
+                    Some(Provider::Lambda) => make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r),
+                    Some(Provider::MicroVm) => make_microvm(dir, &infra_dir, &namespace, fqn, fspec, &r),
+                    _ =>  make_lambda(dir, &infra_dir, &namespace, fqn, fspec, &r)
                 }
+
             }
             None => make_default(dir, &infra_dir, namespace, fqn, fspec),
         }
@@ -794,8 +839,13 @@ mod tests {
         Provider,
         RuntimeSpec,
     };
-    use std::fs;
-    use std::path::{Path, PathBuf};
+    use std::{
+        fs,
+        path::{
+            Path,
+            PathBuf,
+        },
+    };
     use tempfile::TempDir;
 
     fn fake_fspec(name: &str) -> FunctionSpec {
@@ -868,14 +918,13 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
-        let aux = collect_aux_files(
-            &infra_dir,
-            &fake_fspec("myfn"),
-            None,
-            &fake_role_no_path(),
-        );
+        let aux = collect_aux_files(&infra_dir, &fake_fspec("myfn"), None, &fake_role_no_path());
 
         let expected = format!("{}/roles/myfn.json", infra_dir);
         assert!(
@@ -893,14 +942,13 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
-        let aux = collect_aux_files(
-            &infra_dir,
-            &fake_fspec("myfn"),
-            None,
-            &fake_role_no_path(),
-        );
+        let aux = collect_aux_files(&infra_dir, &fake_fspec("myfn"), None, &fake_role_no_path());
 
         let expected = format!("{}/vars/myfn.json", infra_dir);
         assert!(
@@ -920,7 +968,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
         let override_path = root.join("shared/role.json").to_str().unwrap().to_string();
 
         let aux = collect_aux_files(
@@ -946,7 +998,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
         let vars_path = root.join("shared/vars.json").to_str().unwrap().to_string();
 
         let mut rspec = fake_rspec_no_overrides();
@@ -977,14 +1033,13 @@ mod tests {
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
         mkfile(root, "infrastructure/tc/roles/function.json", "{}");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
-        let aux = collect_aux_files(
-            &infra_dir,
-            &fake_fspec("myfn"),
-            None,
-            &fake_role_no_path(),
-        );
+        let aux = collect_aux_files(&infra_dir, &fake_fspec("myfn"), None, &fake_role_no_path());
 
         let parent_role = root
             .join("infrastructure/tc/roles/function.json")
@@ -1005,7 +1060,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
         mkdir(root, "infrastructure/tc/foo");
-        let infra_dir = root.join("infrastructure/tc/foo").to_str().unwrap().to_string();
+        let infra_dir = root
+            .join("infrastructure/tc/foo")
+            .to_str()
+            .unwrap()
+            .to_string();
 
         // Force a duplicate by setting the override role to the same
         // path as the conventional location.

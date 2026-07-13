@@ -65,7 +65,7 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
         Ok(_) => {
             eventbridge::find_or_create_bus(&client, &bus).await;
         }
-        Err(_) => ()
+        Err(_) => (),
     }
 
     let pattern = serde_json::to_string(&pattern).unwrap();

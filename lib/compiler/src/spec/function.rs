@@ -28,7 +28,10 @@ impl FromStr for Lang {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "python3.10" | "python3.11" | "python3.9" | "python3.12 | python3.13 | python 3.14 | python" => Ok(Lang::Python),
+            "python3.10"
+            | "python3.11"
+            | "python3.9"
+            | "python3.12 | python3.13 | python 3.14 | python" => Ok(Lang::Python),
             "ruby3.2" | "ruby" | "ruby32 | ruby3.4 | ruby34 | ruby" => Ok(Lang::Ruby),
             "node22" | "node20" | "node18 | node" | "Node" => Ok(Lang::Node),
             "rust" => Ok(Lang::Rust),
@@ -156,6 +159,8 @@ pub enum BuildKind {
     Extension,
     #[serde(alias = "runtime")]
     Runtime,
+    #[serde(alias = "MicroVmImage")]
+    MicroVmImage,
     #[serde(alias = "image")]
     Image,
 }
@@ -172,6 +177,7 @@ impl FromStr for BuildKind {
             "extension" => Ok(BuildKind::Extension),
             "runtime" => Ok(BuildKind::Runtime),
             "slab" => Ok(BuildKind::Slab),
+            "microvm" | "microvmimage" | "MicroVmImage" => Ok(BuildKind::MicroVmImage),
             "Image" | "image" => Ok(BuildKind::Image),
             _ => Ok(BuildKind::Code),
         }
@@ -189,6 +195,7 @@ impl BuildKind {
             BuildKind::Runtime => s!("runtime"),
             BuildKind::Image => s!("image"),
             BuildKind::Slab => s!("slab"),
+            BuildKind::MicroVmImage => s!("MicroVmImage"),
         }
     }
 }
@@ -255,6 +262,20 @@ pub struct BuildSpec {
     pub dirs: Option<Vec<String>>,
     #[serde(default)]
     pub include_deps: Option<bool>,
+
+    // below are for microvm
+
+    #[serde(default)]
+    pub image_name: Option<String>,
+
+    #[serde(default)]
+    pub base_image_arn: Option<String>,
+
+    #[serde(default)]
+    pub build_role_arn: Option<String>,
+
+    #[serde(default)]
+    pub bucket: Option<String>
 }
 
 impl BuildSpec {
@@ -269,7 +290,8 @@ impl BuildSpec {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Provider {
     Lambda,
-    Fargate,
+    MicroVm,
+    AgentCore
 }
 
 impl FromStr for Provider {
@@ -278,7 +300,8 @@ impl FromStr for Provider {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "lambda" | "Lambda" => Ok(Provider::Lambda),
-            "farget" | "Fargate" => Ok(Provider::Fargate),
+            "microvm" | "Micorvm" | "MicroVm" => Ok(Provider::MicroVm),
+            "agentcore" | "AgentCore" | "Agentcore" => Ok(Provider::AgentCore),
             _ => Ok(Provider::Lambda),
         }
     }
@@ -288,7 +311,8 @@ impl Provider {
     pub fn to_str(&self) -> String {
         match self {
             Provider::Lambda => s!("lambda"),
-            Provider::Fargate => s!("fargate"),
+            Provider::MicroVm => s!("microvm"),
+            Provider::AgentCore => s!("agentcore"),
         }
     }
 }
@@ -309,13 +333,12 @@ pub struct FileSystemSpec {
     pub bucket: Option<String>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Arch {
     #[serde(alias = "arm_64")]
     Arm64,
     #[serde(alias = "x86_64")]
-    X8664
+    X8664,
 }
 
 impl FromStr for Arch {
@@ -334,11 +357,18 @@ impl Arch {
     pub fn to_str(&self) -> String {
         match self {
             Arch::X8664 => s!("x8664"),
-            Arch::Arm64 => s!("arm64")
+            Arch::Arm64 => s!("arm64"),
         }
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MicroVm {
+    pub ingress_network_connectors: Option<String>,
+    pub egress_network_connectors: Option<String>,
+    pub max_duration: Option<i32>,
+    pub log_group: Option<String>
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RuntimeSpec {
@@ -347,6 +377,8 @@ pub struct RuntimeSpec {
 
     #[serde(default = "default_handler")]
     pub handler: String,
+
+    pub code: Option<String>,
 
     #[serde(default = "default_arch")]
     pub arch: Option<Arch>,
@@ -361,9 +393,12 @@ pub struct RuntimeSpec {
     pub role_name: Option<String>,
     pub role: Option<String>,
 
+    pub mem: Option<i32>,
+
     pub uri: Option<String>,
 
     pub mount_fs: Option<bool>,
+    pub network: Option<bool>,
     pub fs: Option<FileSystemSpec>,
 
     pub snapstart: Option<bool>,
@@ -373,6 +408,9 @@ pub struct RuntimeSpec {
 
     #[serde(default = "default_layers")]
     pub extensions: Vec<String>,
+
+    pub microvm: Option<MicroVm>,
+    pub port: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -463,8 +501,13 @@ pub struct FunctionSpec {
 }
 
 fn find_revision(dir: &str) -> String {
-    use std::collections::HashMap;
-    use std::sync::{Mutex, OnceLock};
+    use std::{
+        collections::HashMap,
+        sync::{
+            Mutex,
+            OnceLock,
+        },
+    };
     static CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     if let Ok(guard) = cache.lock() {
@@ -581,7 +624,7 @@ fn load_fspec_file(dir: &str) -> Option<FunctionSpec> {
             tasks: HashMap::new(),
             targets: None,
             shared: None,
-            aux_files: None
+            aux_files: None,
         })
     }
 }
@@ -610,7 +653,7 @@ impl FunctionSpec {
                 tasks: HashMap::new(),
                 targets: None,
                 shared: None,
-                aux_files: None
+                aux_files: None,
             },
         }
     }
@@ -622,6 +665,7 @@ pub struct InlineFunctionSpec {
     pub root: Option<bool>,
     pub functions: Option<Vec<String>>,
     pub function: Option<String>,
+    pub code: Option<String>,
     pub event: Option<String>,
     pub queue: Option<String>,
     pub mutation: Option<String>,
@@ -655,7 +699,7 @@ impl InlineFunctionSpec {
             tasks: HashMap::new(),
             targets: targets,
             shared: None,
-            aux_files: None
+            aux_files: None,
         }
     }
 

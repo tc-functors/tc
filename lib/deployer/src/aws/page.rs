@@ -151,12 +151,12 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
         let validation_records = acm::get_domain_validation_records(&client, &cert_arn).await;
         let route53_client = route53::make_client(auth).await;
         for rec in validation_records {
-            route53::create_record_set(
+            route53::create_validation_record_set(
                 &route53_client,
                 domain,
                 &rec.name,
                 &rec.r#type.as_str(),
-                &rec.value,
+                &rec.value
             )
             .await;
         }
@@ -197,7 +197,7 @@ async fn update_bucket_policy(
 async fn update_dns_record(auth: &Auth, domain: &str, dist_id: &str, cname: &str) {
     tracing::debug!("Associating domain {} with {}", domain, &dist_id);
     let rclient = route53::make_client(auth).await;
-    route53::create_record_set(&rclient, domain, domain, "CNAME", cname).await;
+    route53::create_record_set(&rclient, domain, "CNAME", cname, None).await;
 }
 
 async fn build(auth: &Auth, name: &str, page: &Page, config: &HashMap<String, String>) {
@@ -282,7 +282,6 @@ async fn create_or_update_distribution(
 
     tracing::debug!("Configuring page {} - setting OAC ", name);
     let oac_id = cloudfront::find_or_create_oac(&client, origin_domain).await;
-
 
     let cache_policy_id = match std::env::var("TC_CUSTOM_CACHE_POLICY") {
         Ok(_) => {
