@@ -21,7 +21,7 @@ pub async fn update_datasource(
     role_arn: &str,
 ) {
     let lambda_config = make_lambda_config(lambda_arn);
-    let r = client
+    let _ = client
         .update_data_source()
         .api_id(s!(api_id))
         .name(s!(name))
@@ -41,7 +41,7 @@ pub async fn create_datasource(
     role_arn: &str,
 ) {
     let lambda_config = make_lambda_config(lambda_arn);
-    let r = client
+    let _ = client
         .create_data_source()
         .api_id(s!(api_id))
         .name(s!(name))
