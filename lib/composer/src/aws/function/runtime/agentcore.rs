@@ -34,7 +34,7 @@ pub fn make(
     r: &RuntimeSpec,
 ) -> Runtime {
     let build_kind = c::find_build_kind(&fspec);
-    let uri = format!("{}/lambda.zip", dir);
+    let uri = format!("{}/agentcore.zip", dir);
     let enable_fs = false;
     let role = c::lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);

@@ -1,6 +1,6 @@
 pub mod build;
 mod code;
-mod fs;
+pub mod fs;
 pub mod runtime;
 mod target;
 
