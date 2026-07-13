@@ -4,8 +4,8 @@ pub use crate::aws::{
     flow::Flow,
     function::{
         Function,
-        layer,
-        layer::Layer,
+        runtime::layer,
+        runtime::layer::Layer,
     },
     mutation::{
         Mutation,

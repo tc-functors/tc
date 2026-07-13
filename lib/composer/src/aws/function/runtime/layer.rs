@@ -1,5 +1,6 @@
-use super::Function;
+use crate::Function;
 use crate::index;
+use compiler::BuildKind;
 use compiler::spec::function::{
     FunctionSpec,
     LangRuntime,
@@ -9,6 +10,8 @@ use kit::*;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use walkdir::WalkDir;
+use super::common as c;
+
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
     let function = Function::new(dir, dir, "", "");
@@ -187,4 +190,34 @@ pub fn find(functions: HashMap<String, Function>) -> Vec<Layer> {
     }
     layers.sort_by_key(|x| x.name.to_owned());
     layers
+}
+
+pub fn find_implicit_layer_name(dir: &str, namespace: &str, fspec: &FunctionSpec) -> Option<String> {
+    let given_fqn = &fspec.fqn;
+    let given_layer_name = &fspec.layer_name;
+
+    let build_kind = c::find_build_kind(fspec);
+    match given_layer_name {
+        Some(name) => Some(name.to_string()),
+        None => match build_kind {
+            BuildKind::Code => {
+                let lang = c::infer_lang(dir);
+                if lang == LangRuntime::Ruby32 && layerable(dir) {
+                    match given_fqn {
+                        Some(f) => Some(u::kebab_case(&f)),
+                        None => {
+                            if c::is_singular_function_dir() {
+                                Some(s!(namespace))
+                            } else {
+                                Some(format!("{}-{}", namespace, &fspec.name))
+                            }
+                        }
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+    }
 }

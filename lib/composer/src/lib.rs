@@ -20,7 +20,7 @@ pub use aws::{
     function::{
         Function,
         build::Build,
-        layer::Layer,
+        runtime::layer::Layer,
         runtime::Runtime,
     },
     mutation::Mutation,
@@ -175,7 +175,7 @@ pub fn find_layers() -> Vec<Layer> {
         let topology = compose(&dir, true);
         topology.layers()
     } else {
-        function::layer::discover()
+        function::runtime::layer::discover()
     }
 }
 
@@ -199,7 +199,7 @@ pub fn find_layer_names() -> Vec<String> {
 }
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
-    function::runtime::infer_lang(dir)
+    function::runtime::common::infer_lang(dir)
 }
 
 pub fn is_topology_dir(dir: &str) -> bool {

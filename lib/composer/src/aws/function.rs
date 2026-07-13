@@ -1,8 +1,8 @@
 pub mod build;
-pub mod code;
-pub mod layer;
+mod code;
 pub mod runtime;
-pub mod target;
+mod target;
+mod fs;
 
 use super::template;
 pub use build::Build;
@@ -14,7 +14,6 @@ use configurator::Config;
 use kit as u;
 use kit::*;
 pub use runtime::Runtime;
-use runtime::collect_aux_files;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -104,6 +103,7 @@ fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec> 
     }
 }
 
+
 impl Function {
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
         let config = Config::new();
@@ -123,7 +123,7 @@ impl Function {
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
         let mut aux_files =
-            collect_aux_files(infra_dir, &fspec, fspec.runtime.as_ref(), &runtime.role);
+            fs::collect_aux_files(infra_dir, &fspec, fspec.runtime.as_ref(), &runtime.role);
 
         if let Some(ref afiles) = fspec.aux_files {
             for file in afiles {
@@ -172,7 +172,7 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
-        let aux_files = collect_aux_files(infra_dir, fspec, fspec.runtime.as_ref(), &runtime.role);
+        let aux_files = fs::collect_aux_files(infra_dir, fspec, fspec.runtime.as_ref(), &runtime.role);
 
         let targets = Target::make_all(&fspec);
 

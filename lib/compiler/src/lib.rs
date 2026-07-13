@@ -14,6 +14,7 @@ pub use spec::{
         Arch,
         BuildKind,
         FunctionSpec,
+        RuntimeSpec,
         Lang,
         LangRuntime,
     },
