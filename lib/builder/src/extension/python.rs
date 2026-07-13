@@ -63,7 +63,7 @@ pub fn build_with_docker(dir: &str) -> (bool, String, String) {
     let cmd_str = format!(
         "docker build --no-cache  --platform=linux/amd64 . -t {}",
         u::basedir(dir)
-        );
+    );
     let (status, out, err) = u::runc(&cmd_str, dir);
     if !status {
         sh("rm -rf Dockerfile build", dir);

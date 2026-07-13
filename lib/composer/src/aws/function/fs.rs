@@ -1,5 +1,8 @@
-use compiler::{FunctionSpec, RuntimeSpec};
 use crate::Role;
+use compiler::{
+    FunctionSpec,
+    RuntimeSpec,
+};
 use kit as u;
 
 fn find_parent_function_role(dir: &str) -> Option<String> {

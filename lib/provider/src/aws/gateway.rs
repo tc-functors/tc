@@ -729,10 +729,15 @@ fn make_domain_config(name: &str, cert_arn: &str) -> DomainNameConfiguration {
         .build()
 }
 
-async fn find_api_mapping(client: &Client, api_id: &str, domain_name: &str, api_mapping_key: Option<String>) -> Option<String> {
+async fn find_api_mapping(
+    client: &Client,
+    api_id: &str,
+    domain_name: &str,
+    api_mapping_key: Option<String>,
+) -> Option<String> {
     let key = match api_mapping_key {
         Some(k) => Some(k),
-        None => Some(String::from(""))
+        None => Some(String::from("")),
     };
     let res = client
         .get_api_mappings()
@@ -747,7 +752,7 @@ async fn find_api_mapping(client: &Client, api_id: &str, domain_name: &str, api_
                 match x.api_id {
                     Some(id) => {
                         if id == api_id && x.api_mapping_key == key {
-                            return x.api_mapping_id
+                            return x.api_mapping_id;
                         }
                     }
                     None => (),
@@ -759,7 +764,13 @@ async fn find_api_mapping(client: &Client, api_id: &str, domain_name: &str, api_
     }
 }
 
-async fn update_api_mapping(client: &Client, api_mapping_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
+async fn update_api_mapping(
+    client: &Client,
+    api_mapping_id: &str,
+    stage: &str,
+    domain_name: &str,
+    api_mapping_key: Option<String>,
+) {
     let res = client
         .update_api_mapping()
         .domain_name(domain_name)
@@ -771,8 +782,17 @@ async fn update_api_mapping(client: &Client, api_mapping_id: &str, stage: &str, 
     res.unwrap();
 }
 
-async fn create_api_mapping(client: &Client, api_id: &str, stage: &str, domain_name: &str, api_mapping_key: Option<String>) {
-    println!("Creating api mapping: api_id: {} {:?}", &api_id, &api_mapping_key);
+async fn create_api_mapping(
+    client: &Client,
+    api_id: &str,
+    stage: &str,
+    domain_name: &str,
+    api_mapping_key: Option<String>,
+) {
+    println!(
+        "Creating api mapping: api_id: {} {:?}",
+        &api_id, &api_mapping_key
+    );
     let res = client
         .create_api_mapping()
         .api_id(api_id)
@@ -783,23 +803,32 @@ async fn create_api_mapping(client: &Client, api_id: &str, stage: &str, domain_n
         .await;
     match res {
         Ok(_) => (),
-        Err(e) => println!("Warn creating mapping {:?} {}", &api_mapping_key, &e)
+        Err(e) => println!("Warn creating mapping {:?} {}", &api_mapping_key, &e),
     }
 }
 
-async fn create_or_update_api_mapping(client: &Client, api_id: &str, domain_name: &str, stage: &str, path: Option<String>) {
+async fn create_or_update_api_mapping(
+    client: &Client,
+    api_id: &str,
+    domain_name: &str,
+    stage: &str,
+    path: Option<String>,
+) {
     let maybe_api_mapping_id = find_api_mapping(client, api_id, domain_name, path.clone()).await;
     match maybe_api_mapping_id {
         Some(api_mapping_id) => {
             update_api_mapping(client, &api_mapping_id, stage, domain_name, path).await
-        },
-        None => {
-            create_api_mapping(client, api_id, stage, domain_name, path).await
         }
+        None => create_api_mapping(client, api_id, stage, domain_name, path).await,
     }
 }
 
-pub async fn delete_api_mappings(client: &Client, api_id: &str, domain_name: &str, paths: Vec<String>) {
+pub async fn delete_api_mappings(
+    client: &Client,
+    api_id: &str,
+    domain_name: &str,
+    paths: Vec<String>,
+) {
     for path in paths {
         let maybe_api_mapping_id = find_api_mapping(client, api_id, domain_name, Some(path)).await;
         if let Some(api_mapping_id) = maybe_api_mapping_id {
@@ -820,7 +849,7 @@ pub async fn create_or_update_domain(
     domain_name: &str,
     stage: &str,
     cert_arn: &str,
-    paths: Vec<String>
+    paths: Vec<String>,
 ) -> String {
     let cfg = make_domain_config(domain_name, cert_arn);
 
@@ -884,7 +913,7 @@ pub async fn find_hosted_zone(client: &Client, domain_name: &str) -> Option<Stri
         .domain_name(domain_name)
         .send()
         .await;
-    match res  {
+    match res {
         Ok(r) => {
             let xs = r.domain_name_configurations.unwrap().to_vec();
             if let Some(item) = xs.first() {
@@ -893,9 +922,8 @@ pub async fn find_hosted_zone(client: &Client, domain_name: &str) -> Option<Stri
                 None
             }
         }
-        Err(_) => None
+        Err(_) => None,
     }
 }
-
 
 pub type GatewayCors = aws_sdk_apigatewayv2::types::Cors;

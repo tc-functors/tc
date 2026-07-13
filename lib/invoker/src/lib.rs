@@ -146,7 +146,7 @@ pub async fn invoke(
             let dir = kit::pwd();
             if let Some(function) = topology.current_function(&dir) {
                 function::invoke(auth, &function, &payload).await;
-            }  else {
+            } else {
                 let mode = match flow {
                     Some(f) => &f.mode,
                     None => "Standard",
@@ -154,8 +154,6 @@ pub async fn invoke(
 
                 state::invoke(auth, fqn, &payload, &mode, dumb).await
             }
-
-
         }
     }
 }

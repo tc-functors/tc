@@ -36,7 +36,10 @@ async fn find(client: &Client, api_id: &str, lambda_arn: &str) -> Option<String>
     }
 }
 
-fn make_request_params(given_request_params: HashMap<String, String>, is_async: bool) -> Option<HashMap<String, String>> {
+fn make_request_params(
+    given_request_params: HashMap<String, String>,
+    is_async: bool,
+) -> Option<HashMap<String, String>> {
     if is_async {
         let mut h: HashMap<String, String> = HashMap::new();
         h.insert(
@@ -82,7 +85,7 @@ async fn update(
     lambda_arn: &str,
     role_arn: &str,
     is_async: bool,
-    request_params: HashMap<String, String>
+    request_params: HashMap<String, String>,
 ) -> Result<String, Error> {
     let req_params = make_request_params(request_params, is_async);
     let res = client
@@ -109,19 +112,35 @@ pub async fn create_or_update(
     lambda_arn: &str,
     role_arn: &str,
     is_async: bool,
-    request_params: HashMap<String, String>
+    request_params: HashMap<String, String>,
 ) -> String {
     let maybe_int = find(client, api_id, lambda_arn).await;
     match maybe_int {
         Some(id) => {
             tracing::debug!("Found Lambda Integration {}", id);
-            let _ = update(client, &id, api_id, lambda_arn, role_arn, is_async, request_params).await;
+            let _ = update(
+                client,
+                &id,
+                api_id,
+                lambda_arn,
+                role_arn,
+                is_async,
+                request_params,
+            )
+            .await;
             id
         }
         _ => {
-            let id = create(client, api_id, lambda_arn, role_arn, is_async, request_params)
-                .await
-                .unwrap();
+            let id = create(
+                client,
+                api_id,
+                lambda_arn,
+                role_arn,
+                is_async,
+                request_params,
+            )
+            .await
+            .unwrap();
             tracing::debug!("Created Lambda Integration {}", id);
             id
         }

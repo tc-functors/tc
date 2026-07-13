@@ -1,10 +1,10 @@
 use crate::Topology;
+use kit as u;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use std::collections::HashMap;
-use kit as u;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModelObject {

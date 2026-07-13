@@ -264,7 +264,6 @@ pub struct BuildSpec {
     pub include_deps: Option<bool>,
 
     // below are for microvm
-
     #[serde(default)]
     pub image_name: Option<String>,
 
@@ -275,7 +274,7 @@ pub struct BuildSpec {
     pub build_role_arn: Option<String>,
 
     #[serde(default)]
-    pub bucket: Option<String>
+    pub bucket: Option<String>,
 }
 
 impl BuildSpec {
@@ -291,7 +290,7 @@ impl BuildSpec {
 pub enum Provider {
     Lambda,
     MicroVm,
-    AgentCore
+    AgentCore,
 }
 
 impl FromStr for Provider {
@@ -367,7 +366,7 @@ pub struct MicroVm {
     pub ingress_network_connectors: Option<String>,
     pub egress_network_connectors: Option<String>,
     pub max_duration: Option<i32>,
-    pub log_group: Option<String>
+    pub log_group: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

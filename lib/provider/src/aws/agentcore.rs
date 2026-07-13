@@ -1,9 +1,8 @@
 use crate::Auth;
 use aws_sdk_bedrockagentcore::{
     Client,
+    primitives::Blob,
 };
-use aws_sdk_bedrockagentcore::primitives::Blob;
-
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -26,11 +25,13 @@ pub async fn stop_runtime_session(client: &Client, runtime_arn: &str, session_id
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Payload {
-    prompt: String
+    prompt: String,
 }
 
 pub async fn invoke(client: &Client, runtime_arn: &str, session_id: &str, prompt: &str) -> String {
-    let payload = Payload { prompt: prompt.to_string() };
+    let payload = Payload {
+        prompt: prompt.to_string(),
+    };
     let payload = serde_json::to_string(&payload).unwrap();
     let blob = Blob::new(payload);
     let res = client

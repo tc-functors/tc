@@ -1,7 +1,6 @@
-use petgraph::graph::DiGraph;
-use ascii_petgraph::RenderedGraph;
-
 use crate::Topology;
+use ascii_petgraph::RenderedGraph;
+use petgraph::graph::DiGraph;
 
 pub fn pprint(_topology: &Topology) {
     let mut graph = DiGraph::new();

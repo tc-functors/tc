@@ -4,8 +4,10 @@ pub use crate::aws::{
     flow::Flow,
     function::{
         Function,
-        runtime::layer,
-        runtime::layer::Layer,
+        runtime::{
+            layer,
+            layer::Layer,
+        },
     },
     mutation::{
         Mutation,
@@ -29,12 +31,12 @@ use crate::{
         schedule,
         template,
     },
+    hooks,
+    hooks::Hook,
     index,
     sequence,
     tag,
-    hooks,
     version,
-    hooks::Hook
 };
 use compiler::{
     Entity,
@@ -91,7 +93,7 @@ pub struct Topology {
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
     pub sequences: HashMap<String, Vec<Connector>>,
-    pub hooks: HashMap<String, Vec<Hook>>
+    pub hooks: HashMap<String, Vec<Hook>>,
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -817,7 +819,6 @@ fn make_standalone(dir: &str) -> Topology {
     let function = Function::new(dir, &infra_dir, "", "");
     let functions = Function::to_map(function.clone());
     let namespace = function.name.to_owned();
-
 
     Topology {
         namespace: namespace.clone(),

@@ -1,4 +1,6 @@
 pub mod acm;
+pub mod agentcore;
+pub mod agentcorectl;
 pub mod appsync;
 pub mod bedrock;
 pub mod cloudfront;
@@ -12,6 +14,7 @@ pub mod gateway;
 pub mod iam;
 pub mod lambda;
 pub mod layer;
+pub mod microvm;
 pub mod resourcetag;
 pub mod route53;
 pub mod s3;
@@ -20,9 +23,6 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
-pub mod microvm;
-pub mod agentcorectl;
-pub mod agentcore;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;

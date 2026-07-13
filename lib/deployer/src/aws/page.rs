@@ -156,7 +156,7 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
                 domain,
                 &rec.name,
                 &rec.r#type.as_str(),
-                &rec.value
+                &rec.value,
             )
             .await;
         }

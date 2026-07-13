@@ -4,11 +4,11 @@ use composer::Topology;
 use configurator::Config;
 use itertools::Itertools;
 use kit as u;
-use std::str::FromStr;
 use provider::Auth;
 use std::{
     collections::HashMap,
     panic,
+    str::FromStr,
     time::Instant,
 };
 use tabled::{
@@ -270,7 +270,7 @@ fn run_hooks(topology: &Topology, key: &str) {
         for hook in hooks {
             let dir = match &hook.dir {
                 Some(d) => d,
-                None => &u::pwd()
+                None => &u::pwd(),
             };
             let (status, out, _err) = u::runc(&hook.command, dir);
             if !status {
@@ -278,7 +278,7 @@ fn run_hooks(topology: &Topology, key: &str) {
                 if let Some(on_fail) = &hook.on_failure {
                     match on_fail.as_ref() {
                         "exit" => std::process::exit(1),
-                        _ => println!("doing nothing")
+                        _ => println!("doing nothing"),
                     }
                 }
             }
@@ -516,7 +516,7 @@ pub async fn delete(
     maybe_entity: Option<String>,
     recursive: bool,
     cache: bool,
-    force: bool
+    force: bool,
 ) {
     let sandbox = resolver::maybe_sandbox(sandbox);
     let start = Instant::now();
@@ -940,7 +940,7 @@ pub async fn validate(maybe_entity: Option<String>) {
         Some(e) => {
             let entity = Entity::from_str(&e).unwrap();
             validator::validate(&topology, entity).await;
-        },
-        None => println!("Specify entity")
+        }
+        None => println!("Specify entity"),
     }
 }

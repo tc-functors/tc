@@ -31,7 +31,6 @@ fn make_job_def(env: &str, sandbox: &str) -> String {
     )
 }
 
-
 fn make_job_def_pinned(env: &str, sandbox: &str) -> String {
     format!(
         r#"

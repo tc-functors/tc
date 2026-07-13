@@ -154,7 +154,11 @@ fn is_subscribable(type_name: &str) -> bool {
     !type_name.ends_with("Input") && type_name != "Event"
 }
 
-fn make_types(types: Types, inputs: Inputs, resolvers: HashMap<String, ResolverSpec>) -> HashMap<String, String> {
+fn make_types(
+    types: Types,
+    inputs: Inputs,
+    resolvers: HashMap<String, ResolverSpec>,
+) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
     let mut query_fields: String = s!("");
     for (input_name, mappings) in inputs.clone() {
@@ -227,7 +231,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
             let types = augment_types(ms.types.to_owned());
             let inputs = match ms.inputs {
                 Some(i) => i,
-                None => HashMap::new()
+                None => HashMap::new(),
             };
             let authorizer = match &ms.authorizer {
                 Some(ath) => ath,

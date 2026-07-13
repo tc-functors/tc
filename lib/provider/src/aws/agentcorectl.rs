@@ -1,18 +1,20 @@
 use crate::Auth;
 use aws_sdk_bedrockagentcorecontrol::{
     Client,
-};
-use aws_sdk_bedrockagentcorecontrol::types::NetworkMode;
-use aws_sdk_bedrockagentcorecontrol::types::S3Location;
-use aws_sdk_bedrockagentcorecontrol::types::Code;
-use aws_sdk_bedrockagentcorecontrol::types::CodeConfiguration;
-use aws_sdk_bedrockagentcorecontrol::types::NetworkConfiguration;
-use aws_sdk_bedrockagentcorecontrol::types::AgentRuntimeArtifact;
-use aws_sdk_bedrockagentcorecontrol::types::AgentManagedRuntimeType;
-use aws_sdk_bedrockagentcorecontrol::types::builders::{
-    CodeConfigurationBuilder,
-    NetworkConfigurationBuilder,
-    S3LocationBuilder
+    types::{
+        AgentManagedRuntimeType,
+        AgentRuntimeArtifact,
+        Code,
+        CodeConfiguration,
+        NetworkConfiguration,
+        NetworkMode,
+        S3Location,
+        builders::{
+            CodeConfigurationBuilder,
+            NetworkConfigurationBuilder,
+            S3LocationBuilder,
+        },
+    },
 };
 
 pub async fn make_client(auth: &Auth) -> Client {
@@ -30,7 +32,7 @@ fn make_code_config(bucket: &str, prefix: &str, langr: &str, handler: &str) -> C
         "python3.12" => AgentManagedRuntimeType::Python312,
         "python3.13" => AgentManagedRuntimeType::Python313,
         "python3.14" => AgentManagedRuntimeType::Python314,
-        _ => AgentManagedRuntimeType::Python312
+        _ => AgentManagedRuntimeType::Python312,
     };
 
     let v = CodeConfigurationBuilder::default();
@@ -47,28 +49,22 @@ fn make_network() -> NetworkConfiguration {
     v.network_mode(NetworkMode::Public).build().unwrap()
 }
 
-
 pub struct Runtime {
     pub name: String,
     pub langr: String,
     pub bucket: String,
     pub prefix: String,
     pub role: String,
-    pub handler: String
+    pub handler: String,
 }
 
 impl Runtime {
-
     async fn find(&self, client: &Client) -> Option<String> {
-        let res = client
-            .list_agent_runtimes()
-            .send()
-            .await
-            .unwrap();
+        let res = client.list_agent_runtimes().send().await.unwrap();
         let xs = res.agent_runtimes.to_vec();
         for x in xs {
             if x.agent_runtime_name == self.name {
-                return Some(x.agent_runtime_id)
+                return Some(x.agent_runtime_id);
             }
         }
         None
@@ -108,21 +104,17 @@ impl Runtime {
         let maybe_id = self.find(client).await;
         match maybe_id {
             Some(id) => self.update(client, &id).await,
-            None => self.create(client).await
+            None => self.create(client).await,
         }
     }
 }
 
 pub async fn find(client: &Client, name: &str) -> Option<String> {
-    let res = client
-        .list_agent_runtimes()
-        .send()
-        .await
-        .unwrap();
+    let res = client.list_agent_runtimes().send().await.unwrap();
     let xs = res.agent_runtimes.to_vec();
     for x in xs {
         if x.agent_runtime_name == name {
-            return Some(x.agent_runtime_id)
+            return Some(x.agent_runtime_id);
         }
     }
     None

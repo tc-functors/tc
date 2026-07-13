@@ -1,5 +1,4 @@
 use crate::Topology;
-
 use compiler::Entity;
 use kit::*;
 use std::collections::HashMap;
@@ -178,7 +177,6 @@ rankdir="{orientation}"
         String::from("")
     }
 }
-
 
 pub fn pprint(topology: &Topology) {
     let dot_str = build(topology);

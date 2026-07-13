@@ -1,11 +1,28 @@
-use super::{common, layer};
+use super::{
+    common,
+    layer,
+};
 use common as c;
-use compiler::{BuildKind, FunctionSpec, RuntimeSpec, InfraSpec, Arch};
-use compiler::function::{AssetsSpec, FileSystemSpec, FileSystemKind};
-use common::{Network, FileSystem, Runtime};
-use std::collections::HashMap;
+use common::{
+    FileSystem,
+    Network,
+    Runtime,
+};
+use compiler::{
+    Arch,
+    BuildKind,
+    FunctionSpec,
+    InfraSpec,
+    RuntimeSpec,
+    function::{
+        AssetsSpec,
+        FileSystemKind,
+        FileSystemSpec,
+    },
+};
 use kit as u;
 use kit::*;
+use std::collections::HashMap;
 
 fn find_image_tag(dir: &str, namespace: &str) -> String {
     match std::env::var("TC_VERSION_IMAGES") {
@@ -50,7 +67,6 @@ fn as_uri(
         _ => format!("{}/lambda.zip", dir),
     }
 }
-
 
 fn needs_fs(
     maybe_assets: Option<AssetsSpec>,
@@ -129,7 +145,6 @@ fn lookup_infraspec(
     InfraSpec::new(infra_spec_file.clone())
 }
 
-
 fn as_arch(maybe_arch: &Option<Arch>) -> Arch {
     match maybe_arch {
         Some(a) => a.clone(),
@@ -204,7 +219,7 @@ pub fn make(
         microvm: None,
         port: match r.port {
             Some(p) => p,
-            None => 8080
-        }
+            None => 8080,
+        },
     }
 }

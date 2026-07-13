@@ -621,11 +621,7 @@ impl Function {
             None => self.create_alias(client, &version).await,
         }
 
-        println!(
-            "Published alias {} with version ({})",
-            &self.name,
-            &version
-        );
+        println!("Published alias {} with version ({})", &self.name, &version);
     }
 }
 

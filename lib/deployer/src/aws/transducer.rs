@@ -1,7 +1,10 @@
-use composer::{Function, Transducer};
-use std::collections::HashMap;
-use provider::Auth;
 use super::function::lambda;
+use composer::{
+    Function,
+    Transducer,
+};
+use provider::Auth;
+use std::collections::HashMap;
 
 pub async fn create(
     auth: &Auth,

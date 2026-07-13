@@ -1,10 +1,19 @@
 use super::common;
-use compiler::{FunctionSpec, RuntimeSpec, Entity, BuildKind, InfraSpec, Arch};
-use compiler::function::MicroVm;
-use crate::Role;
-use crate::index;
-use common::Runtime;
+use crate::{
+    Role,
+    index,
+};
 use common as c;
+use common::Runtime;
+use compiler::{
+    Arch,
+    BuildKind,
+    Entity,
+    FunctionSpec,
+    InfraSpec,
+    RuntimeSpec,
+    function::MicroVm,
+};
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
@@ -31,10 +40,14 @@ fn lookup_role(
 
 fn make_microvm() -> Option<MicroVm> {
     Some(MicroVm {
-        ingress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:ALL_INGRESS")),
-        egress_network_connectors: Some(format!("arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:INTERNET_EGRESS")),
+        ingress_network_connectors: Some(format!(
+            "arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:ALL_INGRESS"
+        )),
+        egress_network_connectors: Some(format!(
+            "arn:aws:lambda:{{{{region}}}}:aws:network-connector:aws-network-connector:INTERNET_EGRESS"
+        )),
         max_duration: Some(3600),
-        log_group: None
+        log_group: None,
     })
 }
 
@@ -115,7 +128,7 @@ pub fn make(
         microvm: make_microvm(),
         port: match r.port {
             Some(p) => p,
-            None => 8080
-        }
+            None => 8080,
+        },
     }
 }

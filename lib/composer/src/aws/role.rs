@@ -115,7 +115,6 @@ impl Role {
         }
     }
 
-
     pub fn new_static(
         entity: Entity,
         role_file: &str,
@@ -188,7 +187,6 @@ impl Role {
         }
     }
 
-
     pub fn default_microvm() -> Role {
         let name = format!("tc-base-microvm-{{{{sandbox}}}}");
         let infra_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
@@ -200,7 +198,7 @@ impl Role {
         };
         Role {
             name: s!(&name),
-                    kind: Kind::Base,
+            kind: Kind::Base,
             path: String::from(""),
             trust: Trust::new(),
             arn: template::role_arn(&name),
@@ -209,7 +207,6 @@ impl Role {
             policy_arn: template::policy_arn(&name),
         }
     }
-
 
     pub fn provided(name: &str) -> Role {
         Role {

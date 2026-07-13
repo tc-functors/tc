@@ -57,7 +57,7 @@ pub struct Route {
     pub target: Target,
     pub domains: HashMap<String, HashMap<String, String>>,
     pub throttling: HashMap<String, HashMap<String, Throttling>>,
-    pub verticals: HashMap<String, HashMap<String, Vec<String>>>
+    pub verticals: HashMap<String, HashMap<String, Vec<String>>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -104,8 +104,7 @@ fn make_target(
     fns: &HashMap<String, Function>,
     events: &HashMap<String, Event>,
     queues: &HashMap<String, Queue>,
-    default_rspec: Option<RouteSpec>
-
+    default_rspec: Option<RouteSpec>,
 ) -> Target {
     if let Some(f) = &rspec.function {
         let name = find_function(&f, fns);
@@ -119,7 +118,7 @@ fn make_target(
                     if let Some(d) = default_rspec {
                         match d.request_params {
                             Some(x) => x,
-                            None => HashMap::new()
+                            None => HashMap::new(),
                         }
                     } else {
                         HashMap::new()
@@ -128,8 +127,8 @@ fn make_target(
             },
             response_params: match &rspec.response_params {
                 Some(r) => r.clone(),
-                None => HashMap::new()
-            }
+                None => HashMap::new(),
+            },
         };
     } else if let Some(ev) = &rspec.event {
         let mut req: HashMap<String, String> = HashMap::new();
@@ -155,7 +154,7 @@ fn make_target(
             name: s!(ev),
             arn: String::from(""),
             request_params: req,
-            response_params: HashMap::new()
+            response_params: HashMap::new(),
         };
     } else if let Some(q) = &rspec.queue {
         let mut req: HashMap<String, String> = HashMap::new();
@@ -170,7 +169,7 @@ fn make_target(
             name: s!(q),
             arn: String::from(""),
             request_params: req,
-            response_params: HashMap::new()
+            response_params: HashMap::new(),
         };
     } else {
         let arn = template::sfn_arn(fqn);
@@ -184,7 +183,7 @@ fn make_target(
             name: fqn.to_string(),
             arn: arn,
             request_params: req,
-            response_params: HashMap::new()
+            response_params: HashMap::new(),
         };
     }
 }
@@ -216,7 +215,7 @@ fn make_authorizer(
     fqn: &str,
     rspec: &RouteSpec,
     fns: &HashMap<String, Function>,
-    default_rspec: Option<RouteSpec>
+    default_rspec: Option<RouteSpec>,
 ) -> Option<Authorizer> {
     if let Some(azer) = &rspec.authorizer {
         match fns.get(azer) {
@@ -259,7 +258,7 @@ fn make_authorizer(
                     name: template::maybe_namespace(&azer),
                     kind: s!("lambda"),
                 }),
-                None => None
+                None => None,
             }
         } else {
             None
@@ -279,15 +278,12 @@ impl Route {
         infra_dir: &str,
         skip: bool,
     ) -> Route {
-
         let gateway = match &rspec.vertical {
             Some(v) => format!("{}_{{{{sandbox}}}}", v),
-            None => {
-                match &rspec.gateway {
-                    Some(gw) => gw.clone(),
-                    None => s!(fqn),
-                }
-            }
+            None => match &rspec.gateway {
+                Some(gw) => gw.clone(),
+                None => s!(fqn),
+            },
         };
 
         let path = match &rspec.path {
@@ -312,7 +308,7 @@ impl Route {
 
         let default = match &spec.routes {
             Some(rs) => rs.get("default").cloned(),
-            None => None
+            None => None,
         };
 
         let target = make_target(fqn, rspec, &method, fns, events, queues, default.clone());

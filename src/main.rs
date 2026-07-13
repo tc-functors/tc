@@ -1153,7 +1153,9 @@ async fn mcp(_args: DefaultArgs) {
 }
 
 async fn repl(args: ReplArgs) {
-    let ReplArgs { profile, sandbox, .. } = args;
+    let ReplArgs {
+        profile, sandbox, ..
+    } = args;
     let auth = tc::init(profile, None).await;
     let sandbox = kit::maybe_string(sandbox, "dev");
     let _ = repl::start(&auth, &sandbox).await;

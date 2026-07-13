@@ -1,17 +1,20 @@
-use crate::Function;
-use crate::index;
-use compiler::BuildKind;
-use compiler::spec::function::{
-    FunctionSpec,
-    LangRuntime,
+use super::common as c;
+use crate::{
+    Function,
+    index,
+};
+use compiler::{
+    BuildKind,
+    spec::function::{
+        FunctionSpec,
+        LangRuntime,
+    },
 };
 use kit as u;
 use kit::*;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use walkdir::WalkDir;
-use super::common as c;
-
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
     let function = Function::new(dir, dir, "", "");
@@ -192,7 +195,11 @@ pub fn find(functions: HashMap<String, Function>) -> Vec<Layer> {
     layers
 }
 
-pub fn find_implicit_layer_name(dir: &str, namespace: &str, fspec: &FunctionSpec) -> Option<String> {
+pub fn find_implicit_layer_name(
+    dir: &str,
+    namespace: &str,
+    fspec: &FunctionSpec,
+) -> Option<String> {
     let given_fqn = &fspec.fqn;
     let given_layer_name = &fspec.layer_name;
 

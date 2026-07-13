@@ -1,6 +1,6 @@
+use colored::Colorize;
 use compiler::Entity;
 use composer::Topology;
-use colored::Colorize;
 
 fn validate_gql(topology: &Topology) {
     let types = topology
@@ -17,7 +17,10 @@ fn validate_gql(topology: &Topology) {
     }
 
     let diagnostics = graphql_schema_validation::validate(&graphql);
-    let formatted_diagnostics = diagnostics.iter().map(|err| format!("{}", err)).collect::<Vec<String>>();
+    let formatted_diagnostics = diagnostics
+        .iter()
+        .map(|err| format!("{}", err))
+        .collect::<Vec<String>>();
     for v in formatted_diagnostics {
         if !v.contains("AWS") {
             println!("{}", &v.red());
@@ -28,6 +31,6 @@ fn validate_gql(topology: &Topology) {
 pub async fn validate(topology: &Topology, entity: Entity) {
     match entity {
         Entity::Mutation => validate_gql(&topology),
-        _ => println!("nothing")
+        _ => println!("nothing"),
     }
 }

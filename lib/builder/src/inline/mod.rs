@@ -7,9 +7,9 @@ mod rust;
 use crate::types::BuildStatus;
 use colored::Colorize;
 use compiler::{
+    Arch,
     Lang,
     LangRuntime,
-    Arch
 };
 use composer::Build;
 use kit as u;

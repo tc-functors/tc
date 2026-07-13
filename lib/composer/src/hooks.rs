@@ -1,14 +1,10 @@
+use super::index;
+use kit as u;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use super::{
-    index,
-};
-
 use std::collections::HashMap;
-
-use kit as u;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Hook {
@@ -16,7 +12,7 @@ pub struct Hook {
     #[serde(default)]
     pub on_failure: Option<String>,
     #[serde(default)]
-    pub dir: Option<String>
+    pub dir: Option<String>,
 }
 
 pub fn load(infra_dir: &str) -> HashMap<String, Vec<Hook>> {

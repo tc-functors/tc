@@ -1,21 +1,25 @@
-use crate::{Topology, Entity};
-mod tree;
-mod table;
-mod digraph;
-mod icepanel;
+use crate::{
+    Entity,
+    Topology,
+};
 mod ascii;
 pub mod compact;
+mod digraph;
+mod icepanel;
+mod table;
+mod tree;
 
+use crate::TopologyCount;
+use kit as u;
+use std::{
+    collections::HashMap,
+    str::FromStr,
+    string::ParseError,
+};
 use tabled::{
     Style,
     Table,
 };
-
-use crate::TopologyCount;
-use std::str::FromStr;
-use std::string::ParseError;
-use std::collections::HashMap;
-use kit as u;
 
 pub enum Format {
     Tree,
@@ -24,7 +28,7 @@ pub enum Format {
     Dot,
     Icepanel,
     Compact,
-    Ascii
+    Ascii,
 }
 
 impl FromStr for Format {
@@ -50,10 +54,10 @@ pub fn pprint(topology: &Topology, fmt: &str) {
         Format::JSON => u::pp_json(topology),
         Format::Tree => tree::pprint(topology),
         Format::Table => table::pprint(topology),
-        Format::Dot  => digraph::pprint(topology),
+        Format::Dot => digraph::pprint(topology),
         Format::Icepanel => icepanel::pprint(topology),
         Format::Compact => compact::pprint(topology),
-        Format::Ascii => ascii::pprint(topology)
+        Format::Ascii => ascii::pprint(topology),
     }
 }
 
@@ -63,10 +67,10 @@ pub fn pprint_recursive(topologies: &HashMap<String, Topology>, fmt: &str) {
         Format::JSON => u::pp_json(topologies),
         Format::Tree => tree::pprint_recursive(topologies),
         Format::Table => todo!(),
-        Format::Dot  => todo!(),
+        Format::Dot => todo!(),
         Format::Icepanel => icepanel::pprint_recursive(topologies),
         Format::Compact => compact::pprint_recursive(topologies),
-        Format::Ascii => todo!()
+        Format::Ascii => todo!(),
     }
 }
 
@@ -83,7 +87,7 @@ pub fn pprint_entity(topology: &Topology, entity: Entity) {
                 let out = serde_yaml::to_string(&f).unwrap();
                 println!("{}", &out);
             }
-        },
+        }
         Entity::Mutation => {
             let types = topology
                 .mutations
@@ -96,8 +100,8 @@ pub fn pprint_entity(topology: &Topology, entity: Entity) {
             for (_, v) in types {
                 println!("{}", v)
             }
-        },
-        _ => todo!()
+        }
+        _ => todo!(),
     }
 }
 
@@ -106,7 +110,7 @@ pub fn pprint_component(topology: &Topology, component: &str) {
         "transducer" => u::pp_json(&topology.transducer),
         "roles" => u::pp_json(&topology.roles),
         "base" => u::pp_json(&topology.base_roles),
-        _ => todo!()
+        _ => todo!(),
     }
 }
 

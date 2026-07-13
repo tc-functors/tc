@@ -1,15 +1,12 @@
-use composer::{
-    Function,
-};
-
+use composer::Function;
 use provider::{
     Auth,
-    aws::agentcorectl,
-    aws::agentcorectl::Runtime,
-
+    aws::{
+        agentcorectl,
+        agentcorectl::Runtime,
+    },
 };
 use std::collections::HashMap;
-
 
 pub async fn create(auth: &Auth, function: &Function, _tags: &HashMap<String, String>) -> String {
     let client = agentcorectl::make_client(auth).await;
@@ -19,7 +16,7 @@ pub async fn create(auth: &Auth, function: &Function, _tags: &HashMap<String, St
         bucket: function.build.bucket.clone(),
         prefix: String::from("test"),
         role: function.runtime.role.name.clone(),
-        handler: function.runtime.handler.clone()
+        handler: function.runtime.handler.clone(),
     };
     println!("Creating function agentcore..");
     runtime.create_or_update(&client).await

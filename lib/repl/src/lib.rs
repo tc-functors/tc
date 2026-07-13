@@ -1,12 +1,12 @@
 use colored::Colorize;
+use composer::Topology;
+use kit as u;
+use provider::Auth;
 use rustyline::{
     DefaultEditor,
     Result,
     error::ReadlineError,
 };
-use provider::Auth;
-use composer::Topology;
-use kit as u;
 
 async fn process_cmd(line: &str, auth: &Auth, rt: &Topology) {
     let parts = line.split(' ').collect::<Vec<&str>>();
@@ -14,20 +14,20 @@ async fn process_cmd(line: &str, auth: &Auth, rt: &Topology) {
     match cmd {
         "tree" => {
             composer::pprint(rt, None, "tree");
-        },
+        }
         "create" => {
             deployer::create(auth, rt, false).await;
-        },
+        }
         "update" => {
             deployer::try_update(auth, rt, &None).await;
-        },
+        }
         "delete" => {
             deployer::try_delete(auth, rt, &None, false).await;
-        },
+        }
         "list" => {
             let entity = Some(String::from("functions"));
             deployer::try_list(auth, rt, &entity).await;
-        },
+        }
 
         _ => (),
     }

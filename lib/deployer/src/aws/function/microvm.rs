@@ -1,18 +1,15 @@
-use composer::{
-    Function,
-};
-
+use composer::Function;
 use provider::{
     Auth,
-    aws::microvm,
-    aws::microvm::MicroVm
+    aws::{
+        microvm,
+        microvm::MicroVm,
+    },
 };
 use std::collections::HashMap;
 
 fn make_vm(auth: &Auth, f: &Function, image_id: &str) -> MicroVm {
-
     if let Some(cfg) = &f.runtime.microvm {
-
         MicroVm {
             image_id: image_id.to_string(),
             role: auth.role_arn(&f.runtime.role.name),
@@ -20,7 +17,7 @@ fn make_vm(auth: &Auth, f: &Function, image_id: &str) -> MicroVm {
             egress_network_connectors: cfg.egress_network_connectors.clone().unwrap(),
             max_duration: cfg.max_duration.unwrap(),
             log_group: None,
-            idle_policy: String::from("")
+            idle_policy: String::from(""),
         }
     } else {
         panic!("No microvm default network connectors found")
@@ -84,11 +81,13 @@ pub async fn print_config(auth: &Auth, function: &Function) {
         println!("");
 
         if let Some(token) = microvm::get_token(&client, &microvm_id, 30).await {
-
             println!("To run the microvm: ");
-            println!("curl https://{} -X 'x-aws-proxy-auth: {}'", run_info.endpoint, &token);
+            println!(
+                "curl https://{} -X 'x-aws-proxy-auth: {}'",
+                run_info.endpoint, &token
+            );
             println!("");
             println!("");
-    }
+        }
     }
 }

@@ -13,7 +13,7 @@ use aws::{
     route,
     schedule,
     state,
-    transducer
+    transducer,
 };
 use colored::Colorize;
 use compiler::{
@@ -397,7 +397,12 @@ pub async fn try_update(auth: &Auth, topology: &Topology, maybe_entity: &Option<
     }
 }
 
-pub async fn try_delete(auth: &Auth, topology: &Topology, maybe_entity: &Option<String>, force: bool) {
+pub async fn try_delete(
+    auth: &Auth,
+    topology: &Topology,
+    maybe_entity: &Option<String>,
+    force: bool,
+) {
     match maybe_entity {
         Some(e) => {
             let (entity, component) = Entity::as_entity_component(&e);

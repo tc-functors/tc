@@ -27,7 +27,7 @@ pub struct Build {
     pub image_name: String,
     pub base_image_arn: String,
     pub build_role_arn: String,
-    pub bucket: String
+    pub bucket: String,
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -48,7 +48,7 @@ impl Build {
         runtime: &Runtime,
         bspec: Option<BuildSpec>,
         tasks: HashMap<String, String>,
-        fname: &str
+        fname: &str,
     ) -> Build {
         match bspec {
             Some(b) => Build {
@@ -79,12 +79,14 @@ impl Build {
 
                 base_image_arn: match b.base_image_arn {
                     Some(d) => d,
-                    None => format!("arn:aws:lambda:{{{{region}}}}:aws:microvm-image:al2023-1")
+                    None => format!("arn:aws:lambda:{{{{region}}}}:aws:microvm-image:al2023-1"),
                 },
 
                 build_role_arn: match b.build_role_arn {
                     Some(d) => d,
-                    None => format!("arn:aws:iam::{{{{account}}}}:role/tc-base-microvm-{{{{sandbox}}}}")
+                    None => {
+                        format!("arn:aws:iam::{{{{account}}}}:role/tc-base-microvm-{{{{sandbox}}}}")
+                    }
                 },
 
                 image_name: match b.image_name {
@@ -92,7 +94,7 @@ impl Build {
                     None => {
                         let version = match &b.version {
                             Some(v) => v.replace(".", "-"),
-                            None => "0_1_0".to_string()
+                            None => "0_1_0".to_string(),
                         };
                         format!("{}_{}_{{{{sandbox}}}}", fname, version)
                     }
@@ -103,9 +105,9 @@ impl Build {
                     Some(d) => d,
                     None => match std::env::var("TC_ASSET_BUCKET") {
                         Ok(s) => s,
-                        Err(_) => format!("{{{{ASSET_BUCKET}}}}")
-                    }
-                }
+                        Err(_) => format!("{{{{ASSET_BUCKET}}}}"),
+                    },
+                },
             },
             None => {
                 let command = match tasks.get("build") {
@@ -129,7 +131,7 @@ impl Build {
                     base_image_arn: String::from(""),
                     build_role_arn: String::from(""),
                     bucket: String::from(""),
-                    image_name: String::from("")
+                    image_name: String::from(""),
                 }
             }
         }

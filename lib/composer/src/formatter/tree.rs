@@ -1,10 +1,9 @@
 use crate::Topology;
-use ptree::TreeBuilder;
-use std::collections::HashMap;
-
 use colored::Colorize;
 use kit as u;
 use kit::s;
+use ptree::TreeBuilder;
+use std::collections::HashMap;
 
 fn as_uri(s: &str) -> String {
     if s.starts_with("/") {

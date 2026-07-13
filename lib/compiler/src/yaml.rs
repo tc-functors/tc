@@ -2,6 +2,7 @@ use anyhow::{
     Result,
     anyhow,
 };
+use kit as u;
 use serde_yaml::{
     Mapping,
     Value,
@@ -19,7 +20,6 @@ use std::{
     },
     path::PathBuf,
 };
-use kit as u;
 
 fn load_yaml(file_path: PathBuf) -> Result<Value> {
     let file_reader = File::open(file_path).expect("Unable to open file");

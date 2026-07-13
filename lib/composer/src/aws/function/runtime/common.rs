@@ -1,17 +1,12 @@
-use kit as u;
-use kit::*;
-use crate::{index, aws::template};
-use serde_derive::{
-    Deserialize,
-    Serialize,
+use crate::{
+    Role,
+    aws::template,
+    index,
 };
-use std::collections::HashMap;
-use crate::Role;
 use compiler::{
     Entity,
     spec::{
         function::{
-            RuntimeSpec,
             Arch,
             AssetsSpec,
             BuildKind,
@@ -19,12 +14,20 @@ use compiler::{
             FunctionSpec,
             Lang,
             LangRuntime,
+            MicroVm,
             Provider,
-            MicroVm
+            RuntimeSpec,
         },
         infra::InfraSpec,
     },
 };
+use kit as u;
+use kit::*;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {
@@ -63,8 +66,7 @@ pub struct Runtime {
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
     pub microvm: Option<MicroVm>,
-    pub port: i32
-
+    pub port: i32,
 }
 
 pub fn find_git_sha(dir: &str) -> String {
@@ -117,7 +119,11 @@ pub fn as_infra_dir(dir: &str, _infra_dir: &str) -> String {
         .replace("_", "-")
 }
 
-pub fn as_infra_spec_file(infra_dir: &str, rspec: &RuntimeSpec, function_name: &str) -> Option<String> {
+pub fn as_infra_spec_file(
+    infra_dir: &str,
+    rspec: &RuntimeSpec,
+    function_name: &str,
+) -> Option<String> {
     let f = format!("{}/vars/{}.json", infra_dir, function_name);
     let actual_f = follow_path(&f);
     if index::get().file_exists(&actual_f) {
@@ -377,6 +383,6 @@ pub fn make_default(
         fs: None,
         infra_spec: infra_spec,
         microvm: None,
-        port: 8080
+        port: 8080,
     }
 }

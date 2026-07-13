@@ -118,9 +118,7 @@ fn make_microvm_actions() -> Vec<Action> {
         Action {
             action: v!["s3:GetObject"],
             effect: s!("Allow"),
-            resource: v![
-                &format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")
-            ],
+            resource: v![&format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")],
             sid: make_sid("MVS3"),
         },
         Action {
@@ -132,7 +130,7 @@ fn make_microvm_actions() -> Vec<Action> {
             effect: s!("Allow"),
             resource: v!["*"],
             sid: make_sid("MVLambdaLog"),
-        }
+        },
     ]
 }
 
@@ -326,7 +324,6 @@ impl Policy {
             statement: actions,
         }
     }
-
 
     pub fn microvm() -> Policy {
         let actions = make_microvm_actions();

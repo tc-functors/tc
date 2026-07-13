@@ -1,9 +1,7 @@
 use super::Topology;
 use serde_derive::Serialize;
 use std::collections::HashMap;
-use tabled::{
-    Tabled,
-};
+use tabled::Tabled;
 
 #[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct TopologyCount {
@@ -83,7 +81,6 @@ impl TopologyCount {
         }
     }
 }
-
 
 pub fn get_count(topologies: &HashMap<String, Topology>) -> Vec<TopologyCount> {
     let mut xs: Vec<TopologyCount> = vec![];

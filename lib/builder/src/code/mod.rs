@@ -3,8 +3,8 @@ use crate::{
     types::BuildStatus,
 };
 use compiler::{
-    Lang,
     Arch,
+    Lang,
     LangRuntime,
 };
 use composer::Build;

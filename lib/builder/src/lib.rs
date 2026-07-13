@@ -189,7 +189,9 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
     for build in builds {
         tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
-            BuildKind::Layer | BuildKind::Library | BuildKind::Extension => layer::publish(&auth, &build).await,
+            BuildKind::Layer | BuildKind::Library | BuildKind::Extension => {
+                layer::publish(&auth, &build).await
+            }
             BuildKind::Image => image::publish(&auth, &build).await,
             _ => (),
         }

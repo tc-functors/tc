@@ -1,13 +1,13 @@
 pub mod aws;
 pub mod formatter;
 
+mod counter;
+mod hooks;
 pub mod index;
 pub mod sequence;
 mod tag;
-mod hooks;
 pub mod topology;
 pub mod version;
-mod counter;
 
 pub use aws::{
     channel::Channel,
@@ -20,8 +20,10 @@ pub use aws::{
     function::{
         Function,
         build::Build,
-        runtime::layer::Layer,
-        runtime::Runtime,
+        runtime::{
+            Runtime,
+            layer::Layer,
+        },
     },
     mutation::Mutation,
     page,
@@ -49,8 +51,8 @@ use compiler::{
     },
 };
 use configurator::Config;
-use formatter::compact::CompactTopology;
 use counter::TopologyCount;
+use formatter::compact::CompactTopology;
 use kit as u;
 use kit::*;
 use std::{
@@ -322,10 +324,10 @@ pub fn pprint(topology: &Topology, entity: Option<String>, fmt: &str) {
             let maybe_entity = Entity::from_str(&e);
             match maybe_entity {
                 Ok(ent) => formatter::pprint_entity(topology, ent),
-                Err(_) => formatter::pprint_component(topology, &e)
+                Err(_) => formatter::pprint_component(topology, &e),
             }
-        },
-        None => formatter::pprint(topology, fmt)
+        }
+        None => formatter::pprint(topology, fmt),
     }
 }
 

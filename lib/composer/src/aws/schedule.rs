@@ -1,6 +1,4 @@
-use super::{
-    role::Role,
-};
+use super::role::Role;
 use compiler::{
     Entity,
     spec::ScheduleSpec,

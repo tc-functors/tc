@@ -1,8 +1,8 @@
 pub mod build;
 mod code;
+mod fs;
 pub mod runtime;
 mod target;
-mod fs;
 
 use super::template;
 pub use build::Build;
@@ -103,7 +103,6 @@ fn make_test(t: Option<HashMap<String, TestSpec>>) -> HashMap<String, TestSpec> 
     }
 }
 
-
 impl Function {
     pub fn new(dir: &str, topo_infra_dir: &str, namespace: &str, format: &str) -> Function {
         let config = Config::new();
@@ -172,7 +171,8 @@ impl Function {
         };
 
         let runtime = Runtime::new(dir, infra_dir, &namespace, &fspec, &fqn, &config);
-        let aux_files = fs::collect_aux_files(infra_dir, fspec, fspec.runtime.as_ref(), &runtime.role);
+        let aux_files =
+            fs::collect_aux_files(infra_dir, fspec, fspec.runtime.as_ref(), &runtime.role);
 
         let targets = Target::make_all(&fspec);
 
@@ -185,7 +185,13 @@ impl Function {
             description: None,
             dir: dir.to_string(),
             namespace: namespace.to_string(),
-            build: Build::new(dir, &runtime, fspec.build.clone(), fspec.tasks.clone(), &fspec.name),
+            build: Build::new(
+                dir,
+                &runtime,
+                fspec.build.clone(),
+                fspec.tasks.clone(),
+                &fspec.name,
+            ),
             layer_name: fspec.layer_name.clone(),
             test: make_test(fspec.test.clone()),
             runtime: runtime,

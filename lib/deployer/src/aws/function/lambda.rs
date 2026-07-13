@@ -1,30 +1,27 @@
-use composer::{
-    Function,
-};
 use compiler::Lang;
-
+use composer::Function;
+use kit as u;
+use kit::s;
 use provider::{
     Auth,
-    aws::lambda,
-    aws::lambda::LambdaClient as Client
+    aws::{
+        lambda,
+        lambda::LambdaClient as Client,
+    },
 };
 use std::collections::HashMap;
 
-use kit::s;
-use kit as u;
-
-
-fn make(
-    f: &Function,
-    tags: &HashMap<String, String>,
-) -> lambda::Function {
+fn make(f: &Function, tags: &HashMap<String, String>) -> lambda::Function {
     let package_type = &f.runtime.package_type;
 
     let uri = &f.runtime.uri;
 
     let (size, blob, code) = lambda::make_code(package_type, &uri);
     let vpc_config = match &f.runtime.network {
-        Some(s) => Some(lambda::make_vpc_config(s.subnets.clone(), s.security_groups.clone())),
+        Some(s) => Some(lambda::make_vpc_config(
+            s.subnets.clone(),
+            s.security_groups.clone(),
+        )),
         _ => None,
     };
     let filesystem_config = match &f.runtime.fs {
@@ -76,12 +73,7 @@ fn make(
     }
 }
 
-pub async fn create(
-    client: &Client,
-    f: &Function,
-    tags: &HashMap<String, String>
-) -> String {
-
+pub async fn create(client: &Client, f: &Function, tags: &HashMap<String, String>) -> String {
     let lambda = make(f, tags);
     let maybe_current = lambda::find_config(client, &f.fqn).await;
     let id = if let Some(current) = maybe_current {
@@ -109,11 +101,7 @@ pub async fn create(
     id
 }
 
-pub async fn update_tags(
-    client: &Client,
-    arn: &str,
-    tags: &HashMap<String, String>,
-) {
+pub async fn update_tags(client: &Client, arn: &str, tags: &HashMap<String, String>) {
     lambda::update_tags(client, &arn, tags).await;
 }
 

@@ -1,9 +1,5 @@
-use crate::{
-    Topology,
-};
-
+use crate::Topology;
 use serde_derive::Serialize;
-
 use tabled::{
     Style,
     Table,
@@ -15,7 +11,7 @@ struct EntityTarget {
     entity: String,
     name: String,
     target_entity: String,
-    target_name: String
+    target_name: String,
 }
 
 pub fn pprint(topology: &Topology) {
@@ -26,7 +22,7 @@ pub fn pprint(topology: &Topology) {
                 entity: String::from("function"),
                 name: name.to_string(),
                 target_entity: String::from(""),
-                target_name: String::from("")
+                target_name: String::from(""),
             };
             xs.push(t)
         } else {
@@ -35,7 +31,7 @@ pub fn pprint(topology: &Topology) {
                     entity: String::from("function"),
                     name: name.to_string(),
                     target_entity: target.entity.to_str(),
-                    target_name: target.name.clone()
+                    target_name: target.name.clone(),
                 };
                 xs.push(t)
             }
@@ -47,7 +43,7 @@ pub fn pprint(topology: &Topology) {
                 entity: String::from("event"),
                 name: name.to_string(),
                 target_entity: target.entity.to_str(),
-                target_name: target.name.clone()
+                target_name: target.name.clone(),
             };
             xs.push(t)
         }
@@ -58,7 +54,7 @@ pub fn pprint(topology: &Topology) {
             entity: String::from("route"),
             name: name.to_string(),
             target_entity: r.target.entity.to_str(),
-            target_name: r.target.name.clone()
+            target_name: r.target.name.clone(),
         };
         xs.push(t)
     }

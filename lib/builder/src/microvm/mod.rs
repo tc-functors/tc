@@ -1,16 +1,18 @@
 use crate::types::BuildStatus;
-use composer::{Build, Runtime};
-
-use compiler::spec::{
-    Lang,
+use compiler::spec::Lang;
+use composer::{
+    Build,
+    Runtime,
 };
-
-use provider::Auth;
-use provider::aws::microvm::MicroVmImage;
-use provider::aws::microvm;
-use provider::aws::s3;
-
 use kit as u;
+use provider::{
+    Auth,
+    aws::{
+        microvm,
+        microvm::MicroVmImage,
+        s3,
+    },
+};
 
 mod python;
 
@@ -47,7 +49,12 @@ CMD {cmd}
 }
 
 fn gen_dockerfile(dir: &str, runtime: &Runtime, bspec: &Build) -> bool {
-    let Runtime { port, handler, lang, .. } = runtime;
+    let Runtime {
+        port,
+        handler,
+        lang,
+        ..
+    } = runtime;
     match lang.to_lang() {
         Lang::Python => python::gen_dockerfile(dir, handler, port, &bspec.post),
         _ => gen_generic_dockerfile(dir, handler, port, &bspec.post),
@@ -56,8 +63,14 @@ fn gen_dockerfile(dir: &str, runtime: &Runtime, bspec: &Build) -> bool {
 }
 
 pub async fn build(auth: &Auth, dir: &str, runtime: &Runtime, bspec: &Build) -> BuildStatus {
-
-    let Build { image_name, base_image_arn, build_role_arn, bucket, pre, .. } = bspec;
+    let Build {
+        image_name,
+        base_image_arn,
+        build_role_arn,
+        bucket,
+        pre,
+        ..
+    } = bspec;
     for cmd in pre {
         u::sh(&cmd, dir);
     }
@@ -83,7 +96,7 @@ pub async fn build(auth: &Auth, dir: &str, runtime: &Runtime, bspec: &Build) -> 
         base_image_arn: base_image_arn.to_string(),
         build_role_arn: build_role_arn.to_string(),
         uri: uri,
-        env: Some(runtime.environment.clone())
+        env: Some(runtime.environment.clone()),
     };
     let idem_token = format!("{}_{}", image_name, &auth.name);
     let image_id = mvi.find_or_create(&client, &idem_token).await;

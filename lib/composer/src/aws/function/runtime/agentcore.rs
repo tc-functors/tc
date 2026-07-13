@@ -1,7 +1,12 @@
 use super::common;
-use compiler::{FunctionSpec, RuntimeSpec, InfraSpec, Arch};
-use common::Runtime;
 use common as c;
+use common::Runtime;
+use compiler::{
+    Arch,
+    FunctionSpec,
+    InfraSpec,
+    RuntimeSpec,
+};
 use std::collections::HashMap;
 
 fn as_arch(maybe_arch: &Option<Arch>) -> Arch {
@@ -74,6 +79,6 @@ pub fn make(
         arch: as_arch(&r.arch),
         infra_spec: infra_spec,
         microvm: None,
-        port: 0
+        port: 0,
     }
 }

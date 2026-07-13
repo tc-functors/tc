@@ -30,6 +30,9 @@ aarch64-apple:
 docs:
 	cd doc && make run
 
+test:
+	cargo test --workspace --quiet -j 2 -- --test-threads=2
+
 unit-test:
 	cargo test --quiet -j 2 -- --test-threads=2
 

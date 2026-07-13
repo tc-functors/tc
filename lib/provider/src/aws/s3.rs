@@ -1,7 +1,9 @@
 use crate::Auth;
+use aws_config::{
+    BehaviorVersion,
+    timeout::TimeoutConfig,
+};
 use aws_sdk_lambda::primitives::SdkBody;
-use aws_config::BehaviorVersion;
-use aws_config::timeout::TimeoutConfig;
 pub use aws_sdk_s3::Client;
 use aws_sdk_s3::{
     Error,
@@ -14,10 +16,12 @@ use aws_sdk_s3::{
         builders::CreateBucketConfigurationBuilder,
     },
 };
-use std::time::Duration;
-use kit::*;
 use kit as u;
-use std::path::Path;
+use kit::*;
+use std::{
+    path::Path,
+    time::Duration,
+};
 use walkdir::WalkDir;
 
 pub async fn make_client(auth: &Auth) -> Client {
@@ -29,7 +33,7 @@ pub async fn make_client(auth: &Auth) -> Client {
                 TimeoutConfig::builder()
                     .operation_timeout(Duration::from_secs(60))
                     .operation_attempt_timeout(Duration::from_millis(10000))
-                    .build()
+                    .build(),
             )
             .retry_config(RetryConfig::standard().with_max_attempts(20))
             .build(),

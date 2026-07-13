@@ -2,17 +2,17 @@ use crate::Auth;
 use aws_sdk_route53::{
     Client,
     types::{
+        AliasTarget,
         Change,
         ChangeAction,
         ChangeBatch,
         ResourceRecord,
         ResourceRecordSet,
         RrType,
-        AliasTarget,
         builders::{
+            AliasTargetBuilder,
             ChangeBatchBuilder,
             ChangeBuilder,
-            AliasTargetBuilder,
             ResourceRecordBuilder,
             ResourceRecordSetBuilder,
         },
@@ -52,7 +52,8 @@ fn make_alias_target(target_zone_id: &str, dns_name: &str) -> AliasTarget {
     let b = AliasTargetBuilder::default();
     b.hosted_zone_id(target_zone_id)
         .dns_name(dns_name)
-        .build().unwrap()
+        .build()
+        .unwrap()
 }
 
 fn make_alias_record_set(vr: ValidationRecord, target_zone_id: &str) -> ResourceRecordSet {
@@ -82,13 +83,13 @@ fn make_change(vr: ValidationRecord, target_zone_id: &str, root: bool) -> Change
 fn make_change_batch(
     vr: ValidationRecord,
     target_zone_id: Option<String>,
-    root: bool
+    root: bool,
 ) -> ChangeBatch {
     let b = ChangeBatchBuilder::default();
     let tz_id = if root {
         match target_zone_id {
             Some(t) => t,
-            None => panic!("No target_zone_id specified")
+            None => panic!("No target_zone_id specified"),
         }
     } else {
         // non-root does not need tz_id
@@ -126,7 +127,10 @@ async fn get_hosted_zone_id(client: &Client, name: &str) -> (Option<String>, boo
         (parts.clone().last().cloned().map(String::from), true)
     } else if let Some(zone_id) = zones.get(&zname) {
         let parts: Vec<&str> = zone_id.split("/").collect();
-        (parts.clone().last().cloned().map(String::from), &zname == &fname)
+        (
+            parts.clone().last().cloned().map(String::from),
+            &zname == &fname,
+        )
     } else {
         (None, false)
     }
@@ -139,9 +143,11 @@ pub async fn create_validation_record_set(
     rtype: &str,
     value: &str,
 ) -> (Option<String>, bool) {
-
     let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
-    println!("Creating Validation Recordset {} {} {:?} root:{}", domain, name, maybe_hosted_zone_id, root);
+    println!(
+        "Creating Validation Recordset {} {} {:?} root:{}",
+        domain, name, maybe_hosted_zone_id, root
+    );
 
     if let Some(hosted_zone_id) = maybe_hosted_zone_id.clone() {
         let vr = ValidationRecord {
@@ -170,7 +176,6 @@ pub async fn create_record_set(
     value: &str,
     target_zone_id: Option<String>,
 ) {
-
     let (maybe_hosted_zone_id, root) = get_hosted_zone_id(client, domain).await;
     println!("Creating Recordset {} root:{}", domain, root);
     if let Some(hosted_zone_id) = maybe_hosted_zone_id {

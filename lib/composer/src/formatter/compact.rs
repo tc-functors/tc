@@ -7,13 +7,12 @@ use crate::{
     Route,
     Topology,
 };
+use kit as u;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use std::collections::HashMap;
-
-use kit as u;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct QueueItem {
@@ -240,52 +239,52 @@ pub struct CompactTopology {
 }
 
 fn build(topology: &Topology) -> CompactTopology {
-       let mut routes = build_routes(&topology.namespace, &topology.routes);
-        let mut events = build_events(&topology.namespace, &topology.events);
-        let mut functions = build_functions(&topology.namespace, &topology.functions);
-        let mut mutations = build_mutations(&topology);
-        let mut states = build_states(&topology);
-        let mut channels = build_channels(&topology.namespace, &topology.channels);
-        let mut pages = build_pages(&topology.namespace, &topology.pages);
-        let mut queues = build_queues(&topology.namespace, &topology.queues);
+    let mut routes = build_routes(&topology.namespace, &topology.routes);
+    let mut events = build_events(&topology.namespace, &topology.events);
+    let mut functions = build_functions(&topology.namespace, &topology.functions);
+    let mut mutations = build_mutations(&topology);
+    let mut states = build_states(&topology);
+    let mut channels = build_channels(&topology.namespace, &topology.channels);
+    let mut pages = build_pages(&topology.namespace, &topology.pages);
+    let mut queues = build_queues(&topology.namespace, &topology.queues);
 
-        for (_, node) in &topology.nodes {
-            let rs = build_routes(&node.namespace, &node.routes);
-            routes.extend(rs);
+    for (_, node) in &topology.nodes {
+        let rs = build_routes(&node.namespace, &node.routes);
+        routes.extend(rs);
 
-            let es = build_events(&node.namespace, &node.events);
-            events.extend(es);
+        let es = build_events(&node.namespace, &node.events);
+        events.extend(es);
 
-            let fs = build_functions(&node.namespace, &node.functions);
-            functions.extend(fs);
+        let fs = build_functions(&node.namespace, &node.functions);
+        functions.extend(fs);
 
-            let ms = build_mutations(&node);
-            mutations.extend(ms);
+        let ms = build_mutations(&node);
+        mutations.extend(ms);
 
-            let ss = build_states(&node);
-            states.extend(ss);
+        let ss = build_states(&node);
+        states.extend(ss);
 
-            let cs = build_channels(&node.namespace, &node.channels);
-            channels.extend(cs);
+        let cs = build_channels(&node.namespace, &node.channels);
+        channels.extend(cs);
 
-            let ps = build_pages(&node.namespace, &node.pages);
-            pages.extend(ps);
+        let ps = build_pages(&node.namespace, &node.pages);
+        pages.extend(ps);
 
-            let qs = build_queues(&node.namespace, &node.queues);
-            queues.extend(qs);
-        }
+        let qs = build_queues(&node.namespace, &node.queues);
+        queues.extend(qs);
+    }
 
-        let ct = CompactTopology {
-            namespace: topology.namespace.clone(),
-            routes: routes,
-            events: events,
-            functions: functions,
-            mutations: mutations,
-            states: states,
-            channels: channels,
-            pages: pages,
-            queues: queues,
-        };
+    let ct = CompactTopology {
+        namespace: topology.namespace.clone(),
+        routes: routes,
+        events: events,
+        functions: functions,
+        mutations: mutations,
+        states: states,
+        channels: channels,
+        pages: pages,
+        queues: queues,
+    };
     ct
 }
 
@@ -299,7 +298,6 @@ pub fn build_recursive(topologies: &HashMap<String, Topology>) -> Vec<CompactTop
     tops.reverse();
     tops
 }
-
 
 pub fn pprint(topology: &Topology) {
     let ct = build(topology);

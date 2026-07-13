@@ -1,18 +1,12 @@
 use crate::role;
-use compiler::spec::function::{
-    Provider,
-};
-use composer::{
-    Function,
-};
+use compiler::spec::function::Provider;
+use composer::Function;
 use futures::stream::FuturesUnordered;
-use provider::{
-    Auth,
-};
+use provider::Auth;
 use std::collections::HashMap;
+mod agentcore;
 pub mod lambda;
 mod microvm;
-mod agentcore;
 use tabled::Tabled;
 
 async fn maybe_build(auth: &Auth, function: &Function) {
@@ -27,12 +21,8 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
             let client = lambda::make_client(auth).await;
             lambda::create(&client, &f, tags).await
         }
-        Provider::MicroVm => {
-            microvm::create(auth, &f, tags).await
-        },
-        Provider::AgentCore => {
-            agentcore::create(auth, &f, tags).await
-        },
+        Provider::MicroVm => microvm::create(auth, &f, tags).await,
+        Provider::AgentCore => agentcore::create(auth, &f, tags).await,
     }
 }
 
@@ -92,15 +82,14 @@ pub async fn update_code(
     }
 }
 
-
 pub async fn delete(auth: &Auth, fns: &HashMap<String, Function>, force: bool) {
     let client = lambda::make_client(auth).await;
     for (_name, f) in fns {
-         match f.runtime.provider {
-             Provider::Lambda => lambda::delete(&client, &f).await,
-             Provider::MicroVm => microvm::delete(auth, &f, force).await,
-             Provider::AgentCore => agentcore::delete(auth, &f).await
-         }
+        match f.runtime.provider {
+            Provider::Lambda => lambda::delete(&client, &f).await,
+            Provider::MicroVm => microvm::delete(auth, &f, force).await,
+            Provider::AgentCore => agentcore::delete(auth, &f).await,
+        }
     }
 }
 
@@ -130,16 +119,13 @@ pub async fn sync_roles(auth: &Auth, fns: &HashMap<String, Function>) {
         }
 
         let c = client.clone();
-        let h = tokio::spawn(async move {
-            lambda::sync_role(&c, &f).await
-        });
+        let h = tokio::spawn(async move { lambda::sync_role(&c, &f).await });
         tasks.push(h);
     }
     for task in tasks {
         let _ = task.await;
     }
 }
-
 
 pub async fn update_dir(
     auth: &Auth,
@@ -214,11 +200,10 @@ pub async fn update_tags(
             Provider::Lambda => {
                 let arn = auth.lambda_arn(&f.fqn);
                 lambda::update_tags(&client, &arn, tags).await;
-            },
+            }
             Provider::MicroVm => todo!(),
-            Provider::AgentCore => todo!()
+            Provider::AgentCore => todo!(),
         }
-
     }
 }
 
@@ -229,8 +214,8 @@ async fn update_layers(auth: &Auth, fns: &HashMap<String, Function>) {
             Provider::Lambda => {
                 let arn = auth.lambda_arn(&f.fqn);
                 lambda::update_layers(&client, &f, &arn).await;
-            },
-            _ => todo!()
+            }
+            _ => todo!(),
         }
     }
 }
@@ -240,7 +225,7 @@ async fn update_vars(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_, f) in fns {
         match f.runtime.provider {
             Provider::Lambda => lambda::update_vars(&client, &f).await,
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }
@@ -250,7 +235,7 @@ async fn update_concurrency(auth: &Auth, fns: &HashMap<String, Function>) {
     for (_, f) in fns {
         match f.runtime.provider {
             Provider::Lambda => lambda::update_concurrency(&client, f).await,
-            _ => ()
+            _ => (),
         }
     }
 }
@@ -290,15 +275,14 @@ pub async fn list(auth: &Auth, fns: &HashMap<String, Function>) -> Vec<Record> {
                     };
                     rows.push(row);
                 }
-            },
+            }
             Provider::MicroVm => {
                 microvm::print_config(auth, f).await;
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
     rows
 }
-
 
 // transducers
