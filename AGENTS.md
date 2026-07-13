@@ -2,7 +2,7 @@
 
 ## Project overview
 - This is `tc` (Topology Composer), a Rust 2024 workspace for describing, composing, and deploying cloud-native serverless systems.
-- Use Rust 1.90, as specified by the root `Cargo.toml`.
+- Use Rust 1.95, as specified by the root `Cargo.toml`.
 - The CLI lives in `src/`; reusable workspace crates live in `lib/`.
 - AWS integrations and infrastructure behavior live primarily under `lib/provider`, `lib/composer`, `lib/resolver`, and `lib/deployer`.
 - Examples under `examples/` are executable documentation; update them when behavior or supported configuration changes.
