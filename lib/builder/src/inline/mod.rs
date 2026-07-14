@@ -89,7 +89,7 @@ async fn build_with_docker(
     auth: &Auth,
     dir: &str,
     langr: &LangRuntime,
-    _name: &str,
+    name: &str,
     shared_context: bool,
 ) -> (bool, String, String) {
     let root = &u::root();
@@ -99,12 +99,26 @@ async fn build_with_docker(
     };
     //let container_sha = create_buildx_container(name, dir);
 
+    let key_file = format!("/tmp/{}-key.txt", name);
+    let secret_file = format!("/tmp/{}-secret.txt", name);
+    let session_file = format!("/tmp/{}-session.txt", name);
+
     let cmd_str = if shared_context {
-        format!(
-            "docker buildx build --platform=linux/amd64 --ssh default --load -t {} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+        let (key, secret, aws_token) = auth.get_keys().await;
+
+        u::write_str(&key_file, &key);
+        u::write_str(&secret_file, &secret);
+        u::write_str(&session_file, &aws_token);
+
+        let out = format!(
+            "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
             u::basedir(dir),
+            &key_file,
+            &secret_file,
+            &session_file,
             &token
-        )
+        );
+        out
     } else {
         format!(
             "docker buildx build --platform=linux/amd64 --load -t {} .",
@@ -113,6 +127,11 @@ async fn build_with_docker(
     };
 
     let (status, out, err) = u::runc(&cmd_str, dir);
+
+    sh(&format!("rm -f {}", &key_file), dir);
+    sh(&format!("rm -f {}", &secret_file), dir);
+    sh(&format!("rm -f {}", &session_file), dir);
+
     if !status {
         println!("Build failed: {} {}", out, err);
         sh("rm -f Dockerfile wrapper", dir);

@@ -68,7 +68,8 @@ RUN {pre}
 
 RUN --mount=type=ssh --mount=type=cache,target=/.root/cache --mount=target=shared,type=bind,source=. {pip_cmd}
 
-RUN --mount=type=ssh --mount=type=secret,id=aws,target=/root/.aws/credentials {post}
+RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {post}
+
 
 "#
     );
