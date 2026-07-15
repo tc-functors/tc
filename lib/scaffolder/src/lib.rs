@@ -1,7 +1,9 @@
 mod anthropic;
 mod function;
 mod prompt;
+mod iac;
 use compiler::LangRuntime;
+use composer::Topology;
 use inquire::Text;
 use kit as u;
 use provider::{
@@ -66,4 +68,20 @@ pub async fn scaffold_llm_bedrock_headless(auth: &Auth, given_text: &str) -> Str
     let response = bedrock::send(&client, &prompt, &model).await;
     let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
     code
+}
+
+pub async fn scaffold_iac(
+    auth: &Auth,
+    topology: &Topology,
+    iac: Option<String>,
+    out_dir: Option<String>
+) {
+    let dir = u::maybe_string(out_dir, "tf");
+    let iac = u::maybe_string(iac, "tf");
+    let model = DEFAULT_BEDROCK_MODEL;
+    println!("Using bedrock model {}", &model);
+    let client = bedrock::make_client(auth).await;
+    let prompt = iac::generate_prompt(topology, &iac, &dir);
+    let response = bedrock::send(&client, &prompt, &model).await;
+    println!("{}", &response)
 }
