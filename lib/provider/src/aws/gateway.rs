@@ -1,7 +1,13 @@
 use crate::Auth;
 pub use aws_sdk_apigatewayv2::Client;
+use aws_config::{
+    BehaviorVersion,
+    timeout::TimeoutConfig,
+};
 use aws_sdk_apigatewayv2::{
     Error,
+    config as gateway_config,
+    config::retry::{RetryConfig, RetryMode},
     types::{
         AuthorizationType,
         AuthorizerType,
@@ -22,6 +28,7 @@ use aws_sdk_apigatewayv2::{
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
+use std::time::Duration;
 
 mod eventbridge;
 mod lambda;
@@ -30,7 +37,24 @@ mod sqs;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::new(shared_config)
+    Client::from_conf(
+        gateway_config::Builder::from(shared_config)
+            .behavior_version(BehaviorVersion::latest())
+            .timeout_config(
+                TimeoutConfig::builder()
+                    .operation_timeout(Duration::from_secs(60))
+                    .operation_attempt_timeout(Duration::from_millis(10000))
+                    .build(),
+            )
+            .retry_config(
+                RetryConfig::standard()
+                    .with_retry_mode(RetryMode::Adaptive)
+                    .with_max_attempts(20)
+                    .with_initial_backoff(Duration::from_secs(1))
+                    .with_max_backoff(Duration::from_secs(10))
+            )
+            .build(),
+    )
 }
 
 pub fn make_cors(methods: Vec<String>, origins: Vec<String>, headers: Option<Vec<String>>) -> Cors {
