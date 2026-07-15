@@ -1,10 +1,12 @@
-use composer::{Topology};
-use composer::topology::*;
+use composer::{
+    Topology,
+    topology::*,
+};
+use kit::s;
 use std::{
     fs,
     os::unix::fs::symlink,
 };
-use kit::s;
 use tempfile::TempDir;
 
 #[test]
@@ -52,7 +54,7 @@ fn write_shared_function(dir: &std::path::Path, name: &str, fqn: &str) {
              command: echo build\n"
         ),
     )
-        .unwrap();
+    .unwrap();
     fs::write(dir.join("handler.py"), "").unwrap();
 }
 

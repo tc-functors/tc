@@ -1,11 +1,8 @@
 use aws_config::{
+    BehaviorVersion,
     timeout::TimeoutConfig,
 };
 use std::time::Duration;
-use aws_config::{
-    BehaviorVersion,
-};
-
 
 pub const MAX_ATTEMPTS: u32 = 20;
 

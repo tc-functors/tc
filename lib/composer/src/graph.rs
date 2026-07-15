@@ -1,8 +1,13 @@
-use petgraph::graph::{Graph, DiGraph};
-use std::collections::HashMap;
 use crate::Topology;
 use compiler::Entity;
-use petgraph::stable_graph::NodeIndex;
+use petgraph::{
+    graph::{
+        DiGraph,
+        Graph,
+    },
+    stable_graph::NodeIndex,
+};
+use std::collections::HashMap;
 
 #[derive(Eq, Hash, PartialEq)]
 struct Source {
@@ -120,7 +125,7 @@ fn make_nodes(mappings: &HashMap<Source, Vec<Target>>) -> HashMap<String, Node> 
         let node = Node {
             entity: source.entity.clone(),
             name: source.name.clone(),
-            targets: targets.to_vec()
+            targets: targets.to_vec(),
         };
         h.insert(source.name.clone(), node);
     }
@@ -129,7 +134,7 @@ fn make_nodes(mappings: &HashMap<Source, Vec<Target>>) -> HashMap<String, Node> 
 
 struct Edge {
     source: String,
-    target: String
+    target: String,
 }
 
 fn make_edges(mappings: &HashMap<Source, Vec<Target>>) -> HashMap<String, String> {

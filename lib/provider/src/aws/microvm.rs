@@ -1,8 +1,12 @@
+use super::constants;
 use crate::Auth;
 use aws_sdk_lambdamicrovms::{
     Client,
     config,
-    config::retry::{RetryConfig, RetryMode},
+    config::retry::{
+        RetryConfig,
+        RetryMode,
+    },
     types::{
         CodeArtifact,
         MicrovmImageState,
@@ -15,7 +19,6 @@ use kit::{
     LogUpdate,
     *,
 };
-use super::constants;
 use std::{
     collections::HashMap,
     io::stdout,
@@ -32,7 +35,7 @@ pub async fn make_client(auth: &Auth) -> Client {
                     .with_retry_mode(RetryMode::Adaptive)
                     .with_max_attempts(constants::MAX_ATTEMPTS)
                     .with_initial_backoff(constants::INITIAL_BACKOFF)
-                    .with_max_backoff(constants::MAX_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF),
             )
             .build(),
     )

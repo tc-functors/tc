@@ -1,7 +1,9 @@
-use std::fs;
-use tempfile::TempDir;
-use std::path::Path;
 use composer::index::*;
+use std::{
+    fs,
+    path::Path,
+};
+use tempfile::TempDir;
 
 fn mk(root: &Path, rel: &str, contents: &str) {
     let p = root.join(rel);
@@ -142,7 +144,7 @@ fn dangling_symlink_does_not_report_as_existing() {
         root.join("nonexistent_target.json"),
         root.join("dir").join("vars.json"),
     )
-        .unwrap();
+    .unwrap();
 
     let idx = RepoIndex::build(root);
     let dir_str = idx.root().join("dir").to_str().unwrap().to_string();
@@ -175,7 +177,7 @@ fn symlinked_topology_yml_is_visible_via_has() {
         root.join("real").join("topology.yml"),
         root.join("linked").join("topology.yml"),
     )
-        .unwrap();
+    .unwrap();
 
     let idx = RepoIndex::build(root);
     // Both dirs surface as topology dirs.

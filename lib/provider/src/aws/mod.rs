@@ -7,6 +7,7 @@ pub mod cloudfront;
 pub mod cloudwatch;
 pub mod codeartifact;
 pub mod cognito;
+mod constants;
 pub mod ecr;
 pub mod efs;
 pub mod eventbridge;
@@ -23,7 +24,6 @@ pub mod sfn;
 pub mod sqs;
 pub mod ssm;
 pub mod sts;
-mod constants;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;

@@ -1,5 +1,7 @@
-use crate::Topology;
-use crate::graph;
+use crate::{
+    Topology,
+    graph,
+};
 use ascii_petgraph::RenderedGraph;
 
 pub fn pprint(topology: &Topology) {

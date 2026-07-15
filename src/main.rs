@@ -1131,7 +1131,6 @@ async fn scaffold(args: ScaffoldArgs) {
     } else {
         tc::scaffold(profile, dir, text, provider, model, functions).await
     }
-
 }
 
 async fn validate(args: ValidateArgs) {

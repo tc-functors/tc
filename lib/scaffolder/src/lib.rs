@@ -1,7 +1,7 @@
 mod anthropic;
 mod function;
-mod prompt;
 mod iac;
+mod prompt;
 use compiler::LangRuntime;
 use composer::Topology;
 use inquire::Text;
@@ -74,7 +74,7 @@ pub async fn scaffold_iac(
     auth: &Auth,
     topology: &Topology,
     iac: Option<String>,
-    out_dir: Option<String>
+    out_dir: Option<String>,
 ) {
     let dir = u::maybe_string(out_dir, "tf");
     let iac = u::maybe_string(iac, "tf");

@@ -1,15 +1,18 @@
+use super::constants;
 use crate::Auth;
 use aws_sdk_resourcegroupstagging::{
     Client,
     config,
-    config::retry::{RetryConfig, RetryMode},
+    config::retry::{
+        RetryConfig,
+        RetryMode,
+    },
     types::{
         Tag,
         TagFilter,
         builders::TagFilterBuilder,
     },
 };
-use super::constants;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -22,7 +25,7 @@ pub async fn make_client(auth: &Auth) -> Client {
                     .with_retry_mode(RetryMode::Adaptive)
                     .with_max_attempts(constants::MAX_ATTEMPTS)
                     .with_initial_backoff(constants::INITIAL_BACKOFF)
-                    .with_max_backoff(constants::MAX_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF),
             )
             .build(),
     )

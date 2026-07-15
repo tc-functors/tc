@@ -940,11 +940,7 @@ pub async fn validate(maybe_entity: Option<String>) {
     }
 }
 
-pub async fn scaffold_iac(
-    profile: Option<String>,
-    iac: Option<String>,
-    out_dir: Option<String>,
-) {
+pub async fn scaffold_iac(profile: Option<String>, iac: Option<String>, out_dir: Option<String>) {
     let dir = u::pwd();
     let topology = composer::compose(&dir, true);
     let auth = init(profile, None).await;

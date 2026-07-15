@@ -1,13 +1,19 @@
-use composer::aws::role::Role;
-use compiler::spec::function::{
-    FunctionSpec,
-    LangRuntime,
-    Provider,
-    RuntimeSpec,
+use compiler::{
+    Entity,
+    spec::function::{
+        FunctionSpec,
+        LangRuntime,
+        Provider,
+        RuntimeSpec,
+    },
 };
-use composer::aws::function::fs::collect_aux_files;
-use compiler::Entity;
+use composer::aws::{
+    function::fs::collect_aux_files,
+    role::Role,
+};
+use kit::s;
 use std::{
+    collections::HashMap,
     fs,
     path::{
         Path,
@@ -15,8 +21,6 @@ use std::{
     },
 };
 use tempfile::TempDir;
-use kit::s;
-use std::collections::HashMap;
 
 fn fake_fspec(name: &str) -> FunctionSpec {
     FunctionSpec {
@@ -37,7 +41,7 @@ fn fake_fspec(name: &str) -> FunctionSpec {
         assets: None,
         targets: None,
         aux_files: None,
-        shared: None
+        shared: None,
     }
 }
 
@@ -62,7 +66,7 @@ fn fake_rspec_no_overrides() -> RuntimeSpec {
         arch: None,
         network: None,
         port: None,
-        microvm: None
+        microvm: None,
     }
 }
 
@@ -295,9 +299,9 @@ fn composer_aux_path_byte_matches_diff_set_path_for_deleted_role_file() {
         Some(&fake_rspec_no_overrides()),
         &fake_role_no_path(),
     )
-        .into_iter()
-        .find(|p| p.ends_with("roles/myfn.json"))
-        .expect("conventional role path must always be emitted");
+    .into_iter()
+    .find(|p| p.ends_with("roles/myfn.json"))
+    .expect("conventional role path must always be emitted");
 
     // Mirror `build_diff_set`: canonicalize the repo root, join
     // the rel path, fall back to the logical join when the file
@@ -337,9 +341,9 @@ fn composer_aux_path_byte_matches_diff_set_path_for_deleted_vars_file() {
         Some(&fake_rspec_no_overrides()),
         &fake_role_no_path(),
     )
-        .into_iter()
-        .find(|p| p.ends_with("vars/myfn.json"))
-        .expect("conventional vars path must always be emitted");
+    .into_iter()
+    .find(|p| p.ends_with("vars/myfn.json"))
+    .expect("conventional vars path must always be emitted");
 
     let rel = "infrastructure/tc/foo/vars/myfn.json";
     let canonical_root = repo_root.canonicalize().unwrap();

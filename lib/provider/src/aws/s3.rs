@@ -1,10 +1,14 @@
+use super::constants;
 use crate::Auth;
 use aws_sdk_lambda::primitives::SdkBody;
 pub use aws_sdk_s3::Client;
 use aws_sdk_s3::{
     Error,
     config,
-    config::retry::{RetryConfig, RetryMode},
+    config::retry::{
+        RetryConfig,
+        RetryMode,
+    },
     primitives::ByteStream,
     types::{
         BucketLocationConstraint,
@@ -14,11 +18,8 @@ use aws_sdk_s3::{
 };
 use kit as u;
 use kit::*;
-use std::{
-    path::Path,
-};
+use std::path::Path;
 use walkdir::WalkDir;
-use super::constants;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -31,7 +32,7 @@ pub async fn make_client(auth: &Auth) -> Client {
                     .with_retry_mode(RetryMode::Adaptive)
                     .with_max_attempts(constants::MAX_ATTEMPTS)
                     .with_initial_backoff(constants::INITIAL_BACKOFF)
-                    .with_max_backoff(constants::MAX_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF),
             )
             .build(),
     )

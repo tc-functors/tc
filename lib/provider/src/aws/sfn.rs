@@ -1,10 +1,14 @@
+use super::constants;
 use crate::Auth;
 use anyhow::Result;
 use aws_sdk_sfn::{
     Client,
-    config,
-    config::retry::{RetryConfig, RetryMode},
     Error,
+    config,
+    config::retry::{
+        RetryConfig,
+        RetryMode,
+    },
     types::{
         LogLevel,
         LoggingConfiguration,
@@ -21,7 +25,6 @@ use aws_sdk_sfn::{
         },
     },
 };
-use super::constants;
 use colored::Colorize;
 use kit::{
     LogUpdate,
@@ -44,7 +47,7 @@ pub async fn make_client(auth: &Auth) -> Client {
                     .with_retry_mode(RetryMode::Adaptive)
                     .with_max_attempts(constants::MAX_ATTEMPTS)
                     .with_initial_backoff(constants::INITIAL_BACKOFF)
-                    .with_max_backoff(constants::MAX_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF),
             )
             .build(),
     )
