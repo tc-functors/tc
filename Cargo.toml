@@ -58,7 +58,6 @@ kit = { path = "lib/kit" }
 executor = { path = "lib/executor" }
 emulator = { path = "lib/emulator" }
 provider = { path = "lib/provider" }
-visualizer = { path = "lib/visualizer" }
 validator = { path = "lib/validator" }
 repl = { path = "lib/repl" }
 
@@ -89,7 +88,6 @@ members = [
    "lib/provider",
    "lib/configurator",
    "lib/differ",
-   "lib/visualizer",
    "lib/validator",
    "lib/repl"
 ]
