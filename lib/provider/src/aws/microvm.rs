@@ -1,6 +1,8 @@
 use crate::Auth;
 use aws_sdk_lambdamicrovms::{
     Client,
+    config,
+    config::retry::{RetryConfig, RetryMode},
     types::{
         CodeArtifact,
         MicrovmImageState,
@@ -13,6 +15,7 @@ use kit::{
     LogUpdate,
     *,
 };
+use super::constants;
 use std::{
     collections::HashMap,
     io::stdout,
@@ -20,7 +23,19 @@ use std::{
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::new(shared_config)
+    Client::from_conf(
+        config::Builder::from(shared_config)
+            .behavior_version(constants::behavior_version())
+            .timeout_config(constants::timeout_config())
+            .retry_config(
+                RetryConfig::standard()
+                    .with_retry_mode(RetryMode::Adaptive)
+                    .with_max_attempts(constants::MAX_ATTEMPTS)
+                    .with_initial_backoff(constants::INITIAL_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF)
+            )
+            .build(),
+    )
 }
 
 fn pp_status(status: &MicrovmImageState) -> String {

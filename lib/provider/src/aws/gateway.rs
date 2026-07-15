@@ -1,9 +1,6 @@
 use crate::Auth;
 pub use aws_sdk_apigatewayv2::Client;
-use aws_config::{
-    BehaviorVersion,
-    timeout::TimeoutConfig,
-};
+
 use aws_sdk_apigatewayv2::{
     Error,
     config as gateway_config,
@@ -28,7 +25,7 @@ use aws_sdk_apigatewayv2::{
 use colored::Colorize;
 use kit::*;
 use std::collections::HashMap;
-use std::time::Duration;
+use super::constants;
 
 mod eventbridge;
 mod lambda;
@@ -39,19 +36,14 @@ pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
     Client::from_conf(
         gateway_config::Builder::from(shared_config)
-            .behavior_version(BehaviorVersion::latest())
-            .timeout_config(
-                TimeoutConfig::builder()
-                    .operation_timeout(Duration::from_secs(60))
-                    .operation_attempt_timeout(Duration::from_millis(10000))
-                    .build(),
-            )
+            .behavior_version(constants::behavior_version())
+            .timeout_config(constants::timeout_config())
             .retry_config(
                 RetryConfig::standard()
                     .with_retry_mode(RetryMode::Adaptive)
-                    .with_max_attempts(20)
-                    .with_initial_backoff(Duration::from_secs(1))
-                    .with_max_backoff(Duration::from_secs(10))
+                    .with_max_attempts(constants::MAX_ATTEMPTS)
+                    .with_initial_backoff(constants::INITIAL_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF)
             )
             .build(),
     )

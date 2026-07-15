@@ -1,11 +1,33 @@
-use aws_sdk_dynamodb::types::{AttributeDefinition, BillingMode, KeySchemaElement, KeyType,
-                              ScalarAttributeType};;
-use aws_sdk_dynamodb::Client;
+use aws_sdk_dynamodb::{
+    Client,
+    config,
+    config::retry::{RetryConfig, RetryMode},
+    types::{
+        AttributeDefinition,
+        BillingMode,
+        KeySchemaElement,
+        KeyType,
+        ScalarAttributeType
+};
+
 use crate::Auth;
+use super::constants;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = auth.load().await;
-    Client::new(&shared_config)
+    Client::from_conf(
+        config::Builder::from(shared_config)
+            .behavior_version(constants::behavior_version())
+            .timeout_config(constants::timeout_config())
+            .retry_config(
+                RetryConfig::standard()
+                    .with_retry_mode(RetryMode::Adaptive)
+                    .with_max_attempts(constants::MAX_ATTEMPTS)
+                    .with_initial_backoff(constants::INITIAL_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF)
+            )
+            .build(),
+    )
 }
 
 fn make_hash_key_schema(hash_key: &str) -> KeySchemaElement {

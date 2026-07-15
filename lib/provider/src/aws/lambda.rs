@@ -2,6 +2,8 @@ use crate::Auth;
 use anyhow::Result;
 use aws_sdk_lambda::{
     Client,
+    config,
+    config::retry::{RetryConfig, RetryMode},
     Error,
     primitives::Blob,
     types::{
@@ -53,6 +55,7 @@ use std::{
     },
     panic,
 };
+use super::constants;
 
 fn pp_state(state: &State) -> String {
     match state {
@@ -75,7 +78,19 @@ fn pp_status(status: &LastUpdateStatus) -> String {
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::new(shared_config)
+    Client::from_conf(
+        config::Builder::from(shared_config)
+            .behavior_version(constants::behavior_version())
+            .timeout_config(constants::timeout_config())
+            .retry_config(
+                RetryConfig::standard()
+                    .with_retry_mode(RetryMode::Adaptive)
+                    .with_max_attempts(constants::MAX_ATTEMPTS)
+                    .with_initial_backoff(constants::INITIAL_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF)
+            )
+            .build(),
+    )
 }
 
 pub fn make_blob_from_str(payload: &str) -> Blob {

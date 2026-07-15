@@ -1,6 +1,8 @@
 use crate::Auth;
 use aws_sdk_bedrockagentcorecontrol::{
     Client,
+    config,
+    config::retry::{RetryConfig, RetryMode},
     types::{
         AgentManagedRuntimeType,
         AgentRuntimeArtifact,
@@ -16,10 +18,23 @@ use aws_sdk_bedrockagentcorecontrol::{
         },
     },
 };
+use super::constants;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
-    Client::new(shared_config)
+    Client::from_conf(
+        config::Builder::from(shared_config)
+            .behavior_version(constants::behavior_version())
+            .timeout_config(constants::timeout_config())
+            .retry_config(
+                RetryConfig::standard()
+                    .with_retry_mode(RetryMode::Adaptive)
+                    .with_max_attempts(constants::MAX_ATTEMPTS)
+                    .with_initial_backoff(constants::INITIAL_BACKOFF)
+                    .with_max_backoff(constants::MAX_BACKOFF)
+            )
+            .build(),
+    )
 }
 
 fn make_s3_location(bucket: &str, prefix: &str) -> S3Location {
