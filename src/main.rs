@@ -98,8 +98,6 @@ enum Cmd {
     Validate(ValidateArgs),
     /// display current tc version
     Version(DefaultArgs),
-    /// Visualize topology using HTML
-    Visualize(VisualizeArgs),
     /// Generate documentation
     #[clap(hide = true)]
     Doc(DefaultArgs),
@@ -385,12 +383,6 @@ pub struct UpgradeArgs {
 }
 
 #[derive(Debug, Args)]
-pub struct VisualizeArgs {
-    #[arg(long, short = 'd')]
-    dir: Option<String>,
-}
-
-#[derive(Debug, Args)]
 pub struct UpdateArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
@@ -604,6 +596,10 @@ pub struct ScaffoldArgs {
     /// Model identifier
     #[arg(long)]
     model: Option<String>,
+    #[arg(long, alias = "out-dir")]
+    out_dir: Option<String>,
+    #[arg(long)]
+    iac: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1119,6 +1115,8 @@ async fn scaffold(args: ScaffoldArgs) {
         llm,
         provider,
         model,
+        iac,
+        out_dir,
         ..
     } = args;
 
@@ -1128,12 +1126,12 @@ async fn scaffold(args: ScaffoldArgs) {
         None
     };
 
-    tc::scaffold(profile, dir, text, provider, model, functions).await
-}
+    if iac.is_some() {
+        tc::scaffold_iac(profile, iac, out_dir).await
+    } else {
+        tc::scaffold(profile, dir, text, provider, model, functions).await
+    }
 
-async fn visualize(args: VisualizeArgs) {
-    let VisualizeArgs { dir, .. } = args;
-    tc::visualize(dir).await;
 }
 
 async fn validate(args: ValidateArgs) {
@@ -1212,7 +1210,6 @@ async fn run_command() {
         Cmd::Changelog(args) => changelog(args).await,
         Cmd::Validate(args) => validate(args).await,
         Cmd::Version(..) => version().await,
-        Cmd::Visualize(args) => visualize(args).await,
         Cmd::Scaffold(args) => scaffold(args).await,
         Cmd::Release(args) => ci_release(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,

@@ -900,11 +900,6 @@ pub async fn emulate(
     emulator::emulate(auth, &rt, &entity_component, shell).await;
 }
 
-pub async fn visualize(dir: Option<String>) {
-    let dir = u::maybe_string(dir, &u::pwd());
-    visualizer::visualize(&dir);
-}
-
 pub async fn run(dir: Option<String>, task: String, trace: bool) {
     let dir = u::maybe_string(dir, &u::pwd());
 
@@ -943,4 +938,15 @@ pub async fn validate(maybe_entity: Option<String>) {
         }
         None => println!("Specify entity"),
     }
+}
+
+pub async fn scaffold_iac(
+    profile: Option<String>,
+    iac: Option<String>,
+    out_dir: Option<String>,
+) {
+    let dir = u::pwd();
+    let topology = composer::compose(&dir, true);
+    let auth = init(profile, None).await;
+    scaffolder::scaffold_iac(&auth, &topology, iac, out_dir).await
 }
