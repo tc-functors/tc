@@ -1,15 +1,9 @@
 use crate::Topology;
+use crate::graph;
 use ascii_petgraph::RenderedGraph;
-use petgraph::graph::DiGraph;
 
-pub fn pprint(_topology: &Topology) {
-    let mut graph = DiGraph::new();
-    let a = graph.add_node("Start");
-    let b = graph.add_node("Process");
-    let c = graph.add_node("End");
-
-    graph.add_edge(a, b, "begin");
-    graph.add_edge(b, c, "finish");
+pub fn pprint(topology: &Topology) {
+    let graph = graph::build_digraph(topology);
 
     // Render it
     let mut rendered = RenderedGraph::from_graph(graph);

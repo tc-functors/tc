@@ -3,6 +3,7 @@ pub mod formatter;
 
 mod counter;
 mod hooks;
+mod graph;
 pub mod index;
 pub mod sequence;
 mod tag;
