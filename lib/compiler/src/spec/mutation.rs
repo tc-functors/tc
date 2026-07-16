@@ -52,7 +52,9 @@ pub fn merge_specs(mspecs: &Vec<MutationSpec>) -> MutationSpec {
         }
         types.extend(spec.types.clone());
         resolvers.extend(spec.resolvers.clone());
-        authorizer = spec.authorizer.clone();
+        if spec.authorizer.is_some() {
+            authorizer = spec.authorizer.clone();
+        }
     }
     MutationSpec {
         authorizer: authorizer,
