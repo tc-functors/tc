@@ -26,10 +26,10 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
     }
 }
 
-fn get_chunk_size() -> usize {
+fn get_chunk_size(concurrency: i32) -> usize {
     match std::env::var("TC_FUNCTION_CREATE_CONCURRENCY") {
         Ok(n) => n.parse::<usize>().unwrap(),
-        Err(_) => 4,
+        Err(_) => concurrency.try_into().unwrap(),
     }
 }
 
@@ -37,10 +37,10 @@ pub async fn create(
     auth: &Auth,
     fns: &HashMap<String, Function>,
     tags: &HashMap<String, String>,
-    _sync: bool,
+    concurrency: i32,
 ) {
     let names: Vec<String> = Vec::from_iter(fns.keys().cloned());
-    let csize = get_chunk_size();
+    let csize = get_chunk_size(concurrency);
     let chunks: Vec<&[String]> = names.chunks(csize).collect();
 
     for chunk in chunks {

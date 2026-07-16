@@ -66,7 +66,7 @@ pub struct Topology {
     pub namespace: String,
     pub env: String,
     pub fqn: String,
-    pub concurrent: bool,
+    pub concurrency: i32,
     pub kind: TopologyKind,
     pub infra: String,
     pub dir: String,
@@ -714,10 +714,10 @@ fn find_kind(
     }
 }
 
-fn is_concurrent(maybe_concurrent: &Option<bool>) -> bool {
-    match maybe_concurrent {
+fn concurrency(maybe_concurrency: &Option<i32>) -> i32 {
+    match maybe_concurrency {
         Some(b) => *b,
-        None => false,
+        None => 4,
     }
 }
 
@@ -761,7 +761,7 @@ fn make(
     Topology {
         namespace: namespace.clone(),
         fqn: fqn.clone(),
-        concurrent: is_concurrent(&spec.concurrent),
+        concurrency: concurrency(&spec.concurrency),
         env: template::profile(),
         kind: find_kind(&spec.kind, &flow, &functions, &mutations, &routes),
         version: version,
@@ -825,7 +825,7 @@ fn make_standalone(dir: &str) -> Topology {
         env: template::profile(),
         fqn: template::topology_fqn(&namespace, false),
         kind: TopologyKind::Function,
-        concurrent: false,
+        concurrency: 1,
         version: u::current_semver(&namespace),
         sandbox: template::sandbox(),
         infra: infra_dir,

@@ -35,9 +35,9 @@ use tabled::{
     Table,
 };
 
-pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
+pub async fn create(auth: &Auth, topology: &Topology) {
     let Topology {
-        concurrent,
+        concurrency,
         namespace,
         version,
         sandbox,
@@ -67,14 +67,13 @@ pub async fn create(auth: &Auth, topology: &Topology, sync: bool) {
         &version
     );
 
-    let is_sync = !*concurrent || sync;
 
     if namespace == "base" || sandbox != "stable" {
         role::update_base_roles(auth, base_roles, tags).await;
     }
 
     role::create_or_update(auth, roles, tags).await;
-    function::create(auth, functions, &tags, is_sync).await;
+    function::create(auth, functions, &tags, *concurrency).await;
     function::sync_roles(auth, all_functions).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
@@ -164,6 +163,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
 
 async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     let Topology {
+        concurrency,
         version,
         namespace,
         sandbox,
@@ -191,7 +191,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     );
     match entity {
         Entity::Event => event::create(&auth, events, tags).await,
-        Entity::Function => function::create(&auth, functions, tags, false).await,
+        Entity::Function => function::create(&auth, functions, tags, *concurrency).await,
         Entity::Mutation => mutation::create(&auth, mutations, tags).await,
         Entity::Queue => queue::create(&auth, queues).await,
         Entity::Channel => channel::create(&auth, channels).await,

@@ -170,7 +170,7 @@ impl Tc {
         deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
         composer::count_of(&ct);
 
-        tc::create_topology(&auth, &rt, false).await;
+        tc::create_topology(&auth, &rt).await;
         let duration = start.elapsed();
         format!("Time elapsed: {:#}", u::time_format(duration))
     }
