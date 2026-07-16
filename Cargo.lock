@@ -3888,6 +3888,7 @@ dependencies = [
  "subprocess",
  "tabled 0.10.0",
  "text_placeholder",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "uuid",

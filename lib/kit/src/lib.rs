@@ -8,6 +8,7 @@ mod json;
 mod pprint;
 mod text;
 mod time;
+mod memo;
 
 pub use self::{
     core::*,
@@ -20,6 +21,7 @@ pub use self::{
     pprint::*,
     text::*,
     time::*,
+    memo::*,
 };
 
 #[macro_export]

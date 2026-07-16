@@ -1,5 +1,4 @@
 use super::Context;
-use crate::memo::AsyncMemo;
 use compiler::{
     TopologyKind,
     spec::{
@@ -23,6 +22,7 @@ use futures::stream::{
 };
 use kit as u;
 use kit::*;
+use kit::AsyncMemo;
 use provider::{
     Auth,
     aws,

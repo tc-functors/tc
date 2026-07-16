@@ -2,7 +2,6 @@ pub mod cache;
 mod context;
 mod event;
 pub mod function;
-mod memo;
 mod pool;
 mod topology;
 use compiler::Entity;

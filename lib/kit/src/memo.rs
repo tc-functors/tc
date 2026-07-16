@@ -1,38 +1,3 @@
-//! Process-wide async single-flight memoization.
-//!
-//! `tc` is a one-shot CLI: AWS lookup results that depend only on
-//! account/region/name don't change between the first call and process
-//! exit. The resolver hot path issues hundreds of identical lookups
-//! (same API name, same Lambda layer, same assumed role) inside a
-//! parallel `buffer_unordered` loop. Wrapping each lookup in
-//! [`AsyncMemo::get_or_init`] collapses concurrent duplicates onto one
-//! in-flight future and returns the cached value to subsequent
-//! callers.
-//!
-//! ## Single-flight semantics
-//!
-//! Multiple concurrent callers passing the same key all `.await` on
-//! one shared [`tokio::sync::OnceCell`]: only the first to acquire the
-//! cell's init permit runs `f`; the rest wait. On success, every
-//! waiter resumes with the cached value.
-//!
-//! On panic, [`tokio::sync::OnceCell::get_or_init`] propagates the
-//! panic only to the permit-holding caller and leaves the cell
-//! uninitialized; concurrent waiters wake up, re-race for the permit,
-//! and one of them re-runs `f`. For the resolver this means a
-//! transient AWS error during a hot lookup can produce up to N panics
-//! across N concurrent waiters before the cell resolves (or the
-//! process dies). Caller code MUST NOT add its own retry loop on top.
-//!
-//! ## Lifetime
-//!
-//! Built lazily on first `get_or_init` and cached for the rest of the
-//! process. No invalidation. Same `OnceLock<Mutex<HashMap<K, _>>>`
-//! shape as the synchronous cache in `kit::current_semver`, extended
-//! with [`tokio::sync::OnceCell`] inside each entry to provide
-//! single-flight semantics that the synchronous version lacks (kit's
-//! version is last-writer-wins under racing inserts).
-
 use std::{
     collections::HashMap,
     future::Future,
@@ -73,6 +38,7 @@ impl<K: Eq + Hash + Clone, V: Clone> AsyncMemo<K, V> {
         };
         cell.get_or_init(f).await.clone()
     }
+
 }
 
 #[cfg(test)]

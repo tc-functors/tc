@@ -27,6 +27,9 @@ pub mod sts;
 
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
+use kit::AsyncMemo;
+
+static CACHE: AsyncMemo<String, Auth> = AsyncMemo::new();
 
 #[derive(Clone, Debug)]
 pub struct Auth {
@@ -38,11 +41,9 @@ pub struct Auth {
 }
 
 impl Auth {
-    pub async fn new(profile: Option<String>, assume_role: Option<String>) -> Auth {
-        let name = match profile {
-            Some(p) => p,
-            None => "default".to_string(),
-        };
+
+
+    async fn do_new(name: String, assume_role: Option<String>) -> Auth {
 
         let config = sts::get_config(&name, assume_role.clone()).await;
         let client = sts::make_client(&config).await;
@@ -50,12 +51,26 @@ impl Auth {
         let region = sts::get_region();
 
         Auth {
-            name: name,
+            name: name.clone(),
             assume_role: assume_role,
             aws_config: config,
             account: account,
             region: region,
         }
+    }
+
+    pub async fn new(profile: Option<String>, assume_role: Option<String>) -> Auth {
+
+        let name = match profile {
+            Some(p) => p,
+            None => "default".to_string(),
+        };
+
+        CACHE
+            .get_or_init(name.clone(), || async {
+            println!("Looking up auth for {} (cache miss)", &name);
+            Self::do_new(name, assume_role).await
+        }).await
     }
 
     pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>) -> Auth {
