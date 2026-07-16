@@ -1,0 +1,15 @@
+inputs:
+  Foo:
+    text: String!
+
+types:
+  Message:
+    id: String!
+    text: String!
+
+resolvers:
+  getMessage:
+    function: foo
+    input: Message
+    output: AWSJSON
+    subscribe: true

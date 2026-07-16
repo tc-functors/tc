@@ -1,0 +1,3 @@
+/bar:
+  method: GET
+  function: f2

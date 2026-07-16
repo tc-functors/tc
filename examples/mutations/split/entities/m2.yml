@@ -1,0 +1,11 @@
+types:
+  Data:
+    id: String!
+    text: String!
+
+resolvers:
+  getData:
+    function: foo
+    input: Data
+    output: AWSJSON
+    subscribe: false

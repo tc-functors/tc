@@ -3,6 +3,8 @@ use anyhow::{
     anyhow,
 };
 use kit as u;
+use crate::spec::mutation::MutationSpec;
+use crate::spec::mutation;
 use serde_yaml::{
     Mapping,
     Value,
@@ -106,6 +108,23 @@ impl Transformer {
                     let file_path = PathBuf::from("/tmp/tc-read-tmp.yml");
                     self.handle_include_extension(file_path)
                 }
+                "!mutations" => {
+                    let value = tagged_value.value.as_str().unwrap();
+                    let paths: Vec<&str> = value.split(" !mutations ").collect();
+                    let mut specs: Vec<MutationSpec> = vec![];
+
+                    for path in paths {
+                        let data: String = u::slurp(&path);
+                        let spec: MutationSpec = serde_yaml::from_str(&data).unwrap();
+                        specs.push(spec);
+                    }
+                    let merged = mutation::merge_specs(&specs);
+                    let s = serde_yaml::to_string(&merged).unwrap();
+                    u::write_str("/tmp/tc-mutations.yml", &s);
+                    let file_path = PathBuf::from("/tmp/tc-mutations.yml");
+                    self.handle_include_extension(file_path)
+                }
+
                 _ => Value::Tagged(tagged_value),
             },
             // default no transform

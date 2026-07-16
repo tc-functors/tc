@@ -39,3 +39,25 @@ pub struct MutationSpec {
     pub types: HashMap<String, HashMap<String, String>>,
     pub resolvers: HashMap<String, ResolverSpec>,
 }
+
+
+pub fn merge_specs(mspecs: &Vec<MutationSpec>) -> MutationSpec {
+    let mut inputs: HashMap<String, HashMap<String, String>> = HashMap::new();
+    let mut types: HashMap<String, HashMap<String, String>> = HashMap::new();
+    let mut resolvers: HashMap<String, ResolverSpec> = HashMap::new();
+    let mut authorizer: Option<String> = None;
+    for spec in mspecs {
+        if let Some(ins) = spec.inputs.clone() {
+            inputs.extend(ins);
+        }
+        types.extend(spec.types.clone());
+        resolvers.extend(spec.resolvers.clone());
+        authorizer = spec.authorizer.clone();
+    }
+    MutationSpec {
+        authorizer: authorizer,
+        inputs: Some(inputs),
+        types: types,
+        resolvers: resolvers
+    }
+}
