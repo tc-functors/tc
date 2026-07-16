@@ -1,11 +1,11 @@
 [package]
 name = "tc"
-version = "0.9.136"
+version = "0.9.137"
 edition = "2024"
 rust-version = "1.95"
 
 [workspace.package]
-version = "0.9.136"
+version = "0.9.137"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
