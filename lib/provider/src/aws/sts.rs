@@ -49,10 +49,10 @@ pub async fn get_account_id(client: &Client) -> String {
             }
         },
         Err(e) => {
-            println!("{:?}", e);
+            println!("sts::get_account_id failed {:?}", e);
             panic::set_hook(Box::new(|_| {
                 println!(
-                    "AWS authentication failed. Please run `aws sso login --profile <profile>"
+                    "sts::get_account_id failed"
                 );
             }));
             panic!("Unable to authenticate")

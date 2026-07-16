@@ -464,22 +464,26 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-acm"
-version = "1.77.0"
+version = "1.108.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c5fd1085a3b4bc821cd72fa48bb0df53daa963e9380a90dbd81a4e5681662fe"
+checksum = "142f21db8d4143af128e54dcb26b4f7504dacfe5874646ff8856d3323fd62698"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
  "aws-types",
  "bytes",
  "fastrand",
  "http 0.2.12",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
@@ -616,68 +620,79 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-cloudfront"
-version = "1.95.0"
+version = "1.124.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eb0902384d92dfc91d46417328ab13a92ff17df90b695dee9c0d48e33bcb3bb"
+checksum = "312fb3f5b0b798ebd18130d962dcf8f12e2ae60cbba5600ef96422c1bdf6076b"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
- "aws-smithy-xml 0.60.10",
+ "aws-smithy-xml",
  "aws-types",
  "fastrand",
  "http 0.2.12",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
 
 [[package]]
 name = "aws-sdk-cloudwatchlogs"
-version = "1.77.0"
+version = "1.141.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79c51fb2a86cee88d566b5fbfdda563d1f59c207baee38fee2bce9cde270f2d7"
+checksum = "0207b177687a3e9707a71cc1163d75e3a011f8c5391291b3b5c11c9a4ef5f30b"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-eventstream 0.60.21",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
+ "aws-smithy-eventstream 0.61.1",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
  "aws-types",
  "bytes",
  "fastrand",
  "http 0.2.12",
- "once_cell",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
 
 [[package]]
 name = "aws-sdk-codeartifact"
-version = "1.74.0"
+version = "1.106.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6daf1c564b0ff15ed37f49039cd66a32c348112840ce281f0c245ff8103dd93"
+checksum = "673f5a7087be40401a3a5e8d1e96d08381b0eb8facb57093a9517d73e3a877c1"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
  "aws-types",
  "bytes",
  "fastrand",
  "http 0.2.12",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
@@ -707,22 +722,26 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-dynamodb"
-version = "1.93.0"
+version = "1.117.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d5b0656080dc4061db88742d2426fc09369107eee2485dfedbc7098a04f21d1"
+checksum = "0f2b4adcf6592e06ebb2c78235ae09cee178263a5b7fc20ae5ea07ca67067bb6"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
  "aws-types",
  "bytes",
  "fastrand",
  "http 0.2.12",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
@@ -810,12 +829,12 @@ dependencies = [
  "aws-smithy-http 0.64.0",
  "aws-smithy-json 0.63.0",
  "aws-smithy-observability 0.3.0",
- "aws-smithy-query 0.61.1",
+ "aws-smithy-query",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
  "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
- "aws-smithy-xml 0.61.1",
+ "aws-smithy-xml",
  "aws-types",
  "fastrand",
  "http 0.2.12",
@@ -900,22 +919,26 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-route53"
-version = "1.84.0"
+version = "1.116.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ec4589cb6721f5ec7b12bd1afef7521fd5509d3022a61b7e2ce7aed88473537"
+checksum = "6e80f600bb96d1dca90a78681252685942e81e777b8e8ba653369ff48b6698c1"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
- "aws-smithy-xml 0.60.10",
+ "aws-smithy-xml",
  "aws-types",
  "fastrand",
  "http 0.2.12",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
@@ -940,7 +963,7 @@ dependencies = [
  "aws-smithy-runtime-api",
  "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
- "aws-smithy-xml 0.61.1",
+ "aws-smithy-xml",
  "aws-types",
  "bytes",
  "fastrand",
@@ -1098,24 +1121,27 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-sts"
-version = "1.66.0"
+version = "1.108.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7420479eac0a53f776cc8f0d493841ffe58ad9d9783f3947be7265784471b47a"
+checksum = "3c72b08911d8128dd360fe1b22a9fec0fa8b552dde8ec828dcf20ef5ec974e9f"
 dependencies = [
+ "arc-swap",
  "aws-credential-types",
  "aws-runtime",
  "aws-smithy-async",
- "aws-smithy-http 0.62.3",
- "aws-smithy-json 0.61.5",
- "aws-smithy-query 0.60.7",
+ "aws-smithy-http 0.64.0",
+ "aws-smithy-json 0.63.0",
+ "aws-smithy-observability 0.3.0",
+ "aws-smithy-query",
  "aws-smithy-runtime",
  "aws-smithy-runtime-api",
+ "aws-smithy-schema 0.2.0",
  "aws-smithy-types",
- "aws-smithy-xml 0.60.10",
+ "aws-smithy-xml",
  "aws-types",
  "fastrand",
  "http 0.2.12",
- "once_cell",
+ "http 1.4.2",
  "regex-lite",
  "tracing",
 ]
@@ -1366,16 +1392,6 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-query"
-version = "0.60.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2fbd61ceb3fe8a1cb7352e42689cec5335833cd9f94103a61e98f9bb61c64bb"
-dependencies = [
- "aws-smithy-types",
- "urlencoding",
-]
-
-[[package]]
-name = "aws-smithy-query"
 version = "0.61.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd22a6ba36e3f113cb8d5b3d1fe0ed31c76ee608ef63322d753bb8d2c9479e77"
@@ -1485,15 +1501,6 @@ dependencies = [
  "time",
  "tokio",
  "tokio-util",
-]
-
-[[package]]
-name = "aws-smithy-xml"
-version = "0.60.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3db87b96cb1b16c024980f133968d52882ca0daaee3a086c6decc500f6c99728"
-dependencies = [
- "xmlparser",
 ]
 
 [[package]]
@@ -1631,7 +1638,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -2110,7 +2117,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "colored",
@@ -2134,7 +2141,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "ascii-petgraph",
@@ -2192,7 +2199,7 @@ dependencies = [
 
 [[package]]
 name = "configurator"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "derivative",
  "kit",
@@ -2484,7 +2491,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "builder",
@@ -2573,7 +2580,7 @@ dependencies = [
 
 [[package]]
 name = "differ"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "cacache",
  "composer",
@@ -2714,7 +2721,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2817,7 +2824,7 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "kit",
  "serde 1.0.228",
@@ -3735,7 +3742,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "colored",
  "compiler",
@@ -3853,7 +3860,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -4232,7 +4239,7 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "colored",
  "configurator",
@@ -4764,7 +4771,7 @@ dependencies = [
 
 [[package]]
 name = "provider"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -5020,7 +5027,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "repl"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "colored",
  "composer",
@@ -5150,7 +5157,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "cacache",
  "compiler",
@@ -5263,7 +5270,7 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "anyhow",
  "colored",
@@ -5463,7 +5470,7 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "base64 0.21.7",
  "compiler",
@@ -5944,7 +5951,7 @@ dependencies = [
 
 [[package]]
 name = "snapshotter"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "colored",
  "compiler",
@@ -6196,7 +6203,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "colored",
  "kit",
@@ -6210,7 +6217,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "builder",
  "clap",
@@ -6284,7 +6291,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "assert-json-diff",
  "colored",
@@ -6765,7 +6772,7 @@ dependencies = [
 
 [[package]]
 name = "validator"
-version = "0.9.137"
+version = "0.9.138"
 dependencies = [
  "colored",
  "compiler",
