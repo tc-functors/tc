@@ -300,7 +300,7 @@ pub async fn build(
             err: err,
         }
     } else {
-        println!("Skipping Inline build");
+        println!("Skipping Inline build ({})", name.green());
         sh(command, dir);
         BuildStatus {
             path: format!("{}/lambda.zip", dir),
