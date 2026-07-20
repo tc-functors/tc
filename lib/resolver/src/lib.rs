@@ -68,6 +68,7 @@ pub async fn render(auth: &Auth, sandbox: &str, topology: &Topology) -> Topology
         sandbox: sandbox.to_string(),
         trace: true,
         config: topology.config.to_owned(),
+        version: topology.version.to_owned()
     };
     let v = serde_json::to_string(topology).unwrap();
     let rendered = ctx.render(&v);

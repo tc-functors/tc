@@ -17,6 +17,7 @@ pub struct Context {
     pub sandbox: String,
     pub trace: bool,
     pub config: Config,
+    pub version: String
 }
 
 impl Context {
@@ -36,6 +37,14 @@ impl Context {
             Err(_) => &self.config.aws.lambda.asset_bucket,
         };
 
+        let asset_acc = match std::env::var("TC_ASSET_ACCOUNT") {
+            Ok(r) => &r.to_owned(),
+            Err(_) => if let Some(c) = &self.config.aws.lambda.asset_account {                c
+            } else {
+                account
+            }
+        };
+
         let lazy_id = format!("{{{{lazy_id}}}}");
 
         table.insert("account", account);
@@ -46,6 +55,7 @@ impl Context {
         table.insert("sandbox", &self.sandbox);
         table.insert("env", &self.auth.name);
         table.insert("profile", &self.auth.name);
+        table.insert("version", &self.version);
         table.insert("repo", repo);
         table.insert("lazy_id", &lazy_id);
         table.insert("API_GATEWAY_URL", "{{API_GATEWAY_URL}}");
@@ -54,6 +64,7 @@ impl Context {
         table.insert("HTTP_DOMAIN", "{{HTTP_DOMAIN}}");
         table.insert("API_KEY", "{{API_KEY}}");
         table.insert("ASSET_BUCKET", &bucket);
+        table.insert("ASSET_ACCOUNT", &asset_acc);
         u::stencil(s, table)
     }
 }
