@@ -1638,7 +1638,7 @@ dependencies = [
 
 [[package]]
 name = "builder"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -2117,7 +2117,7 @@ dependencies = [
 
 [[package]]
 name = "compiler"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "colored",
@@ -2141,7 +2141,7 @@ dependencies = [
 
 [[package]]
 name = "composer"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "ascii-petgraph",
@@ -2199,7 +2199,7 @@ dependencies = [
 
 [[package]]
 name = "configurator"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "derivative",
  "kit",
@@ -2491,7 +2491,7 @@ dependencies = [
 
 [[package]]
 name = "deployer"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "builder",
@@ -2580,7 +2580,7 @@ dependencies = [
 
 [[package]]
 name = "differ"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "cacache",
  "composer",
@@ -2721,7 +2721,7 @@ dependencies = [
 
 [[package]]
 name = "emulator"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -2824,7 +2824,7 @@ dependencies = [
 
 [[package]]
 name = "executor"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "kit",
  "serde 1.0.228",
@@ -3088,8 +3088,19 @@ checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
 dependencies = [
  "cfg-if 1.0.0",
  "libc",
- "r-efi",
+ "r-efi 5.3.0",
  "wasip2",
+]
+
+[[package]]
+name = "getrandom"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
+dependencies = [
+ "cfg-if 1.0.0",
+ "libc",
+ "r-efi 6.0.0",
 ]
 
 [[package]]
@@ -3742,7 +3753,7 @@ dependencies = [
 
 [[package]]
 name = "invoker"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "colored",
  "compiler",
@@ -3860,7 +3871,7 @@ dependencies = [
 
 [[package]]
 name = "kit"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "ansi-escapes",
  "base64 0.21.7",
@@ -4240,7 +4251,7 @@ dependencies = [
 
 [[package]]
 name = "notifier"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "colored",
  "configurator",
@@ -4772,7 +4783,7 @@ dependencies = [
 
 [[package]]
 name = "provider"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "aws-config",
@@ -4863,6 +4874,12 @@ name = "r-efi"
 version = "5.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+
+[[package]]
+name = "r-efi"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "radix_trie"
@@ -5028,7 +5045,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "repl"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "colored",
  "composer",
@@ -5158,7 +5175,7 @@ dependencies = [
 
 [[package]]
 name = "resolver"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "cacache",
  "compiler",
@@ -5271,7 +5288,7 @@ dependencies = [
 
 [[package]]
 name = "router"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "anyhow",
  "colored",
@@ -5471,7 +5488,7 @@ dependencies = [
 
 [[package]]
 name = "scaffolder"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "base64 0.21.7",
  "compiler",
@@ -5952,7 +5969,7 @@ dependencies = [
 
 [[package]]
 name = "snapshotter"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "colored",
  "compiler",
@@ -6204,7 +6221,7 @@ dependencies = [
 
 [[package]]
 name = "tagger"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "colored",
  "kit",
@@ -6218,7 +6235,7 @@ dependencies = [
 
 [[package]]
 name = "tc"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "builder",
  "clap",
@@ -6292,7 +6309,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "tester"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "assert-json-diff",
  "colored",
@@ -6764,16 +6781,18 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.11.1"
+version = "1.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b913a3b5fe84142e269d63cc62b64319ccaf89b748fc31fe025177f767a756c4"
+checksum = "bf3923a6f5c4c6382e0b653c4117f48d631ea17f38ed86e2a828e6f7412f5239"
 dependencies = [
- "getrandom 0.2.15",
+ "getrandom 0.4.3",
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]
 name = "validator"
-version = "0.9.140"
+version = "0.9.141"
 dependencies = [
  "colored",
  "compiler",
