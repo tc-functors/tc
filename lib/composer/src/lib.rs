@@ -5,7 +5,6 @@ mod counter;
 mod graph;
 mod hooks;
 pub mod index;
-pub mod sequence;
 mod tag;
 pub mod topology;
 pub mod version;

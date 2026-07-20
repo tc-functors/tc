@@ -34,7 +34,6 @@ use crate::{
     hooks,
     hooks::Hook,
     index,
-    sequence,
     tag,
     version,
 };
@@ -49,7 +48,6 @@ use compiler::{
 use configurator::Config;
 use kit as u;
 use kit::*;
-pub use sequence::Connector;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -92,7 +90,6 @@ pub struct Topology {
     pub base_roles: HashMap<String, Role>,
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
-    pub sequences: HashMap<String, Vec<Connector>>,
     pub hooks: HashMap<String, Vec<Hook>>,
 }
 
@@ -793,7 +790,6 @@ fn make(
         flow: flow,
         config: Config::new(),
         transducer: maybe_transducer,
-        sequences: sequence::make_all(&spec.sequences),
         hooks: hooks::load(&infra_dir),
     }
 }
@@ -849,7 +845,6 @@ fn make_standalone(dir: &str) -> Topology {
         tests: HashMap::new(),
         config: Config::new(),
         transducer: None,
-        sequences: HashMap::new(),
         hooks: HashMap::new(),
     }
 }
