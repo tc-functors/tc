@@ -149,7 +149,6 @@ pub struct TopologySpec {
     pub tests: Option<HashMap<String, TestSpec>>,
     pub states: Option<Value>,
     pub flow: Option<Value>,
-    pub sequences: Option<HashMap<String, Vec<String>>>,
 }
 
 impl TopologySpec {
@@ -180,7 +179,6 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
-                system_context: None,
                 root: Some(false),
                 function_dirs: None,
                 concurrency: Some(4),
@@ -206,7 +204,6 @@ impl TopologySpec {
                 triggers: None,
                 pages: None,
                 tests: None,
-                sequences: Some(HashMap::new()),
             }
         }
     }
