@@ -9,6 +9,7 @@ use aws_sdk_appsync::{
         RetryMode,
     },
     types::{
+        GraphQlApiIntrospectionConfig,
         AdditionalAuthenticationProvider,
         AuthenticationType,
         LambdaAuthorizerConfig,
@@ -268,12 +269,19 @@ async fn create_api(
     client: &Client,
     name: &str,
     authorizer_arn: &str,
+    enable_introspection: bool,
     tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     println!("Creating api {}", name.green());
     let auth_type = AuthenticationType::AwsLambda;
     let lambda_auth_config = make_lambda_authorizer(authorizer_arn);
     let additional_auth_types = vec![make_key_auth_type(), make_iam_auth_type()];
+
+    let introspection = if enable_introspection {
+        GraphQlApiIntrospectionConfig::Enabled
+    } else {
+        GraphQlApiIntrospectionConfig::Disabled
+    };
     let r = client
         .create_graphql_api()
         .name(s!(name))
@@ -281,6 +289,7 @@ async fn create_api(
         .authentication_type(auth_type)
         .set_additional_authentication_providers(Some(additional_auth_types))
         .lambda_authorizer_config(lambda_auth_config)
+        .introspection_config(introspection)
         .send()
         .await;
     match r {
@@ -297,12 +306,18 @@ async fn update_api(
     name: &str,
     authorizer_arn: &str,
     api_id: &str,
+    enable_introspection: bool,
     _tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     println!("Updating api {}", name.blue());
     let auth_type = AuthenticationType::AwsLambda;
     let lambda_auth_config = make_lambda_authorizer(authorizer_arn);
     let additional_auth_types = vec![make_key_auth_type(), make_iam_auth_type()];
+    let introspection = if enable_introspection {
+        GraphQlApiIntrospectionConfig::Enabled
+    } else {
+        GraphQlApiIntrospectionConfig::Disabled
+    };
     let r = client
         .update_graphql_api()
         .name(s!(name))
@@ -310,6 +325,7 @@ async fn update_api(
         .authentication_type(auth_type)
         .set_additional_authentication_providers(Some(additional_auth_types))
         .lambda_authorizer_config(lambda_auth_config)
+        .introspection_config(introspection)
         .send()
         .await;
     match r {
@@ -325,12 +341,13 @@ pub async fn create_or_update_api(
     client: &Client,
     name: &str,
     authorizer_arn: &str,
+    enable_introspection: bool,
     tags: HashMap<String, String>,
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {
-        Some(id) => update_api(client, name, authorizer_arn, &id, tags.clone()).await,
-        None => create_api(client, name, authorizer_arn, tags).await,
+        Some(id) => update_api(client, name, authorizer_arn, &id, enable_introspection, tags.clone()).await,
+        None => create_api(client, name, authorizer_arn, enable_introspection,  tags).await,
     }
 }
 

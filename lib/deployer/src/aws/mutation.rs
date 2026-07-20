@@ -45,6 +45,7 @@ async fn create_mutation(
         api_name,
         authorizer,
         types,
+        infra,
         resolvers,
         role_arn,
         ..
@@ -57,8 +58,13 @@ async fn create_mutation(
         &auth.lambda_arn(&authorizer),
     )
     .await;
+    let enable_introspection = match infra {
+        Some(x) => x.introspection.get(&auth.name).unwrap_or(&false).to_owned(),
+        None => false
+    };
+
     let (api_id, _) =
-        appsync::create_or_update_api(&client, &api_name, &authorizer_arn, tags.clone()).await;
+        appsync::create_or_update_api(&client, &api_name, &authorizer_arn, enable_introspection, tags.clone()).await;
 
     add_permission(auth, &api_name, &authorizer_arn).await;
     appsync::create_types(auth, &api_id, types).await;

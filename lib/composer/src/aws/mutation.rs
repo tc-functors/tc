@@ -8,11 +8,30 @@ use compiler::{
     },
 };
 use kit::*;
+use kit as u;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use std::collections::HashMap;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Infra {
+    pub introspection: HashMap<String, bool>,
+}
+
+impl Infra {
+    pub fn new(infra_dir: &str) -> Option<Infra> {
+        let f = format!("{}/mutations.json", infra_dir);
+        if u::file_exists(&f) {
+            let data: String = u::slurp(&f);
+            let inf: Infra = serde_json::from_str(&data).unwrap();
+            Some(inf)
+        } else {
+            None
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Resolver {
@@ -64,6 +83,7 @@ fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Reso
 pub struct Mutation {
     pub api_name: String,
     pub authorizer: String,
+    pub infra: Option<Infra>,
     pub role_arn: String,
     pub types: HashMap<String, String>,
     pub resolvers: HashMap<String, Resolver>,
@@ -225,7 +245,7 @@ fn augment_types(mut given: Types) -> Types {
     given
 }
 
-pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutation> {
+pub fn make(namespace: &str, infra_dir: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutation> {
     match some_mutatations {
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());
@@ -233,6 +253,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
                 Some(i) => i,
                 None => HashMap::new(),
             };
+            let infra = Infra::new(infra_dir);
             let authorizer = match &ms.authorizer {
                 Some(ath) => ath,
                 None => "default",
@@ -240,6 +261,7 @@ pub fn make(namespace: &str, some_mutatations: Option<MutationSpec>) -> Option<M
             let m = Mutation {
                 api_name: format!("{}_{{{{sandbox}}}}", namespace),
                 authorizer: template::maybe_namespace(authorizer),
+                infra: infra,
                 types: make_types(types.to_owned(), inputs.to_owned(), ms.resolvers.to_owned()),
                 resolvers: make_resolvers(ms.resolvers),
                 role_arn: Role::entity_role_arn(Entity::Mutation),

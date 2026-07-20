@@ -614,8 +614,8 @@ fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> 
     h
 }
 
-fn make_mutations(spec: &TopologySpec, _config: &Config) -> HashMap<String, Mutation> {
-    let mutations = mutation::make(&spec.name, spec.mutations.to_owned());
+fn make_mutations(spec: &TopologySpec, infra_dir: &str, _config: &Config) -> HashMap<String, Mutation> {
+    let mutations = mutation::make(&spec.name, infra_dir, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
     if let Some(ref m) = mutations {
         tracing::debug!("Compiling mutations");
@@ -751,7 +751,7 @@ fn make(
     let version = version::current_semver(root_ns, root_dir);
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
-    let mutations = make_mutations(&spec, &config);
+    let mutations = make_mutations(&spec, &infra_dir, &config);
 
     let resolvers = match &mutations.get("default") {
         Some(m) => m.resolvers.clone(),
