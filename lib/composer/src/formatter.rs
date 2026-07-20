@@ -8,6 +8,8 @@ mod digraph;
 mod icepanel;
 mod table;
 mod tree;
+mod mermaid;
+mod structurizr;
 
 use crate::TopologyCount;
 use kit as u;
@@ -29,6 +31,8 @@ pub enum Format {
     Icepanel,
     Compact,
     Ascii,
+    Mermaid,
+    Structurizr
 }
 
 impl FromStr for Format {
@@ -43,6 +47,8 @@ impl FromStr for Format {
             "ascii" => Ok(Format::Ascii),
             "icepanel" => Ok(Format::Icepanel),
             "compact" => Ok(Format::Compact),
+            "mermaid" => Ok(Format::Mermaid),
+            "structurizr" | "c4"  => Ok(Format::Structurizr),
             _ => Ok(Format::JSON),
         }
     }
@@ -57,6 +63,8 @@ pub fn pprint(topology: &Topology, fmt: &str) {
         Format::Dot => digraph::pprint(topology),
         Format::Icepanel => icepanel::pprint(topology),
         Format::Compact => compact::pprint(topology),
+        Format::Mermaid => mermaid::pprint(topology),
+        Format::Structurizr => structurizr::pprint(topology),
         Format::Ascii => ascii::pprint(topology),
     }
 }
@@ -66,10 +74,12 @@ pub fn pprint_recursive(topologies: &HashMap<String, Topology>, fmt: &str) {
     match format {
         Format::JSON => u::pp_json(topologies),
         Format::Tree => tree::pprint_recursive(topologies),
-        Format::Table => todo!(),
-        Format::Dot => todo!(),
+        Format::Table => table::pprint_recursive(topologies),
+        Format::Dot => println!("Not implemented"),
         Format::Icepanel => icepanel::pprint_recursive(topologies),
         Format::Compact => compact::pprint_recursive(topologies),
+        Format::Mermaid => mermaid::pprint_recursive(topologies),
+        Format::Structurizr => structurizr::pprint_recursive(topologies),
         Format::Ascii => todo!(),
     }
 }
