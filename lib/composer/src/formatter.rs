@@ -12,16 +12,18 @@ mod mermaid;
 mod structurizr;
 mod bincode;
 
+use serde_derive::Serialize;
+use tabled::{
+    Style,
+    Table,
+    Tabled,
+};
 use crate::TopologyCount;
 use kit as u;
 use std::{
     collections::HashMap,
     str::FromStr,
     string::ParseError,
-};
-use tabled::{
-    Style,
-    Table,
 };
 
 pub enum Format {
@@ -120,14 +122,40 @@ pub fn pprint_entity(topology: &Topology, entity: Entity) {
     }
 }
 
+#[derive(Tabled, Clone, Debug, Serialize)]
+struct Version {
+    namespace: String,
+    version: String
+}
+
+fn print_versions(topology: &Topology) {
+    let mut xs: Vec<Version> = vec![];
+    let v = Version {
+        namespace: topology.namespace.clone(),
+        version: topology.version.clone()
+    };
+    xs.push(v);
+    for (_, node) in &topology.nodes {
+        let v = Version {
+            namespace: node.namespace.clone(),
+            version: node.version.clone()
+        };
+        xs.push(v);
+    }
+    let table = Table::new(xs).with(Style::psql()).to_string();
+    println!("{}", table);
+}
+
 pub fn pprint_component(topology: &Topology, component: &str) {
     match component {
         "transducer" => u::pp_json(&topology.transducer),
         "roles" => u::pp_json(&topology.roles),
         "base" => u::pp_json(&topology.base_roles),
+        "versions" => print_versions(topology),
         _ => todo!(),
     }
 }
+
 
 pub fn pprint_stats(topologies: &HashMap<String, Topology>) {
     let mut xs: Vec<TopologyCount> = vec![];
