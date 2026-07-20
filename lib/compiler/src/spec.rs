@@ -166,7 +166,8 @@ impl TopologySpec {
                     spec
                 }
                 Err(_) => {
-                    let tn = Transformer::new(path, false);
+                    let dir = u::parent_dir(topology_spec_file);
+                    let tn = Transformer::new(path, false, &dir);
                     let v = match tn {
                         Ok(transformer) => transformer.parse(),
                         Err(e) => panic!("{:?}", e),
@@ -179,6 +180,7 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
+                system_context: None,
                 root: Some(false),
                 function_dirs: None,
                 concurrency: Some(4),

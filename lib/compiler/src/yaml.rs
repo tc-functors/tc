@@ -34,12 +34,13 @@ fn load_yaml(file_path: PathBuf) -> Result<Value> {
 pub struct Transformer {
     error_on_circular: bool,
     root_path: PathBuf,
+    dir: String,
     seen_paths: HashSet<PathBuf>, // for circular reference detection
 }
 
 impl Transformer {
-    pub fn new(root_path: PathBuf, strict: bool) -> Result<Self> {
-        Self::new_node(root_path, strict, None)
+    pub fn new(root_path: PathBuf, strict: bool, dir: &str) -> Result<Self> {
+        Self::new_node(root_path, strict, dir, None)
     }
 
     pub fn parse(&self) -> Value {
@@ -52,6 +53,7 @@ impl Transformer {
     fn new_node(
         root_path: PathBuf,
         strict: bool,
+        dir: &str,
         seen_paths_option: Option<HashSet<PathBuf>>,
     ) -> Result<Self> {
         let mut seen_paths = match seen_paths_option {
@@ -73,6 +75,7 @@ impl Transformer {
 
         Ok(Transformer {
             error_on_circular: strict,
+            dir: dir.to_string(),
             root_path,
             seen_paths,
         })
@@ -101,7 +104,8 @@ impl Transformer {
 
                     let mut s: String = String::from("");
                     for path in paths {
-                        let c = u::slurp(&path);
+                        let p = u::absolutize(&self.dir, &path);
+                        let c = u::slurp(&p);
                         s.push_str(&c);
                     }
                     u::write_str("/tmp/tc-read-tmp.yml", &s);
@@ -138,6 +142,7 @@ impl Transformer {
         match Transformer::new_node(
             normalized_file_path,
             self.error_on_circular,
+            &self.dir,
             Some(self.seen_paths.clone()),
         ) {
             Ok(transformer) => transformer.parse(),
