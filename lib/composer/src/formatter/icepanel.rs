@@ -7,6 +7,17 @@ use serde_derive::{
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ModelConnection {
+    pub id: String,
+    pub direction: String,
+    pub name: String,
+    #[serde(rename(serialize = "OriginId"))]
+    pub origin_id: Option<String>,
+    #[serde(rename(serialize = "TargetId"))]
+    pub target_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ModelObject {
     pub id: String,
     pub name: String,
@@ -22,64 +33,105 @@ pub struct ModelObject {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Tag {
+    pub id: String,
+    pub name: String,
+    #[serde(rename(serialize = "GroupId"))]
+    pub group_id: Option<String>,
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Landscape {
+    pub tags: Vec<Tag>,
+    #[serde(rename(serialize = "tagGroups"))]
+    pub tag_groups: Vec<ModelObject>,
+    #[serde(rename(serialize = "modelConnections"))]
+    pub model_connections: Vec<ModelConnection>,
     #[serde(rename(serialize = "modelObjects"))]
     pub model_objects: Vec<ModelObject>,
 }
 
-fn generate(topologies: &HashMap<String, Topology>) -> Landscape {
+fn make_model_connections(_topologies: &HashMap<String, Topology>) -> Vec<ModelConnection> {
+    vec![]
+}
+
+fn make_model_objects_node(domain: &str, name: &str, parent_id: Option<String>, topology: &Topology) -> Vec<ModelObject> {
     let mut mos: Vec<ModelObject> = vec![];
-    for (name, topology) in topologies {
-        let pmo = ModelObject {
-            id: name.to_string(),
-            name: name.to_string(),
-            kind: "domain".to_string(),
-            parent_id: None,
-            tag_ids: vec!["tag-external".to_string()],
+
+    let pmo = ModelObject {
+        id: domain.to_string(),
+        name: domain.to_string(),
+        kind: "domain".to_string(),
+        parent_id: parent_id,
+        tag_ids: vec![],
+    };
+    mos.push(pmo);
+
+    for (fname, _) in &topology.functions {
+        let mo = ModelObject {
+            id: format!("{}_{}", &name, &fname),
+            name: fname.to_string(),
+            parent_id: Some(name.to_string()),
+            kind: "system".to_string(),
+            tag_ids: vec![],
         };
-        mos.push(pmo);
-        for (fname, _) in &topology.functions {
-            let mo = ModelObject {
-                id: format!("{}_{}", &name, &fname),
-                name: fname.to_string(),
-                parent_id: Some(name.to_string()),
-                kind: "app".to_string(),
-                tag_ids: vec!["tag-external".to_string()],
-            };
-            mos.push(mo);
-        }
+        mos.push(mo);
+    }
+
+    for (ename, _) in &topology.events {
+        let mo = ModelObject {
+            id: format!("{}_{}", &name, &ename),
+            name: ename.to_string(),
+            parent_id: Some(name.to_string()),
+            kind: "system".to_string(),
+            tag_ids: vec![],
+        };
+        mos.push(mo);
+    }
+    mos
+}
+
+fn make_model_objects(topologies: &HashMap<String, Topology>) -> Vec<ModelObject> {
+    let mut mos: Vec<ModelObject> = vec![];
+
+    for (name, topology) in topologies {
+
+        let objects = make_model_objects_node(name, name, None, topology);
+
+        mos.extend(objects);
+
         for (n, node) in &topology.nodes {
-            let mo = ModelObject {
-                id: n.to_string(),
-                name: n.to_string(),
-                parent_id: Some(name.to_string()),
-                kind: "system".to_string(),
-                tag_ids: vec!["tag-external".to_string()],
-            };
-            mos.push(mo);
-            for (fname, _) in &node.functions {
-                let mo = ModelObject {
-                    id: format!("{}_{}", &n, &fname),
-                    name: fname.to_string(),
-                    parent_id: Some(n.to_string()),
-                    kind: "app".to_string(),
-                    tag_ids: vec!["tag-external".to_string()],
-                };
-                mos.push(mo);
-            }
+
+            let node_objects = make_model_objects_node(n, name, None, node);
+            mos.extend(node_objects);
         }
     }
-    Landscape { model_objects: mos }
+    mos
+}
+
+fn make_tags() -> Vec<Tag> {
+    vec![]
+}
+
+
+fn build(topologies: &HashMap<String, Topology>) -> Landscape {
+    Landscape {
+        model_connections: make_model_connections(topologies),
+        model_objects: make_model_objects(topologies),
+        tags: make_tags(),
+        tag_groups: vec![]
+    }
 }
 
 pub fn pprint(topology: &Topology) {
     let mut t: HashMap<String, Topology> = HashMap::new();
     t.insert(topology.namespace.clone(), topology.clone());
-    let objs = generate(&t);
+    let objs = build(&t);
     u::pp_json(&objs);
 }
 
 pub fn pprint_recursive(topologies: &HashMap<String, Topology>) {
-    let objs = generate(topologies);
+    let objs = build(topologies);
     u::pp_json(&objs);
 }
