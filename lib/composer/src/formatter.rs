@@ -10,6 +10,7 @@ mod table;
 mod tree;
 mod mermaid;
 mod structurizr;
+mod bincode;
 
 use crate::TopologyCount;
 use kit as u;
@@ -32,7 +33,8 @@ pub enum Format {
     Compact,
     Ascii,
     Mermaid,
-    Structurizr
+    Structurizr,
+    Bincode
 }
 
 impl FromStr for Format {
@@ -49,6 +51,7 @@ impl FromStr for Format {
             "compact" => Ok(Format::Compact),
             "mermaid" => Ok(Format::Mermaid),
             "structurizr" | "c4"  => Ok(Format::Structurizr),
+            "bincode"  => Ok(Format::Bincode),
             _ => Ok(Format::JSON),
         }
     }
@@ -66,6 +69,7 @@ pub fn pprint(topology: &Topology, fmt: &str) {
         Format::Mermaid => mermaid::pprint(topology),
         Format::Structurizr => structurizr::pprint(topology),
         Format::Ascii => ascii::pprint(topology),
+        Format::Bincode => bincode::pprint(topology)
     }
 }
 
@@ -81,6 +85,7 @@ pub fn pprint_recursive(topologies: &HashMap<String, Topology>, fmt: &str) {
         Format::Mermaid => mermaid::pprint_recursive(topologies),
         Format::Structurizr => structurizr::pprint_recursive(topologies),
         Format::Ascii => todo!(),
+        Format::Bincode => todo!(),
     }
 }
 
