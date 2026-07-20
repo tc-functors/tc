@@ -91,7 +91,7 @@ fn compose_recursive_dedups_shared_functions_to_root() {
     );
     write_shared_function(&root.join("c/local"), "local", "child_c_local");
 
-    let topology = Topology::new(root.to_str().unwrap(), true, false);
+    let topology = Topology::new(root.to_str().unwrap(), "", true, false);
 
     assert!(
         topology.functions.contains_key("foo"),
@@ -222,7 +222,7 @@ fn intern_marks_relative_uri_imports_as_shared() {
         "name: child-a\nkind: step-function\nfunctions:\n  x:\n    uri: ../shared/x\n",
     );
 
-    let topology = Topology::new(root.to_str().unwrap(), true, false);
+    let topology = Topology::new(root.to_str().unwrap(), "", true, false);
     let promoted = topology
         .functions
         .get("x")
@@ -243,7 +243,7 @@ fn root_declaring_shared_function_keeps_it_in_place() {
         "name: root-shared\nkind: step-function\nfunctions:\n  x:\n    uri: ./shared/x\n",
     );
 
-    let topology = Topology::new(root.to_str().unwrap(), true, false);
+    let topology = Topology::new(root.to_str().unwrap(), "", true, false);
     assert!(
         topology.functions.contains_key("x"),
         "root's own shared function must remain in root.functions"
@@ -269,7 +269,7 @@ fn same_source_different_keys_both_promoted() {
         "name: child-b\nkind: step-function\nfunctions:\n  my_foo:\n    uri: ../shared/foo\n",
     );
 
-    let topology = Topology::new(root.to_str().unwrap(), true, false);
+    let topology = Topology::new(root.to_str().unwrap(), "", true, false);
 
     assert!(
         topology.functions.contains_key("foo"),
@@ -300,7 +300,7 @@ fn deep_nesting_shared_functions_promoted() {
         "name: leaf\nkind: step-function\nfunctions:\n  foo:\n    uri: ../../shared/foo\n",
     );
 
-    let topology = Topology::new(root.to_str().unwrap(), true, false);
+    let topology = Topology::new(root.to_str().unwrap(), "", true, false);
 
     assert!(
         topology.functions.contains_key("foo"),
@@ -333,7 +333,7 @@ fn non_recursive_mode_does_not_promote() {
         "name: non-recursive\nkind: step-function\nfunctions:\n  x:\n    uri: ./shared/x\n",
     );
 
-    let topology = Topology::new(root.to_str().unwrap(), false, false);
+    let topology = Topology::new(root.to_str().unwrap(), "", false, false);
 
     assert!(
         topology.functions.contains_key("x"),
