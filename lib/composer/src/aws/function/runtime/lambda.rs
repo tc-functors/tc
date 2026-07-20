@@ -55,6 +55,7 @@ fn as_uri(
     name: &str,
     package_type: &str,
     uri: Option<String>,
+    build_kind: &BuildKind
 ) -> String {
     match package_type {
         "Image" | "image" | "oci" => match uri {
@@ -64,7 +65,22 @@ fn as_uri(
                 format!("{{{{repo}}}}:{}_{}_{}", namespace, name, &tag)
             }
         },
-        _ => format!("{}/lambda.zip", dir),
+        _ => {
+            match build_kind {
+                BuildKind::Inline => {
+                    match std::env::var("TC_USE_ASSET_STORE") {
+                        Ok(_) => {
+                            let key = format!("{}/{{{{version}}}}/functions/{}.zip",
+                                              namespace, name);
+                            format!("s3://{{{{ASSET_BUCKET}}}}/{}", &key)
+                        }
+                        Err(_) => format!("{}/lambda.zip", dir)
+                    }
+                },
+                _ => format!("{}/lambda.zip", dir)
+
+            }
+        }
     }
 }
 
@@ -170,7 +186,7 @@ pub fn make(
             _ => s!("zip"),
         },
     };
-    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone());
+    let uri = as_uri(dir, namespace, &fspec.name, &package_type, r.uri.clone(), &build_kind);
     let enable_fs = needs_fs(fspec.assets.clone(), r.mount_fs, &r.fs);
     let role = c::lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 

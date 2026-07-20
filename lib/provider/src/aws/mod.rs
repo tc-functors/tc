@@ -254,4 +254,8 @@ impl Auth {
     pub fn cloudfront_function_arn(&self, name: &str) -> String {
         format!("arn:aws:cloudfront::{}:function/{}", &self.account, name)
     }
+
+    pub fn s3_arn(&self, name: &str) -> String {
+        format!("arn:aws:s3:::{}", name)
+    }
 }

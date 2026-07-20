@@ -90,13 +90,14 @@ impl Role {
                 entity_name.to_string()
             };
             let name = format!("tc-{}-{}-{{{{sandbox}}}}", namespace, abbr);
+            let policy = read_policy(&role_file);
             Role {
                 name: s!(&name),
                 kind: Kind::Override,
                 trust: Trust::new(),
                 path: s!(role_file),
                 arn: template::role_arn(&name),
-                policy: read_policy(&role_file),
+                policy: policy.augment(),
                 policy_name: s!(&name),
                 policy_arn: template::policy_arn(&name),
             }
@@ -173,6 +174,7 @@ impl Role {
                 } else {
                     Policy::new(entity)
                 };
+                let policy = policy.augment();
                 Role {
                     name: s!(&name),
                     kind: Kind::Base,

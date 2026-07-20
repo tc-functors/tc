@@ -13,6 +13,7 @@ use aws_sdk_s3::{
     types::{
         BucketLocationConstraint,
         CreateBucketConfiguration,
+        ObjectAttributes,
         builders::CreateBucketConfigurationBuilder,
     },
 };
@@ -196,4 +197,20 @@ pub async fn upload_file(client: &Client, bucket: &str, file: &str, key: &str) {
         .send()
         .await
         .unwrap();
+}
+
+pub async fn get_object_size(client: &Client, bucket: &str, key: &str) -> Option<i64> {
+
+    let res = client
+        .get_object_attributes()
+        .bucket(bucket)
+        .key(key)
+        .object_attributes(ObjectAttributes::ObjectSize)
+        .send()
+        .await;
+
+    match res {
+        Ok(r) => r.object_size,
+        Err(_) => None
+    }
 }

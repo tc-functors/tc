@@ -9,6 +9,7 @@ pub struct BuildOutput {
     pub dir: String,
     pub runtime: LangRuntime,
     pub kind: BuildKind,
+    pub uri: String,
     pub artifact: String,
     pub version: Option<String>,
 }

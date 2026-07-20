@@ -1,4 +1,4 @@
-use compiler::Lang;
+use compiler::{Lang, BuildKind};
 use composer::Function;
 use kit as u;
 use kit::s;
@@ -7,6 +7,8 @@ use provider::{
     aws::{
         lambda,
         lambda::LambdaClient as Client,
+        lambda::Store,
+        s3
     },
 };
 use std::collections::HashMap;
@@ -16,7 +18,26 @@ fn make(f: &Function, tags: &HashMap<String, String>) -> lambda::Function {
 
     let uri = &f.runtime.uri;
 
-    let (size, blob, code) = lambda::make_code(package_type, &uri);
+    let store = match std::env::var("TC_USE_ASSET_STORE") {
+        Ok(_) => {
+            match &f.build.kind {
+                BuildKind::Inline => {
+                    let (bucket, key) = s3::parts_of(&f.runtime.uri);
+                    Some(
+                        Store {
+                            bucket: bucket,
+                            key: key,
+                            size: 0.to_string()
+                        }
+                    )
+                },
+                _ => None
+            }
+        },
+        Err(_) => None
+    };
+
+    let (size, blob, code) = lambda::make_code(package_type, &uri, store.clone());
     let vpc_config = match &f.runtime.network {
         Some(s) => Some(lambda::make_vpc_config(
             s.subnets.clone(),
@@ -70,6 +91,7 @@ fn make(f: &Function, tags: &HashMap<String, String>) -> lambda::Function {
         vpc_config: vpc_config,
         filesystem_config: filesystem_config,
         _logging_config: None,
+        store: store
     }
 }
 

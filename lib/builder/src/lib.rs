@@ -79,10 +79,12 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
         if b.kind == BuildKind::Image {
             let function = composer::current_function(&b.dir);
             if let Some(ref f) = function {
+                let uri = image::render_uri(&f.runtime.uri, repo);
                 let out = BuildOutput {
                     name: f.name.clone(),
                     dir: b.dir.clone(),
-                    artifact: image::render_uri(&f.runtime.uri, repo),
+                    artifact: uri.clone(),
+                    uri: uri,
                     kind: b.kind.clone(),
                     runtime: f.runtime.lang.clone(),
                     version: b.version.clone(),
@@ -122,7 +124,7 @@ pub async fn build(
         BuildKind::Image => {
             image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await
         }
-        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &runtime.arch, &build).await,
+        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &runtime.arch, &runtime.uri, &build).await,
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr, &build),
         BuildKind::Slab => todo!(),
@@ -146,6 +148,7 @@ pub async fn build(
         dir: dir.to_string(),
         artifact: build_status.path,
         kind: kind.clone(),
+        uri: runtime.uri.clone(),
         runtime: langr.clone(),
         version: build.version.clone(),
     };
@@ -187,10 +190,16 @@ pub fn clean(recursive: bool) {
 pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
     let auth = provider::init_centralized_auth(auth).await;
     for build in builds {
-        tracing::debug!("Publishing {}", &build.artifact);
         match build.kind {
             BuildKind::Layer | BuildKind::Library | BuildKind::Extension => {
                 layer::publish(&auth, &build).await
+            }
+            BuildKind::Inline => {
+                match std::env::var("TC_USE_ASSET_STORE") {
+                    Ok(_) => inline::publish(&auth, &build).await,
+                    Err(_) => ()
+                }
+
             }
             BuildKind::Image => image::publish(&auth, &build).await,
             _ => (),

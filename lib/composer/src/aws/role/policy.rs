@@ -69,22 +69,20 @@ fn make_lambda_actions() -> Vec<Action> {
                 "logs:CreateLogGroup",
                 "logs:PutLogEvents",
                 "logs:CreateLogDelivery",
-                "logs:CreateLogStream",
-                "logs:GetLogDelivery",
-                "logs:UpdateLogDelivery",
-                "logs:DeleteLogDelivery",
-                "logs:ListLogDeliveries",
-                "logs:PutResourcePolicy",
-                "logs:DescribeResourcePolicies",
-                "logs:DescribeLogStreams",
-                "logs:DescribeLogGroups",
-                "logs:CreateLogStream",
-                "logs:CreateLogGroup",
-                "logs:CreateLogGroup"
+                "logs:CreateLogStream"
             ],
             effect: s!("Allow"),
             resource: v!["*"],
             sid: make_sid("LambdaLog"),
+        },
+        Action {
+            action: v![
+                "s3:GetObject",
+                "s3:GetObjectVersion"
+            ],
+            effect: s!("Allow"),
+            resource: v![&format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")],
+            sid: make_sid("LambdaAssetAccess1"),
         },
         Action {
             action: v!["ssm:GetParameters", "ssm:GetParameter"],
@@ -331,6 +329,25 @@ impl Policy {
         Policy {
             version: s!("2012-10-17"),
             statement: actions,
+        }
+    }
+
+    pub fn augment(&self) -> Policy {
+        let common = Action {
+            action: v![
+                "s3:GetObject",
+                "s3:GetObjectVersion"
+            ],
+            effect: s!("Allow"),
+            resource: v![&format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")],
+            sid: make_sid("LambdaAssetAccess"),
+        };
+
+        let mut actions: Vec<Action> = self.statement.clone();
+        actions.push(common);
+        Policy {
+            version: self.version.clone(),
+            statement: actions
         }
     }
 

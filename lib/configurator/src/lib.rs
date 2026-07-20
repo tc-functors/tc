@@ -86,10 +86,6 @@ fn default_network() -> HashMap<String, Network> {
 #[derive(Derivative, Serialize, Deserialize, Clone)]
 #[derivative(Debug, Default)]
 pub struct Compiler {
-    #[derivative(Default(value = "default_bool()"))]
-    #[serde(default = "default_bool")]
-    pub verify: bool,
-
     #[derivative(Default(value = "default_int()"))]
     #[serde(default = "default_int")]
     pub graph_depth: u8,
@@ -103,6 +99,7 @@ pub struct Compiler {
 #[derivative(Debug, Default)]
 pub struct Builder {
     pub cluster: Option<String>,
+    pub bucket: Option<String>,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]
@@ -307,6 +304,8 @@ pub struct Lambda {
     #[derivative(Default(value = "default()"))]
     #[serde(default = "default")]
     pub asset_bucket: String,
+
+    pub asset_account: Option<String>,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Clone)]

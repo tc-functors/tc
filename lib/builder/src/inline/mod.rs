@@ -3,8 +3,11 @@ mod node;
 mod python;
 mod ruby;
 mod rust;
+use crate::types::{
+    BuildOutput,
+    BuildStatus,
+};
 
-use crate::types::BuildStatus;
 use colored::Colorize;
 use compiler::{
     Arch,
@@ -17,6 +20,7 @@ use kit::sh;
 use provider::{
     Auth,
     aws,
+    aws::s3,
 };
 
 fn gen_dockerfile(
@@ -198,10 +202,27 @@ fn zip(dir: &str, langr: &LangRuntime) {
     }
 }
 
-fn should_build_deps() -> bool {
+async fn should_build_deps(auth: &Auth, uri: &str) -> bool {
     match std::env::var("TC_SKIP_BUILD") {
         Ok(_) => false,
-        Err(_) => true,
+        Err(_) => {
+            match std::env::var("TC_USE_ASSET_STORE") {
+                Ok(_) => {
+                    if uri.is_empty() {
+                        return true
+                    }
+                    let (bucket, key) = s3::parts_of(uri);
+                    let client = s3::make_client(auth).await;
+                    let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
+                    if let Some(_) = maybe_size {
+                        false
+                    } else {
+                        true
+                    }
+                },
+                Err(_) => true
+            }
+        },
     }
 }
 
@@ -211,6 +232,7 @@ pub async fn build(
     name: &str,
     langr: &LangRuntime,
     arch: &Arch,
+    uri: &str,
     bs: &Build,
 ) -> BuildStatus {
     let Build {
@@ -222,7 +244,7 @@ pub async fn build(
         ..
     } = bs;
 
-    if should_build_deps() {
+    if should_build_deps(auth, uri).await {
         sh("rm -rf lambda.zip deps.zip build", &dir);
 
         let bar = u::progress(8);
@@ -285,6 +307,20 @@ pub async fn build(
             status: true,
             out: String::from(""),
             err: String::from(""),
+        }
+    }
+}
+
+pub async fn publish(auth: &Auth, build: &BuildOutput) {
+    let (bucket, key) = s3::parts_of(&build.uri);
+    let client = s3::make_client(auth).await;
+    let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
+    match maybe_size {
+        Some(_size) => (),
+        None => {
+            println!("Publishing {}", &key);
+            let zip_path = build.artifact.clone();
+            s3::upload_file(&client, &bucket, &zip_path, &key).await;
         }
     }
 }

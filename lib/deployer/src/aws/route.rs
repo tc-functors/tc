@@ -570,7 +570,6 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
     let route_id = gateway::find_route(client, api_id, &route_key).await;
     match route_id {
         Some(rid) => {
-            println!("Deleting route: {}", &route_key);
             gateway::delete_route(client, &api_id, &rid).await.unwrap();
         }
         _ => (),

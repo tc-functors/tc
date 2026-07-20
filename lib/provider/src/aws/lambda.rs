@@ -11,6 +11,7 @@ use aws_sdk_lambda::{
     },
     primitives::Blob,
     types::{
+        S3ObjectStorageMode,
         Architecture,
         DeadLetterConfig,
         DestinationConfig,
@@ -128,15 +129,32 @@ pub fn make_vpc_config(subnets: Vec<String>, sgs: Vec<String>) -> VpcConfig {
         .build()
 }
 
-pub fn make_code(package_type: &str, path: &str) -> (String, Blob, FunctionCode) {
+#[derive(Clone, Debug)]
+pub struct Store {
+    pub bucket: String,
+    pub key: String,
+    pub size: String,
+}
+
+pub fn make_code(package_type: &str, path: &str, store: Option<Store>) -> (String, Blob, FunctionCode) {
     match package_type {
         "zip" => {
-            let blob = make_blob(path);
-            let f = FunctionCodeBuilder::default();
-            let code = f.zip_file(blob.clone()).build();
-            let size: f64 = blob.clone().into_inner().len() as f64;
-            let hsize = file_size_human(size);
-            (hsize, blob, code)
+            if let Some(s) = store {
+                let f = FunctionCodeBuilder::default();
+                let code = f.s3_bucket(s.bucket)
+                    .s3_key(s.key)
+                    .s3_object_storage_mode(S3ObjectStorageMode::Reference)
+                    .build();
+                let blob = make_blob_from_str("default");
+                (s!("ref"), blob, code)
+            } else {
+                let blob = make_blob(path);
+                let f = FunctionCodeBuilder::default();
+                let code = f.zip_file(blob.clone()).build();
+                let size: f64 = blob.clone().into_inner().len() as f64;
+                let hsize = file_size_human(size);
+                (hsize, blob, code)
+            }
         }
         "image" | "oci" => {
             let f = FunctionCodeBuilder::default();
@@ -229,6 +247,7 @@ pub struct Function {
     pub vpc_config: Option<VpcConfig>,
     pub filesystem_config: Option<Vec<FileSystemConfig>>,
     pub _logging_config: Option<LoggingConfig>,
+    pub store: Option<Store>
 }
 
 impl Function {
@@ -425,12 +444,27 @@ impl Function {
                     .await?
             }
             PackageType::Zip => {
-                client
-                    .update_function_code()
-                    .function_name(arn)
-                    .zip_file(self.blob.clone())
-                    .send()
-                    .await?
+                match &self.store {
+                    Some(s) => {
+                        client
+                            .update_function_code()
+                            .function_name(arn)
+                            .s3_bucket(s.bucket.clone())
+                            .s3_key(s.key.clone())
+                            .s3_object_storage_mode(S3ObjectStorageMode::Reference)
+                            .send()
+                            .await?
+                    },
+                    None => {
+                        client
+                            .update_function_code()
+                            .function_name(arn)
+                            .zip_file(self.blob.clone())
+                            .send()
+                            .await?
+                    }
+                }
+
             }
             _ => panic!("unsupported package type"),
         };
