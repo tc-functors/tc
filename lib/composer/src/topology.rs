@@ -60,8 +60,15 @@ use std::{
 use walkdir::WalkDir;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Root {
+    pub name: String,
+    pub dir: String
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Topology {
     pub namespace: String,
+    pub root: Root,
     pub env: String,
     pub fqn: String,
     pub concurrency: i32,
@@ -447,6 +454,7 @@ pub fn should_ignore_node(
 
 fn discover_leaf_nodes(
     root_ns: &str,
+    ns: &str,
     root_dir: &str,
     dir: &str,
     s: &TopologySpec,
@@ -460,9 +468,9 @@ fn discover_leaf_nodes(
             let spec = TopologySpec::new(&f);
             let infra_dir = as_infra_dir(spec.infra.to_owned(), dir);
             let mut functions = discover_functions(dir, &infra_dir, &spec);
-            let interned = intern_functions(root_ns, &infra_dir, &spec);
+            let interned = intern_functions(ns, &infra_dir, &spec);
             functions.extend(interned);
-            let node = make(root_dir, dir, &spec, functions, HashMap::new());
+            let node = make(root_ns, root_dir, dir, &spec, functions, HashMap::new());
             nodes.insert(spec.name.to_string(), node);
         }
     }
@@ -500,7 +508,7 @@ fn nested_topology_dirs(root_dir: &str) -> Vec<String> {
         .collect()
 }
 
-fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
+fn make_nodes(root_ns: &str, root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> {
     let ignore_nodes = &spec.nodes.ignore;
     let candidates: Vec<String> = nested_topology_dirs(root_dir)
         .into_iter()
@@ -533,8 +541,8 @@ fn make_nodes(root_dir: &str, spec: &TopologySpec) -> HashMap<String, Topology> 
                             let interned = intern_functions(p, &infra_dir, &node_spec);
                             functions.extend(interned);
                             let leaf_nodes =
-                                discover_leaf_nodes(&node_spec.name, root_dir, p, &node_spec);
-                            let node = make(root_dir, p, &node_spec, functions, leaf_nodes);
+                                discover_leaf_nodes(root_ns, &node_spec.name, root_dir, p, &node_spec);
+                            let node = make(root_ns, root_dir, p, &node_spec, functions, leaf_nodes);
                             (node_spec.name.to_string(), node)
                         })
                         .collect::<Vec<_>>()
@@ -719,7 +727,8 @@ fn concurrency(maybe_concurrency: &Option<i32>) -> i32 {
 }
 
 fn make(
-    _root_dir: &str,
+    root_ns: &str,
+    root_dir: &str,
     dir: &str,
     spec: &TopologySpec,
     functions: HashMap<String, Function>,
@@ -739,7 +748,7 @@ fn make(
     let interned = intern_functions(&namespace, &infra_dir, &spec);
     functions.extend(interned);
 
-    let version = version::current_semver(&namespace);
+    let version = version::current_semver(root_ns, root_dir);
     let fqn = template::topology_fqn(&namespace, spec.hyphenated_names);
     let flow = Flow::new(dir, &infra_dir, &fqn, &spec);
     let mutations = make_mutations(&spec, &config);
@@ -757,6 +766,10 @@ fn make(
 
     Topology {
         namespace: namespace.clone(),
+        root: Root {
+            name: root_ns.to_string(),
+            dir: root_dir.to_string()
+        },
         fqn: fqn.clone(),
         concurrency: concurrency(&spec.concurrency),
         env: template::profile(),
@@ -794,7 +807,7 @@ fn make(
     }
 }
 
-fn make_relative(dir: &str) -> Topology {
+fn make_relative(root_ns: &str, dir: &str) -> Topology {
     let f = match parent_topology_file(dir) {
         Some(file) => file,
         None => format!("../topology.yml"),
@@ -806,10 +819,10 @@ fn make_relative(dir: &str) -> Topology {
     let function = Function::new(dir, &infra_dir, namespace, &spec.fmt());
     let functions = Function::to_map(function);
     let nodes = HashMap::new();
-    make(dir, dir, &spec, functions, nodes)
+    make(root_ns, dir, dir, &spec, functions, nodes)
 }
 
-fn make_standalone(dir: &str) -> Topology {
+fn make_standalone(root_ns: &str, dir: &str) -> Topology {
     let infra_dir = format!("{}/infra", dir);
 
     let function = Function::new(dir, &infra_dir, "", "");
@@ -818,6 +831,10 @@ fn make_standalone(dir: &str) -> Topology {
 
     Topology {
         namespace: namespace.clone(),
+        root: Root {
+            name: root_ns.to_string(),
+            dir: dir.to_string()
+        },
         env: template::profile(),
         fqn: template::topology_fqn(&namespace, false),
         kind: TopologyKind::Function,
@@ -924,13 +941,13 @@ fn promote_shared_to_root(root: &mut Topology) {
 }
 
 impl Topology {
-    pub fn new(dir: &str, recursive: bool, skip_functions: bool) -> Topology {
+    pub fn new(dir: &str, root_ns: &str, recursive: bool, skip_functions: bool) -> Topology {
         if is_singular_function_dir() {
             let f = format!("{}/topology.yml", dir);
             let spec = TopologySpec::new(&f);
             let infra_dir = as_infra_dir(spec.infra.to_owned(), &spec.name);
             let functions = current_function(dir, &infra_dir, &spec);
-            make(dir, dir, &spec, functions, HashMap::new())
+            make(&spec.name, dir, dir, &spec, functions, HashMap::new())
         } else if is_topology_dir(dir) {
             let f = format!("{}/topology.yml", dir);
             let spec = TopologySpec::new(&f);
@@ -939,26 +956,26 @@ impl Topology {
 
             let nodes = if recursive {
                 tracing::debug!("Recursive {}", dir);
-                make_nodes(dir, &spec)
+                make_nodes(root_ns, dir, &spec)
             } else {
                 HashMap::new()
             };
             let mut topology = if skip_functions {
                 tracing::debug!("Skipping functions {}", dir);
-                make(dir, dir, &spec, HashMap::new(), nodes)
+                make(root_ns, dir, dir, &spec, HashMap::new(), nodes)
             } else {
                 tracing::debug!("Discovering functions {}", dir);
                 let functions = discover_functions(dir, &infra_dir, &spec);
-                make(dir, dir, &spec, functions, nodes)
+                make(root_ns, dir, dir, &spec, functions, nodes)
             };
             if recursive {
                 promote_shared_to_root(&mut topology);
             }
             topology
         } else if is_relative_topology_dir(dir) {
-            make_relative(dir)
+            make_relative(root_ns, dir)
         } else if is_standalone_function_dir(dir) {
-            make_standalone(dir)
+            make_standalone(root_ns, dir)
         } else {
             println!("{}", dir);
             std::panic::set_hook(Box::new(|_| {

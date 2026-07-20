@@ -68,7 +68,7 @@ pub fn is_root_dir(dir: &str) -> bool {
 }
 
 pub fn config(dir: &str) -> Config {
-    let t = Topology::new(dir, false, true);
+    let t = Topology::new(dir, "", false, true);
     t.config
 }
 
@@ -83,7 +83,7 @@ pub fn compose(dir: &str, recursive: bool) -> Topology {
     let f = format!("{}/topology.yml", dir);
     let spec = TopologySpec::new(&f);
     let recurse = should_recurse(recursive, spec.recursive);
-    Topology::new(dir, recurse, false)
+    Topology::new(dir, &spec.name, recurse, false)
 }
 
 pub fn compose_dirs(dirs: Vec<String>) -> HashMap<String, Topology> {
@@ -148,7 +148,7 @@ pub fn lookup_versions(dir: &str) -> HashMap<String, String> {
         let f = format!("{}/{}/topology.yml", dir, &d);
         let spec = TopologySpec::new(&f);
         if &spec.name != "tc" {
-            let version = version::current_semver(&spec.name);
+            let version = version::current_semver(&spec.name, dir);
             h.insert(spec.name, version);
         }
     }
@@ -183,7 +183,7 @@ pub fn find_layers() -> Vec<Layer> {
 
 pub fn find_buildables(dir: &str, recursive: bool) -> Vec<Build> {
     let mut xs: Vec<Build> = vec![];
-    let topology = Topology::new(dir, recursive, false);
+    let topology = Topology::new(dir, "", recursive, false);
     let fns = topology.functions;
     for (_, f) in fns {
         xs.push(f.build)
@@ -222,11 +222,11 @@ pub fn topology_name(dir: &str) -> String {
 }
 
 pub fn topology_version(namespace: &str) -> String {
-    version::current_semver(&namespace)
+    version::current_semver(&namespace, &u::pwd())
 }
 
 pub fn current_function(dir: &str) -> Option<Function> {
-    let topology = Topology::new(dir, false, true);
+    let topology = Topology::new(dir, "", false, true);
     topology.current_function(dir)
 }
 
@@ -255,7 +255,7 @@ pub fn list_topologies() -> HashMap<String, Topology> {
             .collect()
     };
     for p in candidates {
-        let spec = Topology::new(&p, true, true);
+        let spec = Topology::new(&p, "", true, true);
         if !names.contains(&spec.namespace.to_string()) {
             names.push(spec.namespace.to_string());
             topologies.insert(p, spec);

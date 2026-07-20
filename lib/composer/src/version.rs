@@ -1,5 +1,4 @@
 use kit::{
-    pwd,
     sh,
 };
 use regex::Regex;
@@ -25,7 +24,7 @@ fn extract_version(s: &str) -> String {
 /// CLI invocation), so 200+ functions in a topology each calling this
 /// pay for each unique prefix exactly once. Mirrors `kit::current_semver`
 /// but with a stricter match pattern that filters tags to semver shape.
-pub fn current_semver(prefix: &str) -> String {
+pub fn current_semver(prefix: &str, dir: &str) -> String {
     static CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     if let Ok(guard) = cache.lock() {
@@ -37,7 +36,7 @@ pub fn current_semver(prefix: &str) -> String {
         "git describe --match {}-[0-9]*.[0-9]*.[0-9]* --tags $(git log -n1 --pretty='%h')",
         prefix
     );
-    let out = sh(&cmd, &pwd());
+    let out = sh(&cmd, dir);
     let v = if out.contains("fatal") {
         String::from("0.0.1")
     } else {
