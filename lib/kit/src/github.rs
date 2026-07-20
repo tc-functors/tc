@@ -111,7 +111,7 @@ impl Github {
                 let path = format!("/releases/assets/{}", id);
                 http::download(&self.url(&path), headers.clone(), outfile).await;
                 replace_exe(outfile);
-                println!("Simplicity does not precede complexity, but follows it - Alan Perlis");
+                println!("E pluribus unum - Out of Many, One");
             }
         }
     }
@@ -131,7 +131,7 @@ impl Github {
                 let path = format!("/releases/assets/{}", id);
                 http::download(&self.url(&path), headers.clone(), outfile).await;
                 replace_exe(outfile);
-                println!("Simplicity does not precede complexity, but follows it - Alan Perlis");
+                println!("E pluribus unum - Out of Many, One");
             }
         }
     }
