@@ -24,10 +24,20 @@ pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
     }
 }
 
-pub async fn should_abort(_auth: &Auth, sandbox: &str, _topology: &Topology) -> bool {
+pub async fn should_abort(auth: &Auth, sandbox: &str, _topology: &Topology) -> bool {
     let yes = match std::env::var("CI") {
         Ok(_) => match std::env::var("TC_FREEZE") {
-            Ok(_) => true,
+            Ok(_) => {
+                match std::env::var("TC_FREEZE_SANDBOX") {
+                    Ok(q) => if q == auth.name {
+                        println!("{} is frozen. Aborting", &q);
+                        true
+                    } else {
+                        false
+                    },
+                    Err(_) => false
+                }
+            }
             Err(_) => false,
         },
         Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
