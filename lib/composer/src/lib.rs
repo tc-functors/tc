@@ -2,7 +2,6 @@ pub mod aws;
 pub mod formatter;
 
 mod counter;
-mod graph;
 mod hooks;
 pub mod index;
 mod tag;

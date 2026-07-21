@@ -2,7 +2,6 @@ use crate::{
     Entity,
     Topology,
 };
-mod ascii;
 pub mod compact;
 mod digraph;
 mod icepanel;
@@ -33,7 +32,6 @@ pub enum Format {
     Dot,
     Icepanel,
     Compact,
-    Ascii,
     Mermaid,
     Structurizr,
     Bincode
@@ -48,7 +46,6 @@ impl FromStr for Format {
             "tree" => Ok(Format::Tree),
             "table" => Ok(Format::Table),
             "dot" | "digraph" => Ok(Format::Dot),
-            "ascii" => Ok(Format::Ascii),
             "icepanel" => Ok(Format::Icepanel),
             "compact" => Ok(Format::Compact),
             "mermaid" => Ok(Format::Mermaid),
@@ -70,7 +67,6 @@ pub fn pprint(topology: &Topology, fmt: &str) {
         Format::Compact => compact::pprint(topology),
         Format::Mermaid => mermaid::pprint(topology),
         Format::Structurizr => structurizr::pprint(topology),
-        Format::Ascii => ascii::pprint(topology),
         Format::Bincode => bincode::pprint(topology)
     }
 }
@@ -86,7 +82,6 @@ pub fn pprint_recursive(topologies: &HashMap<String, Topology>, fmt: &str) {
         Format::Compact => compact::pprint_recursive(topologies),
         Format::Mermaid => mermaid::pprint_recursive(topologies),
         Format::Structurizr => structurizr::pprint_recursive(topologies),
-        Format::Ascii => todo!(),
         Format::Bincode => todo!(),
     }
 }
