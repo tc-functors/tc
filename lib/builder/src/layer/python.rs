@@ -29,17 +29,7 @@ fn find_image(runtime: &LangRuntime) -> String {
     }
 }
 
-fn gen_req_cmd(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!(
-            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --without dev --format=requirements.txt > requirements.txt"
-        )
-    } else {
-        format!("echo 1")
-    }
-}
-
-fn gen_copy_cmd(dir: &str) -> String {
+fn make_copy_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
         String::from("COPY pyproject.toml ./")
     } else if u::path_exists(dir, "requirements.txt") {
@@ -49,17 +39,22 @@ fn gen_copy_cmd(dir: &str) -> String {
     }
 }
 
+fn make_install_command(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+    } else if u::path_exists(dir, "requirements.txt") {
+        format!("uv pip install -r requirements.txt --target=/build/python")
+    } else {
+        format!("RUN echo 0")
+    }
+}
+
 pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
     let _extra_str = u::vec_to_str(shared_objects());
 
-    let _pip_cmd = match std::env::var("TC_FORCE_BUILD") {
-        Ok(_) => "pip install -r requirements.txt --target=/build/python --upgrade",
-        Err(_) => "pip install -r requirements.txt --without dev --target=/build/python",
-    };
-
     let build_context = &u::root();
-    let req_cmd = gen_req_cmd(dir);
-    let copy_cmd = gen_copy_cmd(dir);
+    let install_cmd = make_install_command(dir);
+    let copy_cmd = make_copy_cmd(dir);
     let image = find_image(&runtime);
 
     let f = format!(
@@ -72,11 +67,9 @@ RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 COPY --from=shared . {build_context}/
 
-RUN {req_cmd}
-
 RUN mkdir -p /build/lib
 
-RUN --mount=type=ssh --mount=target=shared,type=bind,source=. pip install -vvv -r requirements.txt --target=/build/python --upgrade
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {install_cmd}
 
 "#
     );

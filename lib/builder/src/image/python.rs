@@ -25,16 +25,6 @@ fn find_runtime_image(runtime: &LangRuntime) -> String {
     format!("public.ecr.aws/lambda/{}", &tag)
 }
 
-fn gen_req_cmd(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!(
-            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
-        )
-    } else {
-        format!("echo 0")
-    }
-}
-
 fn deps_str(deps: &Vec<String>) -> String {
     let s = if deps.len() >= 2 {
         deps.join(" && ")
@@ -46,6 +36,16 @@ fn deps_str(deps: &Vec<String>) -> String {
     s.replace("AWS_PROFILE=cicd", "")
 }
 
+fn make_install_command(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+    } else if u::path_exists(dir, "requirements.txt") {
+        format!("uv pip install -r requirements.txt --target=/build/python")
+    } else {
+        format!("RUN echo 0")
+    }
+}
+
 pub fn gen_base_dockerfile(
     dir: &str,
     runtime: &LangRuntime,
@@ -55,11 +55,10 @@ pub fn gen_base_dockerfile(
     let pre_commands = deps_str(pre);
     let post_commands = deps_str(post);
 
+    let install_cmd = make_install_command(dir);
+
     let build_image = find_build_image(runtime);
     let runtime_image = find_runtime_image(runtime);
-
-    let req_cmd = gen_req_cmd(dir);
-    let pip_cmd = "pip install -vv -r requirements.txt --target /build/python";
 
     let build_context = &u::root();
 
@@ -75,11 +74,9 @@ COPY --from=shared . {build_context}/
 
 RUN {pre_commands}
 
-RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {req_cmd}
-
 RUN mkdir -p /model
 
-RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {pip_cmd}
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {install_cmd}
 
 RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {post_commands}
 

@@ -12,16 +12,6 @@ fn find_image(runtime: &LangRuntime) -> String {
     }
 }
 
-fn gen_req_cmd(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!(
-            "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
-        )
-    } else {
-        format!("echo 1")
-    }
-}
-
 fn deps_str(deps: Vec<String>) -> String {
     if deps.len() >= 2 {
         deps.join(" && ")
@@ -32,23 +22,35 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
+fn make_copy_cmd(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        String::from("COPY pyproject.toml ./")
+    } else if u::path_exists(dir, "requirements.txt") {
+        String::from("COPY requirements.txt ./")
+    } else {
+        String::from("RUN echo 0")
+    }
+}
+
+fn make_install_command(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+        format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+    } else if u::path_exists(dir, "requirements.txt") {
+        format!("uv pip install -r requirements.txt --target=/build/python")
+    } else {
+        format!("RUN echo 0")
+    }
+}
+
+
 pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
-    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
-        Ok(_) => "pip install -r requirements.txt --target=/build/python",
-        Err(_) => "pip install -r requirements.txt --target=/build/python --prefer-binary",
-    };
+    let install_cmd = make_install_command(dir);
+    let cp_command = make_copy_cmd(dir);
 
     let build_context = &u::root();
     let image = find_image(&runtime);
-    let req_cmd = gen_req_cmd(dir);
-
-    let cp_command = if u::path_exists(dir, "pyproject.toml") {
-        "COPY pyproject.toml ./"
-    } else {
-        "RUN echo 0"
-    };
 
     let f = format!(
         r#"
@@ -60,13 +62,11 @@ RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 COPY --from=shared . {build_context}/
 
-RUN --mount=type=ssh {req_cmd}
-
 RUN rm -rf /build/python && mkdir -p /build
 
 RUN {pre}
 
-RUN --mount=type=ssh --mount=type=cache,target=/.root/cache --mount=target=shared,type=bind,source=. {pip_cmd}
+RUN --mount=type=ssh --mount=type=cache,target=/.root/cache --mount=target=shared,type=bind,source=. {install_cmd}
 
 RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {post}
 
@@ -85,30 +85,22 @@ pub fn gen_dockerfile_unshared(
 ) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
-    let pip_cmd = match std::env::var("TC_FORCE_BUILD") {
-        Ok(_) => "pip install -r requirements.txt --target=/build/python",
-        Err(_) => {
-            "pip install -r requirements.txt --target=/build/python --implementation cp --only-binary=:all:"
-        }
-    };
-
+    let install_cmd = make_install_command(dir);
+    let cp_command = make_copy_cmd(dir);
     let image = find_image(&runtime);
-    let req_cmd = gen_req_cmd(dir);
 
     let f = format!(
         r#"
 FROM {image} AS intermediate
 WORKDIR {dir}
 
-COPY pyproject.toml ./
-
-RUN {req_cmd}
+{cp_command}
 
 RUN rm -rf /build/python && mkdir -p /build
 
 RUN {pre}
 
-RUN --mount=type=cache,target=/.root/cache {pip_cmd}
+RUN --mount=type=cache,target=/.root/cache {install_cmd}
 
 RUN {post}
 
