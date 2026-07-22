@@ -128,9 +128,9 @@ pub async fn promote(auth: &Auth, layer_name: &str, lang: &str, version: Option<
     }
 }
 
-pub fn gen_dockerfile(dir: &str, langr: &LangRuntime) {
+pub fn gen_dockerfile(dir: &str, langr: &LangRuntime, package_manager: &str) {
     match langr.to_lang() {
-        Lang::Python => python::gen_dockerfile(dir, langr),
+        Lang::Python => python::gen_dockerfile(dir, langr, package_manager),
         Lang::Ruby => ruby::gen_dockerfile(dir),
         _ => todo!(),
     }
@@ -209,9 +209,9 @@ fn clean(dir: &str) {
     }
 }
 
-pub fn build(dir: &str, name: &str, langr: &LangRuntime, _bspec: &Build) -> BuildStatus {
+pub fn build(dir: &str, name: &str, langr: &LangRuntime, bspec: &Build) -> BuildStatus {
     sh("rm -f deps.zip", dir);
-    gen_dockerfile(dir, langr);
+    gen_dockerfile(dir, langr, &bspec.package_manager);
     let created_root_dockerignore = crate::gen_dockerignore(dir);
     let (status, out, err) = build_with_docker(dir);
     if created_root_dockerignore {

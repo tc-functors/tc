@@ -12,13 +12,12 @@ pub fn build(dir: &str, langr: &LangRuntime, bspec: &Build) -> BuildStatus {
     let Build {
         dirs,
         include_deps,
-        post,
         ..
     } = bspec;
 
     let path = match langr.to_lang() {
-        Lang::Python => python::build(dir, langr, dirs, *include_deps, post),
-        Lang::Ruby => ruby::build(dir, langr, dirs, *include_deps, post),
+        Lang::Python => python::build(dir, langr, dirs, *include_deps, bspec),
+        Lang::Ruby => ruby::build(dir, langr, dirs, *include_deps, bspec),
         _ => todo!(),
     };
     BuildStatus {

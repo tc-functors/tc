@@ -27,12 +27,12 @@ fn gen_dockerfile(
     dir: &str,
     arch: &Arch,
     langr: &LangRuntime,
-    pre: &Vec<String>,
-    post: &Vec<String>,
     skip_dev_deps: bool,
+    bs: &Build
 ) {
+    let Build { pre, post, .. } = bs;
     match langr.to_lang() {
-        Lang::Python => python::gen_dockerfile(dir, langr, pre, post),
+        Lang::Python => python::gen_dockerfile(dir, langr, bs),
         Lang::Ruby => {
             if skip_dev_deps {
                 ruby::gen_dockerfile(dir, langr, pre, post);
@@ -51,12 +51,13 @@ fn gen_dockerfile_unshared(
     dir: &str,
     arch: &Arch,
     langr: &LangRuntime,
-    pre: &Vec<String>,
-    post: &Vec<String>,
     _wrap: bool,
+    bs: &Build
 ) {
+    let Build { pre, post, .. } = bs;
+
     match langr.to_lang() {
-        Lang::Python => python::gen_dockerfile_unshared(dir, langr, pre, post),
+        Lang::Python => python::gen_dockerfile_unshared(dir, langr, bs),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Go => go::gen_dockerfile(dir, arch, pre),
@@ -237,8 +238,6 @@ pub async fn build(
 ) -> BuildStatus {
     let Build {
         command,
-        pre,
-        post,
         shared_context,
         skip_dev_deps,
         ..
@@ -253,9 +252,9 @@ pub async fn build(
         bar.set_prefix(prefix);
 
         if *shared_context {
-            gen_dockerfile(dir, arch, langr, pre, post, *skip_dev_deps)
+            gen_dockerfile(dir, arch, langr, *skip_dev_deps, bs)
         } else {
-            gen_dockerfile_unshared(dir, arch, langr, pre, post, *skip_dev_deps);
+            gen_dockerfile_unshared(dir, arch, langr, *skip_dev_deps, bs);
         }
         bar.inc(1);
         let created_root_dockerignore = gen_dockerignore(dir);

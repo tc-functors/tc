@@ -1,5 +1,6 @@
 use crate::layer;
 use compiler::spec::LangRuntime;
+use composer::Build;
 use kit as u;
 use kit::sh;
 
@@ -8,8 +9,9 @@ pub fn build(
     langr: &LangRuntime,
     dirs: &Vec<String>,
     include_deps: bool,
-    post: &Vec<String>,
+    bspec: &Build
 ) -> String {
+    let post = &bspec.post;
     u::run("rm -rf deps.zip build", &dir);
     u::run("mkdir -p build/python/lib && mkdir -p build/lib", &dir);
 
@@ -24,7 +26,7 @@ pub fn build(
 
         println!("include_deps {}", include_deps);
         if include_deps {
-            layer::gen_dockerfile(&d, &langr);
+            layer::gen_dockerfile(&d, &langr, &bspec.package_manager);
             let (_status, _out, _err) = layer::build_with_docker(&d);
             layer::copy_from_docker(&d);
             let cmd = format!("cp -rv . {}/build", dir);

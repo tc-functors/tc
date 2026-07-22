@@ -39,21 +39,26 @@ fn make_copy_cmd(dir: &str) -> String {
     }
 }
 
-fn make_install_command(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
-    } else if u::path_exists(dir, "requirements.txt") {
-        format!("uv pip install -r requirements.txt --target=/build/python")
-    } else {
-        format!("RUN echo 0")
+fn make_install_command(dir: &str, package_manager: &str) -> String {
+    match package_manager  {
+        "uv" =>  {
+            if u::path_exists(dir, "pyproject.toml") {
+                format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+            } else if u::path_exists(dir, "requirements.txt") {
+                format!("uv pip install -r requirements.txt --target=/build/python")
+            } else {
+                format!("echo 0")
+            }
+        },
+        _ => panic!("Please use uv as package manager for layers")
     }
 }
 
-pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime) {
+pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, package_manager: &str) {
     let _extra_str = u::vec_to_str(shared_objects());
 
     let build_context = &u::root();
-    let install_cmd = make_install_command(dir);
+    let install_cmd = make_install_command(dir, package_manager);
     let copy_cmd = make_copy_cmd(dir);
     let image = find_image(&runtime);
 

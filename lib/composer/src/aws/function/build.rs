@@ -2,6 +2,7 @@ use super::Runtime;
 use compiler::spec::function::{
     BuildKind,
     BuildSpec,
+    Lang
 };
 use kit::*;
 use serde_derive::{
@@ -28,6 +29,7 @@ pub struct Build {
     pub base_image_arn: String,
     pub build_role_arn: String,
     pub bucket: String,
+    pub package_manager: String
 }
 
 fn infer_kind(package_type: &str) -> BuildKind {
@@ -39,6 +41,18 @@ fn infer_kind(package_type: &str) -> BuildKind {
         "zip-layer" | "layer" => BuildKind::Layer,
         "zip-inline" | "inline" => BuildKind::Inline,
         _ => BuildKind::Code,
+    }
+}
+
+fn as_default_package_manager(lang: &Lang) -> String {
+    match lang {
+    Lang::Python => match std::env::var("TC_PYTHON_PACKAGE_MANAGER") {
+        Ok(r) => r,
+        Err(_) => String::from("poetry")
+    },
+    Lang::Ruby => String::from("bundler"),
+    Lang::Rust => String::from("cargo"),
+    _ => String::from("default")
     }
 }
 
@@ -108,6 +122,11 @@ impl Build {
                         Err(_) => format!("{{{{ASSET_BUCKET}}}}"),
                     },
                 },
+
+                package_manager: match b.package_manager {
+                    Some(p) => p,
+                    None => as_default_package_manager(&runtime.lang.to_lang())
+                }
             },
             None => {
                 let command = match tasks.get("build") {
@@ -132,6 +151,7 @@ impl Build {
                     build_role_arn: String::from(""),
                     bucket: String::from(""),
                     image_name: String::from(""),
+                    package_manager: as_default_package_manager(&runtime.lang.to_lang())
                 }
             }
         }

@@ -1,8 +1,9 @@
 use super::LangRuntime;
+use composer::Build;
 use kit as u;
 
-fn find_image(runtime: &LangRuntime) -> String {
-    match runtime {
+fn find_image(langr: &LangRuntime) -> String {
+    match langr {
         LangRuntime::Python310 => String::from("public.ecr.aws/sam/build-python3.10:latest"),
         LangRuntime::Python311 => String::from("public.ecr.aws/sam/build-python3.11:latest"),
         LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
@@ -32,21 +33,44 @@ fn make_copy_cmd(dir: &str) -> String {
     }
 }
 
-fn make_install_command(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
-    } else if u::path_exists(dir, "requirements.txt") {
-        format!("uv pip install -r requirements.txt --target=/build/python")
-    } else {
-        format!("RUN echo 0")
+fn make_req_cmd(dir: &str, package_manager: &str) -> String {
+    match package_manager {
+        "uv" => String::from("echo 0"),
+        _ => if u::path_exists(dir, "pyproject.toml") {
+            format!(
+                "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+            )
+        } else {
+            String::from("echo 0")
+        }
+    }
+}
+
+fn make_install_command(dir: &str, package_manager: &str) -> String {
+    match package_manager {
+        "uv" =>  {
+            if u::path_exists(dir, "pyproject.toml") {
+                format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+            } else if u::path_exists(dir, "requirements.txt") {
+                format!("uv pip install -r requirements.txt --target=/build/python")
+            } else {
+                format!("echo 0")
+            }
+        },
+        "poetry" => {
+            String::from("pip install -r requirements.txt --target=/build/python --prefer-binary")
+        },
+        _ => panic!("Package manager not known")
     }
 }
 
 
-pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, bs: &Build) {
+    let Build { pre, post, package_manager, .. } = bs;
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
-    let install_cmd = make_install_command(dir);
+    let req_cmd = make_req_cmd(dir, package_manager);
+    let install_cmd = make_install_command(dir, package_manager);
     let cp_command = make_copy_cmd(dir);
 
     let build_context = &u::root();
@@ -61,6 +85,8 @@ RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 {cp_command}
 
 COPY --from=shared . {build_context}/
+
+RUN --mount=type=ssh {req_cmd}
 
 RUN rm -rf /build/python && mkdir -p /build
 
@@ -80,12 +106,13 @@ RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=
 pub fn gen_dockerfile_unshared(
     dir: &str,
     runtime: &LangRuntime,
-    pre: &Vec<String>,
-    post: &Vec<String>,
+    bs: &Build
 ) {
+    let Build { pre, post, package_manager, .. } = bs;
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
-    let install_cmd = make_install_command(dir);
+    let req_cmd = make_req_cmd(dir, package_manager);
+    let install_cmd = make_install_command(dir, package_manager);
     let cp_command = make_copy_cmd(dir);
     let image = find_image(&runtime);
 
@@ -95,6 +122,8 @@ FROM {image} AS intermediate
 WORKDIR {dir}
 
 {cp_command}
+
+RUN --mount=type=ssh {req_cmd}
 
 RUN rm -rf /build/python && mkdir -p /build
 

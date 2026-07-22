@@ -28,9 +28,11 @@ fn gen_dockerignore(dir: &str) -> bool {
     crate::gen_dockerignore(dir)
 }
 
-fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, pre: &Vec<String>, post: &Vec<String>) {
+fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, bspec: &Build) {
+
+    let Build { pre, post, .. } = bspec;
     match runtime.to_lang() {
-        Lang::Python => python::gen_base_dockerfile(dir, runtime, pre, post),
+        Lang::Python => python::gen_base_dockerfile(dir, runtime, bspec),
         Lang::Ruby => ruby::gen_base_dockerfile(dir, runtime, pre, post),
         _ => todo!(),
     }
@@ -123,7 +125,7 @@ pub async fn build(
     code_only: bool,
 ) -> BuildStatus {
     let Build {
-        pre, post, version, ..
+        version, ..
     } = bspec;
 
     aws::ecr::login(&auth, dir).await;
@@ -154,7 +156,7 @@ pub async fn build(
         // }
         gen_code_dockerfile(dir, langr, &base_image_uri, &bspec.pack);
     } else {
-        gen_base_dockerfile(dir, langr, pre, post);
+        gen_base_dockerfile(dir, langr, bspec);
     }
 
     let created_root_dockerignore = gen_dockerignore(dir);

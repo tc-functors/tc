@@ -181,6 +181,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         build_role_arn: String::from(""),
         image_name: String::from(""),
         bucket: String::from(""),
+        package_manager: String::from("default")
     };
 
     let tags = tag::make(namespace, "");

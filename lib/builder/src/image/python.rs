@@ -1,4 +1,5 @@
 use compiler::spec::LangRuntime;
+use composer::Build;
 use kit as u;
 
 fn find_build_image(runtime: &LangRuntime) -> String {
@@ -36,26 +37,49 @@ fn deps_str(deps: &Vec<String>) -> String {
     s.replace("AWS_PROFILE=cicd", "")
 }
 
-fn make_install_command(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
-    } else if u::path_exists(dir, "requirements.txt") {
-        format!("uv pip install -r requirements.txt --target=/build/python")
-    } else {
-        format!("RUN echo 0")
+fn make_req_cmd(dir: &str, package_manager: &str) -> String {
+    match package_manager {
+        "poetry" => {
+            if u::path_exists(dir, "pyproject.toml") {
+                format!(
+                    "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+                )
+            } else {
+                format!("echo 0")
+            }
+        },
+        _ => format!("echo 0")
+    }
+}
+
+
+fn make_install_command(dir: &str, package_manager: &str) -> String {
+    match package_manager {
+        "uv" => {
+            if u::path_exists(dir, "pyproject.toml") {
+                format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+            } else if u::path_exists(dir, "requirements.txt") {
+                format!("uv pip install -r requirements.txt --target=/build/python")
+            } else {
+                format!("RUN echo 0")
+            }
+        },
+        "poetry" => String::from("pip install -vv -r requirements.txt --target /build/python"),
+        _ => String::from("RUN echo 0")
     }
 }
 
 pub fn gen_base_dockerfile(
     dir: &str,
     runtime: &LangRuntime,
-    pre: &Vec<String>,
-    post: &Vec<String>,
+    bspec: &Build
 ) {
+    let Build { pre, post, package_manager, .. } = bspec;
     let pre_commands = deps_str(pre);
     let post_commands = deps_str(post);
 
-    let install_cmd = make_install_command(dir);
+    let req_cmd = make_req_cmd(dir, package_manager);
+    let install_cmd = make_install_command(dir, package_manager);
 
     let build_image = find_build_image(runtime);
     let runtime_image = find_runtime_image(runtime);
@@ -73,6 +97,8 @@ COPY . ./
 COPY --from=shared . {build_context}/
 
 RUN {pre_commands}
+
+RUN --mount=type=ssh --mount=target=shared,type=bind,source=. {req_cmd}
 
 RUN mkdir -p /model
 
