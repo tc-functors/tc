@@ -118,7 +118,8 @@ impl Transformer {
                     let mut specs: Vec<MutationSpec> = vec![];
 
                     for path in paths {
-                        let data: String = u::slurp(&path);
+                        let p = u::absolutize(&self.dir, &path);
+                        let data: String = u::slurp(&p);
                         let spec: MutationSpec = serde_yaml::from_str(&data).unwrap();
                         specs.push(spec);
                     }
