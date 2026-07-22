@@ -1,57 +1,34 @@
-[tool.poetry]
-name = "pyp"
+[project]
+name = "python-image"
 version = "0.1.0"
 description = ""
-authors = ["fu <foo@fubar.com>"]
 
-[tool.poetry.dependencies]
-python = "~3.10"
-aws-lambda-powertools = "2.26.0"
-honeybadger = "0.15.2"
-simplejson = "^3.19.2"
-botocore = "^1.31.73"
-boto3 = "^1.28.73"
-pyyaml = "6.0.2"
+requires-python = "~=3.12.0"
 
-[tool.poetry.group.layer.dependencies]
-honeybadger = "0.15.2"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "*"
-pytest = "^7.0"
-pytest-xdist = "^2.5.0"
-coverage = {extras = ["toml"], version = "^7.1.0"}
-ipdb = "^0.13.9"
-jmespath = "^1.0.1"
-ipython = "^8.17.2"
-python-dotenv = "^1.0.0"
-
-[tool.pytest.ini_options]
-markers = [
-  "focus: focus specific tests to run"
+dependencies = [
+    "boto3>=1.34.0",
+    "aws-lambda-powertools>=2.25.0",
+    "honeybadger>=0.15.0",
+    "pyyaml>=6.0.3",
 ]
 
-[tool.coverage.run]
-omit = [".*", "*/site-packages/*"]
+[dependency-groups]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-mock>=3.12.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.11.0",
+    "ruff>=0.1.6",
+    "uv>=0.1.0",
+    "coverage>=7.3.2",
+    "python-dotenv>=1.0.0",
+    "types-pyyaml>=6.0.12.20260510",
+]
 
-[tool.coverage.report]
-fail_under = 70
-
-[tool.black]
-line-length = 120
-target-version=['py310']
-
-[tool.ruff]
-select = ["C", "E", "F", "W", "B", "I", "T20", "Q"]
-line-length = 120
-target-version='py310'
-
-[tool.ruff.flake8-quotes]
-inline-quotes = "double"
-
-[tool.ruff.mccabe]
-max-complexity = 10
+[tool.uv.build-backend]
+module-name = []
+module-root = ""
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.30,<0.12"]
+build-backend = "uv_build"
