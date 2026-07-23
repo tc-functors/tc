@@ -128,7 +128,9 @@ The codebase is organized as a Rust workspace with multiple libraries:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. *Please do not use any LLM-generated Code. We are not ready yet to accept LLM-generated code as the design and coding style have not been codified*
+4. *Please do not submit any PR with LLM-generated Code.* 
+    We are working on ways we can accept LLM generated code. 
+    Only Repo Owners can experiment with LLM code in branches for now.
 5. Write or update tests as needed
 6. Submit a pull request
 7. Respond to any feedback
