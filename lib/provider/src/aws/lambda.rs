@@ -379,9 +379,8 @@ impl Function {
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let _ = log_update.render(&format!(
-            "Updating function {} ({})",
-            name,
-            &self.code_size.cyan()
+            "Updating function config {}",
+            name.blue(),
         ));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
         while state != LastUpdateStatus::Successful {
@@ -428,7 +427,7 @@ impl Function {
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
         let _ = log_update.render(&format!(
-            "Updating function {} ({})",
+            "Updating function code {} ({})",
             name,
             &self.code_size.cyan()
         ));
@@ -532,6 +531,7 @@ impl Function {
     }
 
     pub async fn create_or_update(&self, client: &Client) -> String {
+        let mut log_update = LogUpdate::new(stdout()).unwrap();
         let res = self.find_arn(client).await;
         let arn = match res {
             Some(arn) => {
@@ -543,6 +543,18 @@ impl Function {
                         panic!("{:?}", e);
                     }
                 }
+                let mut state: State = State::Inactive;
+
+                while state == State::Pending {
+                    state = self.get_state(client, &self.name).await;
+                    let _ = log_update.render(&format!(
+                        "Checking function {} ({})",
+                        &self.name,
+                        pp_state(&state).blue()
+                    ));
+                    sleep(800)
+                }
+
                 let r = self.update_code(client, &arn).await;
                 match r {
                     Ok(_) => (),
