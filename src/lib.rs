@@ -359,6 +359,9 @@ pub async fn create(
 ) {
     let start = Instant::now();
 
+    let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
+    println!("Running tc {}", &version);
+
     let CreateOpts {
         notify,
         recursive,

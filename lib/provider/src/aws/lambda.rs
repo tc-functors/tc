@@ -543,12 +543,12 @@ impl Function {
                         panic!("{:?}", e);
                     }
                 }
-                let mut state: State = State::Inactive;
+                let mut state: State = State::Pending;
 
-                while state == State::Pending {
+                while state != State::Active {
                     state = self.get_state(client, &self.name).await;
                     let _ = log_update.render(&format!(
-                        "Checking function {} ({})",
+                        "Checking function config {} ({})",
                         &self.name,
                         pp_state(&state).blue()
                     ));
