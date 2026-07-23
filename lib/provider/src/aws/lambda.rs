@@ -535,6 +535,14 @@ impl Function {
         let res = self.find_arn(client).await;
         let arn = match res {
             Some(arn) => {
+                let upres = self.update_function(client, &arn).await;
+                match upres {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!("Failed to update {}", &arn);
+                        panic!("{:?}", e);
+                    }
+                }
                 let r = self.update_code(client, &arn).await;
                 match r {
                     Ok(_) => (),
@@ -543,7 +551,7 @@ impl Function {
                         panic!("{:?}", e);
                     }
                 }
-                self.update_function(client, &arn).await.unwrap()
+                arn
             }
             None => self.create(client).await.unwrap(),
         };
