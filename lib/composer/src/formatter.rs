@@ -141,12 +141,42 @@ fn print_versions(topology: &Topology) {
     println!("{}", table);
 }
 
+fn print_function_versions(topology: &Topology) {
+    let mut xs: Vec<Version> = vec![];
+    let v = Version {
+        namespace: topology.namespace.clone(),
+        version: topology.version.clone()
+    };
+    xs.push(v);
+    for (name, f) in &topology.functions {
+        let v = Version {
+            namespace: name.clone(),
+            version: f.version.clone()
+        };
+        xs.push(v);
+    }
+
+    for (_, node) in &topology.nodes {
+        for (name, f) in &node.functions {
+            let v = Version {
+                namespace: name.clone(),
+                version: f.version.clone()
+            };
+            xs.push(v);
+        }
+    }
+    let table = Table::new(xs).with(Style::psql()).to_string();
+    println!("{}", table);
+}
+
+
 pub fn pprint_component(topology: &Topology, component: &str) {
     match component {
         "transducer" => u::pp_json(&topology.transducer),
         "roles" => u::pp_json(&topology.roles),
         "base" => u::pp_json(&topology.base_roles),
         "versions" => print_versions(topology),
+        "functions/versions" => print_function_versions(topology),
         _ => todo!(),
     }
 }

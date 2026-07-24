@@ -6,6 +6,7 @@ use tabled::Tabled;
 #[derive(Tabled, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct TopologyCount {
     pub name: String,
+    pub version: String,
     pub kind: String,
     pub nodes: usize,
     pub functions: usize,
@@ -21,6 +22,7 @@ impl TopologyCount {
     pub fn new(topology: &Topology) -> TopologyCount {
         let Topology {
             namespace,
+            version,
             kind,
             functions,
             mutations,
@@ -69,6 +71,7 @@ impl TopologyCount {
 
         TopologyCount {
             name: namespace.to_string(),
+            version: version.to_string(),
             kind: kind.to_str(),
             nodes: nodes.len(),
             functions: f,
