@@ -15,6 +15,7 @@ use aws_sdk_appsync::{
         LambdaAuthorizerConfig,
         ResolverKind,
         TypeDefinitionFormat,
+        OutputType,
         builders::{
             AdditionalAuthenticationProviderBuilder,
             LambdaAuthorizerConfigBuilder,
@@ -742,5 +743,27 @@ pub async fn get_tag(client: &Client, arn: &str, tag: String) -> String {
         None => "".to_string(),
     }
 }
+
+pub async fn get_schema(client: &Client, api_id: &str) -> Option<String> {
+    let res = client
+        .get_introspection_schema()
+        .api_id(api_id)
+        .format(OutputType::Sdl)
+        .include_directives(true)
+        .send()
+        .await
+        .unwrap();
+    if let Some(blob) = res.schema {
+        let bytes = blob.into_inner();
+        let res = String::from_utf8(bytes);
+        match res {
+            Ok(r) => Some(r),
+            Err(_) => None
+        }
+    } else {
+        None
+    }
+}
+
 
 pub type AppsyncClient = Client;
