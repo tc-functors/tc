@@ -72,6 +72,8 @@ enum Cmd {
     Mcp(DefaultArgs),
     /// Prune all resources in given sandbox
     Prune(PruneArgs),
+    /// Reflect target state of entities
+    Reflect(ReflectArgs),
     /// Resolve a topology
     Resolve(ResolveArgs),
     /// Route traffic to the given sandbox
@@ -207,6 +209,19 @@ pub struct DiffArgs {
     #[arg(long, action, short = 't')]
     trace: bool,
 }
+
+#[derive(Debug, Args)]
+pub struct ReflectArgs {
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, short = 'c')]
+    entity: Option<String>,
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
+}
+
 
 #[derive(Debug, Args)]
 pub struct SnapshotArgs {
@@ -1129,7 +1144,7 @@ async fn scaffold(args: ScaffoldArgs) {
     if iac.is_some() {
         tc::scaffold_iac(profile, iac, out_dir).await
     } else {
-        tc::scaffold(profile, dir, text, provider, model, functions).await
+        tc::scaffold_llm(profile, dir, text, provider, model, functions).await;
     }
 }
 
@@ -1157,6 +1172,14 @@ async fn repl(args: ReplArgs) {
     let sandbox = kit::maybe_string(sandbox, "dev");
     let _ = repl::start(&auth, &sandbox).await;
 }
+
+async fn reflect(args: ReflectArgs) {
+    let ReflectArgs {
+        profile, sandbox, entity, dir, ..
+    } = args;
+    tc::reflect(profile, sandbox, entity, dir).await;
+}
+
 
 async fn list(args: ListArgs) {
     let ListArgs {
@@ -1200,6 +1223,7 @@ async fn run_command() {
         Cmd::Route(args) => route(args).await,
         Cmd::Run(args) => run(args).await,
         Cmd::Repl(args) => repl(args).await,
+        Cmd::Reflect(args) => reflect(args).await,
         Cmd::Snapshot(args) => snapshot(args).await,
         Cmd::Tag(args) => tag(args).await,
         Cmd::Test(args) => test(args).await,

@@ -852,18 +852,33 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<Strin
     }
 }
 
-pub async fn scaffold(
+pub async fn reflect(
+    profile: Option<String>,
+    sandbox: Option<String>,
+    entity: Option<String>,
+    dir: Option<String>
+) {
+    let auth = init(profile, None).await;
+    let sandbox = u::maybe_string(sandbox, "dev");
+    let dir = u::maybe_string(dir, &u::pwd());
+    let topology = composer::compose(&dir, false);
+    reflector::reflect(&auth, &topology, &sandbox, entity).await;
+}
+
+
+pub async fn scaffold_llm(
     profile: Option<String>,
     dir: Option<String>,
     llm: Option<String>,
     provider: Option<String>,
     model: Option<String>,
-    functions: bool,
+    functions: bool
 ) {
     let dir = u::maybe_string(dir, &u::pwd());
 
     if functions {
         scaffolder::scaffold_functions(&dir)
+
     } else if llm.is_some() {
         let provider = u::maybe_string(provider, "anthropic");
         let text = u::maybe_string(llm, "default");
