@@ -543,14 +543,33 @@ impl Function {
                         panic!("{:?}", e);
                     }
                 }
-                let mut state: State = State::Pending;
 
-                while state != State::Active {
-                    state = self.get_state(client, &self.name).await;
+                let mut state = LastUpdateStatus::InProgress;
+                let mut tries = 0;
+
+                while state == LastUpdateStatus::InProgress && tries < 60 {
+
+                    let r = client
+                        .get_function_configuration()
+                        .function_name(self.name.clone())
+                        .send()
+                        .await;
+                    match r {
+                        Ok(res) => {
+                            state = res
+                                .last_update_status
+                                .unwrap_or(LastUpdateStatus::Successful)
+                        }
+                        Err(_) => break,
+                    }
+                    if state == LastUpdateStatus::InProgress {
+                        sleep(800);
+                    }
+                    tries += 1;
                     let _ = log_update.render(&format!(
                         "Checking function config {} ({})",
                         &self.name,
-                        pp_state(&state).blue()
+                        pp_status(&state).blue()
                     ));
                     sleep(800)
                 }
