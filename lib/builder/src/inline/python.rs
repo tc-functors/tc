@@ -23,16 +23,6 @@ fn deps_str(deps: Vec<String>) -> String {
     }
 }
 
-fn make_copy_cmd(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        String::from("COPY pyproject.toml ./")
-    } else if u::path_exists(dir, "requirements.txt") {
-        String::from("COPY requirements.txt ./")
-    } else {
-        String::from("RUN echo 0")
-    }
-}
-
 fn make_req_cmd(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "uv" => String::from("echo 0"),
@@ -50,7 +40,7 @@ fn make_install_command(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "uv" =>  {
             if u::path_exists(dir, "pyproject.toml") {
-                format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+                format!("uv sync --locked --no-dev && uv pip install -r pyproject.toml --target=/build/python")
             } else if u::path_exists(dir, "requirements.txt") {
                 format!("uv pip install -r requirements.txt --target=/build/python")
             } else {
@@ -71,7 +61,6 @@ pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, bs: &Build) {
     let post = deps_str(post.to_vec());
     let req_cmd = make_req_cmd(dir, package_manager);
     let install_cmd = make_install_command(dir, package_manager);
-    let cp_command = make_copy_cmd(dir);
 
     let build_context = &u::root();
     let image = find_image(&runtime);
@@ -82,7 +71,6 @@ FROM {image} AS intermediate
 WORKDIR {dir}
 
 RUN mkdir -p -m 0600 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-{cp_command}
 
 COPY --from=shared . {build_context}/
 
@@ -113,7 +101,6 @@ pub fn gen_dockerfile_unshared(
     let post = deps_str(post.to_vec());
     let req_cmd = make_req_cmd(dir, package_manager);
     let install_cmd = make_install_command(dir, package_manager);
-    let cp_command = make_copy_cmd(dir);
     let image = find_image(&runtime);
 
     let f = format!(
@@ -121,7 +108,6 @@ pub fn gen_dockerfile_unshared(
 FROM {image} AS intermediate
 WORKDIR {dir}
 
-{cp_command}
 
 RUN --mount=type=ssh {req_cmd}
 
