@@ -40,7 +40,7 @@ fn make_install_command(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "uv" =>  {
             if u::path_exists(dir, "pyproject.toml") {
-                format!("uv sync --locked --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+                format!("cd {} && uv sync --locked --no-dev && uv pip install -r pyproject.toml --target=/build/python", dir)
             } else if u::path_exists(dir, "requirements.txt") {
                 format!("uv pip install -r requirements.txt --target=/build/python")
             } else {
@@ -80,6 +80,8 @@ RUN rm -rf /build/python && mkdir -p /build
 
 RUN {pre}
 
+RUN echo {dir}
+
 RUN --mount=type=ssh --mount=type=cache,target=/.root/cache --mount=target=shared,type=bind,source=. {install_cmd}
 
 RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=aws-secret,env=AWS_SECRET_ACCESS_KEY --mount=type=secret,id=aws-session,env=AWS_SESSION_TOKEN {post}
@@ -91,6 +93,20 @@ RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=
     u::write_str(&dockerfile, &f);
 }
 
+fn make_copy_cmd(dir: &str) -> String {
+    if u::path_exists(dir, "pyproject.toml") {
+       format!(r#"
+COPY pyproject.toml ./
+COPY uv.lock ./
+"#)
+    } else if u::path_exists(dir, "requirements.txt") {
+        String::from("COPY requirements.txt ./")
+    } else {
+        String::from("RUN echo 0")
+    }
+}
+
+
 pub fn gen_dockerfile_unshared(
     dir: &str,
     runtime: &LangRuntime,
@@ -100,6 +116,7 @@ pub fn gen_dockerfile_unshared(
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let req_cmd = make_req_cmd(dir, package_manager);
+    let cp_cmd = make_copy_cmd(dir);
     let install_cmd = make_install_command(dir, package_manager);
     let image = find_image(&runtime);
 
@@ -108,6 +125,7 @@ pub fn gen_dockerfile_unshared(
 FROM {image} AS intermediate
 WORKDIR {dir}
 
+{cp_cmd}
 
 RUN --mount=type=ssh {req_cmd}
 
