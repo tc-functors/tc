@@ -27,7 +27,7 @@ async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String
 }
 
 fn get_chunk_size(concurrency: i32) -> usize {
-    match std::env::var("TC_FUNCTION_CREATE_CONCURRENCY") {
+    match std::env::var("TC_DEPLOYER_CONCURRENCY") {
         Ok(n) => n.parse::<usize>().unwrap(),
         Err(_) => concurrency.try_into().unwrap(),
     }
