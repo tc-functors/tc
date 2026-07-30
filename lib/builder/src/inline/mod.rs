@@ -146,7 +146,7 @@ async fn build_with_docker(
 }
 
 fn copy_from_docker(dir: &str, langr: &LangRuntime) {
-    let temp_cont = &format!("tmp-{}", u::basedir(dir));
+    let temp_cont = &format!("tmp-{}-{}", u::basedir(dir), u::randstr_n(4));
     let clean = &format!("docker rm -f {}", &temp_cont);
 
     let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
