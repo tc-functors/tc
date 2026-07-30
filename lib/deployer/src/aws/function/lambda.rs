@@ -13,28 +13,32 @@ use provider::{
 };
 use std::collections::HashMap;
 
-fn make(f: &Function, tags: &HashMap<String, String>) -> lambda::Function {
+fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Function {
     let package_type = &f.runtime.package_type;
 
     let uri = &f.runtime.uri;
 
-    let store = match std::env::var("TC_USE_ASSET_STORE") {
-        Ok(_) => {
-            match &f.build.kind {
-                BuildKind::Inline => {
-                    let (bucket, key) = s3::parts_of(&f.runtime.uri);
-                    Some(
-                        Store {
-                            bucket: bucket,
-                            key: key,
-                            size: 0.to_string()
-                        }
-                    )
-                },
-                _ => None
-            }
-        },
-        Err(_) => None
+    let store = if force {
+        None
+    } else {
+        match std::env::var("TC_USE_ASSET_STORE") {
+            Ok(_) => {
+                match &f.build.kind {
+                    BuildKind::Inline => {
+                        let (bucket, key) = s3::parts_of(&f.runtime.uri);
+                        Some(
+                            Store {
+                                bucket: bucket,
+                                key: key,
+                                size: 0.to_string()
+                            }
+                        )
+                    },
+                    _ => None
+                }
+            },
+            Err(_) => None
+        }
     };
 
     let (size, blob, code) = lambda::make_code(package_type, &uri, store.clone());
@@ -95,8 +99,8 @@ fn make(f: &Function, tags: &HashMap<String, String>) -> lambda::Function {
     }
 }
 
-pub async fn create(client: &Client, f: &Function, tags: &HashMap<String, String>) -> String {
-    let lambda = make(f, tags);
+pub async fn create(client: &Client, f: &Function, tags: &HashMap<String, String>, force: bool) -> String {
+    let lambda = make(f, tags, force);
     let maybe_current = lambda::find_config(client, &f.fqn).await;
     let id = if let Some(current) = maybe_current {
         let package_type = f.runtime.package_type.to_lowercase();
@@ -141,14 +145,14 @@ pub async fn update_runtime_version(client: &Client, fns: &HashMap<String, Funct
 }
 
 pub async fn update_layers(client: &Client, f: &Function, arn: &str) {
-    let function = make(f, &HashMap::new());
+    let function = make(f, &HashMap::new(), false);
     let _ = function.update_layers(client, arn).await;
 }
 
 pub async fn update_vars(client: &Client, f: &Function) {
     let memory_size = f.runtime.memory_size.expect("memory error");
     println!("mem {}", memory_size);
-    let function = make(f, &HashMap::new());
+    let function = make(f, &HashMap::new(), false);
     if f.runtime.package_type == "zip" || f.runtime.package_type == "Zip" {
         let _ = function.update_vars(client).await;
     } else {
@@ -214,7 +218,7 @@ pub async fn is_frozen(client: &Client, arn: &str) -> bool {
 }
 
 pub async fn delete(client: &Client, f: &Function) {
-    let function = make(f, &HashMap::new());
+    let function = make(f, &HashMap::new(), false);
     function.delete(client).await.unwrap();
 }
 
@@ -232,7 +236,7 @@ pub async fn sync_role(client: &Client, function: &Function) {
 }
 
 pub async fn update_concurrency(client: &Client, f: &Function) {
-    let function = make(f, &HashMap::new());
+    let function = make(f, &HashMap::new(), false);
 
     if let Some(n) = f.runtime.provisioned_concurrency {
         function.update_provisioned_concurrency(client, n).await

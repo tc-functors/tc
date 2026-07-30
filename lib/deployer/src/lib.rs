@@ -35,10 +35,9 @@ use tabled::{
     Table,
 };
 
-pub async fn create(auth: &Auth, topology: &Topology) {
+pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, force: bool) {
     let Topology {
-        concurrency,
-        namespace,
+         namespace,
         version,
         sandbox,
         functions,
@@ -59,6 +58,11 @@ pub async fn create(auth: &Auth, topology: &Topology) {
         ..
     } = topology;
 
+    let concurrency = match concurrency {
+        Some(c) => c,
+        None => topology.concurrency
+    };
+
     println!(
         "Creating functor {}@{}.{}/{}",
         &namespace.green(),
@@ -73,7 +77,7 @@ pub async fn create(auth: &Auth, topology: &Topology) {
     }
 
     role::create_or_update(auth, roles, tags).await;
-    function::create(auth, functions, &tags, *concurrency).await;
+    function::create(auth, functions, &tags, concurrency, force).await;
     function::sync_roles(auth, all_functions).await;
     channel::create(&auth, channels).await;
     mutation::create(&auth, mutations, &tags).await;
@@ -191,7 +195,7 @@ async fn update_entity(auth: &Auth, topology: &Topology, entity: Entity) {
     );
     match entity {
         Entity::Event => event::create(&auth, events, tags).await,
-        Entity::Function => function::create(&auth, functions, tags, *concurrency).await,
+        Entity::Function => function::create(&auth, functions, tags, *concurrency, false).await,
         Entity::Mutation => mutation::create(&auth, mutations, tags).await,
         Entity::Queue => queue::create(&auth, queues).await,
         Entity::Channel => channel::create(&auth, channels).await,

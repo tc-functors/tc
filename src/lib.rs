@@ -308,11 +308,11 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
     notifier::notify(&namespace, &msg).await;
 }
 
-pub async fn create_topology(auth: &Auth, topology: &Topology) {
-    deployer::create(auth, topology).await;
+pub async fn create_topology(auth: &Auth, topology: &Topology, concurrency: Option<i32>, force: bool) {
+    deployer::create(auth, topology, concurrency, force).await;
 
     for (_, node) in &topology.nodes {
-        deployer::create(auth, node).await;
+        deployer::create(auth, node, concurrency, force).await;
     }
 }
 
@@ -349,6 +349,7 @@ pub struct CreateOpts {
     pub cache: bool,
     pub sync: bool,
     pub force: bool,
+    pub concurrency: Option<i32>
 }
 
 pub async fn create(
@@ -367,6 +368,7 @@ pub async fn create(
         recursive,
         cache,
         force,
+        concurrency,
         ..
     } = opts;
 
@@ -404,7 +406,7 @@ pub async fn create(
     };
 
     let auth = init(Some(topology.env.to_string()), None).await;
-    create_topology(&auth, &topology).await;
+    create_topology(&auth, &topology, concurrency, force).await;
 
     match std::env::var("TC_INSPECT_BUILD") {
         Ok(_) => (),

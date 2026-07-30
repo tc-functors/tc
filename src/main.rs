@@ -387,6 +387,8 @@ pub struct CreateArgs {
     remote: bool,
     #[arg(long, action, short = 'f')]
     force: bool,
+    #[arg(long, short = 'n')]
+    concurrency: Option<i32>,
 }
 
 #[derive(Debug, Args)]
@@ -703,6 +705,7 @@ async fn create(args: CreateArgs) {
         dry_run,
         remote,
         force,
+        concurrency,
         ..
     } = args;
 
@@ -718,6 +721,7 @@ async fn create(args: CreateArgs) {
             cache: cache,
             sync: sync,
             force: force,
+            concurrency: concurrency
         };
         tc::create(profile, sandbox, topology, opts).await;
     }

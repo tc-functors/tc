@@ -16,7 +16,7 @@ async fn process_cmd(line: &str, auth: &Auth, rt: &Topology) {
             composer::pprint(rt, None, "tree");
         }
         "create" => {
-            deployer::create(auth, rt).await;
+            deployer::create(auth, rt, Some(1), false).await;
         }
         "update" => {
             deployer::try_update(auth, rt, &None).await;

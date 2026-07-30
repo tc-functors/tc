@@ -14,12 +14,12 @@ async fn maybe_build(auth: &Auth, function: &Function) {
     builder::publish(auth, builds).await;
 }
 
-async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String>) -> String {
+async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String>, force: bool) -> String {
     maybe_build(auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => {
             let client = lambda::make_client(auth).await;
-            lambda::create(&client, &f, tags).await
+            lambda::create(&client, &f, tags, force).await
         }
         Provider::MicroVm => microvm::create(auth, &f, tags).await,
         Provider::AgentCore => agentcore::create(auth, &f, tags).await,
@@ -38,6 +38,7 @@ pub async fn create(
     fns: &HashMap<String, Function>,
     tags: &HashMap<String, String>,
     concurrency: i32,
+    force: bool
 ) {
     let names: Vec<String> = Vec::from_iter(fns.keys().cloned());
     let csize = get_chunk_size(concurrency);
@@ -52,7 +53,7 @@ pub async fn create(
             let a = auth.clone();
             let t = tags.clone();
             let fut = tokio::spawn(async move {
-                create_function(&a, f, &t).await;
+                create_function(&a, f, &t, force).await;
             });
             futs.push(fut);
         }
@@ -73,7 +74,7 @@ pub async fn update_code(
         let f = function.clone();
         let t = tags.clone();
         let h = tokio::spawn(async move {
-            create_function(&a, f, &t).await;
+            create_function(&a, f, &t, false).await;
         });
         tasks.push(h);
     }
@@ -138,7 +139,7 @@ pub async fn update_dir(
             Some(f) => {
                 let a = auth.clone();
                 maybe_build(&a, &f).await;
-                create_function(&a, f.clone(), tags).await;
+                create_function(&a, f.clone(), tags, true).await;
             }
             None => panic!("No valid function found"),
         }
