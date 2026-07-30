@@ -547,7 +547,7 @@ impl Function {
                 let mut state = LastUpdateStatus::InProgress;
                 let mut tries = 0;
 
-                while state == LastUpdateStatus::InProgress && tries < 60 {
+                while state == LastUpdateStatus::InProgress && tries < 100 {
 
                     let r = client
                         .get_function_configuration()
@@ -563,7 +563,7 @@ impl Function {
                         Err(_) => break,
                     }
                     if state == LastUpdateStatus::InProgress {
-                        sleep(800);
+                        sleep(2000);
                     }
                     tries += 1;
                     let _ = log_update.render(&format!(
@@ -571,7 +571,7 @@ impl Function {
                         &self.name,
                         pp_status(&state).blue()
                     ));
-                    sleep(800)
+                    sleep(2000)
                 }
 
                 let r = self.update_code(client, &arn).await;

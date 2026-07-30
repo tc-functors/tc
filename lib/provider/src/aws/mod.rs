@@ -68,7 +68,7 @@ impl Auth {
 
         CACHE
             .get_or_init(name.clone(), || async {
-            println!("Looking up auth for {} (cache miss)", &name);
+            tracing::debug!("Looking up auth for {} (cache miss)", &name);
             Self::do_new(name, assume_role).await
         }).await
     }
