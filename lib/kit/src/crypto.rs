@@ -26,6 +26,15 @@ pub fn randstr() -> String {
     s
 }
 
+pub fn randstr_n(n: usize) -> String {
+    let s: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(n)
+        .map(char::from)
+        .collect();
+    s
+}
+
 pub fn uuid_str() -> String {
     Uuid::new_v4().to_string()
 }
