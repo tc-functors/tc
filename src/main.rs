@@ -222,7 +222,6 @@ pub struct ReflectArgs {
     dir: Option<String>,
 }
 
-
 #[derive(Debug, Args)]
 pub struct SnapshotArgs {
     #[arg(long, short = 'e')]
@@ -721,7 +720,7 @@ async fn create(args: CreateArgs) {
             cache: cache,
             sync: sync,
             force: force,
-            concurrency: concurrency
+            concurrency: concurrency,
         };
         tc::create(profile, sandbox, topology, opts).await;
     }
@@ -1179,11 +1178,14 @@ async fn repl(args: ReplArgs) {
 
 async fn reflect(args: ReflectArgs) {
     let ReflectArgs {
-        profile, sandbox, entity, dir, ..
+        profile,
+        sandbox,
+        entity,
+        dir,
+        ..
     } = args;
     tc::reflect(profile, sandbox, entity, dir).await;
 }
-
 
 async fn list(args: ListArgs) {
     let ListArgs {

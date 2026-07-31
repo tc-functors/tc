@@ -6,10 +6,8 @@ use std::str::FromStr;
 
 async fn reflect_entity(auth: &Auth, fqn: &str, entity: Entity) {
     match entity {
-       Entity::Mutation => {
-           mutation::introspect(auth, fqn).await
-       },
-        _ => ()
+        Entity::Mutation => mutation::introspect(auth, fqn).await,
+        _ => (),
     }
 }
 
@@ -21,7 +19,7 @@ pub async fn reflect(
     auth: &Auth,
     topology: &Topology,
     sandbox: &str,
-    maybe_entity: Option<String>
+    maybe_entity: Option<String>,
 ) {
     let namespace = &topology.namespace;
     let fqn = format!("{}_{}", namespace, sandbox);
@@ -29,7 +27,7 @@ pub async fn reflect(
     if let Some(e) = maybe_entity {
         match Entity::from_str(&e) {
             Ok(entity) => reflect_entity(auth, &fqn, entity).await,
-            Err(_) => reflect_component(auth, &e).await
+            Err(_) => reflect_component(auth, &e).await,
         }
     } else {
         println!("Reflecting topology")

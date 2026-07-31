@@ -40,7 +40,6 @@ pub struct Tag {
     pub group_id: Option<String>,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Landscape {
     pub tags: Vec<Tag>,
@@ -56,7 +55,12 @@ fn make_model_connections(_topologies: &HashMap<String, Topology>) -> Vec<ModelC
     vec![]
 }
 
-fn make_model_objects_node(domain: &str, name: &str, parent_id: Option<String>, topology: &Topology) -> Vec<ModelObject> {
+fn make_model_objects_node(
+    domain: &str,
+    name: &str,
+    parent_id: Option<String>,
+    topology: &Topology,
+) -> Vec<ModelObject> {
     let mut mos: Vec<ModelObject> = vec![];
 
     let pmo = ModelObject {
@@ -96,13 +100,11 @@ fn make_model_objects(topologies: &HashMap<String, Topology>) -> Vec<ModelObject
     let mut mos: Vec<ModelObject> = vec![];
 
     for (name, topology) in topologies {
-
         let objects = make_model_objects_node(name, name, None, topology);
 
         mos.extend(objects);
 
         for (n, node) in &topology.nodes {
-
             let node_objects = make_model_objects_node(n, name, None, node);
             mos.extend(node_objects);
         }
@@ -114,13 +116,12 @@ fn make_tags() -> Vec<Tag> {
     vec![]
 }
 
-
 fn build(topologies: &HashMap<String, Topology>) -> Landscape {
     Landscape {
         model_connections: make_model_connections(topologies),
         model_objects: make_model_objects(topologies),
         tags: make_tags(),
-        tag_groups: vec![]
+        tag_groups: vec![],
     }
 }
 

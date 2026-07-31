@@ -7,8 +7,8 @@ use compiler::{
         mutation::ResolverSpec,
     },
 };
-use kit::*;
 use kit as u;
+use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
@@ -245,7 +245,11 @@ fn augment_types(mut given: Types) -> Types {
     given
 }
 
-pub fn make(namespace: &str, infra_dir: &str, some_mutatations: Option<MutationSpec>) -> Option<Mutation> {
+pub fn make(
+    namespace: &str,
+    infra_dir: &str,
+    some_mutatations: Option<MutationSpec>,
+) -> Option<Mutation> {
     match some_mutatations {
         Some(ms) => {
             let types = augment_types(ms.types.to_owned());

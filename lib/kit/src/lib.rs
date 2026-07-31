@@ -5,10 +5,10 @@ mod github;
 mod http;
 mod io;
 mod json;
+mod memo;
 mod pprint;
 mod text;
 mod time;
-mod memo;
 
 pub use self::{
     core::*,
@@ -18,10 +18,10 @@ pub use self::{
     http::*,
     io::*,
     json::*,
+    memo::*,
     pprint::*,
     text::*,
     time::*,
-    memo::*,
 };
 
 #[macro_export]

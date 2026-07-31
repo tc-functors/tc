@@ -213,6 +213,4 @@ pub fn pprint(topology: &Topology) {
     println!("{}", &s);
 }
 
-
-pub fn pprint_recursive(_topologies: &HashMap<String, Topology>) {
-}
+pub fn pprint_recursive(_topologies: &HashMap<String, Topology>) {}

@@ -124,7 +124,18 @@ pub async fn build(
         BuildKind::Image => {
             image::build(&auth, dir, &name, langr, &runtime.uri, &build, code_only).await
         }
-        BuildKind::Inline => inline::build(&auth, dir, &name, langr, &runtime.arch, &runtime.uri, &build).await,
+        BuildKind::Inline => {
+            inline::build(
+                &auth,
+                dir,
+                &name,
+                langr,
+                &runtime.arch,
+                &runtime.uri,
+                &build,
+            )
+            .await
+        }
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr, &build),
         BuildKind::Slab => todo!(),
@@ -194,13 +205,10 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
             BuildKind::Layer | BuildKind::Library | BuildKind::Extension => {
                 layer::publish(&auth, &build).await
             }
-            BuildKind::Inline => {
-                match std::env::var("TC_USE_ASSET_STORE") {
-                    Ok(_) => inline::publish(&auth, &build).await,
-                    Err(_) => ()
-                }
-
-            }
+            BuildKind::Inline => match std::env::var("TC_USE_ASSET_STORE") {
+                Ok(_) => inline::publish(&auth, &build).await,
+                Err(_) => (),
+            },
             BuildKind::Image => image::publish(&auth, &build).await,
             _ => (),
         }

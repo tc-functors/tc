@@ -40,17 +40,19 @@ fn make_copy_cmd(dir: &str) -> String {
 }
 
 fn make_install_command(dir: &str, package_manager: &str) -> String {
-    match package_manager  {
-        "uv" =>  {
+    match package_manager {
+        "uv" => {
             if u::path_exists(dir, "pyproject.toml") {
-                format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+                format!(
+                    "uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python"
+                )
             } else if u::path_exists(dir, "requirements.txt") {
                 format!("uv pip install -r requirements.txt --target=/build/python")
             } else {
                 format!("echo 0")
             }
-        },
-        _ => panic!("Please use uv as package manager for layers")
+        }
+        _ => panic!("Please use uv as package manager for layers"),
     }
 }
 

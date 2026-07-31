@@ -26,37 +26,46 @@ fn deps_str(deps: Vec<String>) -> String {
 fn make_req_cmd(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "uv" => String::from("echo 0"),
-        _ => if u::path_exists(dir, "pyproject.toml") {
-            format!(
-                "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
-            )
-        } else {
-            String::from("echo 0")
+        _ => {
+            if u::path_exists(dir, "pyproject.toml") {
+                format!(
+                    "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
+                )
+            } else {
+                String::from("echo 0")
+            }
         }
     }
 }
 
 fn make_install_command(dir: &str, package_manager: &str) -> String {
     match package_manager {
-        "uv" =>  {
+        "uv" => {
             if u::path_exists(dir, "pyproject.toml") {
-                format!("cd {} && uv sync --locked --no-dev && uv pip install -r pyproject.toml --target=/build/python", dir)
+                format!(
+                    "cd {} && uv sync --locked --no-dev && uv pip install -r pyproject.toml --target=/build/python",
+                    dir
+                )
             } else if u::path_exists(dir, "requirements.txt") {
                 format!("uv pip install -r requirements.txt --target=/build/python")
             } else {
                 format!("echo 0")
             }
-        },
+        }
         "poetry" => {
             String::from("pip install -r requirements.txt --target=/build/python --prefer-binary")
-        },
-        _ => panic!("Package manager not known")
+        }
+        _ => panic!("Package manager not known"),
     }
 }
 
-
 pub fn gen_dockerfile(dir: &str, runtime: &LangRuntime, bs: &Build) {
-    let Build { pre, post, package_manager, .. } = bs;
+    let Build {
+        pre,
+        post,
+        package_manager,
+        ..
+    } = bs;
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let req_cmd = make_req_cmd(dir, package_manager);
@@ -95,10 +104,12 @@ RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=
 
 fn make_copy_cmd(dir: &str) -> String {
     if u::path_exists(dir, "pyproject.toml") {
-       format!(r#"
+        format!(
+            r#"
 COPY pyproject.toml ./
 COPY uv.lock ./
-"#)
+"#
+        )
     } else if u::path_exists(dir, "requirements.txt") {
         String::from("COPY requirements.txt ./")
     } else {
@@ -106,13 +117,13 @@ COPY uv.lock ./
     }
 }
 
-
-pub fn gen_dockerfile_unshared(
-    dir: &str,
-    runtime: &LangRuntime,
-    bs: &Build
-) {
-    let Build { pre, post, package_manager, .. } = bs;
+pub fn gen_dockerfile_unshared(dir: &str, runtime: &LangRuntime, bs: &Build) {
+    let Build {
+        pre,
+        post,
+        package_manager,
+        ..
+    } = bs;
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let req_cmd = make_req_cmd(dir, package_manager);

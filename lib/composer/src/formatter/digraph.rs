@@ -1,21 +1,15 @@
-use crate::{
-    Topology,
-};
+use crate::Topology;
 use compiler::Entity;
 use petgraph::{
-    graph::{
-        DiGraph,
+    dot::{
+        Config,
+        Dot,
+        RankDir,
     },
+    graph::DiGraph,
     stable_graph::NodeIndex,
 };
 use std::collections::HashMap;
-
-
-use petgraph::dot::{
-    Config,
-    RankDir,
-    Dot,
-};
 
 #[derive(Eq, Hash, PartialEq)]
 struct Source {
@@ -39,7 +33,6 @@ struct Node {
     #[allow(dead_code)]
     targets: Vec<Target>,
 }
-
 
 fn name_of(s: &str) -> String {
     if s.contains("{{namespace") && s.contains("{{sandbox") {
@@ -179,8 +172,10 @@ fn build_digraph(topology: &Topology) -> DiGraph<String, &str> {
     graph
 }
 
-
 pub fn pprint(topology: &Topology) {
     let graph = build_digraph(topology);
-    println!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::RankDir(RankDir::LR)]));
+    println!(
+        "{:?}",
+        Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::RankDir(RankDir::LR)])
+    );
 }

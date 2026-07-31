@@ -14,7 +14,12 @@ async fn maybe_build(auth: &Auth, function: &Function) {
     builder::publish(auth, builds).await;
 }
 
-async fn create_function(auth: &Auth, f: Function, tags: &HashMap<String, String>, force: bool) -> String {
+async fn create_function(
+    auth: &Auth,
+    f: Function,
+    tags: &HashMap<String, String>,
+    force: bool,
+) -> String {
     maybe_build(auth, &f).await;
     match f.runtime.provider {
         Provider::Lambda => {
@@ -38,7 +43,7 @@ pub async fn create(
     fns: &HashMap<String, Function>,
     tags: &HashMap<String, String>,
     concurrency: i32,
-    force: bool
+    force: bool,
 ) {
     let names: Vec<String> = Vec::from_iter(fns.keys().cloned());
     let csize = get_chunk_size(concurrency);

@@ -11,7 +11,6 @@ use aws_sdk_lambda::{
     },
     primitives::Blob,
     types::{
-        S3ObjectStorageMode,
         Architecture,
         DeadLetterConfig,
         DestinationConfig,
@@ -24,6 +23,7 @@ use aws_sdk_lambda::{
         LoggingConfig,
         PackageType,
         Runtime,
+        S3ObjectStorageMode,
         SnapStart,
         SnapStartApplyOn,
         State,
@@ -136,12 +136,17 @@ pub struct Store {
     pub size: String,
 }
 
-pub fn make_code(package_type: &str, path: &str, store: Option<Store>) -> (String, Blob, FunctionCode) {
+pub fn make_code(
+    package_type: &str,
+    path: &str,
+    store: Option<Store>,
+) -> (String, Blob, FunctionCode) {
     match package_type {
         "zip" => {
             if let Some(s) = store {
                 let f = FunctionCodeBuilder::default();
-                let code = f.s3_bucket(s.bucket)
+                let code = f
+                    .s3_bucket(s.bucket)
                     .s3_key(s.key)
                     .s3_object_storage_mode(S3ObjectStorageMode::Reference)
                     .build();
@@ -247,7 +252,7 @@ pub struct Function {
     pub vpc_config: Option<VpcConfig>,
     pub filesystem_config: Option<Vec<FileSystemConfig>>,
     pub _logging_config: Option<LoggingConfig>,
-    pub store: Option<Store>
+    pub store: Option<Store>,
 }
 
 impl Function {
@@ -378,10 +383,7 @@ impl Function {
         };
 
         let mut log_update = LogUpdate::new(stdout()).unwrap();
-        let _ = log_update.render(&format!(
-            "Updating function config {}",
-            name.blue(),
-        ));
+        let _ = log_update.render(&format!("Updating function config {}", name.blue(),));
         let mut state: LastUpdateStatus = LastUpdateStatus::InProgress;
         while state != LastUpdateStatus::Successful {
             state = self.get_update_status(client, &self.name).await;
@@ -442,29 +444,26 @@ impl Function {
                     .send()
                     .await?
             }
-            PackageType::Zip => {
-                match &self.store {
-                    Some(s) => {
-                        client
-                            .update_function_code()
-                            .function_name(arn)
-                            .s3_bucket(s.bucket.clone())
-                            .s3_key(s.key.clone())
-                            .s3_object_storage_mode(S3ObjectStorageMode::Reference)
-                            .send()
-                            .await?
-                    },
-                    None => {
-                        client
-                            .update_function_code()
-                            .function_name(arn)
-                            .zip_file(self.blob.clone())
-                            .send()
-                            .await?
-                    }
+            PackageType::Zip => match &self.store {
+                Some(s) => {
+                    client
+                        .update_function_code()
+                        .function_name(arn)
+                        .s3_bucket(s.bucket.clone())
+                        .s3_key(s.key.clone())
+                        .s3_object_storage_mode(S3ObjectStorageMode::Reference)
+                        .send()
+                        .await?
                 }
-
-            }
+                None => {
+                    client
+                        .update_function_code()
+                        .function_name(arn)
+                        .zip_file(self.blob.clone())
+                        .send()
+                        .await?
+                }
+            },
             _ => panic!("unsupported package type"),
         };
 
@@ -548,7 +547,6 @@ impl Function {
                 let mut tries = 0;
 
                 while state == LastUpdateStatus::InProgress && tries < 100 {
-
                     let r = client
                         .get_function_configuration()
                         .function_name(self.name.clone())

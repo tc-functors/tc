@@ -2,25 +2,30 @@ use crate::Topology;
 use std::collections::HashMap;
 
 fn make_model() -> String {
-    format!(r#"
+    format!(
+        r#"
         u = person "User"
         ss = softwareSystem "Software System"
 
         u -> ss "Uses"
-"#)
+"#
+    )
 }
 
 fn make_views() -> String {
-    format!(r#"
+    format!(
+        r#"
         systemContext ss {{
             include *
             autoLayout
         }}
-"#)
+"#
+    )
 }
 
 fn build(model: &str, views: &str) -> String {
-    format!(r#"
+    format!(
+        r#"
 workspace "tc" "Description" {{
    model {{
       {model}
@@ -29,8 +34,8 @@ workspace "tc" "Description" {{
       {views}
    }}
 }}
-"#)
-
+"#
+    )
 }
 
 pub fn pprint(_topology: &Topology) {
@@ -40,27 +45,30 @@ pub fn pprint(_topology: &Topology) {
     println!("{}", &out);
 }
 
-
 fn make_root_model(topologies: &HashMap<String, Topology>) -> String {
     let mut containers: String = "".to_string();
     for (name, _topology) in topologies {
-        let s = format!(r#"
-        {name} = container "{name}""#);
+        let s = format!(
+            r#"
+        {name} = container "{name}""#
+        );
         containers.push_str(&s);
     }
 
-    format!(r#"
+    format!(
+        r#"
         user = person "User" "User"
 
         system = softwareSystem "System" {{
            {containers}
         }}
-    "#)
-
+    "#
+    )
 }
 
 fn make_root_views() -> String {
-    format!(r#"
+    format!(
+        r#"
         systemContext system "System" "System" {{
             include *
             autoLayout
@@ -70,7 +78,8 @@ fn make_root_views() -> String {
             include *
             autoLayout
         }}
-"#)
+"#
+    )
 }
 
 pub fn pprint_recursive(topologies: &HashMap<String, Topology>) {

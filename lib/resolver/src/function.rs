@@ -21,8 +21,10 @@ use futures::stream::{
     StreamExt,
 };
 use kit as u;
-use kit::*;
-use kit::AsyncMemo;
+use kit::{
+    AsyncMemo,
+    *,
+};
 use provider::{
     Auth,
     aws,

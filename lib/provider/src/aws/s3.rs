@@ -200,7 +200,6 @@ pub async fn upload_file(client: &Client, bucket: &str, file: &str, key: &str) {
 }
 
 pub async fn get_object_size(client: &Client, bucket: &str, key: &str) -> Option<i64> {
-
     let res = client
         .get_object_attributes()
         .bucket(bucket)
@@ -211,6 +210,6 @@ pub async fn get_object_size(client: &Client, bucket: &str, key: &str) -> Option
 
     match res {
         Ok(r) => r.object_size,
-        Err(_) => None
+        Err(_) => None,
     }
 }

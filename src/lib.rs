@@ -308,7 +308,12 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
     notifier::notify(&namespace, &msg).await;
 }
 
-pub async fn create_topology(auth: &Auth, topology: &Topology, concurrency: Option<i32>, force: bool) {
+pub async fn create_topology(
+    auth: &Auth,
+    topology: &Topology,
+    concurrency: Option<i32>,
+    force: bool,
+) {
     deployer::create(auth, topology, concurrency, force).await;
 
     for (_, node) in &topology.nodes {
@@ -349,7 +354,7 @@ pub struct CreateOpts {
     pub cache: bool,
     pub sync: bool,
     pub force: bool,
-    pub concurrency: Option<i32>
+    pub concurrency: Option<i32>,
 }
 
 pub async fn create(
@@ -858,7 +863,7 @@ pub async fn reflect(
     profile: Option<String>,
     sandbox: Option<String>,
     entity: Option<String>,
-    dir: Option<String>
+    dir: Option<String>,
 ) {
     let auth = init(profile, None).await;
     let sandbox = u::maybe_string(sandbox, "dev");
@@ -867,20 +872,18 @@ pub async fn reflect(
     reflector::reflect(&auth, &topology, &sandbox, entity).await;
 }
 
-
 pub async fn scaffold_llm(
     profile: Option<String>,
     dir: Option<String>,
     llm: Option<String>,
     provider: Option<String>,
     model: Option<String>,
-    functions: bool
+    functions: bool,
 ) {
     let dir = u::maybe_string(dir, &u::pwd());
 
     if functions {
         scaffolder::scaffold_functions(&dir)
-
     } else if llm.is_some() {
         let provider = u::maybe_string(provider, "anthropic");
         let text = u::maybe_string(llm, "default");

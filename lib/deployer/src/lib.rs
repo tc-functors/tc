@@ -37,7 +37,7 @@ use tabled::{
 
 pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, force: bool) {
     let Topology {
-         namespace,
+        namespace,
         version,
         sandbox,
         functions,
@@ -60,7 +60,7 @@ pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, 
 
     let concurrency = match concurrency {
         Some(c) => c,
-        None => topology.concurrency
+        None => topology.concurrency,
     };
 
     println!(
@@ -70,7 +70,6 @@ pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, 
         &auth.name.blue(),
         &version
     );
-
 
     if namespace == "base" || sandbox != "stable" {
         role::update_base_roles(auth, base_roles, tags).await;

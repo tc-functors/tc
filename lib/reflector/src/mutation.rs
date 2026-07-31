@@ -1,5 +1,7 @@
-use provider::Auth;
-use provider::aws::appsync;
+use provider::{
+    Auth,
+    aws::appsync,
+};
 
 pub async fn introspect(auth: &Auth, name: &str) {
     let client = appsync::make_client(auth).await;

@@ -1,10 +1,12 @@
+use crate::spec::{
+    mutation,
+    mutation::MutationSpec,
+};
 use anyhow::{
     Result,
     anyhow,
 };
 use kit as u;
-use crate::spec::mutation::MutationSpec;
-use crate::spec::mutation;
 use serde_yaml::{
     Mapping,
     Value,

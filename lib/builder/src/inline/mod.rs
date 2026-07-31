@@ -7,7 +7,6 @@ use crate::types::{
     BuildOutput,
     BuildStatus,
 };
-
 use colored::Colorize;
 use compiler::{
     Arch,
@@ -23,13 +22,7 @@ use provider::{
     aws::s3,
 };
 
-fn gen_dockerfile(
-    dir: &str,
-    arch: &Arch,
-    langr: &LangRuntime,
-    skip_dev_deps: bool,
-    bs: &Build
-) {
+fn gen_dockerfile(dir: &str, arch: &Arch, langr: &LangRuntime, skip_dev_deps: bool, bs: &Build) {
     let Build { pre, post, .. } = bs;
     match langr.to_lang() {
         Lang::Python => python::gen_dockerfile(dir, langr, bs),
@@ -47,13 +40,7 @@ fn gen_dockerfile(
     }
 }
 
-fn gen_dockerfile_unshared(
-    dir: &str,
-    arch: &Arch,
-    langr: &LangRuntime,
-    _wrap: bool,
-    bs: &Build
-) {
+fn gen_dockerfile_unshared(dir: &str, arch: &Arch, langr: &LangRuntime, _wrap: bool, bs: &Build) {
     let Build { pre, post, .. } = bs;
 
     match langr.to_lang() {
@@ -206,23 +193,21 @@ fn zip(dir: &str, langr: &LangRuntime) {
 async fn should_build_deps(auth: &Auth, uri: &str) -> bool {
     match std::env::var("TC_SKIP_BUILD") {
         Ok(_) => false,
-        Err(_) => {
-            match std::env::var("TC_USE_ASSET_STORE") {
-                Ok(_) => {
-                    if uri.is_empty() {
-                        return true
-                    }
-                    let (bucket, key) = s3::parts_of(uri);
-                    let client = s3::make_client(auth).await;
-                    let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
-                    if let Some(_) = maybe_size {
-                        false
-                    } else {
-                        true
-                    }
-                },
-                Err(_) => true
+        Err(_) => match std::env::var("TC_USE_ASSET_STORE") {
+            Ok(_) => {
+                if uri.is_empty() {
+                    return true;
+                }
+                let (bucket, key) = s3::parts_of(uri);
+                let client = s3::make_client(auth).await;
+                let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
+                if let Some(_) = maybe_size {
+                    false
+                } else {
+                    true
+                }
             }
+            Err(_) => true,
         },
     }
 }

@@ -9,7 +9,7 @@ pub fn build(
     langr: &LangRuntime,
     dirs: &Vec<String>,
     include_deps: bool,
-    bspec: &Build
+    bspec: &Build,
 ) -> String {
     let post = &bspec.post;
     u::run("rm -rf deps.zip build", &dir);

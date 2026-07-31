@@ -62,7 +62,7 @@ use walkdir::WalkDir;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Root {
     pub name: String,
-    pub dir: String
+    pub dir: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -540,9 +540,15 @@ fn make_nodes(root_ns: &str, root_dir: &str, spec: &TopologySpec) -> HashMap<Str
                                 discover_functions_sequential(p, &infra_dir, &node_spec);
                             let interned = intern_functions(p, &infra_dir, &node_spec);
                             functions.extend(interned);
-                            let leaf_nodes =
-                                discover_leaf_nodes(root_ns, &node_spec.name, root_dir, p, &node_spec);
-                            let node = make(root_ns, root_dir, p, &node_spec, functions, leaf_nodes);
+                            let leaf_nodes = discover_leaf_nodes(
+                                root_ns,
+                                &node_spec.name,
+                                root_dir,
+                                p,
+                                &node_spec,
+                            );
+                            let node =
+                                make(root_ns, root_dir, p, &node_spec, functions, leaf_nodes);
                             (node_spec.name.to_string(), node)
                         })
                         .collect::<Vec<_>>()
@@ -614,7 +620,11 @@ fn make_queues(spec: &TopologySpec, _config: &Config) -> HashMap<String, Queue> 
     h
 }
 
-fn make_mutations(spec: &TopologySpec, infra_dir: &str, _config: &Config) -> HashMap<String, Mutation> {
+fn make_mutations(
+    spec: &TopologySpec,
+    infra_dir: &str,
+    _config: &Config,
+) -> HashMap<String, Mutation> {
     let mutations = mutation::make(&spec.name, infra_dir, spec.mutations.to_owned());
     let mut h: HashMap<String, Mutation> = HashMap::new();
     if let Some(ref m) = mutations {
@@ -768,7 +778,7 @@ fn make(
         namespace: namespace.clone(),
         root: Root {
             name: root_ns.to_string(),
-            dir: root_dir.to_string()
+            dir: root_dir.to_string(),
         },
         fqn: fqn.clone(),
         concurrency: concurrency(&spec.concurrency),
@@ -833,7 +843,7 @@ fn make_standalone(root_ns: &str, dir: &str) -> Topology {
         namespace: namespace.clone(),
         root: Root {
             name: root_ns.to_string(),
-            dir: dir.to_string()
+            dir: dir.to_string(),
         },
         env: template::profile(),
         fqn: template::topology_fqn(&namespace, false),

@@ -17,7 +17,7 @@ pub struct Context {
     pub sandbox: String,
     pub trace: bool,
     pub config: Config,
-    pub version: String
+    pub version: String,
 }
 
 impl Context {
@@ -39,9 +39,12 @@ impl Context {
 
         let asset_acc = match std::env::var("TC_ASSET_ACCOUNT") {
             Ok(r) => &r.to_owned(),
-            Err(_) => if let Some(c) = &self.config.aws.lambda.asset_account {                c
-            } else {
-                account
+            Err(_) => {
+                if let Some(c) = &self.config.aws.lambda.asset_account {
+                    c
+                } else {
+                    account
+                }
             }
         };
 

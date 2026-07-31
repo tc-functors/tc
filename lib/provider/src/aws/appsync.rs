@@ -9,13 +9,13 @@ use aws_sdk_appsync::{
         RetryMode,
     },
     types::{
-        GraphQlApiIntrospectionConfig,
         AdditionalAuthenticationProvider,
         AuthenticationType,
+        GraphQlApiIntrospectionConfig,
         LambdaAuthorizerConfig,
+        OutputType,
         ResolverKind,
         TypeDefinitionFormat,
-        OutputType,
         builders::{
             AdditionalAuthenticationProviderBuilder,
             LambdaAuthorizerConfigBuilder,
@@ -347,8 +347,18 @@ pub async fn create_or_update_api(
 ) -> (String, HashMap<String, String>) {
     let api = find_api(client, name).await;
     match api {
-        Some(id) => update_api(client, name, authorizer_arn, &id, enable_introspection, tags.clone()).await,
-        None => create_api(client, name, authorizer_arn, enable_introspection,  tags).await,
+        Some(id) => {
+            update_api(
+                client,
+                name,
+                authorizer_arn,
+                &id,
+                enable_introspection,
+                tags.clone(),
+            )
+            .await
+        }
+        None => create_api(client, name, authorizer_arn, enable_introspection, tags).await,
     }
 }
 
@@ -758,12 +768,11 @@ pub async fn get_schema(client: &Client, api_id: &str) -> Option<String> {
         let res = String::from_utf8(bytes);
         match res {
             Ok(r) => Some(r),
-            Err(_) => None
+            Err(_) => None,
         }
     } else {
         None
     }
 }
-
 
 pub type AppsyncClient = Client;

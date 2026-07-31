@@ -1,12 +1,14 @@
-use crate::Topology;
-use crate::counter::TopologyCount;
+use crate::{
+    Topology,
+    counter::TopologyCount,
+};
 use serde_derive::Serialize;
+use std::collections::HashMap;
 use tabled::{
     Style,
     Table,
     Tabled,
 };
-use std::collections::HashMap;
 
 #[derive(Tabled, Clone, Debug, Serialize)]
 struct EntityTarget {
@@ -64,7 +66,6 @@ pub fn pprint(topology: &Topology) {
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
 }
-
 
 pub fn pprint_recursive(topologies: &HashMap<String, Topology>) {
     let mut xs: Vec<TopologyCount> = vec![];

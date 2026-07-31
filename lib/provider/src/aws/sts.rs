@@ -1,3 +1,4 @@
+use super::constants;
 use aws_config::{
     BehaviorVersion,
     SdkConfig,
@@ -7,13 +8,10 @@ use aws_config::{
 use aws_sdk_sts::{
     Client,
     config,
-    config::retry::{
-        RetryMode,
-    },
+    config::retry::RetryMode,
 };
 use aws_smithy_types::retry::RetryConfig;
 use std::panic;
-use super::constants;
 
 // sts
 
@@ -51,9 +49,7 @@ pub async fn get_account_id(client: &Client) -> String {
         Err(e) => {
             println!("sts::get_account_id failed {:?}", e);
             panic::set_hook(Box::new(|_| {
-                println!(
-                    "sts::get_account_id failed"
-                );
+                println!("sts::get_account_id failed");
             }));
             panic!("Unable to authenticate")
         }

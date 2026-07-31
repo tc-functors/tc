@@ -47,34 +47,36 @@ fn make_req_cmd(dir: &str, package_manager: &str) -> String {
             } else {
                 format!("echo 0")
             }
-        },
-        _ => format!("echo 0")
+        }
+        _ => format!("echo 0"),
     }
 }
-
 
 fn make_install_command(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "uv" => {
             if u::path_exists(dir, "pyproject.toml") {
-                format!("uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python")
+                format!(
+                    "uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python"
+                )
             } else if u::path_exists(dir, "requirements.txt") {
                 format!("uv pip install -r requirements.txt --target=/build/python")
             } else {
                 format!("RUN echo 0")
             }
-        },
+        }
         "poetry" => String::from("pip install -vv -r requirements.txt --target /build/python"),
-        _ => String::from("RUN echo 0")
+        _ => String::from("RUN echo 0"),
     }
 }
 
-pub fn gen_base_dockerfile(
-    dir: &str,
-    runtime: &LangRuntime,
-    bspec: &Build
-) {
-    let Build { pre, post, package_manager, .. } = bspec;
+pub fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, bspec: &Build) {
+    let Build {
+        pre,
+        post,
+        package_manager,
+        ..
+    } = bspec;
     let pre_commands = deps_str(pre);
     let post_commands = deps_str(post);
 

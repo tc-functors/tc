@@ -76,10 +76,7 @@ fn make_lambda_actions() -> Vec<Action> {
             sid: make_sid("LambdaLog"),
         },
         Action {
-            action: v![
-                "s3:GetObject",
-                "s3:GetObjectVersion"
-            ],
+            action: v!["s3:GetObject", "s3:GetObjectVersion"],
             effect: s!("Allow"),
             resource: v![&format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")],
             sid: make_sid("LambdaAssetAccess1"),
@@ -334,10 +331,7 @@ impl Policy {
 
     pub fn augment(&self) -> Policy {
         let common = Action {
-            action: v![
-                "s3:GetObject",
-                "s3:GetObjectVersion"
-            ],
+            action: v!["s3:GetObject", "s3:GetObjectVersion"],
             effect: s!("Allow"),
             resource: v![&format!("arn:aws:s3:::{{{{ASSET_BUCKET}}}}/*")],
             sid: make_sid("LambdaAssetAccess"),
@@ -347,7 +341,7 @@ impl Policy {
         actions.push(common);
         Policy {
             version: self.version.clone(),
-            statement: actions
+            statement: actions,
         }
     }
 

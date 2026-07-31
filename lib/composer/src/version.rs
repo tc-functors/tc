@@ -1,6 +1,4 @@
-use kit::{
-    sh,
-};
+use kit::sh;
 use regex::Regex;
 use std::{
     collections::HashMap,

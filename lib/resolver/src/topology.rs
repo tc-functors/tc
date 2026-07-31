@@ -22,7 +22,7 @@ pub async fn resolve(
         sandbox: sandbox.to_string(),
         trace: true,
         config: topology.config.to_owned(),
-        version: topology.version.to_owned()
+        version: topology.version.to_owned(),
     };
 
     let templated = topology.to_str();
@@ -67,7 +67,7 @@ pub async fn resolve_entity(
         sandbox: sandbox.to_string(),
         trace: true,
         config: topology.config.to_owned(),
-        version: topology.version.to_owned()
+        version: topology.version.to_owned(),
     };
 
     let templated = topology.to_str();
@@ -119,7 +119,7 @@ pub async fn resolve_entity_component(
         sandbox: sandbox.to_string(),
         trace: true,
         config: topology.config.to_owned(),
-        version: topology.version.to_owned()
+        version: topology.version.to_owned(),
     };
 
     let templated = topology.to_str();

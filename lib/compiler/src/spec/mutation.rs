@@ -40,7 +40,6 @@ pub struct MutationSpec {
     pub resolvers: HashMap<String, ResolverSpec>,
 }
 
-
 pub fn merge_specs(mspecs: &Vec<MutationSpec>) -> MutationSpec {
     let mut inputs: HashMap<String, HashMap<String, String>> = HashMap::new();
     let mut types: HashMap<String, HashMap<String, String>> = HashMap::new();
@@ -60,6 +59,6 @@ pub fn merge_specs(mspecs: &Vec<MutationSpec>) -> MutationSpec {
         authorizer: authorizer,
         inputs: Some(inputs),
         types: types,
-        resolvers: resolvers
+        resolvers: resolvers,
     }
 }

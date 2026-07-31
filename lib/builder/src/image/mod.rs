@@ -29,7 +29,6 @@ fn gen_dockerignore(dir: &str) -> bool {
 }
 
 fn gen_base_dockerfile(dir: &str, runtime: &LangRuntime, bspec: &Build) {
-
     let Build { pre, post, .. } = bspec;
     match runtime.to_lang() {
         Lang::Python => python::gen_base_dockerfile(dir, runtime, bspec),
@@ -124,9 +123,7 @@ pub async fn build(
     bspec: &Build,
     code_only: bool,
 ) -> BuildStatus {
-    let Build {
-        version, ..
-    } = bspec;
+    let Build { version, .. } = bspec;
 
     aws::ecr::login(&auth, dir).await;
 

@@ -41,10 +41,7 @@ pub struct Auth {
 }
 
 impl Auth {
-
-
     async fn do_new(name: String, assume_role: Option<String>) -> Auth {
-
         let config = sts::get_config(&name, assume_role.clone()).await;
         let client = sts::make_client(&config).await;
         let account = sts::get_account_id(&client).await;
@@ -60,7 +57,6 @@ impl Auth {
     }
 
     pub async fn new(profile: Option<String>, assume_role: Option<String>) -> Auth {
-
         let name = match profile {
             Some(p) => p,
             None => "default".to_string(),
@@ -68,9 +64,10 @@ impl Auth {
 
         CACHE
             .get_or_init(name.clone(), || async {
-            tracing::debug!("Looking up auth for {} (cache miss)", &name);
-            Self::do_new(name, assume_role).await
-        }).await
+                tracing::debug!("Looking up auth for {} (cache miss)", &name);
+                Self::do_new(name, assume_role).await
+            })
+            .await
     }
 
     pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>) -> Auth {

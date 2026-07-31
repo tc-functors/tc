@@ -1,4 +1,7 @@
-use compiler::{Lang, BuildKind};
+use compiler::{
+    BuildKind,
+    Lang,
+};
 use composer::Function;
 use kit as u;
 use kit::s;
@@ -6,9 +9,11 @@ use provider::{
     Auth,
     aws::{
         lambda,
-        lambda::LambdaClient as Client,
-        lambda::Store,
-        s3
+        lambda::{
+            LambdaClient as Client,
+            Store,
+        },
+        s3,
     },
 };
 use std::collections::HashMap;
@@ -22,22 +27,18 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
         None
     } else {
         match std::env::var("TC_USE_ASSET_STORE") {
-            Ok(_) => {
-                match &f.build.kind {
-                    BuildKind::Inline => {
-                        let (bucket, key) = s3::parts_of(&f.runtime.uri);
-                        Some(
-                            Store {
-                                bucket: bucket,
-                                key: key,
-                                size: 0.to_string()
-                            }
-                        )
-                    },
-                    _ => None
+            Ok(_) => match &f.build.kind {
+                BuildKind::Inline => {
+                    let (bucket, key) = s3::parts_of(&f.runtime.uri);
+                    Some(Store {
+                        bucket: bucket,
+                        key: key,
+                        size: 0.to_string(),
+                    })
                 }
+                _ => None,
             },
-            Err(_) => None
+            Err(_) => None,
         }
     };
 
@@ -95,11 +96,16 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
         vpc_config: vpc_config,
         filesystem_config: filesystem_config,
         _logging_config: None,
-        store: store
+        store: store,
     }
 }
 
-pub async fn create(client: &Client, f: &Function, tags: &HashMap<String, String>, force: bool) -> String {
+pub async fn create(
+    client: &Client,
+    f: &Function,
+    tags: &HashMap<String, String>,
+    force: bool,
+) -> String {
     let lambda = make(f, tags, force);
     let maybe_current = lambda::find_config(client, &f.fqn).await;
     let id = if let Some(current) = maybe_current {

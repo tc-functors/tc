@@ -2,27 +2,27 @@ use crate::{
     Entity,
     Topology,
 };
+mod bincode;
 pub mod compact;
 mod digraph;
 mod icepanel;
-mod table;
-mod tree;
 mod mermaid;
 mod structurizr;
-mod bincode;
+mod table;
+mod tree;
 
-use serde_derive::Serialize;
-use tabled::{
-    Style,
-    Table,
-    Tabled,
-};
 use crate::TopologyCount;
 use kit as u;
+use serde_derive::Serialize;
 use std::{
     collections::HashMap,
     str::FromStr,
     string::ParseError,
+};
+use tabled::{
+    Style,
+    Table,
+    Tabled,
 };
 
 pub enum Format {
@@ -34,7 +34,7 @@ pub enum Format {
     Compact,
     Mermaid,
     Structurizr,
-    Bincode
+    Bincode,
 }
 
 impl FromStr for Format {
@@ -49,8 +49,8 @@ impl FromStr for Format {
             "icepanel" => Ok(Format::Icepanel),
             "compact" => Ok(Format::Compact),
             "mermaid" => Ok(Format::Mermaid),
-            "structurizr" | "c4"  => Ok(Format::Structurizr),
-            "bincode"  => Ok(Format::Bincode),
+            "structurizr" | "c4" => Ok(Format::Structurizr),
+            "bincode" => Ok(Format::Bincode),
             _ => Ok(Format::JSON),
         }
     }
@@ -67,7 +67,7 @@ pub fn pprint(topology: &Topology, fmt: &str) {
         Format::Compact => compact::pprint(topology),
         Format::Mermaid => mermaid::pprint(topology),
         Format::Structurizr => structurizr::pprint(topology),
-        Format::Bincode => bincode::pprint(topology)
+        Format::Bincode => bincode::pprint(topology),
     }
 }
 
@@ -120,20 +120,20 @@ pub fn pprint_entity(topology: &Topology, entity: Entity) {
 #[derive(Tabled, Clone, Debug, Serialize)]
 struct Version {
     namespace: String,
-    version: String
+    version: String,
 }
 
 fn print_versions(topology: &Topology) {
     let mut xs: Vec<Version> = vec![];
     let v = Version {
         namespace: topology.namespace.clone(),
-        version: topology.version.clone()
+        version: topology.version.clone(),
     };
     xs.push(v);
     for (_, node) in &topology.nodes {
         let v = Version {
             namespace: node.namespace.clone(),
-            version: node.version.clone()
+            version: node.version.clone(),
         };
         xs.push(v);
     }
@@ -145,13 +145,13 @@ fn print_function_versions(topology: &Topology) {
     let mut xs: Vec<Version> = vec![];
     let v = Version {
         namespace: topology.namespace.clone(),
-        version: topology.version.clone()
+        version: topology.version.clone(),
     };
     xs.push(v);
     for (name, f) in &topology.functions {
         let v = Version {
             namespace: name.clone(),
-            version: f.version.clone()
+            version: f.version.clone(),
         };
         xs.push(v);
     }
@@ -160,7 +160,7 @@ fn print_function_versions(topology: &Topology) {
         for (name, f) in &node.functions {
             let v = Version {
                 namespace: name.clone(),
-                version: f.version.clone()
+                version: f.version.clone(),
             };
             xs.push(v);
         }
@@ -168,7 +168,6 @@ fn print_function_versions(topology: &Topology) {
     let table = Table::new(xs).with(Style::psql()).to_string();
     println!("{}", table);
 }
-
 
 pub fn pprint_component(topology: &Topology, component: &str) {
     match component {
@@ -180,7 +179,6 @@ pub fn pprint_component(topology: &Topology, component: &str) {
         _ => todo!(),
     }
 }
-
 
 pub fn pprint_stats(topologies: &HashMap<String, Topology>) {
     let mut xs: Vec<TopologyCount> = vec![];

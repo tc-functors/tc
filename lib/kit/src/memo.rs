@@ -38,7 +38,6 @@ impl<K: Eq + Hash + Clone, V: Clone> AsyncMemo<K, V> {
         };
         cell.get_or_init(f).await.clone()
     }
-
 }
 
 #[cfg(test)]
