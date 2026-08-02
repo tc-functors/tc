@@ -90,6 +90,8 @@ enum Cmd {
     Test(TestArgs),
     /// Create semver tags scoped by a topology
     Tag(TagArgs),
+    /// Run tui
+    Tui(DefaultArgs),
     /// Unfreeze a sandbox and make it mutable
     Unfreeze(UnFreezeArgs),
     /// Update entity and components
@@ -632,6 +634,11 @@ async fn version() {
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
     println!("{}", version);
 }
+
+async fn tui() {
+    tc::tui();
+}
+
 
 async fn build(args: BuildArgs) {
     let BuildArgs {
@@ -1243,6 +1250,7 @@ async fn run_command() {
         Cmd::Release(args) => ci_release(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,
         Cmd::UpgradeCi(args) => ci_upgrade(args).await,
+        Cmd::Tui(..) => tui().await,
     }
 }
 
