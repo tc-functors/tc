@@ -90,9 +90,14 @@ async fn create_mutation(
         };
 
         appsync::find_or_create_datasource(&client, &api_id, datasource_input).await;
-        let _ = appsync::create_or_update_function(&client, &api_id, &field_name, datasource_name)
-            .await;
-        appsync::find_or_create_resolver(&client, &api_id, &field_name, datasource_name).await;
+
+        if !datasource_name.is_empty() {
+            let _ = appsync::create_or_update_function(&client, &api_id, &field_name, datasource_name)
+                .await;
+            appsync::find_or_create_resolver(&client, &api_id, &field_name, datasource_name).await;
+        } else {
+            panic!("Datasource name is empty. Aborting");
+        }
     }
     appsync::update_tags(&client, &auth.graphql_api_arn(&api_id), tags.clone()).await;
     let _ = appsync::create_or_update_api_key(&client, &api_id).await;
