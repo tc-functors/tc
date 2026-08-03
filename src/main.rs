@@ -64,6 +64,8 @@ enum Cmd {
     Emulate(EmulateArgs),
     /// Freeze a sandbox and make it immutable
     Freeze(FreezeArgs),
+    /// Run inspector
+    Inspect(DefaultArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
     /// List resources in a topology
@@ -90,8 +92,6 @@ enum Cmd {
     Test(TestArgs),
     /// Create semver tags scoped by a topology
     Tag(TagArgs),
-    /// Run tui
-    Tui(DefaultArgs),
     /// Unfreeze a sandbox and make it mutable
     Unfreeze(UnFreezeArgs),
     /// Update entity and components
@@ -635,8 +635,8 @@ async fn version() {
     println!("{}", version);
 }
 
-async fn tui() {
-    tc::tui();
+async fn inspect() {
+    tc::inspect();
 }
 
 
@@ -1250,7 +1250,7 @@ async fn run_command() {
         Cmd::Release(args) => ci_release(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,
         Cmd::UpgradeCi(args) => ci_upgrade(args).await,
-        Cmd::Tui(..) => tui().await,
+        Cmd::Inspect(..) => inspect().await,
     }
 }
 

@@ -4011,6 +4011,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "inspector"
+version = "0.9.153"
+dependencies = [
+ "color-eyre",
+ "colored_json 5.0.0",
+ "compiler",
+ "composer",
+ "crossterm 0.29.0",
+ "ratatui 0.30.2",
+ "serde 1.0.228",
+ "serde_json",
+ "tui-tree-widget",
+]
+
+[[package]]
 name = "instability"
 version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6892,6 +6907,7 @@ dependencies = [
  "emulator",
  "executor",
  "inquire",
+ "inspector",
  "invoker",
  "itertools 0.10.5",
  "kit",
@@ -6919,7 +6935,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "tui",
  "validator",
 ]
 
@@ -7414,21 +7429,6 @@ name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
-
-[[package]]
-name = "tui"
-version = "0.9.153"
-dependencies = [
- "color-eyre",
- "colored_json 5.0.0",
- "compiler",
- "composer",
- "crossterm 0.29.0",
- "ratatui 0.30.2",
- "serde 1.0.228",
- "serde_json",
- "tui-tree-widget",
-]
 
 [[package]]
 name = "tui-tree-widget"

@@ -13,7 +13,7 @@ mod color;
 mod detail;
 mod tree;
 
-use detail::DetailWidget;
+use detail::Detail;
 
 #[must_use]
 struct App<'a> {
@@ -76,15 +76,14 @@ impl<'a> App<'a> {
         let entity = selected.into_iter().nth(0).unwrap_or(&"").to_string();
         let name = selected.into_iter().nth(1).unwrap_or(&"").to_string();
 
-        let detail = DetailWidget {
+        let detail = Detail {
             topology: self.topology.clone(),
-            entity: entity,
+            entity: entity.clone(),
             name: name
         };
 
         frame.render_stateful_widget(sidebar, layout[0], &mut self.state);
-        frame.render_widget(detail, layout[1]);
-
+        detail.render(frame, layout[1]);
     }
 }
 

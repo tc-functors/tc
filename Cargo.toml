@@ -61,7 +61,7 @@ provider = { path = "lib/provider" }
 validator = { path = "lib/validator" }
 repl = { path = "lib/repl" }
 reflector = { path = "lib/reflector" }
-tui = { path = "lib/tui" }
+inspector = { path = "lib/inspector" }
 
 [features]
 # Force openssl-sys to staticly link in the openssl library. Necessary when
@@ -93,7 +93,7 @@ members = [
    "lib/validator",
    "lib/repl",
    "lib/reflector",
-   "lib/tui"
+   "lib/inspector"
 ]
 
 [profile.release]

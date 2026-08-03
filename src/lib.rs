@@ -969,8 +969,8 @@ pub async fn scaffold_iac(profile: Option<String>, iac: Option<String>, out_dir:
     scaffolder::scaffold_iac(&auth, &topology, iac, out_dir).await
 }
 
-pub fn tui() {
+pub fn inspect() {
     let dir = u::pwd();
     let topology = composer::compose(&dir, true);
-    let _ = tui::run(&topology);
+    let _ = inspector::run(&topology);
 }
