@@ -35,6 +35,10 @@ impl<'a> App<'a> {
                 tree::make_routes(topology),
                 tree::make_functions(topology),
                 tree::make_mutations(topology),
+                tree::make_pages(topology),
+                tree::make_channels(topology),
+                tree::make_queues(topology),
+                tree::make_roles(topology),
             ]
 
         }
@@ -75,11 +79,14 @@ impl<'a> App<'a> {
         let selected = self.state.selected();
         let entity = selected.into_iter().nth(0).unwrap_or(&"").to_string();
         let name = selected.into_iter().nth(1).unwrap_or(&"").to_string();
+        let component = selected.into_iter().nth(2).unwrap_or(&"").to_string();
+
 
         let detail = Detail {
             topology: self.topology.clone(),
             entity: entity.clone(),
-            name: name
+            name: name,
+            component: component
         };
 
         frame.render_stateful_widget(sidebar, layout[0], &mut self.state);

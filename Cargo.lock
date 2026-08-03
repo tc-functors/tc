@@ -4021,6 +4021,7 @@ dependencies = [
  "crossterm 0.29.0",
  "ratatui 0.30.2",
  "serde 1.0.228",
+ "serde_derive",
  "serde_json",
  "tui-tree-widget",
 ]

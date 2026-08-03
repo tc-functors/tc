@@ -1,13 +1,16 @@
 use std::collections::HashMap;
-use composer::Topology;
+use serde_derive::{
+    Deserialize,
+    Serialize,
+};
+use composer::{Topology};
+use composer::aws::mutation::Resolver;
 use colored_json::to_colored_json_auto;
 use ratatui::text::Span;
-use ratatui::layout::{Rect, Layout, Constraint};
+use ratatui::layout::Rect;
 use ratatui::buffer::Buffer;
-use ratatui::widgets::{Widget, Tabs};
-use ratatui::style::{Color, Style};
+use ratatui::widgets::Widget;
 use ratatui::Frame;
-use ratatui::symbols;
 use crate::color::ansi_to_spans;
 
 struct JsonWidget {
@@ -48,67 +51,24 @@ impl Widget for JsonWidget {
     }
 }
 
-
-pub struct FunctionWidget {
-    pub build: String,
-    pub runtime: String,
-    pub selected_tab: usize,
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Types {
+    input: HashMap<String, String>,
+    output: HashMap<String, String>
 }
 
-impl FunctionWidget {
-
-    fn render(&self, frame: &mut Frame, area: Rect) {
-
-        let parts = Layout::default()
-            .direction(ratatui::layout::Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ])
-            .split(area);
-
-        let tabs_area = parts[0];
-        let content_area = parts[1];
-
-         let tabs = Tabs::new(vec!["build", "runtime"])
-            .style(Style::default().fg(Color::White))
-            .highlight_style(Style::default().fg(Color::Magenta).bg(Color::Black).add_modifier(ratatui::style::Modifier::BOLD))
-            .select(self.selected_tab)
-            .divider(symbols::DOT)
-            .padding(" ", " ");
-
-        frame.render_widget(tabs, tabs_area);
-
-        let widget = match self.selected_tab {
-            0 => JsonWidget { content: self.build.clone() },
-            1 => JsonWidget { content: self.runtime.clone() },
-            _ => JsonWidget { content: self.build.clone() },
-        };
-
-
-        frame.render_widget(widget, content_area);
-
-    }
-
-    fn handle_key(&mut self, key: crossterm::event::KeyEvent) {
-        match key.code {
-            crossterm::event::KeyCode::Left => {
-               self.selected_tab = self.selected_tab.saturating_sub(1);
-            }
-            crossterm::event::KeyCode::Right => {
-                // clamp to max tab index (2 tabs total => max index 1)
-                self.selected_tab = (self.selected_tab + 1).min(1);
-            }
-            _ => {}
-        }
-    }
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Mutation {
+    resolver: Resolver,
+    types: Types,
 }
-
 
 pub struct Detail {
     pub topology: Topology,
     pub entity: String,
-    pub name: String
+    pub name: String,
+    pub component: String
+
 }
 
 
@@ -130,14 +90,67 @@ impl Detail {
                     frame.render_widget(widget, area);
                 },
 
+                "pages" => {
+                    let d = self.topology.pages.get(&self.name).unwrap();
+                    let pretty = to_colored_json_auto(&d).unwrap();
+                    let widget = JsonWidget { content: pretty };
+                    frame.render_widget(widget, area);
+                },
+
+                "roles" => {
+                    let d = self.topology.roles.get(&self.name).unwrap();
+                    let pretty = to_colored_json_auto(&d).unwrap();
+                    let widget = JsonWidget { content: pretty };
+                    frame.render_widget(widget, area);
+                },
+
+
+                "queues" => {
+                    let d = self.topology.queues.get(&self.name).unwrap();
+                    let pretty = to_colored_json_auto(&d).unwrap();
+                    let widget = JsonWidget { content: pretty };
+                    frame.render_widget(widget, area);
+                },
+
+                "channels" => {
+                    let d = self.topology.channels.get(&self.name).unwrap();
+                    let pretty = to_colored_json_auto(&d).unwrap();
+                    let widget = JsonWidget { content: pretty };
+                    frame.render_widget(widget, area);
+                },
+
+                "mutations" => {
+                    if let Some(m) = self.topology.mutations.get("default") {
+                        let d = m.resolvers.get(&self.name);
+                        let mutation = Mutation {
+                            resolver: d.unwrap().clone(),
+                            types: Types {
+                                input: m.types_map.get(&d.unwrap().input).unwrap_or(&HashMap::new()).clone(),
+                                output: m.types_map.get(&d.unwrap().output).unwrap_or(&HashMap::new()).clone()
+                            }
+                        };
+
+                        let pretty = to_colored_json_auto(&mutation).unwrap();
+                        let widget = JsonWidget { content: pretty };
+                        frame.render_widget(widget, area);
+                    }
+                },
+
                 "functions" => {
                     let f = self.topology.functions.get(&self.name).unwrap();
-                    let fw = FunctionWidget {
-                        build: to_colored_json_auto(&f.build).unwrap(),
-                        runtime: to_colored_json_auto(&f.build).unwrap(),
-                        selected_tab: 0
-                    };
-                    fw.render(frame, area);
+                    if !self.component.is_empty() {
+                        let pretty = match self.component.as_ref() {
+                            "build" => to_colored_json_auto(&f.build).unwrap(),
+                            "runtime" => to_colored_json_auto(&f.runtime).unwrap(),
+                            "environment" => to_colored_json_auto(&f.runtime.environment).unwrap(),
+                            "role" => to_colored_json_auto(&f.runtime.role).unwrap(),
+                            _ => to_colored_json_auto(&f).unwrap(),
+                        };
+                        let widget = JsonWidget { content: pretty };
+
+                        frame.render_widget(widget, area);
+                    }
+
                 },
 
                 _ => {
@@ -146,6 +159,17 @@ impl Detail {
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
                 }
+            }
+        } else {
+            match self.entity.as_ref() {
+                "mutations" => {
+                    let d: HashMap<String, String> = HashMap::new();
+                    let pretty = to_colored_json_auto(&d).unwrap();
+                    let widget = JsonWidget { content: pretty };
+                    frame.render_widget(widget, area);
+                },
+                _ => ()
+
             }
         }
     }
