@@ -65,7 +65,7 @@ enum Cmd {
     /// Freeze a sandbox and make it immutable
     Freeze(FreezeArgs),
     /// Run inspector
-    Inspect(DefaultArgs),
+    Inspect(InspectArgs),
     /// Invoke a topology synchronously or asynchronously
     Invoke(InvokeArgs),
     /// List resources in a topology
@@ -361,6 +361,19 @@ pub struct TestArgs {
 }
 
 #[derive(Debug, Args)]
+pub struct InspectArgs {
+    #[arg(long, short = 'd')]
+    dir: Option<String>,
+    #[arg(long, short = 'e')]
+    profile: Option<String>,
+    #[arg(long, short = 's')]
+    sandbox: Option<String>,
+    #[arg(long, action, short = 'r')]
+    recursive: bool,
+}
+
+
+#[derive(Debug, Args)]
 pub struct CreateArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
@@ -635,8 +648,15 @@ async fn version() {
     println!("{}", version);
 }
 
-async fn inspect() {
-    tc::inspect();
+async fn inspect(args: InspectArgs) {
+    let InspectArgs {
+        recursive,
+        profile,
+        sandbox,
+        dir,
+        ..
+    } = args;
+    tc::inspect(dir, profile, sandbox, recursive).await;
 }
 
 
@@ -1250,7 +1270,7 @@ async fn run_command() {
         Cmd::Release(args) => ci_release(args).await,
         Cmd::Deploy(args) => ci_deploy(args).await,
         Cmd::UpgradeCi(args) => ci_upgrade(args).await,
-        Cmd::Inspect(..) => inspect().await,
+        Cmd::Inspect(args) => inspect(args).await,
     }
 }
 

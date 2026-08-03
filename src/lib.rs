@@ -969,8 +969,21 @@ pub async fn scaffold_iac(profile: Option<String>, iac: Option<String>, out_dir:
     scaffolder::scaffold_iac(&auth, &topology, iac, out_dir).await
 }
 
-pub fn inspect() {
-    let dir = u::pwd();
-    let topology = composer::compose(&dir, true);
+pub async fn inspect(
+    dir: Option<String>,
+    profile: Option<String>,
+    sandbox: Option<String>,
+    recursive: bool
+) {
+    let dir = u::maybe_string(dir, &u::pwd());
+    let topology = if profile.is_some() {
+        let sandbox = u::maybe_string(sandbox, "stable");
+        let auth = init(profile, None).await;
+        let ct = composer::compose(&dir, recursive);
+        resolver::resolve(&auth, &sandbox, &ct, false, false).await
+    } else {
+        composer::compose(&dir, true)
+    };
+
     let _ = inspector::run(&topology);
 }
