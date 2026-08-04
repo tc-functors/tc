@@ -85,7 +85,7 @@ async fn build_with_docker(
     dir: &str,
     langr: &LangRuntime,
     name: &str,
-    shared_context: bool,
+    _shared_context: bool,
 ) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
@@ -98,28 +98,20 @@ async fn build_with_docker(
     let secret_file = format!("/tmp/{}-secret.txt", name);
     let session_file = format!("/tmp/{}-session.txt", name);
 
-    let cmd_str = if shared_context {
-        let (key, secret, aws_token) = auth.get_keys().await;
+    let (key, secret, aws_token) = auth.get_keys().await;
 
-        u::write_str(&key_file, &key);
-        u::write_str(&secret_file, &secret);
-        u::write_str(&session_file, &aws_token);
+    u::write_str(&key_file, &key);
+    u::write_str(&secret_file, &secret);
+    u::write_str(&session_file, &aws_token);
 
-        let out = format!(
-            "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
-            u::basedir(dir),
-            &key_file,
-            &secret_file,
+    let cmd_str = format!(
+        "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+        u::basedir(dir),
+        &key_file,
+        &secret_file,
             &session_file,
-            &token
-        );
-        out
-    } else {
-        format!(
-            "docker buildx build --platform=linux/amd64 --load -t {} .",
-            u::basedir(dir)
-        )
-    };
+        &token
+    );
 
     let (status, out, err) = u::runc(&cmd_str, dir);
 
