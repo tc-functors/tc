@@ -44,7 +44,10 @@ fn gen_dockerfile_unshared(dir: &str, arch: &Arch, langr: &LangRuntime, _wrap: b
     let Build { pre, post, .. } = bs;
 
     match langr.to_lang() {
-        Lang::Python => python::gen_dockerfile_unshared(dir, langr, bs),
+        Lang::Python => match std::env::var("TC_BUILDER_UNSHARED_CONTEXT")  {
+            Ok(_) => python::gen_dockerfile_unshared(dir, langr, bs),
+            Err(_) => python::gen_dockerfile(dir, langr, bs)
+        },
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Go => go::gen_dockerfile(dir, arch, pre),
