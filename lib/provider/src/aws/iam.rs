@@ -33,7 +33,6 @@ pub async fn make_client(auth: &Auth) -> Client {
 
 #[derive(Debug)]
 pub struct Role {
-    pub client: Client,
     pub name: String,
     pub policy_name: String,
     pub policy_arn: String,
@@ -42,7 +41,7 @@ pub struct Role {
 }
 
 impl Role {
-    async fn create(&self) {
+    async fn create(&self, client: &Client) {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
 
         let _ = log_update.render(&format!(
@@ -50,25 +49,25 @@ impl Role {
             self.name,
             "creating policy".cyan()
         ));
-        self.find_or_create_policy().await;
+        self.find_or_create_policy(client).await;
 
         let _ = log_update.render(&format!(
             "Creating role {} ({})",
             self.name,
             "attachable".cyan()
         ));
-        self.wait_until_attachable().await;
+        self.wait_until_attachable(client).await;
 
         let _ = log_update.render(&format!("Creating role {} ({})", self.name, "role".cyan()));
-        self.find_or_create_role().await;
+        self.find_or_create_role(client).await;
 
         let _ = log_update.render(&format!(
             "Creating role {} ({})",
             self.name,
             "attaching".cyan()
         ));
-        self.attach_policy().await;
-        self.wait_until_attached().await;
+        self.attach_policy(client).await;
+        self.wait_until_attached(client).await;
         // FIXME: iam is eventually consistent. There is no way to know if the role is really
         // useable
         u::sleep(4000);
@@ -80,17 +79,17 @@ impl Role {
         ));
     }
 
-    pub async fn delete(&self) -> Result<(), Error> {
+    pub async fn delete(&self, client: &Client) -> Result<(), Error> {
         println!("Deleting role {}", self.name);
-        self.detach_policy().await?;
-        self.wait_until_detached().await;
-        self.delete_non_default_versions().await?;
-        self.delete_policy().await?;
-        self.delete_role().await?;
+        self.detach_policy(client).await?;
+        self.wait_until_detached(client).await;
+        self.delete_non_default_versions(client).await?;
+        self.delete_policy(client).await?;
+        self.delete_role(client).await?;
         Ok(())
     }
 
-    async fn update(&self) -> Result<(), Error> {
+    async fn update(&self, client: &Client) -> Result<(), Error> {
         let mut log_update = LogUpdate::new(stdout()).unwrap();
 
         let _ = log_update.render(&format!(
@@ -98,14 +97,14 @@ impl Role {
             self.name,
             "pruning old versions".blue()
         ));
-        self.delete_non_default_versions().await?;
+        self.delete_non_default_versions(client).await?;
 
         let _ = log_update.render(&format!(
             "Updating role {} ({})",
             self.name,
             "creating policy version".blue()
         ));
-        self.client
+        client
             .create_policy_version()
             .policy_arn(&self.policy_arn)
             .policy_document(&self.policy_doc)
@@ -114,7 +113,7 @@ impl Role {
             .await
             .unwrap();
 
-        self.find_or_create_role().await;
+        self.find_or_create_role(client).await;
 
         let _ = log_update.render(&format!(
             "Updating role {} ({})",
@@ -124,26 +123,25 @@ impl Role {
         Ok(())
     }
 
-    pub async fn create_or_update(&self) -> Result<(), Error> {
-        let res = self.client.get_role().role_name(&self.name).send().await;
+    pub async fn create_or_update(&self, client: &Client) -> Result<(), Error> {
+        let res = client.get_role().role_name(&self.name).send().await;
         match res {
-            Ok(_) => self.update().await?,
-            Err(_) => self.create().await,
+            Ok(_) => self.update(client).await?,
+            Err(_) => self.create(client).await,
         }
         Ok(())
     }
 
-    pub async fn find_or_create(&self) {
-        let res = self.client.get_role().role_name(&self.name).send().await;
+    pub async fn find_or_create(&self, client: &Client) {
+        let res = client.get_role().role_name(&self.name).send().await;
         match res {
             Ok(_) => (),
-            Err(_) => self.create().await,
+            Err(_) => self.create(client).await,
         };
     }
 
-    pub async fn create_policy(&self) -> String {
-        let res = self
-            .client
+    pub async fn create_policy(&self, client: &Client) -> String {
+        let res = client
             .create_policy()
             .policy_name(&self.policy_name)
             .policy_document(&self.policy_doc)
@@ -156,9 +154,8 @@ impl Role {
         }
     }
 
-    async fn find_policy(&self) -> Result<Option<String>, Error> {
-        let res = self
-            .client
+    async fn find_policy(&self, client: &Client) -> Result<Option<String>, Error> {
+        let res = client
             .get_policy()
             .policy_arn(&self.policy_arn)
             .send()
@@ -169,25 +166,24 @@ impl Role {
         }
     }
 
-    pub async fn find_or_create_policy(&self) -> String {
-        let res = self.find_policy().await.unwrap();
+    pub async fn find_or_create_policy(&self, client: &Client) -> String {
+        let res = self.find_policy(client).await.unwrap();
         match res {
             Some(a) => a,
-            None => self.create_policy().await,
+            None => self.create_policy(client).await,
         }
     }
 
-    async fn find_role(&self) -> Result<Option<String>, Error> {
-        let res = self.client.get_role().role_name(&self.name).send().await;
+    async fn find_role(&self, client: &Client) -> Result<Option<String>, Error> {
+        let res = client.get_role().role_name(&self.name).send().await;
         match res {
             Ok(r) => Ok(Some(r.role.unwrap().arn)),
             Err(_) => Ok(None),
         }
     }
 
-    async fn create_role(&self) -> String {
-        let res = self
-            .client
+    async fn create_role(&self, client: &Client) -> String {
+        let res = client
             .create_role()
             .role_name(&self.name)
             .assume_role_policy_document(&self.trust_policy)
@@ -200,16 +196,16 @@ impl Role {
         }
     }
 
-    pub async fn find_or_create_role(&self) -> String {
-        let arn = self.find_role().await.unwrap();
+    pub async fn find_or_create_role(&self, client: &Client) -> String {
+        let arn = self.find_role(client).await.unwrap();
         match arn {
             Some(a) => a,
-            None => self.create_role().await,
+            None => self.create_role(client).await,
         }
     }
 
-    pub async fn attach_policy(&self) {
-        self.client
+    pub async fn attach_policy(&self, client: &Client) {
+        client
             .attach_role_policy()
             .role_name(&self.name)
             .policy_arn(&self.policy_arn)
@@ -218,9 +214,8 @@ impl Role {
             .unwrap();
     }
 
-    pub async fn detach_policy(&self) -> Result<(), Error> {
-        let res = self
-            .client
+    pub async fn detach_policy(&self, client: &Client) -> Result<(), Error> {
+        let res = client
             .detach_role_policy()
             .role_name(&self.name)
             .policy_arn(&self.policy_arn)
@@ -232,9 +227,8 @@ impl Role {
         }
     }
 
-    pub async fn delete_policy(&self) -> Result<(), Error> {
-        let res = self
-            .client
+    pub async fn delete_policy(&self, client: &Client) -> Result<(), Error> {
+        let res = client
             .delete_policy()
             .policy_arn(&self.policy_arn)
             .send()
@@ -245,17 +239,16 @@ impl Role {
         }
     }
 
-    pub async fn delete_role(&self) -> Result<(), Error> {
-        let res = self.client.delete_role().role_name(&self.name).send().await;
+    pub async fn delete_role(&self, client: &Client) -> Result<(), Error> {
+        let res = client.delete_role().role_name(&self.name).send().await;
         match res {
             Ok(_) => Ok(()),
             Err(_) => Ok(()),
         }
     }
 
-    async fn list_policy_versions(&self) -> Vec<(String, bool)> {
-        let res = self
-            .client
+    async fn list_policy_versions(&self, client: &Client) -> Vec<(String, bool)> {
+        let res = client
             .list_policy_versions()
             .policy_arn(&self.policy_arn)
             .send()
@@ -273,12 +266,11 @@ impl Role {
         }
     }
 
-    async fn delete_non_default_versions(&self) -> Result<(), Error> {
-        let versions = self.list_policy_versions().await;
+    async fn delete_non_default_versions(&self, client: &Client) -> Result<(), Error> {
+        let versions = self.list_policy_versions(client).await;
         for (version_id, is_default) in versions {
             if !is_default {
-                let _ = self
-                    .client
+                let _ = client
                     .delete_policy_version()
                     .policy_arn(&self.policy_arn)
                     .version_id(version_id)
@@ -289,9 +281,8 @@ impl Role {
         Ok(())
     }
 
-    pub async fn is_policy_attachable(&self) -> bool {
-        let res = self
-            .client
+    pub async fn is_policy_attachable(&self, client: &Client) -> bool {
+        let res = client
             .get_policy()
             .policy_arn(&self.policy_arn)
             .send()
@@ -299,9 +290,8 @@ impl Role {
         res.unwrap().policy.unwrap().is_attachable
     }
 
-    pub async fn is_policy_attached(&self) -> bool {
-        let res = self
-            .client
+    pub async fn is_policy_attached(&self, client: &Client) -> bool {
+        let res = client
             .get_policy()
             .policy_arn(&self.policy_arn)
             .send()
@@ -316,26 +306,26 @@ impl Role {
         }
     }
 
-    pub async fn wait_until_attachable(&self) {
+    pub async fn wait_until_attachable(&self, client: &Client) {
         let mut ready = false;
         while !ready {
-            ready = self.is_policy_attachable().await;
+            ready = self.is_policy_attachable(client).await;
             u::sleep(1000)
         }
     }
 
-    pub async fn wait_until_attached(&self) {
+    pub async fn wait_until_attached(&self, client: &Client) {
         let mut ready = false;
         while !ready {
-            ready = self.is_policy_attached().await;
+            ready = self.is_policy_attached(client).await;
             u::sleep(2000)
         }
     }
 
-    pub async fn wait_until_detached(&self) {
+    pub async fn wait_until_detached(&self, client: &Client) {
         let mut ready = false;
         while !ready {
-            ready = !self.is_policy_attached().await;
+            ready = !self.is_policy_attached(client).await;
             u::sleep(2000)
         }
     }
@@ -371,3 +361,59 @@ pub async fn find_policy_doc(
         Err(_) => None,
     }
 }
+
+
+async fn list_roles_by_token(client: &Client, token: &str) -> (Vec<(String, String)>, Option<String>, bool) {
+    let res = client
+        .list_roles()
+        .marker(token)
+        .send()
+        .await
+        .unwrap();
+    let roles = res.roles.to_vec();
+    let mut xs: Vec<(String, String)> = vec![];
+    for role in roles {
+        xs.push((role.role_name, role.arn))
+    }
+    (xs, res.marker, res.is_truncated)
+}
+
+pub async fn list_roles(client: &Client) -> Vec<(String, String)> {
+    let res = client
+        .list_roles()
+        .send()
+        .await
+        .unwrap();
+    let mut token: Option<String> = res.marker;
+    let mut is_truncated = res.is_truncated;
+
+    let roles = res.roles.to_vec();
+    let mut xs: Vec<(String, String)> = vec![];
+    for role in roles {
+        xs.push((role.role_name, role.arn))
+    }
+
+
+    match token {
+        Some(tk) => {
+            token = Some(tk);
+            while is_truncated {
+                let (x, t, truncated) = list_roles_by_token(client, &token.unwrap()).await;
+                xs.extend(x);
+                token = t.clone();
+                is_truncated = truncated;
+                if let Some(x) = t {
+                    if x.is_empty() {
+                        break;
+                    }
+                }
+
+            }
+        },
+        None => (),
+    }
+    xs
+
+}
+
+pub type IamClient = Client;

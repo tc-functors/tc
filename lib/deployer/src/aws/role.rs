@@ -21,14 +21,13 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
     for (_, role) in roles {
         if &role.kind.to_str() == "override" || should_delete() {
             let r = Role {
-                client: client.clone(),
                 name: role.name.clone(),
                 trust_policy: role.trust.to_string(),
                 policy_arn: role.policy_arn.clone(),
                 policy_name: role.policy_name.clone(),
                 policy_doc: role.policy.to_string(),
             };
-            let _ = r.delete().await;
+            let _ = r.delete(&client).await;
         }
     }
 }
@@ -43,7 +42,6 @@ pub async fn create_aux(
     let client = iam::make_client(&auth).await;
 
     let r = Role {
-        client: client.clone(),
         name: role.name.clone(),
         trust_policy: role.trust.to_string(),
         policy_arn: role.policy_arn.clone(),
@@ -54,7 +52,7 @@ pub async fn create_aux(
     let _ = match role.kind.to_str().as_ref() {
         "provided" => (),
         "base" => {
-            let _ = r.create_or_update().await;
+            let _ = r.create_or_update(&client).await;
             ()
         }
         _ => {
@@ -86,7 +84,7 @@ pub async fn create_aux(
             };
 
             if should_update {
-                let _ = r.create_or_update().await;
+                let _ = r.create_or_update(&client).await;
                 ()
             } else {
                 ()
@@ -136,5 +134,32 @@ pub async fn update_base_roles(
     }
     for task in tasks {
         let _ = task.await;
+    }
+}
+
+pub async fn list(auth: &Auth, suffix: &str) -> Vec<(String, String)> {
+    let client = iam::make_client(auth).await;
+    let roles = iam::list_roles(&client).await;
+    let mut xs: Vec<(String, String)> = vec![];
+    for (name, arn) in roles {
+        if name.ends_with(suffix) && name.starts_with("tc") {
+            xs.push((name, arn))
+        }
+    }
+    xs
+}
+
+pub async fn delete_roles(auth: &Auth, roles: Vec<(String, String)>) {
+    let client = iam::make_client(auth).await;
+    for (name, _arn) in roles {
+        let role = Role {
+            name: name.clone(),
+            trust_policy: String::from(""),
+            policy_arn: auth.policy_arn(&name),
+            policy_name: name.clone(),
+            policy_doc: String::from(""),
+        };
+        println!("Deleting role {}", &name);
+        let _ = role.delete(&client).await;
     }
 }

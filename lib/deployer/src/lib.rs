@@ -500,14 +500,17 @@ pub async fn list_all_resources(auth: &Auth) {
 
 pub async fn prune(auth: &Auth, sandbox: &str, filter: Option<String>) {
     let arns = resource::list(auth, sandbox).await;
-    let arns = resource::filter_arns(arns, filter);
-    let grouped = resource::group_entities(arns);
-    println!("{}", resource::count_of(&grouped));
+    let grouped_arns = resource::filter_arns(arns.clone(), filter);
+    let grouped = resource::group_entities(grouped_arns);
+    let roles = role::list(auth, &format!("-{}", sandbox)).await;
+    println!("{}, roles: {}", resource::count_of(&grouped), &roles.len());
     let cont = guard::prompt("Do you want to delete these resources in given sandbox ?");
     if !cont {
         std::process::exit(1);
     }
     resource::delete_arns(auth, grouped).await;
+
+    role::delete_roles(auth, roles).await;
 }
 
 pub async fn make_config(auth: &Auth, topology: &Topology) -> HashMap<String, String> {
