@@ -333,10 +333,13 @@ fn collate_gateways(
 
     let mut h: HashMap<String, Gateway> = HashMap::new();
 
+    let mut cors = None;
+
     if let Some(route) = default_route {
+        cors = make_cors(&route);
         let gw = Gateway {
             stage: route.stage.clone(),
-            cors: make_cors(&route),
+            cors: cors.clone(),
             authorizer: route.authorizer.clone(),
             burst_limit: None,
             rate_limit: None,
@@ -395,9 +398,13 @@ fn collate_gateways(
 
             let manage = gateway.ends_with(&format!("_{}", sandbox));
 
+            if cors.is_none() {
+                cors = make_cors(&route);
+            }
+
             if !gateway.is_empty() {
                 let gw = Gateway {
-                    cors: make_cors(&route),
+                    cors: cors.clone(),
                     authorizer: authorizer.clone(),
                     stage: stage.to_string(),
                     burst_limit: burst_limit,
@@ -443,7 +450,6 @@ async fn create_or_update_gateways(
             manage,
             ..
         } = gateway;
-        println!("Creating route: gateway {} manage: {}", name, manage);
         if !manage {
             let maybe_api_id = gateway::find_api(&client, &name).await;
             if let Some(api_id) = maybe_api_id {
@@ -546,7 +552,7 @@ pub async fn create(
                     url = endpoint.to_string();
                 }
             } else {
-                println!("Skipping routes");
+                println!("Skipping route {}", &name);
             }
         }
         println!("Endpoint {}", url);
