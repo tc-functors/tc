@@ -44,10 +44,7 @@ fn gen_dockerfile_unshared(dir: &str, arch: &Arch, langr: &LangRuntime, _wrap: b
     let Build { pre, post, .. } = bs;
 
     match langr.to_lang() {
-        Lang::Python => match std::env::var("TC_BUILDER_UNSHARED_CONTEXT")  {
-            Ok(_) => python::gen_dockerfile_unshared(dir, langr, bs),
-            Err(_) => python::gen_dockerfile(dir, langr, bs)
-        },
+        Lang::Python => python::gen_dockerfile_unshared(dir, langr, bs),
         Lang::Ruby => ruby::gen_dockerfile_unshared(dir, langr, pre, post),
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Go => go::gen_dockerfile(dir, arch, pre),
@@ -85,7 +82,7 @@ async fn build_with_docker(
     dir: &str,
     langr: &LangRuntime,
     name: &str,
-    _shared_context: bool,
+    shared_context: bool,
 ) -> (bool, String, String) {
     let root = &u::root();
     let token = match langr.to_lang() {
@@ -98,20 +95,28 @@ async fn build_with_docker(
     let secret_file = format!("/tmp/{}-secret.txt", name);
     let session_file = format!("/tmp/{}-session.txt", name);
 
-    let (key, secret, aws_token) = auth.get_keys().await;
+    let cmd_str = if shared_context {
+        let (key, secret, aws_token) = auth.get_keys().await;
 
-    u::write_str(&key_file, &key);
-    u::write_str(&secret_file, &secret);
-    u::write_str(&session_file, &aws_token);
+        u::write_str(&key_file, &key);
+        u::write_str(&secret_file, &secret);
+        u::write_str(&session_file, &aws_token);
 
-    let cmd_str = format!(
-        "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
-        u::basedir(dir),
-        &key_file,
-        &secret_file,
+        let out = format!(
+            "docker buildx build --platform=linux/amd64 --ssh default --provenance=false --load -t {} --secret id=aws-key,src={} --secret id=aws-secret,src={} --secret id=aws-session,src={} --build-arg AUTH_TOKEN={} --build-context shared={root} .",
+            u::basedir(dir),
+            &key_file,
+            &secret_file,
             &session_file,
-        &token
-    );
+            &token
+        );
+        out
+    } else {
+        format!(
+            "docker buildx build --platform=linux/amd64 --load -t {} .",
+            u::basedir(dir)
+        )
+    };
 
     let (status, out, err) = u::runc(&cmd_str, dir);
 

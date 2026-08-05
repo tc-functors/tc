@@ -73,9 +73,12 @@ impl Build {
                 command: b.command,
                 pack: b.pack.unwrap_or(String::from("echo 0")),
                 version: b.version.clone(),
-                shared_context: match b.shared_context {
-                    Some(s) => s,
-                    None => true,
+                shared_context:  match std::env::var("TC_USE_SHARED_CONTEXT") {
+                    Ok(_) => true,
+                    Err(_) => match b.shared_context {
+                        Some(s) => s,
+                        None => true,
+                    }
                 },
                 skip_dev_deps: match b.skip_dev_deps {
                     Some(s) => s,
