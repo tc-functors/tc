@@ -7,6 +7,7 @@ use compiler::{
         function::FileSystemKind,
     },
 };
+use compiler::spec::function::FileSystemKind;
 use composer::{
     Function,
     Runtime,
@@ -243,6 +244,7 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
             match arn {
                 Some(a) => {
                     let fs = FileSystem {
+                        kind: FileSystemKind::Efs,
                         arn: a,
                         kind: FileSystemKind::Efs,
                         mount_point: config.aws.lambda.fs_mountpoint.to_owned(),
