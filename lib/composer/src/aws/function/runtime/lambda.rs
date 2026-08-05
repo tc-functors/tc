@@ -1,6 +1,5 @@
 use super::{
     common,
-    layer,
 };
 use common as c;
 use common::{
@@ -34,18 +33,12 @@ fn find_image_tag(dir: &str, namespace: &str) -> String {
 fn consolidate_layers(
     extensions: Vec<String>,
     given_layers: Vec<String>,
-    implicit_layer: Option<String>,
 ) -> Vec<String> {
     let mut layers: Vec<String> = vec![];
     let mut e: Vec<String> = extensions;
     let mut g: Vec<String> = given_layers;
     layers.append(&mut e);
     layers.append(&mut g);
-
-    match implicit_layer {
-        Some(m) => layers.push(m),
-        None => (),
-    }
     u::uniq(layers)
 }
 
@@ -170,8 +163,7 @@ pub fn make(
     fspec: &FunctionSpec,
     r: &RuntimeSpec,
 ) -> Runtime {
-    let layer_name = layer::find_implicit_layer_name(dir, namespace, fspec);
-    let layers = consolidate_layers(r.extensions.clone(), r.layers.clone(), layer_name);
+    let layers = consolidate_layers(r.extensions.clone(), r.layers.clone());
     let build_kind = c::find_build_kind(&fspec);
     let package_type = match &r.package_type {
         Some(x) => x.to_string(),

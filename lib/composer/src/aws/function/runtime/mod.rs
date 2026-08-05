@@ -1,7 +1,6 @@
 pub mod agentcore;
 pub mod common;
 pub mod lambda;
-pub mod layer;
 pub mod microvm;
 
 pub use common::{

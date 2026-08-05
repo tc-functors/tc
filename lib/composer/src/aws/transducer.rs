@@ -223,7 +223,6 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         namespace: namespace.to_string(),
         runtime: runtime,
         build: build,
-        layer_name: None,
         targets: vec![],
         test: HashMap::new(),
         tasks: HashMap::new(),

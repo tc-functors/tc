@@ -4,10 +4,6 @@ pub use crate::aws::{
     flow::Flow,
     function::{
         Function,
-        runtime::{
-            layer,
-            layer::Layer,
-        },
     },
     mutation::{
         Mutation,
@@ -1011,11 +1007,6 @@ impl Topology {
             }
         }
         None
-    }
-
-    pub fn layers(&self) -> Vec<Layer> {
-        let fns = self.functions();
-        layer::find(fns)
     }
 
     pub fn to_str(&self) -> String {

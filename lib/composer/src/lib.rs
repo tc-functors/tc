@@ -21,7 +21,6 @@ pub use aws::{
         build::Build,
         runtime::{
             Runtime,
-            layer::Layer,
         },
     },
     mutation::Mutation,
@@ -169,17 +168,6 @@ pub fn root_namespaces(dir: &str) -> HashMap<String, String> {
     h
 }
 
-// deprecated
-pub fn find_layers() -> Vec<Layer> {
-    let dir = u::pwd();
-    if topology::is_compilable(&dir) {
-        let topology = compose(&dir, true);
-        topology.layers()
-    } else {
-        function::runtime::layer::discover()
-    }
-}
-
 pub fn find_buildables(dir: &str, recursive: bool) -> Vec<Build> {
     let mut xs: Vec<Build> = vec![];
     let topology = Topology::new(dir, "", recursive, false);
@@ -188,15 +176,6 @@ pub fn find_buildables(dir: &str, recursive: bool) -> Vec<Build> {
         xs.push(f.build)
     }
     xs
-}
-
-pub fn find_layer_names() -> Vec<String> {
-    let mut xs: Vec<String> = vec![];
-    let layers = find_layers();
-    for layer in layers {
-        xs.push(layer.name)
-    }
-    u::uniq(xs)
 }
 
 pub fn guess_runtime(dir: &str) -> LangRuntime {
