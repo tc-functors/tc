@@ -306,6 +306,25 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
         tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
+
+  let maybe_target_profile = match std::env::var("TC_TARGET_PROFILE") {
+        Ok(p) => Some(p),
+        Err(_) => None
+    };
+
+    let maybe_source_profile = match std::env::var("TC_SOURCE_PROFILE") {
+        Ok(p) => Some(p),
+        Err(_) => None
+    };
+    if let Some(ref p) = maybe_source_profile {
+        if &auth.name == p {
+            let from_auth = init(maybe_source_profile, None).await;
+            let to_auth = init(maybe_target_profile, None).await;
+            snapshotter::snapshot_topology(&from_auth, &to_auth, topology, sandbox, true, true).await;
+        }
+    } else {
+        println!("Skipping snapshotting");
+    }
 }
 
 pub async fn create_topology(
