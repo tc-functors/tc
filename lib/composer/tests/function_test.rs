@@ -29,7 +29,6 @@ fn fake_fspec(name: &str) -> FunctionSpec {
         description: None,
         namespace: None,
         fqn: None,
-        layer_name: None,
         version: None,
         revision: None,
         runtime: None,
