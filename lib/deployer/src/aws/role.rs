@@ -34,6 +34,7 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
 
 pub async fn create_aux(
     profile: String,
+    sandbox: String,
     role_arn: Option<String>,
     role: composer::Role,
     _tags: HashMap<String, String>,
@@ -52,8 +53,10 @@ pub async fn create_aux(
     let _ = match role.kind.to_str().as_ref() {
         "provided" => (),
         "base" => {
-            let _ = r.create_or_update(&client).await;
-            ()
+            if &sandbox != "stable" {
+                let _ = r.create_or_update(&client).await;
+                ()
+            }
         }
         _ => {
             let maybe_policy = iam::find_policy_doc(&client, &role.name, &role.policy_arn).await;
@@ -95,6 +98,7 @@ pub async fn create_aux(
 
 pub async fn create_or_update(
     auth: &Auth,
+    sandbox: &str,
     roles: &HashMap<String, composer::Role>,
     tags: &HashMap<String, String>,
 ) {
@@ -104,8 +108,9 @@ pub async fn create_or_update(
         let tags = tags.clone();
         let p = auth.name.to_string();
         let role_arn = auth.assume_role.to_owned();
+        let s = sandbox.to_string();
         let h = tokio::spawn(async move {
-            create_aux(p, role_arn, role.clone(), tags.clone()).await;
+            create_aux(p, s, role_arn, role.clone(), tags.clone()).await;
         });
         tasks.push(h);
     }
@@ -127,7 +132,7 @@ pub async fn update_base_roles(
             let p = auth.name.to_string();
             let role_arn = auth.assume_role.to_owned();
             let h = tokio::spawn(async move {
-                create_aux(p, role_arn, role.clone(), tags.clone()).await;
+                create_aux(p, String::from(""), role_arn, role.clone(), tags.clone()).await;
             });
             tasks.push(h);
         }

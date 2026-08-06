@@ -75,7 +75,7 @@ pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, 
         role::update_base_roles(auth, base_roles, tags).await;
     }
 
-    role::create_or_update(auth, roles, tags).await;
+    role::create_or_update(auth, &sandbox, roles, tags).await;
     function::create(auth, functions, &tags, concurrency, force).await;
     function::sync_roles(auth, all_functions).await;
     channel::create(&auth, channels).await;
@@ -144,7 +144,7 @@ async fn update_topology(auth: &Auth, topology: &Topology) {
         &version
     );
 
-    role::create_or_update(&auth, roles, tags).await;
+    role::create_or_update(&auth, &sandbox, roles, tags).await;
     function::update_code(&auth, functions, &tags).await;
     function::sync_roles(&auth, all_functions).await;
     mutation::create(&auth, mutations, &tags).await;

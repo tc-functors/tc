@@ -108,7 +108,7 @@ async fn update_roles(auth: &Auth, funcs: &HashMap<String, Function>) {
             roles.insert(f.runtime.role.name.clone(), f.runtime.role.clone());
         }
     }
-    role::create_or_update(auth, &roles, &HashMap::new()).await;
+    role::create_or_update(auth, "", &roles, &HashMap::new()).await;
 }
 
 pub async fn sync_roles(auth: &Auth, fns: &HashMap<String, Function>) {
