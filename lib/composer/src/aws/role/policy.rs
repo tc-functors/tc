@@ -33,7 +33,7 @@ pub struct Action {
 }
 
 fn make_sid(ec: &str) -> Option<String> {
-    Some(format!("TcBase{}{{{{sandbox}}}}", ec))
+    Some(format!("TcBase{}{{{{sandbox_trimmed}}}}", ec))
 }
 
 fn make_lambda_actions() -> Vec<Action> {

@@ -50,12 +50,15 @@ impl Context {
 
         let lazy_id = format!("{{{{lazy_id}}}}");
 
+        let sandbox_trimmed = &self.sandbox.replace("-", "");
+
         table.insert("account", account);
         table.insert("acc", account);
         table.insert("region", region);
         table.insert("namespace", &self.namespace);
         table.insert("abbr_namespace", &abbr_namespace);
         table.insert("sandbox", &self.sandbox);
+        table.insert("sandbox_trimmed", &sandbox_trimmed);
         table.insert("env", &self.auth.name);
         table.insert("profile", &self.auth.name);
         table.insert("version", &self.version);
