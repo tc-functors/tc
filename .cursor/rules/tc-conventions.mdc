@@ -1,0 +1,48 @@
+---
+description: tc (Topology Composer) house style — MUST follow. Canonical rules live in /AGENTS.md and /docs/agents/.
+globs:
+  - "**/*.rs"
+  - "**/topology.yml"
+  - "**/function.yml"
+alwaysApply: true
+---
+
+# tc conventions (Cursor rule)
+
+Canonical, always-authoritative sources — read them before writing code:
+- `@AGENTS.md`
+- `@docs/agents/STYLE.md` (the prescriptive style guide — most important)
+- `@docs/agents/ARCHITECTURE.md`
+- `@docs/agents/DSL.md`
+- `@docs/agents/CALIBRATION.md`
+
+Conformance to the existing style is the acceptance criterion — matching the
+author's conventions matters as much as correctness.
+
+## Always
+- Small, terse **free functions** over methods/`impl`. Take `&Topology`/`&Auth`/
+  `&str`, return owned `String`/`Vec`/`HashMap`.
+- Use the **`kit`** crate: `use kit as u;` + `use kit::*;`. Prefer `s()`, `empty()`,
+  `s!`, `v!`, `maybe_*`, `nth`, `split*` over inline logic.
+- Fail-fast error handling: `.unwrap()`, `.expect("fail")`, `panic!`. Graceful
+  degradation **only** in the caching/concurrency layer (`kit::memo`, resolver
+  concurrency, `differ`).
+- Data structs: `#[derive(Serialize, Deserialize, Clone, Debug)]`, all fields `pub`,
+  `HashMap<String, _>`-of-everything, `Option<T>` + `#[serde(default)]`.
+- Bounded concurrency (`buffer_unordered(n)`, env-configurable cap clamped to a
+  `const` ceiling). Config via `TC_*` env vars.
+- Imports crate-granular + vertical (nightly `rustfmt`). Add a `#[cfg(test)]` twin
+  for any new leaf IO fn.
+- Respect `TopologySpec` (unresolved, `Option`) vs `Topology` (resolved, `HashMap`).
+
+## Never
+- Add `anyhow`, `thiserror`, or a custom error enum.
+- Introduce a provider trait/abstraction (AWS is hard-coded by design).
+- "Modernize" intentional idioms: keep `.clone()`s, `x.len() > 0`, `match opt {..}`;
+  do not convert free functions to methods; do not reformat unrelated files.
+- Add dependencies or move responsibilities between crates without discussing it.
+
+## Before finishing
+Run `./scripts/agent-check.sh` (nightly fmt on changed files, clippy allow-list,
+`cargo build`, `cargo test -p composer`, convention greps). Note: `cargo test
+--workspace` does not compile yet (documented in CALIBRATION.md) — use `-p composer`.
