@@ -30,7 +30,9 @@ ok()    { printf '\033[32mok:\033[0m %s\n' "$1"; }
 changed() { { git diff --name-only --diff-filter=ACM "$BASE"...HEAD -- "$@" 2>/dev/null; \
               git diff --name-only --diff-filter=ACM -- "$@"; } | sort -u | sed '/^$/d'; }
 CHANGED_RS=$(changed '*.rs')
-CHANGED_TOML=$(changed '*/Cargo.toml' Cargo.toml)
+# '*Cargo.toml' matches the root manifest AND every nested lib/*/Cargo.toml — git
+# pathspec '*' spans '/' (unlike a shell glob), so one pattern covers all depths.
+CHANGED_TOML=$(changed '*Cargo.toml')
 
 # --- 1. fmt (nightly, diff-scoped) ---
 note "rustfmt (nightly, changed files only)"
