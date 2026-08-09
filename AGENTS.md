@@ -17,6 +17,7 @@ Aider, Gemini CLI, and others; thin adapters point the remaining harnesses here
 - `docs/agents/ARCHITECTURE.md` — the pipeline, crate map, and data model.
 - `docs/agents/DSL.md` — the `topology.yml` / `function.yml` schema reference.
 - `docs/agents/CALIBRATION.md` — what actually builds/tests/lints clean today, and why.
+- `docs/agents/REVIEW.md` — the automated PR review layer (Cursor Bugbot rules).
 
 ## What this project is (one paragraph)
 `tc` is a single Rust binary that turns a provider-agnostic `topology.yml` graph of
