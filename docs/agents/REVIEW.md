@@ -30,6 +30,18 @@ Bugbot reviews every PR and posts findings as PR comments (check name
 - **Blocking behavior:** by default Bugbot findings are non-blocking (`neutral`). To
   make unresolved findings fail the check, enable fail-on-unresolved-issues in the
   Cursor dashboard and require the `Cursor Bugbot` status in branch protection.
+- **Effort level (recommended: High):** in the Cursor dashboard → Bugbot Automations,
+  set the review **effort** to **High** for this repo. Higher effort spends more
+  reasoning per review (better recall on subtle style violations) at higher cost —
+  worth it for a conformance gate. `Default` optimizes for speed and finds fewer bugs.
+
+## Deterministic rules stay in the gate, not the model
+Everything mechanically checkable — `no anyhow/thiserror`, `no unbounded join_all`,
+fmt, line-scoped clippy, workspace tests — lives in `scripts/agent-check.sh` +
+`agent-conformance.yml`, so reviewer *quality* never gates on those. The model
+reviewers handle only the judgment a linter can't: "does this read like the original
+author wrote it?" Keep it that way — when a rule becomes mechanically expressible,
+move it from the charter into the gate.
 
 ## Fork-PR caveat
 Bugbot (and any secret-backed reviewer) does not run with full power on PRs from
@@ -42,10 +54,31 @@ re-run validation from a trusted in-repo branch.
 - Add area-specific rules with nested `<dir>/.cursor/BUGBOT.md` files.
 - Team/manual/learned rules can also be managed from the Cursor dashboard; inline
   `@cursor remember <fact>` on a PR teaches a durable rule.
-- Optional future piece (not yet added): a second model reviewer as a GitHub Actions
-  workflow (Anthropic/OpenAI), gated to in-repo branches because it needs API-key
-  secrets. Keep it mirroring the same charter as `.cursor/BUGBOT.md` so the two
-  reviewers don't diverge.
+## Second, pinned reviewer (GitHub Actions)
+Bugbot's model is opaque and unpinnable. To get a diverse, **auditable, version-pinned**
+second opinion, `.github/workflows/ai-review.yml` runs `scripts/ai_review.py` — a
+small, stdlib-only reviewer that reads the **same charter** (`AGENTS.md` +
+`docs/agents/STYLE.md` + `.cursor/BUGBOT.md`) so the two reviewers don't diverge, and
+(unlike a diff-only bot) sends the style guide with the diff.
+
+Enable it (until then it's a safe no-op — it never breaks CI):
+1. Add secret **`ANTHROPIC_API_KEY`** (Settings → Secrets and variables → Actions → Secrets).
+2. Add variable **`AI_REVIEW_MODEL`** (… → Variables) = the exact model id you want to
+   pin (you choose and version it — that's the point). No model id is hardcoded.
+3. Optional: set `AI_REVIEW_ENFORCE=1` in the workflow to make a `VERDICT: BLOCK`
+   fail the check (default is advisory, mirroring Bugbot).
+
+Fork-safe by construction: the job is gated to in-repo PRs (`head.repo == repo`)
+because fork PRs can't read secrets. Provider is Anthropic by default; the script is
+~120 lines of stdlib and trivially adapted to OpenAI/Bedrock (swap the endpoint +
+headers). It is **not yet validated against a live key** — do a first live run on an
+in-repo PR after adding the secret/variable.
+
+## Measuring reviewer quality (eval harness)
+"Is the reviewer up to the task?" is answered with numbers, not opinion — see the
+`eval/` harness (Phase 4): it replays labeled cases (planted convention violations +
+clean idiomatic changes) through a reviewer and scores precision/recall, so you can
+compare Bugbot vs the pinned reviewer and catch regressions in the charter itself.
 
 ## Relationship to the other layers
 1. Constitution — `AGENTS.md`, `docs/agents/STYLE.md|ARCHITECTURE.md|DSL.md`.

@@ -1,0 +1,44 @@
+name: AI Review (second, pinned)
+
+# A second, model-PINNED reviewer that complements Cursor Bugbot with an auditable,
+# version-controlled model the maintainer chooses. Shares the charter in
+# .cursor/BUGBOT.md + docs/agents/STYLE.md so the two reviewers do not diverge.
+#
+# Requires two repo settings (until then the script is a safe no-op):
+#   - Secret  ANTHROPIC_API_KEY  (Settings → Secrets and variables → Actions → Secrets)
+#   - Variable AI_REVIEW_MODEL   (… → Variables)  e.g. your pinned Claude model id
+# In-repo PRs only: fork PRs cannot read secrets, so this reviewer does not run there
+# (the deterministic gate + Bugbot remain the fork-safe baseline — see docs/agents/REVIEW.md).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    # Skip on forks (no secret access) — keeps this from failing/spamming fork PRs.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run pinned second reviewer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}
+          # AI_REVIEW_ENFORCE: "1"   # uncomment to make a BLOCK verdict fail the check
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: origin/${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/ai_review.py
