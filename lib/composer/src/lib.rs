@@ -78,8 +78,7 @@ fn should_recurse(given: bool, maybe_bool: Option<bool>) -> bool {
 }
 
 pub fn compose(dir: &str, recursive: bool) -> Topology {
-    let f = format!("{}/topology.yml", dir);
-    let spec = TopologySpec::new(&f);
+    let spec = compiler::compile(dir);
     let recurse = should_recurse(recursive, spec.recursive);
     Topology::new(dir, &spec.name, recurse, false)
 }

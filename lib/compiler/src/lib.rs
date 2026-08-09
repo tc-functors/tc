@@ -25,11 +25,24 @@ use std::{
     path::Path,
 };
 
+use validator::Validate;
+
 pub fn compile(dir: &str) -> TopologySpec {
     let yaml_file = format!("{}/topology.yml", dir);
     let lisp_file = format!("{}/topology.lisp", dir);
     if u::file_exists(&yaml_file) {
-        TopologySpec::new(&yaml_file)
+        let spec = TopologySpec::new(&yaml_file);
+        match spec.validate() {
+            Ok(_) => spec,
+            Err(e) => {
+                println!("{}", e);
+                std::panic::set_hook(Box::new(|_| {
+                    println!("Validation Error");
+                }));
+                panic!("validation error");
+
+            }
+        }
     } else if u::file_exists(&lisp_file) {
         let data = u::slurp(&lisp_file);
         lisp::load(data);

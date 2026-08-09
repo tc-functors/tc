@@ -38,6 +38,8 @@ pub use queue::QueueSpec;
 pub use route::RouteSpec;
 use yaml::Transformer;
 
+use validator::Validate;
+
 // topology
 
 fn default_nodes() -> Nodes {
@@ -48,7 +50,7 @@ fn default_nodes() -> Nodes {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Validate, Debug)]
 pub struct Nodes {
     #[serde(default)]
     pub ignore: Option<Vec<String>>,
@@ -102,9 +104,10 @@ impl TopologyKind {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Validate, Debug)]
 pub struct TopologySpec {
     #[serde(default)]
+    #[validate(length(min = 3))]
     pub name: String,
 
     pub root: Option<bool>,
@@ -120,9 +123,11 @@ pub struct TopologySpec {
     pub version: Option<String>,
 
     #[serde(default)]
+    #[serde(alias = "infra-dir")]
     pub infra: Option<String>,
 
     #[serde(default)]
+    #[serde(alias = "config-file")]
     pub config: Option<String>,
 
     pub mode: Option<String>,
