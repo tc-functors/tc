@@ -46,11 +46,13 @@ else
   warn "nightly rustfmt not installed — run: rustup toolchain install nightly --component rustfmt"
 fi
 
-# --- 2. clippy (diff-scoped): fail only on NEW findings in changed files ---
-# --cap-lints=warn downgrades HEAD's pre-existing error-level lints so clippy can
-# analyze the whole workspace; the python filter then keeps only findings whose
-# primary span is in a file this change touched.
-note "clippy (workspace, findings scoped to changed files)"
+# --- 2. clippy (LINE-scoped): fail only on findings on lines this change added ---
+# HEAD is not clippy-clean (deliberate idioms + 2 pre-existing correctness lints in
+# `compiler`). --cap-lints=warn lets clippy analyze the whole workspace anyway; the
+# python filter then keeps only findings whose primary span is on a line THIS branch
+# added/changed (computed from the merge-base diff). Line-scoping — not file-scoping —
+# is what stops a change from being blamed for a touched file's pre-existing idioms.
+note "clippy (workspace, findings scoped to changed lines)"
 if [ -z "$CHANGED_RS" ]; then
   if cargo clippy --workspace -- --cap-lints=warn >/tmp/agent-clippy.log 2>&1; then
     ok "workspace lints/compiles (no changed .rs to scope)"
@@ -58,35 +60,49 @@ if [ -z "$CHANGED_RS" ]; then
     bad "cargo clippy failed to run (see /tmp/agent-clippy.log)"
   fi
 else
+  MB=$(git merge-base "$BASE" HEAD 2>/dev/null || echo "$BASE")
+  git diff --unified=0 "$MB" -- '*.rs' > /tmp/agent-added.patch 2>/dev/null
   cargo clippy --workspace --message-format=json -- --cap-lints=warn >/tmp/agent-clippy.json 2>/tmp/agent-clippy.err
-  CHANGED_RS="$CHANGED_RS" python3 - <<'PY'
-import json, os, sys
-changed = set(os.environ.get("CHANGED_RS", "").split())
+  python3 - <<'PY'
+import json, re, sys
+# 1) added/changed lines per file, from the merge-base diff
+added = {}
+cur = None
+hunk = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+for ln in open("/tmp/agent-added.patch", encoding="utf-8", errors="replace"):
+    if ln.startswith("+++ "):
+        p = ln[4:].strip()
+        cur = None if p == "/dev/null" else re.sub(r'^[ab]/', '', p)
+    elif ln.startswith("@@") and cur:
+        m = hunk.match(ln)
+        if m:
+            start = int(m.group(1)); cnt = int(m.group(2) or "1")
+            added.setdefault(cur, set()).update(range(start, start + max(cnt, 1)))
+# 2) clippy findings whose primary span line is an added line
 hits = []
 for line in open("/tmp/agent-clippy.json", encoding="utf-8", errors="replace"):
     line = line.strip()
     if not line.startswith("{"):
         continue
-    try:
-        obj = json.loads(line)
-    except Exception:
-        continue
-    if obj.get("reason") != "compiler-message":
-        continue
+    try: obj = json.loads(line)
+    except Exception: continue
+    if obj.get("reason") != "compiler-message": continue
     msg = obj.get("message") or {}
-    if msg.get("level") not in ("warning", "error"):
-        continue
-    code = ((msg.get("code") or {}).get("code")) or ""
+    if msg.get("level") not in ("warning", "error"): continue
+    code = ((msg.get("code") or {}).get("code")) or msg["level"]
     for sp in msg.get("spans", []):
-        if sp.get("is_primary") and sp.get("file_name") in changed:
-            hits.append(f"{sp['file_name']}:{sp.get('line_start')}: [{code or msg['level']}] {msg.get('message','')}")
-            break
+        if not sp.get("is_primary"): continue
+        f = sp.get("file_name"); 
+        for l in range(sp.get("line_start", 0), sp.get("line_end", sp.get("line_start", 0)) + 1):
+            if l in added.get(f, ()):
+                hits.append(f"{f}:{sp['line_start']}: [{code}] {msg.get('message','')}")
+                break
+        break
 if hits:
-    print("\n".join(sorted(set(hits))))
-    sys.exit(1)
+    print("\n".join(sorted(set(hits)))); sys.exit(1)
 sys.exit(0)
 PY
-  if [ $? -eq 0 ]; then ok "no new clippy findings in changed files"; else bad "clippy findings in changed files (fix or justify)"; fi
+  if [ $? -eq 0 ]; then ok "no new clippy findings on changed lines"; else bad "clippy findings on changed lines (fix or justify)"; fi
 fi
 
 # --- 3. build + the tests CI actually runs (workspace tests do not compile yet) ---

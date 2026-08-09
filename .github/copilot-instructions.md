@@ -17,5 +17,5 @@ Core rules:
 - Do not add a provider trait (AWS is hard-coded), do not "modernize" intentional
   idioms, do not reformat unrelated files.
 
-Build/test: `cargo build` and `cargo test -p composer` (not `--workspace`, which
-does not compile yet — see `docs/agents/CALIBRATION.md`). Gate: `./scripts/agent-check.sh`.
+Build/test: `cargo build` and `cargo test --workspace` (green as of Phase 2; CI runs
+it). Gate before finishing: `./scripts/agent-check.sh`. See `docs/agents/CALIBRATION.md`.

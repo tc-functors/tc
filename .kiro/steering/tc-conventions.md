@@ -26,5 +26,5 @@ Non-negotiables (full detail in STYLE.md):
    leaf IO; respect `TopologySpec` vs `Topology`.
 
 Do not add a provider trait, do not "modernize" intentional idioms, do not reformat
-unrelated files. Build with `cargo build`; test with `cargo test -p composer`
-(workspace tests do not compile yet). Gate: `./scripts/agent-check.sh`.
+unrelated files. Build with `cargo build`; test with `cargo test --workspace`
+(green as of Phase 2) or `cargo test -p composer`. Gate: `./scripts/agent-check.sh`.

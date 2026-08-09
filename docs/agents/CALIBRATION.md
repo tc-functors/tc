@@ -24,22 +24,34 @@ this file when the baseline moves.
 | `cargo +nightly fmt --check` | ❌ 55 hunks / 14 files | pre-existing drift, not agent-introduced |
 | `cargo clippy --workspace` | ❌ 2 errors + 153 warns | correctness lints in `compiler`; idioms elsewhere — see below |
 | `cargo clippy --workspace --all-targets` | ❌ compile error | `kit` **test** target — see bug below |
-| `cargo test --workspace` / `make unit-test` | ❌ compile error | same `kit` test-target bug |
+| `cargo test --workspace` / `make unit-test` | ❌→✅ fixed (Phase 2) | did not compile at HEAD; **now passes** on this branch — see below |
+
+> Update (this branch): the `cargo test --workspace` row was ❌ at the tagged HEAD
+> baseline; Phase 2 fixed it (84 tests pass). The green baseline for CI is now
+> `agent-check.sh` + `cargo test --workspace`.
 
 **Therefore the green baseline is: `cargo build` + `cargo test -p composer`.** Do
 not claim "workspace tests pass" — they do not compile yet.
 
-## Pre-existing bug: `kit` test target does not compile
-`lib/kit/src/io.rs:202` defines `pub fn sh(..)` under `#[cfg(not(test))]` with **no
-`#[cfg(test)]` twin**, but `lib/kit/src/git.rs` (`use crate::{pwd, sh};`) and other
-`io.rs` functions call `sh` unconditionally. Under `cfg(test)` the symbol is absent,
-so `kit`'s lib-test target fails (`E0432`/`E0425`). CI never caught this because it
-only runs `cargo test` in `lib/composer`, never `kit` or `--workspace`.
+## `kit` test target — FIXED on this branch (Phase 2)
+Originally `lib/kit/src/io.rs:202` defined `pub fn sh(..)` under `#[cfg(not(test))]`
+with **no `#[cfg(test)]` twin**, while `lib/kit/src/git.rs` and other `io.rs`
+functions called `sh` unconditionally — so `kit`'s lib-test target failed
+(`E0432`/`E0425`) and `cargo test --workspace` never compiled. CI never caught it
+because it only ran `cargo test` in `lib/composer`.
 
-This is exactly the class of defect the framework should prevent. The `#[cfg(test)]`
-twin for `sh` should mirror the pattern already used for `file_exists`/`slurp`.
-Fixing it (and widening CI to the workspace) is proposed framework work — until
-then, gates avoid `--all-targets` and scope tests to `composer`.
+Phase 2 fixed this:
+- Added the `#[cfg(test)]` twin for `sh` (mirrors `file_exists`/`slurp`).
+- Repaired the stale `differ` topology fixture (`fixture_topology`), which had
+  drifted behind the resolved structs. Added the now-required fields: `Runtime`
+  (`arch`, `enable_network`, `microvm`, `port`), `Build` (`dirs`, `include_deps`,
+  `image_name`, `base_image_arn`, `build_role_arn`, `bucket`, `package_manager`),
+  `Function` (`tasks`, `shared`), `Topology` (`root`, `concurrency`, `hooks`).
+
+Result: **`cargo test --workspace` now compiles and passes (84 tests, 0 failures)**,
+and `.github/workflows/agent-conformance.yml` runs it on every PR/push. This is a
+worked example of the framework surfacing real pre-existing rot: fixing one masked
+compile error exposed three stale-fixture test failures underneath it.
 
 ## clippy: HEAD is NOT clippy-clean → the gate is diff-scoped
 `cargo clippy --workspace` **fails on HEAD**: the `compiler` crate has **2

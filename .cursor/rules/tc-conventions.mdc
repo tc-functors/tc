@@ -43,6 +43,6 @@ author's conventions matters as much as correctness.
 - Add dependencies or move responsibilities between crates without discussing it.
 
 ## Before finishing
-Run `./scripts/agent-check.sh` (nightly fmt on changed files, clippy allow-list,
-`cargo build`, `cargo test -p composer`, convention greps). Note: `cargo test
---workspace` does not compile yet (documented in CALIBRATION.md) — use `-p composer`.
+Run `./scripts/agent-check.sh` (nightly fmt on changed files, line-scoped clippy,
+`cargo build`, `cargo test -p composer`, convention greps). The full `cargo test
+--workspace` suite is green as of Phase 2 (CI runs it) — see CALIBRATION.md.

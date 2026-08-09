@@ -32,20 +32,23 @@ is required for `fmt` (the entire `rustfmt.toml` uses unstable options).
 
 ```sh
 cargo build                    # builds the `tc` binary — the primary green signal
-cargo test -p composer         # the suite CI actually runs today (green)
+cargo test -p composer         # the suite CI historically ran
+cargo test --workspace         # full suite — green as of Phase 2 (was broken before)
 cargo +nightly fmt --check     # formatting gate — REQUIRES nightly
 cargo clippy --workspace       # lint (see the allow-list in CALIBRATION.md)
 ./scripts/agent-check.sh       # the one command to run before proposing changes
 ```
 
-Known caveats (do not be surprised by these — they are documented in
-`docs/agents/CALIBRATION.md`):
-- `cargo test --workspace` / `make unit-test` currently **fail to compile** because
-  `kit`'s `sh` has a `#[cfg(not(test))]` gate with no `#[cfg(test)]` twin. CI only
-  runs `lib/composer` tests, so this went unnoticed. Do not treat workspace-wide
-  tests as a passing baseline until that is fixed.
+Known caveats (documented in `docs/agents/CALIBRATION.md`):
+- `cargo test --workspace` / `make unit-test` were **broken at the tagged HEAD**
+  (a missing `#[cfg(test)]` `sh` twin in `kit` plus stale `differ` fixtures). Phase 2
+  **fixed** this — the full suite now passes and `.github/workflows/agent-conformance.yml`
+  runs it on every PR/push.
 - `cargo +nightly fmt --check` reports pre-existing drift in 14 files. Scope your
   formatting to files you changed; do not reformat unrelated files.
+- `cargo clippy --workspace` is not globally clean (deliberate idioms + 2 pre-existing
+  correctness lints in `compiler`); the gate is **line-scoped** so it only judges the
+  lines your change adds.
 
 ## The ten non-negotiables (full detail in STYLE.md)
 1. Prefer small, terse **free functions** over methods/`impl` blocks. Logic takes
