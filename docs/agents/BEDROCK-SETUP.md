@@ -23,7 +23,12 @@ the bare foundation-model id. List what's available:
 ```sh
 aws bedrock list-inference-profiles --region REGION \
   --query "inferenceProfileSummaries[?contains(inferenceProfileId,'anthropic')].inferenceProfileId"
-# e.g. us.anthropic.claude-<name>-v1:0   (region-prefixed: us./eu./apac.)
+# Recommended default (pinned, US-region, good quality/cost for per-PR review):
+#   us.anthropic.claude-sonnet-4-5-20250929-v1:0
+# Prefer a DATED snapshot id (…-YYYYMMDD-v1:0) over a rolling alias (e.g. sonnet-5)
+# so the reviewer stays auditable/reproducible. Step up to a dated Opus
+# (us.anthropic.claude-opus-4-5-20251101-v1:0) only if the eval shows Sonnet misses
+# real violations. Use the `us.` prefix (not `global.`) to keep routing in US regions.
 ```
 Use that id as `AI_REVIEW_MODEL`. (A plain `anthropic.claude-...` id also works in
 regions where on-demand is supported, but the profile is the safe default.)
@@ -89,7 +94,7 @@ non-secret; the role ARN is not sensitive, and OIDC means **no API key/secret**)
 | Variable | Value |
 |---|---|
 | `AI_REVIEW_BACKEND` | `bedrock` |
-| `AI_REVIEW_MODEL` | the inference-profile id from A2 |
+| `AI_REVIEW_MODEL` | the inference-profile id from A2 (recommended: `us.anthropic.claude-sonnet-4-5-20250929-v1:0`) |
 | `AI_REVIEW_AWS_REGION` | `REGION` |
 | `AI_REVIEW_AWS_ROLE` | the role ARN from A4 |
 
@@ -106,7 +111,7 @@ check in branch protection, and/or set `AI_REVIEW_ENFORCE=1` in the workflow to 
 **Locally** (fastest sanity check, using your own AWS creds for `REGION`):
 ```sh
 export AI_REVIEW_BACKEND=bedrock AI_REVIEW_AWS_REGION=REGION \
-       AI_REVIEW_MODEL="us.anthropic.claude-<name>-v1:0"
+       AI_REVIEW_MODEL="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 python3 eval/run_eval.py --live        # scores the seed cases through Bedrock
 ```
 **In CI:** open a small in-repo PR and watch the *AI Review (second, pinned)* job —
