@@ -4182,6 +4182,7 @@ name = "kit"
 version = "0.9.159"
 dependencies = [
  "ansi-escapes",
+ "anyhow",
  "base64 0.21.7",
  "chksum",
  "chrono",
