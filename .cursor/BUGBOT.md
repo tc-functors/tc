@@ -10,7 +10,16 @@ conflicts with a rule below, the rule below wins.
 Canonical references (read for depth): `/AGENTS.md` and `/docs/agents/STYLE.md`
 (especially **§10, "deliberate idioms — match, don't fix"**), `/docs/agents/ARCHITECTURE.md`.
 
-## BLOCK (raise a blocking Bug) when a changed file does any of these
+## Scope — which rules apply where
+The BLOCK rules below concern the **Rust codebase** (`lib/**`, `src/**`). Auxiliary
+tooling — Python/shell/YAML under `scripts/**`, `eval/**`, `.github/**` — is **not**
+Rust: do **not** apply the Rust-specific rules to it (the `#[cfg(test)]` twin,
+free-functions-over-methods, the derive quartet, `kit` usage, vertical `use` blocks).
+Judge that tooling on its own terms — stdlib-only where practical, fail-safe, no
+needless dependencies, no secrets. (For example, a Python helper that shells out to
+`git`/`aws` is fine and does **not** need a Rust `#[cfg(test)]` twin.)
+
+## BLOCK (raise a blocking Bug) when a changed **Rust** file does any of these
 1. Adds `anyhow` or `thiserror` to any `Cargo.toml`, or adds `use anyhow`/`use
    thiserror`. This codebase is **deliberately free of them**. Error handling is
    fail-fast (`.unwrap()`, `.expect("fail")`, `panic!`, `std::process::exit(1)`).

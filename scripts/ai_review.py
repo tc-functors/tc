@@ -60,7 +60,10 @@ def read_charter():
             with open(path, encoding="utf-8") as fh:
                 parts.append(f"===== {f} =====\n{fh.read()}")
         except OSError:
-            notice(f"charter file missing (skipped): {f}")
+            notice(f"charter file missing: {f}")
+            # Emit a visible marker so the model (and eval harness) sees the gap
+            # instead of silently reviewing against an incomplete charter.
+            parts.append(f"===== {f} =====\n[FILE MISSING]\n")
     return "\n\n".join(parts)
 
 
