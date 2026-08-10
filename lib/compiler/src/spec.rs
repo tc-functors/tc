@@ -107,7 +107,7 @@ impl TopologyKind {
 #[derive(Serialize, Deserialize, Clone, Validate, Debug)]
 pub struct TopologySpec {
     #[serde(default)]
-    #[validate(length(min = 3))]
+    #[validate(length(min = 1))]
     pub name: String,
 
     pub root: Option<bool>,
@@ -156,6 +156,40 @@ pub struct TopologySpec {
     pub flow: Option<Value>,
 }
 
+impl Default for TopologySpec {
+
+    fn default() -> Self {
+        Self {
+            name: String::from("unknown"),
+            root: Some(false),
+            function_dirs: None,
+            concurrency: Some(4),
+            recursive: Some(false),
+            auto: Some(false),
+            kind: Some(TopologyKind::Function),
+            dir: Some(u::pwd()),
+            hyphenated_names: false,
+            version: None,
+            infra: None,
+            config: None,
+            mode: None,
+            pools: None,
+            functions: None,
+            routes: None,
+            events: None,
+            nodes: default_nodes(),
+            states: None,
+            flow: None,
+            queues: None,
+            mutations: None,
+            channels: None,
+            triggers: None,
+            pages: None,
+            tests: None,
+        }
+    }
+}
+
 impl TopologySpec {
     pub fn new(topology_spec_file: &str) -> TopologySpec {
         if u::file_exists(topology_spec_file) {
@@ -184,32 +218,19 @@ impl TopologySpec {
         } else {
             TopologySpec {
                 name: s!("tc"),
-                root: Some(false),
-                function_dirs: None,
-                concurrency: Some(4),
-                recursive: Some(false),
-                auto: Some(false),
-                kind: Some(TopologyKind::Function),
-                dir: Some(u::pwd()),
-                hyphenated_names: false,
-                version: None,
-                infra: None,
-                config: None,
-                mode: None,
-                pools: None,
-                functions: None,
-                routes: None,
-                events: None,
-                nodes: default_nodes(),
-                states: None,
-                flow: None,
-                queues: None,
-                mutations: None,
-                channels: None,
-                triggers: None,
-                pages: None,
-                tests: None,
+                ..Default::default()
             }
+        }
+    }
+
+    pub fn standalone(dir: &str) -> TopologySpec {
+        if let Some(fspec) = function::load_fspec_file(dir) {
+            TopologySpec {
+                name: fspec.namespace.unwrap_or(fspec.name),
+                ..TopologySpec::default()
+            }
+        } else {
+            TopologySpec::default()
         }
     }
 
