@@ -42,13 +42,15 @@ def load_reviewer():
 
 
 def review_live(reviewer, diff):
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    model = os.environ.get("AI_REVIEW_MODEL", "").strip()
-    if not (api_key and model):
-        raise SystemExit("--live needs ANTHROPIC_API_KEY and AI_REVIEW_MODEL set.")
-    base_url = os.environ.get("ANTHROPIC_BASE", "https://api.anthropic.com").rstrip("/")
-    prompt = reviewer.build_prompt(reviewer.read_charter(), diff)
-    return reviewer.call_model(api_key, base_url, model, prompt)
+    # Delegate to the shared backend dispatcher so --live scoring uses the exact same
+    # path (anthropic | bedrock), charter, and verdict rules as the CI reviewer.
+    text = reviewer.run_review(diff)
+    if text is None:
+        raise SystemExit(
+            "--live: reviewer backend not configured. Set AI_REVIEW_MODEL and the "
+            "backend's credentials (ANTHROPIC_API_KEY, or AI_REVIEW_BACKEND=bedrock + AWS creds)."
+        )
+    return text
 
 
 def main():
