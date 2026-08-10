@@ -29,12 +29,16 @@ BLOCK is posted as a comment but still exits 0 (advisory), mirroring Bugbot's de
 
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.error
 import urllib.request
 
 CHARTER_FILES = ["AGENTS.md", "docs/agents/STYLE.md", ".cursor/BUGBOT.md"]
+# Resolve charter paths relative to the repo (this file is <repo>/scripts/ai_review.py),
+# not the process cwd — so callers like the eval harness read the real charter.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def notice(msg):
@@ -44,12 +48,33 @@ def notice(msg):
 def read_charter():
     parts = []
     for f in CHARTER_FILES:
+        path = os.path.join(REPO_ROOT, f)
         try:
-            with open(f, encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 parts.append(f"===== {f} =====\n{fh.read()}")
         except OSError:
             notice(f"charter file missing (skipped): {f}")
     return "\n\n".join(parts)
+
+
+def parse_verdict(text):
+    """Return 'BLOCK' or 'PASS' from a reviewer's text.
+
+    Scans the last few non-empty lines for an explicit VERDICT token, tolerating
+    markdown/backticks/punctuation and any spacing (`VERDICT: BLOCK`, `**VERDICT:
+    BLOCK**`, `` `VERDICT:BLOCK` ``). Requiring the VERDICT token avoids false hits on
+    prose like "this is not a BLOCK". Defaults to PASS (advisory-safe) when no verdict
+    line is present. Shared by the CI reviewer and the eval harness so they agree.
+    """
+    lines = [ln for ln in (text or "").splitlines() if ln.strip()]
+    for line in reversed(lines[-6:]):
+        cleaned = re.sub(r"[^A-Za-z ]", " ", line).upper()
+        if "VERDICT" in cleaned:
+            if "BLOCK" in cleaned:
+                return "BLOCK"
+            if "PASS" in cleaned:
+                return "PASS"
+    return "PASS"
 
 
 def get_diff(base, head, cap):
@@ -124,8 +149,8 @@ def post_comment(repo, pr, token, body):
     )
     try:
         urllib.request.urlopen(req, timeout=60)
-    except urllib.error.HTTPError as e:
-        notice(f"comment post failed ({e.code}); printing instead")
+    except Exception as e:  # fail-safe: a post blip must never fail the job
+        notice(f"comment post failed ({e!r}); printing instead")
         print(body)
 
 
@@ -156,7 +181,7 @@ def main():
         notice(f"model call failed ({e!r}) — skipping (no-op)")
         return 0
 
-    verdict_block = review.rstrip().splitlines()[-1].strip().upper().endswith("BLOCK") if review else False
+    verdict_block = parse_verdict(review) == "BLOCK"
     header = f"### Second reviewer (`{model}`)\n\n"
     footer = "\n\n<sub>Pinned second reviewer — shares the charter in `.cursor/BUGBOT.md` + `docs/agents/STYLE.md`. Advisory unless `AI_REVIEW_ENFORCE=1`.</sub>"
     post_comment(
