@@ -41,16 +41,6 @@ def load_reviewer():
     return mod
 
 
-def parse_verdict(text):
-    for line in reversed((text or "").strip().splitlines()):
-        s = line.strip().upper()
-        if s.endswith("BLOCK"):
-            return "BLOCK"
-        if s.endswith("PASS"):
-            return "PASS"
-    return "PASS"  # no explicit verdict -> treat as no-block
-
-
 def review_live(reviewer, diff):
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     model = os.environ.get("AI_REVIEW_MODEL", "").strip()
@@ -72,7 +62,10 @@ def main():
     if not files:
         raise SystemExit(f"no cases in {args.cases_dir}")
 
-    reviewer = load_reviewer() if args.live else None
+    # Always load the reviewer module: mock and live both use its shared
+    # parse_verdict() so the harness and the CI reviewer agree on verdicts. (Importing
+    # the module runs no I/O; it only executes on __main__.)
+    reviewer = load_reviewer()
     tp = fp = tn = fn = 0
     rows = []
     for f in files:
@@ -83,7 +76,7 @@ def main():
             text = review_live(reviewer, case.get("diff", ""))
         else:
             text = case.get("mock_output", "")
-        predicted = parse_verdict(text)
+        predicted = reviewer.parse_verdict(text)
         ok = predicted == expected
         # BLOCK is the positive class
         if expected == "BLOCK" and predicted == "BLOCK":
