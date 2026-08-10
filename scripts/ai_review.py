@@ -16,11 +16,18 @@ Design goals:
   guide, so the reviewer judges against tc's conventions, not generic Rust.
 
 Env:
-  ANTHROPIC_API_KEY   required to call the model (absent -> no-op, exit 0)
   AI_REVIEW_MODEL     required model id, maintainer-pinned (absent -> no-op, exit 0)
-  ANTHROPIC_BASE      optional, default https://api.anthropic.com
-  GH_TOKEN / GITHUB_TOKEN, GITHUB_REPOSITORY, PR_NUMBER, BASE_SHA, HEAD_SHA
+  AI_REVIEW_BACKEND   "anthropic" (default, public API) or "bedrock" (AWS, in-account)
   AI_REVIEW_MAX_DIFF  optional cap on diff chars sent (default 60000)
+  GH_TOKEN / GITHUB_TOKEN, GITHUB_REPOSITORY, PR_NUMBER, BASE_SHA, HEAD_SHA
+  # anthropic backend:
+  ANTHROPIC_API_KEY   required for the public API (absent -> no-op, exit 0)
+  ANTHROPIC_BASE      optional, default https://api.anthropic.com
+  # bedrock backend (data stays in AWS; nothing goes to the model provider):
+  AI_REVIEW_AWS_REGION optional; falls back to AWS_REGION. Auth via the ambient AWS
+                       creds (in CI: GitHub OIDC -> IAM role via configure-aws-credentials).
+                       Uses the model-agnostic `aws bedrock-runtime converse` CLI, so
+                       AI_REVIEW_MODEL is a Bedrock model id / inference-profile ARN.
 
 Verdict protocol: the model is asked to end with a line `VERDICT: BLOCK` or
 `VERDICT: PASS`. BLOCK sets exit code 1 *only if* AI_REVIEW_ENFORCE=1; by default a
@@ -109,7 +116,7 @@ def build_prompt(charter, diff):
     )
 
 
-def call_model(api_key, base_url, model, prompt):
+def call_anthropic(api_key, base_url, model, prompt):
     body = json.dumps({
         "model": model,
         "max_tokens": 2000,
@@ -129,6 +136,63 @@ def call_model(api_key, base_url, model, prompt):
         data = json.loads(resp.read())
     # Messages API: content is a list of blocks; concatenate text blocks.
     return "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text").strip()
+
+
+def call_bedrock(model, prompt, region):
+    """Call Bedrock via the model-agnostic `aws bedrock-runtime converse` CLI.
+
+    Inference runs inside AWS; the prompt is not sent to the model provider. Auth is
+    the ambient AWS identity (in CI: GitHub OIDC -> IAM role). The CLI ships on the
+    runner, so this stays dependency-free. The messages payload is passed via a temp
+    file (`file://`) to avoid arg-length limits on large charters/diffs.
+    """
+    import tempfile
+
+    messages = [{"role": "user", "content": [{"text": prompt}]}]
+    fd, path = tempfile.mkstemp(suffix=".json")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(messages, fh)
+        cmd = [
+            "aws", "bedrock-runtime", "converse",
+            "--model-id", model,
+            "--messages", f"file://{path}",
+            "--inference-config", '{"maxTokens":2000}',
+        ]
+        if region:
+            cmd += ["--region", region]
+        out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    data = json.loads(out)
+    blocks = data.get("output", {}).get("message", {}).get("content", [])
+    return "".join(b.get("text", "") for b in blocks).strip()
+
+
+def run_review(diff):
+    """Dispatch to the configured backend. Returns the review text, or None when the
+    backend is not configured (a safe no-op — the caller exits 0)."""
+    model = os.environ.get("AI_REVIEW_MODEL", "").strip()
+    if not model:
+        notice("AI_REVIEW_MODEL not set — skipping. Set the repo variable to your pinned model id.")
+        return None
+    backend = os.environ.get("AI_REVIEW_BACKEND", "anthropic").strip().lower()
+    prompt = build_prompt(read_charter(), diff)
+    if backend == "bedrock":
+        region = (os.environ.get("AI_REVIEW_AWS_REGION") or os.environ.get("AWS_REGION") or "").strip()
+        return call_bedrock(model, prompt, region)
+    if backend == "anthropic":
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+        if not api_key:
+            notice("ANTHROPIC_API_KEY not set — skipping (no-op). Add the repo secret to enable.")
+            return None
+        base_url = os.environ.get("ANTHROPIC_BASE", "https://api.anthropic.com").rstrip("/")
+        return call_anthropic(api_key, base_url, model, prompt)
+    notice(f"unknown AI_REVIEW_BACKEND '{backend}' — skipping (no-op)")
+    return None
 
 
 def post_comment(repo, pr, token, body):
@@ -155,16 +219,6 @@ def post_comment(repo, pr, token, body):
 
 
 def main():
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-    model = os.environ.get("AI_REVIEW_MODEL", "").strip()
-    if not api_key:
-        notice("ANTHROPIC_API_KEY not set — skipping (no-op). Add the repo secret to enable.")
-        return 0
-    if not model:
-        notice("AI_REVIEW_MODEL not set — skipping. Set the repo variable to your pinned model id.")
-        return 0
-
-    base_url = os.environ.get("ANTHROPIC_BASE", "https://api.anthropic.com").rstrip("/")
     cap = int(os.environ.get("AI_REVIEW_MAX_DIFF", "60000"))
     base_sha = os.environ.get("BASE_SHA", "origin/main")
     head_sha = os.environ.get("HEAD_SHA", "HEAD")
@@ -174,15 +228,18 @@ def main():
         notice("empty diff — nothing to review")
         return 0
 
-    prompt = build_prompt(read_charter(), diff)
     try:
-        review = call_model(api_key, base_url, model, prompt)
-    except Exception as e:  # fail-safe: never break CI on an API hiccup
-        notice(f"model call failed ({e!r}) — skipping (no-op)")
+        review = run_review(diff)
+    except Exception as e:  # fail-safe: never break CI on an API/CLI hiccup
+        notice(f"review failed ({e!r}) — skipping (no-op)")
         return 0
+    if review is None:
+        return 0  # backend not configured — safe no-op
 
+    model = os.environ.get("AI_REVIEW_MODEL", "").strip()
+    backend = os.environ.get("AI_REVIEW_BACKEND", "anthropic").strip().lower()
     verdict_block = parse_verdict(review) == "BLOCK"
-    header = f"### Second reviewer (`{model}`)\n\n"
+    header = f"### Second reviewer (`{model}` via {backend})\n\n"
     footer = "\n\n<sub>Pinned second reviewer — shares the charter in `.cursor/BUGBOT.md` + `docs/agents/STYLE.md`. Advisory unless `AI_REVIEW_ENFORCE=1`.</sub>"
     post_comment(
         os.environ.get("GITHUB_REPOSITORY"),

@@ -55,24 +55,53 @@ re-run validation from a trusted in-repo branch.
 - Team/manual/learned rules can also be managed from the Cursor dashboard; inline
   `@cursor remember <fact>` on a PR teaches a durable rule.
 ## Second, pinned reviewer (GitHub Actions)
-Bugbot's model is opaque and unpinnable. To get a diverse, **auditable, version-pinned**
-second opinion, `.github/workflows/ai-review.yml` runs `scripts/ai_review.py` — a
-small, stdlib-only reviewer that reads the **same charter** (`AGENTS.md` +
-`docs/agents/STYLE.md` + `.cursor/BUGBOT.md`) so the two reviewers don't diverge, and
-(unlike a diff-only bot) sends the style guide with the diff.
+Bugbot's model is opaque and unpinnable. `.github/workflows/ai-review.yml` runs
+`scripts/ai_review.py` — a small, stdlib-only reviewer that reads the **same charter**
+(`AGENTS.md` + `docs/agents/STYLE.md` + `.cursor/BUGBOT.md`) so the two reviewers don't
+diverge, and (unlike a diff-only bot) sends the style guide with the diff. It's
+fail-safe (missing config or any API/CLI error → no-op, never breaks CI) and posts
+findings as a PR comment; `VERDICT: BLOCK` can optionally enforce.
 
-Enable it (until then it's a safe no-op — it never breaks CI):
-1. Add secret **`ANTHROPIC_API_KEY`** (Settings → Secrets and variables → Actions → Secrets).
-2. Add variable **`AI_REVIEW_MODEL`** (… → Variables) = the exact model id you want to
-   pin (you choose and version it — that's the point). No model id is hardcoded.
-3. Optional: set `AI_REVIEW_ENFORCE=1` in the workflow to make a `VERDICT: BLOCK`
-   fail the check (default is advisory, mirroring Bugbot).
+Two backends, chosen by the repo variable **`AI_REVIEW_BACKEND`**:
 
-Fork-safe by construction: the job is gated to in-repo PRs (`head.repo == repo`)
-because fork PRs can't read secrets. Provider is Anthropic by default; the script is
-~120 lines of stdlib and trivially adapted to OpenAI/Bedrock (swap the endpoint +
-headers). It is **not yet validated against a live key** — do a first live run on an
-in-repo PR after adding the secret/variable.
+### `anthropic` (default — public Anthropic API)
+Data egresses to Anthropic, so this is for public code / OSS repos.
+1. Secret **`ANTHROPIC_API_KEY`**.
+2. Variable **`AI_REVIEW_MODEL`** = your pinned Claude model id.
+
+### `bedrock` (Amazon Bedrock — for private/company repos)
+Inference runs **inside AWS** via the model-agnostic `aws bedrock-runtime converse`
+CLI; per AWS's documented data handling, prompts/completions are **not** sent to the
+model provider and are **not** used for training — so data stays within AWS. Setup:
+1. Variables: `AI_REVIEW_BACKEND=bedrock`, `AI_REVIEW_MODEL` = a Bedrock model id /
+   inference-profile ARN (Claude-on-Bedrock or Amazon Nova; Converse is model-agnostic
+   so Llama/Mistral/OpenAI gpt-oss also work), and `AI_REVIEW_AWS_REGION`.
+2. In AWS: enable model access for that model + region (Bedrock console → Model
+   access; some models need an access request).
+3. Auth via **GitHub OIDC → IAM role** (no static keys): register GitHub's OIDC
+   provider in IAM; create a role scoped to this repo with `bedrock:InvokeModel` on
+   the model/inference-profile ARN; set variable `AI_REVIEW_AWS_ROLE` to that role
+   ARN. The workflow already declares `id-token: write` and runs
+   `configure-aws-credentials` when the backend is `bedrock`.
+4. For zero non-AWS hops even for the runner, use a self-hosted runner in your AWS
+   account (GitHub-hosted runners are on Azure; either way the traffic is GitHub→AWS,
+   which stays within "AWS or GitHub").
+
+Optional (either backend): `AI_REVIEW_ENFORCE=1` makes a `BLOCK` verdict fail the
+check (default advisory).
+
+Fork-safe by construction: gated to in-repo PRs (`head.repo == repo`) because fork
+PRs can't read secrets or assume the role. **Not yet validated against a live
+key/role — do a first live run on an in-repo PR after configuring.**
+
+## Compliance / data residency
+Pick reviewers whose data handling fits the repo's rules:
+- **Public / OSS repos** (like this one): any backend is fine.
+- **Private repos with an egress boundary:** the **`bedrock`** backend keeps inference
+  in AWS (data not sent to the model provider). **Cursor Bugbot** processes on Cursor's
+  infrastructure — use it only where Cursor is an approved vendor for that repo. The
+  **`anthropic`** backend sends the diff to Anthropic — use only where that egress is
+  permitted. Confirm specifics against your own policy and cloud agreement.
 
 ## Measuring reviewer quality (eval harness)
 "Is the reviewer up to the task?" is answered with numbers, not opinion — see the
