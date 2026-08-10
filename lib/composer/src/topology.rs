@@ -94,6 +94,8 @@ pub struct Topology {
     pub tests: HashMap<String, TestSpec>,
     pub transducer: Option<Transducer>,
     pub hooks: HashMap<String, Vec<Hook>>,
+    pub tc_version: String,
+    pub changelog: Vec<String>
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -810,6 +812,8 @@ fn make(
         config: Config::new(),
         transducer: maybe_transducer,
         hooks: hooks::load(&infra_dir),
+        tc_version: version::tc_version(),
+        changelog: vec![]
     }
 }
 
@@ -869,6 +873,8 @@ fn make_standalone(root_ns: &str, dir: &str) -> Topology {
         config: Config::new(),
         transducer: None,
         hooks: HashMap::new(),
+        tc_version: version::tc_version(),
+        changelog: vec![]
     }
 }
 
