@@ -45,7 +45,8 @@ jobs:
           fetch-depth: 0
 
       - name: Configure AWS credentials (bedrock backend only)
-        if: vars.AI_REVIEW_BACKEND == 'bedrock'
+        if: vars.AI_REVIEW_BACKEND == 'bedrock' && vars.AI_REVIEW_AWS_ROLE != ''
+        continue-on-error: true # a creds/role failure must not fail the job; the script then no-ops
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AI_REVIEW_AWS_ROLE }}

@@ -179,7 +179,7 @@ def run_review(diff):
     if not model:
         notice("AI_REVIEW_MODEL not set — skipping. Set the repo variable to your pinned model id.")
         return None
-    backend = os.environ.get("AI_REVIEW_BACKEND", "anthropic").strip().lower()
+    backend = (os.environ.get("AI_REVIEW_BACKEND") or "anthropic").strip().lower()
     prompt = build_prompt(read_charter(), diff)
     if backend == "bedrock":
         region = (os.environ.get("AI_REVIEW_AWS_REGION") or os.environ.get("AWS_REGION") or "").strip()
@@ -237,7 +237,7 @@ def main():
         return 0  # backend not configured — safe no-op
 
     model = os.environ.get("AI_REVIEW_MODEL", "").strip()
-    backend = os.environ.get("AI_REVIEW_BACKEND", "anthropic").strip().lower()
+    backend = (os.environ.get("AI_REVIEW_BACKEND") or "anthropic").strip().lower()
     verdict_block = parse_verdict(review) == "BLOCK"
     header = f"### Second reviewer (`{model}` via {backend})\n\n"
     footer = "\n\n<sub>Pinned second reviewer — shares the charter in `.cursor/BUGBOT.md` + `docs/agents/STYLE.md`. Advisory unless `AI_REVIEW_ENFORCE=1`.</sub>"
