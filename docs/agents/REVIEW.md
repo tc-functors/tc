@@ -90,6 +90,9 @@ model provider and are **not** used for training — so data stays within AWS. S
 Optional (either backend): `AI_REVIEW_ENFORCE=1` makes a `BLOCK` verdict fail the
 check (default advisory).
 
+**Full step-by-step Bedrock + OIDC runbook (model access, IAM role, trust +
+permission policies, validation, troubleshooting):** `docs/agents/BEDROCK-SETUP.md`.
+
 Fork-safe by construction: gated to in-repo PRs (`head.repo == repo`) because fork
 PRs can't read secrets or assume the role. **Not yet validated against a live
 key/role — do a first live run on an in-repo PR after configuring.**
