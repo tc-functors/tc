@@ -4,6 +4,7 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0"
 ansi-escapes = "0.1.1"
 base64 = "0.21.0"
 chrono = "0.4.24"
