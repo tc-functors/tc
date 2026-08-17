@@ -18,6 +18,10 @@ Aider, Gemini CLI, and others; thin adapters point the remaining harnesses here
 - `docs/agents/DSL.md` — the `topology.yml` / `function.yml` schema reference.
 - `docs/agents/CALIBRATION.md` — what actually builds/tests/lints clean today, and why.
 
+## Additional references
+- `docs/agents/REVIEW.md` — the automated PR review layer (Cursor Bugbot + the pinned
+  Bedrock reviewer). Read this when **preparing a PR**, not before writing code.
+
 ## What this project is (one paragraph)
 `tc` is a single Rust binary that turns a provider-agnostic `topology.yml` graph of
 entities (functions, events, routes, mutations, queues, channels, states, pages,
@@ -85,6 +89,18 @@ Known caveats (documented in `docs/agents/CALIBRATION.md`):
   hard-coded by design.
 - Do **not** move responsibilities between crates without discussing the design.
 - Keep diffs narrowly scoped. Update `examples/` when user-facing behavior changes.
+
+## Attribution
+Agent-made commits set the git **author** to `KiroCrew` while the **committer** is the
+supervising human who reviewed and pushed them — so history reads *"KiroCrew authored,
+<human> committed"*. Agents commit with:
+```sh
+git commit --author="KiroCrew <kirocrew@users.noreply.github.com>" -m "…"
+```
+Comments an agent posts directly (i.e. not via a CI bot, which already appears as
+`github-actions[bot]`/`cursor[bot]`) carry a signature line — e.g.
+`🤖 KiroCrew (agent), under @<human>'s supervision` — so agent authorship is clear
+even when the API call uses the human's token.
 
 ## Before you say "done"
 1. `./scripts/agent-check.sh` passes (fmt on changed files, clippy allow-list,
