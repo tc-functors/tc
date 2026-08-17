@@ -577,7 +577,7 @@ fn load_and_render(path: &str, dir: &str) -> String {
     }
 }
 
-fn load_fspec_file(dir: &str) -> Option<FunctionSpec> {
+pub fn load_fspec_file(dir: &str) -> Option<FunctionSpec> {
     let name = find_fspec_file(dir);
     let f1 = format!("{}/function.json", dir);
     let f2 = format!("{}/{}", dir, &name);

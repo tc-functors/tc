@@ -29,6 +29,7 @@ use validator::Validate;
 
 pub fn compile(dir: &str) -> TopologySpec {
     let yaml_file = format!("{}/topology.yml", dir);
+    let function_file = format!("{}/function.yml", dir);
     let lisp_file = format!("{}/topology.lisp", dir);
     if u::file_exists(&yaml_file) {
         let spec = TopologySpec::new(&yaml_file);
@@ -47,6 +48,8 @@ pub fn compile(dir: &str) -> TopologySpec {
         let data = u::slurp(&lisp_file);
         lisp::load(data);
         TopologySpec::new(&yaml_file)
+    } else if u::file_exists(&function_file) {
+        TopologySpec::standalone(dir)
     } else {
         panic!("No topology spec found");
     }

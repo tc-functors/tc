@@ -45,3 +45,9 @@ pub fn current_semver(prefix: &str, dir: &str) -> String {
     }
     v
 }
+
+pub fn tc_version() -> String {
+    option_env!("PROJECT_VERSION")
+        .unwrap_or(env!("CARGO_PKG_VERSION"))
+        .to_string()
+}
