@@ -1,0 +1,8 @@
+{
+  "name": "violation_custom_error_enum",
+  "kind": "violation",
+  "expect_verdict": "BLOCK",
+  "rule": "no-custom-error-enum",
+  "diff": "--- a/lib/composer/src/lib.rs\n+++ b/lib/composer/src/lib.rs\n@@\n-pub fn compose(dir: &str) -> Topology {\n-    let spec = compiler::compile(dir);\n-    build(spec)\n+use thiserror::Error;\n+\n+#[derive(Error, Debug)]\n+pub enum ComposeError {\n+    #[error(\"missing spec\")]\n+    MissingSpec,\n+}\n+\n+pub fn compose(dir: &str) -> Result<Topology, ComposeError> {\n+    let spec = compiler::compile(dir);\n+    Ok(build(spec))\n }\n",
+  "mock_output": "High — lib/composer/src/lib.rs: introduces `thiserror` + a custom `ComposeError` enum and a `Result`-returning API in ordinary code. The house style is fail-fast (no anyhow/thiserror/custom error enums). Return `Topology` and panic/expect on unrecoverable input.\n\nVERDICT: BLOCK"
+}
