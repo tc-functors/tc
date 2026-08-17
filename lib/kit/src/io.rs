@@ -218,6 +218,13 @@ pub fn sh(path: &str, dir: &str) -> String {
     }
 }
 
+// Mocking this io function
+// tests never shell out; return empty output
+#[cfg(test)]
+pub fn sh(_path: &str, _dir: &str) -> String {
+    String::new()
+}
+
 pub fn run(path: &str, dir: &str) {
     match std::env::var("TC_TRACE") {
         Ok(_) => {
