@@ -1,0 +1,8 @@
+{
+  "name": "clean_idiomatic_data_struct",
+  "kind": "clean",
+  "expect_verdict": "PASS",
+  "rule": "",
+  "diff": "--- a/lib/composer/src/topology.rs\n+++ b/lib/composer/src/topology.rs\n@@\n+#[derive(Serialize, Deserialize, Clone, Debug)]\n+pub struct Store {\n+    pub name: String,\n+    pub kind: String,\n+    pub tags: HashMap<String, String>,\n+    #[serde(default)]\n+    pub bucket: Option<String>,\n+}\n",
+  "mock_output": "No findings. New data struct uses the standard derive quartet, all `pub` fields, `HashMap<String, String>`, and `Option<T>` + `#[serde(default)]` — matches the data-structure conventions.\n\nVERDICT: PASS"
+}

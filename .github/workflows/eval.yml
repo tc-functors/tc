@@ -1,0 +1,30 @@
+name: Reviewer Eval (mock)
+
+# Fast, no-secret guard for the reviewer eval harness (Phase 4). Runs the labeled
+# cases in MOCK mode, which validates the case files + runner and asserts the expected
+# verdicts are self-consistent. Live scoring of a real model (needs the API key) is an
+# ad-hoc/local step — see eval/README.md — not part of default CI.
+on:
+  pull_request:
+    paths:
+      - "eval/**"
+      - "scripts/ai_review.py"
+      - ".cursor/BUGBOT.md"
+      - "docs/agents/STYLE.md"
+      - "AGENTS.md"
+  push:
+    branches: [main]
+    paths:
+      - "eval/**"
+      - "scripts/ai_review.py"
+
+permissions:
+  contents: read
+
+jobs:
+  eval-mock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run eval harness (mock)
+        run: python3 eval/run_eval.py --min-accuracy 1.0

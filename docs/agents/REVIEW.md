@@ -48,7 +48,8 @@ Bugbot (and any secret-backed reviewer) does not run with full power on PRs from
 forks. The **deterministic gate needs no secrets and does run on forks**, so it stays
 the fork-safe baseline; model review is best-effort on forks and authoritative on
 in-repo branches. A maintainer can always trigger a review manually (`bugbot run`) or
-re-run validation from a trusted in-repo branch.
+re-run validation from a trusted in-repo branch — or run the **fork-PR conformance
+triage** below, which brings the pinned reviewer to a fork PR safely and on demand.
 
 ## Extending the review
 - Add area-specific rules with nested `<dir>/.cursor/BUGBOT.md` files.
@@ -96,6 +97,51 @@ permission policies, validation, troubleshooting):** `docs/agents/BEDROCK-SETUP.
 Fork-safe by construction: gated to in-repo PRs (`head.repo == repo`) because fork
 PRs can't read secrets or assume the role. **Not yet validated against a live
 key/role — do a first live run on an in-repo PR after configuring.**
+
+## Fork-PR conformance triage (maintainer-triggered)
+Fork PRs are the one place the framework is otherwise blind: the two model reviewers
+are gated to in-repo PRs (a fork can't read `ANTHROPIC_API_KEY` or assume the OIDC
+role), so an outside contributor only ever sees the deterministic gate — not the
+house-style judgment that decides whether a change reads like `tc`.
+`.github/workflows/pr-conformance-triage.yml` closes that gap **on a maintainer's
+explicit request**, reusing `scripts/ai_review.py` in `AI_REVIEW_MODE=conformance`
+(feedback mode).
+
+**How a maintainer triggers it**
+- Comment **`/triage`** on the PR (must be an OWNER / MEMBER / COLLABORATOR), or
+- run the **PR Conformance Triage** workflow via *Actions → Run workflow* with the PR
+  number (`workflow_dispatch`).
+
+**What it posts** — ONE "🔎 Conformance triage report" comment combining:
+1. the **deterministic gate** conclusion (read from the `Agent Conformance` check that
+   already ran on the fork PR — not recomputed here), and
+2. the **pinned reviewer's** findings, each mapped to the exact rule
+   (`STYLE.md §<n>` / `BUGBOT.md BLOCK #<n>`) and the concrete in-scope fix.
+
+It is **always advisory** (never fails a check, even with `AI_REVIEW_ENFORCE=1`) and
+is signed as the KiroCrew agent.
+
+**Why it is fork-safe by construction** — the recurring danger is a
+`pull_request_target`-style flow that checks out a fork's HEAD and *runs* it (build
+scripts, tests, `build.rs`) while holding secrets. This workflow structurally cannot:
+1. **Trusted definition.** It triggers on `issue_comment` / `workflow_dispatch`, which
+   run the workflow file from the **default branch** — never the fork's copy — so a
+   fork PR can't edit the workflow to exfiltrate anything.
+2. **Maintainer gate.** It runs only for a `/triage` from a maintainer (or a
+   `workflow_dispatch`, which needs write access). A fork author can't self-trigger the
+   privileged (Bedrock + write-token) run.
+3. **No untrusted code executes.** The job checks out the **trusted base repo** (its
+   own `ai_review.py` + charter) and reads the contribution **only as a text diff**
+   (`git fetch …/head` + `git diff`). The OIDC role and write token are never in scope
+   while any contributor-controlled code runs, because none runs here.
+4. **The gate stays where execution is safe.** Compiling/linting/testing contributor
+   code is exactly what `agent-conformance.yml` already does on fork PRs
+   (`permissions: contents: read`, no secrets — nothing to steal). The triage only
+   *reads* that gate's conclusion.
+
+So the split is: **execute untrusted code only in a no-secret sandbox (the gate);
+touch secrets only over untrusted *data* (the diff), never untrusted *code* (the
+triage).**
 
 ## Compliance / data residency
 Pick reviewers whose data handling fits the repo's rules:
