@@ -1,0 +1,12 @@
+name: tc-api
+runtime:
+  provider: MicroVm
+  handler: 'python3 main.py'
+  port: 8080
+
+build:
+  kind: MicroVmImage
+  version: 0.1.1
+  post:
+    - dnf install curl -y
+    - 'curl -L -H "Accept: application/octet-stream" -H "x-github-api-version: 2022-11-28" https://api.github.com/repos/tc-functors/tc/releases/assets/503071360 -o /opt/tc && chmod +x /opt/tc'
