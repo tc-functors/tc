@@ -146,7 +146,9 @@ pub async fn list(_sandbox: &str) -> Vec<String> {
         for key in keys {
             let part = u::split_last(&key, &format!("{}/", &prefix));
             let name = u::split_first(&part, ".");
-            xs.push(name)
+            if !name.starts_with("current") {
+                xs.push(name);
+            }
         }
         xs.sort();
         xs.reverse();
