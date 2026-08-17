@@ -628,7 +628,9 @@ mod tests {
                 "tests": {{}},
                 "transducer": null,
                 "hooks": {{}},
-                "sequences": {{}}
+                "sequences": {{}},
+                "tc_version": "0.0.0",
+                "changelog": []
             }}"#
         );
         serde_json::from_str(&json).unwrap_or_else(|e| {
