@@ -40,6 +40,13 @@ async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
     }
 }
 
+fn queue_url_of(target: &Target) -> String {
+    match target.request_params.get("QueueUrl") {
+        Some(url) => s!(url),
+        None => panic!("No QueueUrl in queue target {}", target.name),
+    }
+}
+
 async fn find_alias_arn(client: &LambdaClient, arn: &str) -> String {
     let maybe_alias_arn = lambda::find_alias_arn(&client, arn).await;
     match maybe_alias_arn {
@@ -113,7 +120,7 @@ async fn create_integration(
             gateway::create_sqs_integration(
                 client,
                 api_id,
-                &int_name,
+                &queue_url_of(target),
                 role_arn,
                 request_params.clone(),
             )
@@ -566,7 +573,9 @@ async fn delete_integration(client: &Client, api_id: &str, method: &str, target:
         Entity::Function => gateway::delete_lambda_integration(client, api_id, arn).await,
         Entity::State => gateway::delete_sfn_integration(client, api_id, &int_name).await,
         Entity::Event => gateway::delete_event_integration(client, api_id, &int_name).await,
-        Entity::Queue => gateway::delete_sqs_integration(client, api_id, &int_name).await,
+        Entity::Queue => {
+            gateway::delete_sqs_integration(client, api_id, &queue_url_of(target)).await
+        }
         _ => (),
     }
 }

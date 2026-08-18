@@ -9,7 +9,10 @@ use aws_sdk_apigatewayv2::{
 use kit::*;
 use std::collections::HashMap;
 
-async fn find(client: &Client, api_id: &str, int_name: &str) -> Option<String> {
+// SQS-SendMessage integrations carry no Name request-parameter (the subtype only
+// accepts QueueUrl/MessageBody/DelaySeconds/MessageGroupId/...), so the queue url
+// is what identifies one route's integration.
+async fn find(client: &Client, api_id: &str, queue_url: &str) -> Option<String> {
     let r = client
         .get_integrations()
         .api_id(api_id.to_string())
@@ -21,16 +24,12 @@ async fn find(client: &Client, api_id: &str, int_name: &str) -> Option<String> {
     match items {
         Some(ints) => {
             for int in ints.to_vec() {
-                match int.request_parameters {
-                    Some(req) => match req.get("Name") {
-                        Some(name) => {
-                            if name == int_name {
-                                return int.integration_id;
-                            }
-                        }
-                        None => (),
-                    },
-                    None => (),
+                let url = match &int.request_parameters {
+                    Some(req) => req.get("QueueUrl").cloned(),
+                    None => None,
+                };
+                if url == Some(s!(queue_url)) {
+                    return int.integration_id;
                 }
             }
             return None;
@@ -69,9 +68,9 @@ pub async fn find_or_create(
     api_id: &str,
     role_arn: &str,
     request_parameters: HashMap<String, String>,
-    name: &str,
+    queue_url: &str,
 ) -> String {
-    let maybe_int = find(client, api_id, name).await;
+    let maybe_int = find(client, api_id, queue_url).await;
     match maybe_int {
         Some(id) => id,
         _ => create(client, api_id, role_arn, request_parameters)
@@ -80,8 +79,8 @@ pub async fn find_or_create(
     }
 }
 
-pub async fn delete(client: &Client, api_id: &str, name: &str) {
-    let maybe_int = find(client, api_id, name).await;
+pub async fn delete(client: &Client, api_id: &str, queue_url: &str) {
+    let maybe_int = find(client, api_id, queue_url).await;
     match maybe_int {
         Some(id) => {
             let _ = client

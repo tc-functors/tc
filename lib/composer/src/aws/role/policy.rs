@@ -229,6 +229,12 @@ fn make_api_actions() -> Vec<Action> {
             resource: v!["*"],
             sid: make_sid("ApiEvents"),
         },
+        Action {
+            action: v!["sqs:SendMessage", "sqs:GetQueueUrl"],
+            effect: s!("Allow"),
+            resource: v!["arn:aws:sqs:{{region}}:{{account}}:*"],
+            sid: make_sid("ApiQueue"),
+        },
     ]
 }
 
@@ -347,5 +353,34 @@ impl Policy {
 
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn actions_of(policy: &Policy) -> Vec<String> {
+        let mut xs: Vec<String> = vec![];
+        for st in &policy.statement {
+            xs.extend(st.action.clone());
+        }
+        xs
+    }
+
+    /// A route targeting a queue is an SQS-SendMessage integration signed with the
+    /// api base role - without this action every queued request 403s at runtime.
+    #[test]
+    fn api_role_can_send_to_queues() {
+        let policy = Policy::new(Entity::Route);
+        assert!(actions_of(&policy).contains(&s!("sqs:SendMessage")));
+    }
+
+    #[test]
+    fn api_role_keeps_its_other_targets() {
+        let actions = actions_of(&Policy::new(Entity::Route));
+        assert!(actions.contains(&s!("lambda:InvokeFunction")));
+        assert!(actions.contains(&s!("states:StartExecution")));
+        assert!(actions.contains(&s!("events:PutEvents")));
     }
 }

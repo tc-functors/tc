@@ -2,7 +2,7 @@ name: x-route-queue
 
 routes:
   /api/ping:
-    method: GET
+    method: POST
     queue: my-queue
 
 queues:
