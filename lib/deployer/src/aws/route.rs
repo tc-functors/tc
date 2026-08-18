@@ -42,15 +42,16 @@ async fn add_target_permission(auth: &Auth, api_id: &str, target: &Target) {
 
 fn queue_url_of(target: &Target) -> String {
     match target.request_params.get("QueueUrl") {
-        Some(url) => s!(url),
+        Some(url) => url.clone(),
         None => panic!("No QueueUrl in queue target {}", target.name),
     }
 }
 
-// One SQS integration per route. The SQS-SendMessage subtype takes no Name
-// parameter, so the api-gateway route key is what tells two routes feeding the
-// same queue apart.
-fn sqs_key(route: &Route) -> String {
+// The api-gateway route key, also stashed in the SQS integration description:
+// SQS-SendMessage takes no Name parameter, so this is what tells two routes
+// feeding the same queue apart. Always build it from a resolve_route-trimmed
+// route, or create and delete will key the same integration differently.
+fn route_key(route: &Route) -> String {
     format!("{} {}", route.method, route.path)
 }
 
@@ -127,7 +128,7 @@ async fn create_integration(
             gateway::create_sqs_integration(
                 client,
                 api_id,
-                &sqs_key(route),
+                &route_key(route),
                 &queue_url_of(target),
                 role_arn,
                 request_params.clone(),
@@ -583,16 +584,20 @@ async fn delete_integration(client: &Client, api_id: &str, route: &Route) {
         Entity::State => gateway::delete_sfn_integration(client, api_id, &int_name).await,
         Entity::Event => gateway::delete_event_integration(client, api_id, &int_name).await,
         Entity::Queue => {
-            gateway::delete_sqs_integration(client, api_id, &sqs_key(route), &queue_url_of(target))
-                .await
+            gateway::delete_sqs_integration(
+                client,
+                api_id,
+                &route_key(route),
+                &queue_url_of(target),
+            )
+            .await
         }
         _ => (),
     }
 }
 
 async fn delete_route(client: &Client, api_id: &str, route: &Route) {
-    let route_key = format!("{} {}", route.method, route.path);
-    let route_id = gateway::find_route(client, api_id, &route_key).await;
+    let route_id = gateway::find_route(client, api_id, &route_key(route)).await;
     match route_id {
         Some(rid) => {
             gateway::delete_route(client, &api_id, &rid).await.unwrap();
@@ -614,7 +619,8 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str,
                 for (name, route) in routes {
                     println!("Deleting route {}", &name);
                     if !&route.skip {
-                        delete_route(&client, &api_id, &route).await;
+                        let res_route = resolve_route(&gateway, route);
+                        delete_route(&client, &api_id, &res_route).await;
                     }
                 }
                 if gateway.manage {
