@@ -590,11 +590,12 @@ pub async fn create_event_integration(
 pub async fn create_sqs_integration(
     client: &Client,
     api_id: &str,
-    name: &str,
+    key: &str,
+    queue_url: &str,
     role: &str,
     request_params: HashMap<String, String>,
 ) -> String {
-    sqs::find_or_create(client, api_id, role, request_params, name).await
+    sqs::create_or_update(client, api_id, key, role, request_params, queue_url).await
 }
 
 pub async fn delete_lambda_integration(client: &Client, api_id: &str, target_arn: &str) {
@@ -609,8 +610,8 @@ pub async fn delete_event_integration(client: &Client, api_id: &str, name: &str)
     eventbridge::delete(client, api_id, name).await
 }
 
-pub async fn delete_sqs_integration(client: &Client, api_id: &str, name: &str) {
-    sqs::delete(client, api_id, name).await
+pub async fn delete_sqs_integration(client: &Client, api_id: &str, key: &str, queue_url: &str) {
+    sqs::delete(client, api_id, key, queue_url).await
 }
 
 pub async fn find_api_id(client: &Client, name: &str) -> Option<String> {

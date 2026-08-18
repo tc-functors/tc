@@ -157,20 +157,34 @@ fn make_target(
             response_params: HashMap::new(),
         };
     } else if let Some(q) = &rspec.queue {
+        let queue = match queues.get(q) {
+            Some(queue) => queue,
+            None => panic!("No queue defined {}", q),
+        };
         let mut req: HashMap<String, String> = HashMap::new();
-        if let Some(queue) = queues.get(q) {
-            req.insert(s!("QueueUrl"), template::sqs_url(&queue.name));
-            req.insert(s!("MessageBody"), format!("{{{{payload}}}}"));
-        } else {
-            panic!("No queue defined {}", &q)
+        req.insert(s!("QueueUrl"), template::sqs_url(&queue.name));
+        req.insert(
+            s!("MessageBody"),
+            make_request_template(method, rspec.request_template.clone()),
+        );
+        // SQS-SendMessage also takes DelaySeconds and, for FIFO queues,
+        // MessageGroupId/MessageDeduplicationId - pass those through verbatim.
+        // QueueUrl and MessageBody are derived above and stay reserved: QueueUrl
+        // identifies the integration, and the body is shaped by request_template.
+        if let Some(params) = &rspec.request_params {
+            for (k, v) in params {
+                if k != "QueueUrl" && k != "MessageBody" {
+                    req.insert(s!(k), s!(v));
+                }
+            }
         }
-        return Target {
+        Target {
             entity: Entity::Queue,
             name: s!(q),
-            arn: String::from(""),
+            arn: queue.arn.clone(),
             request_params: req,
             response_params: HashMap::new(),
-        };
+        }
     } else {
         let arn = template::sfn_arn(fqn);
         let input = make_request_template(method, rspec.request_template.clone());
@@ -392,5 +406,139 @@ fn find_verticals(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String
         }
     } else {
         HashMap::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use compiler::spec::QueueSpec;
+
+    fn queue_rspec(method: &str, queue: &str) -> RouteSpec {
+        RouteSpec {
+            method: Some(s!(method)),
+            path: None,
+            gateway: None,
+            vertical: None,
+            authorizer: None,
+            function: None,
+            proxy: None,
+            state: None,
+            event: None,
+            queue: Some(s!(queue)),
+            request_params: None,
+            response_params: None,
+            request_template: None,
+            response_template: None,
+            is_async: None,
+            stage: None,
+            stage_variables: None,
+            cors: None,
+            doc_only: false,
+        }
+    }
+
+    fn queues_of(name: &str) -> HashMap<String, Queue> {
+        let qspec = QueueSpec {
+            producer: empty(),
+            name: None,
+            function: Some(s!("consumer")),
+        };
+        let mut h: HashMap<String, Queue> = HashMap::new();
+        h.insert(s!(name), Queue::new(name, &qspec));
+        h
+    }
+
+    fn target_of(rspec: &RouteSpec, method: &str, queues: &HashMap<String, Queue>) -> Target {
+        make_target(
+            "x-route-queue",
+            rspec,
+            method,
+            &HashMap::new(),
+            &HashMap::new(),
+            queues,
+            None,
+        )
+    }
+
+    /// SQS-SendMessage needs the queue url plus a real mapping expression as the
+    /// body. `{{payload}}` used to be emitted here, which the resolver's stencil
+    /// pass silently blanked - every queued message arrived empty.
+    #[test]
+    fn post_queue_target_sends_the_request_body() {
+        let rspec = queue_rspec("POST", "my-queue");
+        let target = target_of(&rspec, "POST", &queues_of("my-queue"));
+
+        assert_eq!(target.entity, Entity::Queue);
+        assert_eq!(target.name, s!("my-queue"));
+        assert_eq!(
+            target.request_params.get("QueueUrl").unwrap(),
+            "https://sqs.{{region}}.amazonaws.com/{{account}}/my-queue"
+        );
+        assert_eq!(
+            target.request_params.get("MessageBody").unwrap(),
+            "${request.body}"
+        );
+        assert!(
+            !target
+                .request_params
+                .get("MessageBody")
+                .unwrap()
+                .contains("{{")
+        );
+    }
+
+    #[test]
+    fn get_queue_target_sends_the_path() {
+        let rspec = queue_rspec("GET", "my-queue");
+        let target = target_of(&rspec, "GET", &queues_of("my-queue"));
+
+        let body = target.request_params.get("MessageBody").unwrap();
+        assert!(body.contains("${request.path}"));
+        assert!(!body.contains("{{"));
+    }
+
+    #[test]
+    fn queue_target_passes_through_request_params() {
+        let mut rspec = queue_rspec("POST", "my-queue");
+        rspec.request_params = Some(u::kv("MessageGroupId", "$request.header.tenant"));
+        let target = target_of(&rspec, "POST", &queues_of("my-queue"));
+
+        assert_eq!(
+            target.request_params.get("MessageGroupId").unwrap(),
+            "$request.header.tenant"
+        );
+        assert_eq!(
+            target.request_params.get("MessageBody").unwrap(),
+            "${request.body}"
+        );
+    }
+
+    /// QueueUrl identifies the deployed integration and MessageBody is derived
+    /// from the method/request_template - a route must not be able to clobber
+    /// either through request_params.
+    #[test]
+    fn queue_target_reserves_queue_url_and_body() {
+        let mut rspec = queue_rspec("POST", "my-queue");
+        let mut params = u::kv("QueueUrl", "https://sqs.example.com/nope");
+        params.insert(s!("MessageBody"), s!("clobbered"));
+        rspec.request_params = Some(params);
+        let target = target_of(&rspec, "POST", &queues_of("my-queue"));
+
+        assert_eq!(
+            target.request_params.get("QueueUrl").unwrap(),
+            "https://sqs.{{region}}.amazonaws.com/{{account}}/my-queue"
+        );
+        assert_eq!(
+            target.request_params.get("MessageBody").unwrap(),
+            "${request.body}"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "No queue defined")]
+    fn undefined_queue_fails_loud() {
+        let rspec = queue_rspec("POST", "absent-queue");
+        let _ = target_of(&rspec, "POST", &queues_of("my-queue"));
     }
 }
