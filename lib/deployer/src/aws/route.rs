@@ -613,13 +613,19 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str,
 
         let gateways = collate_gateways(routes, &auth.name, sandbox);
 
-        for (name, gateway) in gateways {
+        for (name, gateway) in gateways.clone() {
             let maybe_api_id = gateway::find_api(&client, &name).await;
             if let Some(api_id) = maybe_api_id {
                 for (name, route) in routes {
                     println!("Deleting route {}", &name);
                     if !&route.skip {
-                        let res_route = resolve_route(&gateway, route);
+                        // Trim with the route's own gateway, as create does. Trimming
+                        // against another gateway's paths yields a different route_key
+                        // and would delete the wrong route and integration.
+                        let res_route = match gateways.get(&route.gateway) {
+                            Some(gw) => resolve_route(gw, route),
+                            None => route.clone(),
+                        };
                         delete_route(&client, &api_id, &res_route).await;
                     }
                 }

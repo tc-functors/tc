@@ -9,12 +9,9 @@ use aws_sdk_apigatewayv2::{
 use kit::*;
 use std::collections::HashMap;
 
-// SQS-SendMessage integrations carry no Name request-parameter - the subtype only
-// accepts QueueUrl/MessageBody/DelaySeconds/MessageGroupId/... - so the route key
-// is stashed in the integration description and matched on. QueueUrl alone is not
-// enough: several routes may feed the same queue with different bodies, and they
-// each need their own integration. Integrations deployed before the description
-// was set are matched by QueueUrl so they are updated in place, not orphaned.
+// Keyed by description (the route key): SQS-SendMessage takes no Name parameter,
+// and QueueUrl alone collapses routes that share a queue. Integrations predating
+// the description are matched by QueueUrl so they are updated, not orphaned.
 async fn find(client: &Client, api_id: &str, key: &str, queue_url: &str) -> Option<String> {
     let r = client
         .get_integrations()
