@@ -1,0 +1,8 @@
+{
+  "name": "violation_free_fn_to_method",
+  "kind": "violation",
+  "expect_verdict": "BLOCK",
+  "rule": "free-functions-over-methods",
+  "diff": "--- a/lib/composer/src/topology.rs\n+++ b/lib/composer/src/topology.rs\n@@\n-pub fn entities_of(topology: &Topology) -> Vec<String> {\n-    topology.functions.keys().cloned().collect()\n+impl Topology {\n+    pub fn entities_of(&self) -> Vec<String> {\n+        self.functions.keys().cloned().collect()\n+    }\n }\n",
+  "mock_output": "High — lib/composer/src/topology.rs: converts the free function `entities_of(&Topology)` into a method on `Topology`. The house style keeps logic in terse free functions that take `&Topology`, not methods on domain structs. Keep it a free function.\n\nVERDICT: BLOCK"
+}
