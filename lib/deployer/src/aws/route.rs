@@ -47,6 +47,13 @@ fn queue_url_of(target: &Target) -> String {
     }
 }
 
+// One SQS integration per route. The SQS-SendMessage subtype takes no Name
+// parameter, so the api-gateway route key is what tells two routes feeding the
+// same queue apart.
+fn sqs_key(route: &Route) -> String {
+    format!("{} {}", route.method, route.path)
+}
+
 async fn find_alias_arn(client: &LambdaClient, arn: &str) -> String {
     let maybe_alias_arn = lambda::find_alias_arn(&client, arn).await;
     match maybe_alias_arn {
@@ -120,6 +127,7 @@ async fn create_integration(
             gateway::create_sqs_integration(
                 client,
                 api_id,
+                &sqs_key(route),
                 &queue_url_of(target),
                 role_arn,
                 request_params.clone(),
@@ -566,22 +574,24 @@ pub async fn create(
     }
 }
 
-async fn delete_integration(client: &Client, api_id: &str, method: &str, target: &Target) {
+async fn delete_integration(client: &Client, api_id: &str, route: &Route) {
+    let target = &route.target;
     let Target { entity, arn, .. } = target;
-    let int_name = format!("{}-{}", entity.to_str(), method);
+    let int_name = format!("{}-{}", entity.to_str(), route.method);
     match entity {
         Entity::Function => gateway::delete_lambda_integration(client, api_id, arn).await,
         Entity::State => gateway::delete_sfn_integration(client, api_id, &int_name).await,
         Entity::Event => gateway::delete_event_integration(client, api_id, &int_name).await,
         Entity::Queue => {
-            gateway::delete_sqs_integration(client, api_id, &queue_url_of(target)).await
+            gateway::delete_sqs_integration(client, api_id, &sqs_key(route), &queue_url_of(target))
+                .await
         }
         _ => (),
     }
 }
 
 async fn delete_route(client: &Client, api_id: &str, route: &Route) {
-    let route_key = format!("{} {}", &route.method, &route.path);
+    let route_key = format!("{} {}", route.method, route.path);
     let route_id = gateway::find_route(client, api_id, &route_key).await;
     match route_id {
         Some(rid) => {
@@ -589,7 +599,7 @@ async fn delete_route(client: &Client, api_id: &str, route: &Route) {
         }
         _ => (),
     }
-    delete_integration(client, &api_id, &route.method, &route.target).await;
+    delete_integration(client, api_id, route).await;
 }
 
 pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str, force: bool) {

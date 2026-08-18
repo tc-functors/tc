@@ -169,9 +169,13 @@ fn make_target(
         );
         // SQS-SendMessage also takes DelaySeconds and, for FIFO queues,
         // MessageGroupId/MessageDeduplicationId - pass those through verbatim.
+        // QueueUrl and MessageBody are derived above and stay reserved: QueueUrl
+        // identifies the integration, and the body is shaped by request_template.
         if let Some(params) = &rspec.request_params {
             for (k, v) in params {
-                req.insert(s!(k), s!(v));
+                if k != "QueueUrl" && k != "MessageBody" {
+                    req.insert(s!(k), s!(v));
+                }
             }
         }
         Target {
@@ -503,6 +507,27 @@ mod tests {
         assert_eq!(
             target.request_params.get("MessageGroupId").unwrap(),
             "$request.header.tenant"
+        );
+        assert_eq!(
+            target.request_params.get("MessageBody").unwrap(),
+            "${request.body}"
+        );
+    }
+
+    /// QueueUrl identifies the deployed integration and MessageBody is derived
+    /// from the method/request_template - a route must not be able to clobber
+    /// either through request_params.
+    #[test]
+    fn queue_target_reserves_queue_url_and_body() {
+        let mut rspec = queue_rspec("POST", "my-queue");
+        let mut params = u::kv("QueueUrl", "https://sqs.example.com/nope");
+        params.insert(s!("MessageBody"), s!("clobbered"));
+        rspec.request_params = Some(params);
+        let target = target_of(&rspec, "POST", &queues_of("my-queue"));
+
+        assert_eq!(
+            target.request_params.get("QueueUrl").unwrap(),
+            "https://sqs.{{region}}.amazonaws.com/{{account}}/my-queue"
         );
         assert_eq!(
             target.request_params.get("MessageBody").unwrap(),
