@@ -49,6 +49,10 @@ against the current source; file:line citations are illustrative anchors.
 - Destructure at the top: `let Topology { functions, routes, .. } = topology;`
 - Keep functions short (3–15 lines typical); decompose longer ones into a sequence
   punctuated by `tracing::debug!`.
+- **At most 4 parameters** per function (enforced by `clippy.toml`
+  `too-many-arguments-threshold = 4`; a 5th parameter fails line-scoped clippy on the
+  signature). Thread wider state through `&Context`/`&Auth` or a small `pub` struct
+  rather than a long argument list.
 
 ## 3. Error handling
 - **Base style unwraps freely and fails loud**: `.unwrap()`, `.expect("fail")`,
@@ -104,9 +108,24 @@ use serde_derive::{
 - `kit` is imported two ways at once: `use kit as u;` (then `u::pwd()`) and
   `use kit::*;` (macros + free fns). `kit::sh` is also called fully-qualified.
 - Section dividers are lowercase line comments: `// aws`, `// option`, `// arn`.
+- **Column width target is 80** (emacs `rust-mode`'s default `fill-column`), set in
+  `.editorconfig` + `.dir-locals.el` so standard editors wrap new code there. Write
+  new/changed code at ≤80. `rustfmt.toml` still carries the historical `max_width`/
+  `comment_width = 100` ceiling; a deliberate, maintainer-run repo-wide
+  `cargo +nightly fmt` will lower it to 80 and make it the hard gate. Until then, do
+  **not** reflow unrelated 100-column lines (§10 / BUGBOT #6 — no whitespace churn).
 
 ## 7. Testing
-- Inline `#[cfg(test)] mod tests { use super::*; … }` at file bottom.
+- **Default: put behavior/unit tests in a sibling file under
+  `lib/<crate>/tests/<area>_test.rs`** (per entity, e.g.
+  `lib/composer/tests/route_test.rs`), not inline. Keeping tests and source in
+  separate files (the Clojure/Ruby split) makes both easier to maintain. The
+  per-entity files already scaffolded in `lib/composer/tests/` are the canonical
+  home — fill the matching one instead of adding an inline `mod tests`.
+- Inline `#[cfg(test)] mod tests { use super::*; … }` is reserved for the two cases a
+  `tests/` file cannot cover: the **leaf-IO cfg-twin** (next bullet), and a test that
+  genuinely needs a crate-private item. If the test only touches the crate's public
+  surface, it belongs in the sibling `tests/` file.
 - **Mock leaf IO with a cfg twin**, not a trait/mock object. The same `pub fn` has
   two bodies selected by cfg:
   ```rust
