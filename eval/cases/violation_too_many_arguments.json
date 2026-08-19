@@ -1,0 +1,8 @@
+{
+  "name": "violation_too_many_arguments",
+  "kind": "violation",
+  "expect_verdict": "BLOCK",
+  "rule": "max-4-arguments (STYLE.md §2; BUGBOT BLOCK #11; clippy too-many-arguments-threshold=4)",
+  "diff": "--- a/lib/composer/src/aws/route.rs\n+++ b/lib/composer/src/aws/route.rs\n@@\n-pub fn route_arn(auth: &Auth, api: &str, route: &str) -> String {\n-    format!(\"arn:aws:apigateway:{}::/apis/{}/routes/{}\", auth.region, api, route)\n-}\n+pub fn route_arn(auth: &Auth, api: &str, route: &str, method: &str, stage: &str, kind: &str) -> String {\n+    format!(\"arn:aws:apigateway:{}::/apis/{}/routes/{}/{}/{}/{}\", auth.region, api, route, method, stage, kind)\n+}\n",
+  "mock_output": "block — lib/composer/src/aws/route.rs: `route_arn` now takes 6 parameters. The house style caps functions at 4 parameters (STYLE.md §2; clippy `too-many-arguments-threshold = 4`). Thread the extra ARN parts through `&Context`/`&Auth` or a small `pub` struct instead of widening the signature.\n\nVERDICT: BLOCK"
+}

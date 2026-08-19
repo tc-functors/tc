@@ -46,6 +46,15 @@ needless dependencies, no secrets. (For example, a Python helper that shells out
    (resolved, non-optional `HashMap`s) boundary — e.g. resolving during compile, or
    adding `Option` churn to the resolved type.
 10. Adds a new third-party dependency without a clear, stated need.
+11. Adds a function with **more than 4 parameters** (`clippy.toml` enforces
+    `too-many-arguments-threshold = 4`). Thread wider state via `&Context`/`&Auth` or a
+    small `pub` struct. Grandfathered: only flag a signature the change adds or widens,
+    never a pre-existing wide one.
+12. Puts new behavior/unit tests in a fresh inline `#[cfg(test)] mod tests` when they
+    only exercise the crate's **public** surface. Those belong in the sibling
+    `lib/<crate>/tests/<area>_test.rs` (the per-entity files already scaffolded in
+    `lib/composer/tests/`). Inline `#[cfg(test)]` is correct **only** for the leaf-IO
+    cfg-twin (#5) or a test that needs a crate-private item.
 
 For new **caching / concurrency** code specifically, DO expect the disciplined-layer
 style and block if it is missing: bounded concurrency, an env-configurable cap with a
@@ -68,6 +77,10 @@ raise Bugs, and do not suggest "improvements," for any of them:
 - Vertical, crate-granular `use` blocks (enforced by `rustfmt.toml`; do **not** suggest
   collapsing to one line).
 - Missing doc comments on small free functions.
+- Pre-existing 100-column lines, or lines the change did not functionally alter. The
+  80-column target (`.editorconfig` / `.dir-locals.el`) applies to **new** code only
+  until a maintainer-run repo-wide reformat lands; do not flag existing width, and do
+  not suggest reflowing untouched lines.
 
 Do **not** recommend generic refactors that contradict this style: builder patterns,
 trait-based abstraction, added generics, `?`/`Result` error propagation in place of
