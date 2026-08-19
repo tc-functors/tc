@@ -1,0 +1,6 @@
+# House-style lint config for `tc` (see docs/agents/STYLE.md §2).
+# `too_many_arguments` fires when a function has MORE than this many parameters,
+# so a threshold of 4 enforces the "at most 4 parameters" rule (a 5th trips it).
+# The conformance gate is line-scoped, so pre-existing wide signatures are
+# grandfathered — only a signature a change adds or widens is flagged.
+too-many-arguments-threshold = 4

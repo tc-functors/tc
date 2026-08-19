@@ -6,6 +6,21 @@ framework. It catches what the deterministic gate (`scripts/agent-check.sh`,
 but still doesn't read like `tc`'s Rust. The deterministic gate is the mechanical
 floor; this layer is the taste/judgment gate.
 
+## Style-PASS is not correctness-clean (merge gate)
+The deterministic gate and the pinned style reviewer judge **house style + mechanics**:
+"does this compile, lint, and read like the original author wrote it?" **Cursor Bugbot
+reviews a different axis — reachable correctness.** A green `gate + tests`, and a
+`VERDICT: PASS` from the pinned reviewer, say **nothing** about Bugbot's correctness
+findings. So before merging any agent-authored PR, a **human must adjudicate every
+unresolved Bugbot correctness finding** — fix it, or explicitly accept it with a
+reason. A style-PASS does not authorize the merge.
+
+Worked example — **PR #93** (a real Claude Code fix): the pinned reviewer flipped to
+`VERDICT: PASS` (the Rust was house-style-conformant) while Bugbot still held open
+correctness concerns on the delete-path/queue-integration handling. That split is the
+framework working as designed: style and correctness are separate gates, and only the
+human closes the correctness one.
+
 ## Cursor Bugbot (the reviewer already wired to this repo)
 Bugbot reviews every PR and posts findings as PR comments (check name
 `Cursor Bugbot`). It is configured for style-conformance review via a rule file.
