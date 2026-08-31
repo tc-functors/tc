@@ -96,7 +96,7 @@ fn docker_run_cmd(name: &str, lang: &str) -> String {
 
 async fn make_layer_auth(auth: &Auth, config: &Config) -> Auth {
     let profile = config.aws.lambda.layers_profile.clone();
-    auth.assume(profile.clone(), config.role_to_assume(profile))
+    auth.assume(profile.clone(), config.role_to_assume(profile), None)
         .await
 }
 

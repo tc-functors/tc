@@ -178,6 +178,8 @@ pub struct CBuildArgs {
 pub struct ResolveArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
@@ -222,6 +224,8 @@ pub struct ReflectArgs {
     entity: Option<String>,
     #[arg(long, short = 'd')]
     dir: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -366,6 +370,8 @@ pub struct InspectArgs {
     dir: Option<String>,
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, action, short = 'r')]
@@ -377,6 +383,8 @@ pub struct InspectArgs {
 pub struct CreateArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
@@ -417,6 +425,8 @@ pub struct UpgradeArgs {
 pub struct UpdateArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
@@ -441,6 +451,8 @@ pub struct UpdateArgs {
 pub struct DeleteArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
@@ -463,6 +475,8 @@ pub struct InvokeArgs {
     payload: Option<String>,
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'R')]
     role: Option<String>,
     #[arg(long, short = 's')]
@@ -483,6 +497,8 @@ pub struct InvokeArgs {
 pub struct ListArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long, short = 'c')]
@@ -537,6 +553,8 @@ pub struct PruneArgs {
     profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'f')]
     filter: Option<String>,
     #[arg(long, action, alias = "dry-run")]
@@ -654,9 +672,10 @@ async fn inspect(args: InspectArgs) {
         profile,
         sandbox,
         dir,
+        region,
         ..
     } = args;
-    tc::inspect(dir, profile, sandbox, recursive).await;
+    tc::inspect(dir, profile, region, sandbox, recursive).await;
 }
 
 
@@ -710,7 +729,7 @@ async fn test(args: TestArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, role).await;
+    let env = tc::init(profile, role, None).await;
     if interactive {
         tc::test_interactive(env, sandbox).await;
     } else {
@@ -731,8 +750,9 @@ async fn create(args: CreateArgs) {
         dry_run,
         remote,
         force,
+        region,
         concurrency,
-        ..
+          ..
     } = args;
 
     init_tracing(trace);
@@ -748,6 +768,7 @@ async fn create(args: CreateArgs) {
             sync: sync,
             force: force,
             concurrency: concurrency,
+            region: region
         };
         tc::create(profile, sandbox, topology, opts).await;
     }
@@ -764,6 +785,7 @@ async fn update(args: UpdateArgs) {
         interactive,
         trace,
         remote,
+        region,
         ..
     } = args;
 
@@ -771,7 +793,7 @@ async fn update(args: UpdateArgs) {
     if remote {
         remote::update(profile, sandbox).await;
     } else {
-        let env = tc::init(profile, role).await;
+        let env = tc::init(profile, role, region).await;
         tc::update(env, sandbox, entity, recursive, cache, interactive).await;
     }
 }
@@ -786,12 +808,13 @@ async fn delete(args: DeleteArgs) {
         trace,
         cache,
         force,
+        region,
         ..
     } = args;
 
     init_tracing(trace);
 
-    let env = tc::init(profile, role).await;
+    let env = tc::init(profile, role, region).await;
     tc::delete(env, sandbox, entity, recursive, cache, force).await;
 }
 
@@ -855,12 +878,13 @@ async fn resolve(args: ResolveArgs) {
         recursive,
         cache,
         trace,
+        region,
         ..
     } = args;
 
     init_tracing(trace);
 
-    let env = tc::init(profile, role).await;
+    let env = tc::init(profile, role, region).await;
     tc::resolve(env, sandbox, entity, recursive, cache, trace).await;
 }
 
@@ -880,7 +904,7 @@ async fn diff(args: DiffArgs) {
     if let Some(b) = between {
         tc::diff_between(&b, sandbox).await;
     } else {
-        let env = tc::init(profile, role).await;
+        let env = tc::init(profile, role, None).await;
         tc::diff(env, sandbox, recursive, trace).await;
     }
 }
@@ -895,6 +919,7 @@ async fn invoke(args: InvokeArgs) {
         dumb,
         trace,
         dir,
+        region,
         ..
     } = args;
 
@@ -906,6 +931,7 @@ async fn invoke(args: InvokeArgs) {
         emulator: emulator,
         entity: entity,
         dumb: dumb,
+        region: region
     };
 
     tc::invoke(profile, opts).await;
@@ -927,7 +953,7 @@ async fn route(args: RouteArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None).await;
+    let env = tc::init(profile, None, None).await;
     tc::route(env, event, service, sandbox, rule).await;
 }
 
@@ -939,7 +965,7 @@ async fn freeze(args: FreezeArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None).await;
+    let env = tc::init(profile, None, None).await;
     tc::freeze(env, sandbox).await;
 }
 
@@ -951,7 +977,7 @@ async fn unfreeze(args: UnFreezeArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None).await;
+    let env = tc::init(profile, None, None).await;
     tc::unfreeze(env, sandbox).await;
 }
 
@@ -1127,6 +1153,7 @@ async fn doc(_args: DefaultArgs) {
 async fn prune(args: PruneArgs) {
     let PruneArgs {
         profile,
+        region,
         sandbox,
         filter,
         trace,
@@ -1134,7 +1161,7 @@ async fn prune(args: PruneArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None).await;
+    let env = tc::init(profile, None, region).await;
     tc::prune(&env, sandbox, filter, dry_run).await;
 }
 
@@ -1148,7 +1175,7 @@ async fn emulate(args: EmulateArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None).await;
+    let env = tc::init(profile, None, None).await;
     tc::emulate(&env, sandbox, entity, shell).await;
 }
 
@@ -1198,7 +1225,7 @@ async fn repl(args: ReplArgs) {
     let ReplArgs {
         profile, sandbox, ..
     } = args;
-    let auth = tc::init(profile, None).await;
+    let auth = tc::init(profile, None, None).await;
     let sandbox = kit::maybe_string(sandbox, "dev");
     let _ = repl::start(&auth, &sandbox).await;
 }
@@ -1209,14 +1236,16 @@ async fn reflect(args: ReflectArgs) {
         sandbox,
         entity,
         dir,
+        region,
         ..
     } = args;
-    tc::reflect(profile, sandbox, entity, dir).await;
+    tc::reflect(profile, region, sandbox, entity, dir).await;
 }
 
 async fn list(args: ListArgs) {
     let ListArgs {
         profile,
+        region,
         sandbox,
         trace,
         entity,
@@ -1225,7 +1254,7 @@ async fn list(args: ListArgs) {
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None).await;
+    let env = tc::init(profile, None, region).await;
     if all {
         tc::list_all(&env, sandbox, format).await;
     } else {

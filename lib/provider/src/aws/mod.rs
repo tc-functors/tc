@@ -41,11 +41,17 @@ pub struct Auth {
 }
 
 impl Auth {
-    async fn do_new(name: String, assume_role: Option<String>) -> Auth {
+    async fn do_new(name: String, assume_role: Option<String>, region: Option<String>) -> Auth {
         let config = sts::get_config(&name, assume_role.clone()).await;
         let client = sts::make_client(&config).await;
         let account = sts::get_account_id(&client).await;
-        let region = sts::get_region();
+        let region = match region {
+            Some(r) => r,
+            None => match std::env::var("AWS_REGION") {
+                Ok(e) => e,
+                Err(_) => String::from("us-west-2")
+            }
+        };
 
         Auth {
             name: name.clone(),
@@ -56,7 +62,7 @@ impl Auth {
         }
     }
 
-    pub async fn new(profile: Option<String>, assume_role: Option<String>) -> Auth {
+    pub async fn new(profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
         let name = match profile {
             Some(p) => p,
             None => "default".to_string(),
@@ -65,16 +71,16 @@ impl Auth {
         CACHE
             .get_or_init(name.clone(), || async {
                 tracing::debug!("Looking up auth for {} (cache miss)", &name);
-                Self::do_new(name, assume_role).await
+                Self::do_new(name, assume_role, region).await
             })
             .await
     }
 
-    pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>) -> Auth {
+    pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
         match profile {
             Some(_) => match std::env::var("TC_ASSUME_ROLE") {
-                Ok(_) => Auth::new(profile, assume_role).await,
-                Err(_) => Auth::new(profile, None).await,
+                Ok(_) => Auth::new(profile, assume_role, region).await,
+                Err(_) => Auth::new(profile, None, region).await,
             },
             None => self.clone(),
         }

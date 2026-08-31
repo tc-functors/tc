@@ -40,8 +40,8 @@ pub async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
         },
     };
     let prof = Some(profile);
-    let auth = init(prof.clone(), None).await;
-    let centralized = auth.assume(prof.clone(), config.role_to_assume(prof)).await;
+    let auth = init(prof.clone(), None, None).await;
+    let centralized = auth.assume(prof.clone(), config.role_to_assume(prof), None).await;
     centralized
 }
 
@@ -244,12 +244,12 @@ pub async fn diff_between(between: &str, sandbox: Option<String>) {
     let (from, to) = between.split("..").collect_tuple().unwrap();
 
     if let Some(sbox) = sandbox {
-        let from_auth = init(Some(from.to_string()), None).await;
+        let from_auth = init(Some(from.to_string()), None, None).await;
         let resolved = resolver::render(&from_auth, &sbox, &topology).await;
         let fqn = &resolved.fqn;
 
         let maybe_from_ver = snapshotter::find_version(&from_auth, fqn, &topology.kind).await;
-        let to_auth = init(Some(to.to_string()), None).await;
+        let to_auth = init(Some(to.to_string()), None, None).await;
         let maybe_to_ver = snapshotter::find_version(&to_auth, fqn, &topology.kind).await;
         if let Some(from_ver) = maybe_from_ver
             && let Some(to_ver) = maybe_to_ver
@@ -292,6 +292,7 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
         namespace,
         sandbox,
         version,
+        region,
         ..
     } = topology;
     let tag = format!("{}-{}", namespace, version);
@@ -302,8 +303,8 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
     let url = executor::current_url();
     let incr = if force { false } else { true };
     let msg = format!(
-        "Deployed `{}` to *{}*::{}_{} by {} (elapsed: {} incr: {}) [build: {}]",
-        tag, &auth.name, namespace, &sandbox, &user, time, incr, &url
+        "Deployed `{}` to *{}*::{}_{} (region: {}) by {} (elapsed: {} incr: {}) [build: {}]",
+        tag, &auth.name, namespace, &sandbox, &region, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
 
@@ -318,8 +319,8 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
     };
     if let Some(ref p) = maybe_source_profile {
         if &auth.name == p {
-            let from_auth = init(maybe_source_profile, None).await;
-            let to_auth = init(maybe_target_profile, None).await;
+            let from_auth = init(maybe_source_profile, None, Some(region.to_string())).await;
+            let to_auth = init(maybe_target_profile, None, Some(region.to_string())).await;
             snapshotter::snapshot_topology(&from_auth, &to_auth, topology, sandbox, true, true).await;
         }
     } else {
@@ -374,6 +375,7 @@ pub struct CreateOpts {
     pub sync: bool,
     pub force: bool,
     pub concurrency: Option<i32>,
+    pub region: Option<String>
 }
 
 pub async fn create(
@@ -385,7 +387,7 @@ pub async fn create(
     let start = Instant::now();
 
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
-    println!("Running tc {}", &version);
+
 
     let CreateOpts {
         notify,
@@ -393,15 +395,18 @@ pub async fn create(
         cache,
         force,
         concurrency,
+        region,
         ..
     } = opts;
+
+    println!("Running tc {} env: {:?} region: {:?}", &version, &profile, &region);
 
     let maybe_topology = read_topology(topology_path).await;
 
     let topology = match maybe_topology {
         Some(t) => t,
         None => {
-            let auth = init(profile, None).await;
+            let auth = init(profile, None, region.clone()).await;
             let sandbox = resolver::maybe_sandbox(sandbox);
             let dir = u::pwd();
             println!("Composing topology...");
@@ -429,7 +434,7 @@ pub async fn create(
         }
     };
 
-    let auth = init(Some(topology.env.to_string()), None).await;
+    let auth = init(Some(topology.env.to_string()), None, region).await;
     create_topology(&auth, &topology, concurrency, force).await;
 
     match std::env::var("TC_INSPECT_BUILD") {
@@ -454,7 +459,7 @@ pub async fn create(
 }
 
 pub async fn dry_run_create(profile: Option<String>, sandbox: Option<String>, recursive: bool) {
-    let auth = init(profile, None).await;
+    let auth = init(profile, None, None).await;
     let sandbox = resolver::maybe_sandbox(sandbox);
     let dir = u::pwd();
     println!("Composing topology {} ...", &composer::topology_name(&dir));
@@ -580,6 +585,7 @@ pub struct InvokeOptions {
     pub dir: Option<String>,
     pub payload: Option<String>,
     pub entity: Option<String>,
+    pub region: Option<String>,
     pub emulator: bool,
     pub dumb: bool,
 }
@@ -592,6 +598,7 @@ pub async fn invoke(profile: Option<String>, opts: InvokeOptions) {
         dumb,
         entity,
         dir,
+        region,
         ..
     } = opts;
 
@@ -602,11 +609,11 @@ pub async fn invoke(profile: Option<String>, opts: InvokeOptions) {
 
     if emulator {
         let profile = u::maybe_string(profile, "dev");
-        let auth = init(Some(profile), None).await;
+        let auth = init(Some(profile), None, region).await;
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
         invoker::invoke_emulator(&auth, entity, &resolved, payload).await;
     } else {
-        let auth = init(profile, None).await;
+        let auth = init(profile, None, region).await;
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
         invoker::invoke(&auth, entity, &resolved, payload, dumb).await;
     }
@@ -691,7 +698,7 @@ pub async fn show_config() {
     println!("{}", config.render());
 }
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
+pub async fn init(profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = match assume_role {
@@ -702,9 +709,9 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
                     config.ci.roles.get(&p).cloned()
                 }
             };
-            Auth::new(profile.clone(), role).await
+            Auth::new(profile.clone(), role, region).await
         }
-        Err(_) => Auth::new(profile.clone(), assume_role).await,
+        Err(_) => Auth::new(profile.clone(), assume_role, region).await,
     }
 }
 
@@ -745,8 +752,8 @@ pub async fn snapshot_current(
     save: bool,
 ) {
     let sandbox = u::maybe_string(sandbox, "stable");
-    let from_auth = init(profile, None).await;
-    let target_auth = init(target_profile, None).await;
+    let from_auth = init(profile, None, None).await;
+    let target_auth = init(target_profile, None, None).await;
     let topology = composer::compose(&u::pwd(), false);
     snapshotter::snapshot_topology(&from_auth, &target_auth, &topology, &sandbox, true, save).await;
 }
@@ -758,8 +765,8 @@ pub async fn snapshot_root(
     save: bool,
 ) {
     let sandbox = u::maybe_string(sandbox, "stable");
-    let from_auth = init(profile, None).await;
-    let target_auth = init(target_profile, None).await;
+    let from_auth = init(profile, None, None).await;
+    let target_auth = init(target_profile, None, None).await;
     snapshotter::snapshot_topologies(&from_auth, &target_auth, &u::root(), &sandbox, true, save)
         .await;
 }
@@ -784,7 +791,7 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
             if profiles.len() > 1 {
                 snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
             } else {
-                let auth = init(profile.clone(), None).await;
+                let auth = init(profile.clone(), None, None).await;
                 let records = snapshotter::snapshot_sandbox(&auth, &dir, &sandbox).await;
                 if save {
                     let records_str = serde_json::to_string_pretty(&records).unwrap();
@@ -880,11 +887,12 @@ pub async fn list_all(auth: &Auth, sandbox: Option<String>, format: Option<Strin
 
 pub async fn reflect(
     profile: Option<String>,
+    region: Option<String>,
     sandbox: Option<String>,
     entity: Option<String>,
     dir: Option<String>,
 ) {
-    let auth = init(profile, None).await;
+    let auth = init(profile, None, region).await;
     let sandbox = u::maybe_string(sandbox, "dev");
     let dir = u::maybe_string(dir, &u::pwd());
     let topology = composer::compose(&dir, false);
@@ -913,7 +921,7 @@ pub async fn scaffold_llm(
             }
             "bedrock" => {
                 if profile.is_some() {
-                    let auth = init(profile, None).await;
+                    let auth = init(profile, None, None).await;
                     scaffolder::scaffold_llm_bedrock(&auth, &dir, &text, model).await;
                 } else {
                     println!(
@@ -984,20 +992,21 @@ pub async fn validate(maybe_entity: Option<String>) {
 pub async fn scaffold_iac(profile: Option<String>, iac: Option<String>, out_dir: Option<String>) {
     let dir = u::pwd();
     let topology = composer::compose(&dir, true);
-    let auth = init(profile, None).await;
+    let auth = init(profile, None, None).await;
     scaffolder::scaffold_iac(&auth, &topology, iac, out_dir).await
 }
 
 pub async fn inspect(
     dir: Option<String>,
     profile: Option<String>,
+    region: Option<String>,
     sandbox: Option<String>,
     recursive: bool
 ) {
     let dir = u::maybe_string(dir, &u::pwd());
     let topology = if profile.is_some() {
         let sandbox = u::maybe_string(sandbox, "stable");
-        let auth = init(profile, None).await;
+        let auth = init(profile, None, region).await;
         let ct = composer::compose(&dir, recursive);
         resolver::resolve(&auth, &sandbox, &ct, false, false).await
     } else {

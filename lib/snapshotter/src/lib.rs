@@ -37,7 +37,7 @@ pub async fn snapshot_profiles_json(
         let mut h: HashMap<String, String> = HashMap::new();
 
         for profile in &profiles {
-            let auth = Auth::new(Some(s!(profile)), None).await;
+            let auth = Auth::new(Some(s!(profile)), None, None).await;
             let tags = manifest::lookup_tags(&auth, &node.kind, &name).await;
             let version = u::safe_unwrap(tags.get("version"));
             h.insert(profile.to_string(), version);
@@ -67,7 +67,7 @@ pub async fn snapshot_profiles(dir: &str, sandbox: &str, profiles: Vec<String>) 
         row.push(s!(&node.namespace));
 
         for profile in &profiles {
-            let auth = Auth::new(Some(s!(profile)), None).await;
+            let auth = Auth::new(Some(s!(profile)), None, None).await;
             let tags = manifest::lookup_tags(&auth, &node.kind, &name).await;
             let version = u::safe_unwrap(tags.get("version"));
             row.push(version);
@@ -117,7 +117,7 @@ pub async fn show(name: &str) -> Vec<Manifest> {
     if let (Some(bucket), Some(prefix), Some(profile)) =
         (maybe_bucket, maybe_prefix, maybe_target_profile)
     {
-        let auth = &init_auth(&profile).await;
+        let auth = &init_auth(&profile, None).await;
         let client = aws::s3::make_client(auth).await;
         let key = format!("{}/{}.json", &prefix, name);
         let s = aws::s3::get_str(&client, &bucket, &key).await;
@@ -139,7 +139,7 @@ pub async fn list(_sandbox: &str) -> Vec<String> {
     if let (Some(bucket), Some(prefix), Some(profile)) =
         (maybe_bucket, maybe_prefix, maybe_target_profile)
     {
-        let auth = &init_auth(&profile).await;
+        let auth = &init_auth(&profile, None).await;
         let client = aws::s3::make_client(auth).await;
         let keys = aws::s3::list_keys(&client, &bucket, &prefix).await;
         let mut xs: Vec<String> = vec![];
@@ -168,7 +168,7 @@ pub async fn save(auth: &Auth, payload: &str, env: &str, sandbox: &str) {
 
     if let (Some(bucket), Some(prefix)) = (maybe_bucket, maybe_prefix) {
         let auth = match maybe_target_profile {
-            Some(p) => &init_auth(&p).await,
+            Some(p) => &init_auth(&p, None).await,
             None => auth,
         };
         let key = format!("{}/{}/{}/{}.json", prefix, env, sandbox, u::ymd());
@@ -198,7 +198,7 @@ pub async fn snapshot_topology(
 
         if let (Some(bucket), Some(prefix)) = (maybe_bucket, maybe_prefix) {
             let auth = match maybe_target_profile {
-                Some(p) => &init_auth(&p).await,
+                Some(p) => &init_auth(&p, None).await,
                 None => from_auth,
             };
             let payload = serde_json::to_string(&record).unwrap();
@@ -232,14 +232,14 @@ pub async fn snapshot_topologies(
     }
 }
 
-async fn init_auth(target_profile: &str) -> Auth {
+async fn init_auth(target_profile: &str, region: Option<String>) -> Auth {
     let config = composer::config(&u::pwd());
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = config.ci.roles.get(target_profile).cloned();
-            Auth::new(Some(target_profile.to_string()), role).await
+            Auth::new(Some(target_profile.to_string()), role, region).await
         }
-        Err(_) => Auth::new(Some(target_profile.to_string()), None).await,
+        Err(_) => Auth::new(Some(target_profile.to_string()), None, region).await,
     }
 }
 

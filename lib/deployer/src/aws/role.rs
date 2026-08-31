@@ -34,16 +34,28 @@ pub async fn delete(auth: &Auth, roles: &HashMap<String, composer::Role>) {
 
 pub async fn create_aux(
     profile: String,
+    region: Option<String>,
     sandbox: String,
     role_arn: Option<String>,
     role: composer::Role,
     _tags: HashMap<String, String>,
 ) {
-    let auth = Auth::new(Some(profile), role_arn).await;
+    let auth = Auth::new(Some(profile), role_arn, region.clone()).await;
     let client = iam::make_client(&auth).await;
 
+    let region_str = match region {
+        Some(r) => r,
+        None => "us-west-2".to_string()
+    };
+
+    let role_name = if region_str == "us-west-2" {
+        role.name.clone()
+    } else {
+        format!("{}-{}", &role.name, &region_str)
+    };
+
     let r = Role {
-        name: role.name.clone(),
+        name: role_name,
         trust_policy: role.trust.to_string(),
         policy_arn: role.policy_arn.clone(),
         policy_name: role.policy_name.clone(),
@@ -107,10 +119,11 @@ pub async fn create_or_update(
     for (_, role) in roles.clone() {
         let tags = tags.clone();
         let p = auth.name.to_string();
+        let region = Some(auth.region.to_string());
         let role_arn = auth.assume_role.to_owned();
         let s = sandbox.to_string();
         let h = tokio::spawn(async move {
-            create_aux(p, s, role_arn, role.clone(), tags.clone()).await;
+            create_aux(p, region, s, role_arn, role.clone(), tags.clone()).await;
         });
         tasks.push(h);
     }
@@ -130,9 +143,10 @@ pub async fn update_base_roles(
         if role.kind.to_str() == "base" {
             let tags = tags.clone();
             let p = auth.name.to_string();
+            let region = Some(auth.region.to_string());
             let role_arn = auth.assume_role.to_owned();
             let h = tokio::spawn(async move {
-                create_aux(p, String::from(""), role_arn, role.clone(), tags.clone()).await;
+                create_aux(p, region, String::from(""), role_arn, role.clone(), tags.clone()).await;
             });
             tasks.push(h);
         }

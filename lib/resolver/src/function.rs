@@ -125,7 +125,7 @@ async fn make_layer_auth(ctx: &Context) -> Auth {
     LAYER_AUTH
         .get_or_init(key, || async {
             tracing::debug!("Assuming layer-auth profile (cache miss)");
-            auth.assume(profile, role).await
+            auth.assume(profile, role, None).await
         })
         .await
 }

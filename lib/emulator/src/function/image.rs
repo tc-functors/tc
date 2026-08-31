@@ -33,7 +33,7 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, _shell: bool) {
     let maybe_cfg_profile = config.aws.lambda.layers_profile.clone();
     let auth = match maybe_cfg_profile {
         Some(p) => {
-            auth.assume(Some(p.clone()), config.role_to_assume(Some(p)))
+            auth.assume(Some(p.clone()), config.role_to_assume(Some(p)), None)
                 .await
         }
         None => auth.clone(),

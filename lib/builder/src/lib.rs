@@ -118,7 +118,7 @@ pub async fn build(
     };
 
     let name = u::maybe_string(name, &function.name);
-    let auth = provider::init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth, None).await;
 
     let build_status = match kind {
         BuildKind::Image => {
@@ -199,7 +199,7 @@ pub fn clean(recursive: bool) {
 }
 
 pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
-    let auth = provider::init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth, None).await;
     for build in builds {
         match build.kind {
             BuildKind::Layer | BuildKind::Library | BuildKind::Extension => {
@@ -216,7 +216,7 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
 }
 
 pub async fn sync(auth: &Auth, builds: Vec<BuildOutput>) {
-    let auth = provider::init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth, None).await;
     println!(
         "Attempting to sync latest code images for the following functions. This may take a while zzz..."
     );
@@ -239,7 +239,7 @@ pub async fn promote(auth: &Auth, name: &str, dir: &str, version: Option<String>
 }
 
 pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
-    let auth = provider::init_centralized_auth(auth).await;
+    let auth = provider::init_centralized_auth(auth, None).await;
     let function = composer::current_function(dir);
 
     if let Some(f) = function {
@@ -257,11 +257,11 @@ pub async fn shell(auth: &Auth, dir: &str, kind: Option<String>) {
 }
 
 pub async fn list_images(auth: &Auth, repo: &str) -> Vec<String> {
-    let cauth = provider::init_centralized_auth(auth).await;
+    let cauth = provider::init_centralized_auth(auth, None).await;
     ecr::list_images(&cauth, repo).await
 }
 
 pub async fn list_layers(auth: &Auth) -> Vec<provider::aws::layer::Layer> {
-    let cauth = provider::init_centralized_auth(auth).await;
+    let cauth = provider::init_centralized_auth(auth, None).await;
     provider::aws::layer::list(&cauth).await
 }

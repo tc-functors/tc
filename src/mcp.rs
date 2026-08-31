@@ -35,6 +35,8 @@ pub struct CreateRequest {
     pub profile: String,
     #[schemars(description = "Sandbox name")]
     pub sandbox: String,
+    #[schemars(description = "Region name")]
+    pub region: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -51,6 +53,8 @@ pub struct UpdateRequest {
         description = "Entity/Component - functions, events, routes, mutations, channels, states"
     )]
     pub entity: Option<String>,
+    #[schemars(description = "Region name")]
+    pub region: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -67,6 +71,8 @@ pub struct DeleteRequest {
         description = "Entity/Component - functions, events, routes, mutations, channels, states"
     )]
     pub entity: Option<String>,
+    #[schemars(description = "Region name")]
+    pub region: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -83,6 +89,8 @@ pub struct InvokeRequest {
     pub entity: Option<String>,
     #[schemars(description = "Payload in JSON")]
     pub payload: String,
+    #[schemars(description = "Region name")]
+    pub region: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -109,6 +117,8 @@ pub struct ResolveRequest {
     pub profile: String,
     #[schemars(description = "Sandbox name")]
     pub sandbox: String,
+    #[schemars(description = "Region name")]
+    pub region: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -161,10 +171,11 @@ impl Tc {
             profile,
             sandbox,
             recursive,
+            region,
         }): Parameters<CreateRequest>,
     ) -> String {
         let start = Instant::now();
-        let auth = tc::init(Some(profile), None).await;
+        let auth = tc::init(Some(profile), None, region).await;
         let ct = composer::compose(&dir, recursive);
         let rt = resolver::resolve(&auth, &sandbox, &ct, false, false).await;
         deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
@@ -184,9 +195,10 @@ impl Tc {
             sandbox,
             recursive,
             entity,
+            region,
         }): Parameters<UpdateRequest>,
     ) -> String {
-        let auth = tc::init(Some(profile), None).await;
+        let auth = tc::init(Some(profile), None, region).await;
         let topology = composer::compose(&dir, recursive);
         let rt = resolver::render(&auth, &sandbox, &topology).await;
         deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
@@ -204,9 +216,10 @@ impl Tc {
             sandbox,
             recursive,
             entity,
+            region,
         }): Parameters<DeleteRequest>,
     ) -> String {
-        let auth = tc::init(Some(profile), None).await;
+        let auth = tc::init(Some(profile), None, region).await;
         let topology = composer::compose(&dir, recursive);
         let rt = resolver::render(&auth, &sandbox, &topology).await;
         deployer::guard::prevent_stable_updates(&auth, &sandbox, &rt).await;
@@ -230,9 +243,10 @@ impl Tc {
             sandbox,
             entity,
             payload,
+            region,
         }): Parameters<InvokeRequest>,
     ) -> String {
-        let auth = tc::init(Some(profile), None).await;
+        let auth = tc::init(Some(profile), None, region).await;
         let topology = composer::compose(&dir, true);
         let resolved = resolver::render(&auth, &sandbox, &topology).await;
         invoker::invoke(&auth, entity, &resolved, Some(payload), true).await;
@@ -251,7 +265,7 @@ impl Tc {
             unit,
         }): Parameters<TestRequest>,
     ) -> String {
-        let auth = tc::init(Some(profile), None).await;
+        let auth = tc::init(Some(profile), None, None).await;
         if composer::is_topology_dir(&dir) {
             let topology = composer::compose(&dir, recursive);
             let resolved = resolver::render(&auth, &sandbox, &topology).await;
@@ -273,9 +287,10 @@ impl Tc {
             recursive,
             profile,
             sandbox,
+            region,
         }): Parameters<ResolveRequest>,
     ) -> String {
-        let auth = tc::init(Some(profile), None).await;
+        let auth = tc::init(Some(profile), None, region).await;
         let ct = composer::compose(&dir, recursive);
         let rt = resolver::resolve(&auth, &sandbox, &ct, false, false).await;
         rt.to_str()

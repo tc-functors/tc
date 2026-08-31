@@ -10,7 +10,7 @@ use provider::{
 async fn get_token(auth: &Auth) -> String {
     match std::env::var("TC_USE_CODEARTIFACT") {
         Ok(_) => {
-            let auth = provider::init_centralized_auth(auth).await;
+            let auth = provider::init_centralized_auth(auth, None).await;
             let client = aws::codeartifact::make_client(&auth).await;
             aws::codeartifact::get_auth_token(&client, &auth.name, &auth.account).await
         }

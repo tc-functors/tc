@@ -3,7 +3,7 @@ pub mod aws;
 pub use aws::Auth;
 use configurator::Config;
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth {
+pub async fn init(profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = match assume_role {
@@ -16,20 +16,20 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>) -> Auth 
                     }
                 }
             };
-            Auth::new(profile.clone(), role).await
+            Auth::new(profile.clone(), role, region).await
         }
-        Err(_) => Auth::new(profile.clone(), assume_role).await,
+        Err(_) => Auth::new(profile.clone(), assume_role, region).await,
     }
 }
 
-pub async fn init_centralized_auth(given_auth: &Auth) -> Auth {
+pub async fn init_centralized_auth(given_auth: &Auth, region: Option<String>) -> Auth {
     let config = Config::new();
     let profile = config.aws.lambda.layers_profile.clone();
     match profile {
         Some(_) => {
-            let cauth = init(profile.clone(), None).await;
+            let cauth = init(profile.clone(), None, region.clone()).await;
             let centralized = cauth
-                .assume(profile.clone(), config.role_to_assume(profile))
+                .assume(profile.clone(), config.role_to_assume(profile), region)
                 .await;
             centralized
         }
