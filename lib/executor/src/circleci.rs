@@ -19,8 +19,14 @@ fn find_org() -> String {
         Ok(k) => k,
         Err(_) => {
             let s1 = u::sh("git config --get remote.origin.url", &u::pwd());
-            let s2 = u::second(&s1, ":");
-            u::split_first(&s2, "/")
+            if s1.starts_with("https") {
+                let xs: &Vec<&str> = &s1.split("/").collect::<Vec<_>>();
+                u::nth(xs.to_vec(), 4)
+            } else {
+                let s2 = u::second(&s1, ":");
+                u::split_first(&s2, "/")
+            }
+
         }
     }
 }
