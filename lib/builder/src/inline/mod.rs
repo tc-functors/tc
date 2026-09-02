@@ -201,10 +201,12 @@ async fn should_build_deps(auth: &Auth, uri: &str) -> bool {
                 let (bucket, key) = s3::parts_of(uri);
                 let client = s3::make_client(auth).await;
                 let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
-                if let Some(_) = maybe_size {
-                    false
-                } else {
-                    true
+                match std::env::var("TC_FORCE_PUBLISH") {
+                    Ok(_) => true,
+                    Err(_) => match maybe_size {
+                        Some(_size) => false,
+                        None => true
+                    }
                 }
             }
             Err(_) => true,
