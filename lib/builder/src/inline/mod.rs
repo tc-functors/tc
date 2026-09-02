@@ -299,12 +299,17 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let (bucket, key) = s3::parts_of(&build.uri);
     let client = s3::make_client(auth).await;
     let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
-    match maybe_size {
-        Some(_size) => (),
-        None => {
-            println!("Publishing {}", &key);
-            let zip_path = build.artifact.clone();
-            s3::upload_file(&client, &bucket, &zip_path, &key).await;
+    let should_publish = match std::env::var("TC_FORCE_PUBLISH") {
+        Ok(_) => true,
+        Err(_) => match maybe_size {
+            Some(_size) => false,
+            None => true
         }
+    };
+
+    if should_publish {
+        println!("Publishing {}", &key);
+        let zip_path = build.artifact.clone();
+        s3::upload_file(&client, &bucket, &zip_path, &key).await;
     }
 }
