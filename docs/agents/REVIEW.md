@@ -150,15 +150,20 @@ PR or push CI at all (`ci.yml` triggers on **tags only**), so exempting a mainta
 restores the prior status quo rather than removing a safety net.
 
 `gate + tests` (`agent-conformance.yml`) and the pinned reviewer (`ai-review.yml`) both
-skip when either condition holds:
+skip when the PR author — or, on `push`, the pusher (`github.actor`, since a push has no
+PR author) — appears in the **`CONFORMANCE_EXEMPT_USERS`** repo variable: a JSON array
+of logins, e.g. `["icylisper","sanjeev247"]`. It defaults to `["icylisper"]` when unset,
+so it works without configuration; set it to `[]` to check everyone.
 
-| Escape hatch | How | Scope |
-|---|---|---|
-| `CONFORMANCE_EXEMPT_USERS` repo variable | JSON array of logins, e.g. `["icylisper","sanjeev247"]`. Defaults to `["icylisper"]` if unset; set to `[]` to check everyone. | Per person, standing |
-| `skip-conformance` label | Add the label to a PR | One PR, leaves a visible trace |
+There is deliberately **no label-based escape hatch**. A `skip-conformance` label was
+tried and reverted: these workflows trigger on `opened`/`synchronize`/`reopened`, so
+applying a label never re-evaluates the job's `if`, and re-running a check reuses the
+original event payload without the new label. Adding `labeled` to `types:` would fix
+that but re-run the full ~12-minute gate on **every** label change to any PR. Since the
+variable already covers the need, and nothing here can block a merge anyway, the label
+was not worth that cost.
 
-On `push` events there is no PR author, so the check falls back to `github.actor`
-(the pusher). Two things are intentionally **not** exempted:
+Two things are intentionally **not** exempted:
 - **Cursor Bugbot** is not driven by repo files — it predates this layer and keeps
   running. Its automation settings live in the Cursor dashboard.
 - **`eval.yml`** is path-filtered to framework files (`eval/**`, `AGENTS.md`,

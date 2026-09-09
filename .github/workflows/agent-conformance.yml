@@ -21,15 +21,14 @@ jobs:
     # Maintainer bypass. This conformance layer exists to vet agent-generated and
     # external contributions; routine maintainer work had no PR/push CI before it
     # existed (`ci.yml` triggers on tags only), so exempting it restores the prior
-    # status quo rather than removing a safety net. Two escape hatches:
-    #   - `CONFORMANCE_EXEMPT_USERS` repo variable: JSON array of logins, e.g.
-    #     ["icylisper","sanjeev247"]. Set it to [] to check everyone.
-    #   - `skip-conformance` label: exempts one PR, and leaves a visible trace.
+    # status quo rather than removing a safety net.
+    # Controlled by the `CONFORMANCE_EXEMPT_USERS` repo variable: a JSON array of
+    # logins, e.g. ["icylisper","sanjeev247"]. Defaults to ["icylisper"] when unset;
+    # set it to [] to check everyone.
     # The `|| github.actor` fallback covers `push` events, where there is no PR author.
     if: >-
       !contains(fromJSON(vars.CONFORMANCE_EXEMPT_USERS || '["icylisper"]'),
                 github.event.pull_request.user.login || github.actor)
-      && !contains(toJSON(github.event.pull_request.labels.*.name), 'skip-conformance')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
