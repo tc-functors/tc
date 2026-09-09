@@ -514,6 +514,7 @@ mod tests {
                 "kind": "Function",
                 "infra": "",
                 "dir": "/tmp/tc-test-topology",
+                "region": "us-west-2",
                 "sandbox": "test",
                 "hyphenated_names": false,
                 "version": "0.0.0",
