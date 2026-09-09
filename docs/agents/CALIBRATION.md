@@ -53,6 +53,31 @@ and `.github/workflows/agent-conformance.yml` runs it on every PR/push. This is 
 worked example of the framework surfacing real pre-existing rot: fixing one masked
 compile error exposed three stale-fixture test failures underneath it.
 
+### Recurring class: `differ`'s fixture drifts when `Topology` gains a field
+This is a **standing hazard, not a one-off**. `differ`'s `fixture_topology()` builds a
+`Topology` from an inline JSON string, but `Topology` is defined in `composer`
+(`lib/composer/src/topology.rs`). Because the house style makes new fields **required**
+(`pub region: String`, not `Option<T>` + `#[serde(default)]` — see STYLE.md §4), adding
+one to `Topology` silently breaks `differ`'s tests with:
+
+```
+topology fixture failed to deserialize: missing field `<name>`
+```
+
+Nothing at the definition site points at the fixture, so it is only caught by running
+the suite. Known occurrences:
+
+| Field(s) added | Added by | Fixture repaired in |
+|---|---|---|
+| `root`, `concurrency`, `hooks`, plus `Runtime`/`Build`/`Function` fields | pre-Phase-2 drift | Phase 2 |
+| `tc_version`, `changelog` | `6df60220` | Phase 2 follow-up |
+| `region` | `dbb909eb` | this fix |
+
+**If you add a field to `Topology`, update `lib/differ/src/lib.rs` `fixture_topology()`
+in the same change.** The corresponding schema commit will normally already be on `main`
+by the time the red suite is noticed, so a fixture repair legitimately lands as its own
+PR with no schema change in it — that is expected, not a missing half of the diff.
+
 ## clippy: HEAD is NOT clippy-clean → the gate is diff-scoped
 `cargo clippy --workspace` **fails on HEAD**: the `compiler` crate has **2
 error-level (correctness) lints** and the workspace emits **153 warnings across 33
