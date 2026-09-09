@@ -143,6 +143,32 @@ So the split is: **execute untrusted code only in a no-secret sandbox (the gate)
 touch secrets only over untrusted *data* (the diff), never untrusted *code* (the
 triage).**
 
+## Who this layer applies to (maintainer bypass)
+This review layer exists to vet **agent-generated and external contributions**. It is
+deliberately **not** in the maintainers' way: before it existed, routine work had no
+PR or push CI at all (`ci.yml` triggers on **tags only**), so exempting a maintainer
+restores the prior status quo rather than removing a safety net.
+
+`gate + tests` (`agent-conformance.yml`) and the pinned reviewer (`ai-review.yml`) both
+skip when either condition holds:
+
+| Escape hatch | How | Scope |
+|---|---|---|
+| `CONFORMANCE_EXEMPT_USERS` repo variable | JSON array of logins, e.g. `["icylisper","sanjeev247"]`. Defaults to `["icylisper"]` if unset; set to `[]` to check everyone. | Per person, standing |
+| `skip-conformance` label | Add the label to a PR | One PR, leaves a visible trace |
+
+On `push` events there is no PR author, so the check falls back to `github.actor`
+(the pusher). Two things are intentionally **not** exempted:
+- **Cursor Bugbot** is not driven by repo files — it predates this layer and keeps
+  running. Its automation settings live in the Cursor dashboard.
+- **`eval.yml`** is path-filtered to framework files (`eval/**`, `AGENTS.md`,
+  `docs/agents/STYLE.md`, …), never fires on ordinary Rust work, runs `--mock` with no
+  model call in ~6s, and posts nothing. It guards the reviewer's own harness.
+
+Nothing in this layer can block a merge regardless: no framework check is marked
+required in branch protection, and `AI_REVIEW_ENFORCE` is unset, so a BLOCK verdict is
+advisory. Exemption controls **whether the jobs run at all**, i.e. noise and CI minutes.
+
 ## Compliance / data residency
 Pick reviewers whose data handling fits the repo's rules:
 - **Public / OSS repos** (like this one): any backend is fine.

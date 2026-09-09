@@ -37,7 +37,14 @@ concurrency:
 jobs:
   ai-review:
     # Skip on forks (no secret / OIDC access) — keeps this from failing fork PRs.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Also skip for exempt maintainers and `skip-conformance`-labelled PRs: this
+    # reviewer is for agent-generated / external contributions, not routine
+    # maintainer work. See agent-conformance.yml for the full rationale.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && !contains(fromJSON(vars.CONFORMANCE_EXEMPT_USERS || '["icylisper"]'),
+                   github.event.pull_request.user.login || github.actor)
+      && !contains(toJSON(github.event.pull_request.labels.*.name), 'skip-conformance')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
