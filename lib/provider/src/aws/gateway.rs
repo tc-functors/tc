@@ -511,7 +511,8 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
 
 fn make_log_config(log_group_arn: &str) -> AccessLogSettings {
     let f = AccessLogSettingsBuilder::default();
-    f.destination_arn(log_group_arn).build()
+    let fmt = format!(r#"{{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }}"#);
+    f.destination_arn(log_group_arn).format(fmt).build()
 }
 
 
@@ -526,7 +527,7 @@ async fn create_stage(
     let route_settings = make_route_settings(burst_limit, rate_limit);
     tracing::debug!("Creating stage {} lg:{}", &stage.green(), log_group_arn);
     let log_config = make_log_config(log_group_arn);
-    let _ = client
+    client
         .create_stage()
         .api_id(s!(api_id))
         .auto_deploy(true)
@@ -534,7 +535,8 @@ async fn create_stage(
         .access_log_settings(log_config)
         .default_route_settings(route_settings)
         .send()
-        .await;
+        .await
+        .unwrap();
 }
 
 async fn update_stage(
@@ -547,7 +549,7 @@ async fn update_stage(
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     let log_config = make_log_config(log_group_arn);
-    let _ = client
+    client
         .update_stage()
         .api_id(s!(api_id))
         .auto_deploy(true)
@@ -555,7 +557,8 @@ async fn update_stage(
         .stage_name(stage)
         .default_route_settings(route_settings)
         .send()
-        .await;
+        .await
+        .unwrap();
 }
 
 pub async fn create_or_update_stage(

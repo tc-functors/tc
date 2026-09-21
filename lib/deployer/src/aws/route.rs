@@ -491,8 +491,8 @@ async fn create_or_update_gateways(
             // create log group
             let cw_client = cloudwatch::make_client(auth).await;
             let _ = cloudwatch::create_log_group(cw_client, &log_group).await;
-
-            gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit, &log_group)
+            let log_group_arn = auth.log_group_arn(&log_group);
+            gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit, &log_group_arn)
                 .await;
 
             let endpoint = if let Some(dom) = domain {

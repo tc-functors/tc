@@ -258,6 +258,10 @@ impl Auth {
         format!("arn:aws:cloudfront::{}:function/{}", &self.account, name)
     }
 
+    pub fn log_group_arn(&self, name: &str) -> String {
+        format!("arn:aws:logs:{}:{}:log-group:{}", &self.region, &self.account, name)
+    }
+
     pub fn s3_arn(&self, name: &str) -> String {
         format!("arn:aws:s3:::{}", name)
     }
