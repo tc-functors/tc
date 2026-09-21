@@ -23,6 +23,7 @@ use provider::{
         lambda,
         lambda::LambdaClient,
         route53,
+        cloudwatch
     },
 };
 use std::collections::HashMap;
@@ -199,6 +200,7 @@ async fn create_authorizer(
                         &api_id,
                         &authorizer.name,
                         &uri,
+                        authorizer.cache_ttl
                     )
                     .await;
                     (Some(id), authorizer.kind)
@@ -229,26 +231,26 @@ fn find_throttling(
     throttling: &HashMap<String, HashMap<String, Throttling>>,
     env: &str,
     sandbox: &str,
-) -> (Option<i32>, Option<f64>) {
+) -> (Option<i32>, Option<f64>, Option<i32>) {
     match throttling.get(env) {
         Some(e) => {
             let maybe_t = e.get(sandbox);
             if let Some(t) = maybe_t {
-                (t.burst_limit, t.rate_limit)
+                (t.burst_limit, t.rate_limit, t.authorizer_cache_ttl)
             } else {
-                (None, None)
+                (None, None, None)
             }
         }
         None => match throttling.get("default") {
             Some(d) => {
                 let maybe_t = d.get(sandbox);
                 if let Some(t) = maybe_t {
-                    (t.burst_limit, t.rate_limit)
+                    (t.burst_limit, t.rate_limit, t.authorizer_cache_ttl)
                 } else {
-                    (None, None)
+                    (None, None, None)
                 }
             }
-            None => (None, None),
+            None => (None, None, None),
         },
     }
 }
@@ -315,6 +317,7 @@ fn make_cors(route: &Route) -> Option<Cors> {
 #[derive(Clone, Debug)]
 struct Gateway {
     stage: String,
+    log_group: String,
     cors: Option<Cors>,
     authorizer: Option<Authorizer>,
     burst_limit: Option<i32>,
@@ -338,7 +341,8 @@ fn collate_gateways(
     if let Some(route) = default_route {
         cors = make_cors(&route);
         let gw = Gateway {
-            stage: route.stage.clone(),
+            stage: route.stage.name.clone(),
+            log_group: route.stage.log_group.clone(),
             cors: cors.clone(),
             authorizer: route.authorizer.clone(),
             burst_limit: None,
@@ -362,7 +366,7 @@ fn collate_gateways(
             } = route;
 
             // throttling
-            let (burst_limit, rate_limit) = find_throttling(&throttling, env, sandbox);
+            let (burst_limit, rate_limit, authorizer_cache_ttl) = find_throttling(&throttling, env, sandbox);
 
             // domains
             let maybe_domain = match domains.get(env) {
@@ -402,11 +406,20 @@ fn collate_gateways(
                 cors = make_cors(&route);
             }
 
+            let auth = if let Some(mut auth) = authorizer.clone() {
+                auth.cache_ttl = authorizer_cache_ttl.unwrap_or(auth.cache_ttl);
+                Some(auth.clone())
+            } else {
+                authorizer.clone()
+            };
+
+
             if !gateway.is_empty() {
                 let gw = Gateway {
                     cors: cors.clone(),
-                    authorizer: authorizer.clone(),
-                    stage: stage.to_string(),
+                    authorizer: auth,
+                    stage: stage.name.to_string(),
+                    log_group: stage.log_group.to_string(),
                     burst_limit: burst_limit,
                     rate_limit: rate_limit,
                     domain: maybe_domain,
@@ -448,6 +461,7 @@ async fn create_or_update_gateways(
             domain,
             paths,
             manage,
+            log_group,
             ..
         } = gateway;
         if !manage {
@@ -474,7 +488,11 @@ async fn create_or_update_gateways(
             }
             let (auth_id, auth_kind) = create_authorizer(auth, &api_id, authorizer).await;
 
-            gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit)
+            // create log group
+            let cw_client = cloudwatch::make_client(auth).await;
+            let _ = cloudwatch::create_log_group(cw_client, &log_group).await;
+
+            gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit, &log_group)
                 .await;
 
             let endpoint = if let Some(dom) = domain {
@@ -547,7 +565,9 @@ pub async fn create(
 
                     let gateway_arn = auth.api_gateway_arn(&api_id);
 
-                    gateway::create_deployment(&client, &api_id, &stage).await;
+                    if stage != "$default" {
+                        gateway::create_deployment(&client, &api_id, &stage).await;
+                    }
                     gateway::update_tags(&client, &gateway_arn, tags.clone()).await;
                     url = endpoint.to_string();
                 }

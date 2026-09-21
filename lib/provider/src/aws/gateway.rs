@@ -17,11 +17,13 @@ use aws_sdk_apigatewayv2::{
         JwtConfiguration,
         ProtocolType,
         RouteSettings,
+        AccessLogSettings,
         builders::{
             CorsBuilder,
             DomainNameConfigurationBuilder,
             JwtConfigurationBuilder,
             RouteSettingsBuilder,
+            AccessLogSettingsBuilder
         },
     },
 };
@@ -351,6 +353,7 @@ pub async fn create_lambda_authorizer(
     api_id: &str,
     name: &str,
     uri: &str,
+    result_ttl: i32
 ) -> String {
     println!("Creating authorizer: {}", name.blue());
     let res = client
@@ -359,7 +362,7 @@ pub async fn create_lambda_authorizer(
         .api_id(s!(api_id))
         .authorizer_type(AuthorizerType::Request)
         .authorizer_uri(s!(uri))
-        .authorizer_result_ttl_in_seconds(0)
+        .authorizer_result_ttl_in_seconds(result_ttl)
         .authorizer_payload_format_version(s!("2.0"))
         .identity_source(s!("$request.header.Authorization"))
         .send()
@@ -372,6 +375,7 @@ pub async fn update_lambda_authorizer(
     id: &str,
     api_id: &str,
     uri: &str,
+    cache_ttl: i32
 ) -> String {
     let res = client
         .update_authorizer()
@@ -380,7 +384,7 @@ pub async fn update_lambda_authorizer(
         .authorizer_type(AuthorizerType::Request)
         .authorizer_uri(s!(uri))
         .authorizer_payload_format_version(s!("2.0"))
-        .authorizer_result_ttl_in_seconds(0)
+        .authorizer_result_ttl_in_seconds(cache_ttl)
         .identity_source(s!("$request.header.Authorization"))
         .send()
         .await;
@@ -392,14 +396,15 @@ pub async fn create_or_update_lambda_authorizer(
     api_id: &str,
     name: &str,
     uri: &str,
+    cache_ttl: i32
 ) -> String {
     let maybe_authorizer_id = find_authorizer(client, api_id, name).await;
     match maybe_authorizer_id {
         Some(id) => {
-            println!("Updating authorizer {}", name.green());
-            update_lambda_authorizer(client, &id, api_id, uri).await
+            println!("Updating authorizer {} cache-ttl:{}", name.green(), cache_ttl);
+            update_lambda_authorizer(client, &id, api_id, uri, cache_ttl).await
         }
-        None => create_lambda_authorizer(client, api_id, name, uri).await,
+        None => create_lambda_authorizer(client, api_id, name, uri, cache_ttl).await,
     }
 }
 
@@ -504,20 +509,29 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
     }
 }
 
+fn make_log_config(log_group_arn: &str) -> AccessLogSettings {
+    let f = AccessLogSettingsBuilder::default();
+    f.destination_arn(log_group_arn).build()
+}
+
+
 async fn create_stage(
     client: &Client,
     api_id: &str,
     stage: &str,
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
+    log_group_arn: &str
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
-    tracing::debug!("Creating stage {}", &stage.green());
+    tracing::debug!("Creating stage {} lg:{}", &stage.green(), log_group_arn);
+    let log_config = make_log_config(log_group_arn);
     let _ = client
         .create_stage()
         .api_id(s!(api_id))
         .auto_deploy(true)
         .stage_name(stage)
+        .access_log_settings(log_config)
         .default_route_settings(route_settings)
         .send()
         .await;
@@ -529,12 +543,15 @@ async fn update_stage(
     stage: &str,
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
+    log_group_arn: &str
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
+    let log_config = make_log_config(log_group_arn);
     let _ = client
         .update_stage()
         .api_id(s!(api_id))
         .auto_deploy(true)
+        .access_log_settings(log_config)
         .stage_name(stage)
         .default_route_settings(route_settings)
         .send()
@@ -547,11 +564,12 @@ pub async fn create_or_update_stage(
     stage: &str,
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
+    log_group_arn: &str
 ) {
     if stage_exists(client, api_id, stage).await {
-        update_stage(client, api_id, stage, burst_limit, rate_limit).await;
+        update_stage(client, api_id, stage, burst_limit, rate_limit, log_group_arn).await;
     } else {
-        create_stage(client, api_id, stage, burst_limit, rate_limit).await;
+        create_stage(client, api_id, stage, burst_limit, rate_limit, log_group_arn).await;
     }
 }
 

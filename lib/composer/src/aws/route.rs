@@ -34,12 +34,22 @@ pub struct Authorizer {
     pub create: bool,
     pub name: String,
     pub kind: String,
+    pub cache_ttl: i32
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Stage {
+    pub name: String,
+    pub log_group: String,
+    pub variables: HashMap<String, String>,
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Throttling {
     pub burst_limit: Option<i32>,
     pub rate_limit: Option<f64>,
+    pub authorizer_cache_ttl: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -50,8 +60,7 @@ pub struct Route {
     pub gateway: String,
     pub authorizer: Option<Authorizer>,
     pub role_arn: String,
-    pub stage: String,
-    pub stage_variables: HashMap<String, String>,
+    pub stage: Stage,
     pub is_async: bool,
     pub cors: Option<Cors>,
     pub target: Target,
@@ -211,12 +220,15 @@ fn make_cors(maybe_cors: &Option<CorsSpec>, _default: Option<RouteSpec>) -> Opti
     }
 }
 
+
 fn make_authorizer(
     fqn: &str,
     rspec: &RouteSpec,
     fns: &HashMap<String, Function>,
     default_rspec: Option<RouteSpec>,
 ) -> Option<Authorizer> {
+
+
     if let Some(azer) = &rspec.authorizer {
         match fns.get(azer) {
             Some(_) => {
@@ -225,12 +237,14 @@ fn make_authorizer(
                         create: false,
                         name: azer.to_string(),
                         kind: s!("lambda"),
+                        cache_ttl: 0
                     })
                 } else {
                     Some(Authorizer {
                         create: true,
                         name: template::maybe_namespace(&azer),
                         kind: s!("lambda"),
+                        cache_ttl: 0
                     })
                 }
             }
@@ -240,12 +254,14 @@ fn make_authorizer(
                         create: true,
                         name: fqn.to_string(),
                         kind: s!("cognito"),
+                        cache_ttl: 0
                     })
                 } else {
                     Some(Authorizer {
                         create: false,
                         name: azer.to_string(),
                         kind: s!("lambda"),
+                        cache_ttl: 0
                     })
                 }
             }
@@ -257,12 +273,26 @@ fn make_authorizer(
                     create: true,
                     name: template::maybe_namespace(&azer),
                     kind: s!("lambda"),
+                    cache_ttl: 0
                 }),
                 None => None,
             }
         } else {
             None
         }
+    }
+}
+
+fn make_stage(namespace: &str, maybe_name: &Option<String>) -> Stage {
+    let name = match maybe_name {
+        Some(s) => s.clone(),
+        None => s!("$default"),
+    };
+    let lg = format!("/aws/vendedlogs/tc/gateways/{}-{{{{sandbox}}}}", namespace);
+    Stage {
+        name: name,
+        log_group: lg,
+        variables: HashMap::new()
     }
 }
 
@@ -301,10 +331,7 @@ impl Route {
             None => false,
         };
 
-        let stage = match &rspec.stage {
-            Some(s) => s.clone(),
-            None => s!("$default"),
-        };
+        let stage = make_stage(&spec.name, &rspec.stage);
 
         let default = match &spec.routes {
             Some(rs) => rs.get("default").cloned(),
@@ -325,7 +352,6 @@ impl Route {
             target: target,
             role_arn: Role::entity_role_arn(Entity::Route),
             stage: stage,
-            stage_variables: HashMap::new(),
             is_async: is_async,
             domains: find_domains(infra_dir),
             throttling: find_throttling(infra_dir),
