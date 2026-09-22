@@ -157,6 +157,8 @@ pub async fn update(
     tags: &HashMap<String, String>,
     component: &str,
 ) {
+    println!("Updating component {}", component);
+
     match component {
         "layers" => update_layers(auth, functions).await,
         "vars" => update_vars(auth, functions).await,
@@ -166,7 +168,10 @@ pub async fn update(
             lambda::update_runtime_version(&client, functions).await;
         }
         "tags" => update_tags(auth, functions, tags).await,
-        "roles" => update_roles(auth, functions).await,
+        "roles" => {
+            update_roles(auth, functions).await;
+            sync_roles(auth, functions).await;
+        }
         _ => update_dir(auth, &functions, component, tags).await,
     }
 }

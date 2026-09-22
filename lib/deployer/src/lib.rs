@@ -94,6 +94,7 @@ pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, 
         let cfg = make_config(&auth, topology).await;
         transducer::create(auth, functions, &trn, &cfg).await;
     }
+    function::sync_roles(auth, functions).await;
 }
 
 async fn update_function(
@@ -241,13 +242,16 @@ async fn update_component(auth: &Auth, topology: &Topology, entity: Entity, comp
         &entity.to_str()
     );
 
+
     match entity {
         Entity::Event => event::update(&auth, events, tags, component).await,
         Entity::Function => {
             for (_, node) in nodes {
-                println!("updating {}", &node.namespace);
+                println!("Updating {}", &node.namespace);
                 function::update(&auth, &node.functions, tags, component).await;
             }
+            println!("Updating {}", &namespace);
+            function::update(&auth, &topology.functions, tags, component).await;
         }
         Entity::Mutation => mutation::update(&auth, mutations, &component).await,
         Entity::Queue => queue::update(&auth, queues, component).await,
