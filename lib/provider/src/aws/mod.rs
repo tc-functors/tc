@@ -42,9 +42,6 @@ pub struct Auth {
 
 impl Auth {
     async fn do_new(name: String, assume_role: Option<String>, region: Option<String>) -> Auth {
-        let config = sts::get_config(&name, assume_role.clone()).await;
-        let client = sts::make_client(&config).await;
-        let account = sts::get_account_id(&client).await;
         let region = match region {
             Some(r) => r,
             None => match std::env::var("AWS_REGION") {
@@ -52,6 +49,10 @@ impl Auth {
                 Err(_) => String::from("us-west-2")
             }
         };
+
+        let config = sts::get_config(&name, assume_role.clone(), &region).await;
+        let client = sts::make_client(&config).await;
+        let account = sts::get_account_id(&client).await;
 
         Auth {
             name: name.clone(),

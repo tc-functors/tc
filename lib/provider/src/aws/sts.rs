@@ -10,8 +10,10 @@ use aws_sdk_sts::{
     config,
     config::retry::RetryMode,
 };
+use aws_config::meta::region::{RegionProviderChain};
 use aws_smithy_types::retry::RetryConfig;
 use std::panic;
+use aws_config::Region;
 
 // sts
 
@@ -56,26 +58,34 @@ pub async fn get_account_id(client: &Client) -> String {
     }
 }
 
-async fn assume_given_role(role_arn: &str) -> SdkConfig {
+async fn assume_given_role(role_arn: &str, region: String) -> SdkConfig {
     let session_name = "TcSession";
     let provider = AssumeRoleProvider::builder(role_arn)
         .session_name(session_name)
         .build_from_provider(EnvironmentVariableCredentialsProvider::new())
         .await;
+    let region_provider = RegionProviderChain::first_try(Region::new(region.clone()))
+        .or_default_provider()
+        .or_else("us-west-2");
     aws_config::from_env()
         .retry_config(RetryConfig::adaptive())
         .credentials_provider(provider)
+        .region(region_provider)
         .behavior_version(BehaviorVersion::latest())
         .load()
         .await
 }
 
-pub async fn get_config(profile: &str, assume_role: Option<String>) -> SdkConfig {
+pub async fn get_config(profile: &str, assume_role: Option<String>, region: &str) -> SdkConfig {
     match assume_role {
-        Some(role_arn) => assume_given_role(&role_arn).await,
+        Some(role_arn) => assume_given_role(&role_arn, region.to_string()).await,
         None => {
+            let region_provider = RegionProviderChain::first_try(Region::new(region.to_string()))
+                .or_default_provider()
+                .or_else("us-west-2");
             aws_config::from_env()
                 .profile_name(profile)
+                .region(region_provider)
                 .retry_config(RetryConfig::adaptive())
                 .load()
                 .await
