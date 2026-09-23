@@ -20,6 +20,12 @@ pub struct Context {
     pub version: String,
 }
 
+fn render_region(s: &str, region: &str) -> String {
+    let mut table: HashMap<&str, &str> = HashMap::new();
+    table.insert("region", region);
+    u::stencil(s, table)
+}
+
 impl Context {
     pub fn render(&self, s: &str) -> String {
         let mut table: HashMap<&str, &str> = HashMap::new();
@@ -33,7 +39,7 @@ impl Context {
         };
 
         let bucket = match std::env::var("TC_ASSET_BUCKET") {
-            Ok(r) => &r.to_owned(),
+            Ok(r) => &render_region(&r, &region),
             Err(_) => &self.config.aws.lambda.asset_bucket,
         };
 
