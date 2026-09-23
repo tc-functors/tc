@@ -600,7 +600,10 @@ pub async fn find_function(client: &Client, name: &str) -> Option<String> {
 pub async fn create_or_update_function(client: &Client, name: &str, handler: &str) {
     let maybe_fn = find_function(client, name).await;
     match maybe_fn {
-        Some(_) => (),
+        Some(etag) => {
+            let etag = update_function(client, name, handler, &etag).await;
+            publish_function(client, name, &etag).await;
+        },
         None => {
             let etag = create_function(client, name, handler).await;
             publish_function(client, name, &etag).await;
