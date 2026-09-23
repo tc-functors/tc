@@ -239,7 +239,7 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
     }
     let s3_client = s3::make_client(auth).await;
 
-    s3::find_or_create_bucket(&s3_client, bucket).await;
+    s3::find_or_create_bucket(&s3_client, bucket, &auth.region).await;
 
     if bucket.is_empty() {
         panic!("Bucket not configured. Set TC_PAGES_BUCKET, in config or in topology")

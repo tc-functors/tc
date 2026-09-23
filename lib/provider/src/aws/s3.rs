@@ -124,14 +124,18 @@ async fn bucket_exists(client: &Client, bucket: &str) -> bool {
     }
 }
 
-fn make_bucket_cfg() -> CreateBucketConfiguration {
+fn make_bucket_cfg(region: &str) -> CreateBucketConfiguration {
     let it = CreateBucketConfigurationBuilder::default();
-    it.location_constraint(BucketLocationConstraint::UsWest2)
+    let loc = match region {
+        "us-west-2" => BucketLocationConstraint::UsWest2,
+        _ => BucketLocationConstraint::from(region),
+    };
+    it.location_constraint(loc)
         .build()
 }
 
-async fn create_bucket(client: &Client, bucket: &str) {
-    let cfg = make_bucket_cfg();
+async fn create_bucket(client: &Client, bucket: &str, region: &str) {
+    let cfg = make_bucket_cfg(region);
     println!("Creating bucket {}", bucket);
     let _ = client
         .create_bucket()
@@ -142,9 +146,9 @@ async fn create_bucket(client: &Client, bucket: &str) {
         .unwrap();
 }
 
-pub async fn find_or_create_bucket(client: &Client, bucket: &str) {
+pub async fn find_or_create_bucket(client: &Client, bucket: &str, region: &str) {
     if !bucket_exists(client, bucket).await {
-        create_bucket(client, bucket).await
+        create_bucket(client, bucket, region).await
     }
 }
 
