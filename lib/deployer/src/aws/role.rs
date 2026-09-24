@@ -43,29 +43,11 @@ pub async fn create_aux(
     let auth = Auth::new(Some(profile), role_arn, region.clone()).await;
     let client = iam::make_client(&auth).await;
 
-    let region_str = match region {
-        Some(r) => r,
-        None => "us-west-2".to_string()
-    };
-
-    // late resolve the region
-    let role_name = if region_str == "us-west-2" {
-        role.name.clone()
-    } else {
-        format!("{}-{}", &role.name, &region_str)
-    };
-
-    let policy_name = if region_str == "us-west-2" {
-        role.policy_name.clone()
-    } else {
-        format!("{}-{}", &role.policy_name, &region_str)
-    };
-
     let r = Role {
-        name: role_name,
+        name: role.name.to_string(),
         trust_policy: role.trust.to_string(),
         policy_arn: role.policy_arn.clone(),
-        policy_name: policy_name,
+        policy_name: role.policy_name.clone(),
         policy_doc: role.policy.to_string(),
     };
 

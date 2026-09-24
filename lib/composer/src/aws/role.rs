@@ -89,7 +89,7 @@ impl Role {
             } else {
                 entity_name.to_string()
             };
-            let name = format!("tc-{}-{}-{{{{sandbox}}}}", namespace, abbr);
+            let name = format!("tc-{}-{}-{{{{sandbox}}}}-{{{{region}}}}", namespace, abbr);
             let policy = read_policy(&role_file);
             Role {
                 name: s!(&name),
@@ -102,7 +102,7 @@ impl Role {
                 policy_arn: template::policy_arn(&name),
             }
         } else {
-            let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+            let name = format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str());
             Role {
                 name: s!(&name),
                 kind: Kind::Base,

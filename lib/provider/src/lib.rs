@@ -25,6 +25,11 @@ pub async fn init(profile: Option<String>, assume_role: Option<String>, region: 
 pub async fn init_centralized_auth(given_auth: &Auth, region: Option<String>) -> Auth {
     let config = Config::new();
     let profile = config.aws.lambda.layers_profile.clone();
+    let region = match region {
+        Some(r) => Some(r),
+        None => Some(given_auth.region.clone())
+    };
+
     match profile {
         Some(_) => {
             let cauth = init(profile.clone(), None, region.clone()).await;

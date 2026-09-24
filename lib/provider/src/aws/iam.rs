@@ -97,7 +97,20 @@ impl Role {
             self.name,
             "pruning old versions".blue()
         ));
+
+        let _ = log_update.render(&format!(
+            "Creating role {} ({})",
+            self.name,
+            "creating policy".cyan()
+        ));
+        self.find_or_create_policy(client).await;
+        self.wait_until_attachable(client).await;
+
+        self.attach_policy(client).await;
+        self.wait_until_attached(client).await;
+
         self.delete_non_default_versions(client).await?;
+
 
         let _ = log_update.render(&format!(
             "Updating role {} ({})",
