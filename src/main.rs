@@ -135,6 +135,8 @@ pub struct DeployArgs {
     #[arg(long, short = 's')]
     sandbox: Option<String>,
     #[arg(long)]
+    region: Option<String>,
+    #[arg(long)]
     snapshot: Option<MaybeStdin<String>>,
     #[arg(long, short = 'v')]
     version: Option<String>,
@@ -146,6 +148,8 @@ pub struct DeployArgs {
     interactive: bool,
     #[arg(long, action, short = 'f')]
     force: bool,
+    #[arg(long)]
+    concurrency: Option<i32>,
 }
 
 #[derive(Debug, Args)]
@@ -234,6 +238,8 @@ pub struct SnapshotArgs {
     profile: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, short = 'f')]
     format: Option<String>,
     #[arg(long, action)]
@@ -1000,10 +1006,12 @@ async fn ci_deploy(args: DeployArgs) {
     let DeployArgs {
         env,
         sandbox,
+        region,
         topology,
         version,
         branch,
         snapshot,
+        concurrency,
         interactive,
         force,
         ..
@@ -1012,7 +1020,7 @@ async fn ci_deploy(args: DeployArgs) {
     if interactive {
         remote::deploy_interactive().await;
     } else if let Some(ver) = version {
-        remote::deploy_version(topology, env, sandbox, &ver, force).await;
+        remote::deploy_version(topology, env, sandbox, region, &ver, force, concurrency).await;
     } else if let Some(br) = branch {
         remote::deploy_branch(topology, env, sandbox, &br).await;
     } else if let Some(snap) = snapshot {
@@ -1069,6 +1077,7 @@ async fn snapshot(args: SnapshotArgs) {
         profile,
         sandbox,
         format,
+        region,
         save,
         list,
         show,
@@ -1094,7 +1103,7 @@ async fn snapshot(args: SnapshotArgs) {
     } else if root {
         tc::snapshot_root(profile, target_env, sandbox, save).await;
     } else {
-        tc::snapshot(profile, sandbox, opts).await;
+        tc::snapshot(profile, sandbox, region, opts).await;
     }
 }
 

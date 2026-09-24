@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 // interactive
 
-pub fn prompt_versions(topologies: &HashMap<String, String>) -> (String, String, String, String) {
+pub fn prompt_versions(topologies: &HashMap<String, String>) -> (String, String, String, String, String) {
     let mut names: Vec<String> = topologies.keys().cloned().collect();
 
     names.sort();
@@ -37,18 +37,21 @@ pub fn prompt_versions(topologies: &HashMap<String, String>) -> (String, String,
 
     let sandbox = Text::new("Sandbox").with_default("stable").prompt();
 
+    let region = Text::new("Region").with_default("us-west-2").prompt();
+
     let version = selected_version.unwrap();
     let sandbox = sandbox.unwrap();
     let profile = profile.unwrap();
+    let region = region.unwrap();
     let msg = format!(
-        "Do you want to deploy {}@{}.{}/{} ?",
-        &t, &sandbox, &profile, &version
+        "Do you want to deploy {}@{}.{}/{} {}?",
+        &t, &sandbox, &profile, &version, &region
     );
 
     let ans = Confirm::new(&msg).with_default(false).prompt();
 
     match ans {
-        Ok(true) => (t.to_string(), version, profile, sandbox),
+        Ok(true) => (t.to_string(), version, profile, sandbox, region),
         Ok(false) | Err(_) => {
             println!("Not deploying via CI. Exiting");
             std::process::exit(1);
@@ -73,8 +76,8 @@ pub async fn deploy_interactive() {
     let dir = u::root();
     u::sh("git fetch --tags", &dir);
     let versions = composer::lookup_versions(&dir);
-    let (namespace, version, env, sandbox) = prompt_versions(&versions);
-    let url = executor::deploy(&env, &namespace, &sandbox, &version, false).await;
+    let (namespace, version, env, sandbox, region) = prompt_versions(&versions);
+    let url = executor::deploy(&env, &namespace, &sandbox, &region, &version, false, 3).await;
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
@@ -154,8 +157,10 @@ pub async fn deploy_version(
     topology: Option<String>,
     env: Option<String>,
     sandbox: Option<String>,
+    region: Option<String>,
     version: &str,
     force: bool,
+    concurrency: Option<i32>
 ) {
     let dir = u::pwd();
     let env = match env {
@@ -165,12 +170,17 @@ pub async fn deploy_version(
     let namespace = composer::topology_name(&dir);
     let name = u::maybe_string(topology, &namespace);
     let sandbox = u::maybe_string(sandbox, "stable");
+    let region = u::maybe_string(region, "us-west-2");
+    let concurrency = match concurrency {
+        Some(c) => c,
+        None => 3
+    };
     let version = if version == "latest" {
         composer::topology_version(&namespace)
     } else {
         version.to_string()
     };
-    let url = executor::deploy(&env, &name, &sandbox, &version, force).await;
+    let url = executor::deploy(&env, &name, &sandbox, &region, &version, force, concurrency).await;
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }

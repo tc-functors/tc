@@ -27,9 +27,9 @@ pub async fn release(service: &str, suffix: &str, tag: &str) -> String {
     url
 }
 
-pub async fn deploy(env: &str, service: &str, sandbox: &str, version: &str, force: bool) -> String {
+pub async fn deploy(env: &str, service: &str, sandbox: &str, region: &str, version: &str, force: bool, concurrency: i32) -> String {
     let repo = current_repo();
-    circleci::trigger_tag(&repo, &env, &sandbox, &service, &version, force).await
+    circleci::trigger_tag(&repo, &env, &sandbox, region, &service, &version, force, concurrency).await
 }
 
 pub async fn deploy_branch(env: &str, service: &str, sandbox: &str, branch: &str) -> String {

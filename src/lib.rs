@@ -381,7 +381,10 @@ pub async fn create(
         ..
     } = opts;
 
-    println!("Running tc {} env: {:?} region: {:?}", &version, &profile, &region);
+    println!("Running tc version:{} env:{} region:{}",
+             &version,
+             &profile.clone().unwrap_or("NA".to_string()),
+             &region.clone().unwrap_or("us-west-2".to_string()));
 
     let maybe_topology = read_topology(topology_path).await;
 
@@ -753,7 +756,7 @@ pub async fn snapshot_root(
         .await;
 }
 
-pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: SnapshotOpts) {
+pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, region: Option<String>, opts: SnapshotOpts) {
     let SnapshotOpts {
         save,
         list,
@@ -766,6 +769,7 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
     let dir = u::root();
     let format = u::maybe_string(format, "json");
     let sandbox = u::maybe_string(sandbox, "stable");
+    let region_s = u::maybe_string(region.clone(), "us-west-2");
 
     match profile {
         Some(ref p) => {
@@ -773,14 +777,14 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
             if profiles.len() > 1 {
                 snapshotter::snapshot_profiles(&dir, &sandbox, profiles).await;
             } else {
-                let auth = init(profile.clone(), None, None).await;
+                let auth = init(profile.clone(), None, region).await;
                 let records = snapshotter::snapshot_sandbox(&auth, &dir, &sandbox).await;
                 if save {
                     let records_str = serde_json::to_string_pretty(&records).unwrap();
                     snapshotter::save(&auth, &records_str, &p, &sandbox).await
                 }
 
-                snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
+                snapshotter::pretty_print(&records, &format, target_env, target_sandbox, &region_s);
             }
         }
         None => {
@@ -791,7 +795,7 @@ pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, opts: Sn
                 }
             } else if let Some(s) = show {
                 let records = snapshotter::show(&s).await;
-                snapshotter::pretty_print(&records, &format, target_env, target_sandbox);
+                snapshotter::pretty_print(&records, &format, target_env, target_sandbox, &region_s);
             } else {
                 println!("Please specify profile");
             }

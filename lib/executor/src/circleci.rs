@@ -118,9 +118,11 @@ pub async fn trigger_tag(
     repo: &str,
     env: &str,
     sandbox: &str,
+    region: &str,
     prefix: &str,
     version: &str,
     force: bool,
+    concurrency: i32,
 ) -> String {
     let ci = Circle::init(repo);
 
@@ -134,7 +136,7 @@ pub async fn trigger_tag(
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
-              "tc-deploy-opts": "--notify --force --recursive",
+              "tc-deploy-opts": "--notify --recursive --region {region} --concurrency {concurrency}",
               "api_call": true
            }}}}"#
         )

@@ -248,6 +248,7 @@ pub fn pretty_print(
     format: &str,
     env: Option<String>,
     sandbox: Option<String>,
+    region: &str
 ) {
     match format {
         "json" => {
@@ -264,7 +265,8 @@ pub fn pretty_print(
                 Some(e) => e,
                 None => panic!("Please provide --target-sandbox"),
             };
-            let s = pipeline::generate_config(records, &env, &sandbox);
+
+            let s = pipeline::generate_config(records, &env, &sandbox, region);
             println!("{}", &s);
         }
         _ => (),
