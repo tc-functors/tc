@@ -1,4 +1,4 @@
-mod aws;
+pub mod aws;
 pub mod guard;
 use aws::{
     channel,
@@ -10,11 +10,11 @@ use aws::{
     queue,
     resource,
     role,
-    route,
     schedule,
     state,
     transducer,
 };
+pub use aws::route;
 use colored::Colorize;
 use compiler::{
     Entity,

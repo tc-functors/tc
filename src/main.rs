@@ -601,16 +601,10 @@ pub struct ChangelogArgs {
 pub struct RouteArgs {
     #[arg(long, short = 'e')]
     profile: Option<String>,
-    #[arg(long, short = 'E')]
-    event: Option<String>,
     #[arg(long, short = 's')]
     sandbox: Option<String>,
-    #[arg(long, short = 'S')]
-    service: String,
-    #[arg(long, short = 'r')]
-    rule: Option<String>,
-    #[arg(long, action)]
-    list: bool,
+    #[arg(long)]
+    region: Option<String>,
     #[arg(long, action, short = 't')]
     trace: bool,
 }
@@ -951,16 +945,13 @@ async fn upgrade(args: UpgradeArgs) {
 async fn route(args: RouteArgs) {
     let RouteArgs {
         profile,
-        event,
-        service,
+        region,
         sandbox,
-        rule,
         trace,
         ..
     } = args;
     init_tracing(trace);
-    let env = tc::init(profile, None, None).await;
-    tc::route(env, event, service, sandbox, rule).await;
+    tc::route(profile, sandbox, region).await;
 }
 
 async fn freeze(args: FreezeArgs) {

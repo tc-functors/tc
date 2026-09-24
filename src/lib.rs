@@ -370,7 +370,6 @@ pub async fn create(
 
     let version = option_env!("PROJECT_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"));
 
-
     let CreateOpts {
         notify,
         recursive,
@@ -621,18 +620,19 @@ pub async fn tag(
 }
 
 pub async fn route(
-    auth: Auth,
-    event: Option<String>,
-    service: String,
+    profile: Option<String>,
     sandbox: Option<String>,
-    rule: Option<String>,
+    region: Option<String>
 ) {
-    let event = u::maybe_string(event, "default");
+    let auth = init(profile, None, region.clone()).await;
     let sandbox = resolver::maybe_sandbox(sandbox);
-    match rule {
-        Some(r) => router::route(&auth, &event, &service, &sandbox, &r).await,
-        None => println!("Rule not specified"),
-    }
+    let region = u::maybe_string(region, "us-west-2");
+    let dir = u::pwd();
+    let topology = composer::compose(&dir, false);
+    router::route(&auth, &topology, &sandbox).await;
+    let msg = format!("Routed DNS {}@{}.{}/{}", topology.namespace, &sandbox, &auth.name, &region);
+    println!("{}", &msg);
+    notifier::notify(&topology.namespace, &msg).await;
 }
 
 async fn find_root_topologies(auth: &Auth, dir: &str, sandbox: &str) -> HashMap<String, Topology> {

@@ -12,3 +12,5 @@ anyhow = "1.0.71"
 kit = { path = "../kit" }
 configurator = { path = "../configurator" }
 provider = { path = "../provider" }
+deployer = { path = "../deployer" }
+composer = { path = "../composer" }

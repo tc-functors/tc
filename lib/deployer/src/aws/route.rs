@@ -315,19 +315,19 @@ fn make_cors(route: &Route) -> Option<Cors> {
 }
 
 #[derive(Clone, Debug)]
-struct Gateway {
-    stage: String,
-    log_group: String,
-    cors: Option<Cors>,
-    authorizer: Option<Authorizer>,
-    burst_limit: Option<i32>,
-    rate_limit: Option<f64>,
-    domain: Option<String>,
-    paths: Vec<String>,
-    manage: bool,
+pub struct Gateway {
+    pub stage: String,
+    pub log_group: String,
+    pub cors: Option<Cors>,
+    pub authorizer: Option<Authorizer>,
+    pub burst_limit: Option<i32>,
+    pub rate_limit: Option<f64>,
+    pub domain: Option<String>,
+    pub paths: Vec<String>,
+    pub manage: bool,
 }
 
-fn collate_gateways(
+pub fn collate_gateways(
     routes: &HashMap<String, Route>,
     env: &str,
     sandbox: &str,
@@ -442,6 +442,20 @@ struct GatewayState {
     endpoint: String,
 }
 
+pub async fn update_dns(auth: &Auth, sandbox: &str, api_id: &str, stage: &str, domain: &str, paths: Vec<String>) {
+    println!("Creating domain: {}", domain);
+    let idempotency_token = sandbox;
+    let cert_arn = find_or_create_cert(auth, domain, idempotency_token).await;
+    let client = gateway::make_client(auth).await;
+    let gateway_domain = gateway::create_or_update_domain(
+        &client, &api_id, domain, stage, &cert_arn, paths,
+    )
+        .await;
+    let target_zone_id = gateway::find_hosted_zone(&client, domain).await;
+    println!("Updating dns record {}", &gateway_domain);
+    update_dns_record(auth, domain, &gateway_domain, target_zone_id).await;
+}
+
 async fn create_or_update_gateways(
     auth: &Auth,
     gateways: HashMap<String, Gateway>,
@@ -495,18 +509,12 @@ async fn create_or_update_gateways(
             gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit, &log_group_arn)
                 .await;
 
+
             let endpoint = if let Some(dom) = domain {
-                println!("Creating domain: {}", dom);
-                let idempotency_token = sandbox;
-                let cert_arn = find_or_create_cert(auth, &dom, idempotency_token).await;
-                let client = gateway::make_client(auth).await;
-                let gateway_domain = gateway::create_or_update_domain(
-                    &client, &api_id, &dom, &stage, &cert_arn, paths,
-                )
-                .await;
-                let target_zone_id = gateway::find_hosted_zone(&client, &dom).await;
-                println!("Updating dns record {}", &gateway_domain);
-                update_dns_record(auth, &dom, &gateway_domain, target_zone_id).await;
+                match std::env::var("TC_UPDATE_DNS") {
+                    Ok(_) => update_dns(auth, sandbox, &api_id, &stage, &dom, paths).await,
+                    Err(_) => println!("Skipping DNS record updates")
+                };
                 dom
             } else {
                 auth.api_endpoint(&api_id, &stage)
