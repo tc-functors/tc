@@ -44,10 +44,7 @@ impl Auth {
     async fn do_new(name: String, assume_role: Option<String>, region: Option<String>) -> Auth {
         let region = match region {
             Some(r) => r,
-            None => match std::env::var("AWS_REGION") {
-                Ok(e) => e,
-                Err(_) => String::from("us-west-2")
-            }
+            None => String::from("us-west-2")
         };
 
         let config = sts::get_config(&name, assume_role.clone(), &region).await;
