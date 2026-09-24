@@ -63,7 +63,7 @@ pub struct Role {
 
 fn legacy_name_of(entity: Entity) -> String {
     match entity {
-        Entity::Route => s!("tc-base-api-role"),
+        Entity::Route => s!("tc-base-api-role-{{{region"),
         Entity::Event => s!("tc-base-event-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
         Entity::State => s!("tc-base-sfn-role"),
@@ -73,11 +73,11 @@ fn legacy_name_of(entity: Entity) -> String {
 
 fn name_of(entity: Entity) -> String {
     match entity {
-        Entity::Route => s!("tc-base-api-{{sandbox}}"),
-        Entity::Event => s!("tc-base-event-{{sandbox}}"),
-        Entity::Mutation => s!("tc-base-appsync-{{sandbox}}"),
-        Entity::State => s!("tc-base-state-{{sandbox}}"),
-        _ => s!("tc-base-lambda-{{sandbox}}"),
+        Entity::Route => s!("tc-base-api-{{sandbox}}-{{region}}"),
+        Entity::Event => s!("tc-base-event-{{sandbox}}-{{region}}"),
+        Entity::Mutation => s!("tc-base-appsync-{{sandbox}}-{{region}}"),
+        Entity::State => s!("tc-base-state-{{sandbox}}-{{region}}"),
+        _ => s!("tc-base-lambda-{{sandbox}}-{{region}}"),
     }
 }
 
@@ -135,7 +135,7 @@ impl Role {
                 policy_arn: template::policy_arn(&name),
             }
         } else {
-            let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+            let name = format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str());
             Role {
                 name: s!(&name),
                 kind: Kind::Base,
@@ -166,7 +166,7 @@ impl Role {
             }
 
             Err(_) => {
-                let name = format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str());
+                let name = format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str());
                 let infra_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
                 let maybe_base_path = format!("{}/{}.json", infra_dir, &entity.to_str());
                 let policy = if index::get().file_exists(&maybe_base_path) {

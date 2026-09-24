@@ -71,8 +71,11 @@ pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, 
         &version
     );
 
-    if namespace == "base" || sandbox != "stable" {
-        role::update_base_roles(auth, base_roles, tags).await;
+    match std::env::var("TC_UPDATE_BASE_ROLES") {
+        Ok(_) => role::update_base_roles(auth, base_roles, tags).await,
+        Err(_) => if namespace == "base" || sandbox != "stable" {
+            role::update_base_roles(auth, base_roles, tags).await;
+        }
     }
 
     role::create_or_update(auth, &sandbox, roles, tags).await;
