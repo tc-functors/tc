@@ -150,7 +150,7 @@ pub async fn trigger_tag(
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
-              "tc-deploy-opts": "--notify --recursive",
+              "tc-deploy-opts": "--notify --recursive --region {region} --concurrency {concurrency}",
               "api_call": true
            }}}}"#
         )
