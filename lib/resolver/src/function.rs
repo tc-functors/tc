@@ -118,14 +118,14 @@ async fn resolve_vars(
 static LAYER_AUTH: AsyncMemo<(Option<String>, Option<String>), Auth> = AsyncMemo::new();
 
 async fn make_layer_auth(ctx: &Context) -> Auth {
-    let Context { auth, config, .. } = ctx;
+    let Context { auth, config,  .. } = ctx;
     let profile = config.aws.lambda.layers_profile.clone();
     let role = config.role_to_assume(profile.clone());
     let key = (profile.clone(), role.clone());
     LAYER_AUTH
         .get_or_init(key, || async {
             tracing::debug!("Assuming layer-auth profile (cache miss)");
-            auth.assume(profile, role, None).await
+            auth.assume(profile, role, Some(auth.region.clone())).await
         })
         .await
 }
