@@ -15,15 +15,18 @@ Deep references:
 - `#[[file:docs/agents/CALIBRATION.md]]` — verified build/test/lint baseline
 
 Non-negotiables (full detail in STYLE.md):
-1. Terse **free functions** over methods; `&Topology`/`&Auth`/`&str` in, owned out.
+1. Terse **free functions** over methods; `&Topology`/`&Auth`/`&str` in, owned out;
+   **≤4 parameters** (thread wider state via `&Context`/a struct).
 2. Use the **`kit`** crate (`s()`, `empty()`, `s!`, `v!`, `maybe_*`, `nth`, `split*`).
 3. Fail-fast (`.unwrap()`/`.expect("fail")`/`panic!`); **no `anyhow`/`thiserror`**.
    Graceful degradation only in `kit::memo`/resolver concurrency/`differ`.
 4. `#[derive(Serialize, Deserialize, Clone, Debug)]`, `pub` fields, `HashMap`
    -of-everything, `Option<T>` + `#[serde(default)]`.
 5. `Kind`-suffixed enums with `todo!()` arms; bounded concurrency; `TC_*` config.
-6. Vertical crate-granular imports (nightly `rustfmt`); `#[cfg(test)]` twins for
-   leaf IO; respect `TopologySpec` vs `Topology`.
+6. Vertical crate-granular imports (nightly `rustfmt`), **80-col target for new code**
+   (`.editorconfig`/`.dir-locals.el`); respect `TopologySpec` vs `Topology`.
+7. Tests in a sibling `lib/<crate>/tests/<area>_test.rs`; inline `#[cfg(test)]` only
+   for the leaf-IO cfg-twin or a private-access test.
 
 Do not add a provider trait, do not "modernize" intentional idioms, do not reformat
 unrelated files. Build with `cargo build`; test with `cargo test --workspace`

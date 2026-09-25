@@ -56,7 +56,8 @@ Known caveats (documented in `docs/agents/CALIBRATION.md`):
 
 ## The ten non-negotiables (full detail in STYLE.md)
 1. Prefer small, terse **free functions** over methods/`impl` blocks. Logic takes
-   `&Topology`/`&Auth`/`&str`, returns owned `String`/`Vec`/`HashMap`.
+   `&Topology`/`&Auth`/`&str`, returns owned `String`/`Vec`/`HashMap`. **≤4 parameters**
+   per function (thread wider state via `&Context`/`&Auth` or a small struct).
 2. Use the **`kit`** crate for everything: `use kit as u;` and `use kit::*;`.
    Reach for `s()`, `empty()`, `s!`, `v!`, `maybe_*`, `nth`, `split*` before writing
    inline logic.
@@ -69,9 +70,12 @@ Known caveats (documented in `docs/agents/CALIBRATION.md`):
 5. Enums for closed sets get a `Kind` suffix and honest `todo!()` arms for
    unimplemented variants.
 6. Imports: crate-granular, **vertical**, one group, braces even for one item
-   (enforced by `rustfmt.toml`; needs nightly).
-7. Tests: inline `#[cfg(test)] mod tests`; mock leaf IO with a
-   `#[cfg(test)]`/`#[cfg(not(test))]` twin function, not a trait/mock object.
+   (enforced by `rustfmt.toml`; needs nightly). Column-width target **80** for new
+   code (`.editorconfig` / `.dir-locals.el`); `rustfmt.toml` stays at 100 until a
+   maintainer-run repo-wide reformat lowers it.
+7. Tests: prefer a sibling `lib/<crate>/tests/<area>_test.rs` (per entity) over inline;
+   inline `#[cfg(test)] mod tests` only for the leaf-IO `#[cfg(test)]`/`#[cfg(not(test))]`
+   twin function, or a test that needs a crate-private item.
 8. Concurrency is always **bounded** (`futures::stream … buffer_unordered(n)`),
    with an env-configurable cap clamped to a documented `const` ceiling.
 9. Respect the `TopologySpec` (unresolved, `Option`-heavy) vs `Topology` (resolved,

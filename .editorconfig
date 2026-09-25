@@ -1,0 +1,28 @@
+# Editor conventions for `tc`. See docs/agents/STYLE.md §6.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.rs]
+indent_size = 4
+# House target is 80 columns (emacs rust-mode default). rustfmt.toml still carries
+# the historical 100 ceiling until a maintainer-run repo-wide reformat lowers it.
+max_line_length = 80
+
+[*.{toml,yml,yaml,json}]
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Make requires literal tabs for recipe lines — never spaces.
+[{Makefile,makefile,GNUmakefile,*.mk}]
+indent_style = tab
