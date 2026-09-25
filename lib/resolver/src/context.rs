@@ -35,7 +35,7 @@ impl Context {
 
         let repo = match std::env::var("TC_ECR_REPO") {
             Ok(r) => &r.to_owned(),
-            Err(_) => &self.config.aws.ecr.repo,
+            Err(_) => &render_region(&self.config.aws.ecr.repo, &region),
         };
 
         let bucket = match std::env::var("TC_ASSET_BUCKET") {
