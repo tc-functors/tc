@@ -723,7 +723,7 @@ pub async fn find_tags(client: &Client, name: &str) -> HashMap<String, String> {
 
 // domain
 
-async fn find_domain(client: &Client, domain_name: &str) -> Option<String> {
+pub async fn find_domain(client: &Client, domain_name: &str) -> Option<String> {
     let res = client
         .get_domain_name()
         .domain_name(domain_name)
