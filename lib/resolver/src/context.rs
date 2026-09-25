@@ -34,7 +34,7 @@ impl Context {
         let abbr_namespace = abbr(&self.namespace);
 
         let repo = match std::env::var("TC_ECR_REPO") {
-            Ok(r) => &r.to_owned(),
+            Ok(r) => &render_region(&r, &region),
             Err(_) => &render_region(&self.config.aws.ecr.repo, &region),
         };
 
