@@ -123,7 +123,7 @@ impl Role {
         entity_name: &str,
     ) -> Role {
         if index::get().file_exists(&role_file) {
-            let name = entity_name;
+            let name = format!("{}-{{{{region}}}}", entity_name);
             Role {
                 name: s!(&name),
                 kind: Kind::Override,
