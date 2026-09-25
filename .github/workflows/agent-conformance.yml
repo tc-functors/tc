@@ -18,6 +18,21 @@ concurrency:
 jobs:
   conformance:
     name: gate + tests
+    # Maintainer bypass. This conformance layer exists to vet agent-generated and
+    # external contributions; routine maintainer work had no PR/push CI before it
+    # existed (`ci.yml` triggers on tags only), so exempting it restores the prior
+    # status quo rather than removing a safety net.
+    # Controlled by the `CONFORMANCE_EXEMPT_USERS` repo variable: a JSON array of
+    # logins, e.g. ["icylisper","sanjeev247"]. Defaults to ["icylisper"] when unset;
+    # set it to [] to check everyone.
+    # On `pull_request` the subject is the PR author; on `push` there is no PR author,
+    # so it is the pusher (`github.actor`). Selected explicitly via the documented
+    # `A && B || C` form rather than leaning on `null` coercion.
+    if: >-
+      !contains(fromJSON(vars.CONFORMANCE_EXEMPT_USERS || '["icylisper"]'),
+                github.event_name == 'pull_request'
+                && github.event.pull_request.user.login
+                || github.actor)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
