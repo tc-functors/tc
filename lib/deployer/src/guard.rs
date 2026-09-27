@@ -40,7 +40,7 @@ pub async fn should_abort(auth: &Auth, sandbox: &str, _topology: &Topology) -> b
             },
             Err(_) => false,
         },
-        Err(_) => match std::env::var("TC_FORCE_DEPLOY") {
+        Err(_) => match std::env::var("TC_ALLOW_STABLE") {
             Ok(_) => false,
             Err(_) => true,
         },
