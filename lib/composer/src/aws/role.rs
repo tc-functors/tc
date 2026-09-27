@@ -61,9 +61,17 @@ pub struct Role {
     pub policy_arn: String,
 }
 
+fn should_be_region_specific() -> bool {
+    match std::env::var("TC_USE_GLOBAL_ROLES") {
+        Ok(_) => false,
+        Err(_)  => true
+
+    }
+}
+
 fn legacy_name_of(entity: Entity) -> String {
     match entity {
-        Entity::Route => s!("tc-base-api-role-{{{region"),
+        Entity::Route => s!("tc-base-api-role"),
         Entity::Event => s!("tc-base-event-role"),
         Entity::Mutation => s!("tc-base-appsync-role"),
         Entity::State => s!("tc-base-sfn-role"),
@@ -72,12 +80,22 @@ fn legacy_name_of(entity: Entity) -> String {
 }
 
 fn name_of(entity: Entity) -> String {
-    match entity {
-        Entity::Route => s!("tc-base-api-{{sandbox}}-{{region}}"),
-        Entity::Event => s!("tc-base-event-{{sandbox}}-{{region}}"),
-        Entity::Mutation => s!("tc-base-appsync-{{sandbox}}-{{region}}"),
-        Entity::State => s!("tc-base-state-{{sandbox}}-{{region}}"),
-        _ => s!("tc-base-lambda-{{sandbox}}-{{region}}"),
+    if should_be_region_specific() {
+        match entity {
+            Entity::Route => s!("tc-base-api-{{sandbox}}-{{region}}"),
+            Entity::Event => s!("tc-base-event-{{sandbox}}-{{region}}"),
+            Entity::Mutation => s!("tc-base-appsync-{{sandbox}}-{{region}}"),
+            Entity::State => s!("tc-base-state-{{sandbox}}-{{region}}"),
+            _ => s!("tc-base-lambda-{{sandbox}}-{{region}}"),
+        }
+    } else  {
+        match entity {
+            Entity::Route => s!("tc-base-api-{{sandbox}}"),
+            Entity::Event => s!("tc-base-event-{{sandbox}}"),
+            Entity::Mutation => s!("tc-base-appsync-{{sandbox}}"),
+            Entity::State => s!("tc-base-state-{{sandbox}}"),
+            _ => s!("tc-base-lambda-{{sandbox}}"),
+        }
     }
 }
 
@@ -89,7 +107,11 @@ impl Role {
             } else {
                 entity_name.to_string()
             };
-            let name = format!("tc-{}-{}-{{{{sandbox}}}}-{{{{region}}}}", namespace, abbr);
+            let name = if should_be_region_specific() {
+                format!("tc-{}-{}-{{{{sandbox}}}}-{{{{region}}}}", namespace, abbr)
+            } else {
+                format!("tc-{}-{}-{{{{sandbox}}}}", namespace, abbr)
+            };
             let policy = read_policy(&role_file);
             Role {
                 name: s!(&name),
@@ -102,7 +124,11 @@ impl Role {
                 policy_arn: template::policy_arn(&name),
             }
         } else {
-            let name = format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str());
+            let name = if should_be_region_specific() {
+                format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str())
+            } else {
+                format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str())
+            };
             Role {
                 name: s!(&name),
                 kind: Kind::Base,
@@ -123,7 +149,11 @@ impl Role {
         entity_name: &str,
     ) -> Role {
         if index::get().file_exists(&role_file) {
-            let name = format!("{}-{{{{region}}}}", entity_name);
+            let name = if should_be_region_specific() {
+                format!("{}-{{{{region}}}}", entity_name)
+            } else {
+                entity_name.to_string()
+            };
             Role {
                 name: s!(&name),
                 kind: Kind::Override,
@@ -135,7 +165,11 @@ impl Role {
                 policy_arn: template::policy_arn(&name),
             }
         } else {
-            let name = format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str());
+            let name = if should_be_region_specific() {
+                format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str())
+            } else {
+                format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str())
+            };
             Role {
                 name: s!(&name),
                 kind: Kind::Base,
@@ -166,7 +200,11 @@ impl Role {
             }
 
             Err(_) => {
-                let name = format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str());
+                let name = if should_be_region_specific() {
+                    format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str())
+                } else {
+                    format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str())
+                };
                 let infra_dir = format!("{}/infrastructure/tc/base/roles", &u::root());
                 let maybe_base_path = format!("{}/{}.json", infra_dir, &entity.to_str());
                 let policy = if index::get().file_exists(&maybe_base_path) {
