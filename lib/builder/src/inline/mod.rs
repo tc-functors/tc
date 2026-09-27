@@ -190,27 +190,31 @@ fn zip(dir: &str, langr: &LangRuntime) {
     }
 }
 
-async fn should_build_deps(auth: &Auth, uri: &str) -> bool {
-    match std::env::var("TC_SKIP_BUILD") {
-        Ok(_) => false,
-        Err(_) => match std::env::var("TC_USE_ASSET_STORE") {
-            Ok(_) => {
-                if uri.is_empty() {
-                    return true;
-                }
-                let (bucket, key) = s3::parts_of(uri);
-                let client = s3::make_client(auth).await;
-                let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
-                match std::env::var("TC_FORCE_PUBLISH") {
-                    Ok(_) => true,
-                    Err(_) => match maybe_size {
-                        Some(_size) => false,
-                        None => true
+async fn should_build_deps(auth: &Auth, uri: &str, use_asset_store: bool) -> bool {
+    if use_asset_store {
+        match std::env::var("TC_SKIP_BUILD") {
+            Ok(_) => false,
+            Err(_) => match std::env::var("TC_USE_ASSET_STORE") {
+                Ok(_) => {
+                    if uri.is_empty() {
+                        return true;
+                    }
+                    let (bucket, key) = s3::parts_of(uri);
+                    let client = s3::make_client(auth).await;
+                    let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
+                    match std::env::var("TC_FORCE_PUBLISH") {
+                        Ok(_) => true,
+                        Err(_) => match maybe_size {
+                            Some(_size) => false,
+                            None => true
+                        }
                     }
                 }
-            }
-            Err(_) => true,
-        },
+                Err(_) => true,
+            },
+        }
+    } else {
+        true
     }
 }
 
@@ -222,6 +226,7 @@ pub async fn build(
     arch: &Arch,
     uri: &str,
     bs: &Build,
+    use_asset_store: bool
 ) -> BuildStatus {
     let Build {
         command,
@@ -230,7 +235,7 @@ pub async fn build(
         ..
     } = bs;
 
-    if should_build_deps(auth, uri).await {
+    if should_build_deps(auth, uri, use_asset_store).await {
         sh("rm -rf lambda.zip deps.zip build", &dir);
 
         let bar = u::progress(8);

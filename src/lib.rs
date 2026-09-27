@@ -90,7 +90,8 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
             match maybe_fn {
                 Some(f) => {
                     let auth = init_centralized_auth(profile).await;
-                    let builds = builder::build(&auth, &f, name, kind, false).await;
+                    let opts = builder::BuildOpts { code_only: false, use_asset_store: false };
+                    let builds = builder::build(&auth, &f, name, kind, opts).await;
                     if publish {
                         builder::publish(&auth, builds.clone()).await;
                     }

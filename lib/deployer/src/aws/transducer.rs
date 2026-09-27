@@ -4,6 +4,7 @@ use composer::{
     Transducer,
 };
 use provider::Auth;
+use builder::BuildOpts;
 use std::collections::HashMap;
 
 pub async fn create(
@@ -15,7 +16,8 @@ pub async fn create(
     println!("Creating transducer");
     transducer.dump(config);
 
-    let _ = builder::build(auth, &transducer.function, None, None, true).await;
+    let opts = BuildOpts { code_only: true, use_asset_store: false };
+    let _ = builder::build(auth, &transducer.function, None, None, opts).await;
 
     let client = lambda::make_client(auth).await;
     lambda::create(&client, &transducer.function, &HashMap::new(), false).await;

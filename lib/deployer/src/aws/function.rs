@@ -8,9 +8,11 @@ mod agentcore;
 pub mod lambda;
 mod microvm;
 use tabled::Tabled;
+use builder::BuildOpts;
 
-async fn maybe_build(auth: &Auth, function: &Function) {
-    let builds = builder::build(auth, function, None, None, true).await;
+async fn maybe_build(auth: &Auth, function: &Function, force: bool) {
+    let opts = BuildOpts { code_only: true, use_asset_store: !force };
+    let builds = builder::build(auth, function, None, None, opts).await;
     builder::publish(auth, builds).await;
 }
 
@@ -20,7 +22,7 @@ async fn create_function(
     tags: &HashMap<String, String>,
     force: bool,
 ) -> String {
-    maybe_build(auth, &f).await;
+    maybe_build(auth, &f, force).await;
     match f.runtime.provider {
         Provider::Lambda => {
             let client = lambda::make_client(auth).await;
@@ -143,7 +145,7 @@ pub async fn update_dir(
         match functions.get(dir) {
             Some(f) => {
                 let a = auth.clone();
-                maybe_build(&a, &f).await;
+                maybe_build(&a, &f, true).await;
                 create_function(&a, f.clone(), tags, true).await;
             }
             None => panic!("No valid function found"),

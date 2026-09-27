@@ -1,6 +1,7 @@
 use super::Context;
 use compiler::{
     TopologyKind,
+    BuildKind,
     spec::{
         InfraSpec,
         NetworkSpec,
@@ -392,12 +393,14 @@ fn get_infra_spec(
 
 async fn resolve_runtime(
     ctx: &Context,
-    runtime: &Runtime,
+    function: &Function,
     fqn: &str,
     resolve_urls: bool,
+    force: bool
 ) -> Runtime {
     let Context { auth, sandbox, .. } = ctx;
 
+    let runtime = function.runtime.clone();
     let Runtime {
         layers,
         network,
@@ -406,10 +409,23 @@ async fn resolve_runtime(
         enable_fs,
         enable_network,
         ..
-    } = runtime;
-    let mut r: Runtime = runtime.clone();
+    } = &function.runtime;
+    let mut r: Runtime = function.runtime.clone();
 
-    let actual_infra = get_infra_spec(infra_spec, &auth.name, sandbox);
+
+
+    let uri = if force {
+        match &function.build.kind {
+            BuildKind::Inline => &format!("{}/lambda.zip", &function.dir),
+            _ => &function.runtime.uri
+        }
+    } else {
+        &function.runtime.uri
+    };
+
+    r.uri = uri.to_string();
+
+    let actual_infra = get_infra_spec(&infra_spec, &auth.name, sandbox);
     let InfraSpec {
         memory_size,
         timeout,
@@ -555,7 +571,7 @@ pub async fn resolve(
             async move {
                 tracing::debug!("Resolving function {}", &name);
                 let mut fu = f.clone();
-                fu.runtime = resolve_runtime(ctx, &f.runtime, &fqn, resolve_urls).await;
+                fu.runtime = resolve_runtime(ctx, &f, &fqn, resolve_urls, force).await;
                 (name, fu)
             }
         })
@@ -577,7 +593,7 @@ pub async fn resolve_given(
 
         let resolve_urls = topology.routes.len() > 0;
 
-        fu.runtime = resolve_runtime(ctx, &f.runtime, &root.fqn, resolve_urls).await;
+        fu.runtime = resolve_runtime(ctx, &f, &root.fqn, resolve_urls, false).await;
         functions.insert(component.to_string(), fu.clone());
         functions
     } else {
