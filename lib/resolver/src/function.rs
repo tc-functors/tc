@@ -1,7 +1,7 @@
 use super::Context;
 use compiler::{
-    TopologyKind,
     BuildKind,
+    TopologyKind,
     spec::{
         InfraSpec,
         NetworkSpec,
@@ -119,7 +119,7 @@ async fn resolve_vars(
 static LAYER_AUTH: AsyncMemo<(Option<String>, Option<String>), Auth> = AsyncMemo::new();
 
 async fn make_layer_auth(ctx: &Context) -> Auth {
-    let Context { auth, config,  .. } = ctx;
+    let Context { auth, config, .. } = ctx;
     let profile = config.aws.lambda.layers_profile.clone();
     let role = config.role_to_assume(profile.clone());
     let key = (profile.clone(), role.clone());
@@ -396,7 +396,7 @@ async fn resolve_runtime(
     function: &Function,
     fqn: &str,
     resolve_urls: bool,
-    force: bool
+    force: bool,
 ) -> Runtime {
     let Context { auth, sandbox, .. } = ctx;
 
@@ -412,12 +412,10 @@ async fn resolve_runtime(
     } = &function.runtime;
     let mut r: Runtime = function.runtime.clone();
 
-
-
     let uri = if force {
         match &function.build.kind {
             BuildKind::Inline => &format!("{}/lambda.zip", &function.dir),
-            _ => &function.runtime.uri
+            _ => &function.runtime.uri,
         }
     } else {
         &function.runtime.uri

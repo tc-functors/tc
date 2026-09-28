@@ -26,7 +26,6 @@ fn find_org() -> String {
                 let s2 = u::second(&s1, ":");
                 u::split_first(&s2, "/")
             }
-
         }
     }
 }
@@ -200,13 +199,18 @@ pub async fn trigger_create(
     branch: &str,
     force: bool,
     concurrency: i32,
-
 ) -> String {
     let ci = Circle::init(repo);
     let opts = if force {
-        format!("--notify --force --recursive --concurrency {} --region {}", concurrency, region)
+        format!(
+            "--notify --force --recursive --concurrency {} --region {}",
+            concurrency, region
+        )
     } else {
-        format!("--notify --recursive --concurrency {} --region {}", concurrency, region)
+        format!(
+            "--notify --recursive --concurrency {} --region {}",
+            concurrency, region
+        )
     };
 
     let payload = format!(

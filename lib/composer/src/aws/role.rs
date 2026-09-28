@@ -64,8 +64,7 @@ pub struct Role {
 fn should_be_region_specific() -> bool {
     match std::env::var("TC_USE_GLOBAL_ROLES") {
         Ok(_) => false,
-        Err(_)  => true
-
+        Err(_) => true,
     }
 }
 
@@ -88,7 +87,7 @@ fn name_of(entity: Entity) -> String {
             Entity::State => s!("tc-base-state-{{sandbox}}-{{region}}"),
             _ => s!("tc-base-lambda-{{sandbox}}-{{region}}"),
         }
-    } else  {
+    } else {
         match entity {
             Entity::Route => s!("tc-base-api-{{sandbox}}"),
             Entity::Event => s!("tc-base-event-{{sandbox}}"),
@@ -125,7 +124,10 @@ impl Role {
             }
         } else {
             let name = if should_be_region_specific() {
-                format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str())
+                format!(
+                    "tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}",
+                    &entity.to_str()
+                )
             } else {
                 format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str())
             };
@@ -166,7 +168,10 @@ impl Role {
             }
         } else {
             let name = if should_be_region_specific() {
-                format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str())
+                format!(
+                    "tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}",
+                    &entity.to_str()
+                )
             } else {
                 format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str())
             };
@@ -201,7 +206,10 @@ impl Role {
 
             Err(_) => {
                 let name = if should_be_region_specific() {
-                    format!("tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}", &entity.to_str())
+                    format!(
+                        "tc-base-{}-{{{{sandbox}}}}-{{{{region}}}}",
+                        &entity.to_str()
+                    )
                 } else {
                     format!("tc-base-{}-{{{{sandbox}}}}", &entity.to_str())
                 };

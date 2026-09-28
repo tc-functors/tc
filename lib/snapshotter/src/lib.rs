@@ -248,7 +248,7 @@ pub fn pretty_print(
     format: &str,
     env: Option<String>,
     sandbox: Option<String>,
-    region: &str
+    region: &str,
 ) {
     match format {
         "json" => {

@@ -1,10 +1,10 @@
 use super::function::lambda;
+use builder::BuildOpts;
 use composer::{
     Function,
     Transducer,
 };
 use provider::Auth;
-use builder::BuildOpts;
 use std::collections::HashMap;
 
 pub async fn create(
@@ -16,7 +16,10 @@ pub async fn create(
     println!("Creating transducer");
     transducer.dump(config);
 
-    let opts = BuildOpts { code_only: true, use_asset_store: false };
+    let opts = BuildOpts {
+        code_only: true,
+        use_asset_store: false,
+    };
     let _ = builder::build(auth, &transducer.function, None, None, opts).await;
 
     let client = lambda::make_client(auth).await;

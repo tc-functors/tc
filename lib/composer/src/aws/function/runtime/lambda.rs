@@ -1,6 +1,4 @@
-use super::{
-    common,
-};
+use super::common;
 use common as c;
 use common::{
     FileSystem,
@@ -30,10 +28,7 @@ fn find_image_tag(dir: &str, namespace: &str) -> String {
     }
 }
 
-fn consolidate_layers(
-    extensions: Vec<String>,
-    given_layers: Vec<String>,
-) -> Vec<String> {
+fn consolidate_layers(extensions: Vec<String>, given_layers: Vec<String>) -> Vec<String> {
     let mut layers: Vec<String> = vec![];
     let mut e: Vec<String> = extensions;
     let mut g: Vec<String> = given_layers;

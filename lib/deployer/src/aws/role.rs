@@ -135,7 +135,15 @@ pub async fn update_base_roles(
             let region = Some(auth.region.to_string());
             let role_arn = auth.assume_role.to_owned();
             let h = tokio::spawn(async move {
-                create_aux(p, region, String::from(""), role_arn, role.clone(), tags.clone()).await;
+                create_aux(
+                    p,
+                    region,
+                    String::from(""),
+                    role_arn,
+                    role.clone(),
+                    tags.clone(),
+                )
+                .await;
             });
             tasks.push(h);
         }

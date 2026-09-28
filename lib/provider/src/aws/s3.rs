@@ -130,8 +130,7 @@ fn make_bucket_cfg(region: &str) -> CreateBucketConfiguration {
         "us-west-2" => BucketLocationConstraint::UsWest2,
         _ => BucketLocationConstraint::from(region),
     };
-    it.location_constraint(loc)
-        .build()
+    it.location_constraint(loc).build()
 }
 
 async fn create_bucket(client: &Client, bucket: &str, region: &str) {

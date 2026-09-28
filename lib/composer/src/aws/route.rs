@@ -34,7 +34,7 @@ pub struct Authorizer {
     pub create: bool,
     pub name: String,
     pub kind: String,
-    pub cache_ttl: i32
+    pub cache_ttl: i32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -43,7 +43,6 @@ pub struct Stage {
     pub log_group: String,
     pub variables: HashMap<String, String>,
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Throttling {
@@ -220,15 +219,12 @@ fn make_cors(maybe_cors: &Option<CorsSpec>, _default: Option<RouteSpec>) -> Opti
     }
 }
 
-
 fn make_authorizer(
     fqn: &str,
     rspec: &RouteSpec,
     fns: &HashMap<String, Function>,
     default_rspec: Option<RouteSpec>,
 ) -> Option<Authorizer> {
-
-
     if let Some(azer) = &rspec.authorizer {
         match fns.get(azer) {
             Some(_) => {
@@ -237,14 +233,14 @@ fn make_authorizer(
                         create: false,
                         name: azer.to_string(),
                         kind: s!("lambda"),
-                        cache_ttl: 0
+                        cache_ttl: 0,
                     })
                 } else {
                     Some(Authorizer {
                         create: true,
                         name: template::maybe_namespace(&azer),
                         kind: s!("lambda"),
-                        cache_ttl: 0
+                        cache_ttl: 0,
                     })
                 }
             }
@@ -254,14 +250,14 @@ fn make_authorizer(
                         create: true,
                         name: fqn.to_string(),
                         kind: s!("cognito"),
-                        cache_ttl: 0
+                        cache_ttl: 0,
                     })
                 } else {
                     Some(Authorizer {
                         create: false,
                         name: azer.to_string(),
                         kind: s!("lambda"),
-                        cache_ttl: 0
+                        cache_ttl: 0,
                     })
                 }
             }
@@ -273,7 +269,7 @@ fn make_authorizer(
                     create: true,
                     name: template::maybe_namespace(&azer),
                     kind: s!("lambda"),
-                    cache_ttl: 0
+                    cache_ttl: 0,
                 }),
                 None => None,
             }
@@ -292,7 +288,7 @@ fn make_stage(namespace: &str, maybe_name: &Option<String>) -> Stage {
     Stage {
         name: name,
         log_group: lg,
-        variables: HashMap::new()
+        variables: HashMap::new(),
     }
 }
 

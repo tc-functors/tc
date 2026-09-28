@@ -36,9 +36,8 @@ pub use mutation::MutationSpec;
 pub use page::PageSpec;
 pub use queue::QueueSpec;
 pub use route::RouteSpec;
-use yaml::Transformer;
-
 use validator::Validate;
+use yaml::Transformer;
 
 // topology
 
@@ -157,7 +156,6 @@ pub struct TopologySpec {
 }
 
 impl Default for TopologySpec {
-
     fn default() -> Self {
         Self {
             name: String::from("unknown"),

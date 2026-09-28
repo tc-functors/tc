@@ -7,11 +7,14 @@ use std::collections::HashMap;
 mod agentcore;
 pub mod lambda;
 mod microvm;
-use tabled::Tabled;
 use builder::BuildOpts;
+use tabled::Tabled;
 
 async fn maybe_build(auth: &Auth, function: &Function, force: bool) {
-    let opts = BuildOpts { code_only: true, use_asset_store: !force };
+    let opts = BuildOpts {
+        code_only: true,
+        use_asset_store: !force,
+    };
     let builds = builder::build(auth, function, None, None, opts).await;
     builder::publish(auth, builds).await;
 }

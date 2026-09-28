@@ -9,6 +9,7 @@ use aws_sdk_apigatewayv2::{
         RetryMode,
     },
     types::{
+        AccessLogSettings,
         AuthorizationType,
         AuthorizerType,
         Cors,
@@ -17,13 +18,12 @@ use aws_sdk_apigatewayv2::{
         JwtConfiguration,
         ProtocolType,
         RouteSettings,
-        AccessLogSettings,
         builders::{
+            AccessLogSettingsBuilder,
             CorsBuilder,
             DomainNameConfigurationBuilder,
             JwtConfigurationBuilder,
             RouteSettingsBuilder,
-            AccessLogSettingsBuilder
         },
     },
 };
@@ -353,7 +353,7 @@ pub async fn create_lambda_authorizer(
     api_id: &str,
     name: &str,
     uri: &str,
-    result_ttl: i32
+    result_ttl: i32,
 ) -> String {
     println!("Creating authorizer: {}", name.blue());
     let res = client
@@ -375,7 +375,7 @@ pub async fn update_lambda_authorizer(
     id: &str,
     api_id: &str,
     uri: &str,
-    cache_ttl: i32
+    cache_ttl: i32,
 ) -> String {
     let res = client
         .update_authorizer()
@@ -396,12 +396,16 @@ pub async fn create_or_update_lambda_authorizer(
     api_id: &str,
     name: &str,
     uri: &str,
-    cache_ttl: i32
+    cache_ttl: i32,
 ) -> String {
     let maybe_authorizer_id = find_authorizer(client, api_id, name).await;
     match maybe_authorizer_id {
         Some(id) => {
-            println!("Updating authorizer {} cache-ttl:{}", name.green(), cache_ttl);
+            println!(
+                "Updating authorizer {} cache-ttl:{}",
+                name.green(),
+                cache_ttl
+            );
             update_lambda_authorizer(client, &id, api_id, uri, cache_ttl).await
         }
         None => create_lambda_authorizer(client, api_id, name, uri, cache_ttl).await,
@@ -511,10 +515,11 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
 
 fn make_log_config(log_group_arn: &str) -> AccessLogSettings {
     let f = AccessLogSettingsBuilder::default();
-    let fmt = format!(r#"{{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }}"#);
+    let fmt = format!(
+        r#"{{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength" }}"#
+    );
     f.destination_arn(log_group_arn).format(fmt).build()
 }
-
 
 async fn create_stage(
     client: &Client,
@@ -522,7 +527,7 @@ async fn create_stage(
     stage: &str,
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
-    log_group_arn: &str
+    log_group_arn: &str,
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     tracing::debug!("Creating stage {} lg:{}", &stage.green(), log_group_arn);
@@ -545,7 +550,7 @@ async fn update_stage(
     stage: &str,
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
-    log_group_arn: &str
+    log_group_arn: &str,
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     let log_config = make_log_config(log_group_arn);
@@ -567,12 +572,28 @@ pub async fn create_or_update_stage(
     stage: &str,
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
-    log_group_arn: &str
+    log_group_arn: &str,
 ) {
     if stage_exists(client, api_id, stage).await {
-        update_stage(client, api_id, stage, burst_limit, rate_limit, log_group_arn).await;
+        update_stage(
+            client,
+            api_id,
+            stage,
+            burst_limit,
+            rate_limit,
+            log_group_arn,
+        )
+        .await;
     } else {
-        create_stage(client, api_id, stage, burst_limit, rate_limit, log_group_arn).await;
+        create_stage(
+            client,
+            api_id,
+            stage,
+            burst_limit,
+            rate_limit,
+            log_group_arn,
+        )
+        .await;
     }
 }
 

@@ -14,6 +14,7 @@ use provider::{
     Auth,
     aws::{
         acm,
+        cloudwatch,
         cognito,
         gateway,
         gateway::{
@@ -23,7 +24,6 @@ use provider::{
         lambda,
         lambda::LambdaClient,
         route53,
-        cloudwatch
     },
 };
 use std::collections::HashMap;
@@ -200,7 +200,7 @@ async fn create_authorizer(
                         &api_id,
                         &authorizer.name,
                         &uri,
-                        authorizer.cache_ttl
+                        authorizer.cache_ttl,
                     )
                     .await;
                     (Some(id), authorizer.kind)
@@ -366,7 +366,8 @@ pub fn collate_gateways(
             } = route;
 
             // throttling
-            let (burst_limit, rate_limit, authorizer_cache_ttl) = find_throttling(&throttling, env, sandbox);
+            let (burst_limit, rate_limit, authorizer_cache_ttl) =
+                find_throttling(&throttling, env, sandbox);
 
             // domains
             let maybe_domain = match domains.get(env) {
@@ -412,7 +413,6 @@ pub fn collate_gateways(
             } else {
                 authorizer.clone()
             };
-
 
             if !gateway.is_empty() {
                 let gw = Gateway {
@@ -500,8 +500,15 @@ async fn create_or_update_gateways(
             let cw_client = cloudwatch::make_client(auth).await;
             let _ = cloudwatch::create_log_group(cw_client, &log_group).await;
             let log_group_arn = auth.log_group_arn(&log_group);
-            gateway::create_or_update_stage(&client, &api_id, &stage, burst_limit, rate_limit, &log_group_arn)
-                .await;
+            gateway::create_or_update_stage(
+                &client,
+                &api_id,
+                &stage,
+                burst_limit,
+                rate_limit,
+                &log_group_arn,
+            )
+            .await;
 
             let endpoint = if let Some(dom) = domain {
                 let idempotency_token = sandbox;
@@ -509,11 +516,12 @@ async fn create_or_update_gateways(
                 let client = gateway::make_client(auth).await;
                 let gateway_domain = gateway::create_or_update_domain(
                     &client, &api_id, &dom, &stage, &cert_arn, paths,
-                ).await;
+                )
+                .await;
 
                 match std::env::var("TC_UPDATE_DNS") {
                     Ok(_) => update_dns(auth, &dom, &gateway_domain).await,
-                    Err(_) => println!("Skipping DNS record updates")
+                    Err(_) => println!("Skipping DNS record updates"),
                 };
                 dom
             } else {

@@ -121,7 +121,9 @@ pub async fn build(
     spec: &Build,
 ) -> BuildStatus {
     match langr.to_lang() {
-        Lang::Rust | Lang::Go => super::inline::build(auth, dir, name, langr, arch, "", spec, false).await,
+        Lang::Rust | Lang::Go => {
+            super::inline::build(auth, dir, name, langr, arch, "", spec, false).await
+        }
         _ => {
             let Build { command, pre, .. } = spec;
 

@@ -44,7 +44,7 @@ impl Auth {
     async fn do_new(name: String, assume_role: Option<String>, region: Option<String>) -> Auth {
         let region = match region {
             Some(r) => r,
-            None => String::from("us-west-2")
+            None => String::from("us-west-2"),
         };
 
         let config = sts::get_config(&name, assume_role.clone(), &region).await;
@@ -60,7 +60,11 @@ impl Auth {
         }
     }
 
-    pub async fn new(profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
+    pub async fn new(
+        profile: Option<String>,
+        assume_role: Option<String>,
+        region: Option<String>,
+    ) -> Auth {
         let name = match profile {
             Some(p) => p,
             None => "default".to_string(),
@@ -74,7 +78,12 @@ impl Auth {
             .await
     }
 
-    pub async fn assume(&self, profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
+    pub async fn assume(
+        &self,
+        profile: Option<String>,
+        assume_role: Option<String>,
+        region: Option<String>,
+    ) -> Auth {
         match profile {
             Some(_) => match std::env::var("TC_ASSUME_ROLE") {
                 Ok(_) => Auth::new(profile, assume_role, region).await,
@@ -257,7 +266,10 @@ impl Auth {
     }
 
     pub fn log_group_arn(&self, name: &str) -> String {
-        format!("arn:aws:logs:{}:{}:log-group:{}", &self.region, &self.account, name)
+        format!(
+            "arn:aws:logs:{}:{}:log-group:{}",
+            &self.region, &self.account, name
+        )
     }
 
     pub fn s3_arn(&self, name: &str) -> String {

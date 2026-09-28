@@ -156,7 +156,10 @@ impl Tc {
         match maybe_fn {
             Some(f) => {
                 let auth = tc::init_centralized_auth(Some(profile)).await;
-                let opts = builder::BuildOpts { code_only: false, use_asset_store: false };
+                let opts = builder::BuildOpts {
+                    code_only: false,
+                    use_asset_store: false,
+                };
                 let _builds = builder::build(&auth, &f, Some(f.name.clone()), None, opts).await;
                 "success".to_string()
             }
