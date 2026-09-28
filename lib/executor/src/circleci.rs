@@ -195,10 +195,20 @@ pub async fn trigger_create(
     repo: &str,
     env: &str,
     sandbox: &str,
+    region: &str,
     dir: &str,
     branch: &str,
+    force: bool,
+    concurrency: i32,
+
 ) -> String {
     let ci = Circle::init(repo);
+    let opts = if force {
+        format!("--notify --force --recursive --concurrency {} --region {}", concurrency, region)
+    } else {
+        format!("--notify --recursive --concurrency {} --region {}", concurrency, region)
+    };
+
     let payload = format!(
         r#"
            {{
@@ -209,6 +219,7 @@ pub async fn trigger_create(
               "tc-deploy-sandbox": "{sandbox}",
               "tc-build-branch": "{branch}",
               "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "{opts}",
               "api_call": true
            }}}}"#
     );
@@ -223,10 +234,12 @@ pub async fn trigger_update(
     repo: &str,
     env: &str,
     sandbox: &str,
+    region: &str,
     dir: &str,
     branch: &str,
 ) -> String {
     let ci = Circle::init(repo);
+    let opts = format!("--region {}", region);
     let payload = format!(
         r#"
            {{
@@ -237,6 +250,7 @@ pub async fn trigger_update(
               "tc-deploy-sandbox": "{sandbox}",
               "tc-build-branch": "{branch}",
               "tc-deploy-env": "{env}",
+              "tc-deploy-opts": "{opts}",
               "api_call": true
            }}}}"#
     );

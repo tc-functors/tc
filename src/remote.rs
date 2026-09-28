@@ -204,7 +204,7 @@ pub async fn deploy_branch(
     open::that(&url).unwrap();
 }
 
-pub async fn create(env: Option<String>, sandbox: Option<String>) {
+pub async fn create(env: Option<String>, sandbox: Option<String>, region: Option<String>, force: bool, concurrency: Option<i32>) {
     let env = match env {
         Some(e) => e,
         None => panic!("No env or profile specified"),
@@ -214,12 +214,17 @@ pub async fn create(env: Option<String>, sandbox: Option<String>) {
     let rdir = &dir.strip_prefix(&format!("{}/", u::root())).unwrap();
     let sandbox = u::maybe_string(sandbox, "stable");
     let branch = u::sh("git rev-parse --abbrev-ref HEAD", &dir);
-    let url = executor::create(&env, &sandbox, &rdir, &branch).await;
+    let region = u::maybe_string(region, "us-west-2");
+    let concurrency = match concurrency {
+        Some(c) => c,
+        None => 3
+    };
+    let url = executor::create(&env, &sandbox, &region, &rdir, &branch, force, concurrency).await;
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }
 
-pub async fn update(env: Option<String>, sandbox: Option<String>) {
+pub async fn update(env: Option<String>, sandbox: Option<String>, region: Option<String>) {
     let dir = u::pwd();
     let env = match env {
         Some(e) => e,
@@ -229,7 +234,8 @@ pub async fn update(env: Option<String>, sandbox: Option<String>) {
     let rdir = &dir.strip_prefix(&format!("{}/", u::root())).unwrap();
     let sandbox = u::maybe_string(sandbox, "stable");
     let branch = u::sh("git rev-parse --abbrev-ref HEAD", &dir);
-    let url = executor::update(&env, &sandbox, &rdir, &branch).await;
+    let region = u::maybe_string(region, "us-west-2");
+    let url = executor::update(&env, &sandbox, &region, &rdir, &branch).await;
     println!("Opening {}", &url);
     open::that(&url).unwrap();
 }

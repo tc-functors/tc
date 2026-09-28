@@ -757,7 +757,7 @@ async fn create(args: CreateArgs) {
 
     init_tracing(trace);
     if remote {
-        remote::create(profile, sandbox).await;
+        remote::create(profile, sandbox, region, force, concurrency).await;
     } else if dry_run {
         tc::dry_run_create(profile, sandbox, recursive).await;
     } else {
@@ -791,7 +791,7 @@ async fn update(args: UpdateArgs) {
 
     init_tracing(trace);
     if remote {
-        remote::update(profile, sandbox).await;
+        remote::update(profile, sandbox, region).await;
     } else {
         let env = tc::init(profile, role, region).await;
         tc::update(env, sandbox, entity, recursive, cache, interactive).await;
