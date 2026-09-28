@@ -41,7 +41,9 @@ pub async fn init_centralized_auth(maybe_profile: Option<String>) -> Auth {
     };
     let prof = Some(profile);
     let auth = init(prof.clone(), None, None).await;
-    let centralized = auth.assume(prof.clone(), config.role_to_assume(prof), None).await;
+    let centralized = auth
+        .assume(prof.clone(), config.role_to_assume(prof), None)
+        .await;
     centralized
 }
 
@@ -90,7 +92,10 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
             match maybe_fn {
                 Some(f) => {
                     let auth = init_centralized_auth(profile).await;
-                    let opts = builder::BuildOpts { code_only: false, use_asset_store: false };
+                    let opts = builder::BuildOpts {
+                        code_only: false,
+                        use_asset_store: false,
+                    };
                     let builds = builder::build(&auth, &f, name, kind, opts).await;
                     if publish {
                         builder::publish(&auth, builds.clone()).await;
@@ -308,7 +313,6 @@ async fn run_create_hook(auth: &Auth, topology: &Topology, time: &str, force: bo
         tag, &auth.name, namespace, &sandbox, &region, &user, time, incr, &url
     );
     notifier::notify(&namespace, &msg).await;
-
 }
 
 pub async fn create_topology(
@@ -358,7 +362,7 @@ pub struct CreateOpts {
     pub sync: bool,
     pub force: bool,
     pub concurrency: Option<i32>,
-    pub region: Option<String>
+    pub region: Option<String>,
 }
 
 pub async fn create(
@@ -381,10 +385,12 @@ pub async fn create(
         ..
     } = opts;
 
-    println!("Running tc version:{} env:{} region:{}",
-             &version,
-             &profile.clone().unwrap_or("NA".to_string()),
-             &region.clone().unwrap_or("us-west-2".to_string()));
+    println!(
+        "Running tc version:{} env:{} region:{}",
+        &version,
+        &profile.clone().unwrap_or("NA".to_string()),
+        &region.clone().unwrap_or("us-west-2".to_string())
+    );
 
     let maybe_topology = read_topology(topology_path).await;
 
@@ -620,18 +626,17 @@ pub async fn tag(
     tagger::create_tag(&next, &prefix, &suffix, push, dry_run).await
 }
 
-pub async fn route(
-    profile: Option<String>,
-    sandbox: Option<String>,
-    region: Option<String>
-) {
+pub async fn route(profile: Option<String>, sandbox: Option<String>, region: Option<String>) {
     let auth = init(profile, None, region.clone()).await;
     let sandbox = resolver::maybe_sandbox(sandbox);
     let region = u::maybe_string(region, "us-west-2");
     let dir = u::pwd();
     let topology = composer::compose(&dir, false);
     router::route(&auth, &topology, &sandbox).await;
-    let msg = format!("Routed DNS {}@{}.{}/{}", topology.namespace, &sandbox, &auth.name, &region);
+    let msg = format!(
+        "Routed DNS {}@{}.{}/{}",
+        topology.namespace, &sandbox, &auth.name, &region
+    );
     println!("{}", &msg);
     notifier::notify(&topology.namespace, &msg).await;
 }
@@ -684,7 +689,11 @@ pub async fn show_config() {
     println!("{}", config.render());
 }
 
-pub async fn init(profile: Option<String>, assume_role: Option<String>, region: Option<String>) -> Auth {
+pub async fn init(
+    profile: Option<String>,
+    assume_role: Option<String>,
+    region: Option<String>,
+) -> Auth {
     match std::env::var("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = match assume_role {
@@ -757,7 +766,12 @@ pub async fn snapshot_root(
         .await;
 }
 
-pub async fn snapshot(profile: Option<String>, sandbox: Option<String>, region: Option<String>, opts: SnapshotOpts) {
+pub async fn snapshot(
+    profile: Option<String>,
+    sandbox: Option<String>,
+    region: Option<String>,
+    opts: SnapshotOpts,
+) {
     let SnapshotOpts {
         save,
         list,
@@ -988,7 +1002,7 @@ pub async fn inspect(
     profile: Option<String>,
     region: Option<String>,
     sandbox: Option<String>,
-    recursive: bool
+    recursive: bool,
 ) {
     let dir = u::maybe_string(dir, &u::pwd());
     let topology = if profile.is_some() {

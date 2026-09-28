@@ -24,7 +24,6 @@ use std::{
     collections::HashMap,
     path::Path,
 };
-
 use validator::Validate;
 
 pub fn compile(dir: &str) -> TopologySpec {
@@ -41,7 +40,6 @@ pub fn compile(dir: &str) -> TopologySpec {
                     println!("Validation Error");
                 }));
                 panic!("validation error");
-
             }
         }
     } else if u::file_exists(&lisp_file) {

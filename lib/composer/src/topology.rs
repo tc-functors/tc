@@ -2,9 +2,7 @@ pub use crate::aws::{
     channel::Channel,
     event::Event,
     flow::Flow,
-    function::{
-        Function,
-    },
+    function::Function,
     mutation::{
         Mutation,
         Resolver,
@@ -96,7 +94,7 @@ pub struct Topology {
     pub transducer: Option<Transducer>,
     pub hooks: HashMap<String, Vec<Hook>>,
     pub tc_version: String,
-    pub changelog: Vec<String>
+    pub changelog: Vec<String>,
 }
 
 fn relative_root_path(dir: &str) -> (String, String) {
@@ -815,7 +813,7 @@ fn make(
         transducer: maybe_transducer,
         hooks: hooks::load(&infra_dir),
         tc_version: version::tc_version(),
-        changelog: vec![]
+        changelog: vec![],
     }
 }
 
@@ -877,7 +875,7 @@ fn make_standalone(root_ns: &str, dir: &str) -> Topology {
         transducer: None,
         hooks: HashMap::new(),
         tc_version: version::tc_version(),
-        changelog: vec![]
+        changelog: vec![],
     }
 }
 

@@ -23,25 +23,24 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
 
     let uri = &f.runtime.uri;
 
-    let store =
-        if force {
-            None
-        } else {
-            match std::env::var("TC_USE_ASSET_STORE") {
-                Ok(_) => match &f.build.kind {
-                    BuildKind::Inline => {
-                        let (bucket, key) = s3::parts_of(&f.runtime.uri);
-                        Some(Store {
-                            bucket: bucket,
-                            key: key,
-                            size: 0.to_string(),
-                        })
-                    }
-                    _ => None,
-                },
-                Err(_) => None,
-            }
-        };
+    let store = if force {
+        None
+    } else {
+        match std::env::var("TC_USE_ASSET_STORE") {
+            Ok(_) => match &f.build.kind {
+                BuildKind::Inline => {
+                    let (bucket, key) = s3::parts_of(&f.runtime.uri);
+                    Some(Store {
+                        bucket: bucket,
+                        key: key,
+                        size: 0.to_string(),
+                    })
+                }
+                _ => None,
+            },
+            Err(_) => None,
+        }
+    };
 
     let (size, blob, code) = lambda::make_code(package_type, &uri, store.clone());
     let vpc_config = match &f.runtime.network {

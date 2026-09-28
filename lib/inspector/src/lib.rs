@@ -1,13 +1,43 @@
-use core::time::Duration;
-use std::time::Instant;
-use ratatui::backend::{Backend, CrosstermBackend};
-use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind};
-use ratatui::layout::{Position, Constraint, Direction, Layout};
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::widgets::{Block, Scrollbar, ScrollbarOrientation};
-use ratatui::{Frame, Terminal, crossterm};
-use tui_tree_widget::{Tree, TreeItem, TreeState};
 use composer::Topology;
+use core::time::Duration;
+use ratatui::{
+    Frame,
+    Terminal,
+    backend::{
+        Backend,
+        CrosstermBackend,
+    },
+    crossterm,
+    crossterm::event::{
+        Event,
+        KeyCode,
+        KeyEventKind,
+        KeyModifiers,
+        MouseEventKind,
+    },
+    layout::{
+        Constraint,
+        Direction,
+        Layout,
+        Position,
+    },
+    style::{
+        Color,
+        Modifier,
+        Style,
+    },
+    widgets::{
+        Block,
+        Scrollbar,
+        ScrollbarOrientation,
+    },
+};
+use std::time::Instant;
+use tui_tree_widget::{
+    Tree,
+    TreeItem,
+    TreeState,
+};
 
 mod color;
 mod detail;
@@ -25,7 +55,6 @@ struct App<'a> {
 
 impl<'a> App<'a> {
     fn new(topology: &'a Topology) -> Self {
-
         Self {
             namespace: topology.namespace.clone(),
             topology: topology.clone(),
@@ -39,8 +68,7 @@ impl<'a> App<'a> {
                 tree::make_channels(topology),
                 tree::make_queues(topology),
                 tree::make_roles(topology),
-            ]
-
+            ],
         }
     }
 
@@ -49,19 +77,12 @@ impl<'a> App<'a> {
 
         let layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Length(40),
-                Constraint::Percentage(60)
-            ])
+            .constraints([Constraint::Length(40), Constraint::Percentage(60)])
             .split(area);
-
 
         let sidebar = Tree::new(&self.items)
             .expect("all item identifiers are unique")
-            .block(
-                Block::bordered()
-                    .title(self.namespace.clone())
-            )
+            .block(Block::bordered().title(self.namespace.clone()))
             .experimental_scrollbar(Some(
                 Scrollbar::new(ScrollbarOrientation::VerticalRight)
                     .begin_symbol(None)
@@ -81,12 +102,11 @@ impl<'a> App<'a> {
         let name = selected.into_iter().nth(1).unwrap_or(&"").to_string();
         let component = selected.into_iter().nth(2).unwrap_or(&"").to_string();
 
-
         let detail = Detail {
             topology: self.topology.clone(),
             entity: entity.clone(),
             name: name,
-            component: component
+            component: component,
         };
 
         frame.render_stateful_widget(sidebar, layout[0], &mut self.state);
@@ -94,10 +114,7 @@ impl<'a> App<'a> {
     }
 }
 
-fn run_app<B>(
-    terminal: &mut Terminal<B>,
-    mut app: App
-) -> Result<(), B::Error>
+fn run_app<B>(terminal: &mut Terminal<B>, mut app: App) -> Result<(), B::Error>
 where
     B: Backend,
     B::Error: From<std::io::Error>,

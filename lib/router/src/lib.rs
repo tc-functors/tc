@@ -1,12 +1,16 @@
+use composer::Topology;
 use configurator::Config;
+use deployer::{
+    aws,
+    aws::route::Gateway,
+};
 use provider::{
     Auth,
-    aws::eventbridge,
-    aws::gateway
+    aws::{
+        eventbridge,
+        gateway,
+    },
 };
-use deployer::aws;
-use deployer::aws::route::Gateway;
-use composer::Topology;
 
 fn target_id(name: &str) -> String {
     format!("{}_target", name)
@@ -47,11 +51,7 @@ pub async fn route(auth: &Auth, topology: &Topology, sandbox: &str) {
     let gateways = aws::route::collate_gateways(&routes, &auth.name, sandbox);
     let client = gateway::make_client(auth).await;
     for (name, gateway) in gateways {
-        let Gateway {
-            domain,
-            manage,
-            ..
-        } = gateway;
+        let Gateway { domain, manage, .. } = gateway;
         if manage {
             let maybe_api_id = gateway::find_api(&client, &name).await;
             if let Some(_api_id) = maybe_api_id {

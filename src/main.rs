@@ -384,7 +384,6 @@ pub struct InspectArgs {
     recursive: bool,
 }
 
-
 #[derive(Debug, Args)]
 pub struct CreateArgs {
     #[arg(long, short = 'e')]
@@ -678,7 +677,6 @@ async fn inspect(args: InspectArgs) {
     tc::inspect(dir, profile, region, sandbox, recursive).await;
 }
 
-
 async fn build(args: BuildArgs) {
     let BuildArgs {
         name,
@@ -752,7 +750,7 @@ async fn create(args: CreateArgs) {
         force,
         region,
         concurrency,
-          ..
+        ..
     } = args;
 
     init_tracing(trace);
@@ -768,7 +766,7 @@ async fn create(args: CreateArgs) {
             sync: sync,
             force: force,
             concurrency: concurrency,
-            region: region
+            region: region,
         };
         tc::create(profile, sandbox, topology, opts).await;
     }
@@ -931,7 +929,7 @@ async fn invoke(args: InvokeArgs) {
         emulator: emulator,
         entity: entity,
         dumb: dumb,
-        region: region
+        region: region,
     };
 
     tc::invoke(profile, opts).await;

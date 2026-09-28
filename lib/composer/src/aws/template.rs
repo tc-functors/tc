@@ -17,7 +17,6 @@ pub fn sandbox() -> String {
     format!("{{{{sandbox}}}}")
 }
 
-
 pub fn region() -> String {
     format!("{{{{region}}}}")
 }

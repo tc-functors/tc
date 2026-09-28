@@ -10,7 +10,9 @@ use std::collections::HashMap;
 
 // interactive
 
-pub fn prompt_versions(topologies: &HashMap<String, String>) -> (String, String, String, String, String) {
+pub fn prompt_versions(
+    topologies: &HashMap<String, String>,
+) -> (String, String, String, String, String) {
     let mut names: Vec<String> = topologies.keys().cloned().collect();
 
     names.sort();
@@ -160,7 +162,7 @@ pub async fn deploy_version(
     region: Option<String>,
     version: &str,
     force: bool,
-    concurrency: Option<i32>
+    concurrency: Option<i32>,
 ) {
     let dir = u::pwd();
     let env = match env {
@@ -173,7 +175,7 @@ pub async fn deploy_version(
     let region = u::maybe_string(region, "us-west-2");
     let concurrency = match concurrency {
         Some(c) => c,
-        None => 3
+        None => 3,
     };
     let version = if version == "latest" {
         composer::topology_version(&namespace)
@@ -204,7 +206,13 @@ pub async fn deploy_branch(
     open::that(&url).unwrap();
 }
 
-pub async fn create(env: Option<String>, sandbox: Option<String>, region: Option<String>, force: bool, concurrency: Option<i32>) {
+pub async fn create(
+    env: Option<String>,
+    sandbox: Option<String>,
+    region: Option<String>,
+    force: bool,
+    concurrency: Option<i32>,
+) {
     let env = match env {
         Some(e) => e,
         None => panic!("No env or profile specified"),
@@ -217,7 +225,7 @@ pub async fn create(env: Option<String>, sandbox: Option<String>, region: Option
     let region = u::maybe_string(region, "us-west-2");
     let concurrency = match concurrency {
         Some(c) => c,
-        None => 3
+        None => 3,
     };
     let url = executor::create(&env, &sandbox, &region, &rdir, &branch, force, concurrency).await;
     println!("Opening {}", &url);
