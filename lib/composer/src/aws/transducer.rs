@@ -217,6 +217,7 @@ fn make_function(namespace: &str, name: &str, fqn: &str) -> Function {
         arn: template::lambda_arn(&fqn),
         version: s!(""),
         fqn: fqn.to_string(),
+        trace: false,
         description: None,
         dir: dir.to_string(),
         namespace: namespace.to_string(),

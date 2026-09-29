@@ -128,6 +128,12 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
 
     let snap_start = lambda::make_snapstart(f.runtime.snapstart);
 
+    let tracing_config = if f.trace {
+        Some(lambda::make_tracing_config())
+    } else {
+        None
+    };
+
     let f = f.clone();
     lambda::Function {
         name: f.fqn,
@@ -148,6 +154,7 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
         architecture: arch,
         tags: tags.clone(),
         layers: layers,
+        tracing_config: tracing_config,
         vpc_config: vpc_config,
         filesystem_config: filesystem_config,
         _logging_config: None,

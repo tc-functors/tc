@@ -29,6 +29,7 @@ pub struct Function {
     pub dir: String,
     pub description: Option<String>,
     pub fqn: String,
+    pub trace: bool,
     pub arn: String,
     pub version: String,
     pub runtime: Runtime,
@@ -131,12 +132,15 @@ impl Function {
 
         let targets = Target::make_all(&fspec);
 
+        let trace = if let Some(t) = fspec.trace { t } else { false };
+
         Function {
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
             arn: template::lambda_arn(&fqn),
             version: s!(""),
             fqn: fqn.clone(),
+            trace: trace,
             description: None,
             dir: dir.to_string(),
             namespace: namespace.to_string(),
@@ -174,12 +178,15 @@ impl Function {
 
         let targets = Target::make_all(&fspec);
 
+        let trace = if let Some(t) = fspec.trace { t } else { false };
+
         Function {
             name: fspec.name.to_string(),
             actual_name: fspec.name.to_string(),
             arn: template::lambda_arn(&fqn),
             version: s!(""),
             fqn: fqn.clone(),
+            trace: trace,
             description: None,
             dir: dir.to_string(),
             namespace: namespace.to_string(),

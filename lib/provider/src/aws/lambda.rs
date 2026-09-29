@@ -30,6 +30,8 @@ use aws_sdk_lambda::{
         UpdateRuntimeOn,
         VpcConfig,
         DirectS3Read,
+        TracingConfig,
+        TracingMode,
         builders::{
             DeadLetterConfigBuilder,
             DestinationConfigBuilder,
@@ -39,7 +41,8 @@ use aws_sdk_lambda::{
             OnSuccessBuilder,
             SnapStartBuilder,
             VpcConfigBuilder,
-            S3FilesConfigBuilder
+            S3FilesConfigBuilder,
+            TracingConfigBuilder
         },
     },
 };
@@ -141,6 +144,11 @@ pub fn make_vpc_config(subnets: Vec<String>, sgs: Vec<String>) -> VpcConfig {
     v.set_subnet_ids(Some(subnets))
         .set_security_group_ids(Some(sgs))
         .build()
+}
+
+pub fn make_tracing_config() -> TracingConfig {
+    let t = TracingConfigBuilder::default();
+    t.mode(TracingMode::Active).build()
 }
 
 #[derive(Clone, Debug)]
@@ -263,6 +271,7 @@ pub struct Function {
     pub architecture: Architecture,
     pub tags: HashMap<String, String>,
     pub layers: Option<Vec<String>>,
+    pub tracing_config: Option<TracingConfig>,
     pub vpc_config: Option<VpcConfig>,
     pub filesystem_config: Option<Vec<FileSystemConfig>>,
     pub _logging_config: Option<LoggingConfig>,
@@ -414,6 +423,7 @@ impl Function {
             .set_handler(f.handler)
             .environment(f.environment)
             .timeout(f.timeout)
+            .set_tracing_config(f.tracing_config)
             .memory_size(f.memory_size)
             .set_snap_start(f.snap_start)
             .set_vpc_config(f.vpc_config)
