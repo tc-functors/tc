@@ -25,8 +25,7 @@ async fn create_function(
     maybe_build(auth, &f, force).await;
     match f.runtime.provider {
         Provider::Lambda => {
-            let client = lambda::make_client(auth).await;
-            lambda::create(&client, &f, tags, force).await
+            lambda::create(auth, &f, tags, force).await
         }
         Provider::MicroVm => microvm::create(auth, &f, tags).await,
         Provider::AgentCore => agentcore::create(auth, &f, tags).await,

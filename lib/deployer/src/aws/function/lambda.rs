@@ -1,6 +1,7 @@
 use compiler::{
     BuildKind,
     Lang,
+    spec::infra::FileSystemSpec
 };
 use composer::Function;
 use kit as u;
@@ -17,6 +18,32 @@ use provider::{
     },
 };
 use std::collections::HashMap;
+use crate::aws::store;
+use crate::aws::store::FsOpts;
+
+
+async fn maybe_create_fs(auth: &Auth, fs: FileSystemSpec) -> FileSystemSpec {
+    let mut mfs: FileSystemSpec = fs.clone();
+    let ap_arn = if let Some(manage) = fs.manage {
+        if manage {
+            if let Some(bucket) = &fs.bucket {
+                let opts = FsOpts {
+                    bucket: bucket.to_string(),
+                    role_arn: fs.role_arn,
+                    security_groups: fs.security_groups,
+                    subnets: fs.subnets
+                };
+                let arn = store::create_s3_fs(auth, opts).await;
+                Some(arn)
+            } else {
+                fs.arn.clone()
+            }
+        } else { None }
+    } else { None };
+    tracing::debug!("Using fsap {}", &ap_arn.clone().unwrap_or("".to_string()));
+    mfs.arn = ap_arn;
+    mfs
+}
 
 fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Function {
     let package_type = &f.runtime.package_type;
@@ -46,7 +73,25 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
     let (size, blob, code) = lambda::make_code(package_type, &uri, store.clone());
 
     let filesystem_config = if let Some(fs) = &f.runtime.fs {
-        Some(vec![lambda::make_fs_config(&fs.arn, &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()))])
+        if let Some(arn) = &fs.arn {
+            let kind = &fs.kind.clone().unwrap_or("s3".to_string());
+
+            if kind == "efs" {
+                Some(
+                    vec![lambda::make_efs_config(
+                        &arn,
+                        &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()))]
+                )
+            } else {
+                Some(
+                    vec![lambda::make_s3fs_config(
+                        &arn,
+                        &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()))]
+                )
+            }
+        } else {
+            None
+        }
     } else { None };
 
 
@@ -111,13 +156,26 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
 }
 
 pub async fn create(
-    client: &Client,
+    auth: &Auth,
     f: &Function,
     tags: &HashMap<String, String>,
     force: bool,
 ) -> String {
-    let lambda = make(f, tags, force);
-    let maybe_current = lambda::find_config(client, &f.fqn).await;
+    let mut f: Function = f.clone();
+    let client = lambda::make_client(auth).await;
+
+    if let Some(ref fs) = f.runtime.fs {
+        if let Some(manage) = fs.manage {
+            if manage {
+                let ffs = maybe_create_fs(auth, fs.clone()).await;
+                f.runtime.fs = Some(ffs);
+            }
+        }
+    }
+
+
+    let lambda = make(&f, tags, force);
+    let maybe_current = lambda::find_config(&client, &f.fqn).await;
     let id = if let Some(current) = maybe_current {
         let package_type = f.runtime.package_type.to_lowercase();
         let current_package_type = current.package_type.to_lowercase();
@@ -127,17 +185,17 @@ pub async fn create(
                 current_package_type,
                 package_type
             );
-            lambda.delete(client).await.unwrap();
-            lambda.create_or_update(client).await
+            lambda.delete(&client).await.unwrap();
+            lambda.create_or_update(&client).await
         } else {
-            lambda.create_or_update(client).await
+            lambda.create_or_update(&client).await
         }
     } else {
-        lambda.clone().create_or_update(client).await
+        lambda.clone().create_or_update(&client).await
     };
 
     if f.runtime.snapstart {
-        lambda.publish_version(client).await;
+        lambda.publish_version(&client).await;
     }
     id
 }

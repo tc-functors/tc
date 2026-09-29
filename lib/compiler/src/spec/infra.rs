@@ -14,11 +14,14 @@ pub struct NetworkSpec {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct FileSystemSpec {
-    pub arn: String,
+    pub manage: Option<bool>,
+    pub bucket: Option<String>,
+    pub arn: Option<String>,
     pub mount_point: Option<String>,
     pub security_groups: Vec<String>,
     pub subnets: Vec<String>,
-    pub vpc: Vec<String>
+    pub kind: Option<String>,
+    pub role_arn: Option<String>
 }
 
 fn default_memory_size() -> Option<i32> {

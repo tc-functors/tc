@@ -20,7 +20,7 @@ pub async fn create(
     let _ = builder::build(auth, &transducer.function, None, None, opts).await;
 
     let client = lambda::make_client(auth).await;
-    lambda::create(&client, &transducer.function, &HashMap::new(), false).await;
+    lambda::create(auth, &transducer.function, &HashMap::new(), false).await;
 
     for (name, f) in fns {
         if f.targets.len() > 0 {

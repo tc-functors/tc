@@ -5,7 +5,6 @@ use compiler::{
     spec::{
         InfraSpec,
         NetworkSpec,
-        infra::FileSystemSpec
     },
 };
 use composer::{
@@ -132,12 +131,6 @@ async fn resolve_layer(ctx: &Context, layer_name: &str) -> String {
         .await
 }
 
-async fn resolve_access_point_arn(ctx: &Context, name: &str) -> Option<String> {
-    tracing::debug!("Resolving EFS AP {}", name);
-    let auth = make_layer_auth(ctx).await;
-    aws::efs::get_ap_arn(&auth, name).await.unwrap()
-}
-
 // arn
 fn as_layer_arn(auth: &Auth, name: &str) -> String {
     format!(
@@ -200,39 +193,6 @@ async fn resolve_environment(
     };
 
     resolve_vars(auth, combined.clone(), fqn, resolve_urls).await
-}
-
-async fn resolve_fs(ctx: &Context, fs: Option<FileSystemSpec>) -> Option<FileSystemSpec> {
-    let Context {
-        sandbox, config, ..
-    } = ctx;
-
-    match fs {
-        Some(f) => Some(f),
-        None => {
-            let ap_name = match std::env::var("TC_EFS_AP") {
-                Ok(t) => t,
-                Err(_) => match sandbox.as_ref() {
-                    "stable" => s!(&config.aws.efs.stable_ap),
-                    _ => s!(&config.aws.efs.dev_ap),
-                },
-            };
-            let arn = resolve_access_point_arn(ctx, &ap_name).await;
-            match arn {
-                Some(a) => {
-                    let fs = FileSystemSpec {
-                        arn: a,
-                        mount_point: Some(config.aws.lambda.fs_mountpoint.to_owned()),
-                        subnets: vec![],
-                        security_groups: vec![],
-                        vpc: vec![]
-                    };
-                    Some(fs)
-                }
-                _ => None,
-            }
-        }
-    }
 }
 
 async fn resolve_network(
@@ -338,7 +298,10 @@ fn augment_infra_spec(default: &InfraSpec, s: &InfraSpec) -> InfraSpec {
             Some(p) => Some(p),
             None => default.network.clone(),
         },
-        filesystem: None,
+        filesystem: match &s.filesystem {
+            Some(p) => Some(p.clone()),
+            None => default.filesystem.clone()
+        },
         provisioned_concurrency: match s.provisioned_concurrency {
             Some(p) => Some(p),
             None => default.provisioned_concurrency,
@@ -428,13 +391,14 @@ async fn resolve_runtime(
         r.network =
             resolve_network(ctx, r.enable_network, actual_infra.network, network.clone()).await;
     }
+
     let fs = match actual_infra.filesystem.as_ref() {
         Some(mfs) => mfs.get(&auth.region).clone(),
         None => None
     };
 
 
-    r.fs = resolve_fs(ctx, fs.cloned()).await;
+    r.fs = fs.cloned();
     r.infra_spec = HashMap::new();
     r
 }

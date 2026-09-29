@@ -14,7 +14,9 @@ use aws_sdk_s3::{
         BucketLocationConstraint,
         CreateBucketConfiguration,
         ObjectAttributes,
+        BucketVersioningStatus,
         builders::CreateBucketConfigurationBuilder,
+        builders::VersioningConfigurationBuilder
     },
 };
 use kit as u;
@@ -134,6 +136,7 @@ fn make_bucket_cfg(region: &str) -> CreateBucketConfiguration {
         .build()
 }
 
+
 async fn create_bucket(client: &Client, bucket: &str, region: &str) {
     let cfg = make_bucket_cfg(region);
     println!("Creating bucket {}", bucket);
@@ -141,6 +144,18 @@ async fn create_bucket(client: &Client, bucket: &str, region: &str) {
         .create_bucket()
         .bucket(bucket)
         .create_bucket_configuration(cfg)
+        .send()
+        .await
+        .unwrap();
+}
+
+pub async fn enable_versioning(client: &Client, bucket: &str) {
+    let b = VersioningConfigurationBuilder::default();
+    let cfg = b.status(BucketVersioningStatus::Enabled).build();
+    client
+        .put_bucket_versioning()
+        .bucket(bucket)
+        .versioning_configuration(cfg)
         .send()
         .await
         .unwrap();

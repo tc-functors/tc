@@ -116,7 +116,15 @@ fn make_blob(payload_file: &str) -> Blob {
     }
 }
 
-pub fn make_fs_config(fs_arn: &str, mount_point: &str) -> FileSystemConfig {
+pub fn make_efs_config(fs_arn: &str, mount_point: &str) -> FileSystemConfig {
+    let f = FileSystemConfigBuilder::default();
+    f.arn(fs_arn)
+        .local_mount_path(mount_point)
+        .build()
+        .unwrap()
+}
+
+pub fn make_s3fs_config(fs_arn: &str, mount_point: &str) -> FileSystemConfig {
     let b = S3FilesConfigBuilder::default();
     let s3_config = b.direct_s3_read(DirectS3Read::Enabled).build();
     let f = FileSystemConfigBuilder::default();
