@@ -248,6 +248,8 @@ async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
         if layer.starts_with("ssm:") {
             let arn = get_extension_arn(auth, &layer).await;
             xs.push(arn)
+        } else if layer.starts_with("arn") {
+            xs.push(layer)
         } else if layer.contains(":") {
             xs.push(as_layer_arn(&auth, &layer))
         } else if *sandbox != "stable" {
