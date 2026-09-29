@@ -4,7 +4,6 @@ pub mod lambda;
 pub mod microvm;
 
 pub use common::{
-    FileSystem,
     Network,
     Runtime,
 };
@@ -29,6 +28,7 @@ impl Runtime {
             Some(p) => p.to_string(),
             None => common::as_infra_dir(dir, t_infra_dir),
         };
+
 
         match rspec {
             Some(r) => match r.provider {

@@ -320,17 +320,6 @@ fn default_provider() -> Option<Provider> {
     Some(Provider::Lambda)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum FileSystemKind {
-    Efs,
-    S3,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct FileSystemSpec {
-    pub kind: Option<FileSystemKind>,
-    pub bucket: Option<String>,
-}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Arch {
@@ -398,7 +387,6 @@ pub struct RuntimeSpec {
 
     pub mount_fs: Option<bool>,
     pub network: Option<bool>,
-    pub fs: Option<FileSystemSpec>,
 
     pub snapstart: Option<bool>,
 

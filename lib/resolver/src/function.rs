@@ -5,7 +5,7 @@ use compiler::{
     spec::{
         InfraSpec,
         NetworkSpec,
-        function::FileSystemKind,
+        infra::FileSystemSpec
     },
 };
 use composer::{
@@ -13,7 +13,6 @@ use composer::{
     Runtime,
     Topology,
     function::runtime::{
-        FileSystem,
         Network,
     },
 };
@@ -32,8 +31,6 @@ use provider::{
 };
 use std::collections::HashMap;
 
-// aws
-
 pub async fn lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
     let client = aws::gateway::make_client(auth).await;
     let api = aws::gateway::find_api_id(&client, fqn).await;
@@ -49,11 +46,6 @@ pub async fn lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
     }
 }
 
-// Process-wide cache of API gateway URL lookups, keyed by
-// `(auth.name, fqn)`. A given `(account, region, fqn)` maps to a
-// stable api id within a process; `(auth.name, fqn)` is a sufficient
-// surrogate because every call site reaches gateway through the same
-// `Auth::name` (the configured profile).
 static URL_CACHE: AsyncMemo<(String, String), HashMap<String, String>> = AsyncMemo::new();
 
 async fn cached_lookup_urls(auth: &Auth, fqn: &str) -> HashMap<String, String> {
@@ -82,9 +74,6 @@ async fn resolve_vars(
     tracing::debug!("Resolving env vars");
     let client = aws::ssm::make_client(auth).await;
 
-    // Only do the API gateway lookup if at least one env value would
-    // actually consume it. For topologies with no routes / templated
-    // env values this avoids an entire AWS round-trip per function.
     let needs_urls = resolve_urls && environment.values().any(|v| v.starts_with("{{"));
     let config = if needs_urls {
         cached_lookup_urls(auth, fqn).await
@@ -110,12 +99,6 @@ async fn resolve_vars(
     h
 }
 
-// One assumed `Auth` per `(profile, role)` for the lifetime of the
-// process. `auth.assume` does an `STS GetCallerIdentity`; previously
-// this fired once per `resolve_layer` call. Keep `Option<String>` in
-// the key so `None` and `Some("")` stay distinct — `Auth::assume`
-// short-circuits on `None` (returns `self.clone()` with no AWS call)
-// but actually assumes for `Some("")`.
 static LAYER_AUTH: AsyncMemo<(Option<String>, Option<String>), Auth> = AsyncMemo::new();
 
 async fn make_layer_auth(ctx: &Context) -> Auth {
@@ -131,12 +114,6 @@ async fn make_layer_auth(ctx: &Context) -> Auth {
         .await
 }
 
-// Cache resolved layer versions keyed by `(profile, role, layer_name)`.
-// `(profile, role)` uniquely identify the assumed layer-auth (and
-// therefore the account+region the layer ARN resolves against), so a
-// recursive resolve over topologies with mixed `layers_profile`
-// configurations still distinguishes a same-named layer in two
-// different accounts. Bare `layer_name` would collide.
 static LAYER_VERSION_CACHE: AsyncMemo<(Option<String>, Option<String>, String), String> =
     AsyncMemo::new();
 
@@ -225,7 +202,7 @@ async fn resolve_environment(
     resolve_vars(auth, combined.clone(), fqn, resolve_urls).await
 }
 
-async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem> {
+async fn resolve_fs(ctx: &Context, fs: Option<FileSystemSpec>) -> Option<FileSystemSpec> {
     let Context {
         sandbox, config, ..
     } = ctx;
@@ -243,10 +220,12 @@ async fn resolve_fs(ctx: &Context, fs: Option<FileSystem>) -> Option<FileSystem>
             let arn = resolve_access_point_arn(ctx, &ap_name).await;
             match arn {
                 Some(a) => {
-                    let fs = FileSystem {
+                    let fs = FileSystemSpec {
                         arn: a,
-                        kind: FileSystemKind::Efs,
-                        mount_point: config.aws.lambda.fs_mountpoint.to_owned(),
+                        mount_point: Some(config.aws.lambda.fs_mountpoint.to_owned()),
+                        subnets: vec![],
+                        security_groups: vec![],
+                        vpc: vec![]
                     };
                     Some(fs)
                 }
@@ -404,9 +383,7 @@ async fn resolve_runtime(
     let Runtime {
         layers,
         network,
-        fs,
         infra_spec,
-        enable_fs,
         enable_network,
         ..
     } = &function.runtime;
@@ -447,13 +424,17 @@ async fn resolve_runtime(
     if !layers.is_empty() {
         r.layers = resolve_layers(ctx, layers.clone()).await;
     }
-    if *enable_fs || *enable_network {
+    if *enable_network {
         r.network =
             resolve_network(ctx, r.enable_network, actual_infra.network, network.clone()).await;
-        if *enable_fs {
-            r.fs = resolve_fs(ctx, fs.clone()).await;
-        }
     }
+    let fs = match actual_infra.filesystem.as_ref() {
+        Some(mfs) => mfs.get(&auth.region).clone(),
+        None => None
+    };
+
+
+    r.fs = resolve_fs(ctx, fs.cloned()).await;
     r.infra_spec = HashMap::new();
     r
 }
@@ -465,19 +446,6 @@ pub struct Root {
     pub version: String,
 }
 
-/// Decide which functions to (re)deploy given a deployed-version lookup
-/// result and an incremental-diff result. Pure: no AWS, no git, no
-/// global state. Extracted so the resolver's behavior on
-/// [`differ::DiffError::TagUnresolvable`] is unit-testable.
-///
-/// Generic over the function value type purely so tests can substitute
-/// a cheap stand-in for [`composer::Function`] (which has no `Default`
-/// and ~12 required fields). Production callers always pass `Function`.
-///
-/// The fallback when the from-tag cannot be resolved is intentionally
-/// "redeploy every function in the topology" rather than "deploy
-/// nothing": the latter is the silent no-op that this code path was
-/// historically guilty of.
 pub(crate) fn classify_modified<F: Clone>(
     fallback: &HashMap<String, F>,
     namespace: &str,

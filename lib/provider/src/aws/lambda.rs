@@ -29,6 +29,7 @@ use aws_sdk_lambda::{
         State,
         UpdateRuntimeOn,
         VpcConfig,
+        DirectS3Read,
         builders::{
             DeadLetterConfigBuilder,
             DestinationConfigBuilder,
@@ -38,6 +39,7 @@ use aws_sdk_lambda::{
             OnSuccessBuilder,
             SnapStartBuilder,
             VpcConfigBuilder,
+            S3FilesConfigBuilder
         },
     },
 };
@@ -114,10 +116,14 @@ fn make_blob(payload_file: &str) -> Blob {
     }
 }
 
-pub fn make_fs_config(efs_ap_arn: &str, mount_point: &str) -> FileSystemConfig {
+pub fn make_fs_config(fs_arn: &str, mount_point: &str) -> FileSystemConfig {
+    let b = S3FilesConfigBuilder::default();
+    let s3_config = b.direct_s3_read(DirectS3Read::Enabled).build();
     let f = FileSystemConfigBuilder::default();
-    f.arn(efs_ap_arn)
+
+    f.arn(fs_arn)
         .local_mount_path(mount_point)
+        .s3_files_config(s3_config)
         .build()
         .unwrap()
 }

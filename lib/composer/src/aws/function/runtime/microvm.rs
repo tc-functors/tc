@@ -77,7 +77,6 @@ pub fn make(
         },
     };
     let uri = format!("{}/lambda.zip", dir);
-    let enable_fs = false;
     let role = lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
 
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
@@ -120,7 +119,6 @@ pub fn make(
         snapstart: u::opt_as_bool(r.snapstart),
         role: role,
         enable_network: if let Some(n) = r.network { n } else { false },
-        enable_fs: enable_fs,
         network: None,
         fs: None,
         arch: Arch::Arm64,

@@ -35,7 +35,6 @@ pub fn make(
 ) -> Runtime {
     let build_kind = c::find_build_kind(&fspec);
     let uri = format!("{}/agentcore.zip", dir);
-    let enable_fs = false;
     let role = c::lookup_role(&infra_dir, &r, namespace, fqn, &fspec.name);
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
@@ -73,7 +72,6 @@ pub fn make(
         snapstart: false,
         role: role,
         enable_network: false,
-        enable_fs: enable_fs,
         network: None,
         fs: None,
         arch: as_arch(&r.arch),

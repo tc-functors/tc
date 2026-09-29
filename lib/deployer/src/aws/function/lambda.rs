@@ -44,16 +44,25 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
         };
 
     let (size, blob, code) = lambda::make_code(package_type, &uri, store.clone());
-    let vpc_config = match &f.runtime.network {
-        Some(s) => Some(lambda::make_vpc_config(
-            s.subnets.clone(),
-            s.security_groups.clone(),
-        )),
-        _ => None,
-    };
-    let filesystem_config = match &f.runtime.fs {
-        Some(s) => Some(vec![lambda::make_fs_config(&s.arn, &s.mount_point)]),
-        _ => None,
+
+    let filesystem_config = if let Some(fs) = &f.runtime.fs {
+        Some(vec![lambda::make_fs_config(&fs.arn, &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()))])
+    } else { None };
+
+
+    let vpc_config = if let Some(fs) = &f.runtime.fs {
+        Some(lambda::make_vpc_config(
+                fs.subnets.clone(),
+                fs.security_groups.clone(),
+        ))
+    } else {
+        match &f.runtime.network {
+            Some(s) => Some(lambda::make_vpc_config(
+                s.subnets.clone(),
+                s.security_groups.clone(),
+            )),
+            _ => None,
+        }
     };
 
     let arch = lambda::make_arch(&f.runtime.arch.to_str());
@@ -130,7 +139,6 @@ pub async fn create(
     if f.runtime.snapstart {
         lambda.publish_version(client).await;
     }
-
     id
 }
 

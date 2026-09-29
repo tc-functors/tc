@@ -10,7 +10,6 @@ use compiler::{
             Arch,
             AssetsSpec,
             BuildKind,
-            FileSystemKind,
             FunctionSpec,
             Lang,
             LangRuntime,
@@ -18,7 +17,7 @@ use compiler::{
             Provider,
             RuntimeSpec,
         },
-        infra::InfraSpec,
+        infra::{InfraSpec, FileSystemSpec},
     },
 };
 use kit as u;
@@ -27,19 +26,13 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
+
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {
     pub subnets: Vec<String>,
     pub security_groups: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct FileSystem {
-    pub kind: FileSystemKind,
-    pub arn: String,
-    pub mount_point: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -59,10 +52,9 @@ pub struct Runtime {
     pub snapstart: bool,
     pub provisioned_concurrency: Option<i32>,
     pub reserved_concurrency: Option<i32>,
-    pub enable_fs: bool,
     pub enable_network: bool,
     pub network: Option<Network>,
-    pub fs: Option<FileSystem>,
+    pub fs: Option<FileSystemSpec>,
     pub role: Role,
     pub infra_spec: HashMap<String, InfraSpec>,
     pub microvm: Option<MicroVm>,
@@ -376,11 +368,10 @@ pub fn make_default(
         cpu: None,
         timeout: *timeout,
         snapstart: false,
-        enable_fs: false,
         enable_network: false,
         network: None,
-        arch: Arch::X8664,
         fs: None,
+        arch: Arch::X8664,
         infra_spec: infra_spec,
         microvm: None,
         port: 8080,

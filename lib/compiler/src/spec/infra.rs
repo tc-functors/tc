@@ -13,9 +13,12 @@ pub struct NetworkSpec {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct FilesystemSpec {
+pub struct FileSystemSpec {
     pub arn: String,
-    pub mount_point: String,
+    pub mount_point: Option<String>,
+    pub security_groups: Vec<String>,
+    pub subnets: Vec<String>,
+    pub vpc: Vec<String>
 }
 
 fn default_memory_size() -> Option<i32> {
@@ -37,7 +40,7 @@ pub struct InfraSpec {
     pub reserved_concurrency: Option<i32>,
     pub environment: Option<HashMap<String, String>>,
     pub network: Option<NetworkSpec>,
-    pub filesystem: Option<FilesystemSpec>,
+    pub filesystem: Option<HashMap<String, FileSystemSpec>>,
     pub tags: Option<HashMap<String, String>>,
 }
 
