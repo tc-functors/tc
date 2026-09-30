@@ -1,3 +1,6 @@
+import os
 
 def handler(event, context):
-  return event
+  path = "/mnt/assets"
+  entries = os.listdir(path)
+  return entries

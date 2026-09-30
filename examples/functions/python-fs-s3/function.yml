@@ -1,8 +1,6 @@
-name: example-s3
+name: example_py
 description: example function
+infra_dir: ./infra
 runtime:
   lang: python3.11
   handler: handler.handler
-  fs:
-    kind: S3
-    bucket: 'tc-test'

@@ -1,0 +1,65 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:ClientMount",
+        "elasticfilesystem:ClientRootAccess",
+        "elasticfilesystem:ClientWrite",
+        "elasticfilesystem:DescribeMountTargets"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3FilesLambdaAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3files:ClientMount",
+        "s3files:ClientWrite"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3DirectRead",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion"
+      ],
+      "Resource": "arn:aws:s3:::{{bucket}}/*"
+    },
+    {
+      "Sid": "S3FilesConsoleSetup",
+      "Effect": "Allow",
+      "Action": [
+        "s3files:ListFileSystems",
+        "s3files:ListAccessPoints",
+        "s3files:GetFileSystem",
+        "s3files:GetAccessPoint",
+        "s3files:CreateAccessPoint"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

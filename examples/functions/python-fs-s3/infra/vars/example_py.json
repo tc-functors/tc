@@ -1,0 +1,17 @@
+{
+    "default": {
+      "timeout": 500,
+      "environment": {
+        "LOG_LEVEL": "INFO"
+      },
+      "filesystem": {
+	"us-west-2": {
+	  "manage": true,
+	  "bucket": "my-bucket",
+	  "mount_point": "/mnt/assets",
+          "security_groups": ["sg-123"],
+          "subnets": ["subnet-a", "subnet-b", "subnet-c"]
+	}
+      }
+    }
+}
