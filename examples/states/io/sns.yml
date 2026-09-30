@@ -1,0 +1,32 @@
+name: example-io-sns
+flow:
+  StartAt: Publish to SNS
+  States:
+    Publish to SNS:
+      Type: Task
+      Resource: arn:aws:states:::sns:publish
+      Parameters:
+        TopicArn: arn:aws:sns:us-east-1:123456789012:myTopic
+        Message.$: $.input.message
+        MessageAttributes:
+          my_attribute_no_1:
+            DataType: String
+            StringValue: value of my_attribute_no_1
+          my_attribute_no_2:
+            DataType: String
+            StringValue: value of my_attribute_no_2
+      End: true
+    Send to SQS:
+      Type: Task
+      Resource: arn:aws:states:::sqs:sendMessage
+      Parameters:
+        QueueUrl: https://sqs.us-east-1.amazonaws.com/123456789012/myQueue
+        MessageBody.$: $.input.message
+        MessageAttributes:
+          my attribute no 1:
+            DataType: String
+            StringValue: attribute1
+          my attribute no 2:
+            DataType: String
+            StringValue: attribute2
+      End: true

@@ -1,0 +1,57 @@
+name: example-io-gateway
+flow:
+  Comment: Calling APIGW REST Endpoint
+  StartAt: Add Pet to Store
+  States:
+    api:
+      Type: Task
+      Resource: arn:aws:states:::apigateway:invoke
+      Parameters:
+        ApiEndpoint: example.execute-api.us-east-1.amazonaws.com
+        Method: GET
+        Headers:
+          key:
+            - value1
+            - value2
+        Stage: prod
+        Path: bills
+        QueryParameters:
+          billId:
+            - "123456"
+        RequestBody: {}
+        AuthType: NO_AUTH
+    Add Pet to Store:
+      Type: Task
+      Resource: arn:aws:states:::apigateway:invoke
+      Parameters:
+        ApiEndpoint: <POST_PETS_API_ENDPOINT>
+        Method: POST
+        Stage: default
+        Path: pets
+        RequestBody.$: $.NewPet
+        AuthType: IAM_ROLE
+      ResultSelector:
+        ResponseBody.$: $.ResponseBody
+      Next: Pet was Added Successfully?
+    Pet was Added Successfully?:
+      Type: Choice
+      Choices:
+        - Variable: $.ResponseBody.errors
+          IsPresent: true
+          Next: Failure
+      Default: Retrieve Pet Store Data
+    Failure:
+      Type: Fail
+    Retrieve Pet Store Data:
+      Type: Task
+      Resource: arn:aws:states:::apigateway:invoke
+      Parameters:
+        ApiEndpoint: <GET_PETS_API_ENDPOINT>
+        Method: GET
+        Stage: default
+        Path: pets
+        AuthType: IAM_ROLE
+      ResultSelector:
+        Pets.$: $.ResponseBody
+      ResultPath: $.ExistingPets
+      End: true

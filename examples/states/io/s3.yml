@@ -1,0 +1,25 @@
+name: example-io-s3
+kind: step-function
+flow:
+  StartAt: GetObject
+  TimeoutSeconds: 60
+  States:
+    GetObject:
+      Type: Task
+      Parameters:
+        Bucket: <YOUR S3 Bucket Name>
+        Key: <YOUR JSON File Name>
+      Resource: arn:aws:states:::aws-sdk:s3:getObject
+      End: true
+      ResultSelector:
+        myJson.$: States.StringToJson($.Body)
+
+    GetObjectTrigger:
+      Type: Task
+      Parameters:
+        Bucket.$: $$.Execution.Input['Records'][0]['s3']['bucket']['name']
+        Key.$: $$.Execution.Input['Records'][0]['s3']['object']['key']
+      Resource: arn:aws:states:::aws-sdk:s3:getObject
+      End: true
+      ResultSelector:
+        myJson.$: States.StringToJson($.Body)

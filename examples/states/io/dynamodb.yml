@@ -1,0 +1,37 @@
+name: example-io-dynamodb
+kind: state-machine
+flow:
+  StartAt: put-item
+  States:
+    get-item:
+      Type: Task
+      Resource: arn:aws:states:::dynamodb:getItem
+      ResultPath: $.cache
+      Parameters:
+        TableName: "DocumentCache"
+        Key:
+          DocumentId:
+            S.$: $.doc_id
+      Next: FinalStep
+
+    put-item:
+      Next: FinalStep
+      Catch:
+        - ErrorEquals:
+            - DynamoDB.ConditionalCheckFailedException
+          Next: FinalStep
+      Type: Task
+      Resource: arn:aws:states:::dynamodb:putItem
+      Parameters:
+        Item:
+          pk:
+            S: "1"
+          test:
+            S: value
+        TableName: test
+        ConditionExpression: attribute_not_exists(#videoID)
+        ExpressionAttributeNames:
+          '#videoID': videoID
+    FinalStep:
+      Type: Pass
+      End: true

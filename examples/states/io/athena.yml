@@ -1,0 +1,69 @@
+flow:
+  StartAt: Generate Example Data
+  States:
+    Generate Example Data:
+      Type: Task
+      Resource: arn:aws:states:::lambda:invoke
+      OutputPath: $.Payload
+      Parameters:
+        FunctionName: <ATHENA_FUNCTION_NAME>
+      Next: Load Data to Database
+    Load Data to Database:
+      Type: Task
+      Resource: arn:aws:states:::athena:startQueryExecution.sync
+      Parameters:
+        QueryString: <ATHENA_QUERYSTRING>
+        WorkGroup: <ATHENA_WORKGROUP>
+      Catch:
+        - ErrorEquals:
+            - States.ALL
+          Next: Send query results
+      Next: Map
+    Map:
+      Type: Parallel
+      ResultSelector:
+        Query1Result.$: $[0].ResultSet.Rows
+        Query2Result.$: $[1].ResultSet.Rows
+      Catch:
+        - ErrorEquals:
+            - States.ALL
+          Next: Send query results
+      Branches:
+        - StartAt: Start Athena query 1
+          States:
+            Start Athena query 1:
+              Type: Task
+              Resource: arn:aws:states:::athena:startQueryExecution.sync
+              Parameters:
+                QueryString: <ATHENA_QUERYSTRING>
+                WorkGroup: <ATHENA_WORKGROUP>
+              Next: Get Athena query 1 results
+            Get Athena query 1 results:
+              Type: Task
+              Resource: arn:aws:states:::athena:getQueryResults
+              Parameters:
+                QueryExecutionId.$: $.QueryExecution.QueryExecutionId
+              End: true
+        - StartAt: Start Athena query 2
+          States:
+            Start Athena query 2:
+              Type: Task
+              Resource: arn:aws:states:::athena:startQueryExecution.sync
+              Parameters:
+                QueryString: <ATHENA_QUERYSTRING>
+                WorkGroup: <ATHENA_WORKGROUP>
+              Next: Get Athena query 2 results
+            Get Athena query 2 results:
+              Type: Task
+              Resource: arn:aws:states:::athena:getQueryResults
+              Parameters:
+                QueryExecutionId.$: $.QueryExecution.QueryExecutionId
+              End: true
+      Next: Send query results
+    Send query results:
+      Type: Task
+      Resource: arn:aws:states:::sns:publish
+      Parameters:
+        Message.$: $
+        TopicArn: <SNS_TOPIC_ARN>
+      End: true
