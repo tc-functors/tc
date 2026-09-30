@@ -1,6 +1,4 @@
-use super::{
-    common,
-};
+use super::common;
 use common as c;
 use common::{
     Network,
@@ -13,7 +11,6 @@ use compiler::{
     InfraSpec,
     RuntimeSpec,
 };
-
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
@@ -25,10 +22,7 @@ fn find_image_tag(dir: &str, namespace: &str) -> String {
     }
 }
 
-fn consolidate_layers(
-    extensions: Vec<String>,
-    given_layers: Vec<String>,
-) -> Vec<String> {
+fn consolidate_layers(extensions: Vec<String>, given_layers: Vec<String>) -> Vec<String> {
     let mut layers: Vec<String> = vec![];
     let mut e: Vec<String> = extensions;
     let mut g: Vec<String> = given_layers;
@@ -65,7 +59,6 @@ fn as_uri(
         },
     }
 }
-
 
 fn make_network(infra_spec: &InfraSpec) -> Option<Network> {
     match &infra_spec.network {
@@ -123,7 +116,6 @@ pub fn make(
 
     let infra_spec = lookup_infraspec(infra_dir, &fspec.name, r);
     let default_infra_spec = infra_spec.get("default").unwrap();
-
 
     let InfraSpec {
         memory_size,

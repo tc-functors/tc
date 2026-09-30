@@ -1,13 +1,12 @@
 use composer::Topology;
 use tui_tree_widget::TreeItem;
 
-
 pub fn make_events<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
     let mut xs: Vec<TreeItem<'a, &'a str>> = vec![];
 
     for (name, _events) in &topology.events {
         let item = TreeItem::new_leaf(name.as_str(), name.as_str());
-            xs.push(item);
+        xs.push(item);
     }
     let count = &topology.events.len();
 
@@ -20,7 +19,7 @@ pub fn make_routes<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
 
     for (name, route) in &topology.routes {
         let item = TreeItem::new_leaf(name.as_str(), route.path.as_str());
-            xs.push(item);
+        xs.push(item);
     }
 
     let count = &topology.routes.len();
@@ -29,10 +28,8 @@ pub fn make_routes<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
         .expect("all item identifiers are unique")
 }
 
-
 pub fn make_functions<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
     let mut xs: Vec<TreeItem<'a, &'a str>> = vec![];
-
 
     for (name, _f) in &topology.functions {
         let build = TreeItem::new_leaf("build", "build");
@@ -41,7 +38,8 @@ pub fn make_functions<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
         let env = TreeItem::new_leaf("environment", "environment");
 
         let components = vec![build, runtime, env, role];
-        let item = TreeItem::new(name.as_str(), name.as_str(), components).expect("all item identifiers are unique");
+        let item = TreeItem::new(name.as_str(), name.as_str(), components)
+            .expect("all item identifiers are unique");
         xs.push(item);
     }
 
@@ -67,7 +65,6 @@ pub fn make_mutations<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
             .expect("all item identifiers are unique")
     }
 }
-
 
 pub fn make_pages<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
     let mut xs: Vec<TreeItem<'a, &'a str>> = vec![];
@@ -107,7 +104,6 @@ pub fn make_queues<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
     TreeItem::new("queues", format!("Queues ({})", &count), xs)
         .expect("all item identifiers are unique")
 }
-
 
 pub fn make_roles<'a>(topology: &'a Topology) -> TreeItem<'a, &'a str> {
     let mut xs: Vec<TreeItem<'a, &'a str>> = vec![];

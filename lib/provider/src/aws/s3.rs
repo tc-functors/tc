@@ -12,11 +12,13 @@ use aws_sdk_s3::{
     primitives::ByteStream,
     types::{
         BucketLocationConstraint,
+        BucketVersioningStatus,
         CreateBucketConfiguration,
         ObjectAttributes,
-        BucketVersioningStatus,
-        builders::CreateBucketConfigurationBuilder,
-        builders::VersioningConfigurationBuilder
+        builders::{
+            CreateBucketConfigurationBuilder,
+            VersioningConfigurationBuilder,
+        },
     },
 };
 use kit as u;
@@ -132,10 +134,8 @@ fn make_bucket_cfg(region: &str) -> CreateBucketConfiguration {
         "us-west-2" => BucketLocationConstraint::UsWest2,
         _ => BucketLocationConstraint::from(region),
     };
-    it.location_constraint(loc)
-        .build()
+    it.location_constraint(loc).build()
 }
-
 
 async fn create_bucket(client: &Client, bucket: &str, region: &str) {
     let cfg = make_bucket_cfg(region);

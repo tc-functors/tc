@@ -17,7 +17,10 @@ use compiler::{
             Provider,
             RuntimeSpec,
         },
-        infra::{InfraSpec, FileSystemSpec},
+        infra::{
+            FileSystemSpec,
+            InfraSpec,
+        },
     },
 };
 use kit as u;
@@ -26,7 +29,6 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
-
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

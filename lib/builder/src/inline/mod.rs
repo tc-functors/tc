@@ -206,8 +206,8 @@ async fn should_build_deps(auth: &Auth, uri: &str, use_asset_store: bool) -> boo
                         Ok(_) => true,
                         Err(_) => match maybe_size {
                             Some(_size) => false,
-                            None => true
-                        }
+                            None => true,
+                        },
                     }
                 }
                 Err(_) => true,
@@ -226,7 +226,7 @@ pub async fn build(
     arch: &Arch,
     uri: &str,
     bs: &Build,
-    use_asset_store: bool
+    use_asset_store: bool,
 ) -> BuildStatus {
     let Build {
         command,
@@ -310,8 +310,8 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
         Ok(_) => true,
         Err(_) => match maybe_size {
             Some(_size) => false,
-            None => true
-        }
+            None => true,
+        },
     };
 
     if should_publish {

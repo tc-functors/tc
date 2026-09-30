@@ -320,7 +320,6 @@ fn default_provider() -> Option<Provider> {
     Some(Provider::Lambda)
 }
 
-
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub enum Arch {
     #[serde(alias = "arm_64")]

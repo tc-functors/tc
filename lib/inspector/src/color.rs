@@ -1,5 +1,9 @@
 use ratatui::{
-    style::{Color, Modifier, Style},
+    style::{
+        Color,
+        Modifier,
+        Style,
+    },
     text::Span,
 };
 
@@ -96,13 +100,11 @@ fn apply_sgr(style: &mut Style, params: &[u32]) {
 /// Supports: ESC [ ... m sequences (e.g. "\x1b[31mRED\x1b[0m").
 
 pub fn ansi_to_spans(input: &str) -> Vec<Span<'static>> {
-
     let bytes = input.as_bytes();
     let mut i = 0;
 
     let mut current = String::new();
     let mut spans: Vec<Span<'static>> = Vec::new();
-
 
     let mut style = Style::default();
 
@@ -114,7 +116,6 @@ pub fn ansi_to_spans(input: &str) -> Vec<Span<'static>> {
     };
 
     while i < bytes.len() {
-
         if bytes[i] == 0x1b && i + 1 < bytes.len() && bytes[i + 1] == b'[' {
             flush(&mut current, &mut spans, &style);
 

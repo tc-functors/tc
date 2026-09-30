@@ -111,7 +111,6 @@ impl Role {
 
         self.delete_non_default_versions(client).await?;
 
-
         let _ = log_update.render(&format!(
             "Updating role {} ({})",
             self.name,
@@ -375,14 +374,11 @@ pub async fn find_policy_doc(
     }
 }
 
-
-async fn list_roles_by_token(client: &Client, token: &str) -> (Vec<(String, String)>, Option<String>, bool) {
-    let res = client
-        .list_roles()
-        .marker(token)
-        .send()
-        .await
-        .unwrap();
+async fn list_roles_by_token(
+    client: &Client,
+    token: &str,
+) -> (Vec<(String, String)>, Option<String>, bool) {
+    let res = client.list_roles().marker(token).send().await.unwrap();
     let roles = res.roles.to_vec();
     let mut xs: Vec<(String, String)> = vec![];
     for role in roles {
@@ -392,11 +388,7 @@ async fn list_roles_by_token(client: &Client, token: &str) -> (Vec<(String, Stri
 }
 
 pub async fn list_roles(client: &Client) -> Vec<(String, String)> {
-    let res = client
-        .list_roles()
-        .send()
-        .await
-        .unwrap();
+    let res = client.list_roles().send().await.unwrap();
     let mut token: Option<String> = res.marker;
     let mut is_truncated = res.is_truncated;
 
@@ -405,7 +397,6 @@ pub async fn list_roles(client: &Client) -> Vec<(String, String)> {
     for role in roles {
         xs.push((role.role_name, role.arn))
     }
-
 
     match token {
         Some(tk) => {
@@ -420,13 +411,11 @@ pub async fn list_roles(client: &Client) -> Vec<(String, String)> {
                         break;
                     }
                 }
-
             }
-        },
+        }
         None => (),
     }
     xs
-
 }
 
 pub type IamClient = Client;

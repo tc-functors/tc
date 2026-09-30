@@ -27,9 +27,27 @@ pub async fn release(service: &str, suffix: &str, tag: &str) -> String {
     url
 }
 
-pub async fn deploy(env: &str, service: &str, sandbox: &str, region: &str, version: &str, force: bool, concurrency: i32) -> String {
+pub async fn deploy(
+    env: &str,
+    service: &str,
+    sandbox: &str,
+    region: &str,
+    version: &str,
+    force: bool,
+    concurrency: i32,
+) -> String {
     let repo = current_repo();
-    circleci::trigger_tag(&repo, &env, &sandbox, region, &service, &version, force, concurrency).await
+    circleci::trigger_tag(
+        &repo,
+        &env,
+        &sandbox,
+        region,
+        &service,
+        &version,
+        force,
+        concurrency,
+    )
+    .await
 }
 
 pub async fn deploy_branch(env: &str, service: &str, sandbox: &str, branch: &str) -> String {
@@ -42,9 +60,27 @@ pub async fn deploy_snapshot(env: &str, sandbox: &str, snapshot: &str) -> String
     circleci::trigger_pipeline(&repo, env, sandbox, snapshot).await
 }
 
-pub async fn create(env: &str, sandbox: &str, region: &str, dir: &str, branch: &str, force: bool, concurrency: i32) -> String {
+pub async fn create(
+    env: &str,
+    sandbox: &str,
+    region: &str,
+    dir: &str,
+    branch: &str,
+    force: bool,
+    concurrency: i32,
+) -> String {
     let repo = current_repo();
-    circleci::trigger_create(&repo, &env, &sandbox, region, dir, branch, force, concurrency).await
+    circleci::trigger_create(
+        &repo,
+        &env,
+        &sandbox,
+        region,
+        dir,
+        branch,
+        force,
+        concurrency,
+    )
+    .await
 }
 
 pub async fn update(env: &str, sandbox: &str, region: &str, dir: &str, branch: &str) -> String {

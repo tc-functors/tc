@@ -1,7 +1,11 @@
+use crate::aws::{
+    store,
+    store::FsOpts,
+};
 use compiler::{
     BuildKind,
     Lang,
-    spec::infra::FileSystemSpec
+    spec::infra::FileSystemSpec,
 };
 use composer::Function;
 use kit as u;
@@ -18,9 +22,6 @@ use provider::{
     },
 };
 use std::collections::HashMap;
-use crate::aws::store;
-use crate::aws::store::FsOpts;
-
 
 async fn maybe_create_fs(auth: &Auth, fs: FileSystemSpec) -> FileSystemSpec {
     let mut mfs: FileSystemSpec = fs.clone();
@@ -31,15 +32,19 @@ async fn maybe_create_fs(auth: &Auth, fs: FileSystemSpec) -> FileSystemSpec {
                     bucket: bucket.to_string(),
                     role_arn: fs.role_arn,
                     security_groups: fs.security_groups,
-                    subnets: fs.subnets
+                    subnets: fs.subnets,
                 };
                 let arn = store::create_s3_fs(auth, opts).await;
                 Some(arn)
             } else {
                 fs.arn.clone()
             }
-        } else { None }
-    } else { None };
+        } else {
+            None
+        }
+    } else {
+        None
+    };
     tracing::debug!("Using fsap {}", &ap_arn.clone().unwrap_or("".to_string()));
     mfs.arn = ap_arn;
     mfs
@@ -50,25 +55,24 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
 
     let uri = &f.runtime.uri;
 
-    let store =
-        if force {
-            None
-        } else {
-            match std::env::var("TC_USE_ASSET_STORE") {
-                Ok(_) => match &f.build.kind {
-                    BuildKind::Inline => {
-                        let (bucket, key) = s3::parts_of(&f.runtime.uri);
-                        Some(Store {
-                            bucket: bucket,
-                            key: key,
-                            size: 0.to_string(),
-                        })
-                    }
-                    _ => None,
-                },
-                Err(_) => None,
-            }
-        };
+    let store = if force {
+        None
+    } else {
+        match std::env::var("TC_USE_ASSET_STORE") {
+            Ok(_) => match &f.build.kind {
+                BuildKind::Inline => {
+                    let (bucket, key) = s3::parts_of(&f.runtime.uri);
+                    Some(Store {
+                        bucket: bucket,
+                        key: key,
+                        size: 0.to_string(),
+                    })
+                }
+                _ => None,
+            },
+            Err(_) => None,
+        }
+    };
 
     let (size, blob, code) = lambda::make_code(package_type, &uri, store.clone());
 
@@ -77,28 +81,27 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
             let kind = &fs.kind.clone().unwrap_or("s3".to_string());
 
             if kind == "efs" {
-                Some(
-                    vec![lambda::make_efs_config(
-                        &arn,
-                        &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()))]
-                )
+                Some(vec![lambda::make_efs_config(
+                    &arn,
+                    &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()),
+                )])
             } else {
-                Some(
-                    vec![lambda::make_s3fs_config(
-                        &arn,
-                        &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()))]
-                )
+                Some(vec![lambda::make_s3fs_config(
+                    &arn,
+                    &fs.mount_point.clone().unwrap_or("/mnt/assets".to_string()),
+                )])
             }
         } else {
             None
         }
-    } else { None };
-
+    } else {
+        None
+    };
 
     let vpc_config = if let Some(fs) = &f.runtime.fs {
         Some(lambda::make_vpc_config(
-                fs.subnets.clone(),
-                fs.security_groups.clone(),
+            fs.subnets.clone(),
+            fs.security_groups.clone(),
         ))
     } else {
         match &f.runtime.network {
@@ -179,7 +182,6 @@ pub async fn create(
             }
         }
     }
-
 
     let lambda = make(&f, tags, force);
     let maybe_current = lambda::find_config(&client, &f.fqn).await;

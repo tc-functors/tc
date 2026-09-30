@@ -14,6 +14,7 @@ use aws_sdk_lambda::{
         Architecture,
         DeadLetterConfig,
         DestinationConfig,
+        DirectS3Read,
         Environment,
         FileSystemConfig,
         FunctionCode,
@@ -27,11 +28,10 @@ use aws_sdk_lambda::{
         SnapStart,
         SnapStartApplyOn,
         State,
-        UpdateRuntimeOn,
-        VpcConfig,
-        DirectS3Read,
         TracingConfig,
         TracingMode,
+        UpdateRuntimeOn,
+        VpcConfig,
         builders::{
             DeadLetterConfigBuilder,
             DestinationConfigBuilder,
@@ -39,10 +39,10 @@ use aws_sdk_lambda::{
             FileSystemConfigBuilder,
             FunctionCodeBuilder,
             OnSuccessBuilder,
-            SnapStartBuilder,
-            VpcConfigBuilder,
             S3FilesConfigBuilder,
-            TracingConfigBuilder
+            SnapStartBuilder,
+            TracingConfigBuilder,
+            VpcConfigBuilder,
         },
     },
 };
@@ -121,10 +121,7 @@ fn make_blob(payload_file: &str) -> Blob {
 
 pub fn make_efs_config(fs_arn: &str, mount_point: &str) -> FileSystemConfig {
     let f = FileSystemConfigBuilder::default();
-    f.arn(fs_arn)
-        .local_mount_path(mount_point)
-        .build()
-        .unwrap()
+    f.arn(fs_arn).local_mount_path(mount_point).build().unwrap()
 }
 
 pub fn make_s3fs_config(fs_arn: &str, mount_point: &str) -> FileSystemConfig {

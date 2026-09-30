@@ -98,9 +98,8 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
 
 pub struct BuildOpts {
     pub code_only: bool,
-    pub use_asset_store: bool
+    pub use_asset_store: bool,
 }
-
 
 pub async fn build(
     auth: &Auth,
@@ -118,7 +117,11 @@ pub async fn build(
 
     let langr = &runtime.lang;
 
-    let BuildOpts { code_only, use_asset_store, .. } = opts;
+    let BuildOpts {
+        code_only,
+        use_asset_store,
+        ..
+    } = opts;
 
     let kind = match kind {
         Some(k) => BuildKind::from_str(&k).unwrap(),
@@ -141,7 +144,7 @@ pub async fn build(
                 &runtime.arch,
                 &runtime.uri,
                 &build,
-                use_asset_store
+                use_asset_store,
             )
             .await
         }
@@ -183,7 +186,10 @@ pub async fn build_recursive(auth: &Auth, dir: &str, _parallel: bool) -> Vec<Bui
     let topology = composer::compose(dir, true);
 
     for (_, function) in topology.functions {
-        let opts = BuildOpts { code_only: false, use_asset_store: false };
+        let opts = BuildOpts {
+            code_only: false,
+            use_asset_store: false,
+        };
         let mut out = build(auth, &function, None, None, opts).await;
         outs.append(&mut out);
     }

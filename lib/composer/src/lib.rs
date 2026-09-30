@@ -19,9 +19,7 @@ pub use aws::{
     function::{
         Function,
         build::Build,
-        runtime::{
-            Runtime,
-        },
+        runtime::Runtime,
     },
     mutation::Mutation,
     page,

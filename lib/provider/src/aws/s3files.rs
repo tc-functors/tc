@@ -7,12 +7,14 @@ use aws_sdk_s3files::{
         RetryConfig,
         RetryMode,
     },
-    types::LifeCycleState,
-    types::builders::{
-        PosixUserBuilder,
-        CreationPermissionsBuilder,
-        RootDirectoryBuilder
-    }
+    types::{
+        LifeCycleState,
+        builders::{
+            CreationPermissionsBuilder,
+            PosixUserBuilder,
+            RootDirectoryBuilder,
+        },
+    },
 };
 use kit as u;
 
@@ -83,7 +85,7 @@ pub async fn find_or_create_fs(client: &Client, bucket: &str, role_arn: &str) ->
     let maybe_fs_id = find_fs(client, bucket).await;
     match maybe_fs_id {
         Some(id) => id,
-        None => create_fs(client, bucket, role_arn).await
+        None => create_fs(client, bucket, role_arn).await,
     }
 }
 
@@ -99,7 +101,7 @@ async fn find_ap(client: &Client, fs_id: &str) -> Option<String> {
     let xs = res.access_points.to_vec();
     for x in xs {
         if x.file_system_id == fs_id {
-            return Some(x.access_point_arn)
+            return Some(x.access_point_arn);
         }
     }
     None
@@ -120,7 +122,12 @@ async fn create_ap(client: &Client, fs_id: &str) -> String {
     let posix_user = pu.uid(1000).gid(1000).build().unwrap();
 
     let cp = CreationPermissionsBuilder::default();
-    let perm = cp.owner_uid(1000).owner_gid(1000).permissions("755").build().unwrap();
+    let perm = cp
+        .owner_uid(1000)
+        .owner_gid(1000)
+        .permissions("755")
+        .build()
+        .unwrap();
 
     let rd = RootDirectoryBuilder::default();
     let root_dir = rd.path("/lambda").creation_permissions(perm).build();
@@ -148,7 +155,7 @@ pub async fn find_or_create_ap(client: &Client, fs_id: &str) -> String {
     let maybe_ap_arn = find_ap(client, fs_id).await;
     match maybe_ap_arn {
         Some(ap_arn) => ap_arn,
-        None => create_ap(client, fs_id).await
+        None => create_ap(client, fs_id).await,
     }
 }
 
@@ -165,7 +172,7 @@ async fn find_mt(client: &Client, fs_id: &str, subnet_id: &str) -> Option<String
     let xs = res.mount_targets.to_vec();
     for x in xs {
         if x.file_system_id.unwrap() == fs_id && x.subnet_id == subnet_id {
-            return Some(x.mount_target_id)
+            return Some(x.mount_target_id);
         }
     }
     None
@@ -183,10 +190,15 @@ async fn create_mt(client: &Client, fs_id: &str, subnet_id: &str, sgs: Vec<Strin
     res.mount_target_id
 }
 
-pub async fn find_or_create_mt(client: &Client, fs_id: &str, subnet_id: &str, sgs: Vec<String>) -> String {
+pub async fn find_or_create_mt(
+    client: &Client,
+    fs_id: &str,
+    subnet_id: &str,
+    sgs: Vec<String>,
+) -> String {
     let maybe_mt = find_mt(client, fs_id, subnet_id).await;
     match maybe_mt {
         Some(id) => id,
-        None => create_mt(client, fs_id, subnet_id, sgs).await
+        None => create_mt(client, fs_id, subnet_id, sgs).await,
     }
 }

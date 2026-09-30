@@ -1,7 +1,7 @@
 use super::Context;
 use compiler::{
-    TopologyKind,
     BuildKind,
+    TopologyKind,
     spec::{
         InfraSpec,
         NetworkSpec,
@@ -11,9 +11,7 @@ use composer::{
     Function,
     Runtime,
     Topology,
-    function::runtime::{
-        Network,
-    },
+    function::runtime::Network,
 };
 use futures::stream::{
     self,
@@ -101,7 +99,7 @@ async fn resolve_vars(
 static LAYER_AUTH: AsyncMemo<(Option<String>, Option<String>), Auth> = AsyncMemo::new();
 
 async fn make_layer_auth(ctx: &Context) -> Auth {
-    let Context { auth, config,  .. } = ctx;
+    let Context { auth, config, .. } = ctx;
     let profile = config.aws.lambda.layers_profile.clone();
     let role = config.role_to_assume(profile.clone());
     let key = (profile.clone(), role.clone());
@@ -302,7 +300,7 @@ fn augment_infra_spec(default: &InfraSpec, s: &InfraSpec) -> InfraSpec {
         },
         filesystem: match &s.filesystem {
             Some(p) => Some(p.clone()),
-            None => default.filesystem.clone()
+            None => default.filesystem.clone(),
         },
         provisioned_concurrency: match s.provisioned_concurrency {
             Some(p) => Some(p),
@@ -340,7 +338,7 @@ async fn resolve_runtime(
     function: &Function,
     fqn: &str,
     resolve_urls: bool,
-    force: bool
+    force: bool,
 ) -> Runtime {
     let Context { auth, sandbox, .. } = ctx;
 
@@ -354,12 +352,10 @@ async fn resolve_runtime(
     } = &function.runtime;
     let mut r: Runtime = function.runtime.clone();
 
-
-
     let uri = if force {
         match &function.build.kind {
             BuildKind::Inline => &format!("{}/lambda.zip", &function.dir),
-            _ => &function.runtime.uri
+            _ => &function.runtime.uri,
         }
     } else {
         &function.runtime.uri
@@ -396,9 +392,8 @@ async fn resolve_runtime(
 
     let fs = match actual_infra.filesystem.as_ref() {
         Some(mfs) => mfs.get(&auth.region).clone(),
-        None => None
+        None => None,
     };
-
 
     r.fs = fs.cloned();
     r.infra_spec = HashMap::new();

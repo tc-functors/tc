@@ -1,26 +1,28 @@
-use std::collections::HashMap;
+use crate::color::ansi_to_spans;
+use colored_json::to_colored_json_auto;
+use composer::{
+    Topology,
+    aws::mutation::Resolver,
+};
+use ratatui::{
+    Frame,
+    buffer::Buffer,
+    layout::Rect,
+    text::Span,
+    widgets::Widget,
+};
 use serde_derive::{
     Deserialize,
     Serialize,
 };
-use composer::{Topology};
-use composer::aws::mutation::Resolver;
-use colored_json::to_colored_json_auto;
-use ratatui::text::Span;
-use ratatui::layout::Rect;
-use ratatui::buffer::Buffer;
-use ratatui::widgets::Widget;
-use ratatui::Frame;
-use crate::color::ansi_to_spans;
+use std::collections::HashMap;
 
 struct JsonWidget {
     content: String,
 }
 
 impl Widget for JsonWidget {
-
     fn render(self, area: Rect, buf: &mut Buffer) {
-
         let lines_iter = self.content.lines();
 
         for (i, line) in lines_iter.take(area.height as usize).enumerate() {
@@ -54,7 +56,7 @@ impl Widget for JsonWidget {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct Types {
     input: HashMap<String, String>,
-    output: HashMap<String, String>
+    output: HashMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -67,13 +69,10 @@ pub struct Detail {
     pub topology: Topology,
     pub entity: String,
     pub name: String,
-    pub component: String
-
+    pub component: String,
 }
 
-
 impl Detail {
-
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         if !self.name.is_empty() {
             match self.entity.as_ref() {
@@ -82,42 +81,41 @@ impl Detail {
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
+                }
                 "events" => {
                     let d = self.topology.events.get(&self.name).unwrap();
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
+                }
 
                 "pages" => {
                     let d = self.topology.pages.get(&self.name).unwrap();
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
+                }
 
                 "roles" => {
                     let d = self.topology.roles.get(&self.name).unwrap();
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
-
+                }
 
                 "queues" => {
                     let d = self.topology.queues.get(&self.name).unwrap();
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
+                }
 
                 "channels" => {
                     let d = self.topology.channels.get(&self.name).unwrap();
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
+                }
 
                 "mutations" => {
                     if let Some(m) = self.topology.mutations.get("default") {
@@ -125,16 +123,24 @@ impl Detail {
                         let mutation = Mutation {
                             resolver: d.unwrap().clone(),
                             types: Types {
-                                input: m.types_map.get(&d.unwrap().input).unwrap_or(&HashMap::new()).clone(),
-                                output: m.types_map.get(&d.unwrap().output).unwrap_or(&HashMap::new()).clone()
-                            }
+                                input: m
+                                    .types_map
+                                    .get(&d.unwrap().input)
+                                    .unwrap_or(&HashMap::new())
+                                    .clone(),
+                                output: m
+                                    .types_map
+                                    .get(&d.unwrap().output)
+                                    .unwrap_or(&HashMap::new())
+                                    .clone(),
+                            },
                         };
 
                         let pretty = to_colored_json_auto(&mutation).unwrap();
                         let widget = JsonWidget { content: pretty };
                         frame.render_widget(widget, area);
                     }
-                },
+                }
 
                 "functions" => {
                     let f = self.topology.functions.get(&self.name).unwrap();
@@ -150,8 +156,7 @@ impl Detail {
 
                         frame.render_widget(widget, area);
                     }
-
-                },
+                }
 
                 _ => {
                     let d: HashMap<String, String> = HashMap::new();
@@ -167,9 +172,8 @@ impl Detail {
                     let pretty = to_colored_json_auto(&d).unwrap();
                     let widget = JsonWidget { content: pretty };
                     frame.render_widget(widget, area);
-                },
-                _ => ()
-
+                }
+                _ => (),
             }
         }
     }

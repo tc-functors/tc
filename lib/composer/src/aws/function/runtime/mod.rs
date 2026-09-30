@@ -29,7 +29,6 @@ impl Runtime {
             None => common::as_infra_dir(dir, t_infra_dir),
         };
 
-
         match rspec {
             Some(r) => match r.provider {
                 Some(Provider::Lambda) => lambda::make(dir, &infra_dir, &namespace, fqn, fspec, &r),

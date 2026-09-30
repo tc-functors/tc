@@ -1,8 +1,10 @@
 use super::constants;
 use aws_config::{
     BehaviorVersion,
+    Region,
     SdkConfig,
     environment::credentials::EnvironmentVariableCredentialsProvider,
+    meta::region::RegionProviderChain,
     sts::AssumeRoleProvider,
 };
 use aws_sdk_sts::{
@@ -10,10 +12,8 @@ use aws_sdk_sts::{
     config,
     config::retry::RetryMode,
 };
-use aws_config::meta::region::{RegionProviderChain};
 use aws_smithy_types::retry::RetryConfig;
 use std::panic;
-use aws_config::Region;
 
 // sts
 

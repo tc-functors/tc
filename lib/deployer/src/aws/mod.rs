@@ -10,5 +10,5 @@ pub mod role;
 pub mod route;
 pub mod schedule;
 pub mod state;
-pub mod transducer;
 pub mod store;
+pub mod transducer;

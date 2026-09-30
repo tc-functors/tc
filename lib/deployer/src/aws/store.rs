@@ -1,15 +1,16 @@
-use provider::aws::s3files;
-use provider::aws::s3;
-use provider::Auth;
 use provider::{
+    Auth,
     aws::{
         iam,
         iam::Role,
+        s3,
+        s3files,
     },
 };
 
 fn make_policy(bucket: &str, account: &str, region: &str) -> String {
-    format!(r#"{{
+    format!(
+        r#"{{
     "Version": "2012-10-17",
     "Statement": [
         {{
@@ -97,12 +98,13 @@ fn make_policy(bucket: &str, account: &str, region: &str) -> String {
             ]
         }}
     ]
-}}"#)
-
+}}"#
+    )
 }
 
 fn make_trust_policy(account: &str, region: &str) -> String {
-    format!(r#"{{
+    format!(
+        r#"{{
     "Version": "2012-10-17",
     "Statement": [
         {{
@@ -122,7 +124,8 @@ fn make_trust_policy(account: &str, region: &str) -> String {
             }}
         }}
     ]
-}}"#)
+}}"#
+    )
 }
 
 async fn create_role(auth: &Auth, name: &str, bucket: &str) -> String {
@@ -136,7 +139,7 @@ async fn create_role(auth: &Auth, name: &str, bucket: &str) -> String {
         trust_policy: trust_policy,
         policy_arn: policy_arn,
         policy_name: name.to_string(),
-        policy_doc: policy
+        policy_doc: policy,
     };
     let _ = role.create_or_update(&client).await;
     role_arn
@@ -146,12 +149,16 @@ pub struct FsOpts {
     pub bucket: String,
     pub role_arn: Option<String>,
     pub subnets: Vec<String>,
-    pub security_groups: Vec<String>
+    pub security_groups: Vec<String>,
 }
 
 pub async fn create_s3_fs(auth: &Auth, opts: FsOpts) -> String {
-
-    let FsOpts { bucket, subnets, security_groups, .. } = opts;
+    let FsOpts {
+        bucket,
+        subnets,
+        security_groups,
+        ..
+    } = opts;
     println!("Creating store: {}", &bucket);
 
     let role_arn = if let Some(role_arn) = opts.role_arn {
@@ -168,8 +175,8 @@ pub async fn create_s3_fs(auth: &Auth, opts: FsOpts) -> String {
             s3::find_or_create_bucket(&s3_client, &bucket, &auth.region).await;
             tracing::debug!("Enabling bucket versioning...");
             s3::enable_versioning(&s3_client, &bucket).await;
-        },
-        Err(_) => ()
+        }
+        Err(_) => (),
     }
 
     let s3f_client = s3files::make_client(auth).await;
@@ -179,13 +186,12 @@ pub async fn create_s3_fs(auth: &Auth, opts: FsOpts) -> String {
     tracing::debug!("Creating access point fs: {}...", &fs_id);
     let ap_arn = s3files::find_or_create_ap(&s3f_client, &fs_id).await;
 
-
     for subnet_id in subnets {
         tracing::debug!("Creating mount target {}...", &subnet_id);
-        let _ = s3files::find_or_create_mt(&s3f_client, &fs_id, &subnet_id, security_groups.clone()).await;
+        let _ =
+            s3files::find_or_create_mt(&s3f_client, &fs_id, &subnet_id, security_groups.clone())
+                .await;
     }
 
     ap_arn
-
-
 }
