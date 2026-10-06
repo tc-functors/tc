@@ -507,10 +507,9 @@ mod tests {
         let json = format!(
             r#"{{
                 "namespace": "test",
-                "root": {{"name": "test", "dir": "/tmp/tc-test-topology"}},
                 "env": "dev",
                 "fqn": "test",
-                "concurrency": 0,
+                "concurrent": false,
                 "kind": "Function",
                 "infra": "",
                 "dir": "/tmp/tc-test-topology",
@@ -534,7 +533,6 @@ mod tests {
                         "runtime": {{
                             "lang": "Python310",
                             "provider": "Lambda",
-                            "arch": "Arm64",
                             "handler": "handler.handler",
                             "package_type": "zip",
                             "uri": "",
@@ -548,7 +546,6 @@ mod tests {
                             "provisioned_concurrency": null,
                             "reserved_concurrency": null,
                             "enable_fs": false,
-                            "enable_network": false,
                             "network": null,
                             "fs": null,
                             "role": {{
@@ -562,8 +559,6 @@ mod tests {
                                 "policy_arn": ""
                             }},
                             "infra_spec": {{}},
-                            "microvm": null,
-                            "port": 8080,
                             "cluster": ""
                         }},
                         "build": {{
@@ -576,19 +571,10 @@ mod tests {
                             "pack": "",
                             "shared_context": false,
                             "skip_dev_deps": false,
-                            "environment": {{}},
-                            "dirs": [],
-                            "include_deps": false,
-                            "image_name": "",
-                            "base_image_arn": "",
-                            "build_role_arn": "",
-                            "bucket": "",
-                            "package_manager": ""
+                            "environment": {{}}
                         }},
                         "test": {{}},
-                        "tasks": {{}},
                         "targets": [],
-                        "shared": false,
                         "aux_files": {aux_json}
                     }}
                 }},
@@ -627,10 +613,7 @@ mod tests {
                 "base_roles": {{}},
                 "tests": {{}},
                 "transducer": null,
-                "hooks": {{}},
-                "sequences": {{}},
-                "tc_version": "0.0.0",
-                "changelog": []
+                "sequences": {{}}
             }}"#
         );
         serde_json::from_str(&json).unwrap_or_else(|e| {
