@@ -19,6 +19,7 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
+
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -51,6 +52,7 @@ pub struct Throttling {
     pub authorizer_cache_ttl: Option<i32>,
 }
 
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Route {
     pub skip: bool,
@@ -63,7 +65,7 @@ pub struct Route {
     pub is_async: bool,
     pub cors: Option<Cors>,
     pub target: Target,
-    pub domains: HashMap<String, HashMap<String, String>>,
+    pub domains: HashMap<String, HashMap<String, Vec<String>>>,
     pub throttling: HashMap<String, HashMap<String, Throttling>>,
     pub verticals: HashMap<String, HashMap<String, Vec<String>>>,
 }
@@ -359,9 +361,17 @@ impl Route {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum Domain {
+    List(Vec<String>),
+    String(String),
+}
+
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Infra {
     pub throttling: Option<HashMap<String, HashMap<String, Throttling>>>,
-    pub domains: Option<HashMap<String, HashMap<String, String>>>,
+    pub domains: Option<HashMap<String, HashMap<String, Domain>>>,
     pub verticals: Option<HashMap<String, HashMap<String, Vec<String>>>>,
 }
 
@@ -378,11 +388,27 @@ impl Infra {
     }
 }
 
-fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, String>> {
+fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String>>> {
     let maybe_infra = Infra::new(infra_dir);
+    let mut h: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
     if let Some(inf) = maybe_infra {
         if let Some(domains) = &inf.domains {
-            domains.clone()
+            for (e, m) in domains {
+                let mut hs: HashMap<String, Vec<String>> = HashMap::new();
+                for (s, d) in m {
+                    match d {
+                        Domain::List(x) => {
+                            hs.insert(s.to_string(), x.to_vec());
+                        },
+                        Domain::String(x) => {
+                            hs.insert(s.to_string(), vec![x.to_string()]);
+                        }
+                    }
+                }
+                h.insert(e.to_string(), hs);
+            }
+            h
+
         } else {
             HashMap::new()
         }

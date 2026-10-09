@@ -631,13 +631,14 @@ pub async fn route(profile: Option<String>, sandbox: Option<String>, region: Opt
     let sandbox = resolver::maybe_sandbox(sandbox);
     let region = u::maybe_string(region, "us-west-2");
     let dir = u::pwd();
-    let topology = composer::compose(&dir, false);
+    let ct = composer::compose(&dir, false);
+    let topology = resolver::resolve(&auth, &sandbox, &ct, false, false).await;
     router::route(&auth, &topology, &sandbox).await;
     let msg = format!(
         "Routed DNS {}@{}.{}/{}",
         topology.namespace, &sandbox, &auth.name, &region
     );
-    println!("{}", &msg);
+    println!("notify: {}", &msg);
     notifier::notify(&topology.namespace, &msg).await;
 }
 

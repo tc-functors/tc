@@ -51,14 +51,15 @@ pub async fn route(auth: &Auth, topology: &Topology, sandbox: &str) {
     let gateways = aws::route::collate_gateways(&routes, &auth.name, sandbox);
     let client = gateway::make_client(auth).await;
     for (name, gateway) in gateways {
-        let Gateway { domain, manage, .. } = gateway;
+        let Gateway { domains, manage, .. } = gateway;
+
         if manage {
             let maybe_api_id = gateway::find_api(&client, &name).await;
             if let Some(_api_id) = maybe_api_id {
-                if let Some(dom) = domain {
-                    let maybe_gateway_domain = gateway::find_domain(&client, &dom).await;
+                for domain in &domains {
+                    let maybe_gateway_domain = gateway::find_domain(&client, &domain).await;
                     if let Some(gateway_domain) = maybe_gateway_domain {
-                        aws::route::update_dns(auth, &dom, &gateway_domain).await
+                        aws::route::update_dns(auth, &domain, &gateway_domain).await
                     }
                 }
             }

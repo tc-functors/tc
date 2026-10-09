@@ -322,7 +322,7 @@ pub struct Gateway {
     pub authorizer: Option<Authorizer>,
     pub burst_limit: Option<i32>,
     pub rate_limit: Option<f64>,
-    pub domain: Option<String>,
+    pub domains: Vec<String>,
     pub paths: Vec<String>,
     pub manage: bool,
 }
@@ -347,7 +347,7 @@ pub fn collate_gateways(
             authorizer: route.authorizer.clone(),
             burst_limit: None,
             rate_limit: None,
-            domain: None,
+            domains: vec![],
             paths: vec![],
             manage: false,
         };
@@ -370,36 +370,46 @@ pub fn collate_gateways(
                 find_throttling(&throttling, env, sandbox);
 
             // domains
-            let maybe_domain = match domains.get(env) {
-                Some(e) => e.get(sandbox).cloned(),
+
+
+            let domains = match domains.get(env) {
+                Some(e) => match e.get(sandbox) {
+                    Some(x) => x.clone(),
+                    None => vec![]
+                },
                 None => match domains.get("default") {
-                    Some(d) => d.get(sandbox).cloned(),
-                    None => None,
+                    Some(d) => {
+                        match d.get(sandbox) {
+                            Some(x) => x.clone(),
+                            None => vec![]
+                        }
+                    }
+                    None => vec![],
                 },
             };
 
             // gateway mapping paths
-            let paths = if let Some(domain) = maybe_domain.clone() {
-                match verticals.get(&domain) {
+
+
+            let mut paths: Vec<String> = vec![];
+
+            for domain in &domains {
+                match verticals.get(domain) {
                     Some(m) => match m.get(gateway) {
-                        Some(paths) => {
-                            let mut xs: Vec<String> = vec![];
-                            for p in paths {
+                        Some(xs) => {
+                            for p in xs {
                                 if p.starts_with("/") {
-                                    xs.push(p[1..].to_string())
+                                    paths.push(p[1..].to_string())
                                 } else {
-                                    xs.push(p.clone())
+                                    paths.push(p.clone())
                                 };
                             }
-                            xs
                         }
-                        None => vec![],
+                        None => (),
                     },
-                    None => vec![],
+                    None => (),
                 }
-            } else {
-                vec![]
-            };
+            }
 
             let manage = gateway.ends_with(&format!("_{}", sandbox));
 
@@ -422,7 +432,7 @@ pub fn collate_gateways(
                     log_group: stage.log_group.to_string(),
                     burst_limit: burst_limit,
                     rate_limit: rate_limit,
-                    domain: maybe_domain,
+                    domains: domains,
                     paths: paths,
                     manage: manage,
                 };
@@ -466,7 +476,7 @@ async fn create_or_update_gateways(
             stage,
             burst_limit,
             rate_limit,
-            domain,
+            domains,
             paths,
             manage,
             log_group,
@@ -510,30 +520,29 @@ async fn create_or_update_gateways(
             )
             .await;
 
-            let endpoint = if let Some(dom) = domain {
+            for domain in &domains {
                 let idempotency_token = sandbox;
-                let cert_arn = find_or_create_cert(auth, &dom, idempotency_token).await;
+                let cert_arn = find_or_create_cert(auth, &domain, idempotency_token).await;
                 let client = gateway::make_client(auth).await;
                 let gateway_domain = gateway::create_or_update_domain(
-                    &client, &api_id, &dom, &stage, &cert_arn, paths,
+                    &client, &api_id, &domain, &stage, &cert_arn, paths.clone(),
                 )
                 .await;
 
                 match std::env::var("TC_UPDATE_DNS") {
-                    Ok(_) => update_dns(auth, &dom, &gateway_domain).await,
+                    Ok(_) => update_dns(auth, &domain, &gateway_domain).await,
                     Err(_) => println!("Skipping DNS record updates"),
                 };
-                dom
-            } else {
-                auth.api_endpoint(&api_id, &stage)
-            };
+            }
+
+            let endpoint = domains.first().unwrap_or(&auth.api_endpoint(&api_id, &stage)).clone();
 
             let gs = GatewayState {
                 api_id: api_id,
                 auth_id: auth_id,
                 auth_kind: auth_kind,
                 stage: stage,
-                endpoint: endpoint,
+                endpoint: endpoint.clone(),
             };
             h.insert(name, gs);
         }
@@ -638,11 +647,12 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str,
                     if let Some(authorizer) = gateway.authorizer {
                         gateway::delete_authorizer(&client, &api_id, &authorizer.name).await;
                     }
-                    if let Some(domain) = gateway.domain {
+                    for domain in &gateway.domains {
                         println!("Deleting api mappings {}", &api_id);
-                        gateway::delete_api_mappings(&client, &api_id, &domain, gateway.paths)
+                        gateway::delete_api_mappings(&client, &api_id, &domain, gateway.paths.clone())
                             .await;
                     }
+
                     if force {
                         gateway::delete_api(&client, &api_id).await;
                     }
