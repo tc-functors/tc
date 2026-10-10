@@ -1,0 +1,161 @@
+name: PR Conformance Triage (fork-safe, maintainer-triggered)
+
+# Brings the pinned house-style reviewer to EXTERNAL (fork) pull requests, which the
+# secret-backed reviewers cannot see. `ai-review.yml` and Cursor Bugbot are gated to
+# in-repo PRs because a fork PR can neither read secrets nor assume the OIDC role;
+# this workflow closes that gap on a maintainer's explicit request and posts ONE
+# "conformance triage report" mapping each finding to the exact docs/agents/STYLE.md
+# rule + the concrete fix.
+#
+# ── Fork-safety reasoning (why this cannot leak secrets to untrusted code) ─────────
+#   1. TRUSTED DEFINITION. It triggers on `issue_comment` / `workflow_dispatch`, which
+#      always run the workflow file from the repo's DEFAULT branch — never the fork's
+#      copy. A fork PR cannot edit this workflow to exfiltrate anything.
+#   2. MAINTAINER GATE. It runs only for a `/triage` comment from an OWNER / MEMBER /
+#      COLLABORATOR (or a `workflow_dispatch`, which itself requires write access). A
+#      random fork author cannot trigger the privileged (Bedrock + write-token) run.
+#   3. NO UNTRUSTED CODE EXECUTION. The job checks out the TRUSTED base repo (its own
+#      scripts + charter) and reads the fork's contribution ONLY as a text diff
+#      (`git fetch …/head` + `git diff` — never a build, test, or build.rs). The
+#      Bedrock OIDC role and the write token are therefore never in scope while any
+#      contributor-controlled code runs, because none runs here.
+#   4. DETERMINISTIC GATE STAYS SEPARATE & FORK-SAFE. The compile/lint/test gate
+#      (`agent-check.sh`) already runs on fork PRs via `agent-conformance.yml`
+#      (trigger `pull_request`, `permissions: contents: read`, no secrets) — that is
+#      the correct place to execute contributor code, sandboxed with nothing to steal.
+#      This triage merely READS that gate's conclusion and folds it into the report.
+#   See docs/agents/REVIEW.md → "Fork-PR conformance triage" for the full rationale.
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to triage
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  # One triage per PR at a time (issue_comment has no ref, so key on the PR/issue).
+  # NO cancel-in-progress: the group is acquired for *every* issue_comment (before the
+  # job `if` filters to a maintainer /triage), so unrelated PR comments would otherwise
+  # cancel an in-flight triage before it posts. Without it, those instantly-skipped
+  # runs just supersede on the pending side and the running triage always finishes.
+  group: pr-conformance-triage-${{ github.event.issue.number || github.event.inputs.pr }}
+
+jobs:
+  triage:
+    # Gate 1 (maintainer) + Gate 2 (a PR, not an issue) + the /triage command.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       startsWith(github.event.comment.body, '/triage') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: read # read the already-run `Agent Conformance` gate conclusion (checks.listForRef)
+      pull-requests: write # post the report comment + a 👀 acknowledgement
+      id-token: write # GitHub OIDC -> AWS for the bedrock backend (diff-only; no fork code runs)
+    steps:
+      # 1. Resolve the PR (head sha, head repo, base ref) and acknowledge the request.
+      #    No fork code is fetched yet — this is pure GitHub API.
+      - name: Resolve PR + acknowledge
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const num = context.eventName === 'workflow_dispatch'
+              ? Number(context.payload.inputs.pr)
+              : context.payload.issue.number;
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo, pull_number: num,
+            });
+            core.setOutput('number', String(num));
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('base_ref', pr.base.ref);
+            if (context.eventName === 'issue_comment') {
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: context.payload.comment.id, content: 'eyes',
+              }).catch(() => {});
+            }
+
+      # 2. Check out the TRUSTED base repo (default branch) — its scripts/ai_review.py
+      #    and its docs/agents charter, NOT the fork's copies.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 3. Fetch the fork's contribution as DATA (a diff) and pin the exact head SHA.
+      #    `git fetch …/head` + `git diff` execute NONE of the contributor's code. The
+      #    resolved head SHA is reused for the gate lookup below, so the gate result and
+      #    the reviewed diff always describe the SAME commit (no trigger-time-vs-fetch race).
+      - name: Fetch PR head as diff data
+        id: diff
+        env:
+          PR: ${{ steps.pr.outputs.number }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+        run: |
+          git fetch --no-tags origin "+refs/pull/${PR}/head:refs/remotes/pr/${PR}" "${BASE_REF}"
+          echo "base_sha=$(git rev-parse "origin/${BASE_REF}")" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(git rev-parse "refs/remotes/pr/${PR}")" >> "$GITHUB_OUTPUT"
+
+      # 4. Read the ALREADY-RUN deterministic gate's conclusion FOR THE FETCHED head SHA.
+      #    agent-conformance.yml runs it on fork PRs with no secrets — we only read it.
+      - name: Read deterministic-gate conclusion
+        uses: actions/github-script@v7
+        env:
+          HEAD_SHA: ${{ steps.diff.outputs.head_sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            let summary = 'not found (has `Agent Conformance` run yet for this commit?).';
+            try {
+              const { data } = await github.rest.checks.listForRef({
+                owner: context.repo.owner, repo: context.repo.repo,
+                ref: process.env.HEAD_SHA, per_page: 100,
+              });
+              // Pick the NEWEST matching run: listForRef can return several same-named
+              // runs for one SHA after re-runs, and the first is not necessarily current.
+              const gate = data.check_runs
+                .filter(c => /gate|conformance/i.test(c.name))
+                .sort((a, b) => new Date(b.started_at || 0) - new Date(a.started_at || 0))[0];
+              if (gate) {
+                const c = gate.status === 'completed' ? gate.conclusion : gate.status;
+                summary = `${gate.name}: ${c}` + (gate.html_url ? `\n${gate.html_url}` : '');
+              }
+            } catch (e) { summary = `lookup failed: ${e.message}`; }
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/gate.txt`, summary);
+            core.info(`gate summary: ${summary}`);
+
+      # 5. Bedrock backend only: assume the reviewer role via OIDC. A creds/role failure
+      #    must not fail the job — the script then no-ops (advisory).
+      - name: Configure AWS credentials (bedrock backend only)
+        if: vars.AI_REVIEW_BACKEND == 'bedrock' && vars.AI_REVIEW_AWS_ROLE != ''
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AI_REVIEW_AWS_ROLE }}
+          aws-region: ${{ vars.AI_REVIEW_AWS_REGION }}
+
+      # 6. Post the single conformance-triage report (gate + rule-mapped reviewer).
+      #    Reuses scripts/ai_review.py in AI_REVIEW_MODE=conformance (feedback mode).
+      - name: Run conformance triage (feedback mode)
+        env:
+          AI_REVIEW_MODE: conformance
+          AI_REVIEW_BACKEND: ${{ vars.AI_REVIEW_BACKEND }}
+          AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}
+          AI_REVIEW_AWS_REGION: ${{ vars.AI_REVIEW_AWS_REGION }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_REVIEW_GATE_FILE: ${{ runner.temp }}/gate.txt
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          BASE_SHA: ${{ steps.diff.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.diff.outputs.head_sha }}
+        run: python3 scripts/ai_review.py

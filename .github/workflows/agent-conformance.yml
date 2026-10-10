@@ -1,0 +1,62 @@
+name: Agent Conformance
+
+# Runs on every PR and on pushes to main — the deterministic half of the
+# agent-code-quality framework (docs/agents/). No secrets required, so it works on
+# fork PRs too. The model-based adversarial review is a separate workflow (Phase 3).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    name: gate + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so diff-scoped fmt/clippy can reach the base
+
+      - name: Install Rust (stable for build/clippy/test, nightly for fmt)
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup toolchain install nightly --profile minimal --component rustfmt
+          rustup default stable
+          rustc --version && cargo clippy --version && cargo +nightly fmt --version
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: conformance-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: conformance-cargo-
+
+      - name: Determine base ref for diff-scoping
+        id: base
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "base=origin/${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          else
+            # push: compare against the previous tip; agent-check falls back to main
+            # if this ref is unresolvable (e.g. first push of a branch).
+            echo "base=${{ github.event.before }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: agent-check (fmt + clippy [line-scoped] + build + composer tests + conventions)
+        run: BASE="${{ steps.base.outputs.base }}" ./scripts/agent-check.sh
+
+      - name: cargo test --workspace
+        # Widened coverage: green as of the Phase-2 kit test-twin + differ fixture fix
+        # (previously the workspace suite did not even compile; see
+        # docs/agents/CALIBRATION.md). CI historically ran only lib/composer.
+        run: cargo test --workspace

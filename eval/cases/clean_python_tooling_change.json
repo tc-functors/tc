@@ -1,0 +1,8 @@
+{
+  "name": "clean_python_tooling_change",
+  "kind": "clean",
+  "expect_verdict": "PASS",
+  "rule": "",
+  "diff": "--- a/scripts/ai_review.py\n+++ b/scripts/ai_review.py\n@@\n def get_diff(base, head, cap):\n+    # small helper tweak in auxiliary CI tooling (Python, not Rust)\n     try:\n         out = subprocess.run(\n             [\"git\", \"diff\", f\"{base}...{head}\"],\n             capture_output=True, text=True, check=True,\n         ).stdout\n     except subprocess.CalledProcessError as e:\n         notice(f\"git diff failed: {e}\")\n         return \"\"\n",
+  "mock_output": "No charter violations. This changes `scripts/ai_review.py`, which is auxiliary Python CI tooling under `scripts/**` — per the charter Scope section it is judged on its own terms, not the Rust rules. The `#[cfg(test)]`-twin / free-function / derive-quartet rules do not apply to Python; shelling out to `git` here is fine. No issues.\n\nVERDICT: PASS"
+}

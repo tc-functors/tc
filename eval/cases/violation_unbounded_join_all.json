@@ -1,0 +1,8 @@
+{
+  "name": "violation_unbounded_join_all",
+  "kind": "violation",
+  "expect_verdict": "BLOCK",
+  "rule": "bounded-concurrency",
+  "diff": "--- a/lib/resolver/src/lib.rs\n+++ b/lib/resolver/src/lib.rs\n@@\n-    let resolved = stream::iter(nodes)\n-        .map(|n| resolve_node(n))\n-        .buffer_unordered(resolve_concurrency())\n-        .collect()\n-        .await;\n+    let resolved = futures::future::join_all(\n+        nodes.into_iter().map(|n| resolve_node(n))\n+    ).await;\n",
+  "mock_output": "High — lib/resolver/src/lib.rs: replaces bounded `buffer_unordered(resolve_concurrency())` with unbounded `join_all`, which can launch unbounded concurrent AWS calls. Concurrency must stay bounded with the env-configurable, const-capped limit.\n\nVERDICT: BLOCK"
+}

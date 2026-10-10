@@ -1,0 +1,67 @@
+name: AI Review (second, pinned)
+
+# A second, model-PINNED reviewer that complements Cursor Bugbot with an auditable,
+# version-controlled model the maintainer chooses. Shares the charter in
+# .cursor/BUGBOT.md + docs/agents/STYLE.md so the two reviewers do not diverge.
+#
+# Backends (set repo VARIABLE AI_REVIEW_BACKEND):
+#   anthropic (default) — public Anthropic API. Needs secret ANTHROPIC_API_KEY.
+#                         Data egresses to Anthropic — fine for OSS repos.
+#   bedrock             — Amazon Bedrock (Converse). Inference stays IN AWS; data is
+#                         NOT sent to the model provider. Auth via GitHub OIDC -> IAM
+#                         role (no static keys). Use this for private/company repos
+#                         whose data must stay within AWS or GitHub.
+#
+# Required repo settings:
+#   Variable  AI_REVIEW_MODEL      pinned model id (Anthropic id, or a Bedrock model
+#                                   id / inference-profile ARN).
+#   anthropic: Secret ANTHROPIC_API_KEY
+#   bedrock:   Variables AI_REVIEW_BACKEND=bedrock, AI_REVIEW_AWS_ROLE (IAM role ARN
+#              to assume via OIDC, with bedrock:InvokeModel), AI_REVIEW_AWS_REGION
+# Until configured, the script is a safe no-op — it never breaks CI.
+# In-repo PRs only: fork PRs can't read secrets / assume the role (the deterministic
+# gate + Bugbot remain the fork-safe baseline — see docs/agents/REVIEW.md).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write # for GitHub OIDC -> AWS (bedrock backend); unused by the anthropic backend
+
+concurrency:
+  group: ai-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    # Skip on forks (no secret / OIDC access) — keeps this from failing fork PRs.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials (bedrock backend only)
+        if: vars.AI_REVIEW_BACKEND == 'bedrock' && vars.AI_REVIEW_AWS_ROLE != ''
+        continue-on-error: true # a creds/role failure must not fail the job; the script then no-ops
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AI_REVIEW_AWS_ROLE }}
+          aws-region: ${{ vars.AI_REVIEW_AWS_REGION }}
+
+      - name: Run pinned second reviewer
+        env:
+          AI_REVIEW_BACKEND: ${{ vars.AI_REVIEW_BACKEND }}
+          AI_REVIEW_MODEL: ${{ vars.AI_REVIEW_MODEL }}
+          AI_REVIEW_AWS_REGION: ${{ vars.AI_REVIEW_AWS_REGION }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # AI_REVIEW_ENFORCE: "1"   # uncomment to make a BLOCK verdict fail the check
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: origin/${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/ai_review.py

@@ -1,0 +1,8 @@
+{
+  "name": "clean_idiomatic_free_fn",
+  "kind": "clean",
+  "expect_verdict": "PASS",
+  "rule": "",
+  "diff": "--- a/lib/kit/src/core.rs\n+++ b/lib/kit/src/core.rs\n@@\n+pub fn join_names(xs: Vec<&str>, prefix: &str) -> String {\n+    let mut out = empty();\n+    if xs.len() > 0 {\n+        for x in xs.clone().into_iter() {\n+            out = s!(out, prefix, x);\n+        }\n+    }\n+    out\n+}\n",
+  "mock_output": "No findings. The change is a terse free function returning an owned String, uses `empty()`/`s!`, `xs.len() > 0`, and `.clone()` — all deliberate house idioms (STYLE.md \u00a710), not defects.\n\nVERDICT: PASS"
+}

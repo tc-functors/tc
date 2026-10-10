@@ -1,0 +1,8 @@
+{
+  "name": "violation_provider_trait_abstraction",
+  "kind": "violation",
+  "expect_verdict": "BLOCK",
+  "rule": "no-provider-abstraction (BUGBOT BLOCK #3; STYLE.md §10)",
+  "diff": "--- a/lib/deployer/src/lib.rs\n+++ b/lib/deployer/src/lib.rs\n@@\n-pub async fn create_function(auth: &Auth, f: &Function) -> String {\n-    aws::lambda::find_or_create(auth, f).await\n-}\n+pub trait CloudProvider {\n+    async fn create_function(&self, f: &Function) -> String;\n+}\n+\n+pub struct AwsProvider { pub auth: Auth }\n+\n+impl CloudProvider for AwsProvider {\n+    async fn create_function(&self, f: &Function) -> String {\n+        aws::lambda::find_or_create(&self.auth, f).await\n+    }\n+}\n",
+  "mock_output": "block — lib/deployer/src/lib.rs: introduces a `CloudProvider` trait to abstract over cloud providers. AWS is hard-coded by design in `tc`; a provider trait/abstraction is a house-style BLOCK unless the maintainer explicitly asked for multi-cloud. Keep the idempotent free function `create_function(auth: &Auth, f: &Function)` calling `aws::*` directly. (STYLE.md §10 — the author deliberately avoids trait-heavy abstraction; BUGBOT BLOCK #3.)\n\nVERDICT: BLOCK"
+}

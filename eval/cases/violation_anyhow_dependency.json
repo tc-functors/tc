@@ -1,0 +1,8 @@
+{
+  "name": "violation_anyhow_dependency",
+  "kind": "violation",
+  "expect_verdict": "BLOCK",
+  "rule": "no-anyhow-thiserror",
+  "diff": "--- a/lib/compiler/Cargo.toml\n+++ b/lib/compiler/Cargo.toml\n@@\n [dependencies]\n serde = \"1.0\"\n+anyhow = \"1.0\"\n",
+  "mock_output": "High — lib/compiler/Cargo.toml: adds `anyhow`, which this codebase deliberately excludes. Error handling is fail-fast (unwrap/expect/panic). Remove the dependency.\n\nVERDICT: BLOCK"
+}
