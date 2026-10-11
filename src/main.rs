@@ -634,20 +634,19 @@ pub struct ScaffoldArgs {
     profile: Option<String>,
     #[arg(long, short = 'd')]
     dir: Option<String>,
-    #[arg(long, action, short = 'f')]
-    functions: bool,
-    #[arg(long, action, short = 'l')]
-    llm: Option<MaybeStdin<String>>,
-    /// LLM provider to use (bedrock or anthropic)
+    #[arg(long, action, short = 't')]
+    topology: bool,
+    #[arg(long, action, short = 'c')]
+    entity: Option<String>,
     #[arg(long)]
-    provider: Option<String>,
+    iac: Option<String>,
+    #[arg(long)]
+    skills: Option<String>,
     /// Model identifier
     #[arg(long)]
     model: Option<String>,
     #[arg(long, alias = "out-dir")]
     out_dir: Option<String>,
-    #[arg(long)]
-    iac: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1181,25 +1180,21 @@ async fn scaffold(args: ScaffoldArgs) {
     let ScaffoldArgs {
         profile,
         dir,
-        functions,
-        llm,
-        provider,
+        topology,
+        entity,
         model,
         iac,
+        skills,
         out_dir,
         ..
     } = args;
 
-    let text = if let Some(p) = llm {
-        Some(p.to_string())
-    } else {
-        None
-    };
-
     if iac.is_some() {
-        tc::scaffold_iac(profile, iac, out_dir).await
+        tc::scaffold_iac(profile, skills, model, iac, out_dir).await
+    } else if topology {
+        tc::scaffold_topology(profile, skills, model, out_dir).await
     } else {
-        tc::scaffold_llm(profile, dir, text, provider, model, functions).await;
+        tc::scaffold_entity(profile, dir, entity).await;
     }
 }
 

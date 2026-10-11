@@ -133,6 +133,31 @@ pub struct ChangelogRequest {
     pub verbose: bool,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct ScaffoldRequest {
+    #[schemars(description = "AWS Profile")]
+    pub profile: Option<String>,
+
+    #[schemars(description = "Generate topology based on skills/topology.md")]
+    pub topology: bool,
+
+    #[schemars(description = "Entity - functions, events, routes etc")]
+    pub entity: Option<String>,
+
+    #[schemars(description = "tf, cdf, go, rust, python")]
+    pub iac: Option<String>,
+
+    #[schemars(description = "Path to skills file for topology, entity or iac")]
+    pub skills: Option<String>,
+
+    #[schemars(description = "Bedrock model identifier")]
+    pub model: Option<String>,
+
+    #[schemars(description = "Output directory for iac. Defaults to ./iac")]
+    pub out_dir: Option<String>,
+}
+
+
 #[derive(Debug, Clone)]
 pub struct Tc;
 
@@ -146,6 +171,31 @@ impl Tc {
         let topology = composer::compose(&dir, recursive);
         topology.to_str()
     }
+
+    #[tool(description = "Scaffold topology, iac or entities using LLM")]
+    async fn scaffold(
+        &self,
+        Parameters(ScaffoldRequest {
+            profile,
+            topology,
+            entity,
+            model,
+            iac,
+            skills,
+            out_dir
+        }): Parameters<ScaffoldRequest>,
+    ) -> String {
+
+        if iac.is_some() {
+            tc::scaffold_iac(profile, skills, model, iac, out_dir).await
+        } else if topology {
+            tc::scaffold_topology(profile, skills, model, out_dir).await
+        } else {
+            tc::scaffold_entity(profile, out_dir, entity).await;
+        }
+        String::from("Scaffold complete")
+    }
+
 
     #[tool(description = "Build function")]
     async fn build(

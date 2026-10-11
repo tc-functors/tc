@@ -1,6 +1,14 @@
+use inquire::Text;
+use provider::{
+    Auth,
+    aws::bedrock,
+};
 use kit::*;
+use kit as u;
 
-pub fn default(text: &str) -> String {
+const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
+
+pub fn default_tc_skills(text: &str) -> String {
     let lines = v![
         "You are an expert at creating tc topologies. tc is a graph-based, serverless application composer that uses high-level abstractions called Cloud Functors to define application architecture without infrastructure details.",
         "",
@@ -170,4 +178,34 @@ pub fn default(text: &str) -> String {
         "Remember: Focus on business logic and relationships, not infrastructure details. Create a topology that is composable, maintainable, and follows tc best practices"
     ];
     lines.join("\n")
+}
+
+fn process_response(dir: &str, response: &str) {
+    println!("Generating topology.yml...");
+    let code = llm_toolkit::extract_markdown_block_with_lang(&response, "yaml").unwrap();
+    let topo_file = format!("{}/topology.yml", dir);
+    u::write_str(&topo_file, &code);
+}
+
+fn make_prompt(skills: Option<String>) -> String {
+    let f = match skills {
+        Some(s) => s,
+        None => "skills/topology.md".to_string()
+    };
+    let text = if u::file_exists(&f) {
+        u::slurp(&f)
+    } else {
+        let desc = Text::new("Architecture Description:").prompt();
+        desc.unwrap()
+    };
+    default_tc_skills(&text)
+}
+
+pub async fn scaffold(auth: &Auth, skills: Option<String>, model: Option<String>, dir: &str) {
+    let model = u::maybe_string(model, DEFAULT_BEDROCK_MODEL);
+    println!("Using bedrock model {}", &model);
+    let client = bedrock::make_client(auth).await;
+    let prompt = make_prompt(skills);
+    let response = bedrock::send(&client, &prompt, &model).await;
+    process_response(dir, &response);
 }
