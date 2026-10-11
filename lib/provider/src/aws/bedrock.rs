@@ -21,13 +21,18 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
         .build()
         .unwrap();
 
+    let tokens = match std::env::var("TC_MAX_LLM_TOKENS") {
+        Ok(r) => r.trim().parse::<i32>().unwrap(),
+        Err(_) => 60000
+    };
+
     let response = client
         .converse()
         .model_id(model)
         .messages(message)
         .inference_config(
             InferenceConfiguration::builder()
-                .max_tokens(20000)
+                .max_tokens(tokens)
                 .temperature(0.7)
                 .build(),
         )
@@ -35,15 +40,20 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
         .await
         .unwrap();
 
-    response
+    let content = response
         .output()
         .unwrap()
         .as_message()
         .unwrap()
-        .content()
-        .first()
-        .unwrap()
-        .as_text()
-        .unwrap()
-        .to_string()
+        .content();
+
+    let mut s: String = String::from("");
+    for x in content {
+        let data = x
+            .as_text()
+            .unwrap()
+            .to_string();
+        s.push_str(&data)
+    }
+    s
 }

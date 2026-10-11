@@ -11,7 +11,7 @@ serde_yaml = "0.9.25"
 question = "0.2.2"
 inquire = "0.7.5"
 base64 = "0.21.0"
-llm-toolkit = "0.21.0"
+llm-toolkit = "0.63.1"
 kit = { path = "../kit" }
 compiler = { path = "../compiler" }
 composer = { path = "../composer" }

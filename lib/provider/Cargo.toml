@@ -35,7 +35,7 @@ aws-sdk-acm = { version = "1.108.0", features = ["behavior-version-latest"] }
 aws-sdk-route53 = { version = "1.116.0", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = { version = "1.117.0", features = ["behavior-version-latest"] }
 aws-sdk-lambdamicrovms = { version = "1.0.0", features = ["behavior-version-latest"]}
-aws-sdk-bedrockagentcorecontrol = { version = "1.62.0", features = ["behavior-version-latest"]}
+aws-sdk-bedrockagentcorecontrol = { version = "1.75.0", features = ["behavior-version-latest"]}
 aws-sdk-bedrockagentcore = { version = "1.52.0", features = ["behavior-version-latest"]}
 aws-sdk-s3files = { version = "1.17.0", features = ["behavior-version-latest"]}
 aws-sdk-bedrockruntime = "1.50"

@@ -901,40 +901,47 @@ pub async fn reflect(
     reflector::reflect(&auth, &topology, &sandbox, entity).await;
 }
 
-pub async fn scaffold_llm(
+// scaffolding
+
+pub async fn scaffold_iac(
     profile: Option<String>,
-    dir: Option<String>,
-    llm: Option<String>,
-    provider: Option<String>,
+    skills: Option<String>,
     model: Option<String>,
-    functions: bool,
+    iac: Option<String>,
+    out_dir: Option<String>,
+
+) {
+    let dir = u::pwd();
+    let auth = init(profile, None, None).await;
+    let topology = composer::compose(&dir, true);
+    scaffolder::iac::scaffold(&auth, skills, model, &topology, iac, out_dir).await
+}
+
+pub async fn scaffold_topology(
+    profile: Option<String>,
+    skills: Option<String>,
+    model: Option<String>,
+    out_dir: Option<String>,
+) {
+    let dir = u::maybe_string(out_dir, &u::pwd());
+    let auth = init(profile, None, None).await;
+    scaffolder::topology::scaffold(&auth, skills, model, &dir).await
+}
+
+pub async fn scaffold_entity(
+    _profile: Option<String>,
+    dir: Option<String>,
+    entity: Option<String>,
 ) {
     let dir = u::maybe_string(dir, &u::pwd());
-
-    if functions {
-        scaffolder::scaffold_functions(&dir)
-    } else if llm.is_some() {
-        let provider = u::maybe_string(provider, "anthropic");
-        let text = u::maybe_string(llm, "default");
-
-        match provider.as_ref() {
-            "anthropic" => {
-                scaffolder::scaffold_llm_anthropic(&dir, &text, model).await;
-            }
-            "bedrock" => {
-                if profile.is_some() {
-                    let auth = init(profile, None, None).await;
-                    scaffolder::scaffold_llm_bedrock(&auth, &dir, &text, model).await;
-                } else {
-                    println!(
-                        "Please specify profile: tc scaffold --provider --bedrock -e <PROFILE>"
-                    );
-                }
-            }
-            _ => todo!(),
-        }
+    let entity = if let Some(e) = entity {
+        Entity::from_str(&e).unwrap()
     } else {
-        scaffolder::scaffold_function();
+        Entity::Function
+    };
+    match entity {
+        Entity::Function => scaffolder::scaffold_functions(&dir),
+        _ => ()
     }
 }
 
@@ -989,13 +996,6 @@ pub async fn validate(maybe_entity: Option<String>) {
         }
         None => println!("Specify entity"),
     }
-}
-
-pub async fn scaffold_iac(profile: Option<String>, iac: Option<String>, out_dir: Option<String>) {
-    let dir = u::pwd();
-    let topology = composer::compose(&dir, true);
-    let auth = init(profile, None, None).await;
-    scaffolder::scaffold_iac(&auth, &topology, iac, out_dir).await
 }
 
 pub async fn inspect(
