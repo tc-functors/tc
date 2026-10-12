@@ -23,36 +23,36 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
 
     let tokens = match std::env::var("TC_MAX_LLM_TOKENS") {
         Ok(r) => r.trim().parse::<i32>().unwrap(),
-        Err(_) => 60000
+        Err(_) => 60000,
     };
+
+    let temperature = match std::env::var("TC_LLM_TEMPERATURE") {
+        Ok(r) => match r.trim() {
+            "" => None,
+            r => Some(r.parse::<f32>().unwrap()),
+        },
+        Err(_) => None,
+    };
+
+    let mut config = InferenceConfiguration::builder().max_tokens(tokens);
+    if let Some(temperature) = temperature {
+        config = config.temperature(temperature);
+    }
 
     let response = client
         .converse()
         .model_id(model)
         .messages(message)
-        .inference_config(
-            InferenceConfiguration::builder()
-                .max_tokens(tokens)
-                .temperature(0.7)
-                .build(),
-        )
+        .inference_config(config.build())
         .send()
         .await
-        .unwrap();
+        .expect("Bedrock Converse request failed");
 
-    let content = response
-        .output()
-        .unwrap()
-        .as_message()
-        .unwrap()
-        .content();
+    let content = response.output().unwrap().as_message().unwrap().content();
 
     let mut s: String = String::from("");
     for x in content {
-        let data = x
-            .as_text()
-            .unwrap()
-            .to_string();
+        let data = x.as_text().unwrap().to_string();
         s.push_str(&data)
     }
     s
