@@ -6,7 +6,7 @@ use provider::{
 use kit::*;
 use kit as u;
 
-const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
+const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-5-5";
 
 pub fn default_tc_skills(text: &str) -> String {
     let lines = v![
@@ -141,6 +141,8 @@ pub fn default_tc_skills(text: &str) -> String {
         "- All referenced entities must be defined",
         "- Routes must have valid HTTP methods",
         "- Function chains must be logical and non-circular",
+        "- Do not have duplicates in functions, events, channels, mutations or queues",
+        "- Avoid queues unless specified",
         "",
         "## Output Requirements",
         "",

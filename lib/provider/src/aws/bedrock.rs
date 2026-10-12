@@ -33,7 +33,6 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
         .inference_config(
             InferenceConfiguration::builder()
                 .max_tokens(tokens)
-                .temperature(0.7)
                 .build(),
         )
         .send()
@@ -48,12 +47,13 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
         .content();
 
     let mut s: String = String::from("");
+
     for x in content {
-        let data = x
-            .as_text()
-            .unwrap()
-            .to_string();
-        s.push_str(&data)
+        match x.as_text() {
+            Ok(r) => s.push_str(&r),
+            Err(err) => panic!("{:?}", &err)
+
+        }
     }
     s
 }
