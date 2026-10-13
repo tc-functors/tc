@@ -151,11 +151,13 @@ function handler(event) {{
             let path = u::absolutize(dir, &req);
             if u::file_exists(&path) {
                 let js = u::slurp(&path);
-                xs.insert("request".to_string(), js);
+                let name = template::maybe_namespace("request");
+                xs.insert(name, js);
             }
         } else {
             if kind == "spa" || kind == "SPA" {
-                xs.insert(s!("redirect"), redirect);
+                let name = template::maybe_namespace("redirect");
+                xs.insert(name, redirect);
             }
         }
 
@@ -163,12 +165,14 @@ function handler(event) {{
             let path = u::absolutize(dir, &res);
             if u::file_exists(&path) {
                 let js = u::slurp(&path);
-                xs.insert("response".to_string(), js);
+                let name = template::maybe_namespace("response");
+                xs.insert(name, js);
             }
         }
     } else {
         if kind == "spa" || kind == "SPA" {
-            xs.insert(s!("redirect"), redirect);
+            let name = template::maybe_namespace("redirect");
+            xs.insert(name, redirect);
         }
     }
     xs
