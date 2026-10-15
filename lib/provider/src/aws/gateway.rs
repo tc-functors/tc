@@ -516,7 +516,7 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
 fn make_log_config(log_group_arn: &str) -> AccessLogSettings {
     let f = AccessLogSettingsBuilder::default();
     let fmt = format!(
-        r#"{{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength", "responseLatency":"$context.responseLatency", "integrationLatency":"$context.integrationLatency" }}"#
+        r#"{{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength", "responseLatency":"$context.responseLatency", "integrationLatency":"$context.integrationLatency", "partner_name":"$context.authorizer.partner_name", "partner_uuid":"$context.authorizer.partner_uuid", "integrationRequestId":"$context.integration.requestId" }}"#
     );
     f.destination_arn(log_group_arn).format(fmt).build()
 }
