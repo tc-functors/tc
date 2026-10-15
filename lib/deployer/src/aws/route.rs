@@ -325,6 +325,7 @@ pub struct Gateway {
     pub domains: Vec<String>,
     pub paths: Vec<String>,
     pub manage: bool,
+    pub logging: String
 }
 
 pub fn collate_gateways(
@@ -350,6 +351,7 @@ pub fn collate_gateways(
             domains: vec![],
             paths: vec![],
             manage: false,
+            logging: route.logging.clone()
         };
         h.insert(route.gateway.clone(), gw);
     }
@@ -362,6 +364,7 @@ pub fn collate_gateways(
                 authorizer,
                 throttling,
                 verticals,
+                logging,
                 ..
             } = route;
 
@@ -435,6 +438,7 @@ pub fn collate_gateways(
                     domains: domains,
                     paths: paths,
                     manage: manage,
+                    logging: logging.to_string()
                 };
                 h.insert(gateway.to_string(), gw);
             }
@@ -480,6 +484,7 @@ async fn create_or_update_gateways(
             paths,
             manage,
             log_group,
+            logging,
             ..
         } = gateway;
         if !manage {
@@ -517,6 +522,7 @@ async fn create_or_update_gateways(
                 burst_limit,
                 rate_limit,
                 &log_group_arn,
+                &logging
             )
             .await;
 

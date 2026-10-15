@@ -68,6 +68,7 @@ pub struct Route {
     pub domains: HashMap<String, HashMap<String, Vec<String>>>,
     pub throttling: HashMap<String, HashMap<String, Throttling>>,
     pub verticals: HashMap<String, HashMap<String, Vec<String>>>,
+    pub logging: String
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -355,6 +356,7 @@ impl Route {
             throttling: find_throttling(infra_dir),
             cors: cors,
             verticals: find_verticals(infra_dir),
+            logging: find_logging(infra_dir),
             skip: skip,
         }
     }
@@ -373,6 +375,7 @@ pub struct Infra {
     pub throttling: Option<HashMap<String, HashMap<String, Throttling>>>,
     pub domains: Option<HashMap<String, HashMap<String, Domain>>>,
     pub verticals: Option<HashMap<String, HashMap<String, Vec<String>>>>,
+    pub logging: Option<HashMap<String, HashMap<String, String>>>,
 }
 
 impl Infra {
@@ -441,4 +444,35 @@ fn find_verticals(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String
     } else {
         HashMap::new()
     }
+}
+
+fn find_logging(infra_dir: &str) -> String {
+    let maybe_infra = Infra::new(infra_dir);
+    let mut default: HashMap<String, String> = HashMap::new();
+    default.insert(s!("requestId"), s!("$context.requestId"));
+    default.insert(s!("ip"), s!("$context.requestId"));
+    default.insert(s!("requestTime"), s!("$context.identity.sourceIp"));
+    default.insert(s!("httpMethod"), s!("$context.httpMethod"));
+    default.insert(s!("routeKey"), s!("$context.routeKey"));
+    default.insert(s!("status"), s!("$context.status"));
+    default.insert(s!("protocol"), s!("$context.protocol"));
+    default.insert(s!("responseLength"), s!("$context.responseLength"));
+    default.insert(s!("responseLatency"), s!("$context.responseLatency"));
+    default.insert(s!("integrationLatency"), s!("$context.integrationLatency"));
+
+    let s = if let Some(inf) = maybe_infra {
+        if let Some(logging) = &inf.logging {
+            if let Some(m) = logging.get("default") {
+                default.extend(m.clone());
+                default
+            } else {
+                default
+            }
+        } else {
+            default
+        }
+    } else {
+        default
+    };
+    serde_json::to_string(&s).unwrap()
 }

@@ -513,12 +513,9 @@ async fn stage_exists(client: &Client, api_id: &str, stage: &str) -> bool {
     }
 }
 
-fn make_log_config(log_group_arn: &str) -> AccessLogSettings {
+fn make_log_config(log_group_arn: &str, log_format: &str) -> AccessLogSettings {
     let f = AccessLogSettingsBuilder::default();
-    let fmt = format!(
-        r#"{{"requestId":"$context.requestId", "ip": "$context.identity.sourceIp", "requestTime":"$context.requestTime", "httpMethod":"$context.httpMethod","routeKey":"$context.routeKey", "status":"$context.status","protocol":"$context.protocol", "responseLength":"$context.responseLength", "responseLatency":"$context.responseLatency", "integrationLatency":"$context.integrationLatency" }}"#
-    );
-    f.destination_arn(log_group_arn).format(fmt).build()
+    f.destination_arn(log_group_arn).format(log_format).build()
 }
 
 async fn create_stage(
@@ -528,10 +525,11 @@ async fn create_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
     log_group_arn: &str,
+    log_format: &str
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     tracing::debug!("Creating stage {} lg:{}", &stage.green(), log_group_arn);
-    let log_config = make_log_config(log_group_arn);
+    let log_config = make_log_config(log_group_arn, log_format);
     client
         .create_stage()
         .api_id(s!(api_id))
@@ -551,9 +549,10 @@ async fn update_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
     log_group_arn: &str,
+    log_format: &str
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
-    let log_config = make_log_config(log_group_arn);
+    let log_config = make_log_config(log_group_arn, log_format);
     client
         .update_stage()
         .api_id(s!(api_id))
@@ -573,6 +572,7 @@ pub async fn create_or_update_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
     log_group_arn: &str,
+    log_format: &str
 ) {
     if stage_exists(client, api_id, stage).await {
         update_stage(
@@ -582,6 +582,7 @@ pub async fn create_or_update_stage(
             burst_limit,
             rate_limit,
             log_group_arn,
+            log_format
         )
         .await;
     } else {
@@ -592,6 +593,7 @@ pub async fn create_or_update_stage(
             burst_limit,
             rate_limit,
             log_group_arn,
+            log_format
         )
         .await;
     }
