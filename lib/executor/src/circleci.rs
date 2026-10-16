@@ -57,7 +57,7 @@ impl Circle {
     }
 
     fn context_url(&self, context_id: &str, key: &str) -> String {
-        if key == "" {
+          if key == "" {
             format!(
                 "https://circleci.com/api/v2/context/{}/environment-variable",
                 context_id
@@ -131,11 +131,12 @@ pub async fn trigger_tag(
            {{
              "branch": "main",
              "parameters": {{
+              "region": "{region}",
               "tc-deploy-service": "{prefix}",
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
-              "tc-deploy-opts": "--notify --recursive --force --region {region} --concurrency {concurrency}",
+              "tc-deploy-opts": "--notify --recursive --force --concurrency {concurrency}",
               "api_call": true
            }}}}"#
         )
@@ -145,19 +146,21 @@ pub async fn trigger_tag(
            {{
              "branch": "main",
              "parameters": {{
+              "region": "{region}",
               "tc-deploy-service": "{prefix}",
               "tc-deploy-version": "{version}",
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
-              "tc-deploy-opts": "--notify --recursive --region {region} --concurrency {concurrency}",
+              "tc-deploy-opts": "--notify --recursive --concurrency {concurrency}",
               "api_call": true
            }}}}"#
         )
     };
     println!(
-        "Triggering tag deploy {}:{}:{}/{}",
-        env, sandbox, prefix, version
+        "Triggering tag deploy {}:{}:{}/{}:{}",
+        env, sandbox, prefix, region, version
     );
+    println!("With payload {}", &payload);
     ci.trigger_workflow(payload).await
 }
 
@@ -175,7 +178,7 @@ pub async fn trigger_branch(
              "branch": "main",
              "parameters": {{
               "tc-deploy-service": "{prefix}",
-              "tc-deploy-branch": "{branch}",
+               "tc-deploy-branch": "{branch}",
               "tc-deploy-only-branch": true,
               "tc-deploy-sandbox": "{sandbox}",
               "tc-deploy-env": "{env}",
