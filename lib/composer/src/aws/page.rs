@@ -127,12 +127,12 @@ pub struct Page {
     pub default_root_object: String,
     pub domains: HashMap<String, HashMap<String, String>>,
     pub config_template: Option<String>,
-    pub functions: HashMap<String, String>,
+    pub functions: HashMap<String, (String, String)>,
     pub skip_deploy: bool,
 }
 
-fn make_functions(kind: &str, dir: &str, fns: Option<Functions>) -> HashMap<String, String> {
-    let mut xs: HashMap<String, String> = HashMap::new();
+fn make_functions(kind: &str, dir: &str, fns: Option<Functions>) -> HashMap<String, (String, String)> {
+    let mut xs: HashMap<String, (String, String)> = HashMap::new();
     let redirect = format!(
         r#"
 function handler(event) {{
@@ -146,33 +146,27 @@ function handler(event) {{
 "#
     );
 
+
     if let Some(f) = fns {
         if let Some(req) = f.request {
             let path = u::absolutize(dir, &req);
             if u::file_exists(&path) {
                 let js = u::slurp(&path);
                 let name = template::maybe_namespace("request");
-                xs.insert(name, js);
-            }
-        } else {
-            if kind == "spa" || kind == "SPA" {
-                let name = template::maybe_namespace("redirect");
-                xs.insert(name, redirect);
+                xs.insert(name, (s!("request"), js));
             }
         }
-
+        if kind == "spa" || kind == "SPA" {
+            let name = template::maybe_namespace("redirect");
+            xs.insert(name, (s!("redirect"), redirect));
+        }
         if let Some(res) = f.response {
             let path = u::absolutize(dir, &res);
             if u::file_exists(&path) {
                 let js = u::slurp(&path);
                 let name = template::maybe_namespace("response");
-                xs.insert(name, js);
+                xs.insert(name, (s!("response"), js));
             }
-        }
-    } else {
-        if kind == "spa" || kind == "SPA" {
-            let name = template::maybe_namespace("redirect");
-            xs.insert(name, redirect);
         }
     }
     xs

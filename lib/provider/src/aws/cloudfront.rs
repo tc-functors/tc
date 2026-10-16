@@ -181,6 +181,7 @@ fn make_function_associations(functions: HashMap<String, String>) -> FunctionAss
     } else {
         let mut assocs: Vec<FunctionAssociation> = vec![];
         for (kind, arn) in functions {
+            println!("Associating function {} {}", &kind, &arn);
             assocs.push(make_function_assoc(&kind, &arn));
         }
         it.quantity(len).set_items(Some(assocs)).build().unwrap()

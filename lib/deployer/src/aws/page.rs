@@ -253,10 +253,11 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 }
 
-fn as_function_arns(auth: &Auth, functions: &HashMap<String, String>) -> HashMap<String, String> {
+fn as_function_arns(auth: &Auth, functions: &HashMap<String, (String, String)>) -> HashMap<String, String> {
     let mut xs: HashMap<String, String> = HashMap::new();
-    for (name, _) in functions {
-        xs.insert(name.to_string(), auth.cloudfront_function_arn(&name));
+    for (name, (kind, _)) in functions {
+        println!("Updating CF function {} - {}", &kind, &name);
+        xs.insert(kind.to_string(), auth.cloudfront_function_arn(&name));
     }
     xs
 }
@@ -316,7 +317,7 @@ async fn create_or_update_distribution(
         as_function_arns(auth, functions),
     );
 
-    for (name, handler) in functions {
+    for (name, (_kind, handler)) in functions {
         println!("Configuring page: creating function {}", name);
         cloudfront::create_or_update_function(&client, name, handler).await;
     }
@@ -441,13 +442,17 @@ async fn update_domains(
     }
 }
 
-async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>) {
+async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>, sandbox: &str) {
     let client = cloudfront::make_client(auth).await;
-    for (_, page) in pages {
-        for (name, handler) in &page.functions {
+    for (pname, page) in pages {
+        for (name, (_kind, handler)) in &page.functions {
             println!("Configuring page {} - creating function", &name);
             cloudfront::create_or_update_function(&client, &name, &handler).await;
+
         }
+        let maybe_domain = find_domain(&page.domains, &auth.name, sandbox);
+        let _  =
+            create_or_update_distribution(auth, pname, page, sandbox, maybe_domain.clone()).await;
     }
 }
 
@@ -462,7 +467,7 @@ pub async fn update(
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,
         "domains" => update_domains(auth, pages, config, sandbox).await,
-        "functions" => update_functions(auth, pages).await,
+        "functions" => update_functions(auth, pages, sandbox).await,
         "build" => {
             for (name, page) in pages {
                 build_page(auth, &page.dir, name, &page.build, &page.config_template).await;
