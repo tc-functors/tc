@@ -12,6 +12,7 @@ use question::{
     Answer,
     Question,
 };
+use configurator as c;
 
 pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
     let Topology { fqn, kind, .. } = topology;
@@ -40,7 +41,7 @@ pub async fn should_abort(auth: &Auth, sandbox: &str, _topology: &Topology) -> b
             },
             Err(_) => false,
         },
-        Err(_) => match std::env::var("TC_ALLOW_STABLE") {
+        Err(_) => match c::getenv("TC_ALLOW_STABLE") {
             Ok(_) => false,
             Err(_) => true,
         },

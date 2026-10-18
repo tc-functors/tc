@@ -10,6 +10,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Build {
@@ -46,7 +47,7 @@ fn infer_kind(package_type: &str) -> BuildKind {
 
 fn as_default_package_manager(lang: &Lang) -> String {
     match lang {
-        Lang::Python => match std::env::var("TC_PYTHON_PACKAGE_MANAGER") {
+        Lang::Python => match c::getenv("TC_PYTHON_PACKAGE_MANAGER") {
             Ok(r) => r,
             Err(_) => String::from("poetry"),
         },
@@ -73,7 +74,7 @@ impl Build {
                 command: b.command,
                 pack: b.pack.unwrap_or(String::from("echo 0")),
                 version: b.version.clone(),
-                shared_context: match std::env::var("TC_USE_SHARED_CONTEXT") {
+                shared_context: match c::getenv("TC_USE_SHARED_CONTEXT") {
                     Ok(_) => true,
                     Err(_) => match b.shared_context {
                         Some(s) => s,
@@ -120,7 +121,7 @@ impl Build {
                 // FIXME
                 bucket: match b.bucket {
                     Some(d) => d,
-                    None => match std::env::var("TC_ASSET_BUCKET") {
+                    None => match c::getenv("TC_ASSET_BUCKET") {
                         Ok(s) => s,
                         Err(_) => format!("{{{{ASSET_BUCKET}}}}"),
                     },

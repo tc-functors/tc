@@ -8,6 +8,7 @@ use aws_sdk_bedrockruntime::{
         Message,
     },
 };
+use configurator as c;
 
 pub async fn make_client(auth: &Auth) -> Client {
     let shared_config = &auth.aws_config;
@@ -21,7 +22,7 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
         .build()
         .unwrap();
 
-    let tokens = match std::env::var("TC_MAX_LLM_TOKENS") {
+    let tokens = match c::getenv("TC_MAX_LLM_TOKENS") {
         Ok(r) => r.trim().parse::<i32>().unwrap(),
         Err(_) => 60000
     };

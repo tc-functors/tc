@@ -10,6 +10,7 @@ use provider::{
     },
 };
 use std::collections::HashMap;
+use configurator as c;
 
 async fn update_permissions(auth: &Auth, event: &Event) {
     for target in event.targets.clone() {
@@ -30,7 +31,7 @@ async fn update_permissions(auth: &Auth, event: &Event) {
 }
 
 fn should_prune() -> bool {
-    match std::env::var("TC_PRUNE_EVENT_RULES") {
+    match c::getenv("TC_PRUNE_EVENT_RULES") {
         Ok(_) => true,
         Err(_) => false,
     }
@@ -61,7 +62,7 @@ async fn create_event(auth: &Auth, event: &Event, tags: &HashMap<String, String>
 
     let client = eventbridge::make_client(&auth).await;
 
-    match std::env::var("TC_SANDBOXED_EVENTS") {
+    match c::getenv("TC_SANDBOXED_EVENTS") {
         Ok(_) => {
             eventbridge::find_or_create_bus(&client, &bus).await;
         }

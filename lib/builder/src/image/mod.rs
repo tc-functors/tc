@@ -15,6 +15,7 @@ use compiler::{
 };
 use composer::Build;
 use configurator::Config;
+use configurator as c;
 use itertools::Itertools;
 use kit as u;
 use kit::sh;
@@ -129,7 +130,7 @@ pub async fn build(
 
     let config = Config::new();
 
-    let repo = match std::env::var("TC_ECR_REPO") {
+    let repo = match c::getenv("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
@@ -188,7 +189,7 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     aws::ecr::login(&auth, &dir).await;
     let cmd = format!("AWS_PROFILE={} docker push {}", &auth.name, artifact);
     u::run(&cmd, &dir);
-    match std::env::var("TC_BUILD_CACHE_CLEAN") {
+    match c::getenv("TC_BUILD_CACHE_CLEAN") {
         Ok(_) => cleanup_docker(artifact, dir),
         Err(_) => (),
     }
@@ -212,14 +213,14 @@ pub async fn sync(auth: &Auth, build: &BuildOutput) {
 
 pub async fn shell(auth: &Auth, dir: &str, uri: &str, version: Option<String>, kind: BuildKind) {
     let config = Config::new();
-    let repo = match std::env::var("TC_ECR_REPO") {
+    let repo = match c::getenv("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
     aws::ecr::login(auth, &dir).await;
     let uri = render_uri(uri, repo);
 
-    let uri = match std::env::var("TC_IMAGE_URI") {
+    let uri = match c::getenv("TC_IMAGE_URI") {
         Ok(k) => k,
         Err(_) => match kind {
             BuildKind::Image => find_base_image_uri(&uri, version.clone()),

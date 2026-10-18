@@ -9,6 +9,7 @@ pub mod lambda;
 mod microvm;
 use builder::BuildOpts;
 use tabled::Tabled;
+use configurator as c;
 
 async fn maybe_build(auth: &Auth, function: &Function, force: bool) {
     let opts = BuildOpts {
@@ -34,7 +35,7 @@ async fn create_function(
 }
 
 fn get_chunk_size(concurrency: i32) -> usize {
-    match std::env::var("TC_DEPLOYER_CONCURRENCY") {
+    match c::getenv("TC_DEPLOYER_CONCURRENCY") {
         Ok(n) => n.parse::<usize>().unwrap(),
         Err(_) => concurrency.try_into().unwrap(),
     }

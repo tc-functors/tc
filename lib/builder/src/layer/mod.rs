@@ -13,6 +13,7 @@ use compiler::{
     Lang,
     LangRuntime,
 };
+use configurator as c;
 use composer::Build;
 use kit as u;
 use kit::sh;
@@ -158,7 +159,7 @@ pub fn copy_from_docker(dir: &str) {
 
 pub fn build_with_docker(dir: &str) -> (bool, String, String) {
     let root = &u::root();
-    let cmd_str = match std::env::var("DOCKER_SSH") {
+    let cmd_str = match c::getenv("DOCKER_SSH") {
         Ok(e) => format!(
             "docker build --no-cache  --platform=linux/amd64 --ssh default={} --secret id=aws,src=$HOME/.aws/credentials --build-context shared={root} . -t {}",
             &e,

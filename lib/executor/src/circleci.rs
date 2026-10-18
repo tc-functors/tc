@@ -6,6 +6,7 @@ use std::{
     env,
     panic,
 };
+use configurator as c;
 
 #[derive(Clone, Debug)]
 pub struct Circle {
@@ -15,7 +16,7 @@ pub struct Circle {
 }
 
 fn find_org() -> String {
-    match std::env::var("GITHUB_ORG") {
+    match c::getenv("GITHUB_ORG") {
         Ok(k) => k,
         Err(_) => {
             let s1 = u::sh("git config --get remote.origin.url", &u::pwd());

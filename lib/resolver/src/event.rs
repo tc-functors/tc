@@ -14,6 +14,7 @@ use provider::{
     Auth,
     aws,
 };
+use configurator as c;
 use std::collections::HashMap;
 
 fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {
@@ -133,7 +134,7 @@ pub async fn resolve(ctx: &Context, topology: &Topology) -> HashMap<String, Even
 
         event.targets = targets;
 
-        let guard = match std::env::var("TC_CREATE_EVENTS") {
+        let guard = match c::getenv("TC_CREATE_EVENTS") {
             Ok(_) => false,
             Err(_) => config.deployer.guard_stable_updates,
         };

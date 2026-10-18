@@ -30,6 +30,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {
@@ -265,7 +266,7 @@ pub fn lookup_role(
                     None => Role::new(Entity::Function, &p, namespace, function_name),
                 }
             } else {
-                match std::env::var("TC_LEGACY_ROLES") {
+                match c::getenv("TC_LEGACY_ROLES") {
                     Ok(_) => Role::provided_by_entity(Entity::Function),
                     Err(_) => Role::default(Entity::Function),
                 }

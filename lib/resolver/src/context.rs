@@ -2,6 +2,7 @@ use configurator::Config;
 use kit as u;
 use provider::Auth;
 use std::collections::HashMap;
+use configurator as c;
 
 fn abbr(name: &str) -> String {
     if name.chars().count() > 15 {
@@ -33,17 +34,17 @@ impl Context {
         let region = &self.auth.region;
         let abbr_namespace = abbr(&self.namespace);
 
-        let repo = match std::env::var("TC_ECR_REPO") {
+        let repo = match c::getenv("TC_ECR_REPO") {
             Ok(r) => &render_region(&r, &region),
             Err(_) => &render_region(&self.config.aws.ecr.repo, &region),
         };
 
-        let bucket = match std::env::var("TC_ASSET_BUCKET") {
+        let bucket = match c::getenv("TC_ASSET_BUCKET") {
             Ok(r) => &render_region(&r, &region),
             Err(_) => &self.config.aws.lambda.asset_bucket,
         };
 
-        let asset_acc = match std::env::var("TC_ASSET_ACCOUNT") {
+        let asset_acc = match c::getenv("TC_ASSET_ACCOUNT") {
             Ok(r) => &r.to_owned(),
             Err(_) => {
                 if let Some(c) = &self.config.aws.lambda.asset_account {

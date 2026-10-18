@@ -39,7 +39,7 @@ RUN --mount=type=ssh /slab.sh
 }
 
 pub fn build_with_docker(dir: &str) {
-    let cmd_str = match std::env::var("DOCKER_SSH") {
+    let cmd_str = match c::getenv("DOCKER_SSH") {
         Ok(e) => format!(
             "docker build --no-cache  --ssh default={} --secret id=aws,src=$HOME/.aws/credentials . -t {}",
             &e,

@@ -19,8 +19,11 @@ pub fn init_env(dir: &str, name: Option<String>) {
     env::init(dir, name);
 }
 
-pub fn getenv(e: &str) -> Option<String> {
-    env::get(e)
+pub fn getenv(e: &str) -> Result<String, ()> {
+    match env::get(e) {
+        Some(p) => Ok(p),
+        None => Err(())
+    }
 }
 
 pub fn getenvs() -> HashMap<String, String> {

@@ -34,6 +34,7 @@ use tabled::{
     Style,
     Table,
 };
+use configurator as c;
 
 pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, force: bool) {
     let Topology {
@@ -71,7 +72,7 @@ pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, 
         &version
     );
 
-    match std::env::var("TC_UPDATE_BASE_ROLES") {
+    match c::getenv("TC_UPDATE_BASE_ROLES") {
         Ok(_) => role::update_base_roles(auth, base_roles, tags).await,
         Err(_) => {
             if namespace == "base" || sandbox != "stable" {

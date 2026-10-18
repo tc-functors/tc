@@ -14,6 +14,7 @@ use futures::stream::{
 };
 use provider::Auth;
 use std::collections::HashMap;
+use configurator as c;
 
 /// Per-loop-level cap on concurrent in-flight resolve futures.
 /// Override via `TC_RESOLVE_CONCURRENCY=N`; values are clamped to
@@ -34,7 +35,7 @@ use std::collections::HashMap;
 /// account limit). 256 in-flight × ~150 ms/call ≈ 1.7k requests/s,
 /// comfortably within SSM's burst budget.
 pub(crate) fn resolve_concurrency() -> usize {
-    std::env::var("TC_RESOLVE_CONCURRENCY")
+    c::getenv("TC_RESOLVE_CONCURRENCY")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
         .filter(|n| *n > 0)
@@ -54,7 +55,7 @@ pub(crate) const MAX_RESOLVE_CONCURRENCY: usize = 64;
 pub fn maybe_sandbox(s: Option<String>) -> String {
     match s {
         Some(sandbox) => sandbox,
-        None => match std::env::var("TC_SANDBOX") {
+        None => match c::getenv("TC_SANDBOX") {
             Ok(e) => e,
             Err(_) => panic!("Please specify sandbox or set TC_SANDBOX env variable"),
         },

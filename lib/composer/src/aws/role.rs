@@ -13,6 +13,7 @@ use serde_derive::{
     Serialize,
 };
 use trust::Trust;
+use configurator as c;
 
 fn read_policy(path: &str) -> Policy {
     tracing::debug!("Reading {}", path);
@@ -62,7 +63,7 @@ pub struct Role {
 }
 
 fn should_be_region_specific() -> bool {
-    match std::env::var("TC_USE_GLOBAL_ROLES") {
+    match c::getenv("TC_USE_GLOBAL_ROLES") {
         Ok(_) => false,
         Err(_) => true,
     }
@@ -189,7 +190,7 @@ impl Role {
     }
 
     pub fn default(entity: Entity) -> Role {
-        match std::env::var("TC_LEGACY_ROLES") {
+        match c::getenv("TC_LEGACY_ROLES") {
             Ok(_) => {
                 let name = find_legacy_role_name(entity.clone());
                 Role {
@@ -270,7 +271,7 @@ impl Role {
     }
 
     pub fn provided_by_entity(entity: Entity) -> Role {
-        let name = match std::env::var("TC_LEGACY_ROLES") {
+        let name = match c::getenv("TC_LEGACY_ROLES") {
             Ok(_) => legacy_name_of(entity),
             Err(_) => name_of(entity),
         };
@@ -287,7 +288,7 @@ impl Role {
     }
 
     pub fn entity_role_arn(entity: Entity) -> String {
-        match std::env::var("TC_LEGACY_ROLES") {
+        match c::getenv("TC_LEGACY_ROLES") {
             Ok(_) => {
                 let name = legacy_name_of(entity);
                 template::role_arn(&name)

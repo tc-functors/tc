@@ -7,6 +7,7 @@ pub mod pipeline;
 use compiler::TopologyKind;
 use composer::Topology;
 use configurator::Config;
+use configurator as c;
 pub use manifest::Manifest;
 use provider::aws;
 use serde_derive::{
@@ -234,7 +235,7 @@ pub async fn snapshot_topologies(
 
 async fn init_auth(target_profile: &str, region: Option<String>) -> Auth {
     let config = composer::config(&u::pwd());
-    match std::env::var("TC_ASSUME_ROLE") {
+    match c::getenv("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = config.ci.roles.get(target_profile).cloned();
             Auth::new(Some(target_profile.to_string()), role, region).await

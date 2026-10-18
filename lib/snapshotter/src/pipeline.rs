@@ -1,5 +1,6 @@
 use crate::Manifest;
 use kit as u;
+use configurator as c;
 
 fn make_job_def(env: &str, sandbox: &str, region: &str) -> String {
     format!(
@@ -92,7 +93,7 @@ fn approval_job() -> String {
 }
 
 pub fn generate_config(records: &Vec<Manifest>, env: &str, sandbox: &str, region: &str) -> String {
-    let job_def = match std::env::var("TC_FORCE_LATEST_VERSION") {
+    let job_def = match c::getenv("TC_FORCE_LATEST_VERSION") {
         Ok(_) => make_job_def(env, sandbox, region),
         Err(_) => make_job_def_pinned(env, sandbox, region),
     };

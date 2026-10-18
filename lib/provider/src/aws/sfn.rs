@@ -25,6 +25,7 @@ use aws_sdk_sfn::{
         },
     },
 };
+use configurator as c;
 use colored::Colorize;
 use kit::{
     LogUpdate,
@@ -79,7 +80,7 @@ fn make_log_config(log_group_arn: &str, include_data: bool) -> LoggingConfigurat
     let ld = LogDestinationBuilder::default();
     let destination = ld.cloud_watch_logs_log_group(group).build();
 
-    let log_level = match std::env::var("TC_SFN_LOG_LEVEL") {
+    let log_level = match c::getenv("TC_SFN_LOG_LEVEL") {
         Ok(v) => match v.as_ref() {
             "ALL" => LogLevel::All,
             "ERROR" => LogLevel::Error,

@@ -12,6 +12,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyStatement {
@@ -182,7 +183,7 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
                 } else {
                     match &config.aws.cloudfront.bucket {
                         Some(c) => c.to_string(),
-                        None => match std::env::var("TC_PAGES_BUCKET") {
+                        None => match c::getenv("TC_PAGES_BUCKET") {
                             Ok(e) => e,
                             Err(_) => String::from(""),
                         },
@@ -191,7 +192,7 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
             }
             None => match &config.aws.cloudfront.bucket {
                 Some(c) => c.to_string(),
-                None => match std::env::var("TC_PAGES_BUCKET") {
+                None => match c::getenv("TC_PAGES_BUCKET") {
                     Ok(e) => e,
                     Err(_) => String::from(""),
                 },

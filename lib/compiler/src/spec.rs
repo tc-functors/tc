@@ -9,6 +9,7 @@ use std::{
     collections::HashMap,
     path::PathBuf,
 };
+use configurator as c;
 
 pub mod channel;
 pub mod event;
@@ -194,7 +195,7 @@ impl TopologySpec {
             tracing::debug!("Loading topology {}", topology_spec_file);
             let path = PathBuf::from(topology_spec_file);
 
-            match std::env::var("TC_SPEC_SIMPLE") {
+            match c::getenv("TC_SPEC_SIMPLE") {
                 Ok(_) => {
                     let data: String = u::slurp(topology_spec_file);
                     let mut spec: TopologySpec = serde_yaml::from_str(&data).unwrap();

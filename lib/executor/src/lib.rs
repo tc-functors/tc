@@ -1,4 +1,5 @@
 pub mod circleci;
+use configurator as c;
 
 // this is a module that abstracts remote execution of tc commands in a remote executor
 
@@ -109,7 +110,7 @@ pub async fn list_vars() -> Vec<String> {
 }
 
 pub fn current_url() -> String {
-    let url = match std::env::var("CIRCLE_BUILD_URL") {
+    let url = match c::getenv("CIRCLE_BUILD_URL") {
         Ok(r) => r,
         Err(_) => String::from(""),
     };

@@ -1,6 +1,7 @@
 use colored::Colorize;
 use composer::Function;
 use configurator::Config;
+use configurator as c;
 use kit as u;
 use kit::*;
 use provider::{
@@ -73,7 +74,7 @@ EOF
 }
 
 fn docker_run_cmd(name: &str, lang: &str) -> String {
-    let env = match std::env::var("AWS_PROFILE") {
+    let env = match c::getenv("AWS_PROFILE") {
         Ok(e) => e,
         Err(_) => s!("dev"),
     };

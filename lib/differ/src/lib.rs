@@ -33,6 +33,8 @@ use std::{
     },
 };
 
+use configurator as c;
+
 /// Error returned by [`diff_fns`] when an incremental diff cannot be
 /// computed. Surfaced as a typed error so callers (e.g. the resolver)
 /// can distinguish "no functions changed" from "diff could not be
@@ -242,7 +244,7 @@ fn build_diff_set(
         ""
     });
     let mut rels: Vec<String> = find_between_versions_in(namespace, from, to, dir);
-    if include_local && std::env::var("CI").is_err() {
+    if include_local && c::getenv("CI").is_err() {
         rels.extend(files_modified_uncommitted_in(dir));
         rels.extend(files_modified_in_branch_in(dir));
         rels.extend(files_untracked_in(dir));
@@ -917,7 +919,7 @@ mod tests {
         // Setting/unsetting CI globally inside a single test is racy
         // because env mutation isn't thread-safe across cargo's parallel
         // test runner; punt cleanly instead.
-        if std::env::var("CI").is_ok() {
+        if c::getenv("CI").is_ok() {
             eprintln!("skipping include_local=true test under CI=1");
             return;
         }

@@ -2,13 +2,14 @@ pub mod aws;
 
 pub use aws::Auth;
 use configurator::Config;
+use configurator as c;
 
 pub async fn init(
     profile: Option<String>,
     assume_role: Option<String>,
     region: Option<String>,
 ) -> Auth {
-    match std::env::var("TC_ASSUME_ROLE") {
+    match c::getenv("TC_ASSUME_ROLE") {
         Ok(_) => {
             let role = match assume_role {
                 Some(r) => Some(r),

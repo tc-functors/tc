@@ -22,6 +22,7 @@ use kit::{
     AsyncMemo,
     *,
 };
+use configurator as c;
 use provider::{
     Auth,
     aws,
@@ -251,7 +252,7 @@ async fn resolve_layers(ctx: &Context, layers: Vec<String>) -> Vec<String> {
         } else if layer.contains(":") {
             xs.push(as_layer_arn(&auth, &layer))
         } else if *sandbox != "stable" {
-            let name = match std::env::var("TC_USE_STABLE_LAYERS") {
+            let name = match c::getenv("TC_USE_STABLE_LAYERS") {
                 Ok(_) => layer,
                 Err(_) => format!("{}-dev", &layer),
             };
@@ -479,7 +480,7 @@ pub async fn resolve(
     topology: &Topology,
     force: bool,
 ) -> HashMap<String, Function> {
-    let fns: HashMap<String, Function> = match std::env::var("TC_FORCE_DEPLOY") {
+    let fns: HashMap<String, Function> = match c::getenv("TC_FORCE_DEPLOY") {
         Ok(_) => topology.functions.clone(),
         Err(_) => {
             if force {

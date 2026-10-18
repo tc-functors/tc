@@ -13,6 +13,7 @@ use compiler::{
     Lang,
     LangRuntime,
 };
+use configurator as c;
 use composer::Build;
 use kit as u;
 use kit::sh;
@@ -58,7 +59,7 @@ fn gen_dockerignore(dir: &str) -> bool {
 }
 
 async fn get_token(auth: &Auth) -> String {
-    match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
+    match c::getenv("CODEARTIFACT_AUTH_TOKEN") {
         Ok(t) => t,
         Err(_) => {
             let client = aws::codeartifact::make_client(auth).await;
@@ -192,9 +193,9 @@ fn zip(dir: &str, langr: &LangRuntime) {
 
 async fn should_build_deps(auth: &Auth, uri: &str, use_asset_store: bool) -> bool {
     if use_asset_store {
-        match std::env::var("TC_SKIP_BUILD") {
+        match c::getenv("TC_SKIP_BUILD") {
             Ok(_) => false,
-            Err(_) => match std::env::var("TC_USE_ASSET_STORE") {
+            Err(_) => match c::getenv("TC_USE_ASSET_STORE") {
                 Ok(_) => {
                     if uri.is_empty() {
                         return true;
@@ -202,7 +203,7 @@ async fn should_build_deps(auth: &Auth, uri: &str, use_asset_store: bool) -> boo
                     let (bucket, key) = s3::parts_of(uri);
                     let client = s3::make_client(auth).await;
                     let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
-                    match std::env::var("TC_FORCE_PUBLISH") {
+                    match c::getenv("TC_FORCE_PUBLISH") {
                         Ok(_) => true,
                         Err(_) => match maybe_size {
                             Some(_size) => false,
@@ -274,7 +275,7 @@ pub async fn build(
 
         zip(dir, langr);
         bar.inc(7);
-        match std::env::var("TC_INSPECT_BUILD") {
+        match c::getenv("TC_INSPECT_BUILD") {
             Ok(_) => (),
             Err(_) => {
                 sh("rm -rf build build.json", dir);
@@ -306,7 +307,7 @@ pub async fn publish(auth: &Auth, build: &BuildOutput) {
     let (bucket, key) = s3::parts_of(&build.uri);
     let client = s3::make_client(auth).await;
     let maybe_size = s3::get_object_size(&client, &bucket, &key).await;
-    let should_publish = match std::env::var("TC_FORCE_PUBLISH") {
+    let should_publish = match c::getenv("TC_FORCE_PUBLISH") {
         Ok(_) => true,
         Err(_) => match maybe_size {
             Some(_size) => false,

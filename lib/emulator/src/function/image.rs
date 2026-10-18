@@ -1,6 +1,7 @@
 use colored::Colorize;
 use composer::Function;
 use configurator::Config;
+use configurator as c;
 use kit as u;
 use provider::{
     Auth,
@@ -19,12 +20,12 @@ pub async fn run(auth: &Auth, dir: &str, function: &Function, _shell: bool) {
 
     let config = Config::new();
 
-    let repo = match std::env::var("TC_ECR_REPO") {
+    let repo = match c::getenv("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
 
-    let uri = match std::env::var("CODE_IMAGE_URI") {
+    let uri = match c::getenv("CODE_IMAGE_URI") {
         Ok(p) => p,
         Err(_) => function.runtime.uri.clone(),
     };

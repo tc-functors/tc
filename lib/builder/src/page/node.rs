@@ -1,5 +1,6 @@
 use kit as u;
 use kit::*;
+use configurator as c;
 
 fn find_copy_command(_dir: &str, ct: &Option<String>) -> String {
     if let Some(p) = ct {
@@ -15,7 +16,7 @@ pub fn gen_dockerfile(dir: &str, command: &str, config_template: &Option<String>
 
     let copy_config_cmd = find_copy_command(dir, config_template);
 
-    let token = match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
+    let token = match c::getenv("CODEARTIFACT_AUTH_TOKEN") {
         Ok(t) => t,
         Err(_) => String::from(""),
     };

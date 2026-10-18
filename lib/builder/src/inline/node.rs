@@ -1,10 +1,11 @@
 use kit as u;
+use configurator as c;
 
 pub fn gen_dockerfile(dir: &str) {
     let install_cmd = "yarn install --no-lockfile --production";
     let image = "node:22-alpine3.19";
 
-    let token = match std::env::var("CODEARTIFACT_AUTH_TOKEN") {
+    let token = match c::getenv("CODEARTIFACT_AUTH_TOKEN") {
         Ok(t) => t,
         Err(_) => String::from(""),
     };

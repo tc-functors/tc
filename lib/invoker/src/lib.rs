@@ -6,6 +6,7 @@ mod state;
 use compiler::Entity;
 use composer::Topology;
 use configurator::Config;
+use configurator as c;
 use kit as u;
 use provider::{
     aws,
@@ -35,7 +36,7 @@ fn find_bucket() -> String {
     let maybe_bucket = cfg.tester.bucket;
     match maybe_bucket {
         Some(b) => b,
-        None => match std::env::var("TC_TEST_BUCKET") {
+        None => match c::getenv("TC_TEST_BUCKET") {
             Ok(p) => p,
             Err(_) => panic!("No test bucket specified"),
         },

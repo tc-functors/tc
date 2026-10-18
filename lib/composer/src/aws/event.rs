@@ -15,6 +15,7 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
+use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {
@@ -342,7 +343,7 @@ impl Event {
             None => EventPattern::new(event_name, producer.to_vec(), filter.clone()),
         };
 
-        let bus = match std::env::var("TC_SANDBOXED_EVENTS") {
+        let bus = match c::getenv("TC_SANDBOXED_EVENTS") {
             Ok(_) => &format!("tc-{{{{sandbox}}}}"),
             Err(_) => &config.aws.eventbridge.bus,
         };

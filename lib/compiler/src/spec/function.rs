@@ -9,6 +9,7 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
+use configurator as c;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
@@ -540,7 +541,7 @@ fn references_version(s: &str) -> bool {
 }
 
 pub fn find_fspec_file(dir: &str) -> String {
-    let name = match std::env::var("TC_FUNCTION_SPEC") {
+    let name = match c::getenv("TC_FUNCTION_SPEC") {
         Ok(r) => r,
         Err(_) => "function.yml".to_string(),
     };

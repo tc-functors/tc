@@ -6,9 +6,10 @@ use provider::{
     Auth,
     aws,
 };
+use configurator as c;
 
 async fn get_token(auth: &Auth) -> String {
-    match std::env::var("TC_USE_CODEARTIFACT") {
+    match c::getenv("TC_USE_CODEARTIFACT") {
         Ok(_) => {
             let auth = provider::init_centralized_auth(auth, None).await;
             let client = aws::codeartifact::make_client(&auth).await;
@@ -27,7 +28,7 @@ async fn build_with_docker(auth: &Auth, dir: &str) -> (bool, String, String) {
 
     let token = get_token(auth).await;
 
-    let cmd_str = match std::env::var("DOCKER_SSH") {
+    let cmd_str = match c::getenv("DOCKER_SSH") {
         Ok(e) => format!(
             "docker buildx build --platform=linux/amd64 --ssh default={} --build-arg AUTH_TOKEN={} -t {} --build-context shared={root} .",
             &e,

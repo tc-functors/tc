@@ -7,6 +7,7 @@ use provider::{
         s3files,
     },
 };
+use configurator as c;
 
 fn make_policy(bucket: &str, account: &str, region: &str) -> String {
     format!(
@@ -169,7 +170,7 @@ pub async fn create_s3_fs(auth: &Auth, opts: FsOpts) -> String {
         create_role(auth, &name, &bucket).await
     };
 
-    match std::env::var("TC_CREATE_FS_BUCKET") {
+    match c::getenv("TC_CREATE_FS_BUCKET") {
         Ok(_) => {
             let s3_client = s3::make_client(auth).await;
             s3::find_or_create_bucket(&s3_client, &bucket, &auth.region).await;

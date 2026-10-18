@@ -10,6 +10,7 @@ use provider::{
     },
 };
 use std::collections::HashMap;
+use configurator as c;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: &Flow) {
     let Flow {
@@ -108,7 +109,7 @@ pub async fn update_logs(auth: &Auth, sfn_arn: &str, flow: &Flow) {
         ..
     } = flow;
 
-    let include_exec_data = match std::env::var("TC_SFN_DEBUG") {
+    let include_exec_data = match c::getenv("TC_SFN_DEBUG") {
         Ok(_) => true,
         Err(_) => {
             if mode == "Express" {

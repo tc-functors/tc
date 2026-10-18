@@ -21,6 +21,7 @@ use provider::{
         s3,
     },
 };
+use configurator as c;
 use std::collections::HashMap;
 
 async fn maybe_create_fs(auth: &Auth, fs: FileSystemSpec) -> FileSystemSpec {
@@ -58,7 +59,7 @@ fn make(f: &Function, tags: &HashMap<String, String>, force: bool) -> lambda::Fu
     let store = if force {
         None
     } else {
-        match std::env::var("TC_USE_ASSET_STORE") {
+        match c::getenv("TC_USE_ASSET_STORE") {
             Ok(_) => match &f.build.kind {
                 BuildKind::Inline => {
                     let (bucket, key) = s3::parts_of(&f.runtime.uri);
@@ -214,7 +215,7 @@ pub async fn update_tags(client: &Client, arn: &str, tags: &HashMap<String, Stri
 }
 
 pub async fn update_runtime_version(client: &Client, fns: &HashMap<String, Function>) {
-    match std::env::var("TC_LAMBDA_RUNTIME_VERSION") {
+    match c::getenv("TC_LAMBDA_RUNTIME_VERSION") {
         Ok(v) => {
             for (_, f) in fns {
                 if f.runtime.lang.to_lang() == Lang::Ruby {

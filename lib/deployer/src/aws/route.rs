@@ -7,6 +7,7 @@ use composer::{
         Target,
     },
 };
+use configurator as c;
 use itertools::Itertools;
 use kit as u;
 use kit::*;
@@ -125,7 +126,7 @@ async fn create_integration(
 }
 
 fn resolve_route(gateway: &Gateway, route: &Route) -> Route {
-    match std::env::var("TC_DISABLE_ROUTE_TRIM") {
+    match c::getenv("TC_DISABLE_ROUTE_TRIM") {
         Ok(_) => route.clone(),
         Err(_) => {
             let mut r: Route = route.clone();
@@ -535,7 +536,7 @@ async fn create_or_update_gateways(
                 )
                 .await;
 
-                match std::env::var("TC_UPDATE_DNS") {
+                match c::getenv("TC_UPDATE_DNS") {
                     Ok(_) => update_dns(auth, &domain, &gateway_domain).await,
                     Err(_) => println!("Skipping DNS record updates"),
                 };

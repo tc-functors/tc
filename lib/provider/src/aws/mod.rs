@@ -26,6 +26,8 @@ pub mod sqs;
 pub mod ssm;
 pub mod sts;
 
+use configurator as c;
+
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
 use kit::AsyncMemo;
@@ -86,7 +88,7 @@ impl Auth {
         region: Option<String>,
     ) -> Auth {
         match profile {
-            Some(_) => match std::env::var("TC_ASSUME_ROLE") {
+            Some(_) => match c::getenv("TC_ASSUME_ROLE") {
                 Ok(_) => Auth::new(profile, assume_role, region).await,
                 Err(_) => Auth::new(profile, None, region).await,
             },

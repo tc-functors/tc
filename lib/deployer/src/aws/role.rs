@@ -8,9 +8,10 @@ use provider::{
 };
 use serde_json::Value;
 use std::collections::HashMap;
+use configurator as c;
 
 fn should_delete() -> bool {
-    match std::env::var("TC_FORCE_DELETE") {
+    match c::getenv("TC_FORCE_DELETE") {
         Ok(_) => true,
         Err(_) => false,
     }
@@ -75,7 +76,7 @@ pub async fn create_aux(
 
                     let res = match diff {
                         Some(_) => true,
-                        None => match std::env::var("TC_FORCE_DEPLOY") {
+                        None => match c::getenv("TC_FORCE_DEPLOY") {
                             Ok(_) => true,
                             Err(_) => false,
                         },

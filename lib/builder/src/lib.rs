@@ -23,6 +23,7 @@ use std::{
     panic,
     str::FromStr,
 };
+use configurator as c;
 
 /// Writes a `.dockerignore` to `dir` and, if no user-managed `.dockerignore`
 /// exists at the repo root, also writes one there so that named build contexts
@@ -70,7 +71,7 @@ pub fn just_images(recursive: bool) -> Vec<BuildOutput> {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
     let config = Config::new();
     let mut outs: Vec<BuildOutput> = vec![];
-    let repo = match std::env::var("TC_ECR_REPO") {
+    let repo = match c::getenv("TC_ECR_REPO") {
         Ok(r) => &r.to_owned(),
         Err(_) => &config.aws.ecr.repo,
     };
@@ -221,7 +222,7 @@ pub async fn publish(auth: &Auth, builds: Vec<BuildOutput>) {
             BuildKind::Layer | BuildKind::Library | BuildKind::Extension => {
                 layer::publish(&auth, &build).await
             }
-            BuildKind::Inline => match std::env::var("TC_USE_ASSET_STORE") {
+            BuildKind::Inline => match c::getenv("TC_USE_ASSET_STORE") {
                 Ok(_) => inline::publish(&auth, &build).await,
                 Err(_) => (),
             },

@@ -14,9 +14,10 @@ use compiler::{
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
+use configurator as cfg;
 
 fn find_image_tag(dir: &str, namespace: &str) -> String {
-    match std::env::var("TC_VERSION_IMAGES") {
+    match cfg::getenv("TC_VERSION_IMAGES") {
         Ok(_) => u::current_semver(namespace),
         Err(_) => c::find_git_sha(dir),
     }
@@ -48,7 +49,7 @@ fn as_uri(
             }
         },
         _ => match build_kind {
-            BuildKind::Inline => match std::env::var("TC_USE_ASSET_STORE") {
+            BuildKind::Inline => match cfg::getenv("TC_USE_ASSET_STORE") {
                 Ok(_) => {
                     let key = format!("{}/{{{{version}}}}/functions/{}.zip", namespace, name);
                     format!("s3://{{{{ASSET_BUCKET}}}}/{}", &key)
