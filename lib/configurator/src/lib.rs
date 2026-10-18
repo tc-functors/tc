@@ -1,3 +1,5 @@
+mod env;
+
 use derivative::Derivative;
 use kit as u;
 use kit::*;
@@ -10,6 +12,23 @@ use std::{
     fs,
     process::exit,
 };
+
+
+// env
+pub fn init_env(dir: &str, name: Option<String>) {
+    env::init(dir, name);
+}
+
+pub fn getenv(e: &str) -> Option<String> {
+    env::get(e)
+}
+
+pub fn getenvs() -> HashMap<String, String> {
+    env::get_all()
+}
+
+// config
+
 
 fn default() -> String {
     s!("")

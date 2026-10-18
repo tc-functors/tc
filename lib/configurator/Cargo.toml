@@ -10,4 +10,5 @@ serde_derive = "1.0"
 serde_yaml = "0.9.25"
 tracing = "0.1"
 derivative = "2.2.0"
+dotenvy = "0.15"
 kit = { path = "../kit" }

@@ -68,6 +68,13 @@ pub fn config(dir: &str) -> Config {
     t.config
 }
 
+pub fn infra_dirs(root: &str, dir: &str) -> (String, String) {
+    let canonical = format!("{root}/infrastructure/tc");
+    let t = Topology::new(dir, "", false, true);
+    (canonical, t.infra)
+}
+
+
 fn should_recurse(given: bool, maybe_bool: Option<bool>) -> bool {
     match maybe_bool {
         Some(b) => b,

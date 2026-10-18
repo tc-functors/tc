@@ -690,26 +690,6 @@ pub async fn show_config() {
     println!("{}", config.render());
 }
 
-pub async fn init(
-    profile: Option<String>,
-    assume_role: Option<String>,
-    region: Option<String>,
-) -> Auth {
-    match std::env::var("TC_ASSUME_ROLE") {
-        Ok(_) => {
-            let role = match assume_role {
-                Some(r) => Some(r),
-                None => {
-                    let config = composer::config(&kit::pwd());
-                    let p = u::maybe_string(profile.clone(), "default");
-                    config.ci.roles.get(&p).cloned()
-                }
-            };
-            Auth::new(profile.clone(), role, region).await
-        }
-        Err(_) => Auth::new(profile.clone(), assume_role, region).await,
-    }
-}
 
 pub async fn clear_cache() {
     resolver::cache::clear()
@@ -1016,4 +996,40 @@ pub async fn inspect(
     };
 
     let _ = inspector::run(&topology);
+}
+
+pub fn print_env(region: Option<String>) {
+    let dir = kit::pwd();
+    let (root_dir, local_dir) = composer::infra_dirs(&u::root(), &dir);
+    configurator::init_env(&root_dir, region.clone());
+    configurator::init_env(&local_dir, region.clone());
+    let vars = configurator::getenvs();
+    for (k, v) in vars {
+        println!("{}={}", &k, &v);
+    }
+}
+
+pub async fn init(
+    profile: Option<String>,
+    assume_role: Option<String>,
+    region: Option<String>,
+) -> Auth {
+    let dir = kit::pwd();
+    let (root_dir, local_dir) = composer::infra_dirs(&u::root(), &dir);
+    configurator::init_env(&root_dir, region.clone());
+    configurator::init_env(&local_dir, region.clone());
+    match std::env::var("TC_ASSUME_ROLE") {
+        Ok(_) => {
+            let role = match assume_role {
+                Some(r) => Some(r),
+                None => {
+                    let config = composer::config(&dir);
+                    let p = u::maybe_string(profile.clone(), "default");
+                    config.ci.roles.get(&p).cloned()
+                }
+            };
+            Auth::new(profile.clone(), role, region).await
+        }
+        Err(_) => Auth::new(profile.clone(), assume_role, region).await
+    }
 }

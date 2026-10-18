@@ -51,9 +51,8 @@ enum Cmd {
     Compile(CompileArgs),
     /// Compose a Topology
     Compose(ComposeArgs),
-    /// Show config
-    #[clap(hide = true)]
-    Config(DefaultArgs),
+    /// Show config and env vars
+    Config(ConfigArgs),
     /// Create a sandboxed topology
     Create(CreateArgs),
     /// Delete a sandboxed topology
@@ -198,6 +197,14 @@ pub struct ResolveArgs {
     cache: bool,
     #[arg(long, action, short = 't')]
     trace: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct ConfigArgs {
+    #[arg(long, action)]
+    env: bool,
+    #[arg(long)]
+    region: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -1056,8 +1063,13 @@ async fn cache(args: CacheArgs) {
     }
 }
 
-async fn config(_args: DefaultArgs) {
-    tc::show_config().await;
+async fn config(args: ConfigArgs) {
+    let ConfigArgs { region, env } = args;
+    if env {
+        tc::print_env(region);
+    } else {
+        tc::show_config().await;
+    }
 }
 
 async fn snapshot(args: SnapshotArgs) {
