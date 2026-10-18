@@ -24,36 +24,26 @@ pub async fn send(client: &Client, prompt: &str, model: &str) -> String {
 
     let tokens = match c::getenv("TC_MAX_LLM_TOKENS") {
         Ok(r) => r.trim().parse::<i32>().unwrap(),
-        Err(_) => 60000
+        Err(_) => 60000,
     };
 
     let response = client
         .converse()
         .model_id(model)
         .messages(message)
-        .inference_config(
-            InferenceConfiguration::builder()
-                .max_tokens(tokens)
-                .build(),
-        )
+        .inference_config(InferenceConfiguration::builder().max_tokens(tokens).build())
         .send()
         .await
         .unwrap();
 
-    let content = response
-        .output()
-        .unwrap()
-        .as_message()
-        .unwrap()
-        .content();
+    let content = response.output().unwrap().as_message().unwrap().content();
 
     let mut s: String = String::from("");
 
     for x in content {
         match x.as_text() {
             Ok(r) => s.push_str(&r),
-            Err(err) => panic!("{:?}", &err)
-
+            Err(err) => panic!("{:?}", &err),
         }
     }
     s

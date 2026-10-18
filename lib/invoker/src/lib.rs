@@ -5,8 +5,8 @@ pub mod route;
 mod state;
 use compiler::Entity;
 use composer::Topology;
-use configurator::Config;
 use configurator as c;
+use configurator::Config;
 use kit as u;
 use provider::{
     aws,

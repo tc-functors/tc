@@ -1,4 +1,5 @@
 use crate::Entity;
+use configurator as c;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -9,7 +10,6 @@ use std::{
     collections::HashMap,
     str::FromStr,
 };
-use configurator as c;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;

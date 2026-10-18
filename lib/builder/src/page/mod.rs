@@ -1,12 +1,12 @@
 mod node;
 
+use configurator as c;
 use kit as u;
 use kit::sh;
 use provider::{
     Auth,
     aws,
 };
-use configurator as c;
 
 async fn get_token(auth: &Auth) -> String {
     match c::getenv("TC_USE_CODEARTIFACT") {

@@ -8,6 +8,7 @@ use compiler::{
     spec::infra::FileSystemSpec,
 };
 use composer::Function;
+use configurator as c;
 use kit as u;
 use kit::s;
 use provider::{
@@ -21,7 +22,6 @@ use provider::{
         s3,
     },
 };
-use configurator as c;
 use std::collections::HashMap;
 
 async fn maybe_create_fs(auth: &Auth, fs: FileSystemSpec) -> FileSystemSpec {

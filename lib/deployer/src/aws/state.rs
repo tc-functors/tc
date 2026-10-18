@@ -1,4 +1,5 @@
 use composer::Flow;
+use configurator as c;
 use kit as u;
 use kit::*;
 use provider::{
@@ -10,7 +11,6 @@ use provider::{
     },
 };
 use std::collections::HashMap;
-use configurator as c;
 
 pub async fn update_definition(auth: &Auth, tags: &HashMap<String, String>, flow: &Flow) {
     let Flow {

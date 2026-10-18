@@ -8,8 +8,8 @@ mod agentcore;
 pub mod lambda;
 mod microvm;
 use builder::BuildOpts;
-use tabled::Tabled;
 use configurator as c;
+use tabled::Tabled;
 
 async fn maybe_build(auth: &Auth, function: &Function, force: bool) {
     let opts = BuildOpts {

@@ -1,3 +1,4 @@
+use configurator as c;
 use kit as u;
 use kit::*;
 use serde::Deserialize;
@@ -6,7 +7,6 @@ use std::{
     env,
     panic,
 };
-use configurator as c;
 
 #[derive(Clone, Debug)]
 pub struct Circle {
@@ -58,7 +58,7 @@ impl Circle {
     }
 
     fn context_url(&self, context_id: &str, key: &str) -> String {
-          if key == "" {
+        if key == "" {
             format!(
                 "https://circleci.com/api/v2/context/{}/environment-variable",
                 context_id

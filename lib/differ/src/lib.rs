@@ -18,6 +18,7 @@ use composer::{
     Function,
     Topology,
 };
+use configurator as c;
 pub use deps::{
     Analyzer,
     Closure,
@@ -32,8 +33,6 @@ use std::{
         PathBuf,
     },
 };
-
-use configurator as c;
 
 /// Error returned by [`diff_fns`] when an incremental diff cannot be
 /// computed. Surfaced as a typed error so callers (e.g. the resolver)

@@ -4,6 +4,7 @@ use compiler::spec::{
     TopologySpec,
     page::Functions,
 };
+use configurator as c;
 use configurator::Config;
 use kit as u;
 use kit::*;
@@ -12,7 +13,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PolicyStatement {
@@ -132,7 +132,11 @@ pub struct Page {
     pub skip_deploy: bool,
 }
 
-fn make_functions(kind: &str, dir: &str, fns: Option<Functions>) -> HashMap<String, (String, String)> {
+fn make_functions(
+    kind: &str,
+    dir: &str,
+    fns: Option<Functions>,
+) -> HashMap<String, (String, String)> {
     let mut xs: HashMap<String, (String, String)> = HashMap::new();
     let redirect = format!(
         r#"
@@ -146,7 +150,6 @@ function handler(event) {{
 }}
 "#
     );
-
 
     if let Some(f) = fns {
         if let Some(req) = f.request {

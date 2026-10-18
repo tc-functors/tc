@@ -1,10 +1,10 @@
 use inquire::Text;
+use kit as u;
+use kit::*;
 use provider::{
     Auth,
     aws::bedrock,
 };
-use kit::*;
-use kit as u;
 
 const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-5-5";
 
@@ -192,7 +192,7 @@ fn process_response(dir: &str, response: &str) {
 fn make_prompt(skills: Option<String>) -> String {
     let f = match skills {
         Some(s) => s,
-        None => "skills/topology.md".to_string()
+        None => "skills/topology.md".to_string(),
     };
     let text = if u::file_exists(&f) {
         u::slurp(&f)

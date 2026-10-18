@@ -7,12 +7,12 @@ use super::aws::{
 };
 use compiler::TopologyKind;
 use composer::Topology;
+use configurator as c;
 use provider::Auth;
 use question::{
     Answer,
     Question,
 };
-use configurator as c;
 
 pub async fn is_frozen(auth: &Auth, topology: &Topology) -> bool {
     let Topology { fqn, kind, .. } = topology;

@@ -4,13 +4,13 @@ use compiler::spec::function::{
     BuildSpec,
     Lang,
 };
+use configurator as c;
 use kit::*;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use std::collections::HashMap;
-use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Build {

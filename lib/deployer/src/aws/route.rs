@@ -326,7 +326,7 @@ pub struct Gateway {
     pub domains: Vec<String>,
     pub paths: Vec<String>,
     pub manage: bool,
-    pub logging: String
+    pub logging: String,
 }
 
 pub fn collate_gateways(
@@ -352,7 +352,7 @@ pub fn collate_gateways(
             domains: vec![],
             paths: vec![],
             manage: false,
-            logging: route.logging.clone()
+            logging: route.logging.clone(),
         };
         h.insert(route.gateway.clone(), gw);
     }
@@ -375,25 +375,21 @@ pub fn collate_gateways(
 
             // domains
 
-
             let domains = match domains.get(env) {
                 Some(e) => match e.get(sandbox) {
                     Some(x) => x.clone(),
-                    None => vec![]
+                    None => vec![],
                 },
                 None => match domains.get("default") {
-                    Some(d) => {
-                        match d.get(sandbox) {
-                            Some(x) => x.clone(),
-                            None => vec![]
-                        }
-                    }
+                    Some(d) => match d.get(sandbox) {
+                        Some(x) => x.clone(),
+                        None => vec![],
+                    },
                     None => vec![],
                 },
             };
 
             // gateway mapping paths
-
 
             let mut paths: Vec<String> = vec![];
 
@@ -439,7 +435,7 @@ pub fn collate_gateways(
                     domains: domains,
                     paths: paths,
                     manage: manage,
-                    logging: logging.to_string()
+                    logging: logging.to_string(),
                 };
                 h.insert(gateway.to_string(), gw);
             }
@@ -523,7 +519,7 @@ async fn create_or_update_gateways(
                 burst_limit,
                 rate_limit,
                 &log_group_arn,
-                &logging
+                &logging,
             )
             .await;
 
@@ -532,7 +528,12 @@ async fn create_or_update_gateways(
                 let cert_arn = find_or_create_cert(auth, &domain, idempotency_token).await;
                 let client = gateway::make_client(auth).await;
                 let gateway_domain = gateway::create_or_update_domain(
-                    &client, &api_id, &domain, &stage, &cert_arn, paths.clone(),
+                    &client,
+                    &api_id,
+                    &domain,
+                    &stage,
+                    &cert_arn,
+                    paths.clone(),
                 )
                 .await;
 
@@ -542,7 +543,10 @@ async fn create_or_update_gateways(
                 };
             }
 
-            let endpoint = domains.first().unwrap_or(&auth.api_endpoint(&api_id, &stage)).clone();
+            let endpoint = domains
+                .first()
+                .unwrap_or(&auth.api_endpoint(&api_id, &stage))
+                .clone();
 
             let gs = GatewayState {
                 api_id: api_id,
@@ -656,8 +660,13 @@ pub async fn delete(auth: &Auth, routes: &HashMap<String, Route>, sandbox: &str,
                     }
                     for domain in &gateway.domains {
                         println!("Deleting api mappings {}", &api_id);
-                        gateway::delete_api_mappings(&client, &api_id, &domain, gateway.paths.clone())
-                            .await;
+                        gateway::delete_api_mappings(
+                            &client,
+                            &api_id,
+                            &domain,
+                            gateway.paths.clone(),
+                        )
+                        .await;
                     }
 
                     if force {

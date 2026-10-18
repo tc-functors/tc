@@ -1,6 +1,6 @@
 use crate::Manifest;
-use kit as u;
 use configurator as c;
+use kit as u;
 
 fn make_job_def(env: &str, sandbox: &str, region: &str) -> String {
     format!(

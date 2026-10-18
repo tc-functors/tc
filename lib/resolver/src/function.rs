@@ -13,6 +13,7 @@ use composer::{
     Topology,
     function::runtime::Network,
 };
+use configurator as c;
 use futures::stream::{
     self,
     StreamExt,
@@ -22,7 +23,6 @@ use kit::{
     AsyncMemo,
     *,
 };
-use configurator as c;
 use provider::{
     Auth,
     aws,

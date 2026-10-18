@@ -13,8 +13,8 @@ use compiler::{
     Lang,
     LangRuntime,
 };
-use configurator as c;
 use composer::Build;
+use configurator as c;
 use kit as u;
 use kit::sh;
 use provider::{

@@ -25,8 +25,8 @@ use aws_sdk_sfn::{
         },
     },
 };
-use configurator as c;
 use colored::Colorize;
+use configurator as c;
 use kit::{
     LogUpdate,
     *,

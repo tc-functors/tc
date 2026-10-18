@@ -51,7 +51,9 @@ pub async fn route(auth: &Auth, topology: &Topology, sandbox: &str) {
     let gateways = aws::route::collate_gateways(&routes, &auth.name, sandbox);
     let client = gateway::make_client(auth).await;
     for (name, gateway) in gateways {
-        let Gateway { domains, manage, .. } = gateway;
+        let Gateway {
+            domains, manage, ..
+        } = gateway;
 
         if manage {
             let maybe_api_id = gateway::find_api(&client, &name).await;

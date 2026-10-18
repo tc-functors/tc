@@ -1,6 +1,6 @@
+use configurator as c;
 use kit as u;
 use kit::*;
-use configurator as c;
 
 fn find_copy_command(_dir: &str, ct: &Option<String>) -> String {
     if let Some(p) = ct {

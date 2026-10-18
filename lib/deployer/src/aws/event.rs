@@ -1,6 +1,7 @@
 use colored::Colorize;
 use compiler::Entity;
 use composer::Event;
+use configurator as c;
 use provider::{
     Auth,
     aws::{
@@ -10,7 +11,6 @@ use provider::{
     },
 };
 use std::collections::HashMap;
-use configurator as c;
 
 async fn update_permissions(auth: &Auth, event: &Event) {
     for target in event.targets.clone() {

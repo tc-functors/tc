@@ -8,13 +8,13 @@ use composer::{
     Mutation,
     Target,
 };
+use configurator as c;
 use kit as u;
 use kit::*;
 use provider::{
     Auth,
     aws,
 };
-use configurator as c;
 use std::collections::HashMap;
 
 fn fqn_of(context: &Context, topology: &Topology, fn_name: &str) -> String {

@@ -7,13 +7,13 @@ use kit as u;
 use kit::*;
 pub mod policy;
 mod trust;
+use configurator as c;
 use policy::Policy;
 use serde_derive::{
     Deserialize,
     Serialize,
 };
 use trust::Trust;
-use configurator as c;
 
 fn read_policy(path: &str) -> Policy {
     tracing::debug!("Reading {}", path);

@@ -525,7 +525,7 @@ async fn create_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
     log_group_arn: &str,
-    log_format: &str
+    log_format: &str,
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     tracing::debug!("Creating stage {} lg:{}", &stage.green(), log_group_arn);
@@ -549,7 +549,7 @@ async fn update_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
     log_group_arn: &str,
-    log_format: &str
+    log_format: &str,
 ) {
     let route_settings = make_route_settings(burst_limit, rate_limit);
     let log_config = make_log_config(log_group_arn, log_format);
@@ -572,7 +572,7 @@ pub async fn create_or_update_stage(
     burst_limit: Option<i32>,
     rate_limit: Option<f64>,
     log_group_arn: &str,
-    log_format: &str
+    log_format: &str,
 ) {
     if stage_exists(client, api_id, stage).await {
         update_stage(
@@ -582,7 +582,7 @@ pub async fn create_or_update_stage(
             burst_limit,
             rate_limit,
             log_group_arn,
-            log_format
+            log_format,
         )
         .await;
     } else {
@@ -593,7 +593,7 @@ pub async fn create_or_update_stage(
             burst_limit,
             rate_limit,
             log_group_arn,
-            log_format
+            log_format,
         )
         .await;
     }

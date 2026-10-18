@@ -1,16 +1,16 @@
-use composer::Topology;
-use provider::{
-    Auth,
-    aws::bedrock,
-};
 use base64::{
     Engine as _,
     engine::general_purpose,
 };
-use kit::*;
+use composer::Topology;
 use kit as u;
-use std::collections::HashMap;
+use kit::*;
 use llm_toolkit::extract::FlexibleExtractor;
+use provider::{
+    Auth,
+    aws::bedrock,
+};
+use std::collections::HashMap;
 
 const DEFAULT_BEDROCK_MODEL: &str = "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
 
@@ -31,22 +31,27 @@ fn process_response(response: &str) {
     }
 }
 
-pub fn make_prompt(skills: Option<String>, topology: &Topology, iac: &str, out_dir: &str) -> String {
+pub fn make_prompt(
+    skills: Option<String>,
+    topology: &Topology,
+    iac: &str,
+    out_dir: &str,
+) -> String {
     let f = match skills {
         Some(s) => s,
-        None => "skills/iac.md".to_string()
+        None => "skills/iac.md".to_string(),
     };
     if u::file_exists(&f) {
         u::slurp(&f)
     } else {
         let iac_str = match iac {
-        "tf" | "terraform" => "Terraform code (IAC)",
-        "cdk" => "CDK code",
-        "boto" | "python" => "boto3 code in python",
-        "go" => "Go code using go aws-go-sdk",
-        "aws-cli" => "aws cli commands",
-        "rust" => "rust code using aws-rust-sdk",
-        _ => "Terraform code (IAC)",
+            "tf" | "terraform" => "Terraform code (IAC)",
+            "cdk" => "CDK code",
+            "boto" | "python" => "boto3 code in python",
+            "go" => "Go code using go aws-go-sdk",
+            "aws-cli" => "aws cli commands",
+            "rust" => "rust code using aws-rust-sdk",
+            _ => "Terraform code (IAC)",
         };
         let lines = v![
             &topology.to_str(),
@@ -65,7 +70,7 @@ pub async fn scaffold(
     model: Option<String>,
     topology: &Topology,
     iac: Option<String>,
-    out_dir: Option<String>
+    out_dir: Option<String>,
 ) {
     let dir = u::maybe_string(out_dir, "iac");
     let iac = u::maybe_string(iac, "tf");

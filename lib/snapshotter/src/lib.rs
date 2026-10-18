@@ -6,8 +6,8 @@ pub mod pipeline;
 
 use compiler::TopologyKind;
 use composer::Topology;
-use configurator::Config;
 use configurator as c;
+use configurator::Config;
 pub use manifest::Manifest;
 use provider::aws;
 use serde_derive::{

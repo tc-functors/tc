@@ -12,6 +12,7 @@ use crate::types::BuildOutput;
 use colored::Colorize;
 use compiler::spec::function::BuildKind;
 use composer::Function;
+use configurator as c;
 use configurator::Config;
 use kit as u;
 use kit::sh;
@@ -23,7 +24,6 @@ use std::{
     panic,
     str::FromStr,
 };
-use configurator as c;
 
 /// Writes a `.dockerignore` to `dir` and, if no user-managed `.dockerignore`
 /// exists at the repo root, also writes one there so that named build contexts

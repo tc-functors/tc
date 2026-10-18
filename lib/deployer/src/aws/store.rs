@@ -1,3 +1,4 @@
+use configurator as c;
 use provider::{
     Auth,
     aws::{
@@ -7,7 +8,6 @@ use provider::{
         s3files,
     },
 };
-use configurator as c;
 
 fn make_policy(bucket: &str, account: &str, region: &str) -> String {
     format!(

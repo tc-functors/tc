@@ -24,6 +24,7 @@ use composer::{
     Function,
     Topology,
 };
+use configurator as c;
 use kit::*;
 use provider::Auth;
 use std::{
@@ -34,7 +35,6 @@ use tabled::{
     Style,
     Table,
 };
-use configurator as c;
 
 pub async fn create(auth: &Auth, topology: &Topology, concurrency: Option<i32>, force: bool) {
     let Topology {

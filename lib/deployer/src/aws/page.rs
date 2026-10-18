@@ -2,6 +2,7 @@ use composer::{
     Page,
     page::BucketPolicy,
 };
+use configurator as c;
 use kit as u;
 use kit::*;
 use provider::{
@@ -14,7 +15,6 @@ use provider::{
         ssm,
     },
 };
-use configurator as c;
 use std::collections::HashMap;
 
 async fn build_page(
@@ -254,7 +254,10 @@ async fn build_and_upload(auth: &Auth, name: &str, page: &Page, config: &HashMap
     s3::upload_dir(&s3_client, dist, bucket, bucket_prefix).await;
 }
 
-fn as_function_arns(auth: &Auth, functions: &HashMap<String, (String, String)>) -> HashMap<String, String> {
+fn as_function_arns(
+    auth: &Auth,
+    functions: &HashMap<String, (String, String)>,
+) -> HashMap<String, String> {
     let mut xs: HashMap<String, String> = HashMap::new();
     for (name, (kind, _)) in functions {
         println!("Updating CF function {} - {}", &kind, &name);
@@ -449,10 +452,9 @@ async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>, sandbox: &
         for (name, (_kind, handler)) in &page.functions {
             println!("Configuring page {} - creating function", &name);
             cloudfront::create_or_update_function(&client, &name, &handler).await;
-
         }
         let maybe_domain = find_domain(&page.domains, &auth.name, sandbox);
-        let _  =
+        let _ =
             create_or_update_distribution(auth, pname, page, sandbox, maybe_domain.clone()).await;
     }
 }

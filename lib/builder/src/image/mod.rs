@@ -14,8 +14,8 @@ use compiler::{
     },
 };
 use composer::Build;
-use configurator::Config;
 use configurator as c;
+use configurator::Config;
 use itertools::Itertools;
 use kit as u;
 use kit::sh;

@@ -1,5 +1,5 @@
-use kit as u;
 use configurator as c;
+use kit as u;
 
 pub fn gen_dockerfile(dir: &str) {
     let install_cmd = "yarn install --no-lockfile --production";

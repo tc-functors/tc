@@ -6,6 +6,7 @@ mod pool;
 mod topology;
 use compiler::Entity;
 use composer::Topology;
+use configurator as c;
 pub use context::Context;
 pub use function::Root;
 use futures::stream::{
@@ -14,7 +15,6 @@ use futures::stream::{
 };
 use provider::Auth;
 use std::collections::HashMap;
-use configurator as c;
 
 /// Per-loop-level cap on concurrent in-flight resolve futures.
 /// Override via `TC_RESOLVE_CONCURRENCY=N`; values are clamped to

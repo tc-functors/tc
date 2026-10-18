@@ -13,7 +13,6 @@ use std::{
     process::exit,
 };
 
-
 // env
 pub fn init_env(dir: &str, name: Option<String>) {
     env::init(dir, name);
@@ -22,7 +21,7 @@ pub fn init_env(dir: &str, name: Option<String>) {
 pub fn getenv(e: &str) -> Result<String, ()> {
     match env::get(e) {
         Some(p) => Ok(p),
-        None => Err(())
+        None => Err(()),
     }
 }
 
@@ -31,7 +30,6 @@ pub fn getenvs() -> HashMap<String, String> {
 }
 
 // config
-
 
 fn default() -> String {
     s!("")

@@ -8,6 +8,7 @@ use compiler::{
     entity::Entity,
     spec::EventSpec,
 };
+use configurator as c;
 use configurator::Config;
 use kit::*;
 use serde_derive::{
@@ -15,7 +16,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Target {

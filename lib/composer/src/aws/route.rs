@@ -19,7 +19,6 @@ use serde_derive::{
     Deserialize,
     Serialize,
 };
-
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -52,7 +51,6 @@ pub struct Throttling {
     pub authorizer_cache_ttl: Option<i32>,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Route {
     pub skip: bool,
@@ -68,7 +66,7 @@ pub struct Route {
     pub domains: HashMap<String, HashMap<String, Vec<String>>>,
     pub throttling: HashMap<String, HashMap<String, Throttling>>,
     pub verticals: HashMap<String, HashMap<String, Vec<String>>>,
-    pub logging: String
+    pub logging: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -369,7 +367,6 @@ pub enum Domain {
     String(String),
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Infra {
     pub throttling: Option<HashMap<String, HashMap<String, Throttling>>>,
@@ -402,7 +399,7 @@ fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String>>
                     match d {
                         Domain::List(x) => {
                             hs.insert(s.to_string(), x.to_vec());
-                        },
+                        }
                         Domain::String(x) => {
                             hs.insert(s.to_string(), vec![x.to_string()]);
                         }
@@ -411,7 +408,6 @@ fn find_domains(infra_dir: &str) -> HashMap<String, HashMap<String, Vec<String>>
                 h.insert(e.to_string(), hs);
             }
             h
-
         } else {
             HashMap::new()
         }

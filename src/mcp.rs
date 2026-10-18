@@ -157,7 +157,6 @@ pub struct ScaffoldRequest {
     pub out_dir: Option<String>,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Tc;
 
@@ -182,10 +181,9 @@ impl Tc {
             model,
             iac,
             skills,
-            out_dir
+            out_dir,
         }): Parameters<ScaffoldRequest>,
     ) -> String {
-
         if iac.is_some() {
             tc::scaffold_iac(profile, skills, model, iac, out_dir).await
         } else if topology {
@@ -195,7 +193,6 @@ impl Tc {
         }
         String::from("Scaffold complete")
     }
-
 
     #[tool(description = "Build function")]
     async fn build(

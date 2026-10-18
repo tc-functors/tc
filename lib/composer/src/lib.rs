@@ -74,7 +74,6 @@ pub fn infra_dirs(root: &str, dir: &str) -> (String, String) {
     (canonical, t.infra)
 }
 
-
 fn should_recurse(given: bool, maybe_bool: Option<bool>) -> bool {
     match maybe_bool {
         Some(b) => b,

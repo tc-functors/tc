@@ -26,10 +26,9 @@ pub mod sqs;
 pub mod ssm;
 pub mod sts;
 
-use configurator as c;
-
 use aws_config::SdkConfig;
 use aws_sdk_sts::config::ProvideCredentials;
+use configurator as c;
 use kit::AsyncMemo;
 
 static CACHE: AsyncMemo<String, Auth> = AsyncMemo::new();

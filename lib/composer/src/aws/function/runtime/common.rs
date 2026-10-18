@@ -23,6 +23,7 @@ use compiler::{
         },
     },
 };
+use configurator as c;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -30,7 +31,6 @@ use serde_derive::{
     Serialize,
 };
 use std::collections::HashMap;
-use configurator as c;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Network {

@@ -11,10 +11,10 @@ use compiler::{
     InfraSpec,
     RuntimeSpec,
 };
+use configurator as cfg;
 use kit as u;
 use kit::*;
 use std::collections::HashMap;
-use configurator as cfg;
 
 fn find_image_tag(dir: &str, namespace: &str) -> String {
     match cfg::getenv("TC_VERSION_IMAGES") {

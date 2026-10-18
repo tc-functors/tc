@@ -1,3 +1,4 @@
+use configurator as c;
 use kit as u;
 use kit::*;
 use serde_derive::{
@@ -9,7 +10,6 @@ use std::{
     collections::HashMap,
     path::PathBuf,
 };
-use configurator as c;
 
 pub mod channel;
 pub mod event;

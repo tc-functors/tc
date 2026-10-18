@@ -690,7 +690,6 @@ pub async fn show_config() {
     println!("{}", config.render());
 }
 
-
 pub async fn clear_cache() {
     resolver::cache::clear()
 }
@@ -889,7 +888,6 @@ pub async fn scaffold_iac(
     model: Option<String>,
     iac: Option<String>,
     out_dir: Option<String>,
-
 ) {
     let dir = u::pwd();
     let auth = init(profile, None, None).await;
@@ -921,7 +919,7 @@ pub async fn scaffold_entity(
     };
     match entity {
         Entity::Function => scaffolder::scaffold_functions(&dir),
-        _ => ()
+        _ => (),
     }
 }
 
@@ -1030,6 +1028,6 @@ pub async fn init(
             };
             Auth::new(profile.clone(), role, region).await
         }
-        Err(_) => Auth::new(profile.clone(), assume_role, region).await
+        Err(_) => Auth::new(profile.clone(), assume_role, region).await,
     }
 }

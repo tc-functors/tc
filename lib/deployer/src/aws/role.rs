@@ -1,4 +1,5 @@
 use composer;
+use configurator as c;
 use provider::{
     Auth,
     aws::{
@@ -8,7 +9,6 @@ use provider::{
 };
 use serde_json::Value;
 use std::collections::HashMap;
-use configurator as c;
 
 fn should_delete() -> bool {
     match c::getenv("TC_FORCE_DELETE") {

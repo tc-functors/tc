@@ -1,7 +1,7 @@
 use colored::Colorize;
 use composer::Function;
-use configurator::Config;
 use configurator as c;
+use configurator::Config;
 use kit as u;
 use kit::*;
 use provider::{

@@ -1,8 +1,8 @@
+use configurator as c;
 use configurator::Config;
 use kit as u;
 use provider::Auth;
 use std::collections::HashMap;
-use configurator as c;
 
 fn abbr(name: &str) -> String {
     if name.chars().count() > 15 {

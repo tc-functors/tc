@@ -1,8 +1,8 @@
 pub mod aws;
 
 pub use aws::Auth;
-use configurator::Config;
 use configurator as c;
+use configurator::Config;
 
 pub async fn init(
     profile: Option<String>,
