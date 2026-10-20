@@ -56,10 +56,8 @@ fn defaults() -> HashMap<String, String> {
 fn load(vars: HashMap<String, String>) {
     let mut h: HashMap<String, String> = HashMap::new();
     for (k, v) in vars {
-        if k.starts_with("TC_") {
-            if (v != "false") && (v != "0") {
-                h.insert(k, v);
-            }
+        if (v != "false") && (v != "0") {
+            h.insert(k, v);
         }
     }
     let _ = ENV.set(h);
