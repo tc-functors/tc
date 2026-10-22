@@ -724,7 +724,7 @@ impl Function {
             .send()
             .await;
         let version = res.unwrap().version.unwrap();
-
+        self.wait(client, &self.name).await;
         let maybe_alias = self.find_alias(client).await;
         match maybe_alias {
             Some(_) => self.update_alias(client, &version).await,
