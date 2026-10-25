@@ -1,0 +1,5 @@
+name: test
+
+functions:
+  f1:
+    uri: .

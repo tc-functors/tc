@@ -3,6 +3,7 @@ mod node;
 mod python;
 mod ruby;
 mod rust;
+mod clojure;
 use crate::types::{
     BuildOutput,
     BuildStatus,
@@ -37,7 +38,7 @@ fn gen_dockerfile(dir: &str, arch: &Arch, langr: &LangRuntime, skip_dev_deps: bo
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Go => go::gen_dockerfile(dir, arch, pre),
         Lang::Node => node::gen_dockerfile(dir),
-        _ => todo!(),
+        Lang::Clojure => clojure::gen_dockerfile(dir, pre),
     }
 }
 
@@ -50,7 +51,7 @@ fn gen_dockerfile_unshared(dir: &str, arch: &Arch, langr: &LangRuntime, _wrap: b
         Lang::Rust => rust::gen_dockerfile(dir),
         Lang::Go => go::gen_dockerfile(dir, arch, pre),
         Lang::Node => node::gen_dockerfile(dir),
-        _ => todo!(),
+        Lang::Clojure => clojure::gen_dockerfile(dir, pre),
     }
 }
 
@@ -133,6 +134,26 @@ async fn build_with_docker(
     (status, out, err)
 }
 
+
+async fn build_with_docker_noauth(
+    dir: &str,
+) -> (bool, String, String) {
+    let cmd_str =
+        format!(
+            "docker buildx build --platform=linux/amd64 --load -t {} .",
+            u::basedir(dir)
+        );
+
+    let (status, out, err) = u::runc(&cmd_str, dir);
+
+    if !status {
+        println!("Build failed: {} {}", out, err);
+        sh("rm -f Dockerfile wrapper", dir);
+        panic!("Build failed");
+    }
+    (status, out, err)
+}
+
 fn copy_from_docker(dir: &str, langr: &LangRuntime) {
     let temp_cont = &format!("tmp-{}-{}", u::basedir(dir), u::randstr_n(4));
     let clean = &format!("docker rm -f {}", &temp_cont);
@@ -152,6 +173,9 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
                 ),
                 dir,
             );
+        },
+        Lang::Clojure => {
+            sh(&format!("docker cp {}:/build/lambda.jar lambda.zip", id), dir);
         }
         Lang::Go => {
             sh(&format!("docker cp {}:/build/bootstrap bootstrap", id), dir);
@@ -187,7 +211,7 @@ fn zip(dir: &str, langr: &LangRuntime) {
             let command = "zip -q -r lambda.zip bootstrap";
             sh(command, dir);
         }
-        _ => todo!(),
+        Lang::Clojure => (),
     }
 }
 
@@ -274,7 +298,7 @@ pub async fn build(
         match c::getenv("TC_INSPECT_BUILD") {
             Ok(_) => (),
             Err(_) => {
-                sh("rm -rf build build.json", dir);
+                sh("rm -rf build build.json deps.edn build.clj lambda.clj", dir);
             }
         }
 
@@ -296,6 +320,76 @@ pub async fn build(
             out: String::from(""),
             err: String::from(""),
         }
+    }
+}
+
+pub async fn build_noauth(
+    dir: &str,
+    name: &str,
+    langr: &LangRuntime,
+    arch: &Arch,
+    bs: &Build,
+) -> BuildStatus {
+    let Build {
+        command,
+        shared_context,
+        skip_dev_deps,
+        ..
+    } = bs;
+
+    sh("rm -rf lambda.zip deps.zip build", &dir);
+
+    let bar = u::progress(8);
+
+    let prefix = format!("Building {} ({}/inline)", name.blue(), langr.to_str());
+    bar.set_prefix(prefix);
+
+    if *shared_context {
+        gen_dockerfile(dir, arch, langr, *skip_dev_deps, bs)
+    } else {
+        gen_dockerfile_unshared(dir, arch, langr, *skip_dev_deps, bs);
+    }
+    bar.inc(1);
+    let created_root_dockerignore = gen_dockerignore(dir);
+    bar.inc(2);
+
+    let (status, out, err) = build_with_docker_noauth(dir).await;
+    bar.inc(3);
+
+    if !status {
+        println!("Inline build failed {}", name);
+        println!("Err {}, {}", out, err);
+        std::process::exit(1);
+    }
+
+    copy_from_docker(dir, langr);
+    bar.inc(4);
+    sh("rm -f Dockerfile wrapper .dockerignore", dir);
+    if created_root_dockerignore {
+        crate::cleanup_root_dockerignore(dir);
+    }
+    bar.inc(5);
+
+    sh(command, dir);
+    bar.inc(6);
+
+    zip(dir, langr);
+    bar.inc(7);
+    match c::getenv("TC_INSPECT_BUILD") {
+        Ok(_) => (),
+        Err(_) => {
+            sh("rm -rf build build.json deps.edn build.clj lambda.clj", dir);
+        }
+    }
+
+    bar.inc(8);
+    bar.finish();
+
+    BuildStatus {
+        path: format!("{}/lambda.zip", dir),
+        status: status,
+        out: out,
+        err: err,
     }
 }
 

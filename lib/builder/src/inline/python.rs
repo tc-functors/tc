@@ -9,6 +9,7 @@ fn find_image(langr: &LangRuntime) -> String {
         LangRuntime::Python312 => String::from("public.ecr.aws/sam/build-python3.12:latest"),
         LangRuntime::Python313 => String::from("public.ecr.aws/sam/build-python3.13:latest"),
         LangRuntime::Python314 => String::from("public.ecr.aws/sam/build-python3.14:latest"),
+        LangRuntime::Python315 => String::from("public.ecr.aws/sam/build-python3.15:latest"),
         _ => todo!(),
     }
 }

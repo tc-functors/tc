@@ -209,6 +209,7 @@ pub fn make_snapstart(enable_snap: bool) -> Option<SnapStart> {
 
 pub fn make_runtime(lang: &str) -> Runtime {
     match lang {
+        "java25" | "clojure" => Runtime::Java25,
         "java11" => Runtime::Java11,
         "go" => "provided.al2023".into(),
         "python3.7" => Runtime::Python37,

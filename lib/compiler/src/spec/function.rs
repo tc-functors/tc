@@ -30,12 +30,24 @@ impl FromStr for Lang {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "python3.10"
-            | "python3.11"
-            | "python3.9"
-            | "python3.12 | python3.13 | python 3.14 | python" => Ok(Lang::Python),
-            "ruby3.2" | "ruby" | "ruby32 | ruby3.4 | ruby34 | ruby" => Ok(Lang::Ruby),
-            "node22" | "node20" | "node18 | node" | "Node" => Ok(Lang::Node),
-            "rust" => Ok(Lang::Rust),
+                | "python3.11"
+                | "python3.9"
+                | "python3.12"
+                | "python3.13"
+                | "python3.14"
+                | "python3.15" => Ok(Lang::Python),
+            "ruby3.2"
+                | "ruby32"
+                | "ruby3.4"
+                | "ruby34"
+                | "ruby" => Ok(Lang::Ruby),
+            "node22"
+                | "node20"
+                | "node18"
+                | "node"
+                | "Node" => Ok(Lang::Node),
+            "rust" | "Rust" => Ok(Lang::Rust),
+            "clojure" | "Clojure" => Ok(Lang::Clojure),
             _ => Ok(Lang::Python),
         }
     }
@@ -48,8 +60,8 @@ impl Lang {
             Lang::Ruby => s!("ruby"),
             Lang::Node => s!("node"),
             Lang::Rust => s!("rust"),
-            Lang::Go => s!("go"),
-            _ => s!("python"),
+            Lang::Clojure => s!("clojure"),
+            Lang::Go => s!("go")
         }
     }
 }
@@ -68,18 +80,22 @@ pub enum LangRuntime {
     Python313,
     #[serde(alias = "python3.14")]
     Python314,
+    #[serde(alias = "python3.15")]
+    Python315,
     #[serde(alias = "ruby3.2")]
     Ruby32,
     #[serde(alias = "ruby3.4")]
     Ruby34,
-    #[serde(alias = "java21")]
-    Java21,
+    #[serde(alias = "java25")]
+    Java25,
     #[serde(alias = "rust")]
     Rust,
     #[serde(alias = "node22")]
     Node22,
     #[serde(alias = "node20")]
     Node20,
+    #[serde(alias = "clojure")]
+    Clojure,
     #[serde(alias = "go")]
     Go,
 }
@@ -89,6 +105,7 @@ impl FromStr for LangRuntime {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "python3.15" => Ok(LangRuntime::Python315),
             "python3.14" => Ok(LangRuntime::Python314),
             "python3.13" => Ok(LangRuntime::Python313),
             "python3.12" => Ok(LangRuntime::Python312),
@@ -97,7 +114,7 @@ impl FromStr for LangRuntime {
             "python3.9" => Ok(LangRuntime::Python39),
             "ruby3.2" | "ruby" | "ruby32" => Ok(LangRuntime::Ruby32),
             "ruby3.4" | "ruby34" => Ok(LangRuntime::Ruby34),
-            "clojure" | "java21" => Ok(LangRuntime::Java21),
+            "clojure" | "java25" => Ok(LangRuntime::Java25),
             "rust" => Ok(LangRuntime::Rust),
             "node22" | "Node" => Ok(LangRuntime::Node22),
             "node20" => Ok(LangRuntime::Node20),
@@ -109,6 +126,7 @@ impl FromStr for LangRuntime {
 impl LangRuntime {
     pub fn to_str(&self) -> String {
         match self {
+            LangRuntime::Python315 => String::from("python3.15"),
             LangRuntime::Python314 => String::from("python3.14"),
             LangRuntime::Python313 => String::from("python3.13"),
             LangRuntime::Python312 => String::from("python3.12"),
@@ -117,7 +135,8 @@ impl LangRuntime {
             LangRuntime::Python39 => String::from("python3.9"),
             LangRuntime::Ruby32 => String::from("ruby3.2"),
             LangRuntime::Ruby34 => String::from("ruby3.4"),
-            LangRuntime::Java21 => String::from("java21"),
+            LangRuntime::Java25 => String::from("java25"),
+            LangRuntime::Clojure => String::from("clojure"),
             LangRuntime::Node22 => String::from("node22"),
             LangRuntime::Node20 => String::from("node20"),
             LangRuntime::Rust => String::from("rust"),
@@ -127,6 +146,7 @@ impl LangRuntime {
 
     pub fn to_lang(&self) -> Lang {
         match self {
+            LangRuntime::Python315 => Lang::Python,
             LangRuntime::Python314 => Lang::Python,
             LangRuntime::Python313 => Lang::Python,
             LangRuntime::Python312 => Lang::Python,
@@ -135,7 +155,8 @@ impl LangRuntime {
             LangRuntime::Python39 => Lang::Python,
             LangRuntime::Ruby32 => Lang::Ruby,
             LangRuntime::Ruby34 => Lang::Ruby,
-            LangRuntime::Java21 => Lang::Clojure,
+            LangRuntime::Java25 => Lang::Clojure,
+            LangRuntime::Clojure => Lang::Clojure,
             LangRuntime::Rust => Lang::Rust,
             LangRuntime::Node20 => Lang::Node,
             LangRuntime::Node22 => Lang::Node,
@@ -727,16 +748,16 @@ impl InlineFunctionSpec {
 
 pub fn infer_lang(dir: &str) -> LangRuntime {
     if u::path_exists(dir, "handler.py") || u::path_exists(dir, "pyproject.toml") {
-        LangRuntime::Python310
+        LangRuntime::Python314
     } else if u::path_exists(dir, "Cargo.toml") {
         LangRuntime::Rust
     } else if u::path_exists(dir, "handler.js") || u::path_exists(dir, "package.json") {
         LangRuntime::Node22
     } else if u::path_exists(dir, "Gemfile") || u::path_exists(dir, "handler.rb") {
         LangRuntime::Ruby32
-    } else if u::path_exists(dir, "deps.edn") {
-        LangRuntime::Java21
+    } else if u::path_exists(dir, "handler.clj") {
+        LangRuntime::Clojure
     } else {
-        LangRuntime::Python310
+        LangRuntime::Python314
     }
 }

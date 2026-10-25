@@ -60,6 +60,17 @@ pub async fn build(profile: Option<String>, name: Option<String>, dir: &str, opt
         version,
         ..
     } = opts;
+    if profile.is_none() {
+        let maybe_fn = composer::current_function(dir);
+        if let Some(f) = maybe_fn {
+            let opts = builder::BuildOpts {
+                code_only: false,
+                use_asset_store: false,
+            };
+            let _ = builder::build_no_auth(&f, name, kind, opts).await;
+        }
+        return
+    }
 
     if recursive {
         let auth = init_centralized_auth(profile).await;

@@ -77,17 +77,17 @@ pub fn infer_lang(dir: &str) -> LangRuntime {
     let idx = index::get();
     let pe = |name: &str| idx.path_exists(dir, name);
     if pe("handler.py") || pe("pyproject.toml") {
-        LangRuntime::Python310
+        LangRuntime::Python314
     } else if pe("Cargo.toml") {
         LangRuntime::Rust
     } else if pe("handler.js") || pe("package.json") {
         LangRuntime::Node22
     } else if pe("Gemfile") || pe("handler.rb") {
         LangRuntime::Ruby32
-    } else if pe("deps.edn") {
-        LangRuntime::Java21
+    } else if pe("handler.clj") {
+        LangRuntime::Java25
     } else {
-        LangRuntime::Python310
+        LangRuntime::Python314
     }
 }
 
@@ -355,10 +355,21 @@ pub fn make_default(
         fqn,
     );
 
+    let handler = match lang {
+        LangRuntime::Clojure | LangRuntime::Java25 => s!("lambda::handleRequest"),
+        _ => s!("handler.handler")
+    };
+
+    let snapstart = match lang {
+        LangRuntime::Clojure | LangRuntime::Java25 => true,
+        _ => false
+    };
+
+
     Runtime {
         lang: lang,
         provider: Provider::Lambda,
-        handler: s!("handler.handler"),
+        handler: handler,
         package_type: s!("zip"),
         uri: format!("{}/lambda.zip", dir),
         layers: vec![],
@@ -370,7 +381,7 @@ pub fn make_default(
         memory_size: *memory_size,
         cpu: None,
         timeout: *timeout,
-        snapstart: false,
+        snapstart: snapstart,
         enable_network: false,
         network: None,
         fs: None,

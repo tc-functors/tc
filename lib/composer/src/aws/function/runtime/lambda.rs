@@ -10,6 +10,7 @@ use compiler::{
     FunctionSpec,
     InfraSpec,
     RuntimeSpec,
+    LangRuntime
 };
 use configurator as cfg;
 use kit as u;
@@ -135,6 +136,16 @@ pub fn make(
         fqn,
     );
 
+    let snapstart = match r.snapstart {
+        Some(t) => t,
+        None => {
+            match r.lang {
+                LangRuntime::Clojure | LangRuntime::Java25 => true,
+                _ => false
+            }
+        }
+    };
+
     Runtime {
         lang: r.lang.clone(),
         provider: r.provider.clone().unwrap().clone(),
@@ -149,7 +160,7 @@ pub fn make(
         memory_size: *memory_size,
         timeout: *timeout,
         cpu: None,
-        snapstart: u::opt_as_bool(r.snapstart),
+        snapstart: snapstart,
         role: role,
         enable_network: if let Some(n) = r.network { n } else { false },
         network: make_network(&default_infra_spec),

@@ -102,6 +102,55 @@ pub struct BuildOpts {
     pub use_asset_store: bool,
 }
 
+pub async fn build_no_auth(
+    function: &Function,
+    name: Option<String>,
+    kind: Option<String>,
+    _opts: BuildOpts,
+) -> Vec<BuildOutput> {
+    let Function {
+        dir,
+        build,
+        runtime,
+        ..
+    } = function;
+
+    let langr = &runtime.lang;
+
+
+    let kind = match kind {
+        Some(k) => BuildKind::from_str(&k).unwrap(),
+        None => build.kind.clone(),
+    };
+
+    let name = u::maybe_string(name, &function.name);
+
+    let build_status = match kind {
+        BuildKind::Code => code::build_noauth(dir, &name, langr, &runtime.arch, &build).await,
+        BuildKind::Inline => {
+            inline::build_noauth(
+                dir,
+                &name,
+                langr,
+                &runtime.arch,
+                &build,
+            ).await
+        }
+        BuildKind::Library => library::build(dir, langr, &build),
+        _ => todo!(),
+    };
+
+    if !build_status.status {
+        println!("{}", build_status.out.red());
+        println!("{}", build_status.err);
+        panic::set_hook(Box::new(|_| {
+            println!("Build Failed");
+        }));
+        panic!("Build failed")
+    }
+    vec![]
+}
+
 pub async fn build(
     auth: &Auth,
     function: &Function,
@@ -146,9 +195,9 @@ pub async fn build(
                 &runtime.uri,
                 &build,
                 use_asset_store,
-            )
-            .await
+            ).await
         }
+
         BuildKind::Layer => layer::build(dir, &name, langr, &build),
         BuildKind::Library => library::build(dir, langr, &build),
         BuildKind::Slab => todo!(),
@@ -198,14 +247,14 @@ pub async fn build_recursive(auth: &Auth, dir: &str, _parallel: bool) -> Vec<Bui
 }
 
 pub fn clean_lang(dir: &str) {
-    sh("rm -rf dist __pycache__ vendor deps.zip build", dir);
+    sh("rm -rf dist __pycache__ vendor deps.zip build deps.edn build.clj lambda.clj", dir);
 }
 
 pub fn clean(recursive: bool) {
     let buildables = composer::find_buildables(&u::pwd(), recursive);
     for b in buildables {
         if b.kind == BuildKind::Inline {
-            kit::sh("rm -rf build && rm -f bootstrap", &b.dir);
+            kit::sh("rm -rf build && rm -f bootstrap && rm -f deps.edn && rm -f build.clj && rm -f lambda.clj", &b.dir);
         } else {
             kit::sh(
                 "rm -rf lambda.zip deps.zip build && rm -f bootstrap",

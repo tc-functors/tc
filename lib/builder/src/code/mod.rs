@@ -18,6 +18,7 @@ fn find_build_image(runtime: &LangRuntime) -> String {
         LangRuntime::Python312 => "python3.12:latest",
         LangRuntime::Python313 => "python3.13:latest",
         LangRuntime::Python314 => "python3.14:latest",
+        LangRuntime::Python315 => "python3.15:latest",
         LangRuntime::Ruby32 => "ruby3.2:1.103.0-2023111622473",
         LangRuntime::Ruby34 => "ruby3.4:latest",
         _ => todo!(),
@@ -95,6 +96,28 @@ async fn build_with_docker(auth: &Auth, name: &str, dir: &str) -> (bool, String,
     (status, out, err)
 }
 
+async fn build_with_docker_noauth(name: &str, dir: &str) -> (bool, String, String) {
+
+    let cmd_str = format!(
+        "docker buildx build --platform=linux/amd64 --provenance=false -t {} .",
+        name
+    );
+
+    tracing::debug!("Building with docker {}", &cmd_str);
+
+    let (status, out, err) = u::runc(&cmd_str, dir);
+
+    if !status {
+        sh("rm -f Dockerfile wrapper", dir);
+        tracing::debug!("Build Fail {} {} {}", status, out, err);
+        println!("Failed to build {}", name);
+        std::process::exit(1);
+    }
+
+    (status, out, err)
+}
+
+
 fn copy_from_docker(dir: &str, name: &str) {
     let temp_cont = &format!("tmp-{}", name);
     let clean = &format!("docker rm -f {}", &temp_cont);
@@ -121,9 +144,9 @@ pub async fn build(
     spec: &Build,
 ) -> BuildStatus {
     match langr.to_lang() {
-        Lang::Rust | Lang::Go => {
+        Lang::Rust | Lang::Go | Lang::Clojure => {
             super::inline::build(auth, dir, name, langr, arch, "", spec, false).await
-        }
+        },
         _ => {
             let Build { command, pre, .. } = spec;
 
@@ -132,6 +155,55 @@ pub async fn build(
                 gen_dockerfile(dir, langr, pre);
 
                 let (status, out, err) = build_with_docker(&auth, name, dir).await;
+                sh("rm -f Dockerfile wrapper .dockerignore", dir);
+                if created_root_dockerignore {
+                    crate::cleanup_root_dockerignore(dir);
+                }
+                if status {
+                    copy_from_docker(dir, name);
+                    let cmd = "zip -q -9 -r ../lambda.zip .";
+                    let build_dir = format!("{}/build", dir);
+                    sh(&cmd, &build_dir);
+                    sh("rm -rf build build.json", dir);
+                } else {
+                    println!("Failed to run pre commands: {} {}", out, err);
+                    std::process::exit(1)
+                }
+            }
+
+            let c = format!(r"{}", command);
+            let (status, out, err) = u::runc(&c, dir);
+            BuildStatus {
+                path: format!("{}/lambda.zip", dir),
+                status: status,
+                out: out,
+                err: err,
+            }
+        }
+    }
+}
+
+
+pub async fn build_noauth(
+    dir: &str,
+    name: &str,
+    langr: &LangRuntime,
+    arch: &Arch,
+    spec: &Build,
+) -> BuildStatus {
+    println!("{:?}", &langr.to_lang());
+    match langr.to_lang() {
+        Lang::Rust | Lang::Go | Lang::Clojure => {
+            super::inline::build_noauth(dir, name, langr, arch, spec).await
+        },
+        _ => {
+            let Build { command, pre, .. } = spec;
+
+            if !pre.is_empty() {
+                let created_root_dockerignore = gen_dockerignore(dir);
+                gen_dockerfile(dir, langr, pre);
+
+                let (status, out, err) = build_with_docker_noauth(name, dir).await;
                 sh("rm -f Dockerfile wrapper .dockerignore", dir);
                 if created_root_dockerignore {
                     crate::cleanup_root_dockerignore(dir);
