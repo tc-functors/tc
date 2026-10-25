@@ -70,7 +70,6 @@ fn gen_wrapper(dir: &str) {
 }
 
 pub fn gen_dockerfile(dir: &str, _pre: &Vec<String>) {
-    let clojure_version = "1.10.3.1029";
     gen_deps_edn(dir);
     gen_builder(dir);
     gen_wrapper(dir);
@@ -81,10 +80,12 @@ FROM maven:3-amazoncorretto-21 AS builder
 WORKDIR /build
 COPY . .
 
-RUN curl -O https://download.clojure.org/install/linux-install-{clojure_version}.sh && \
-  chmod +x linux-install-{clojure_version}.sh  && \
-  ./linux-install-{clojure_version}.sh && \
-   rm -f linux-install-{clojure_version}.sh
+RUN yum install -y perl-Digest-SHA
+
+RUN curl -L -O https://github.com/clojure/brew-install/releases/latest/download/posix-install.sh && \
+  chmod +x posix-install.sh  && \
+  ./posix-install.sh && \
+   rm -f posix-install.sh
 
 RUN clojure -T:build uber
 RUN rm -rf target lambda.clj deps.edn build.clj
