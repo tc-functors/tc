@@ -1,0 +1,9 @@
+name: flat
+
+functions:
+  f1:
+    code: ./f1.py
+  f2:
+    code: ./f2.rb
+  f3:
+    code: ./f3.clj

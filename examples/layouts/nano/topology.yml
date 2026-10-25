@@ -1,0 +1,25 @@
+name: nano
+
+functions:
+  f1:
+    runtime:
+      lang: python3.14
+      code: |
+        def handler(event, context):
+          return {"pass": "ok"}
+  f2:
+    runtime:
+      lang: ruby3.2
+      code: |
+        require 'json'
+        def handler(event:, context:)
+          { event: JSON.generate(event), context: JSON.generate(context.inspect) }
+        end
+
+  f3:
+    runtime:
+      lang: clojure
+      code: |
+        (defn handler [event]
+          (prn event)
+          event)
