@@ -1025,6 +1025,7 @@ pub async fn init(
 ) -> Auth {
     let dir = kit::pwd();
     let (root_dir, local_dir) = composer::infra_dirs(&u::root(), &dir);
+    let region = Some(region.unwrap_or("us-west-2".to_string()));
     configurator::init_env(&root_dir, region.clone());
     configurator::init_env(&local_dir, region.clone());
     match std::env::var("TC_ASSUME_ROLE") {
