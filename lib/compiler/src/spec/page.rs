@@ -16,7 +16,7 @@ pub struct PageSpec {
     pub kind: Option<String>,
     pub build: Option<Vec<String>>,
     pub dir: Option<String>,
-    pub domains: Option<HashMap<String, String>>,
+    pub domains: Option<HashMap<String, Vec<String>>>,
     pub paths: Option<Vec<String>>,
     pub bucket: Option<String>,
     pub skip_deploy: Option<bool>,

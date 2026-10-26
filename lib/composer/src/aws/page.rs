@@ -95,7 +95,7 @@ impl BucketPolicy {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Infra {
     pub bucket: Option<String>,
-    pub domains: Option<HashMap<String, HashMap<String, String>>>,
+    pub domains: Option<HashMap<String, HashMap<String, Vec<String>>>>,
 }
 
 impl Infra {
@@ -126,7 +126,7 @@ pub struct Page {
     pub origin_paths: HashMap<String, String>,
     pub origin_domain: String,
     pub default_root_object: String,
-    pub domains: HashMap<String, HashMap<String, String>>,
+    pub domains: HashMap<String, HashMap<String, Vec<String>>>,
     pub config_template: Option<String>,
     pub functions: HashMap<String, (String, String)>,
     pub skip_deploy: bool,
@@ -205,12 +205,12 @@ fn find_bucket(given_bucket: &Option<String>, config: &Config, infra: &Option<In
 }
 
 fn find_domains(
-    given_domains: &Option<HashMap<String, String>>,
+    given_domains: &Option<HashMap<String, Vec<String>>>,
     infra: &Option<Infra>,
-) -> HashMap<String, HashMap<String, String>> {
+) -> HashMap<String, HashMap<String, Vec<String>>> {
     match given_domains {
         Some(d) => {
-            let mut h: HashMap<String, HashMap<String, String>> = HashMap::new();
+            let mut h: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
             h.insert(String::from("default"), d.clone());
             h
         }

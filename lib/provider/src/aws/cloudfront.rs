@@ -235,12 +235,8 @@ fn make_logging_config() -> LoggingConfig {
     it.enabled(false).build()
 }
 
-fn make_aliases(alias: Option<String>) -> Aliases {
+fn make_aliases(domains: Vec<String>) -> Aliases {
     let it = AliasesBuilder::default();
-    let domains = match alias {
-        Some(a) => vec![a],
-        None => vec![],
-    };
     it.quantity(domains.len().try_into().unwrap())
         .set_items(Some(domains))
         .build()
@@ -253,12 +249,12 @@ fn make_viewer_cert(maybe_cert_arn: Option<String>) -> ViewerCertificate {
         Some(arn) => it
             .acm_certificate_arn(arn)
             .ssl_support_method(SslSupportMethod::SniOnly)
-            .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
+            .minimum_protocol_version(MinimumProtocolVersion::TlSv122021)
             .build(),
         None => it
             .cloud_front_default_certificate(true)
             .ssl_support_method(SslSupportMethod::SniOnly)
-            .minimum_protocol_version(MinimumProtocolVersion::TlSv122019)
+            .minimum_protocol_version(MinimumProtocolVersion::TlSv122021)
             .build(),
     }
 }
@@ -269,7 +265,7 @@ pub fn make_dist_config(
     caller_ref: &str,
     origin_domain: &str,
     origin_paths: HashMap<String, String>,
-    alias: Option<String>,
+    aliases: Vec<String>,
     cert_arn: Option<String>,
     oac_id: &str,
     cache_policy_id: &str,
@@ -277,7 +273,7 @@ pub fn make_dist_config(
 ) -> DistributionConfig {
     let it = DistributionConfigBuilder::default();
     let origins = make_origins(origin_domain, origin_paths, oac_id);
-    let aliases = make_aliases(alias);
+    let aliases = make_aliases(aliases);
     let cert = make_viewer_cert(cert_arn);
     let default_origin_id = origins.items.first().unwrap().id.clone();
     let default_cache = make_default_cache_behavior(&default_origin_id, cache_policy_id, functions);

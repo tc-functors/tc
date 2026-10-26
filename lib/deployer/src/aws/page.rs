@@ -168,16 +168,16 @@ async fn find_or_create_cert(auth: &Auth, domain: &str, token: &str) -> String {
     cert_arn
 }
 
-fn find_domain(
-    domains: &HashMap<String, HashMap<String, String>>,
+fn find_domains(
+    domains: &HashMap<String, HashMap<String, Vec<String>>>,
     env: &str,
     sandbox: &str,
-) -> Option<String> {
+) -> Vec<String> {
     match domains.get(env) {
-        Some(e) => e.get(sandbox).cloned(),
+        Some(e) => e.get(sandbox).unwrap().to_vec(),
         None => match domains.get("default") {
-            Some(d) => d.get(sandbox).cloned(),
-            None => None,
+            Some(d) => d.get(sandbox).unwrap().to_vec(),
+            None => vec![],
         },
     }
 }
@@ -271,7 +271,7 @@ async fn create_or_update_distribution(
     name: &str,
     page: &Page,
     sandbox: &str,
-    maybe_domain: Option<String>,
+    domains: Vec<String>,
 ) -> (String, String) {
     let Page {
         fqn,
@@ -300,13 +300,20 @@ async fn create_or_update_distribution(
         }
     };
 
-    let maybe_cert_arn = if let Some(domain) = &maybe_domain {
+    let mut maybe_cert_arn: Option<String> = None;
+
+    for domain in &domains {
         let idempotency_token = sandbox;
-        let arn = find_or_create_cert(auth, domain, idempotency_token).await;
-        Some(arn)
-    } else {
-        None
-    };
+        if domain.starts_with("*") {
+            let dom = match domain.split_once(".") {
+                Some((_k, v)) => v,
+                _ => domain
+            };
+            maybe_cert_arn = Some(find_or_create_cert(auth, &dom, idempotency_token).await);
+        } else {
+            maybe_cert_arn = Some(find_or_create_cert(auth, &domain, idempotency_token).await);
+        }
+    }
 
     let dist_config = cloudfront::make_dist_config(
         fqn,
@@ -314,7 +321,7 @@ async fn create_or_update_distribution(
         caller_ref,
         origin_domain,
         origin_paths.clone(),
-        maybe_domain.clone(),
+        domains.clone(),
         maybe_cert_arn,
         &oac_id,
         &cache_policy_id,
@@ -352,18 +359,20 @@ async fn create_page(
         ..
     } = page;
 
-    let maybe_domain = find_domain(domains, &auth.name, sandbox);
+    let all_domains = find_domains(domains, &auth.name, sandbox);
 
     println!("Building page");
     build_and_upload(auth, name, page, config).await;
     let (dist_id, cname) =
-        create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
+        create_or_update_distribution(auth, name, page, sandbox, all_domains.clone()).await;
 
-    if let Some(domain) = &maybe_domain {
-        update_dns_record(auth, domain, &dist_id, &cname).await;
+    for domain in all_domains {
+        match c::getenv("TC_UPDATE_DNS") {
+            Ok(_) => update_dns_record(auth, &domain, &dist_id, &cname).await,
+            Err(_) => ()
+        }
         println!("url - https://{}", domain);
-    } else {
-        println!("url - https://{}", &cname);
+        println!("url - cname: https://{}", &cname);
     }
 
     update_bucket_policy(auth, bucket, bucket_policy, &dist_id).await;
@@ -433,15 +442,13 @@ async fn update_domains(
     for (name, page) in pages {
         let Page { domains, .. } = page;
 
-        let maybe_domain = find_domain(domains, &auth.name, sandbox);
+        let all_domains = find_domains(domains, &auth.name, sandbox);
         let (dist_id, cname) =
-            create_or_update_distribution(auth, name, page, sandbox, maybe_domain.clone()).await;
-
-        if let Some(domain) = &maybe_domain {
-            update_dns_record(auth, domain, &dist_id, &cname).await;
+            create_or_update_distribution(auth, name, page, sandbox, all_domains.clone()).await;
+        for domain in all_domains {
+            update_dns_record(auth, &domain, &dist_id, &cname).await;
             println!("url - https://{}", domain);
-        } else {
-            println!("url - https://{}", &cname);
+            println!("cname - https://{}", &cname);
         }
     }
 }
@@ -453,9 +460,9 @@ async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>, sandbox: &
             println!("Configuring page {} - creating function", &name);
             cloudfront::create_or_update_function(&client, &name, &handler).await;
         }
-        let maybe_domain = find_domain(&page.domains, &auth.name, sandbox);
+        let domains = find_domains(&page.domains, &auth.name, sandbox);
         let _ =
-            create_or_update_distribution(auth, pname, page, sandbox, maybe_domain.clone()).await;
+            create_or_update_distribution(auth, pname, page, sandbox, domains).await;
     }
 }
 
