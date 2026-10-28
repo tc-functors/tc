@@ -160,9 +160,12 @@ function handler(event) {{
                 xs.insert(name, (s!("request"), js));
             }
         }
-        if kind == "spa" || kind == "SPA" {
-            let name = template::maybe_namespace("redirect");
-            xs.insert(name, (s!("redirect"), redirect));
+        match c::getenv("TC_DEFAULT_PAGE_REQUEST") {
+            Ok(_) => if kind == "spa" || kind == "SPA" {
+                let name = template::maybe_namespace("redirect");
+                xs.insert(name, (s!("request"), redirect));
+            },
+            Err(_) => ()
         }
         if let Some(res) = f.response {
             let path = u::absolutize(dir, &res);

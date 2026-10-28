@@ -166,7 +166,7 @@ fn make_lambda_function_associations() -> LambdaFunctionAssociations {
 fn make_function_assoc(kind: &str, arn: &str) -> FunctionAssociation {
     let it = FunctionAssociationBuilder::default();
     let event_type = match kind {
-        "request" | "redirect" => EventType::ViewerRequest,
+        "request" => EventType::ViewerRequest,
         "response" => EventType::ViewerResponse,
         _ => EventType::ViewerRequest,
     };
