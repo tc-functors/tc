@@ -96,6 +96,7 @@ impl BucketPolicy {
 pub struct Infra {
     pub bucket: Option<String>,
     pub domains: Option<HashMap<String, HashMap<String, Vec<String>>>>,
+    pub skip_dns: Option<bool>
 }
 
 impl Infra {
@@ -130,6 +131,7 @@ pub struct Page {
     pub config_template: Option<String>,
     pub functions: HashMap<String, (String, String)>,
     pub skip_deploy: bool,
+    pub skip_dns: bool
 }
 
 fn make_functions(
@@ -231,6 +233,17 @@ fn find_domains(
     }
 }
 
+fn should_skip_dns(infra: &Option<Infra>) -> bool {
+    if let Some(inf) = infra {
+        match inf.skip_dns {
+            Some(b) => b,
+            None => false
+        }
+    } else {
+        true
+    }
+}
+
 fn make_paths(namespace: &str, name: &str) -> HashMap<String, String> {
     let mut h: HashMap<String, String> = HashMap::new();
     let p = format!("/{}/{{{{sandbox}}}}/{}", namespace, name);
@@ -284,6 +297,8 @@ fn make(
         None => false,
     };
 
+    let skip_dns = should_skip_dns(infra);
+
     Page {
         fqn: fqn,
         namespace: namespace.to_string(),
@@ -302,6 +317,7 @@ fn make(
         config_template: ps.config_template.clone(),
         functions: make_functions(kind, &tdir, ps.functions.clone()),
         skip_deploy: should_skip,
+        skip_dns: skip_dns
     }
 }
 

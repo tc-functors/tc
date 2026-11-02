@@ -356,6 +356,7 @@ async fn create_page(
         bucket,
         bucket_policy,
         domains,
+        skip_dns,
         ..
     } = page;
 
@@ -367,9 +368,8 @@ async fn create_page(
         create_or_update_distribution(auth, name, page, sandbox, all_domains.clone()).await;
 
     for domain in all_domains {
-        match c::getenv("TC_UPDATE_DNS") {
-            Ok(_) => update_dns_record(auth, &domain, &dist_id, &cname).await,
-            Err(_) => ()
+        if !skip_dns {
+            update_dns_record(auth, &domain, &dist_id, &cname).await;
         }
         println!("url - https://{}", domain);
         println!("url - cname: https://{}", &cname);
@@ -440,13 +440,15 @@ async fn update_domains(
     sandbox: &str,
 ) {
     for (name, page) in pages {
-        let Page { domains, .. } = page;
+        let Page { domains, skip_dns, .. } = page;
 
         let all_domains = find_domains(domains, &auth.name, sandbox);
         let (dist_id, cname) =
             create_or_update_distribution(auth, name, page, sandbox, all_domains.clone()).await;
         for domain in all_domains {
-            update_dns_record(auth, &domain, &dist_id, &cname).await;
+            if !skip_dns {
+                update_dns_record(auth, &domain, &dist_id, &cname).await;
+            }
             println!("url - https://{}", domain);
             println!("cname - https://{}", &cname);
         }
