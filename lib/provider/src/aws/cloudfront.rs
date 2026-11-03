@@ -42,6 +42,8 @@ use aws_sdk_cloudfront::{
         SslSupportMethod,
         ViewerCertificate,
         ViewerProtocolPolicy,
+        Tag,
+        Tags,
         builders::{
             AliasesBuilder,
             AllowedMethodsBuilder,
@@ -66,6 +68,8 @@ use aws_sdk_cloudfront::{
             RestrictionsBuilder,
             S3OriginConfigBuilder,
             ViewerCertificateBuilder,
+            TagBuilder,
+            TagsBuilder,
         },
     },
 };
@@ -328,6 +332,17 @@ pub async fn find_distribution(client: &Client, name: &str) -> Option<(String, S
     let dists = list_distributions(client).await;
     dists.get(name).cloned()
 }
+
+pub async fn find_distribution_arn(client: &Client, id: &str) -> Option<String> {
+    let res = client
+        .get_distribution()
+        .id(id)
+        .send()
+        .await
+        .unwrap();
+    Some(res.distribution.unwrap().arn)
+}
+
 
 async fn update_distribution(
     client: &Client,
@@ -621,5 +636,34 @@ pub async fn delete_distribution(client: &Client, name: &str) {
                 .unwrap();
         }
         None => println!("CF distribution not found, skipping"),
+    }
+}
+
+fn make_tag(key: String, value: String) -> Tag {
+    let tb = TagBuilder::default();
+    tb.key(key).value(value).build().unwrap()
+}
+
+fn make_tags(kvs: HashMap<String, String>) -> Tags {
+    let mut tags: Vec<Tag> = vec![];
+    for (k, v) in kvs.into_iter() {
+        let tag = make_tag(k, v);
+        tags.push(tag);
+    }
+    let tb = TagsBuilder::default();
+    tb.set_items(Some(tags)).build()
+}
+
+pub async fn update_tags(client: &Client, id: &str, tags: HashMap<String, String>) {
+    let tags = make_tags(tags);
+    let maybe_arn = find_distribution_arn(client, id).await;
+    if let Some(arn) = maybe_arn {
+        let _ = client
+            .tag_resource()
+            .resource(arn)
+            .tags(tags)
+            .send()
+            .await
+            .unwrap();
     }
 }

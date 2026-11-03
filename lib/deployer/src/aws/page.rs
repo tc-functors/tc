@@ -272,6 +272,7 @@ async fn create_or_update_distribution(
     page: &Page,
     sandbox: &str,
     domains: Vec<String>,
+    tags: &HashMap<String, String>
 ) -> (String, String) {
     let Page {
         fqn,
@@ -342,6 +343,9 @@ async fn create_or_update_distribution(
 
     tracing::debug!("Configuring page {} - invalidating cache", name);
     cloudfront::create_invalidation(&client, &dist_id).await;
+
+    cloudfront::update_tags(&client, &dist_id, tags.clone()).await;
+
     (dist_id, cname)
 }
 
@@ -351,6 +355,7 @@ async fn create_page(
     page: &Page,
     config: &HashMap<String, String>,
     sandbox: &str,
+    tags: &HashMap<String, String>
 ) {
     let Page {
         bucket,
@@ -365,7 +370,7 @@ async fn create_page(
     println!("Building page");
     build_and_upload(auth, name, page, config).await;
     let (dist_id, cname) =
-        create_or_update_distribution(auth, name, page, sandbox, all_domains.clone()).await;
+        create_or_update_distribution(auth, name, page, sandbox, all_domains.clone(), tags).await;
 
     for domain in all_domains {
         if !skip_dns {
@@ -376,6 +381,7 @@ async fn create_page(
     }
 
     update_bucket_policy(auth, bucket, bucket_policy, &dist_id).await;
+
 }
 
 pub async fn create(
@@ -383,13 +389,14 @@ pub async fn create(
     pages: &HashMap<String, Page>,
     config: &HashMap<String, String>,
     sandbox: &str,
+    tags: &HashMap<String, String>
 ) {
     for (name, page) in pages {
         if page.skip_deploy {
             println!("Skipping page deploy {}", &name);
             build(auth, &name, &page, config).await;
         } else {
-            create_page(auth, &name, &page, config, sandbox).await;
+            create_page(auth, &name, &page, config, sandbox, tags).await;
         }
     }
 }
@@ -438,13 +445,14 @@ async fn update_domains(
     pages: &HashMap<String, Page>,
     _config: &HashMap<String, String>,
     sandbox: &str,
+    tags: &HashMap<String, String>
 ) {
     for (name, page) in pages {
         let Page { domains, skip_dns, .. } = page;
 
         let all_domains = find_domains(domains, &auth.name, sandbox);
         let (dist_id, cname) =
-            create_or_update_distribution(auth, name, page, sandbox, all_domains.clone()).await;
+            create_or_update_distribution(auth, name, page, sandbox, all_domains.clone(), tags).await;
         for domain in all_domains {
             if !skip_dns {
                 update_dns_record(auth, &domain, &dist_id, &cname).await;
@@ -455,7 +463,7 @@ async fn update_domains(
     }
 }
 
-async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>, sandbox: &str) {
+async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>, sandbox: &str, tags: &HashMap<String, String>) {
     let client = cloudfront::make_client(auth).await;
     for (pname, page) in pages {
         for (name, (_kind, handler)) in &page.functions {
@@ -464,7 +472,7 @@ async fn update_functions(auth: &Auth, pages: &HashMap<String, Page>, sandbox: &
         }
         let domains = find_domains(&page.domains, &auth.name, sandbox);
         let _ =
-            create_or_update_distribution(auth, pname, page, sandbox, domains).await;
+            create_or_update_distribution(auth, pname, page, sandbox, domains, tags).await;
     }
 }
 
@@ -474,12 +482,13 @@ pub async fn update(
     component: &str,
     config: &HashMap<String, String>,
     sandbox: &str,
+    tags: &HashMap<String, String>
 ) {
     match component {
         "code" => update_code(auth, pages, config).await,
         "config" => update_config(auth, pages, config).await,
-        "domains" => update_domains(auth, pages, config, sandbox).await,
-        "functions" => update_functions(auth, pages, sandbox).await,
+        "domains" => update_domains(auth, pages, config, sandbox, tags).await,
+        "functions" => update_functions(auth, pages, sandbox, tags).await,
         "build" => {
             for (name, page) in pages {
                 build_page(auth, &page.dir, name, &page.build, &page.config_template).await;
@@ -487,7 +496,7 @@ pub async fn update(
         }
         _ => {
             if let Some(page) = pages.get(component) {
-                create_page(auth, component, page, config, sandbox).await;
+                create_page(auth, component, page, config, sandbox, tags).await;
             } else {
                 update_code(auth, pages, config).await;
             }
