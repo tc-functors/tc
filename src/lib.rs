@@ -1014,7 +1014,9 @@ pub fn print_env(region: Option<String>) {
     configurator::init_env(&local_dir, region.clone());
     let vars = configurator::getenvs();
     for (k, v) in vars {
-        println!("{}={}", &k, &v);
+        if k.starts_with("TC") {
+            println!("{}={}", &k, &v);
+        }
     }
 }
 

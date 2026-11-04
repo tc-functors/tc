@@ -1,6 +1,5 @@
 use super::Context;
 use compiler::{
-    BuildKind,
     TopologyKind,
     spec::{
         InfraSpec,
@@ -339,7 +338,7 @@ async fn resolve_runtime(
     function: &Function,
     fqn: &str,
     resolve_urls: bool,
-    force: bool,
+    _force: bool,
 ) -> Runtime {
     let Context { auth, sandbox, .. } = ctx;
 
@@ -352,17 +351,6 @@ async fn resolve_runtime(
         ..
     } = &function.runtime;
     let mut r: Runtime = function.runtime.clone();
-
-    let uri = if force {
-        match &function.build.kind {
-            BuildKind::Inline => &format!("{}/lambda.zip", &function.dir),
-            _ => &function.runtime.uri,
-        }
-    } else {
-        &function.runtime.uri
-    };
-
-    r.uri = uri.to_string();
 
     let actual_infra = get_infra_spec(&infra_spec, &auth.name, sandbox);
     let InfraSpec {
