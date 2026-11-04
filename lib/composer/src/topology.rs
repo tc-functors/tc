@@ -256,7 +256,12 @@ fn is_inferred_dir(dir: &str) -> bool {
 }
 
 fn function_dirs(dir: &str, function_dirs: Option<Vec<String>>) -> Vec<String> {
-    let mut known_roots = vec![s!("resolvers"), s!("functions"), s!("transformers")];
+    let mut known_roots = vec![
+        s!("resolvers"),
+        s!("functions"),
+        s!("transformers"),
+        s!("subscribers")
+    ];
     if let Some(dirs) = function_dirs {
         known_roots.extend(dirs)
     }

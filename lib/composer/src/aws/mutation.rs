@@ -79,11 +79,12 @@ fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Reso
         if r.subscribe {
             if let Some(s) = r.subscriber_function {
                 let sub_name = format!("subscribe{}", kit::pascal_case(&k));
+                let fn_name = template::maybe_namespace(&s);
                 let resolver = Resolver {
                     entity: Entity::Function,
                     name: sub_name.clone(),
-                    target_name: s.clone(),
-                    target_arn: make_target_arn(&Entity::Function, &s),
+                    target_name: fn_name.clone(),
+                    target_arn: make_target_arn(&Entity::Function, &fn_name),
                     input: r.input,
                     output: r.output,
                 };
