@@ -27,6 +27,9 @@ pub struct ResolverSpec {
     pub table: Option<String>,
 
     pub subscribe: bool,
+
+    #[serde(default, alias="subscriber-function")]
+    pub subscriber_function: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

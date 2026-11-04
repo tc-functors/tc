@@ -67,14 +67,29 @@ fn make_resolvers(rspecs: HashMap<String, ResolverSpec>) -> HashMap<String, Reso
         let (entity, target_name) = entity_of(r.to_owned());
         let target_arn = make_target_arn(&entity, &target_name);
         let resolver = Resolver {
-            entity: entity,
+            entity: entity.clone(),
             name: k.to_owned(),
             target_name: target_name,
             target_arn: target_arn,
-            input: r.input,
-            output: r.output,
+            input: r.input.clone(),
+            output: r.output.clone(),
         };
-        xs.insert(k, resolver);
+        xs.insert(k.clone(), resolver);
+
+        if r.subscribe {
+            if let Some(s) = r.subscriber_function {
+                let sub_name = format!("subscribe{}", kit::pascal_case(&k));
+                let resolver = Resolver {
+                    entity: Entity::Function,
+                    name: sub_name.clone(),
+                    target_name: s.clone(),
+                    target_arn: make_target_arn(&Entity::Function, &s),
+                    input: r.input,
+                    output: r.output,
+                };
+                xs.insert(sub_name, resolver);
+            }
+        }
     }
     xs
 }

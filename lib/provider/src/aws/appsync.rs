@@ -591,7 +591,11 @@ pub async fn find_or_create_resolver(
     field_name: &str,
     datasource: &str,
 ) {
-    let type_name = "Mutation";
+    let type_name = if field_name.starts_with("subscribe") {
+        "Subscription"
+    } else {
+        "Mutation"
+    };
     let exists = resolver_exists(client, api_id, type_name, field_name).await;
     if !exists {
         create_resolver(client, api_id, type_name, field_name, datasource).await;

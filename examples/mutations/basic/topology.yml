@@ -18,4 +18,5 @@ mutations:
       function: foo
       input: ChannelInput
       output: AWSJSON
-      subscribe: false
+      subscribe: true
+      subscriber-function: foo
