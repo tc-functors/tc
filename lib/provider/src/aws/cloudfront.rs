@@ -206,7 +206,7 @@ fn make_default_cache_behavior(
         .allowed_methods(allowed_methods)
         .cache_policy_id(cache_policy_id)
         .smooth_streaming(false)
-        .compress(false)
+        .compress(true)
         .field_level_encryption_id("")
         .lambda_function_associations(lambda_function_assocs)
         .function_associations(function_assocs)
