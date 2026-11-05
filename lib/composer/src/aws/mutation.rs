@@ -148,12 +148,25 @@ fn make_query_type(fields: &str) -> String {
     )
 }
 
-fn make_sub_fields(type_name: &str, output: String) -> String {
+fn as_auth_modes(maybe_modes: &Option<Vec<String>>) -> String {
+    let mut s: String = String::from("");
+    if let Some(modes) = maybe_modes {
+        for m in modes {
+            let mode = format!("@{}", &m);
+            s.push_str(&mode);
+        }
+        s
+    } else  {
+        String::from("@aws_lambda @aws_iam @aws_api_key")
+    }
+}
+
+fn make_sub_fields(type_name: &str, output: String, auth_modes: &str) -> String {
     let sub_name = format!("subscribe{}", &kit::pascal_case(type_name));
     format!(
         r#"{sub_name}(id: String!): {output}
    @aws_subscribe(mutations: ["{type_name}"])
-   @aws_lambda @aws_iam @aws_api_key
+   {auth_modes}
 "#
     )
 }
@@ -166,7 +179,7 @@ fn make_sub_type(fields: &str) -> Option<String> {
     }
 }
 
-fn make_mut_fields(type_name: &str, input: HashMap<String, String>, output: String) -> String {
+fn make_mut_fields(type_name: &str, input: HashMap<String, String>, output: String, auth_modes: &str) -> String {
     let mut s: String = s!("");
     for (k, v) in input {
         s.push_str(&format!("{}: {} ", k, v));
@@ -174,7 +187,7 @@ fn make_mut_fields(type_name: &str, input: HashMap<String, String>, output: Stri
     format!(
         r#"
 {type_name}({s}): {output}
-@aws_lambda @aws_iam @aws_api_key
+{auth_modes}
 "#
     )
 }
@@ -213,16 +226,18 @@ fn make_types(
     for (type_name, resolver) in resolvers.clone() {
         let type_input = types.get(&resolver.input);
         let input = inputs.get(&resolver.input);
+        let auth_modes = as_auth_modes(&resolver.auth_modes);
+
         match type_input {
             Some(it) => {
-                let f = make_mut_fields(&type_name, it.clone(), resolver.output.clone());
+                let f = make_mut_fields(&type_name, it.clone(), resolver.output.clone(), &auth_modes);
                 mut_fields.push_str(&f);
             }
             None => (),
         }
         match input {
             Some(it) => {
-                let f = make_mut_fields(&type_name, it.clone(), resolver.output);
+                let f = make_mut_fields(&type_name, it.clone(), resolver.output, &auth_modes);
                 mut_fields.push_str(&f);
             }
             None => (),
@@ -235,8 +250,11 @@ fn make_types(
         let ResolverSpec {
             subscribe, output, ..
         } = resolver;
+
+        let auth_modes = as_auth_modes(&resolver.auth_modes);
+
         if is_subscribable(&type_name) && subscribe {
-            let f = make_sub_fields(&type_name, output.to_owned());
+            let f = make_sub_fields(&type_name, output.to_owned(), &auth_modes);
             sub_fields.push_str(&f);
         }
     }

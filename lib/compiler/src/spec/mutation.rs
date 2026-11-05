@@ -30,6 +30,9 @@ pub struct ResolverSpec {
 
     #[serde(default, alias="subscriber-function")]
     pub subscriber_function: Option<String>,
+
+    #[serde(default, alias="auth-modes")]
+    pub auth_modes: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -48,6 +51,7 @@ pub fn merge_specs(mspecs: &Vec<MutationSpec>) -> MutationSpec {
     let mut types: HashMap<String, HashMap<String, String>> = HashMap::new();
     let mut resolvers: HashMap<String, ResolverSpec> = HashMap::new();
     let mut authorizer: Option<String> = None;
+
     for spec in mspecs {
         if let Some(ins) = spec.inputs.clone() {
             inputs.extend(ins);
