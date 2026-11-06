@@ -226,18 +226,18 @@ fn make_types(
     for (type_name, resolver) in resolvers.clone() {
         let type_input = types.get(&resolver.input);
         let input = inputs.get(&resolver.input);
-        let auth_modes = as_auth_modes(&resolver.auth_modes);
+        let mut_auth_modes = as_auth_modes(&resolver.mutation_auth_modes);
 
         match type_input {
             Some(it) => {
-                let f = make_mut_fields(&type_name, it.clone(), resolver.output.clone(), &auth_modes);
+                let f = make_mut_fields(&type_name, it.clone(), resolver.output.clone(), &mut_auth_modes);
                 mut_fields.push_str(&f);
             }
             None => (),
         }
         match input {
             Some(it) => {
-                let f = make_mut_fields(&type_name, it.clone(), resolver.output, &auth_modes);
+                let f = make_mut_fields(&type_name, it.clone(), resolver.output, &mut_auth_modes);
                 mut_fields.push_str(&f);
             }
             None => (),
@@ -251,10 +251,10 @@ fn make_types(
             subscribe, output, ..
         } = resolver;
 
-        let auth_modes = as_auth_modes(&resolver.auth_modes);
+        let sub_auth_modes = as_auth_modes(&resolver.subscriber_auth_modes);
 
         if is_subscribable(&type_name) && subscribe {
-            let f = make_sub_fields(&type_name, output.to_owned(), &auth_modes);
+            let f = make_sub_fields(&type_name, output.to_owned(), &sub_auth_modes);
             sub_fields.push_str(&f);
         }
     }

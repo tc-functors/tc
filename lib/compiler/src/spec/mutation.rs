@@ -31,8 +31,11 @@ pub struct ResolverSpec {
     #[serde(default, alias="subscriber-function")]
     pub subscriber_function: Option<String>,
 
-    #[serde(default, alias="auth-modes")]
-    pub auth_modes: Option<Vec<String>>,
+    #[serde(default, alias="mutation-auth-modes")]
+    pub mutation_auth_modes: Option<Vec<String>>,
+
+    #[serde(default, alias="subscriber-auth-modes")]
+    pub subscriber_auth_modes: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
