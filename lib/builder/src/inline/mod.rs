@@ -75,7 +75,12 @@ fn _create_buildx_container(name: &str, dir: &str) -> String {
     let create_cont_str = format!(
         "docker buildx create --platform linux/amd64 --name {container_sha} --use --bootstrap"
     );
-    u::sh(&create_cont_str, dir);
+    let (status, out, err) = u::runc(&create_cont_str, dir);
+    if !status {
+        println!("Build failed: {} {}", out, err);
+        sh("rm -f Dockerfile wrapper", dir);
+        panic!("Build failed. Can't create container");
+    }
     container_sha
 }
 
@@ -160,59 +165,79 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
 
     let run = format!("docker run -d --name {} {}", &temp_cont, u::basedir(dir));
     sh(&clean, dir);
-    sh(&run, dir);
+    let (status, out, err) = u::runc(&run, dir);
+    if !status {
+        println!("Build failed: {} {}", out, err);
+        sh("rm -f Dockerfile wrapper", dir);
+        panic!("docker run failed");
+    }
+
     let id = sh(&format!("docker ps -aqf \"name={}\"", temp_cont), dir);
+    if id.is_empty() {
+        sh("rm -f Dockerfile wrapper", dir);
+        panic!("Getting docker container id failed");
+    }
+
     tracing::debug!("Container id: {}", &id);
 
-    match langr.to_lang() {
+    let (status, out, err) = match langr.to_lang() {
         Lang::Rust => {
-            sh(
+            u::runc(
                 &format!(
                     "docker cp {}:/build/target/lambda/bootstrap/bootstrap bootstrap",
                     id
                 ),
                 dir,
-            );
+            )
         },
         Lang::Clojure => {
-            sh(&format!("docker cp {}:/build/lambda.jar lambda.zip", id), dir);
+            u::runc(&format!("docker cp {}:/build/lambda.jar lambda.zip", id), dir)
         }
         Lang::Go => {
-            sh(&format!("docker cp {}:/build/bootstrap bootstrap", id), dir);
+            u::runc(&format!("docker cp {}:/build/bootstrap bootstrap", id), dir)
         }
         _ => {
-            sh(&format!("docker cp {}:/build build", id), dir);
+            u::runc(&format!("docker cp {}:/build build", id), dir)
         }
+    };
+    if !status {
+        println!("Build failed: {} {}", out, err);
+        sh("rm -f Dockerfile wrapper", dir);
+        panic!("docker cp failed");
     }
-
     sh(&clean, dir);
     sh("rm -f Dockerfile wrapper", dir);
 }
 
 fn zip(dir: &str, langr: &LangRuntime) {
-    match langr.to_lang() {
+    let (status, out, err) = match langr.to_lang() {
         Lang::Python => {
             let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
-            sh(&cmd, &format!("{}/build/python", dir));
+            u::runc(&cmd, &format!("{}/build/python", dir))
         }
         Lang::Ruby => {
             let cmd = "cd build/ruby && find . -type d -name \".git\" | xargs rm -rf && rm -rf gems/3.2.0/cache/bundler/git && sed -i \"/group/,/end:/d\" Gemfile && zip -q -9 --exclude=\"**/.git/**\" -r ../../lambda.zip . && cd -";
-            sh(&cmd, dir);
+            u::runc(&cmd, dir)
         }
         Lang::Node => {
             let cmd = "cd build && zip -q -9 -r ../lambda.zip node_modules && cd -";
-            sh(&cmd, dir);
+            u::runc(&cmd, dir)
         }
         Lang::Rust => {
             let command = "zip -q -r lambda.zip bootstrap";
-            sh(command, dir);
+            u::runc(command, dir)
         }
         Lang::Go => {
             let command = "zip -q -r lambda.zip bootstrap";
-            sh(command, dir);
+            u::runc(command, dir)
         }
-        Lang::Clojure => (),
+        Lang::Clojure => (true, String::from(""), String::from("")),
+    };
+    if !status {
+        println!("zip fail: {} {} {}", status, out, err);
+        panic!("Build failed");
     }
+
 }
 
 async fn should_build_deps(auth: &Auth, uri: &str, _use_asset_store: bool) -> bool {
