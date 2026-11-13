@@ -47,7 +47,7 @@ npm-debug.log
 .pyenv
 **/.venv/
 **/site-packages/
-*.zip
+**/*.zip
 "#
     );
     let file = format!("{}/.dockerignore", dir);
