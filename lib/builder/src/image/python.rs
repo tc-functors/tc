@@ -66,6 +66,13 @@ fn make_install_command(dir: &str, package_manager: &str) -> String {
             }
         }
         "poetry" => String::from("pip install -vv -r requirements.txt --target /build/python"),
+        "pip" => {
+            if u::path_exists(dir, "requirements.txt") {
+                String::from("pip install -vv -r requirements.txt --target /build/python")
+            } else {
+                String::from("RUN echo 0")
+            }
+        }
         _ => String::from("RUN echo 0"),
     }
 }

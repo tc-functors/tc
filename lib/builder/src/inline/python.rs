@@ -26,7 +26,7 @@ fn deps_str(deps: Vec<String>) -> String {
 
 fn make_req_cmd(dir: &str, package_manager: &str) -> String {
     match package_manager {
-        "uv" => String::from("echo 0"),
+        "uv" | "pip" => String::from("echo 0"),
         _ => {
             if u::path_exists(dir, "pyproject.toml") {
                 format!(
@@ -55,6 +55,13 @@ fn make_install_command(dir: &str, package_manager: &str) -> String {
         }
         "poetry" => {
             String::from("pip install -r requirements.txt --target=/build/python --prefer-binary")
+        }
+        "pip" => {
+            if u::path_exists(dir, "requirements.txt") {
+                String::from("pip install -r requirements.txt --target=/build/python --prefer-binary")
+            } else {
+                String::from("echo 0")
+            }
         }
         _ => panic!("Package manager not known"),
     }
@@ -103,18 +110,40 @@ RUN --mount=type=secret,id=aws-key,env=AWS_ACCESS_KEY_ID --mount=type=secret,id=
     u::write_str(&dockerfile, &f);
 }
 
-fn make_copy_cmd(dir: &str) -> String {
-    if u::path_exists(dir, "pyproject.toml") {
-        format!(
-            r#"
-COPY pyproject.toml ./
-COPY uv.lock ./
-"#
-        )
-    } else if u::path_exists(dir, "requirements.txt") {
-        String::from("COPY requirements.txt ./")
-    } else {
-        String::from("RUN echo 0")
+/// This will panic when package manager is not defined below
+fn make_copy_cmd(dir: &str, package_manager: &str) -> String {
+    match package_manager {
+       "uv" => {
+         if u::path_exists(dir, "pyproject.toml") {
+            format!(
+                r#"
+    COPY pyproject.toml ./
+    COPY uv.lock ./
+    "#
+            )
+        } else if u::path_exists(dir, "requirements.txt") {
+            String::from("COPY requirements.txt ./")
+        } else {
+            String::from("RUN echo 0")
+        }
+    }
+    "pip" => {
+        if u::path_exists(dir, "requirements.txt") {
+            String::from("COPY requirements.txt ./")
+        } else {
+            String::from("RUN echo 0")
+        }
+    }
+    "poetry" => {
+        if u::path_exists(dir, "pyproject.toml") {
+            String::from("COPY pyproject.toml ./")
+        } else if u::path_exists(dir, "requirements.txt") {
+            String::from("COPY requirements.txt ./")
+        } else {
+            String::from("RUN echo 0")
+        }
+    }
+    _ => panic!("Package manager not known")
     }
 }
 
@@ -128,7 +157,7 @@ pub fn gen_dockerfile_unshared(dir: &str, runtime: &LangRuntime, bs: &Build) {
     let pre = deps_str(pre.to_vec());
     let post = deps_str(post.to_vec());
     let req_cmd = make_req_cmd(dir, package_manager);
-    let cp_cmd = make_copy_cmd(dir);
+    let cp_cmd = make_copy_cmd(dir, package_manager);
     let install_cmd = make_install_command(dir, package_manager);
     let image = find_image(&runtime);
 
