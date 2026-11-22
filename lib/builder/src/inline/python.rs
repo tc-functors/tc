@@ -117,9 +117,9 @@ fn make_copy_cmd(dir: &str, package_manager: &str) -> String {
          if u::path_exists(dir, "pyproject.toml") {
             format!(
                 r#"
-    COPY pyproject.toml ./
-    COPY uv.lock ./
-    "#
+COPY pyproject.toml ./
+COPY uv.lock ./
+"#
             )
         } else if u::path_exists(dir, "requirements.txt") {
             String::from("COPY requirements.txt ./")
