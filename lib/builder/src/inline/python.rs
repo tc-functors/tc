@@ -29,7 +29,7 @@ fn make_req_cmd(dir: &str, package_manager: &str) -> String {
         "uv" | "pip" => String::from("echo 0"),
         _ => {
             if u::path_exists(dir, "pyproject.toml") {
-                format!(
+                String::from(
                     "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
                 )
             } else {
@@ -48,9 +48,9 @@ fn make_install_command(dir: &str, package_manager: &str) -> String {
                     dir
                 )
             } else if u::path_exists(dir, "requirements.txt") {
-                format!("uv pip install -r requirements.txt --target=/build/python")
+                String::from("uv pip install -r requirements.txt --target=/build/python")
             } else {
-                format!("echo 0")
+                String::from("echo 0")
             }
         }
         "poetry" => {
@@ -115,7 +115,7 @@ fn make_copy_cmd(dir: &str, package_manager: &str) -> String {
     match package_manager {
        "uv" => {
          if u::path_exists(dir, "pyproject.toml") {
-            format!(
+            String::from(
                 r#"
 COPY pyproject.toml ./
 COPY uv.lock ./
