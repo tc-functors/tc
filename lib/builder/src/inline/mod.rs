@@ -212,6 +212,16 @@ fn copy_from_docker(dir: &str, langr: &LangRuntime) {
 fn zip(dir: &str, langr: &LangRuntime) {
     let (status, out, err) = match langr.to_lang() {
         Lang::Python => {
+            if !u::path_exists(dir, "build/python") {
+                println!(
+                    "{} Inline build produced no dependencies for {} `build/python` missing.\n\
+                    Add a dependency file for your respective `package_manager` choice\n\
+                    OR use `kind: Code` for a no dependency build",
+                    "[Error]".red(),
+                    dir
+                );
+                std::process::exit(1);
+            }
             let cmd = "rm -rf build && zip -q -9 -r ../../lambda.zip .";
             u::runc(&cmd, &format!("{}/build/python", dir))
         }

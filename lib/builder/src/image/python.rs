@@ -41,14 +41,14 @@ fn make_req_cmd(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "poetry" => {
             if u::path_exists(dir, "pyproject.toml") {
-                format!(
+                String::from(
                     "pip install poetry && poetry self add poetry-plugin-export && poetry config virtualenvs.create false && poetry lock && poetry export --without-hashes --format=requirements.txt > requirements.txt"
                 )
             } else {
-                format!("echo 0")
+                String::from("echo 0")
             }
         }
-        _ => format!("echo 0"),
+        _ => String::from("echo 0"),
     }
 }
 
@@ -56,17 +56,24 @@ fn make_install_command(dir: &str, package_manager: &str) -> String {
     match package_manager {
         "uv" => {
             if u::path_exists(dir, "pyproject.toml") {
-                format!(
+                String::from(
                     "uv sync --no-dev && uv pip install -r pyproject.toml --target=/build/python"
                 )
             } else if u::path_exists(dir, "requirements.txt") {
-                format!("uv pip install -r requirements.txt --target=/build/python")
+                String::from("uv pip install -r requirements.txt --target=/build/python")
             } else {
-                format!("RUN echo 0")
+                String::from("echo 0")
             }
         }
         "poetry" => String::from("pip install -vv -r requirements.txt --target /build/python"),
-        _ => String::from("RUN echo 0"),
+        "pip" => {
+            if u::path_exists(dir, "requirements.txt") {
+                String::from("pip install -vv -r requirements.txt --target /build/python")
+            } else {
+                String::from("echo 0")
+            }
+        }
+        _ => String::from("echo 0"),
     }
 }
 
