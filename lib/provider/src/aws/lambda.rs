@@ -341,6 +341,7 @@ impl Function {
         let mut state: State = State::Inactive;
 
         let f = self.clone();
+
         let res = client
             .create_function()
             .function_name(&self.name)
@@ -359,9 +360,10 @@ impl Function {
             .set_vpc_config(f.vpc_config)
             .architectures(f.architecture)
             .set_file_system_configs(f.filesystem_config)
-            .publish(true)
+            .publish(false)
             .send()
-            .await?;
+            .await
+            .unwrap();
 
         while state != State::Active {
             state = self.get_state(client, &self.name).await;
@@ -604,7 +606,8 @@ impl Function {
                 }
                 arn
             }
-            None => self.create(client).await.unwrap(),
+            None => self.create(client).await.unwrap()
+
         };
         arn
     }
@@ -719,6 +722,7 @@ impl Function {
 
     pub async fn publish_version(&self, client: &Client) {
         self.wait(client, &self.name).await;
+        println!("Publishing version ...");
         let res = client
             .publish_version()
             .function_name(&self.name)
@@ -731,7 +735,6 @@ impl Function {
             Some(_) => self.update_alias(client, &version).await,
             None => self.create_alias(client, &version).await,
         }
-
         println!("Published alias {} with version ({})", &self.name, &version);
     }
 }
