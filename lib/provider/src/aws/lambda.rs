@@ -730,6 +730,9 @@ impl Function {
             .await;
         let version = res.unwrap().version.unwrap();
         self.wait(client, &self.name).await;
+        let payload = String::from("");
+        println!("Invoking snap function {}", &self.name);
+        let _ = invoke_sync(client, &self.name, &payload).await;
         let maybe_alias = self.find_alias(client).await;
         match maybe_alias {
             Some(_) => self.update_alias(client, &version).await,
